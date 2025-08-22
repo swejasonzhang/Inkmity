@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, PenTool } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -21,21 +23,50 @@ const itemVariants = {
   },
 };
 
-export default function WaitlistPage() {
+export default function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const notifyError = (msg) => {
+    toast.error(msg, {
+      position: "top-center",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      style: {
+        background: "#111",
+        color: "#f87171",
+        fontWeight: "bold",
+        border: "1px solid #f87171",
+      },
+    });
+  };
+
+  const notifySuccess = (msg) => {
+    toast.success(msg, {
+      position: "top-center",
+      autoClose: 3000,
+      hideProgressBar: false,
+      style: {
+        background: "#111",
+        color: "#f87171",
+        fontWeight: "bold",
+        border: "1px solid #f87171",
+      },
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) {
-      setMessage("Please enter a valid email.");
+      notifyError("Please enter your email.");
       return;
     }
 
     setLoading(true);
-    setMessage("");
 
     try {
       const res = await fetch("http://localhost:5000/api/waitlist", {
@@ -46,15 +77,15 @@ export default function WaitlistPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setMessage(data.error || "Something went wrong.");
+        notifyError(data.error || "Something went wrong.");
       } else {
-        setMessage("🖤 You’re officially inked into the waitlist!");
+        notifySuccess("🖤 You’re officially inked into the waitlist!");
         setEmail("");
         setName("");
       }
     } catch (err) {
       console.error(err);
-      setMessage("Server error. Please try again later.");
+      notifyError("Server error. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -65,6 +96,9 @@ export default function WaitlistPage() {
       className="relative min-h-screen w-screen flex items-center justify-center p-4
       bg-gradient-to-tr from-gray-950 via-gray-900 to-black overflow-hidden"
     >
+      {/* Toast Container */}
+      <ToastContainer />
+
       {/* Tattoo-style grunge background */}
       <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')] bg-repeat"></div>
 
@@ -77,19 +111,16 @@ export default function WaitlistPage() {
         <motion.h2
           className="font-extrabold leading-snug sm:leading-tight tracking-tight text-gray-100 drop-shadow-2xl uppercase text-center"
           style={{
-            fontSize: "clamp(1.5rem, 6vw, 3.5rem)", 
+            fontSize: "clamp(1.5rem, 6vw, 3.5rem)",
           }}
           variants={itemVariants}
         >
           Ink Your Vision <br className="sm:hidden" /> Into the World
         </motion.h2>
 
-        {/* Subheading */}
         <motion.p
           className="mt-4 text-gray-300 max-w-3xl mx-auto italic"
-          style={{
-            fontSize: "clamp(1rem, 2.5vw, 1.5rem)",
-          }}
+          style={{ fontSize: "clamp(1rem, 2.5vw, 1.5rem)" }}
           variants={itemVariants}
         >
           Tattoos aren’t just art—they’re statements. This platform is where
@@ -97,7 +128,6 @@ export default function WaitlistPage() {
           forever. Commitment, creativity, and courage live here.
         </motion.p>
 
-        {/* Waitlist Form */}
         <motion.form
           onSubmit={handleSubmit}
           className="mt-6 max-w-4xl mx-auto w-full"
@@ -116,6 +146,10 @@ export default function WaitlistPage() {
                 placeholder="Your Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
                 className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 
                 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 
                 focus:ring-red-500 outline-none transition"
@@ -131,6 +165,10 @@ export default function WaitlistPage() {
                 placeholder="Your Email (Stay Connected)"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
                 required
                 className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 
                 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 
@@ -143,6 +181,8 @@ export default function WaitlistPage() {
             <button
               type="submit"
               disabled={loading}
+              autoComplete="off"
+              spellCheck={false}
               className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-red-600 hover:bg-red-700 
               text-white font-semibold rounded-lg shadow-md transition transform hover:scale-105 
               disabled:opacity-50 flex-shrink-0"
@@ -152,17 +192,6 @@ export default function WaitlistPage() {
             </button>
           </div>
         </motion.form>
-
-        {/* Message */}
-        {message && (
-          <motion.p
-            className="mt-4 font-medium text-red-400"
-            style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
-            variants={itemVariants}
-          >
-            {message}
-          </motion.p>
-        )}
       </motion.div>
     </div>
   );
