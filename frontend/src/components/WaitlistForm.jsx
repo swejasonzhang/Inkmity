@@ -16,11 +16,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: { type: "spring", stiffness: 100 },
-  },
+  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } },
 };
 
 export default function WaitlistForm() {
@@ -28,7 +24,7 @@ export default function WaitlistForm() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const notifyError = (msg) => {
+  const notifyError = (msg) =>
     toast.error(msg, {
       position: "top-center",
       autoClose: 3000,
@@ -43,9 +39,8 @@ export default function WaitlistForm() {
         border: "1px solid #f87171",
       },
     });
-  };
 
-  const notifySuccess = (msg) => {
+  const notifySuccess = (msg) =>
     toast.success(msg, {
       position: "top-center",
       autoClose: 3000,
@@ -57,31 +52,25 @@ export default function WaitlistForm() {
         border: "1px solid #f87171",
       },
     });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) {
-      notifyError("Please enter your email.");
-      return;
-    }
+    if (!name.trim()) return notifyError("Please enter your name.");
+    if (!email.trim()) return notifyError("Please enter your email.");
 
     setLoading(true);
-
     try {
       const res = await fetch("http://localhost:5000/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        notifyError(data.error || "Something went wrong.");
-      } else {
+      if (!res.ok) notifyError(data.error || "Something went wrong.");
+      else {
         notifySuccess("🖤 You’re officially inked into the waitlist!");
-        setEmail("");
         setName("");
+        setEmail("");
       }
     } catch (err) {
       console.error(err);
@@ -92,10 +81,7 @@ export default function WaitlistForm() {
   };
 
   return (
-    <div
-      className="relative min-h-screen w-screen flex items-center justify-center p-4
-      bg-gradient-to-tr from-gray-950 via-gray-900 to-black overflow-hidden"
-    >
+    <div className="relative min-h-screen w-screen flex items-center justify-center p-4 bg-gradient-to-tr from-gray-950 via-gray-900 to-black overflow-hidden">
       {/* Toast Container */}
       <ToastContainer />
 
@@ -109,13 +95,11 @@ export default function WaitlistForm() {
         animate="visible"
       >
         <motion.h2
-          className="font-extrabold leading-snug sm:leading-tight tracking-tight text-gray-100 drop-shadow-2xl uppercase text-center"
-          style={{
-            fontSize: "clamp(1.5rem, 6vw, 3.5rem)",
-          }}
+          className="font-extrabold tracking-tight text-gray-100 drop-shadow-2xl uppercase text-center"
+          style={{ fontSize: "clamp(1.5rem, 6vw, 3.5rem)", lineHeight: "1.1" }}
           variants={itemVariants}
         >
-          Ink Your Vision <br className="sm:hidden" /> Into the World
+          Ink Your Vision Into the World
         </motion.h2>
 
         <motion.p
@@ -132,12 +116,9 @@ export default function WaitlistForm() {
           onSubmit={handleSubmit}
           className="mt-6 max-w-4xl mx-auto w-full"
           variants={itemVariants}
+          noValidate
         >
-          <div
-            className="flex flex-col sm:flex-row flex-wrap items-center 
-            bg-black/80 backdrop-blur-md border border-gray-700 p-4 sm:p-6 rounded-2xl 
-            shadow-2xl gap-3 sm:gap-4 w-full"
-          >
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch bg-black/80 backdrop-blur-md border border-gray-700 p-4 sm:p-6 rounded-2xl shadow-2xl gap-3 sm:gap-4 w-full">
             {/* Name input */}
             <div className="relative w-full sm:flex-1">
               <PenTool className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-5 sm:h-6 w-5 sm:w-6 text-gray-500" />
@@ -150,9 +131,7 @@ export default function WaitlistForm() {
                 spellCheck={false}
                 autoCorrect="off"
                 autoCapitalize="off"
-                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 
-                placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 
-                focus:ring-red-500 outline-none transition"
+                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-500 outline-none transition"
                 style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
               />
             </div>
@@ -162,17 +141,14 @@ export default function WaitlistForm() {
               <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-5 sm:h-6 w-5 sm:w-6 text-gray-500" />
               <input
                 type="email"
-                placeholder="Your Email (Stay Connected)"
+                placeholder="Your Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="off"
                 spellCheck={false}
                 autoCorrect="off"
                 autoCapitalize="off"
-                required
-                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 
-                placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 
-                focus:ring-red-500 outline-none transition"
+                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-500 outline-none transition"
                 style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
               />
             </div>
@@ -181,11 +157,7 @@ export default function WaitlistForm() {
             <button
               type="submit"
               disabled={loading}
-              autoComplete="off"
-              spellCheck={false}
-              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-red-600 hover:bg-red-700 
-              text-white font-semibold rounded-lg shadow-md transition transform hover:scale-105 
-              disabled:opacity-50 flex-shrink-0"
+              className="w-full sm:flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition transform hover:scale-105 disabled:opacity-50 flex-shrink-0"
               style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
             >
               {loading ? "Inking..." : "Join the Movement"}
