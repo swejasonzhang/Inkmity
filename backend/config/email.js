@@ -8,11 +8,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendWelcomeEmail = async (to) => {
+export const sendWelcomeEmail = async ({ to, subject, text, html }) => {
   await transporter.sendMail({
     from: `"Jason Zhang" <${process.env.GMAIL_USER}>`,
     to,
-    subject: "Welcome to the waitlist 🎉",
-    text: "Thanks for joining the waitlist for For the Love of Tattoos!",
+    subject,
+    text,
+    html,
   });
 };
