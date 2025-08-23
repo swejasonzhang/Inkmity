@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { PenTool, Mail } from "lucide-react";
+import { PenTool, Mail, Info } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -26,6 +26,7 @@ export default function WaitlistForm() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [totalSignups, setTotalSignups] = useState(0);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     const fetchSignups = async () => {
@@ -60,10 +61,10 @@ export default function WaitlistForm() {
       autoClose: 3000,
       hideProgressBar: true,
       style: {
-        background: "#dc2626",
+        background: "#16a34a",
         color: "#ffffff",
         fontWeight: "bold",
-        border: "1px solid #dc2626",
+        border: "1px solid #16a34a",
         textAlign: "center",
       },
     });
@@ -83,10 +84,10 @@ export default function WaitlistForm() {
       const data = await res.json();
       if (!res.ok) notifyError(data.error || "Something went wrong.");
       else {
-        notifySuccess("🖤 You’re officially inked into the waitlist!");
+        notifySuccess("You’re officially inked into the waitlist!");
         setName("");
         setEmail("");
-        setTotalSignups((prev) => prev + 1); 
+        setTotalSignups((prev) => prev + 1);
       }
     } catch (err) {
       console.error(err);
@@ -99,7 +100,15 @@ export default function WaitlistForm() {
   return (
     <div className="relative min-h-screen w-screen flex items-center justify-center p-4 bg-gradient-to-tr from-gray-950 via-gray-900 to-black overflow-hidden">
       <ToastContainer />
-      <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')] bg-repeat"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-black via-gray-950 to-black animate-pulse opacity-20"></div>
+
+      {/* About Me button */}
+      <button
+        onClick={() => setShowAbout(true)}
+        className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900/80 border border-gray-700 text-white font-bold shadow-md hover:bg-gray-800 transition"
+      >
+        <Info className="w-5 h-5" /> About Me
+      </button>
 
       <motion.div
         className="relative z-10 container mx-auto text-center max-w-6xl px-4 w-full"
@@ -108,11 +117,11 @@ export default function WaitlistForm() {
         animate="visible"
       >
         <motion.h2
-          className="font-extrabold tracking-tight text-gray-100 drop-shadow-2xl uppercase text-center"
-          style={{ fontSize: "clamp(1.5rem, 6vw, 3.5rem)", lineHeight: "1.1" }}
+          className="font-extrabold tracking-tight text-gray-100 drop-shadow-2xl uppercase text-center leading-tight"
+          style={{ fontSize: "clamp(1.5rem, 6vw, 3.5rem)" }}
           variants={itemVariants}
         >
-          Ink Your Vision Into the World
+          This Isn’t Just a Waitlist. <br /> It’s a Movement.
         </motion.h2>
 
         <motion.p
@@ -120,11 +129,12 @@ export default function WaitlistForm() {
           style={{ fontSize: "clamp(1rem, 2.5vw, 1.5rem)" }}
           variants={itemVariants}
         >
-          Tattoos aren’t just art—they’re statements. This platform is where
-          artists, collectors, and dreamers unite to leave a mark that lasts
-          forever.
+          Every tattoo tells a story. This is your chance to join the first wave
+          of artists, collectors, and rebels shaping a platform built for those
+          who dare to leave a permanent mark.
         </motion.p>
 
+        {/* FORM */}
         <motion.form
           onSubmit={handleSubmit}
           className="mt-6 max-w-4xl mx-auto w-full"
@@ -141,8 +151,6 @@ export default function WaitlistForm() {
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="off"
                 spellCheck={false}
-                autoCorrect="off"
-                autoCapitalize="off"
                 className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-500 outline-none transition"
                 style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
               />
@@ -157,35 +165,67 @@ export default function WaitlistForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="off"
                 spellCheck={false}
-                autoCorrect="off"
-                autoCapitalize="off"
                 className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-500 outline-none transition"
                 style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
               />
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={loading}
-              className="w-full sm:flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition transform hover:scale-105 disabled:opacity-50 flex-shrink-0"
+              className="w-full sm:flex-1 px-6 sm:px-8 py-3 sm:py-4 
+             bg-gradient-to-r from-red-600 via-red-700 to-red-800
+             hover:from-red-700 hover:to-red-900
+             text-white font-bold rounded-lg shadow-lg
+             transition disabled:opacity-50 flex-shrink-0"
               style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
             >
-              {loading ? "Inking..." : "Join the Movement"}
-            </button>
+              {loading ? "Inking You In..." : "Claim Your Spot"}
+            </motion.button>
           </div>
         </motion.form>
 
-        <motion.p
-          className="mt-4 flex items-center justify-center text-white font-bold tracking-wide text-lg sm:text-xl drop-shadow-lg gap-2"
-          variants={itemVariants}
-        >
-          <PenTool className="w-6 h-6" />{" "}
-          <span>
-            Join {totalSignups.toLocaleString()} Visionaries Already Making
-            Their Mark!
-          </span>
-        </motion.p>
+        {/* CONDITIONAL SIGNUPS */}
+        {totalSignups > 100 ? (
+          <motion.p
+            className="mt-6 text-white font-extrabold tracking-wide text-lg sm:text-xl drop-shadow-lg flex items-center justify-center gap-2"
+            variants={itemVariants}
+          >
+            <PenTool className="w-6 h-6" />
+            {totalSignups.toLocaleString()}+ already inked in. Don’t wait.
+          </motion.p>
+        ) : (
+          <motion.p
+            className="mt-6 text-white font-extrabold tracking-wide text-lg sm:text-xl drop-shadow-lg"
+            variants={itemVariants}
+          >
+            Don’t wait—be part of the first wave.
+          </motion.p>
+        )}
       </motion.div>
+
+      {/* ABOUT ME MODAL */}
+      {showAbout && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 text-white p-6 rounded-2xl max-w-lg shadow-2xl relative animate-fadeIn">
+            <button
+              onClick={() => setShowAbout(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+            <h3 className="text-2xl font-bold mb-4 text-center">About Me</h3>
+            <p className="text-gray-300 leading-relaxed text-center">
+              Hey, I’m Jason. Tattoos aren’t just ink to me—they’re stories and
+              reminders of who we are. I built this platform to make the tattoo
+              experience simpler and more meaningful, while celebrating both the
+              art and the people behind it.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

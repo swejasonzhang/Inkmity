@@ -19,7 +19,7 @@ export const joinWaitlist = async (req, res, next) => {
     try {
       await sendWelcomeEmail({
         to: email,
-        subject: "Welcome to For The Love Of Tattoos! 🎨✨",
+        subject: "Welcome to For The Love Of Tattoos!",
         text: `Hi ${name},
           Welcome to For The Love Of Tattoos! We're thrilled to have you join our community.
 
@@ -40,7 +40,7 @@ export const joinWaitlist = async (req, res, next) => {
           <p>We’re just getting started, and your journey into the world of tattoos begins here! 🚀</p>
           <p style="margin-top:20px;">With inked love,<br>
           <strong>Jason Zhang & The FTLOT Team</strong></p>`,
-        });
+      });
       console.log("✅ Welcome email sent to", email);
     } catch (emailErr) {
       console.error("❌ Failed to send email:", emailErr.message);
