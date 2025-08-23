@@ -1,4 +1,5 @@
 import connectDB from "../../config/db.js";
+import { joinWaitlist } from "../../controllers/waitlistController.js";
 import Waitlist from "../../models/Waitlist.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 
@@ -21,13 +22,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "POST") {
-      const { name, email } = req.body;
-      if (!name || !email) {
-        return res.status(400).json({ error: "Name and email required" });
-      }
-
-      const newEntry = await Waitlist.create({ name, email });
-      return res.status(201).json({ message: "User added!", data: newEntry });
+      return await joinWaitlist(req, res);
     }
 
     if (req.method === "GET") {
@@ -46,8 +41,6 @@ export default async function handler(req, res) {
         .json({ error: "This email is already on the waitlist 🖤" });
     }
 
-    errorHandler
-      ? errorHandler(err, res)
-      : res.status(500).json({ error: "Server error" });
+    errorHandler ? errorHandler(err, res) : res.status(500).json({ error: "Server error" });
   }
 }
