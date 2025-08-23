@@ -19,6 +19,8 @@ const itemVariants = {
   visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } },
 };
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -28,7 +30,7 @@ export default function WaitlistForm() {
   useEffect(() => {
     const fetchSignups = async () => {
       try {
-        const res = await fetch("/api/waitlist/count");
+        const res = await fetch(`${API_URL}/api/waitlist`);
         const data = await res.json();
         if (res.ok) setTotalSignups(data.totalSignups);
       } catch (err) {
@@ -45,7 +47,7 @@ export default function WaitlistForm() {
       hideProgressBar: true,
       style: {
         background: "#dc2626",
-        color: "#fff",
+        color: "#ffffff",
         fontWeight: "bold",
         border: "1px solid #dc2626",
         textAlign: "center",
@@ -59,7 +61,7 @@ export default function WaitlistForm() {
       hideProgressBar: true,
       style: {
         background: "#dc2626",
-        color: "#fff",
+        color: "#ffffff",
         fontWeight: "bold",
         border: "1px solid #dc2626",
         textAlign: "center",
@@ -68,12 +70,12 @@ export default function WaitlistForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return notifyError("Please Enter Your Name.");
-    if (!email.trim()) return notifyError("Please Enter Your Email.");
+    if (!name.trim()) return notifyError("Please enter your name.");
+    if (!email.trim()) return notifyError("Please enter your email.");
 
     setLoading(true);
     try {
-      const res = await fetch("/api/waitlist", {
+      const res = await fetch(`${API_URL}/api/waitlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email }),
@@ -84,7 +86,7 @@ export default function WaitlistForm() {
         notifySuccess("🖤 You’re officially inked into the waitlist!");
         setName("");
         setEmail("");
-        setTotalSignups((prev) => prev + 1); // update count locally
+        setTotalSignups((prev) => prev + 1); // update signups immediately
       }
     } catch (err) {
       console.error(err);
@@ -97,8 +99,6 @@ export default function WaitlistForm() {
   return (
     <div className="relative min-h-screen w-screen flex items-center justify-center p-4 bg-gradient-to-tr from-gray-950 via-gray-900 to-black overflow-hidden">
       <ToastContainer />
-
-      {/* Tattoo-style grunge background */}
       <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')] bg-repeat"></div>
 
       <motion.div
@@ -122,7 +122,7 @@ export default function WaitlistForm() {
         >
           Tattoos aren’t just art—they’re statements. This platform is where
           artists, collectors, and dreamers unite to leave a mark that lasts
-          forever. Commitment, creativity, and courage live here.
+          forever.
         </motion.p>
 
         <motion.form
@@ -179,7 +179,7 @@ export default function WaitlistForm() {
           className="mt-4 flex items-center justify-center text-white font-bold tracking-wide text-lg sm:text-xl drop-shadow-lg gap-2"
           variants={itemVariants}
         >
-          <PenTool className="w-6 h-6" />
+          <PenTool className="w-6 h-6" />{" "}
           <span>
             Join {totalSignups.toLocaleString()} Visionaries Already Making
             Their Mark!
