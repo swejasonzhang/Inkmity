@@ -2,11 +2,12 @@ import connectDB from "../../config/db.js";
 import Waitlist from "../../models/Waitlist.js";
 import { errorHandler } from "../../utils/errorHandler.js";
 
-connectDB();
-
 export default async function handler(req, res) {
+  await connectDB();
+
   const allowedOrigins = [
-    "https://fortheloveoftattoos.vercel.app/api/waitlist",
+    "https://fortheloveoftattoos.vercel.app",
+    "http://localhost:3000",
   ];
 
   const origin = req.headers.origin;
@@ -37,6 +38,7 @@ export default async function handler(req, res) {
     res.setHeader("Allow", ["GET", "POST"]);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (err) {
-    errorHandler(err, res);
+    console.error("❌ API Error:", err.message);
+    errorHandler ? errorHandler(err, res) : res.status(500).json({ error: "Server error" });
   }
 }
