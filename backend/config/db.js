@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 let isConnected = false;
 
-export const connectDB = async () => {
+const connectDB = async () => {
   if (isConnected) return;
 
   if (!process.env.MONGO_URI) {
@@ -22,3 +22,5 @@ export const connectDB = async () => {
     throw err;
   }
 };
+
+export default connectDB;
