@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Tag, PenTool, Mail, Zap } from "lucide-react";
+import { PenTool, Mail } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -30,7 +30,7 @@ export default function WaitlistForm() {
       try {
         const res = await fetch("/api/waitlist/count");
         const data = await res.json();
-        if (res.ok) setTotalSignups(data.count);
+        if (res.ok) setTotalSignups(data.totalSignups);
       } catch (err) {
         console.error("Failed to fetch total signups:", err);
       }
@@ -43,11 +43,9 @@ export default function WaitlistForm() {
       position: "top-center",
       autoClose: 3000,
       hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: true,
       style: {
         background: "#dc2626",
-        color: "#ffffff",
+        color: "#fff",
         fontWeight: "bold",
         border: "1px solid #dc2626",
         textAlign: "center",
@@ -61,7 +59,7 @@ export default function WaitlistForm() {
       hideProgressBar: true,
       style: {
         background: "#dc2626",
-        color: "#ffffff",
+        color: "#fff",
         fontWeight: "bold",
         border: "1px solid #dc2626",
         textAlign: "center",
@@ -86,6 +84,7 @@ export default function WaitlistForm() {
         notifySuccess("🖤 You’re officially inked into the waitlist!");
         setName("");
         setEmail("");
+        setTotalSignups((prev) => prev + 1); // update count locally
       }
     } catch (err) {
       console.error(err);
@@ -97,7 +96,6 @@ export default function WaitlistForm() {
 
   return (
     <div className="relative min-h-screen w-screen flex items-center justify-center p-4 bg-gradient-to-tr from-gray-950 via-gray-900 to-black overflow-hidden">
-      {/* Toast Container */}
       <ToastContainer />
 
       {/* Tattoo-style grunge background */}
@@ -134,7 +132,6 @@ export default function WaitlistForm() {
           noValidate
         >
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch bg-black/80 backdrop-blur-md border border-gray-700 p-4 sm:p-6 rounded-2xl shadow-2xl gap-3 sm:gap-4 w-full">
-            {/* Name input */}
             <div className="relative w-full sm:flex-1">
               <PenTool className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-5 sm:h-6 w-5 sm:w-6 text-gray-500" />
               <input
@@ -151,7 +148,6 @@ export default function WaitlistForm() {
               />
             </div>
 
-            {/* Email input */}
             <div className="relative w-full sm:flex-1">
               <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-5 sm:h-6 w-5 sm:w-6 text-gray-500" />
               <input
@@ -168,7 +164,6 @@ export default function WaitlistForm() {
               />
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
@@ -184,7 +179,7 @@ export default function WaitlistForm() {
           className="mt-4 flex items-center justify-center text-white font-bold tracking-wide text-lg sm:text-xl drop-shadow-lg gap-2"
           variants={itemVariants}
         >
-          <PenTool className="w-6 h-6" />{" "}
+          <PenTool className="w-6 h-6" />
           <span>
             Join {totalSignups.toLocaleString()} Visionaries Already Making
             Their Mark!
