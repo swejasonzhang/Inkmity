@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, PenTool } from "lucide-react";
+import { Tag, PenTool, Mail, Zap } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -23,6 +23,20 @@ export default function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [totalSignups, setTotalSignups] = useState(0);
+
+  useEffect(() => {
+    const fetchSignups = async () => {
+      try {
+        const res = await fetch("/api/waitlist/count");
+        const data = await res.json();
+        if (res.ok) setTotalSignups(data.count);
+      } catch (err) {
+        console.error("Failed to fetch total signups:", err);
+      }
+    };
+    fetchSignups();
+  }, []);
 
   const notifyError = (msg) =>
     toast(msg, {
@@ -165,6 +179,17 @@ export default function WaitlistForm() {
             </button>
           </div>
         </motion.form>
+
+        <motion.p
+          className="mt-4 flex items-center justify-center text-white font-bold tracking-wide text-lg sm:text-xl drop-shadow-lg gap-2"
+          variants={itemVariants}
+        >
+          <PenTool className="w-6 h-6" />{" "}
+          <span>
+            Join {totalSignups.toLocaleString()} Visionaries Already Making
+            Their Mark!
+          </span>
+        </motion.p>
       </motion.div>
     </div>
   );
