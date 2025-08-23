@@ -19,10 +19,29 @@ export const joinWaitlist = async (req, res, next) => {
     try {
       await sendWelcomeEmail({
         to: email,
-        subject: "Welcome to For The Love Of Tattoos Waitlist 🎉",
-        text: `Hi ${name}, thanks for joining our waitlist! We'll keep you updated.`,
-        html: `<h2>Hi ${name},</h2><p>Thanks for joining our waitlist! We'll keep you updated on launch 🚀</p>`,
-      });
+        subject: "Welcome to For The Love Of Tattoos! 🎨✨",
+        text: `Hi ${name},
+          Welcome to For The Love Of Tattoos! We're thrilled to have you join our community.
+
+          This platform was created to connect tattoo clients and artists in a meaningful way, helping you discover talented artists, explore unique designs, and bring your tattoo ideas to life.
+
+          Stay tuned—your journey into the world of tattoos starts here! 🚀
+
+          With inked love,
+          Jason Zhang & The FTLOT Team`,
+        html: `<h2>Hi ${name},</h2>
+          <p>Welcome to <strong>For The Love Of Tattoos</strong>! We're thrilled to have you join our community.</p>
+          <p>This platform was created to connect tattoo clients and artists in a meaningful way, helping you:</p>
+          <ul>
+            <li>Discover talented tattoo artists near you</li>
+            <li>Explore unique tattoo designs</li>
+            <li>Bring your tattoo ideas to life with guidance and inspiration</li>
+          </ul>
+          <p>We’re just getting started, and your journey into the world of tattoos begins here! 🚀</p>
+          <p style="margin-top:20px;">With inked love,<br>
+          <strong>Jason Zhang & The FTLOT Team</strong></p>`,
+        });
+      console.log("✅ Welcome email sent to", email);
     } catch (emailErr) {
       console.error("❌ Failed to send email:", emailErr.message);
     }
