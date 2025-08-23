@@ -6,8 +6,7 @@ connectDB();
 
 export default async function handler(req, res) {
   const allowedOrigins = [
-    "http://localhost:3000",
-    "https://fortheloveoftattoos.vercel.app",
+    "https://fortheloveoftattoos.vercel.app/api/waitlist",
   ];
 
   const origin = req.headers.origin;
@@ -22,8 +21,9 @@ export default async function handler(req, res) {
   try {
     if (req.method === "POST") {
       const { name, email } = req.body;
-      if (!name || !email)
+      if (!name || !email) {
         return res.status(400).json({ error: "Name and email required" });
+      }
 
       const newEntry = await Waitlist.create({ name, email });
       return res.status(201).json({ message: "User added!", data: newEntry });
