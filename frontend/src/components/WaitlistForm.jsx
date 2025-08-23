@@ -86,7 +86,7 @@ export default function WaitlistForm() {
         notifySuccess("🖤 You’re officially inked into the waitlist!");
         setName("");
         setEmail("");
-        setTotalSignups((prev) => prev + 1); // update signups immediately
+        setTotalSignups((prev) => prev + 1); 
       }
     } catch (err) {
       console.error(err);

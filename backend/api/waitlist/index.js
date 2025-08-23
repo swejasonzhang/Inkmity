@@ -39,6 +39,15 @@ export default async function handler(req, res) {
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (err) {
     console.error("❌ API Error:", err.message);
-    errorHandler ? errorHandler(err, res) : res.status(500).json({ error: "Server error" });
+
+    if (err.code === 11000) {
+      return res
+        .status(400)
+        .json({ error: "This email is already on the waitlist 🖤" });
+    }
+
+    errorHandler
+      ? errorHandler(err, res)
+      : res.status(500).json({ error: "Server error" });
   }
 }
