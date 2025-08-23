@@ -25,38 +25,39 @@ export default function WaitlistForm() {
   const [loading, setLoading] = useState(false);
 
   const notifyError = (msg) =>
-    toast.error(msg, {
+    toast(msg, {
       position: "top-center",
       autoClose: 3000,
-      hideProgressBar: false,
+      hideProgressBar: true,
       closeOnClick: true,
       pauseOnHover: true,
-      draggable: true,
       style: {
-        background: "#111",
-        color: "#f87171",
+        background: "#dc2626",
+        color: "#ffffff",
         fontWeight: "bold",
-        border: "1px solid #f87171",
+        border: "1px solid #dc2626",
+        textAlign: "center",
       },
     });
 
   const notifySuccess = (msg) =>
-    toast.success(msg, {
+    toast(msg, {
       position: "top-center",
       autoClose: 3000,
-      hideProgressBar: false,
+      hideProgressBar: true,
       style: {
-        background: "#111",
-        color: "#f87171",
+        background: "#dc2626",
+        color: "#ffffff",
         fontWeight: "bold",
-        border: "1px solid #f87171",
+        border: "1px solid #dc2626",
+        textAlign: "center",
       },
     });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return notifyError("Please enter your name.");
-    if (!email.trim()) return notifyError("Please enter your email.");
+    if (!name.trim()) return notifyError("Please Enter Your Name.");
+    if (!email.trim()) return notifyError("Please Enter Your Email.");
 
     setLoading(true);
     try {
