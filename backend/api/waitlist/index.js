@@ -6,17 +6,14 @@ connectDB();
 
 export default async function handler(req, res) {
   const allowedOrigins = [
-    "https://fortheloveoftattoos.vercel.app",
     "http://localhost:3000",
+    "https://fortheloveoftattoos.vercel.app",
   ];
 
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
-  } else {
-    res.setHeader("Access-Control-Allow-Origin", "*");
   }
-
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
