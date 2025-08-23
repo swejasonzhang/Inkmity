@@ -47,11 +47,12 @@ export default function WaitlistForm() {
       autoClose: 3000,
       hideProgressBar: true,
       style: {
-        background: "#dc2626",
+        background: "linear-gradient(to right, #dc2626, #b91c1c)", // matches submit button red
         color: "#ffffff",
         fontWeight: "bold",
-        border: "1px solid #dc2626",
+        border: "1px solid #7f1d1d",
         textAlign: "center",
+        borderRadius: "12px",
       },
     });
 
@@ -61,11 +62,12 @@ export default function WaitlistForm() {
       autoClose: 3000,
       hideProgressBar: true,
       style: {
-        background: "#16a34a",
+        background: "transparent",
         color: "#ffffff",
         fontWeight: "bold",
-        border: "1px solid #16a34a",
+        border: "1px solid #333",
         textAlign: "center",
+        borderRadius: "12px",
       },
     });
 
@@ -152,7 +154,10 @@ export default function WaitlistForm() {
                 autoComplete="off"
                 spellCheck={false}
                 className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-500 outline-none transition"
-                style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
+                style={{
+                  fontSize: "clamp(0.875rem, 2vw, 1rem)",
+                  WebkitTextSizeAdjust: "100%", // prevent mobile zoom
+                }}
               />
             </div>
 
@@ -166,7 +171,10 @@ export default function WaitlistForm() {
                 autoComplete="off"
                 spellCheck={false}
                 className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 bg-gray-900/90 text-gray-100 placeholder-gray-500 rounded-lg border border-gray-700 focus:ring-2 focus:ring-red-500 outline-none transition"
-                style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
+                style={{
+                  fontSize: "clamp(0.875rem, 2vw, 1rem)",
+                  WebkitTextSizeAdjust: "100%", // prevent mobile zoom
+                }}
               />
             </div>
 
@@ -175,12 +183,12 @@ export default function WaitlistForm() {
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={loading}
-              className="w-full sm:flex-1 px-6 sm:px-8 py-3 sm:py-4 
+              className="w-full sm:flex-1 px-6 py-3 
              bg-gradient-to-r from-red-600 via-red-700 to-red-800
              hover:from-red-700 hover:to-red-900
              text-white font-bold rounded-lg shadow-lg
              transition disabled:opacity-50 flex-shrink-0"
-              style={{ fontSize: "clamp(0.875rem, 2vw, 1rem)" }}
+              style={{ fontSize: "1rem" }}
             >
               {loading ? "Inking You In..." : "Claim Your Spot"}
             </motion.button>

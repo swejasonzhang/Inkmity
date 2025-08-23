@@ -28,7 +28,7 @@ export const joinWaitlist = async (req, res, next) => {
           Stay tuned—your journey into the world of tattoos starts here! 🚀
 
           With inked love,
-          Jason Zhang & The FTLOT Team`,
+          Jason Zhang`,
         html: `<h2>Hi ${name},</h2>
           <p>Welcome to <strong>For The Love Of Tattoos</strong>! We're thrilled to have you join our community.</p>
           <p>This platform was created to connect tattoo clients and artists in a meaningful way, helping you:</p>
@@ -39,7 +39,7 @@ export const joinWaitlist = async (req, res, next) => {
           </ul>
           <p>We’re just getting started, and your journey into the world of tattoos begins here! 🚀</p>
           <p style="margin-top:20px;">With inked love,<br>
-          <strong>Jason Zhang & The FTLOT Team</strong></p>`,
+          <strong>Jason Zhang</strong></p>`,
       });
       console.log("✅ Welcome email sent to", email);
     } catch (emailErr) {
