@@ -1,5 +1,6 @@
 import connectDB from "../../config/db.js";
 import Waitlist from "../../models/Waitlist.js";
+import { errorHandler } from "../../utils/errorHandler.js";
 
 connectDB();
 
