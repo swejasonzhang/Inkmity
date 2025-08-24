@@ -24,6 +24,7 @@ export default function WaitlistForm() {
       try {
         const res = await fetch(`${API_URL}/api/waitlist`);
         const data = await res.json();
+
         if (res.ok && data.totalSignups !== undefined)
           setTotalSignups(data.totalSignups);
       } catch (err) {
@@ -42,7 +43,7 @@ export default function WaitlistForm() {
       pauseOnHover: true,
       draggable: false,
       style: {
-        background: error ? "#fff" : "transparent",
+        background: error ? "#fff" : "#00000",
         color: "#000",
         fontWeight: "bold",
         border: "1px solid #fff",
@@ -67,6 +68,7 @@ export default function WaitlistForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email }),
       });
+
       const data = await res.json();
 
       if (!res.ok) notify(data.error || "Something went wrong.", true);
@@ -206,11 +208,7 @@ export default function WaitlistForm() {
         >
           {totalSignups > 0 && (
             <span className="text-center text-base sm:text-lg">
-              {totalSignups >= 100
-                ? "100+ users signed up to get inked!"
-                : `${totalSignups} ${
-                    totalSignups === 1 ? "user has" : "users have"
-                  } signed up to get inked!`}
+              {totalSignups >= 100 && "100+ users signed up to get inked!"}
             </span>
           )}
           <span className="flex flex-wrap justify-center gap-1 mt-1">
