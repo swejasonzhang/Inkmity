@@ -5,12 +5,14 @@ export default function WaitlistPage() {
     <div className="relative min-h-screen flex flex-col justify-center">
       <video
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
-        src="/Video.mp4"
         autoPlay
         loop
         muted
         playsInline
-      />
+      >
+        <source src="/Video.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
 
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-0"></div>
 
