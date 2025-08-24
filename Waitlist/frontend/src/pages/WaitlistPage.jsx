@@ -7,7 +7,7 @@ export default function WaitlistPage() {
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch((err) => {
-        console.log("Autoplay blocked:", err);
+        console.warn("Autoplay blocked:", err);
       });
     }
   }, []);
@@ -17,14 +17,18 @@ export default function WaitlistPage() {
       <video
         ref={videoRef}
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
-        src="/Video.mp4"
         autoPlay
         loop
         muted
-        defaultMuted
         playsInline
-      />
+      >
+        <source src="/Video-fixed.mp4" type="video/mp4" />
+        <source src="/Video-fixed.webm" type="video/webm" />
+        Your browser does not support the video tag.
+      </video>
+
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-0"></div>
+
       <div className="relative z-10 flex justify-center items-center w-full">
         <WaitlistForm />
       </div>
