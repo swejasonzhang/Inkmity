@@ -41,6 +41,8 @@ export default async function handler(req, res) {
         .json({ error: "This email is already on the waitlist 🖤" });
     }
 
-    errorHandler ? errorHandler(err, res) : res.status(500).json({ error: "Server error" });
+    errorHandler
+      ? errorHandler(err, res)
+      : res.status(500).json({ error: "Server error" });
   }
 }
