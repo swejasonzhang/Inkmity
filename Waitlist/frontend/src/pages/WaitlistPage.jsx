@@ -22,8 +22,8 @@ export default function WaitlistPage() {
         muted
         playsInline
       >
-        <source src="/Video-fixed.mp4" type="video/mp4" />
-        <source src="/Video-fixed.webm" type="video/webm" />
+        <source src="/Video.mp4" type="video/mp4" />
+        <source src="/Video.webm" type="video/webm" />
         Your browser does not support the video tag.
       </video>
 
