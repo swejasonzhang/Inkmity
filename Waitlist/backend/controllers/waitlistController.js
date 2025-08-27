@@ -19,18 +19,18 @@ export const joinWaitlist = async (req, res, next) => {
     try {
       await sendWelcomeEmail({
         to: email,
-        subject: "Welcome to For The Love Of Tattoos!",
+        subject: "Welcome to ForTheLoveOfTattoos!",
         text: `Hi ${name},
-          Welcome to For The Love Of Tattoos! We're thrilled to have you join our community.
+          Welcome to ForTheLoveOfTattoos! We're thrilled to have you join our community.
 
           This platform was created to connect tattoo clients and artists in a meaningful way, helping you discover talented artists, explore unique designs, and bring your tattoo ideas to life.
 
           Stay tuned—your journey into the world of tattoos starts here! 🚀
 
           With inked love,
-          Jason Zhang`,
+          ForTheLoveOfTattoos`,
         html: `<h2>Hi ${name},</h2>
-          <p>Welcome to <strong>For The Love Of Tattoos</strong>! We're thrilled to have you join our community.</p>
+          <p>Welcome to <strong>ForTheLoveOfTattoos</strong>! We're thrilled to have you join our community.</p>
           <p>This platform was created to connect tattoo clients and artists in a meaningful way, helping you:</p>
           <ul>
             <li>Discover talented tattoo artists near you</li>
@@ -39,7 +39,7 @@ export const joinWaitlist = async (req, res, next) => {
           </ul>
           <p>We’re just getting started, and your journey into the world of tattoos begins here! 🚀</p>
           <p style="margin-top:20px;">With inked love,<br>
-          <strong>Jason Zhang</strong></p>`,
+          <strong>ForTheLoveOfTattoos</strong></p>`,
       });
       console.log("✅ Welcome email sent to", email);
     } catch (emailErr) {
