@@ -107,10 +107,10 @@ export default function WaitlistForm() {
         </button>
       </div>
 
-      <motion.div className="relative z-10 container mx-auto text-center max-w-6xl px-4 w-full">
+      <motion.div className="relative z-10 container mx-auto text-center w-full px-4 max-w-full sm:max-w-3xl md:max-w-6xl">
         {/* Heading */}
         <motion.h2
-          className={`font-extrabold tracking-tight text-center leading-tight text-4xl sm:text-6xl md:text-7xl ${textColor}`}
+          className={`font-extrabold tracking-tight leading-tight text-[clamp(2rem,5vw,4rem)] sm:text-[clamp(3rem,6vw,6rem)] md:text-[clamp(4rem,7vw,7rem)] ${textColor}`}
         >
           {headingText.split("\n").map((line, idx) => (
             <span key={idx}>
@@ -132,7 +132,7 @@ export default function WaitlistForm() {
 
         {/* Paragraph */}
         <motion.p
-          className={`mt-4 max-w-3xl mx-auto italic ${textColor}`}
+          className={`mt-4 max-w-full sm:max-w-xl md:max-w-3xl mx-auto italic ${textColor}`}
           style={{ fontSize: "clamp(1rem, 2.5vw, 1.5rem)" }}
         >
           {paragraphText.split(" ").map((word, i) => (
@@ -155,13 +155,12 @@ export default function WaitlistForm() {
         {/* Form */}
         <motion.form
           onSubmit={handleSubmit}
-          className="mt-6 max-w-4xl mx-auto w-full"
+          className="mt-6 mx-auto w-full max-w-full sm:max-w-xl md:max-w-3xl"
           noValidate
         >
           <div
-            className={`flex flex-col sm:flex-row flex-wrap items-stretch ${inputBg}/90 backdrop-blur-md border ${borderColor} p-4 sm:p-6 rounded-2xl shadow-2xl gap-3 sm:gap-4 w-full`}
+            className={`flex flex-col sm:flex-row flex-wrap items-stretch gap-3 sm:gap-4 w-full p-4 sm:p-6 backdrop-blur-md ${inputBg}/90 border ${borderColor} rounded-2xl shadow-2xl`}
           >
-            {/* Name Input */}
             <div className="relative w-full sm:flex-1">
               <PenTool className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-5 sm:h-6 w-5 sm:w-6 text-gray-400" />
               <input
@@ -175,7 +174,6 @@ export default function WaitlistForm() {
               />
             </div>
 
-            {/* Email Input */}
             <div className="relative w-full sm:flex-1">
               <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-5 sm:h-6 w-5 sm:w-6 text-gray-400" />
               <input
@@ -189,7 +187,6 @@ export default function WaitlistForm() {
               />
             </div>
 
-            {/* Submit Button */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
