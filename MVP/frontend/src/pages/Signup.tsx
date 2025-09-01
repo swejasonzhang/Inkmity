@@ -17,16 +17,43 @@ const SignUp: React.FC = () => {
   const [form, setForm] = useState<SignUpForm>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailValid, setEmailValid] = useState(false);
+  const [passwordValid, setPasswordValid] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
   const navigate = useNavigate();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+
+    if (e.target.name === "email") {
+      setEmailValid(emailRegex.test(e.target.value));
+      checkEmailExists(e.target.value);
+    }
+
+    if (e.target.name === "password") {
+      setPasswordValid(passwordRegex.test(e.target.value));
+    }
+  };
+
+  const checkEmailExists = async (email: string) => {
+    if (!emailRegex.test(email)) {
+      setEmailExists(false);
+      return;
+    }
+    try {
+      const res = await api.post("/check-email", { email });
+      setEmailExists(res.data.exists);
+    } catch {
+      setEmailExists(false);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!form.email || !form.password) {
       toast.error("Please fill in both email and password", {
         position: "top-center",
@@ -35,9 +62,7 @@ const SignUp: React.FC = () => {
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
+    if (!emailValid) {
       toast.error("Please enter a valid email address", {
         position: "top-center",
         theme: "dark",
@@ -45,20 +70,30 @@ const SignUp: React.FC = () => {
       return;
     }
 
-    // Password validation
-    if (form.password.length < 6) {
-      toast.error("Password must be at least 6 characters long", {
+    if (emailExists) {
+      toast.error("Email is already registered", {
         position: "top-center",
         theme: "dark",
       });
       return;
     }
 
+    if (!passwordValid) {
+      toast.error(
+        "Password must be at least 6 characters, include an uppercase letter and a number",
+        {
+          position: "top-center",
+          theme: "dark",
+        }
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await api.post("/signup", form);
-      console.log("Signup success:", res.data);
+      const { data } = await api.post("/signup", form);
+      console.log("Signup success:", data);
       toast.success("🎉 Signup successful! Redirecting to login...", {
         position: "top-center",
         theme: "dark",
@@ -71,10 +106,7 @@ const SignUp: React.FC = () => {
           theme: "dark",
         });
       } else if (err instanceof Error) {
-        toast.error(err.message, {
-          position: "top-center",
-          theme: "dark",
-        });
+        toast.error(err.message, { position: "top-center", theme: "dark" });
       } else {
         toast.error("An unexpected error occurred", {
           position: "top-center",
@@ -88,7 +120,6 @@ const SignUp: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      {/* Video Background */}
       <video
         autoPlay
         loop
@@ -99,10 +130,8 @@ const SignUp: React.FC = () => {
         <source src="src/Public/Background.mp4" type="video/mp4" />
       </video>
 
-      {/* Overlay */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-10" />
 
-      {/* Content */}
       <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-20 px-4">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl max-h-[1000px] flex flex-col md:flex-row">
           {/* Left side text + form */}
@@ -131,6 +160,18 @@ const SignUp: React.FC = () => {
                 className="p-3 rounded-md bg-black/40 border border-gray-500 focus:border-white focus:ring-1 focus:ring-white outline-none placeholder-gray-300 text-white"
                 required
               />
+              <p
+                className={`text-sm mt-1 ${
+                  emailValid ? "text-white" : "text-gray-400"
+                }`}
+              >
+                Enter a valid email address
+              </p>
+              {emailExists && (
+                <p className="text-red-400 text-sm mt-1">
+                  Email is already registered
+                </p>
+              )}
 
               <div className="relative">
                 <input
@@ -150,6 +191,14 @@ const SignUp: React.FC = () => {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
+              <p
+                className={`text-sm mt-1 ${
+                  passwordValid ? "text-white" : "text-gray-400"
+                }`}
+              >
+                Password must be at least 6 characters, include an uppercase
+                letter and a number
+              </p>
 
               <Button
                 type="submit"

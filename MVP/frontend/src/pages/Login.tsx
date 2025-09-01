@@ -17,16 +17,28 @@ const Login: React.FC = () => {
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailValid, setEmailValid] = useState(false);
+  const [passwordValid, setPasswordValid] = useState(false);
   const navigate = useNavigate();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{6,}$/;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+
+    if (e.target.name === "email") {
+      setEmailValid(emailRegex.test(e.target.value));
+    }
+
+    if (e.target.name === "password") {
+      setPasswordValid(passwordRegex.test(e.target.value));
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!form.email || !form.password) {
       toast.error("Please fill in both email and password", {
         position: "top-center",
@@ -35,9 +47,7 @@ const Login: React.FC = () => {
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
+    if (!emailValid) {
       toast.error("Please enter a valid email address", {
         position: "top-center",
         theme: "dark",
@@ -45,16 +55,27 @@ const Login: React.FC = () => {
       return;
     }
 
+    if (!passwordValid) {
+      toast.error(
+        "Password must be at least 6 characters, include an uppercase letter and a number",
+        {
+          position: "top-center",
+          theme: "dark",
+        }
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await api.post("/login", form);
-      console.log("Login success:", res.data);
+      const { data } = await api.post("/login", form);
+      console.log("Login success:", data);
       toast.success("✅ Login successful! Redirecting...", {
         position: "top-center",
         theme: "dark",
       });
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/dashboard"), 1000);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         toast.error(err.response?.data?.message || err.message, {
@@ -62,10 +83,7 @@ const Login: React.FC = () => {
           theme: "dark",
         });
       } else if (err instanceof Error) {
-        toast.error(err.message, {
-          position: "top-center",
-          theme: "dark",
-        });
+        toast.error(err.message, { position: "top-center", theme: "dark" });
       } else {
         toast.error("An unexpected error occurred", {
           position: "top-center",
@@ -79,7 +97,6 @@ const Login: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      {/* Video Background */}
       <video
         autoPlay
         loop
@@ -90,13 +107,11 @@ const Login: React.FC = () => {
         <source src="src/Public/Background.mp4" type="video/mp4" />
       </video>
 
-      {/* Overlay */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-10" />
 
-      {/* Content */}
       <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-20 px-4">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl max-h-[1000px] flex flex-col md:flex-row">
-          {/* Left side: Welcome text + form */}
+          {/* Left side text + form */}
           <div className="w-full md:w-1/2 p-8 flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl font-bold mb-4 text-white">
               Welcome Back!
@@ -112,7 +127,9 @@ const Login: React.FC = () => {
               noValidate
               className="flex flex-col gap-6 w-full max-w-sm"
             >
-              <h2 className="text-2xl font-bold text-white uppercase">Login</h2>
+              <h2 className="text-2xl font-bold text-white uppercase text-center">
+                Login
+              </h2>
 
               <input
                 type="email"
@@ -123,6 +140,13 @@ const Login: React.FC = () => {
                 className="p-3 rounded-md bg-black/40 border border-gray-500 focus:border-white focus:ring-1 focus:ring-white outline-none placeholder-gray-300 text-white"
                 required
               />
+              <p
+                className={`text-sm mt-1 ${
+                  emailValid ? "text-white" : "text-gray-400"
+                }`}
+              >
+                Enter a valid email address
+              </p>
 
               <div className="relative">
                 <input
@@ -142,17 +166,25 @@ const Login: React.FC = () => {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
+              <p
+                className={`text-sm mt-1 ${
+                  passwordValid ? "text-white" : "text-gray-400"
+                }`}
+              >
+                Password must be at least 6 characters, include an uppercase
+                letter and a number
+              </p>
 
               <Button
                 type="submit"
-                className="bg-white/20 hover:bg-white/30 transition text-white font-rockSalt font-semibold tracking-wide py-3 rounded-md backdrop-blur-sm"
+                className="bg-white/20 hover:bg-white/30 transition text-white font-semibold tracking-wide py-3 rounded-md backdrop-blur-sm"
                 disabled={loading}
               >
                 {loading ? "Logging In..." : "Login"}
               </Button>
 
-              <p className="text-sm mt-4 text-gray-200">
-                Don&apos;t have an account?{" "}
+              <p className="text-sm mt-4 text-gray-200 text-center">
+                Don't have an account?{" "}
                 <Link
                   to="/signup"
                   className="text-white underline hover:text-gray-300"
@@ -163,7 +195,7 @@ const Login: React.FC = () => {
             </form>
           </div>
 
-          {/* Right side: Clerk SignIn */}
+          {/* Right side Clerk */}
           <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 p-6">
             <div className="w-[400px] h-[600px] flex items-center justify-center">
               <SignIn path="/login" routing="path" />
@@ -172,7 +204,6 @@ const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* Toast Notifications */}
       <ToastContainer
         position="top-center"
         autoClose={2000}
