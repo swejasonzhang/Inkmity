@@ -5,6 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "@/utils/api";
 import { isAxiosError } from "axios";
 import { SignUp as ClerkSignUp } from "@clerk/clerk-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface SignUpForm {
   email: string;
@@ -14,7 +16,6 @@ interface SignUpForm {
 const SignUp: React.FC = () => {
   const [form, setForm] = useState<SignUpForm>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
@@ -24,20 +25,61 @@ const SignUp: React.FC = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Basic validation
+    if (!form.email || !form.password) {
+      toast.error("Please fill in both email and password", {
+        position: "top-center",
+        theme: "dark",
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      toast.error("Please enter a valid email address", {
+        position: "top-center",
+        theme: "dark",
+      });
+      return;
+    }
+
+    // Password validation
+    if (form.password.length < 6) {
+      toast.error("Password must be at least 6 characters long", {
+        position: "top-center",
+        theme: "dark",
+      });
+      return;
+    }
+
     setLoading(true);
-    setError(null);
 
     try {
       const res = await api.post("/signup", form);
       console.log("Signup success:", res.data);
-      navigate("/login");
+      toast.success("🎉 Signup successful! Redirecting to login...", {
+        position: "top-center",
+        theme: "dark",
+      });
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message || err.message);
+        toast.error(err.response?.data?.message || err.message, {
+          position: "top-center",
+          theme: "dark",
+        });
       } else if (err instanceof Error) {
-        setError(err.message);
+        toast.error(err.message, {
+          position: "top-center",
+          theme: "dark",
+        });
       } else {
-        setError("An unexpected error occurred");
+        toast.error("An unexpected error occurred", {
+          position: "top-center",
+          theme: "dark",
+        });
       }
     } finally {
       setLoading(false);
@@ -62,25 +104,23 @@ const SignUp: React.FC = () => {
 
       {/* Content */}
       <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-20 px-4">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-5xl flex flex-col md:flex-row">
-          {/* Left side text */}
-          <div className="w-full md:w-1/2 p-8 flex flex-col justify-center text-center md:text-left">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl max-h-[1000px] flex flex-col md:flex-row">
+          {/* Left side text + form */}
+          <div className="w-full md:w-1/2 p-8 flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl font-bold mb-4 text-white">Welcome!</h1>
-            <p className="text-gray-200 text-lg">
+            <p className="text-gray-200 text-lg mb-6">
               Sign up to discover tattoo artists, explore styles, preview
               tattoos with AR, and start your personalized tattoo journey today.
             </p>
-          </div>
 
-          {/* Right side form */}
-          <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8">
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col gap-6 w-full"
+              noValidate
+              className="flex flex-col gap-6 w-full max-w-sm"
             >
-              <h1 className="text-2xl font-bold text-white uppercase text-center">
+              <h2 className="text-2xl font-bold text-white uppercase">
                 Sign Up
-              </h1>
+              </h2>
 
               <input
                 type="email"
@@ -111,8 +151,6 @@ const SignUp: React.FC = () => {
                 </button>
               </div>
 
-              {error && <p className="text-red-500 text-center">{error}</p>}
-
               <Button
                 type="submit"
                 className="bg-white/20 hover:bg-white/30 transition text-white font-semibold tracking-wide py-3 rounded-md backdrop-blur-sm"
@@ -121,11 +159,7 @@ const SignUp: React.FC = () => {
                 {loading ? "Signing Up..." : "Sign Up"}
               </Button>
 
-              <div className="flex flex-col gap-2 mt-2">
-                <ClerkSignUp path="/signup" routing="path" />
-              </div>
-
-              <p className="text-sm mt-4 text-gray-200 text-center">
+              <p className="text-sm mt-4 text-gray-200">
                 Already have an account?{" "}
                 <Link
                   to="/login"
@@ -136,8 +170,25 @@ const SignUp: React.FC = () => {
               </p>
             </form>
           </div>
+
+          {/* Right side Clerk */}
+          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 p-6">
+            <div className="w-[400px] h-[600px] flex items-center justify-center">
+              <ClerkSignUp path="/signup" routing="path" />
+            </div>
+          </div>
         </div>
       </div>
+
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        hideProgressBar
+        closeOnClick
+        pauseOnHover={false}
+        draggable={false}
+        toastClassName="bg-black/80 text-white text-lg font-rockSalt rounded-lg shadow-lg text-center px-6 py-4 min-w-[450px] min-h-[60px] flex items-center justify-center"
+      />
     </div>
   );
 };
