@@ -1,5 +1,4 @@
-import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/utils/api";
@@ -51,6 +50,7 @@ const Login: React.FC = () => {
       const { data: emailCheck } = await api.post("/check-email", {
         email: form.email,
       });
+
       if (!emailCheck.exists) {
         toast.error("Email not registered", {
           position: "top-center",
@@ -87,7 +87,8 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen">
+      {/* Video Background */}
       <video
         autoPlay
         loop
@@ -97,11 +98,15 @@ const Login: React.FC = () => {
       >
         <source src="src/Public/Background.mp4" type="video/mp4" />
       </video>
+
+      {/* Dark overlay */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-10" />
 
-      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-20 px-4">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl max-h-[1000px] flex flex-col md:flex-row">
-          <div className="w-full md:w-1/2 p-8 flex flex-col items-center justify-center text-center">
+      {/* Main content */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-y-auto sm:overflow-hidden px-4 pt-[50px] sm:pt-0 flex items-start sm:items-center justify-center z-20">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl flex flex-col md:flex-row">
+          {/* Left side: form */}
+          <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl font-bold mb-4 text-white">
               Welcome Back!
             </h1>
@@ -173,7 +178,8 @@ const Login: React.FC = () => {
             </form>
           </div>
 
-          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 p-6">
+          {/* Right side: Clerk */}
+          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 md:mt-0 md:pt-0">
             <div className="w-[400px] h-[600px] flex items-center justify-center">
               <SignIn path="/login" routing="path" />
             </div>
@@ -181,6 +187,7 @@ const Login: React.FC = () => {
         </div>
       </div>
 
+      {/* Toast Container */}
       <ToastContainer
         position="top-center"
         autoClose={2000}

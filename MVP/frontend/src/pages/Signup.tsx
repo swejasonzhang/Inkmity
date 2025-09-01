@@ -1,5 +1,4 @@
-import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/utils/api";
@@ -47,8 +46,11 @@ const SignUp: React.FC = () => {
     setLoading(true);
 
     try {
-      const emailCheck = await api.post("/check-email", { email: form.email });
-      if (emailCheck.data.exists) {
+      // Check if email is already registered
+      const { data: emailCheck } = await api.post("/check-email", {
+        email: form.email,
+      });
+      if (emailCheck.exists) {
         toast.error("Email is already registered", {
           position: "top-center",
           theme: "dark",
@@ -57,8 +59,9 @@ const SignUp: React.FC = () => {
         return;
       }
 
-      const signupResponse = await api.post("/signup", form);
-      console.log("Signup success:", signupResponse.data);
+      // Proceed with signup
+      const { data: signupResponse } = await api.post("/signup", form);
+      console.log("Signup success:", signupResponse);
       toast.success("🎉 Signup successful! Redirecting to login...", {
         position: "top-center",
         theme: "dark",
@@ -83,7 +86,8 @@ const SignUp: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen">
+      {/* Video Background */}
       <video
         autoPlay
         loop
@@ -93,11 +97,15 @@ const SignUp: React.FC = () => {
       >
         <source src="src/Public/Background.mp4" type="video/mp4" />
       </video>
+
+      {/* Dark overlay */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-10" />
 
-      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-20 px-4">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl max-h-[1000px] flex flex-col md:flex-row">
-          <div className="w-full md:w-1/2 p-8 flex flex-col items-center justify-center text-center">
+      {/* Main content */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-y-auto sm:overflow-hidden px-4 pt-[50px] sm:pt-0 flex items-start sm:items-center justify-center z-20">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl flex flex-col md:flex-row">
+          {/* Left side: form */}
+          <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center justify-center text-center">
             <h1 className="text-3xl font-bold mb-4 text-white">Welcome!</h1>
             <p className="text-gray-200 text-lg mb-6">
               Sign up to discover tattoo artists, explore styles, preview
@@ -166,7 +174,8 @@ const SignUp: React.FC = () => {
             </form>
           </div>
 
-          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 p-6">
+          {/* Right side: Clerk */}
+          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 md:mt-0 md:pt-0">
             <div className="w-[400px] h-[600px] flex items-center justify-center">
               <ClerkSignUp path="/signup" routing="path" />
             </div>
@@ -174,6 +183,7 @@ const SignUp: React.FC = () => {
         </div>
       </div>
 
+      {/* Toast Container */}
       <ToastContainer
         position="top-center"
         autoClose={2000}
