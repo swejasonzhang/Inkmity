@@ -87,7 +87,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen max-h-[1000px] sm:max-h-full">
       {/* Video Background */}
       <video
         autoPlay
@@ -103,25 +103,24 @@ const Login: React.FC = () => {
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-10" />
 
       {/* Main content */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-y-auto sm:overflow-hidden px-4 pt-[50px] sm:pt-0 flex items-start sm:items-center justify-center z-20">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-7xl flex flex-col md:flex-row">
+      <div className="absolute top-0 left-0 w-full h-full overflow-y-auto px-4 pt-10 sm:pt-0 flex items-start sm:items-center justify-center z-20">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-2xl sm:max-w-7xl flex flex-col md:flex-row">
           {/* Left side: form */}
-          <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center justify-center text-center">
-            <h1 className="text-3xl font-bold mb-4 text-white">
+          <div className="w-full md:w-1/2 p-4 sm:p-8 flex flex-col items-center justify-center text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-3 text-white">
               Welcome Back!
             </h1>
-            <p className="text-gray-200 text-lg mb-6">
+            <p className="text-gray-200 text-sm sm:text-lg mb-4 sm:mb-6">
               Log in to explore tattoo artists, browse designs, preview tattoos
-              with AR, manage your bookings, and track your tattoo journey all
-              in one place.
+              with AR, manage your bookings, and track your tattoo journey.
             </p>
 
             <form
               onSubmit={handleSubmit}
               noValidate
-              className="flex flex-col gap-6 w-full max-w-sm"
+              className="flex flex-col gap-4 sm:gap-6 w-full max-w-sm"
             >
-              <h2 className="text-2xl font-bold text-white uppercase text-center">
+              <h2 className="text-xl sm:text-2xl font-bold text-white uppercase text-center">
                 Login
               </h2>
 
@@ -160,13 +159,13 @@ const Login: React.FC = () => {
 
               <Button
                 type="submit"
-                className="bg-white/20 hover:bg-white/30 transition text-white font-semibold tracking-wide py-3 rounded-md backdrop-blur-sm"
+                className="bg-white/20 hover:bg-white/30 transition text-white font-semibold tracking-wide py-2 sm:py-3 rounded-md backdrop-blur-sm"
                 disabled={loading}
               >
                 {loading ? "Logging In..." : "Login"}
               </Button>
 
-              <p className="text-sm mt-4 text-gray-200 text-center">
+              <p className="text-xs sm:text-sm mt-2 text-gray-200 text-center">
                 Don't have an account?{" "}
                 <Link
                   to="/signup"
@@ -179,8 +178,8 @@ const Login: React.FC = () => {
           </div>
 
           {/* Right side: Clerk */}
-          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 md:mt-0 md:pt-0">
-            <div className="w-[400px] h-[600px] flex items-center justify-center">
+          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 mt-10 sm:mt-0 p-4 sm:p-6">
+            <div className="w-[300px] sm:w-[400px] h-[450px] sm:h-[600px] flex items-center justify-center">
               <SignIn path="/login" routing="path" />
             </div>
           </div>
@@ -195,7 +194,7 @@ const Login: React.FC = () => {
         closeOnClick
         pauseOnHover={false}
         draggable={false}
-        toastClassName="bg-black/80 text-white text-lg font-rockSalt rounded-lg shadow-lg text-center px-6 py-4 min-w-[450px] min-h-[60px] flex items-center justify-center"
+        toastClassName="bg-black/80 text-white text-lg font-rockSalt rounded-lg shadow-lg text-center px-6 py-4 min-w-[300px] sm:min-w-[450px] min-h-[60px] flex items-center justify-center"
       />
     </div>
   );
