@@ -56,10 +56,10 @@ The goal is to improve the way clients find artists, book sessions, and visualiz
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React (Vite), Tailwind CSS, Framer Motion, React Toastify, Lucide Icons |
-| Backend | Node.js, Express.js, WebSockets (Socket.io or similar) |
+| Frontend | React (Vite), Tailwind CSS, Framer Motion, React Toastify |
+| Backend | Node.js, Express.js, WebSockets (Socket.io) |
 | Database | MongoDB Atlas |
-| Hosting | Netlify (frontend), Vercel (backend) |
+| Hosting | Netlify |
 | Dev Tools | ESLint, Prettier, npm/yarn |
 
 ---
