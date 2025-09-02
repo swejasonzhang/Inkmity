@@ -7,10 +7,14 @@ export const getDashboardData = async (req, res) => {
     const user = await User.findOne({ clerkId: userId });
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const featuredArtists = await Artist.find().sort({ rating: -1 }).limit(5);
+    const featuredArtists = await Artist.find()
+      .sort({ rating: -1 })
+      .limit(5)
+      .select("_id name location style priceRange rating");
 
     res.status(200).json({ user, featuredArtists });
   } catch (error) {
+    console.error("Dashboard fetch error:", error);
     res.status(500).json({ error: "Error fetching dashboard data" });
   }
 };
