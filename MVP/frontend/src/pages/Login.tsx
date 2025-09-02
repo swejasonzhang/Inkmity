@@ -1,9 +1,7 @@
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import api from "@/utils/api";
-import { isAxiosError } from "axios";
-import { SignIn } from "@clerk/clerk-react";
+import { useSignIn, useUser } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,6 +17,20 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { signIn } = useSignIn();
+  const { isSignedIn } = useUser();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      toast.info("Session detected, redirecting to homepage...", {
+        position: "top-center",
+        theme: "dark",
+      });
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 3000);
+    }
+  }, [isSignedIn, navigate]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,13 +58,8 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Check if email exists
-      const { data: emailCheck } = await api.post("/check-email", {
-        email: form.email,
-      });
-
-      if (!emailCheck.exists) {
-        toast.error("Email not registered", {
+      if (!signIn) {
+        toast.error("Login is not available. Please try again.", {
           position: "top-center",
           theme: "dark",
         });
@@ -60,35 +67,37 @@ const Login: React.FC = () => {
         return;
       }
 
-      // Proceed with login
-      const { data: loginResponse } = await api.post("/login", form);
-      console.log("Login success:", loginResponse);
-      toast.success("✅ Login successful! Redirecting...", {
-        position: "top-center",
-        theme: "dark",
+      const { status } = await signIn.create({
+        identifier: form.email,
+        password: form.password,
       });
-      setTimeout(() => navigate("/dashboard"), 1000);
-    } catch (err: unknown) {
-      if (isAxiosError(err))
-        toast.error(err.response?.data?.message || err.message, {
+
+      if (status === "complete") {
+        toast.success("🎉 Login successful! Redirecting...", {
           position: "top-center",
           theme: "dark",
         });
-      else if (err instanceof Error)
-        toast.error(err.message, { position: "top-center", theme: "dark" });
-      else
-        toast.error("An unexpected error occurred", {
+        navigate("/dashboard");
+      } else {
+        toast.info("Please complete any additional verification to login", {
           position: "top-center",
           theme: "dark",
         });
+      }
+    } catch (err: any) {
+      toast.error(
+        err.errors?.[0]?.message ||
+          err.message ||
+          "An unexpected error occurred",
+        { position: "top-center", theme: "dark" }
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative w-full h-screen max-h-[1000px] sm:max-h-full">
-      {/* Video Background */}
+    <div className="relative w-full h-screen">
       <video
         autoPlay
         loop
@@ -99,94 +108,81 @@ const Login: React.FC = () => {
         <source src="src/Public/Background.mp4" type="video/mp4" />
       </video>
 
-      {/* Dark overlay */}
       <div className="absolute top-0 left-0 w-full h-full bg-black/40 z-10" />
 
-      {/* Main content */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-y-auto px-4 pt-10 sm:pt-0 flex items-start sm:items-center justify-center z-20">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden w-full max-w-2xl sm:max-w-7xl flex flex-col md:flex-row">
-          {/* Left side: form */}
-          <div className="w-full md:w-1/2 p-4 sm:p-8 flex flex-col items-center justify-center text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-3 text-white">
-              Welcome Back!
-            </h1>
-            <p className="text-gray-200 text-sm sm:text-lg mb-4 sm:mb-6">
-              Log in to explore tattoo artists, browse designs, preview tattoos
-              with AR, manage your bookings, and track your tattoo journey.
-            </p>
+      <div className="absolute inset-0 flex items-center justify-center z-20 px-4">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-8 w-full max-w-md">
+          <h1 className="text-3xl font-bold mb-4 text-white text-center">
+            Welcome Back!
+          </h1>
+          <p className="text-gray-200 text-lg mb-6 text-center">
+            Login to continue exploring tattoo artists, styles, and your
+            personalized tattoo journey.
+          </p>
 
-            <form
-              onSubmit={handleSubmit}
-              noValidate
-              className="flex flex-col gap-4 sm:gap-6 w-full max-w-sm"
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="flex flex-col gap-6"
+          >
+            <h2 className="text-2xl font-bold text-white uppercase text-center">
+              Login
+            </h2>
+
+            <FormInput
+              type="email"
+              name="email"
+              value={form.email}
+              placeholder="Email"
+              onChange={handleChange}
+              isValid={validateEmail(form.email)}
+              message={
+                !form.email
+                  ? "Enter your email"
+                  : validateEmail(form.email)
+                  ? "Valid email address"
+                  : "Enter a valid email address"
+              }
+            />
+
+            <FormInput
+              type="password"
+              name="password"
+              value={form.password}
+              placeholder="Password"
+              onChange={handleChange}
+              showPasswordToggle
+              showPassword={showPassword}
+              onTogglePassword={() => setShowPassword(!showPassword)}
+              isValid={validatePassword(form.password)}
+              message={
+                validatePassword(form.password)
+                  ? "Valid Password"
+                  : "Password must be at least 6 characters, include an uppercase letter and a number"
+              }
+            />
+
+            <Button
+              type="submit"
+              className="bg-white/20 hover:bg-white/30 transition text-white font-semibold tracking-wide py-3 rounded-md backdrop-blur-sm"
+              disabled={loading}
             >
-              <h2 className="text-xl sm:text-2xl font-bold text-white uppercase text-center">
-                Login
-              </h2>
+              {loading ? "Logging In..." : "Login"}
+            </Button>
 
-              <FormInput
-                type="email"
-                name="email"
-                value={form.email}
-                placeholder="Email"
-                onChange={handleChange}
-                isValid={validateEmail(form.email)}
-                message={
-                  !form.email
-                    ? "Enter your email"
-                    : validateEmail(form.email)
-                    ? "Valid email address"
-                    : "Enter a valid email address"
-                }
-              />
-
-              <FormInput
-                type="password"
-                name="password"
-                value={form.password}
-                placeholder="Password"
-                onChange={handleChange}
-                showPasswordToggle
-                showPassword={showPassword}
-                onTogglePassword={() => setShowPassword(!showPassword)}
-                isValid={validatePassword(form.password)}
-                message={
-                  validatePassword(form.password)
-                    ? "Valid Password"
-                    : "Password must be at least 6 characters, include an uppercase letter and a number"
-                }
-              />
-
-              <Button
-                type="submit"
-                className="bg-white/20 hover:bg-white/30 transition text-white font-semibold tracking-wide py-2 sm:py-3 rounded-md backdrop-blur-sm"
-                disabled={loading}
+            <p className="text-sm mt-4 text-gray-200 text-center">
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-white underline hover:text-gray-300"
               >
-                {loading ? "Logging In..." : "Login"}
-              </Button>
-
-              <p className="text-xs sm:text-sm mt-2 text-gray-200 text-center">
-                Don't have an account?{" "}
-                <Link
-                  to="/signup"
-                  className="text-white underline hover:text-gray-300"
-                >
-                  Sign Up
-                </Link>
-              </p>
-            </form>
-          </div>
-
-          {/* Right side: Clerk */}
-          <div className="w-full md:w-1/2 flex items-center justify-center bg-black/30 mt-10 sm:mt-0 p-4 sm:p-6">
-            <div className="w-[300px] sm:w-[400px] h-[450px] sm:h-[600px] flex items-center justify-center">
-              <SignIn path="/login" routing="path" />
-            </div>
-          </div>
+                Sign Up
+              </Link>
+            </p>
+          </form>
         </div>
       </div>
 
-      {/* Toast Container */}
       <ToastContainer
         position="top-center"
         autoClose={2000}
@@ -194,7 +190,7 @@ const Login: React.FC = () => {
         closeOnClick
         pauseOnHover={false}
         draggable={false}
-        toastClassName="bg-black/80 text-white text-lg font-rockSalt rounded-lg shadow-lg text-center px-6 py-4 min-w-[300px] sm:min-w-[450px] min-h-[60px] flex items-center justify-center"
+        toastClassName="bg-black/80 text-white text-lg font-rockSalt rounded-lg shadow-lg text-center px-6 py-4 min-w-[450px] min-h-[60px] flex items-center justify-center"
       />
     </div>
   );
