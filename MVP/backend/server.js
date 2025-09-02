@@ -1,27 +1,32 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
+import http from "http";
 
-import dashboardRoutes from "./routes/dashboard.js"; 
+import { connectDB } from "./config/db.js";
+import { initSocket } from "./services/socketService.js";
+
+import artistRoutes from "./routes/artists.js";
+import reviewRoutes from "./routes/reviews.js";
+import dashboardRoutes from "./routes/dashboard.js";
+import messageRoutes from "./routes/messages.js";
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+connectDB();
 
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 
-// Mount your routes with Clerk auth middleware
-app.use("/api/dashboard", ClerkExpressRequireAuth(), dashboardRoutes);
+app.use("/api/artists", artistRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/messages", messageRoutes);
+
+initSocket(server);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

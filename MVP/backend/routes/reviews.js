@@ -1,9 +1,9 @@
 import express from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { getDashboardData } from "../controllers/dashboardController.js";
+import { addReview } from "../controllers/reviewController.js";
 
 const router = express.Router();
 
-router.get("/", requireAuth(), getDashboardData);
+router.post("/", requireAuth(), addReview);
 
 export default router;
