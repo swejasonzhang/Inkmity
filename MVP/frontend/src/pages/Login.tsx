@@ -28,7 +28,7 @@ const Login: React.FC = () => {
       });
       setTimeout(() => {
         navigate("/dashboard");
-      }, 5000);
+      }, 3000);
     }
   }, [isSignedIn, navigate]);
 
