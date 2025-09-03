@@ -40,7 +40,7 @@ const FormInput: React.FC<FormInputProps> = ({
       <button
         type="button"
         onClick={onTogglePassword}
-        className="absolute right-3 top-1/2 -translate-y-8 text-gray-300"
+        className="absolute right-3 top-1/2 -translate-y-5 text-gray-300 text-sm flex items-center justify-center"
       >
         {showPassword ? "Hide" : "Show"}
       </button>
