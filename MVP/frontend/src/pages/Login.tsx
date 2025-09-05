@@ -5,19 +5,16 @@ import { useSignIn, useUser, useAuth } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { validateEmail, validatePassword } from "@/utils/validation";
+import { validateEmail } from "@/utils/validation";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface LoginForm {
-  email: string;
-  password: string;
-}
-
 const Login: React.FC = () => {
-  const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [signInAttempt, setSignInAttempt] = useState<any>(null);
+  const [awaitingCode, setAwaitingCode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const navigate = useNavigate();
   const { signIn, setActive } = useSignIn();
@@ -40,55 +37,54 @@ const Login: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(form.email)) {
+
+    if (!validateEmail(email)) {
       toast.error("Please enter a valid email address", {
         position: "top-center",
         theme: "dark",
       });
       return;
     }
-    if (!validatePassword(form.password)) {
-      toast.error(
-        "Password must be at least 6 characters, include an uppercase letter and a number",
-        { position: "top-center", theme: "dark" }
-      );
-      return;
-    }
+
     setLoading(true);
     try {
-      if (!signIn) {
-        toast.error("Login is not available. Please try again.", {
+      if (!signIn) return;
+
+      if (!awaitingCode) {
+        const attempt = await signIn.create({
+          identifier: email,
+          strategy: "email_code",
+        });
+        setSignInAttempt(attempt);
+        setAwaitingCode(true);
+
+        toast.info("We’ve sent you a login code. Check your email.", {
           position: "top-center",
           theme: "dark",
         });
-        setLoading(false);
-        return;
-      }
-
-      const result = await signIn.create({
-        identifier: form.email,
-        password: form.password,
-      });
-
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId }); // ✅ activate the session
-
-        toast.success("Login successful! Redirecting...", {
-          position: "top-center",
-          theme: "dark",
-        });
-        navigate("/dashboard");
       } else {
-        toast.info("Please complete any additional verification to login", {
-          position: "top-center",
-          theme: "dark",
+        if (!signInAttempt) return;
+
+        const verified = await signInAttempt.attemptFirstFactor({
+          strategy: "email_code",
+          code,
         });
+
+        if (verified.status === "complete") {
+          await setActive({ session: verified.createdSessionId });
+          toast.success("Login successful! Redirecting...", {
+            position: "top-center",
+            theme: "dark",
+          });
+          navigate("/dashboard");
+        } else {
+          toast.error("Invalid or expired code. Please try again.", {
+            position: "top-center",
+            theme: "dark",
+          });
+        }
       }
     } catch (err: any) {
       toast.error(
@@ -149,42 +145,49 @@ const Login: React.FC = () => {
               <FormInput
                 type="email"
                 name="email"
-                value={form.email}
+                value={email}
                 placeholder="Email"
-                onChange={handleChange}
-                isValid={validateEmail(form.email)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setEmail(e.target.value)
+                }
+                isValid={validateEmail(email)}
                 message={
-                  !form.email
+                  !email
                     ? "Enter your email"
-                    : validateEmail(form.email)
+                    : validateEmail(email)
                     ? "Valid email address"
                     : "Enter a valid email address"
                 }
               />
 
-              <FormInput
-                type="password"
-                name="password"
-                value={form.password}
-                placeholder="Password"
-                onChange={handleChange}
-                showPasswordToggle
-                showPassword={showPassword}
-                onTogglePassword={() => setShowPassword(!showPassword)}
-                isValid={validatePassword(form.password)}
-                message={
-                  validatePassword(form.password)
-                    ? "Valid password"
-                    : "Must be 6+ chars, uppercase & number"
-                }
-              />
+              {awaitingCode && (
+                <FormInput
+                  type="text"
+                  name="code"
+                  value={code}
+                  placeholder="Enter verification code"
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setCode(e.target.value)
+                  }
+                  isValid={!!code}
+                  message={
+                    code ? "Code entered" : "Check your email for the code"
+                  }
+                />
+              )}
 
               <Button
                 type="submit"
                 className="bg-white/20 hover:bg-white/30 text-white font-semibold py-3 rounded-md transition-colors"
                 disabled={loading}
               >
-                {loading ? "Logging In..." : "Login"}
+                {loading
+                  ? awaitingCode
+                    ? "Verifying..."
+                    : "Sending Code..."
+                  : awaitingCode
+                  ? "Verify Code"
+                  : "Send Code"}
               </Button>
             </form>
 
