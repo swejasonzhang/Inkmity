@@ -16,6 +16,7 @@ const Login: React.FC = () => {
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+
   const navigate = useNavigate();
   const { signIn, setActive } = useSignIn();
 
@@ -26,7 +27,6 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     if (!validateEmail(email)) {
       toast.error("Please enter a valid email address", {
         position: "top-center",
@@ -36,8 +36,25 @@ const Login: React.FC = () => {
     }
 
     setLoading(true);
+
     try {
       if (!signIn) return;
+
+      const trustedEmail = localStorage.getItem("trustedDevice");
+
+      if (trustedEmail === email) {
+        const attempt = await signIn.create({
+          identifier: email,
+          strategy: "email_code",
+        });
+        await setActive({ session: attempt.createdSessionId });
+        toast.success("Welcome back! Logging you in...", {
+          position: "top-center",
+          theme: "dark",
+        });
+        navigate("/dashboard");
+        return;
+      }
 
       if (!awaitingCode) {
         const attempt = await signIn.create({
@@ -46,14 +63,12 @@ const Login: React.FC = () => {
         });
         setSignInAttempt(attempt);
         setAwaitingCode(true);
-
         toast.info("We’ve sent you a login code. Check your email.", {
           position: "top-center",
           theme: "dark",
         });
       } else {
         if (!signInAttempt) return;
-
         const verified = await signInAttempt.attemptFirstFactor({
           strategy: "email_code",
           code,
@@ -61,6 +76,9 @@ const Login: React.FC = () => {
 
         if (verified.status === "complete") {
           await setActive({ session: verified.createdSessionId });
+          
+          localStorage.setItem("trustedDevice", email);
+
           toast.success("Login successful! Redirecting...", {
             position: "top-center",
             theme: "dark",
@@ -78,7 +96,10 @@ const Login: React.FC = () => {
         err.errors?.[0]?.message ||
           err.message ||
           "An unexpected error occurred",
-        { position: "top-center", theme: "dark" }
+        {
+          position: "top-center",
+          theme: "dark",
+        }
       );
     } finally {
       setLoading(false);
