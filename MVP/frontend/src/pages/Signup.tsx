@@ -9,18 +9,8 @@ import { validateEmail, validatePassword } from "@/utils/validation";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface SignUpForm {
-  email: string;
-  password: string;
-  code?: string;
-}
-
 const SignUp: React.FC = () => {
-  const [form, setForm] = useState<SignUpForm>({
-    email: "",
-    password: "",
-    code: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "", code: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -35,31 +25,31 @@ const SignUp: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validateEmail(form.email)) {
-      toast.error("Please enter a valid email address", {
+      toast.error("Please enter a valid email", {
         position: "top-center",
         theme: "dark",
       });
       return;
     }
     if (!validatePassword(form.password)) {
-      toast.error(
-        "Password must be at least 6 characters, include an uppercase letter and a number",
-        { position: "top-center", theme: "dark" }
-      );
+      toast.error("Password must be 6+ chars, uppercase & number", {
+        position: "top-center",
+        theme: "dark",
+      });
       return;
     }
+
     setLoading(true);
 
     try {
       if (!signUp) {
-        toast.error("Signup is not available. Please try again.", {
+        toast.error("Signup unavailable", {
           position: "top-center",
           theme: "dark",
         });
@@ -72,25 +62,19 @@ const SignUp: React.FC = () => {
           emailAddress: form.email,
           password: form.password,
         });
-
         await attempt.prepareEmailAddressVerification();
-
         setSignUpAttempt(attempt);
         setAwaitingCode(true);
-
-        toast.info("Verification code sent to your email. Check your inbox!", {
+        toast.info("Verification code sent to your email!", {
           position: "top-center",
           theme: "dark",
         });
       } else {
         if (!form.code) {
-          toast.error(
-            "Please enter the verification code sent to your email.",
-            {
-              position: "top-center",
-              theme: "dark",
-            }
-          );
+          toast.error("Enter the verification code", {
+            position: "top-center",
+            theme: "dark",
+          });
           setLoading(false);
           return;
         }
@@ -101,19 +85,19 @@ const SignUp: React.FC = () => {
 
         if (result.status === "complete") {
           await setActive({ session: result.createdSessionId });
+
+          localStorage.setItem("trustedDevice", form.email);
+
           toast.success("Signup successful! Redirecting...", {
             position: "top-center",
             theme: "dark",
           });
           navigate("/dashboard");
         } else {
-          toast.error(
-            "Verification failed. Please check your code and try again.",
-            {
-              position: "top-center",
-              theme: "dark",
-            }
-          );
+          toast.error("Verification failed. Check your code and try again.", {
+            position: "top-center",
+            theme: "dark",
+          });
         }
       }
     } catch (err: any) {
@@ -167,8 +151,8 @@ const SignUp: React.FC = () => {
               Welcome!
             </h1>
             <p className="text-gray-200 text-center mb-6 text-sm sm:text-base">
-              Sign up to discover tattoo artists, explore styles, preview
-              tattoos with AR, and start your personalized tattoo journey.
+              Sign up to discover tattoo artists, explore styles, and start your
+              personalized tattoo journey.
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
