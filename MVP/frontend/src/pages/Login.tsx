@@ -1,7 +1,7 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignIn, useUser, useAuth } from "@clerk/clerk-react";
+import { useSignIn } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -18,19 +18,6 @@ const Login: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const navigate = useNavigate();
   const { signIn, setActive } = useSignIn();
-  const { isSignedIn } = useUser();
-  const { signOut } = useAuth();
-
-  useEffect(() => {
-    if (isSignedIn) {
-      signOut().then(() => {
-        toast.info("Previous session cleared. You can log in now.", {
-          position: "top-center",
-          theme: "dark",
-        });
-      });
-    }
-  }, [isSignedIn, signOut]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);
