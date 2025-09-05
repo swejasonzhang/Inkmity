@@ -1,7 +1,7 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignUp, useUser, useAuth } from "@clerk/clerk-react";
+import { useSignUp } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -29,19 +29,6 @@ const SignUp: React.FC = () => {
 
   const navigate = useNavigate();
   const { signUp, setActive } = useSignUp();
-  const { isSignedIn } = useUser();
-  const { signOut } = useAuth();
-
-  useEffect(() => {
-    if (isSignedIn) {
-      signOut().then(() => {
-        toast.info("Previous session cleared. You can sign up now.", {
-          position: "top-center",
-          theme: "dark",
-        });
-      });
-    }
-  }, [isSignedIn, signOut]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);
@@ -80,14 +67,12 @@ const SignUp: React.FC = () => {
         return;
       }
 
-      // Step 1: If we haven't sent the email code yet
       if (!awaitingCode) {
         const attempt = await signUp.create({
           emailAddress: form.email,
           password: form.password,
         });
 
-        // Trigger email code verification
         await attempt.prepareEmailAddressVerification();
 
         setSignUpAttempt(attempt);
@@ -98,7 +83,6 @@ const SignUp: React.FC = () => {
           theme: "dark",
         });
       } else {
-        // Step 2: User submits the email code
         if (!form.code) {
           toast.error(
             "Please enter the verification code sent to your email.",
