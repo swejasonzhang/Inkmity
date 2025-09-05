@@ -107,7 +107,7 @@ const SignUp: React.FC = () => {
         playsInline
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
       >
-        <source src="src/Public/Background.mp4" type="video/mp4" />
+        <source src="public/Background.mp4" type="video/mp4" />
       </video>
       <div className="absolute inset-0 bg-black/50 z-10" />
 

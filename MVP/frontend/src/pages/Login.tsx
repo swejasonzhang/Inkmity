@@ -20,7 +20,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const navigate = useNavigate();
-  const { signIn } = useSignIn();
+  const { signIn, setActive } = useSignIn();
   const { isSignedIn } = useUser();
   const { signOut } = useAuth();
 
@@ -70,11 +70,15 @@ const Login: React.FC = () => {
         setLoading(false);
         return;
       }
-      const { status } = await signIn.create({
+
+      const result = await signIn.create({
         identifier: form.email,
         password: form.password,
       });
-      if (status === "complete") {
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId }); // ✅ activate the session
+
         toast.success("Login successful! Redirecting...", {
           position: "top-center",
           theme: "dark",
@@ -107,7 +111,7 @@ const Login: React.FC = () => {
         playsInline
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
       >
-        <source src="src/Public/Background.mp4" type="video/mp4" />
+        <source src="public/Background.mp4" type="video/mp4" />
       </video>
       <div className="absolute inset-0 bg-black/50 z-10" />
 
