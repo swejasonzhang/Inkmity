@@ -12,15 +12,23 @@ import { motion, AnimatePresence } from "framer-motion";
 interface SignUpForm {
   email: string;
   password: string;
+  code?: string;
 }
 
 const SignUp: React.FC = () => {
-  const [form, setForm] = useState<SignUpForm>({ email: "", password: "" });
+  const [form, setForm] = useState<SignUpForm>({
+    email: "",
+    password: "",
+    code: "",
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [awaitingCode, setAwaitingCode] = useState(false);
+  const [signUpAttempt, setSignUpAttempt] = useState<any>(null);
+
   const navigate = useNavigate();
-  const { signUp } = useSignUp();
+  const { signUp, setActive } = useSignUp();
   const { isSignedIn } = useUser();
   const { signOut } = useAuth();
 
@@ -61,6 +69,7 @@ const SignUp: React.FC = () => {
       return;
     }
     setLoading(true);
+
     try {
       if (!signUp) {
         toast.error("Signup is not available. Please try again.", {
@@ -70,21 +79,58 @@ const SignUp: React.FC = () => {
         setLoading(false);
         return;
       }
-      const { status } = await signUp.create({
-        emailAddress: form.email,
-        password: form.password,
-      });
-      if (status === "complete") {
-        toast.success("Signup successful! Redirecting to login...", {
+
+      // Step 1: If we haven't sent the email code yet
+      if (!awaitingCode) {
+        const attempt = await signUp.create({
+          emailAddress: form.email,
+          password: form.password,
+        });
+
+        // Trigger email code verification
+        await attempt.prepareEmailAddressVerification();
+
+        setSignUpAttempt(attempt);
+        setAwaitingCode(true);
+
+        toast.info("Verification code sent to your email. Check your inbox!", {
           position: "top-center",
           theme: "dark",
         });
-        navigate("/login");
       } else {
-        toast.info("Please verify your email to complete signup", {
-          position: "top-center",
-          theme: "dark",
+        // Step 2: User submits the email code
+        if (!form.code) {
+          toast.error(
+            "Please enter the verification code sent to your email.",
+            {
+              position: "top-center",
+              theme: "dark",
+            }
+          );
+          setLoading(false);
+          return;
+        }
+
+        const result = await signUpAttempt.attemptEmailAddressVerification({
+          code: form.code,
         });
+
+        if (result.status === "complete") {
+          await setActive({ session: result.createdSessionId });
+          toast.success("Signup successful! Redirecting...", {
+            position: "top-center",
+            theme: "dark",
+          });
+          navigate("/dashboard");
+        } else {
+          toast.error(
+            "Verification failed. Please check your code and try again.",
+            {
+              position: "top-center",
+              theme: "dark",
+            }
+          );
+        }
       }
     } catch (err: any) {
       toast.error(
@@ -175,12 +221,30 @@ const SignUp: React.FC = () => {
                 }
               />
 
+              {awaitingCode && (
+                <FormInput
+                  type="text"
+                  name="code"
+                  value={form.code || ""}
+                  placeholder="Enter verification code"
+                  onChange={handleChange}
+                  isValid={!!form.code}
+                  message="Check your email for the code"
+                />
+              )}
+
               <Button
                 type="submit"
                 className="bg-white/20 hover:bg-white/30 text-white font-semibold py-3 rounded-md transition-colors"
                 disabled={loading}
               >
-                {loading ? "Signing Up..." : "Sign Up"}
+                {loading
+                  ? awaitingCode
+                    ? "Verifying..."
+                    : "Signing Up..."
+                  : awaitingCode
+                  ? "Verify Code"
+                  : "Sign Up"}
               </Button>
             </form>
 
