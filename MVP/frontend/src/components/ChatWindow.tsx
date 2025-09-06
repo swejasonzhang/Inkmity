@@ -87,6 +87,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
           placeholder="Type a message..."
           className="flex-1 p-2 rounded bg-gray-700 text-white"
         />
