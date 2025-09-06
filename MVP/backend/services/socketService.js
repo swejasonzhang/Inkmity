@@ -1,6 +1,8 @@
 import { Server } from "socket.io";
+import Message from "../models/Message.js";
 
 let io;
+const onlineUsers = new Map();
 
 export const initSocket = (server) => {
   io = new Server(server, {
@@ -10,17 +12,36 @@ export const initSocket = (server) => {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
-    socket.on("join_room", (roomId) => {
-      socket.join(roomId);
-      console.log(`User joined room: ${roomId}`);
+    socket.on("register", (userId) => {
+      onlineUsers.set(userId, socket.id);
+      console.log(`User ${userId} registered with socket ${socket.id}`);
     });
 
-    socket.on("send_message", (data) => {
-      io.to(data.roomId).emit("receive_message", data);
+    socket.on("send_message", async (data) => {
+      const { sender, recipient, text } = data;
+
+      try {
+        const message = await Message.create({ sender, recipient, text });
+
+        const recipientSocket = onlineUsers.get(recipient);
+        if (recipientSocket) {
+          io.to(recipientSocket).emit("receive_message", message);
+        }
+
+        socket.emit("receive_message", message);
+      } catch (err) {
+        console.error("Error saving message:", err);
+      }
     });
 
     socket.on("disconnect", () => {
-      console.log("Socket disconnected:", socket.id);
+      for (const [userId, socketId] of onlineUsers.entries()) {
+        if (socketId === socket.id) {
+          onlineUsers.delete(userId);
+          console.log(`User ${userId} disconnected`);
+          break;
+        }
+      }
     });
   });
 };
