@@ -2,8 +2,9 @@ import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
-    sender: { type: String, required: true },
-    recipient: { type: String, required: true },
+    roomId: { type: String },
+    sender: { type: String, required: true }, 
+    recipient: { type: String },
     text: { type: String, required: true },
   },
   { timestamps: true }
