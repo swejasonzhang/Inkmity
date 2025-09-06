@@ -1,7 +1,7 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignUp } from "@clerk/clerk-react";
+import { useSignUp, useUser } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,6 +19,22 @@ const SignUp: React.FC = () => {
 
   const navigate = useNavigate();
   const { signUp, setActive } = useSignUp();
+  const { isSignedIn } = useUser();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      toast.info("You are already signed in! Redirecting to dashboard...", {
+        position: "top-center",
+        theme: "dark",
+      });
+
+      const timer = setTimeout(() => {
+        navigate("/dashboard");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isSignedIn, navigate]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);

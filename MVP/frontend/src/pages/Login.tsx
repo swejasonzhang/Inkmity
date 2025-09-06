@@ -1,7 +1,7 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignIn } from "@clerk/clerk-react";
+import { useSignIn, useUser } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,6 +19,22 @@ const Login: React.FC = () => {
 
   const navigate = useNavigate();
   const { signIn, setActive } = useSignIn();
+  const { isSignedIn } = useUser();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      toast.info("You are already signed in! Redirecting to dashboard...", {
+        position: "top-center",
+        theme: "dark",
+      });
+
+      const timer = setTimeout(() => {
+        navigate("/dashboard");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isSignedIn, navigate]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);
@@ -76,7 +92,7 @@ const Login: React.FC = () => {
 
         if (verified.status === "complete") {
           await setActive({ session: verified.createdSessionId });
-          
+
           localStorage.setItem("trustedDevice", email);
 
           toast.success("Login successful! Redirecting...", {
