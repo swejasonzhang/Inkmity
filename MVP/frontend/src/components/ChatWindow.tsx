@@ -1,4 +1,3 @@
-// src/components/ChatWindow.tsx
 import React, {
   useEffect,
   useState,
@@ -16,8 +15,8 @@ interface ChatWindowProps {
 
 interface Message {
   sender: string;
-  recipient: string;
   text: string;
+  roomId: string;
   createdAt?: string;
 }
 
@@ -26,45 +25,41 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userId, otherUserId }) => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Connect socket on mount
+  const roomId = [userId, otherUserId].sort().join("_");
+
   useEffect(() => {
     socket.connect();
 
-    socket.emit("joinRoom", { userId, otherUserId });
+    socket.emit("join_room", roomId);
 
-    socket.on("receiveMessage", (message: Message) => {
+    socket.on("receive_message", (message: Message) => {
       setMessages((prev) => [...prev, message]);
     });
 
     return () => {
-      socket.off("receiveMessage");
+      socket.off("receive_message");
       socket.disconnect();
     };
-  }, [userId, otherUserId]);
+  }, [roomId]);
 
-  // Fetch chat history from backend
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const res = await axios.get<Message[]>(
-          `/api/messages/${userId}/${otherUserId}`
-        );
+        const res = await axios.get<Message[]>(`/api/messages/${roomId}`);
         setMessages(res.data);
       } catch (err) {
         console.error("Error fetching messages", err);
       }
     };
     fetchMessages();
-  }, [userId, otherUserId]);
+  }, [roomId]);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setNewMessage(e.target.value);
-  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -72,11 +67,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ userId, otherUserId }) => {
 
     const message: Message = {
       sender: userId,
-      recipient: otherUserId,
       text: newMessage.trim(),
+      roomId,
     };
 
-    socket.emit("sendMessage", message);
+    socket.emit("send_message", message);
     setMessages((prev) => [...prev, message]);
     setNewMessage("");
   };
