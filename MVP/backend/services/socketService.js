@@ -24,8 +24,6 @@ export const initSocket = (ioInstance) => {
         if (recipientSocket) {
           io.to(recipientSocket).emit("receive_message", message);
         }
-
-        socket.emit("receive_message", message);
       } catch (err) {
         console.error("❌ Error saving message:", err);
       }
