@@ -11,6 +11,7 @@ interface Message {
   sender: string;
   recipient: string;
   text: string;
+  createdAt?: string;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -24,6 +25,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   useEffect(() => {
     socket.connect();
+
     socket.emit("register", userId);
 
     socket.on("receive_message", (message: Message) => {
@@ -36,6 +38,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     });
 
     return () => {
+      socket.off("receive_message");
       socket.disconnect();
     };
   }, [userId, otherUserId]);
@@ -52,14 +55,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       recipient: otherUserId,
       text: newMessage.trim(),
     };
+
     socket.emit("send_message", message);
-    setMessages((prev) => [...prev, message]);
     setNewMessage("");
   };
 
   return (
     <div className="flex flex-col h-80 w-full bg-gray-800 rounded-lg p-4 text-white">
-      <h2 className="font-bold mb-2">{userName}</h2>
+      <h2 className="font-bold mb-2">Chat with {userName}</h2>
       <div className="flex-1 overflow-y-auto space-y-2 mb-2">
         {messages.map((msg, idx) => (
           <div

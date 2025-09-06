@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
+import { Server } from "socket.io";
 
 import { connectDB } from "./config/db.js";
 import { initSocket } from "./services/socketService.js";
@@ -21,6 +22,7 @@ connectDB();
 app.use(
   cors({
     origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
     credentials: true,
   })
 );
@@ -32,7 +34,15 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/messages", messageRoutes);
 
-initSocket(server);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
-const PORT = process.env.PORT;
+initSocket(io);
+
+const PORT = process.env.PORT || 5005;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
