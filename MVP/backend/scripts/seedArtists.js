@@ -2,69 +2,98 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import Artist from "../models/Artist.js";
 
-dotenv.config();
+dotenv.config({ path: "../.env" });
 
-const fakeArtists = [
-  {
-    name: "Luna Vega",
-    bio: "Fine line surrealism with soft details.",
-    location: "Brooklyn, NY",
-    style: ["Fine Line", "Surrealism"],
-    priceRange: { min: 150, max: 400 },
-    rating: 4.8,
-  },
-  {
-    name: "Kai Nakamura",
-    bio: "Traditional Japanese Irezumi expert with over 10 years of experience.",
-    location: "Los Angeles, CA",
-    style: ["Japanese", "Irezumi"],
-    priceRange: { min: 300, max: 1200 },
-    rating: 4.9,
-  },
-  {
-    name: "Sophia Alvarez",
-    bio: "Minimalist and geometric tattoos with clean, modern designs.",
-    location: "Austin, TX",
-    style: ["Minimalist", "Geometric"],
-    priceRange: { min: 80, max: 250 },
-    rating: 4.5,
-  },
-  {
-    name: "Marcus Lee",
-    bio: "Bold traditional tattoos with vibrant colors.",
-    location: "Chicago, IL",
-    style: ["Traditional", "American"],
-    priceRange: { min: 200, max: 600 },
-    rating: 4.6,
-  },
-  {
-    name: "Amara Singh",
-    bio: "Mandala and dotwork specialist with intricate patterns.",
-    location: "San Francisco, CA",
-    style: ["Mandala", "Dotwork"],
-    priceRange: { min: 120, max: 500 },
-    rating: 4.7,
-  },
+// Expanded list of locations
+const locations = [
+  "New York",
+  "Los Angeles",
+  "Chicago",
+  "Miami",
+  "Dallas",
+  "Seattle",
+  "Boston",
+  "San Francisco",
+  "Austin",
+  "Portland",
+  "Denver",
+  "Las Vegas",
+  "Atlanta",
+  "Philadelphia",
+  "Phoenix",
+  "San Diego",
+  "Detroit",
+  "Orlando",
+  "Nashville",
+  "Houston",
 ];
 
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(async () => {
-    console.log("Connected to MongoDB ✅");
+// Expanded list of tattoo styles
+const styles = [
+  "Traditional",
+  "Realism",
+  "Tribal",
+  "Japanese",
+  "Watercolor",
+  "Blackwork",
+  "Neo-Traditional",
+  "Geometric",
+  "Minimalist",
+  "Abstract",
+  "Portrait",
+  "Biomechanical",
+  "Script",
+  "Dotwork",
+  "Celtic",
+  "Chicano",
+  "Fine Line",
+  "Trash Polka",
+  "Surrealism",
+  "New School",
+];
 
+// Helpers
+const randomFromArray = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const randomInt = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+const seedArtists = async () => {
+  try {
+    console.log("process.env.MONGO_URI", process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI);
+
+    // Clear old artists
     await Artist.deleteMany();
-    console.log("Cleared old artist data 🗑️");
 
-    await Artist.insertMany(fakeArtists);
-    console.log("Inserted fake artists 🎨✨");
+    const artists = Array.from({ length: 1000 }).map((_, i) => {
+      const minPrice = randomInt(100, 5000);
+      const maxPrice = randomInt(minPrice + 100, 10000);
 
-    mongoose.connection.close();
-    console.log("Seeding complete, connection closed 🚪");
-  })
-  .catch((err) => {
-    console.error("Error seeding artists ❌", err);
-    mongoose.connection.close();
-  });
+      return {
+        name: `Artist ${i + 1}`,
+        bio: `I am Artist ${i + 1}, specializing in ${randomFromArray(
+          styles
+        )} tattoos.`,
+        location: randomFromArray(locations),
+        style: Array.from({ length: randomInt(1, 3) }).map(() =>
+          randomFromArray(styles)
+        ),
+        priceRange: {
+          min: minPrice,
+          max: maxPrice,
+        },
+        rating: parseFloat((Math.random() * 5).toFixed(1)),
+        reviews: [],
+      };
+    });
+
+    await Artist.insertMany(artists);
+    console.log("✅ Seeded 1000 artists successfully");
+    process.exit();
+  } catch (error) {
+    console.error("❌ Error seeding artists:", error);
+    process.exit(1);
+  }
+};
+
+seedArtists();
