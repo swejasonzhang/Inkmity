@@ -34,11 +34,15 @@ const Dashboard: React.FC = () => {
   }, [isSignedIn, navigate]);
 
   useEffect(() => {
-    fetch("/api/artists")
-      .then((res) => res.json())
-      .then((data) => setArtists(data))
-      .catch((err) => console.error("Error fetching artists:", err));
-  }, []);
+  fetch("http://localhost:5005/api/artists") 
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return res.json();
+    })
+    .then((data) => setArtists(data))
+    .catch((err) => console.error("Error fetching artists:", err));
+}, []);
+
 
   if (!user) return <div className="text-white p-4">Loading...</div>;
 

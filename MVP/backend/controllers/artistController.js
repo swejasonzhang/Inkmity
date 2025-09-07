@@ -1,5 +1,4 @@
 import Artist from "../models/Artist.js";
-import Review from "../models/Review.js";
 
 export const getArtists = async (req, res) => {
   try {
@@ -8,9 +7,8 @@ export const getArtists = async (req, res) => {
     const filter = {};
     if (location) filter.location = location;
     if (style) filter.style = { $in: [style] };
-    if (minPrice || maxPrice) filter.priceRange = {};
-    if (minPrice) filter.priceRange.$gte = Number(minPrice);
-    if (maxPrice) filter.priceRange.$lte = Number(maxPrice);
+    if (minPrice) filter["priceRange.min"] = { $gte: Number(minPrice) };
+    if (maxPrice) filter["priceRange.max"] = { $lte: Number(maxPrice) };
     if (minRating) filter.rating = { $gte: Number(minRating) };
 
     const artists = await Artist.find(filter).populate("reviews");
