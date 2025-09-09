@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare } from "lucide-react";
@@ -25,11 +25,13 @@ interface Artist {
   style?: string[];
   priceRange?: PriceRange;
   rating?: number;
+  images?: string[];
+  socialLinks?: { platform: string; url: string }[];
 }
 
 const ITEMS_PER_PAGE = 20;
 
-const Dashboard: React.FC = () => {
+function Dashboard() {
   const { isSignedIn, user } = useUser();
   const navigate = useNavigate();
 
@@ -42,6 +44,8 @@ const Dashboard: React.FC = () => {
   const [styleFilter, setStyleFilter] = useState<string>("all");
 
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) navigate("/login");
@@ -93,6 +97,7 @@ const Dashboard: React.FC = () => {
   const handleOpenChat = (artist: Artist) => {
     setActiveChat(artist);
     setMessagingOpen(true);
+    setSelectedArtist(null); // close modal when opening chat
   };
 
   return (
@@ -183,7 +188,7 @@ const Dashboard: React.FC = () => {
                 <div
                   key={artist._id}
                   className="bg-gray-700 p-4 rounded-lg shadow hover:bg-gray-600 cursor-pointer"
-                  onClick={() => handleOpenChat(artist)}
+                  onClick={() => setSelectedArtist(artist)}
                 >
                   <h2 className="text-xl font-semibold">{artist.name}</h2>
                   <p className="text-gray-300">{artist.bio}</p>
@@ -239,8 +244,80 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
 
+      {/* Modal */}
+      {selectedArtist && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl w-full relative">
+            <button
+              onClick={() => setSelectedArtist(null)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              {selectedArtist.name}
+            </h2>
+            <p className="text-gray-300 mb-2">{selectedArtist.bio}</p>
+            <p className="text-gray-400 text-sm mb-2">
+              Location: {selectedArtist.location}
+            </p>
+            <p className="text-gray-400 text-sm mb-2">
+              Price Range:{" "}
+              {selectedArtist.priceRange
+                ? `$${selectedArtist.priceRange.min} - $${selectedArtist.priceRange.max}`
+                : "N/A"}
+            </p>
+            <p className="text-gray-400 text-sm mb-2">
+              Style: {selectedArtist.style?.join(", ")}
+            </p>
+            <p className="text-yellow-400 text-sm mb-4">
+              Rating: {selectedArtist.rating?.toFixed(1) || "0"}
+            </p>
+
+            {/* Images */}
+            {selectedArtist.images && selectedArtist.images.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {selectedArtist.images.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={`${selectedArtist.name} work ${i + 1}`}
+                    className="rounded-lg object-cover w-full h-40"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Social Links */}
+            {selectedArtist.socialLinks && (
+              <div className="flex gap-4 mb-4">
+                {selectedArtist.socialLinks.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-400 hover:underline"
+                  >
+                    {link.platform}
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* Message Button */}
+            <button
+              onClick={() => handleOpenChat(selectedArtist)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-500"
+            >
+              Message {selectedArtist.name}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Messaging Panel */}
-      <div className="fixed bottom-0 right-0 w-80 z-50">
+      <div className="fixed bottom-0 right-0 w-80 z-40">
         <div
           className={`bg-gray-800 rounded-t-lg shadow-lg flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
             messagingOpen ? "h-[80vh]" : "h-[50px]"
@@ -285,6 +362,6 @@ const Dashboard: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Dashboard;

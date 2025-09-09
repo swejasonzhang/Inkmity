@@ -1,17 +1,15 @@
-import React, { useEffect, useState, useRef } from "react";
-import socket from "../utils/socket";
+import React, { useState, useEffect } from "react";
+
+interface Message {
+  senderId: string;
+  text: string;
+  timestamp: string;
+}
 
 interface ChatWindowProps {
   userId: string;
   otherUserId: string;
   userName: string;
-}
-
-interface Message {
-  sender: string;
-  recipient: string;
-  text: string;
-  createdAt?: string;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -20,89 +18,98 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   userName,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [expanded, setExpanded] = useState(false);
   const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // helper to create a new message
+  const createMessage = (senderId: string, text: string): Message => ({
+    senderId,
+    text,
+    timestamp: new Date().toISOString(),
+  });
 
   useEffect(() => {
-    socket.connect();
+    // load initial conversation only once when otherUserId changes
+    setMessages([
+      createMessage(otherUserId, "Hey, thanks for checking out my work!"),
+      createMessage(userId, "Your portfolio is amazing!"),
+    ]);
+  }, [otherUserId, userId]);
 
-    socket.emit("register", userId);
-
-    socket.on("receive_message", (message: Message) => {
-      if (
-        (message.sender === userId && message.recipient === otherUserId) ||
-        (message.sender === otherUserId && message.recipient === userId)
-      ) {
-        setMessages((prev) => [...prev, message]);
-      }
-    });
-
-    return () => {
-      socket.off("receive_message");
-      socket.disconnect();
-    };
-  }, [userId, otherUserId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const sendMessage = () => {
+  const handleSendMessage = () => {
     if (!newMessage.trim()) return;
-
-    const message: Message = {
-      sender: userId,
-      recipient: otherUserId,
-      text: newMessage.trim(),
-    };
-
-    socket.emit("send_message", message);
+    const msg = createMessage(userId, newMessage.trim());
+    setMessages((prev) => [...prev, msg]);
     setNewMessage("");
   };
 
   return (
-    <div className="flex flex-col h-80 w-full bg-gray-800 rounded-lg p-4 text-white">
-      <h2 className="font-bold mb-2">Chat with {userName}</h2>
-      <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`flex ${
-              msg.sender === userId ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`px-3 py-2 rounded-lg ${
-                msg.sender === userId ? "bg-blue-500" : "bg-gray-600"
-              }`}
-            >
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-          placeholder="Type a message..."
-          className="flex-1 p-2 rounded bg-gray-700 text-white"
-        />
-        <button
-          onClick={sendMessage}
-          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <h3 className="font-bold text-white mb-2">{userName}</h3>
+
+      {/* Collapsed preview */}
+      {!expanded ? (
+        <div
+          className="bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600"
+          onClick={() => setExpanded(true)}
         >
-          Send
-        </button>
-      </div>
+          <p className="truncate">
+            {messages.length > 0
+              ? messages[messages.length - 1].text
+              : "No messages yet"}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Messages */}
+          <div className="flex-1 flex flex-col gap-2 overflow-y-auto mb-2 pr-2">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-2 rounded max-w-xs break-words ${
+                  msg.senderId === userId
+                    ? "bg-indigo-600 self-end text-white"
+                    : "bg-gray-700 self-start text-white"
+                }`}
+              >
+                <p>{msg.text}</p>
+                <span className="block text-xs text-gray-400 mt-1">
+                  {new Date(msg.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Input + send button */}
+          <div className="flex gap-2">
+            <input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className="flex-1 rounded bg-gray-700 px-3 py-2 text-white focus:outline-none"
+              placeholder="Type a message..."
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+            />
+            <button
+              onClick={handleSendMessage}
+              className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white"
+            >
+              Send
+            </button>
+          </div>
+
+          {/* Collapse button */}
+          <button
+            className="text-sm text-indigo-400 mt-2 self-start hover:underline"
+            onClick={() => setExpanded(false)}
+          >
+            Collapse
+          </button>
+        </>
+      )}
     </div>
   );
 };
