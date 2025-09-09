@@ -36,7 +36,7 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [messagingOpen, setMessagingOpen] = useState(false);
+  const [messagingOpen, setMessagingOpen] = useState(true); // open by default
   const [activeChat, setActiveChat] = useState<Artist | null>(null);
 
   const [priceFilter, setPriceFilter] = useState<string>("all");
@@ -44,7 +44,6 @@ function Dashboard() {
   const [styleFilter, setStyleFilter] = useState<string>("all");
 
   const [currentPage, setCurrentPage] = useState(1);
-
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
 
   useEffect(() => {
@@ -63,7 +62,6 @@ function Dashboard() {
 
   if (!user) return <div className="text-white p-4">Loading...</div>;
 
-  // Filter and sort artists
   const filteredArtists = artists
     .filter((artist) => {
       const inPriceRange = (() => {
@@ -88,7 +86,6 @@ function Dashboard() {
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
   const totalPages = Math.ceil(filteredArtists.length / ITEMS_PER_PAGE);
-
   const paginatedArtists = filteredArtists.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -97,7 +94,7 @@ function Dashboard() {
   const handleOpenChat = (artist: Artist) => {
     setActiveChat(artist);
     setMessagingOpen(true);
-    setSelectedArtist(null); // close modal when opening chat
+    setSelectedArtist(null);
   };
 
   return (
@@ -355,6 +352,8 @@ function Dashboard() {
                 userId="user1"
                 otherUserId={activeChat._id}
                 userName={activeChat.name}
+                onClose={() => setMessagingOpen(false)}
+                startExpanded={true}
               />
             )}
           </div>
