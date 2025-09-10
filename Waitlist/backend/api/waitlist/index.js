@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   await connectDB();
 
   const allowedOrigins = [
-    "https://fortheloveoftattoos.vercel.app",
+    "https://inkmity.com",
   ];
 
   const origin = req.headers.origin;

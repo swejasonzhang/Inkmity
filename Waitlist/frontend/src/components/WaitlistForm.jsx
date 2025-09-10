@@ -43,7 +43,7 @@ export default function WaitlistForm() {
       pauseOnHover: true,
       draggable: false,
       style: {
-        background: error ? "#fff" : "#00000",
+        background: error ? "#fff" : "#000",
         color: "#000",
         fontWeight: "bold",
         border: "1px solid #fff",
@@ -58,15 +58,24 @@ export default function WaitlistForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return notify("Please enter your name.", true);
-    if (!email.trim()) return notify("Please enter your email.", true);
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) return notify("Please enter your name.", true);
+    if (!trimmedEmail) return notify("Please enter your email.", true);
+
+    // ✅ Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail))
+      return notify("Please enter a valid email address.", true);
 
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/waitlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail }),
       });
 
       const data = await res.json();
