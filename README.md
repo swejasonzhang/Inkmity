@@ -1,4 +1,4 @@
-# For The Love Of Tattoos
+# Inkmity
 
 > A modern web application connecting tattoo clients and artists, helping them communicate, find local artists, and explore tattoo designs. Built with a MERN stack and modern frontend tools.
 
@@ -20,7 +20,7 @@
 
 ## Project Overview
 
-**For The Love Of Tattoos** is designed to bridge the gap between tattoo clients and artists by providing:
+**Inkmity** is designed to bridge the gap between tattoo clients and artists by providing:
 
 - A platform for clients to discover and communicate with tattoo artists near them.  
 - A modern, responsive user interface with smooth interactions.  
@@ -59,7 +59,7 @@ The goal is to improve the way clients find artists, book sessions, and visualiz
 | Frontend | React (Vite), Tailwind CSS, Framer Motion, React Toastify |
 | Backend | Node.js, Express.js, WebSockets (Socket.io) |
 | Database | MongoDB Atlas |
-| Hosting | Netlify |
+| Hosting | Vercel |
 | Dev Tools | ESLint, Prettier, npm/yarn |
 
 ---
