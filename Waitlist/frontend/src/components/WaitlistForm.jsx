@@ -43,8 +43,8 @@ export default function WaitlistForm() {
       pauseOnHover: true,
       draggable: false,
       style: {
-        background: error ? "#fff" : "#000",
-        color: "#000",
+        background: error ? "#000" : "#000", // always black
+        color: "#fff", // white text
         fontWeight: "bold",
         border: "1px solid #fff",
         textAlign: "center",
@@ -54,6 +54,22 @@ export default function WaitlistForm() {
         margin: "0 auto",
       },
       className: "toast-center",
+      closeButton: ({ closeToast }) => (
+        <button
+          onClick={closeToast}
+          style={{
+            color: "white",
+            fontSize: "16px",
+            fontWeight: "bold",
+            marginLeft: "8px",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          ✕
+        </button>
+      ),
     });
 
   const handleSubmit = async (e) => {
