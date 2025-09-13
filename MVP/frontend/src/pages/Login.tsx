@@ -20,39 +20,35 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { signIn } = useSignIn();
   const { isSignedIn } = useUser();
-  const { setActive, signOut } = useClerk();
+  const { setActive } = useClerk();
 
   const LOGOUT_TIMESTAMP_KEY = "lastLogout";
-
-  useEffect(() => {
-    const checkLogoutTime = () => {
-      const lastLogout = localStorage.getItem(LOGOUT_TIMESTAMP_KEY);
-      if (isSignedIn) {
-        const within3Days =
-          lastLogout &&
-          (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <= 3;
-
-        toast.info(
-          within3Days
-            ? "Login successful! Redirecting..."
-            : "You are already signed in! Redirecting to dashboard...",
-          {
-            position: "top-center",
-            theme: "dark",
-          }
-        );
-
-        setTimeout(() => navigate("/dashboard"), 2000);
-      }
-    };
-
-    checkLogoutTime();
-  }, [isSignedIn, navigate]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const lastLogout = localStorage.getItem(LOGOUT_TIMESTAMP_KEY);
+    if (isSignedIn && !awaitingCode) {
+      const within3Days =
+        lastLogout &&
+        (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <= 3;
+
+      toast.info(
+        within3Days
+          ? "Login successful! Redirecting..."
+          : "You are already signed in! Redirecting to dashboard...",
+        {
+          position: "top-center",
+          theme: "dark",
+        }
+      );
+
+      setTimeout(() => navigate("/dashboard"), 2000);
+    }
+  }, [isSignedIn, navigate, awaitingCode]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -93,10 +89,21 @@ const Login: React.FC = () => {
           await setActive({ session: verified.createdSessionId });
           localStorage.setItem("trustedDevice", email);
 
-          toast.success("Login successful! Redirecting...", {
-            position: "top-center",
-            theme: "dark",
-          });
+          const lastLogout = localStorage.getItem(LOGOUT_TIMESTAMP_KEY);
+          const within3Days =
+            lastLogout &&
+            (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <=
+              3;
+
+          toast.info(
+            within3Days
+              ? "Login successful! Redirecting..."
+              : "You are already signed in! Redirecting to dashboard...",
+            {
+              position: "top-center",
+              theme: "dark",
+            }
+          );
 
           setTimeout(() => navigate("/dashboard"), 2000);
         } else {
@@ -119,11 +126,6 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    localStorage.setItem(LOGOUT_TIMESTAMP_KEY, Date.now().toString());
   };
 
   return (
