@@ -99,7 +99,9 @@ const Login: React.FC = () => {
             position: "top-center",
             theme: "dark",
           });
-          navigate("/dashboard");
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 3000);
         } else {
           toast.error("Invalid or expired code. Please try again.", {
             position: "top-center",
