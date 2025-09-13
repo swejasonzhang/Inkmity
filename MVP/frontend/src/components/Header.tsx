@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useClerk } from "@clerk/clerk-react";
 
 interface HeaderProps {
@@ -8,21 +8,21 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ userName }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const { signOut } = useClerk();
-  let timeout: NodeJS.Timeout;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseEnter = () => {
-    timeout = setTimeout(() => setShowDropdown(true), 500);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowDropdown(true), 500);
   };
 
   const handleMouseLeave = () => {
-    clearTimeout(timeout);
-    setShowDropdown(false);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowDropdown(false), 200);
   };
 
   return (
     <header className="w-full bg-gray-50 shadow-lg border-b-4 border-gray-200 flex items-center justify-between px-6 py-4 h-24">
       <div className="flex items-center space-x-12 mx-auto">
-        {/* Left Links */}
         <nav className="flex space-x-12 text-lg font-medium text-gray-700">
           <a href="/dashboard" className="hover:text-black transition">
             Home
@@ -32,7 +32,6 @@ const Header: React.FC<HeaderProps> = ({ userName }) => {
           </a>
         </nav>
 
-        {/* Logo */}
         <div className="flex-shrink-0 flex items-center justify-center h-20">
           <img
             src="/Logo.png"
@@ -41,7 +40,6 @@ const Header: React.FC<HeaderProps> = ({ userName }) => {
           />
         </div>
 
-        {/* Right Links */}
         <nav className="flex space-x-4 text-lg font-medium text-gray-700">
           <a href="#" className="hover:text-black transition">
             Services
@@ -52,22 +50,19 @@ const Header: React.FC<HeaderProps> = ({ userName }) => {
         </nav>
       </div>
 
-      {/* User Dropdown on Right */}
       {userName && (
         <div
           className="relative"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Trigger */}
-          <div className="text-black text-lg flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100 transition">
+          <div className="text-black text-lg flex items-center cursor-pointer px-3 py-2 rounded-lg bg-transparent">
             <span className="mr-2 font-semibold text-gray-600">✦</span>
             Hello, <span className="font-bold ml-1">{userName}</span>!
           </div>
 
-          {/* Dropdown Menu */}
           <div
-            className={`absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg transform transition-all duration-500 ${
+            className={`absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg transform transition-all duration-300 ${
               showDropdown
                 ? "opacity-100 translate-y-0 visible"
                 : "opacity-0 -translate-y-2 invisible"
