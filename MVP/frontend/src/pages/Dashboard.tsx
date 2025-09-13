@@ -36,7 +36,7 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [messagingOpen, setMessagingOpen] = useState(true); // open by default
+  const [messagingOpen, setMessagingOpen] = useState(true);
   const [activeChat, setActiveChat] = useState<Artist | null>(null);
 
   const [priceFilter, setPriceFilter] = useState<string>("all");
@@ -108,9 +108,7 @@ function Dashboard() {
               Tattoo Shops & Artists
             </h1>
 
-            {/* Filters */}
             <div className="flex flex-wrap gap-4 justify-center">
-              {/* Price Filter */}
               <Select
                 value={priceFilter}
                 onValueChange={(value) => {
@@ -317,9 +315,11 @@ function Dashboard() {
       <div className="fixed bottom-0 right-0 w-80 z-40">
         <div
           className={`bg-gray-800 rounded-t-lg shadow-lg flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
-            messagingOpen ? "h-[80vh]" : "h-[50px]"
+            messagingOpen ? "max-h-[80vh]" : "max-h-[50px]"
           }`}
+          style={{ height: messagingOpen ? "80vh" : "50px" }}
         >
+          {/* Header */}
           <div className="flex justify-between items-center px-4 py-3 border-b border-gray-700">
             <button
               onClick={() => setMessagingOpen(!messagingOpen)}
@@ -338,12 +338,15 @@ function Dashboard() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2">
+          {/* Chat Body */}
+          <div className="flex-1 overflow-y-auto">
             {!messagingOpen && (
-              <p className="text-gray-400 text-sm">Click to view messages</p>
+              <p className="text-gray-400 text-sm p-2">
+                Click to view messages
+              </p>
             )}
             {messagingOpen && !activeChat && (
-              <p className="text-gray-400">
+              <p className="text-gray-400 p-2">
                 Select an artist to start chatting.
               </p>
             )}

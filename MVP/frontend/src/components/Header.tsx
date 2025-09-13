@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useClerk } from "@clerk/clerk-react";
 
 interface HeaderProps {
   userName?: string;
@@ -6,6 +7,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ userName }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const { signOut } = useClerk();
   let timeout: NodeJS.Timeout;
 
   const handleMouseEnter = () => {
@@ -20,6 +22,7 @@ const Header: React.FC<HeaderProps> = ({ userName }) => {
   return (
     <header className="w-full bg-gray-50 shadow-lg border-b-4 border-gray-200 flex items-center justify-between px-6 py-4 h-24">
       <div className="flex items-center space-x-12 mx-auto">
+        {/* Left Links */}
         <nav className="flex space-x-12 text-lg font-medium text-gray-700">
           <a href="/dashboard" className="hover:text-black transition">
             Home
@@ -56,6 +59,7 @@ const Header: React.FC<HeaderProps> = ({ userName }) => {
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
+          {/* Trigger */}
           <div className="text-black text-lg flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100 transition">
             <span className="mr-2 font-semibold text-gray-600">✦</span>
             Hello, <span className="font-bold ml-1">{userName}</span>!
@@ -69,7 +73,10 @@ const Header: React.FC<HeaderProps> = ({ userName }) => {
                 : "opacity-0 -translate-y-2 invisible"
             }`}
           >
-            <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+            <button
+              onClick={() => signOut()}
+              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+            >
               Logout
             </button>
           </div>
