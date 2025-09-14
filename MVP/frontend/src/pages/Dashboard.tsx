@@ -99,7 +99,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
-      <Header userName={user.firstName || "User"} />
+      <Header />
 
       <main className="flex-1 flex justify-center items-start p-6 overflow-y-auto">
         <div className="w-full max-w-4xl flex flex-col gap-6">
@@ -108,7 +108,9 @@ function Dashboard() {
               Tattoo Shops & Artists
             </h1>
 
+            {/* Filters */}
             <div className="flex flex-wrap gap-4 justify-center">
+              {/* Price Filter */}
               <Select
                 value={priceFilter}
                 onValueChange={(value) => {
