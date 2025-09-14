@@ -317,12 +317,11 @@ function Dashboard() {
       <div className="fixed bottom-0 right-0 w-80 z-40">
         <div
           className={`bg-gray-800 rounded-t-lg shadow-lg flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
-            messagingOpen ? "max-h-[80vh]" : "max-h-[50px]"
+            messagingOpen ? "h-[calc(100vh-120px)]" : "h-[50px]"
           }`}
-          style={{ height: messagingOpen ? "80vh" : "50px" }}
         >
           {/* Header */}
-          <div className="flex justify-between items-center px-4 py-3 border-b border-gray-700">
+          <div className="flex justify-between items-center px-4 py-3 border-b border-gray-700 h-14">
             <button
               onClick={() => setMessagingOpen(!messagingOpen)}
               className="flex items-center gap-2 text-white font-bold"
