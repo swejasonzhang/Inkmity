@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 export interface Message {
   senderId: string;
+  receiverId: string;
   text: string;
   timestamp: number;
 }
@@ -32,7 +33,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-2 border-b font-semibold">{userName}</div>
+      <div className="p-2 border-b font-semibold text-white">{userName}</div>
 
       {/* Messages */}
       <div className="flex-1 p-2 overflow-y-auto">
@@ -68,7 +69,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         />
         <button
           onClick={handleSend}
-          className="ml-2 bg-blue-500 text-white px-4 py-1 rounded"
+          className="ml-2 bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-500"
         >
           Send
         </button>

@@ -3,7 +3,7 @@ import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare } from "lucide-react";
 import Header from "../components/Header";
-import ChatWindow from "../components/ChatWindow";
+import ChatWindow, { Message } from "../components/ChatWindow";
 import {
   Select,
   SelectContent,
@@ -45,6 +45,10 @@ function Dashboard() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+
+  const [conversations, setConversations] = useState<Record<string, Message[]>>(
+    {}
+  );
 
   useEffect(() => {
     if (!isSignedIn) navigate("/login");
@@ -91,9 +95,39 @@ function Dashboard() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  const sendMessageToArtist = (artist: Artist, text: string) => {
+    const message: Message = {
+      senderId: user?.id || "anonymous",
+      receiverId: artist._id,
+      text,
+      timestamp: Date.now(),
+    };
+
+    setConversations((prev) => ({
+      ...prev,
+      [artist._id]: [...(prev[artist._id] || []), message],
+    }));
+
+    fetch("http://localhost:5005/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        senderId: user?.id,
+        receiverId: artist._id,
+        text,
+      }),
+    }).catch((err) => console.error("Error sending message:", err));
+  };
+
   const handleOpenChat = (artist: Artist) => {
     setActiveChat(artist);
     setMessagingOpen(true);
+
+    // Auto-send message if this conversation is new
+    if (!conversations[artist._id] || conversations[artist._id].length === 0) {
+      sendMessageToArtist(artist, "I'm interested in your work");
+    }
+
     setSelectedArtist(null);
   };
 
@@ -118,7 +152,7 @@ function Dashboard() {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="bg-gray-700 border border-gray-600 text-white text-sm px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <SelectTrigger className="bg-gray-700 border border-gray-600 text-white text-sm px-4 py-2 rounded-lg">
                   <SelectValue placeholder="All Prices" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 text-white">
@@ -353,11 +387,11 @@ function Dashboard() {
             )}
             {messagingOpen && activeChat && (
               <ChatWindow
-                userId="user1"
+                userId={user?.id || "user1"}
                 otherUserId={activeChat._id}
                 userName={activeChat.name}
-                onClose={() => setMessagingOpen(false)}
-                startExpanded={true}
+                messages={conversations[activeChat._id] || []}
+                onSend={(text) => sendMessageToArtist(activeChat, text)}
               />
             )}
           </div>
