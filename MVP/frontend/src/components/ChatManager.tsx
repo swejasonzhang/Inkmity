@@ -11,7 +11,6 @@ const ChatManager = ({ userId }: ChatManagerProps) => {
   );
 
   useEffect(() => {
-    // Fetch initial conversations from backend
     fetch(`http://localhost:5005/api/messages/${userId}`)
       .then((res) => res.json())
       .then((data) => {

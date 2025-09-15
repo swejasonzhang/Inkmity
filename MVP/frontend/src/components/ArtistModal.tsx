@@ -1,5 +1,4 @@
-import { Fragment } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import React, { useState } from "react";
 
 interface Artist {
   _id: string;
@@ -10,126 +9,121 @@ interface Artist {
   priceRange?: { min: number; max: number };
   rating?: number;
   images?: string[];
-  socials?: { instagram?: string; website?: string };
+  socialLinks?: { platform: string; url: string }[];
 }
 
-interface ArtistModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface Props {
   artist: Artist;
+  onClose: () => void;
   onMessage: (artist: Artist) => void;
 }
 
-function ArtistModal({ isOpen, onClose, artist, onMessage }: ArtistModalProps) {
-  if (!artist) return null;
+const ArtistModal: React.FC<Props> = ({ artist, onClose, onMessage }) => {
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState<string>("");
+
+  const handleSubmitReview = async () => {
+    console.log({
+      artistId: artist._id,
+      rating: reviewRating,
+      comment: reviewComment,
+    });
+    setReviewRating(5);
+    setReviewComment("");
+    alert("Review submitted!");
+  };
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        {/* Overlay */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+      <div className="bg-gray-800 p-6 rounded-lg max-w-2xl w-full relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-white"
         >
-          <div className="fixed inset-0 bg-black/40" />
-        </Transition.Child>
+          ✕
+        </button>
 
-        {/* Modal Panel */}
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-200"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-150"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
+        <h2 className="text-2xl font-bold text-white mb-4">{artist.name}</h2>
+        <p className="text-gray-300 mb-2">{artist.bio}</p>
+        <p className="text-gray-400 text-sm mb-2">
+          Location: {artist.location}
+        </p>
+        <p className="text-gray-400 text-sm mb-2">
+          Price Range:{" "}
+          {artist.priceRange
+            ? `$${artist.priceRange.min} - $${artist.priceRange.max}`
+            : "N/A"}
+        </p>
+        <p className="text-gray-400 text-sm mb-2">
+          Style: {artist.style?.join(", ")}
+        </p>
+        <p className="text-gray-400 text-sm mb-4">
+          Rating: {artist.rating?.toFixed(1) || "0"}
+        </p>
+
+        {artist.images && artist.images.length > 0 && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {artist.images.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                alt={`${artist.name} work ${i + 1}`}
+                className="rounded-lg object-cover w-full h-40"
+              />
+            ))}
+          </div>
+        )}
+
+        {artist.socialLinks && (
+          <div className="flex gap-4 mb-4">
+            {artist.socialLinks.map((link, i) => (
+              <a
+                key={i}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-400 hover:underline"
+              >
+                {link.platform}
+              </a>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => onMessage(artist)} // matches Dashboard
+          className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 mb-4"
+        >
+          Message {artist.name}
+        </button>
+
+        {/* Review form */}
+        <div className="flex flex-col gap-2">
+          <label className="text-gray-300">Rating (1-5)</label>
+          <input
+            type="number"
+            min={1}
+            max={5}
+            value={reviewRating}
+            onChange={(e) => setReviewRating(Number(e.target.value))}
+            className="px-2 py-1 rounded bg-gray-700 text-white"
+          />
+          <label className="text-gray-300">Comment</label>
+          <textarea
+            value={reviewComment}
+            onChange={(e) => setReviewComment(e.target.value)}
+            className="px-2 py-1 rounded bg-gray-700 text-white"
+          />
+          <button
+            onClick={handleSubmitReview}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500"
           >
-            <Dialog.Panel className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6 text-gray-900">
-              <Dialog.Title className="text-xl font-bold mb-2">
-                {artist.name}
-              </Dialog.Title>
-              {artist.bio && <p className="text-gray-700 mb-4">{artist.bio}</p>}
-              <p className="text-sm text-gray-600">
-                Location: {artist.location || "N/A"}
-              </p>
-              <p className="text-sm text-gray-600">
-                Style: {artist.style?.join(", ") || "N/A"}
-              </p>
-              <p className="text-sm text-gray-600">
-                Price Range:{" "}
-                {artist.priceRange
-                  ? `$${artist.priceRange.min} - $${artist.priceRange.max}`
-                  : "N/A"}
-              </p>
-              <p className="text-sm text-gray-600">
-                Rating: {artist.rating?.toFixed(1) || "0"}
-              </p>
-
-              {/* Images */}
-              {artist.images && artist.images.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {artist.images.map((img, idx) => (
-                    <img
-                      key={idx}
-                      src={img}
-                      alt={`${artist.name}-${idx}`}
-                      className="w-full h-40 object-cover rounded-lg"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Socials */}
-              <div className="mt-4 flex gap-3">
-                {artist.socials?.instagram && (
-                  <a
-                    href={artist.socials.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600"
-                  >
-                    Instagram
-                  </a>
-                )}
-                {artist.socials?.website && (
-                  <a
-                    href={artist.socials.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Website
-                  </a>
-                )}
-              </div>
-
-              {/* Buttons */}
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={() => onMessage(artist)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  Message
-                </button>
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
-                >
-                  Close
-                </button>
-              </div>
-            </Dialog.Panel>
-          </Transition.Child>
+            Submit Review
+          </button>
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+    </div>
   );
-}
+};
 
 export default ArtistModal;
