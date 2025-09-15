@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare } from "lucide-react";
 import Header from "../components/Header";
@@ -33,11 +33,15 @@ const ITEMS_PER_PAGE = 20;
 
 function Dashboard() {
   const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
   const navigate = useNavigate();
 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [messagingOpen, setMessagingOpen] = useState(true);
   const [activeChat, setActiveChat] = useState<Artist | null>(null);
+  const [conversations, setConversations] = useState<Record<string, Message[]>>(
+    {}
+  );
 
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
@@ -46,16 +50,25 @@ function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
 
-  const [conversations, setConversations] = useState<Record<string, Message[]>>(
-    {}
-  );
-
   useEffect(() => {
     if (!isSignedIn) navigate("/login");
   }, [isSignedIn, navigate]);
 
+  const authFetch = async (url: string, options: RequestInit = {}) => {
+    const token = await getToken();
+    return fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
+      },
+    });
+  };
+
+  // Fetch all artists
   useEffect(() => {
-    fetch("http://localhost:5005/api/artists")
+    authFetch("http://localhost:5005/api/artists")
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -63,6 +76,29 @@ function Dashboard() {
       .then((data) => setArtists(data))
       .catch((err) => console.error("Error fetching artists:", err));
   }, []);
+
+  // Fetch all conversations for user
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchConversations = async () => {
+      try {
+        const res = await authFetch(
+          `http://localhost:5005/api/messages/user/${user.id}`
+        );
+        if (res.ok) {
+          const data: Record<string, Message[]> = await res.json();
+          setConversations(data);
+        } else {
+          console.error("Failed to fetch conversations:", res.status);
+        }
+      } catch (err) {
+        console.error("Error fetching conversations:", err);
+      }
+    };
+
+    fetchConversations();
+  }, [user]);
 
   if (!user) return <div className="text-white p-4">Loading...</div>;
 
@@ -95,7 +131,7 @@ function Dashboard() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const sendMessageToArtist = (artist: Artist, text: string) => {
+  const sendMessageToArtist = async (artist: Artist, text: string) => {
     const message: Message = {
       senderId: user?.id || "anonymous",
       receiverId: artist._id,
@@ -108,24 +144,33 @@ function Dashboard() {
       [artist._id]: [...(prev[artist._id] || []), message],
     }));
 
-    fetch("http://localhost:5005/api/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        senderId: user?.id,
-        receiverId: artist._id,
-        text,
-      }),
-    }).catch((err) => console.error("Error sending message:", err));
+    try {
+      await authFetch("http://localhost:5005/api/messages", {
+        method: "POST",
+        body: JSON.stringify({
+          senderId: user?.id,
+          receiverId: artist._id,
+          text,
+        }),
+      });
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
   };
 
-  const handleOpenChat = (artist: Artist) => {
+  const handleOpenChat = async (artist: Artist) => {
     setActiveChat(artist);
-    setMessagingOpen(true);
 
-    // Auto-send message if this conversation is new
-    if (!conversations[artist._id] || conversations[artist._id].length === 0) {
-      sendMessageToArtist(artist, "I'm interested in your work");
+    try {
+      const res = await authFetch(
+        `http://localhost:5005/api/messages/${user?.id}/${artist._id}`
+      );
+      if (res.ok) {
+        const data: Message[] = await res.json();
+        setConversations((prev) => ({ ...prev, [artist._id]: data }));
+      }
+    } catch (err) {
+      console.error("Error fetching messages:", err);
     }
 
     setSelectedArtist(null);
@@ -144,7 +189,6 @@ function Dashboard() {
 
             {/* Filters */}
             <div className="flex flex-wrap gap-4 justify-center">
-              {/* Price Filter */}
               <Select
                 value={priceFilter}
                 onValueChange={(value) => {
@@ -165,7 +209,6 @@ function Dashboard() {
                 </SelectContent>
               </Select>
 
-              {/* Location Filter */}
               <Select
                 value={locationFilter}
                 onValueChange={(value) => {
@@ -189,7 +232,6 @@ function Dashboard() {
                 </SelectContent>
               </Select>
 
-              {/* Style Filter */}
               <Select
                 value={styleFilter}
                 onValueChange={(value) => {
@@ -275,7 +317,7 @@ function Dashboard() {
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Modal for artist details */}
       {selectedArtist && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg max-w-2xl w-full relative">
