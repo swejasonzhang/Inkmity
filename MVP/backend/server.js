@@ -12,6 +12,8 @@ import reviewRoutes from "./routes/reviews.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import messageRoutes from "./routes/messages.js";
 
+import { requireAuth } from "./middleware/auth.js";
+
 dotenv.config();
 
 const app = express();
@@ -22,7 +24,7 @@ connectDB();
 app.use(
   cors({
     origin: "http://localhost:5173",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
@@ -31,8 +33,9 @@ app.use(express.json());
 
 app.use("/api/artists", artistRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/messages", messageRoutes);
+
+app.use("/api/dashboard", requireAuth(), dashboardRoutes);
+app.use("/api/messages", requireAuth(), messageRoutes);
 
 const io = new Server(server, {
   cors: {
