@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Bot } from "lucide-react";
 import Header from "../components/Header";
 import ChatWindow, { Message } from "../components/ChatWindow";
 import ArtistCard from "../components/ArtistCard";
@@ -36,7 +36,8 @@ const Dashboard: React.FC = () => {
   const [styleFilter, setStyleFilter] = useState<string>("all");
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const [showBot, setShowBot] = useState(false);
+  const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
     if (!isSignedIn) navigate("/login");
@@ -74,8 +75,6 @@ const Dashboard: React.FC = () => {
         if (res.ok) {
           const data: Record<string, Message[]> = await res.json();
           setConversations(data);
-        } else {
-          console.error("Failed to fetch conversations:", res.status);
         }
       } catch (err) {
         console.error("Error fetching conversations:", err);
@@ -108,6 +107,8 @@ const Dashboard: React.FC = () => {
       return inPriceRange && inLocation && inStyle;
     })
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+  const totalPages = Math.ceil(filteredArtists.length / ITEMS_PER_PAGE);
 
   const paginatedArtists = filteredArtists.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -159,26 +160,61 @@ const Dashboard: React.FC = () => {
     setSelectedArtist(null);
   };
 
+  const Pagination = () =>
+    totalPages > 1 ? (
+      <div className="flex justify-center items-center gap-4 mt-4">
+        <button
+          className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((p) => p - 1)}
+        >
+          Previous
+        </button>
+        <span className="text-gray-300">
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage((p) => p + 1)}
+        >
+          Next
+        </button>
+      </div>
+    ) : null;
+
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
       <Header />
 
-      <main className="flex-1 flex justify-center items-start p-6 overflow-y-auto">
-        <div className="w-full max-w-4xl flex flex-col gap-6">
-          {/* Artist Filters */}
-          <ArtistFilter
-            priceFilter={priceFilter}
-            setPriceFilter={setPriceFilter}
-            locationFilter={locationFilter}
-            setLocationFilter={setLocationFilter}
-            styleFilter={styleFilter}
-            setStyleFilter={setStyleFilter}
-            artists={artists}
-            setCurrentPage={setCurrentPage}
-          />
+      <main className="flex-1 flex gap-6 px-6">
+        {/* Left Sidebar */}
+        <div className="flex-1 flex flex-col items-center">
+          <button
+            onClick={() => setShowBot(true)}
+            className="bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition"
+          >
+            <Bot size={24} />
+          </button>
+        </div>
 
-          {/* Artist Cards */}
-          <div className="flex flex-col gap-4">
+        {/* Middle Content (larger) */}
+        <div className="flex-2 flex flex-col gap-6 max-w-4xl">
+          <div className="bg-gray-800 p-4 rounded-lg shadow sticky top-0 z-10">
+            <ArtistFilter
+              priceFilter={priceFilter}
+              setPriceFilter={setPriceFilter}
+              locationFilter={locationFilter}
+              setLocationFilter={setLocationFilter}
+              styleFilter={styleFilter}
+              setStyleFilter={setStyleFilter}
+              artists={artists}
+              setCurrentPage={setCurrentPage}
+            />
+            <Pagination />
+          </div>
+
+          <div className="flex flex-col gap-4 items-center">
             {paginatedArtists.map((artist) => (
               <ArtistCard
                 key={artist._id}
@@ -192,10 +228,48 @@ const Dashboard: React.FC = () => {
               </p>
             )}
           </div>
+
+          <Pagination />
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="flex-1 flex flex-col gap-4">
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex-1 flex flex-col">
+            <div className="flex justify-between items-center pb-2 border-b border-gray-700">
+              <button
+                onClick={() => setMessagingOpen(!messagingOpen)}
+                className="flex items-center gap-2 text-white font-bold"
+              >
+                <MessageSquare size={20} />
+                <span>Messaging</span>
+              </button>
+            </div>
+
+            <div className="flex-1 mt-2 overflow-y-auto">
+              {!messagingOpen && (
+                <p className="text-gray-400 text-sm p-2">
+                  Click to view messages
+                </p>
+              )}
+              {messagingOpen && !activeChat && (
+                <p className="text-gray-400 p-2">
+                  Select an artist to start chatting.
+                </p>
+              )}
+              {messagingOpen && activeChat && (
+                <ChatWindow
+                  userId={user?.id || "user1"}
+                  otherUserId={activeChat._id}
+                  userName={activeChat.name}
+                  messages={conversations[activeChat._id] || []}
+                  onSend={(text) => sendMessageToArtist(activeChat, text)}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </main>
 
-      {/* Artist Modal */}
       {selectedArtist && (
         <ArtistModal
           artist={selectedArtist}
@@ -203,55 +277,6 @@ const Dashboard: React.FC = () => {
           onMessage={() => handleOpenChat(selectedArtist)}
         />
       )}
-
-      {/* Messaging */}
-      <div className="fixed bottom-0 right-0 w-80 z-40">
-        <div
-          className={`bg-gray-800 rounded-t-lg shadow-lg flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
-            messagingOpen ? "h-[calc(100vh-120px)]" : "h-[50px]"
-          }`}
-        >
-          <div className="flex justify-between items-center px-4 py-3 border-b border-gray-700 h-14">
-            <button
-              onClick={() => setMessagingOpen(!messagingOpen)}
-              className="flex items-center gap-2 text-white font-bold"
-            >
-              <MessageSquare size={20} />
-              <span>Messaging</span>
-            </button>
-            {messagingOpen && (
-              <button
-                onClick={() => setMessagingOpen(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {!messagingOpen && (
-              <p className="text-gray-400 text-sm p-2">
-                Click to view messages
-              </p>
-            )}
-            {messagingOpen && !activeChat && (
-              <p className="text-gray-400 p-2">
-                Select an artist to start chatting.
-              </p>
-            )}
-            {messagingOpen && activeChat && (
-              <ChatWindow
-                userId={user?.id || "user1"}
-                otherUserId={activeChat._id}
-                userName={activeChat.name}
-                messages={conversations[activeChat._id] || []}
-                onSend={(text) => sendMessageToArtist(activeChat, text)}
-              />
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

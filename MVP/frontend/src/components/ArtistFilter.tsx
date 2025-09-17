@@ -29,7 +29,7 @@ const ArtistFilter: React.FC<Props> = ({
   setCurrentPage,
 }) => {
   return (
-    <div className="flex flex-wrap gap-4 justify-center">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
       <Select
         value={priceFilter}
         onValueChange={(value) => {
@@ -37,7 +37,7 @@ const ArtistFilter: React.FC<Props> = ({
           setCurrentPage(1);
         }}
       >
-        <SelectTrigger className="bg-gray-700 border border-gray-600 text-white text-sm px-4 py-2 rounded-lg">
+        <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm px-4 py-2 rounded-lg">
           <SelectValue placeholder="All Prices" />
         </SelectTrigger>
         <SelectContent className="bg-gray-800 text-white">
@@ -57,7 +57,7 @@ const ArtistFilter: React.FC<Props> = ({
           setCurrentPage(1);
         }}
       >
-        <SelectTrigger className="w-40 bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
+        <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
           <SelectValue placeholder="All Locations" />
         </SelectTrigger>
         <SelectContent className="bg-gray-700 text-white">
@@ -80,7 +80,7 @@ const ArtistFilter: React.FC<Props> = ({
           setCurrentPage(1);
         }}
       >
-        <SelectTrigger className="w-40 bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
+        <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
           <SelectValue placeholder="All Styles" />
         </SelectTrigger>
         <SelectContent className="bg-gray-700 text-white">
