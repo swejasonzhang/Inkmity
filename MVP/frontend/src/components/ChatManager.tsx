@@ -1,32 +1,48 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Message } from "./ChatWindow";
 
-interface ChatManagerProps {
+export interface ChatInfo {
   userId: string;
+  userName: string;
+  messages: Message[];
 }
 
-const ChatManager = ({ userId }: ChatManagerProps) => {
-  const [conversations, setConversations] = useState<Record<string, Message[]>>(
-    {}
-  );
+const useChatManager = () => {
+  const [activeChats, setActiveChats] = useState<ChatInfo[]>([]);
 
-  useEffect(() => {
-    fetch(`http://localhost:5005/api/messages/${userId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const grouped = data.reduce((acc: any, msg: Message) => {
-          const partnerId =
-            msg.senderId === userId ? msg.receiverId : msg.senderId;
-          if (!acc[partnerId]) acc[partnerId] = [];
-          acc[partnerId].push(msg);
-          return acc;
-        }, {});
-        setConversations(grouped);
-      })
-      .catch((err) => console.error("Error fetching messages:", err));
-  }, [userId]);
+  const openChat = (userId: string, userName: string) => {
+    setActiveChats((prev) => {
+      const filtered = prev.filter((chat) => chat.userId !== userId);
+      return [{ userId, userName, messages: [] }, ...filtered];
+    });
+  };
 
-  return { conversations, setConversations };
+  const closeChat = (userId: string) => {
+    setActiveChats((prev) => prev.filter((chat) => chat.userId !== userId));
+  };
+
+  const sendMessage = (userId: string, text: string) => {
+    setActiveChats((prev) =>
+      prev.map((chat) =>
+        chat.userId === userId
+          ? {
+              ...chat,
+              messages: [
+                ...chat.messages,
+                { senderId: "me", receiverId: userId, text, timestamp: Date.now() },
+              ],
+            }
+          : chat
+      )
+    );
+    setActiveChats((prev) => {
+      const chatToMove = prev.find((chat) => chat.userId === userId);
+      const others = prev.filter((chat) => chat.userId !== userId);
+      return chatToMove ? [chatToMove, ...others] : prev;
+    });
+  };
+
+  return { activeChats, openChat, closeChat, sendMessage };
 };
 
-export default ChatManager;
+export default useChatManager;
