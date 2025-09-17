@@ -24,7 +24,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
       <h2 className="text-xl font-semibold text-white">{artist.name}</h2>
       <p className="text-gray-300">{artist.bio}</p>
       <p className="text-gray-400 text-sm">Location: {artist.location}</p>
-      <p className="text-gray-400 text-sm">
+      <p className="text-white text-sm">
         Price Range:{" "}
         {artist.priceRange
           ? `$${artist.priceRange.min} - $${artist.priceRange.max}`

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 interface Artist {
   _id: string;
@@ -19,19 +19,19 @@ interface Props {
 }
 
 const ArtistModal: React.FC<Props> = ({ artist, onClose, onMessage }) => {
-  const [reviewRating, setReviewRating] = useState<number>(5);
-  const [reviewComment, setReviewComment] = useState<string>("");
+  // const [reviewRating, setReviewRating] = useState<number>(5);
+  // const [reviewComment, setReviewComment] = useState<string>("");
 
-  const handleSubmitReview = async () => {
-    console.log({
-      artistId: artist._id,
-      rating: reviewRating,
-      comment: reviewComment,
-    });
-    setReviewRating(5);
-    setReviewComment("");
-    alert("Review submitted!");
-  };
+  // const handleSubmitReview = async () => {
+  //   console.log({
+  //     artistId: artist._id,
+  //     rating: reviewRating,
+  //     comment: reviewComment,
+  //   });
+  //   setReviewRating(5);
+  //   setReviewComment("");
+  //   alert("Review submitted!");
+  // };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
@@ -91,14 +91,13 @@ const ArtistModal: React.FC<Props> = ({ artist, onClose, onMessage }) => {
         )}
 
         <button
-          onClick={() => onMessage(artist)} // matches Dashboard
+          onClick={() => onMessage(artist)}
           className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 mb-4"
         >
           Message {artist.name}
         </button>
 
-        {/* Review form */}
-        <div className="flex flex-col gap-2">
+        {/* <div className="flex flex-col gap-2">
           <label className="text-gray-300">Rating (1-5)</label>
           <input
             type="number"
@@ -120,7 +119,7 @@ const ArtistModal: React.FC<Props> = ({ artist, onClose, onMessage }) => {
           >
             Submit Review
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

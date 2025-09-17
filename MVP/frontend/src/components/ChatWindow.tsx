@@ -31,12 +31,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-2 border-b font-bold text-white text-lg">
+    <div className="flex flex-col h-full w-[800px] max-w-full bg-black border border-gray-700 rounded-2xl shadow-lg">
+      <div className="p-4 border-b border-gray-700 font-bold text-white text-xl bg-gray-900 rounded-t-lg">
         {userName}
       </div>
 
-      <div className="flex-1 p-2 overflow-y-auto space-y-2">
+      <div className="flex-1 p-3 overflow-y-auto space-y-2">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -45,7 +45,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             }`}
           >
             <span
-              className={`inline-block px-3 py-1 rounded-lg max-w-[75%] break-words ${
+              className={`inline-block px-3 py-1 rounded-lg max-w-[85%] break-words ${
                 msg.senderId === userId
                   ? "bg-gray-600 text-white font-medium italic"
                   : "bg-gray-800 text-gray-300 font-normal"
@@ -57,18 +57,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         ))}
       </div>
 
-      <div className="p-2 border-t flex gap-2">
+      <div className="p-3 border-t border-gray-700 flex gap-2 bg-gray-900 rounded-b-lg">
         <input
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="flex-1 border border-gray-600 rounded px-2 py-1 bg-gray-900 text-white placeholder-gray-500"
+          className="flex-1 border border-gray-600 rounded px-3 py-2 bg-black text-white placeholder-gray-500 focus:outline-none"
           placeholder="Type a message..."
         />
         <button
           onClick={handleSend}
-          className="bg-white text-black px-4 py-1 rounded hover:bg-gray-500 transition"
+          className="bg-white text-black px-5 py-2 rounded hover:bg-gray-500 transition"
         >
           Send
         </button>
