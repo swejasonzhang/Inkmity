@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
   const [styleFilter, setStyleFilter] = useState<string>("all");
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showBot, setShowBot] = useState(false);
+  // const [showBot, setShowBot] = useState(false);
   const [filterOpacity, setFilterOpacity] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
@@ -84,7 +84,6 @@ const Dashboard: React.FC = () => {
     fetchConversations();
   }, [user]);
 
-  // Scroll effect for fading filter
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop =
@@ -208,7 +207,7 @@ const Dashboard: React.FC = () => {
         {/* Left Sidebar */}
         <div className="flex-[1] flex flex-col">
           <button
-            onClick={() => setShowBot(true)}
+            // onClick={() => setShowBot(true)}
             className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50"
           >
             <Bot size={24} />
@@ -255,7 +254,9 @@ const Dashboard: React.FC = () => {
             )}
           </div>
 
-          <Pagination />
+          <div className="pb-6">
+            <Pagination />
+          </div>
         </div>
 
         {/* Right Sidebar */}

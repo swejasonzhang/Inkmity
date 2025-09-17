@@ -4,4 +4,5 @@
 
 body {
   font-family: 'Rock Salt', cursive;
+  overscroll-behavior: none;
 }
