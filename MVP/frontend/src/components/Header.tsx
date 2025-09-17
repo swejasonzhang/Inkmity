@@ -175,7 +175,6 @@ const Header: React.FC = () => {
               <span className="font-bold ml-1">
                 {user.firstName || user.emailAddresses[0].emailAddress}
               </span>
-              !
             </div>
 
             <div

@@ -203,7 +203,7 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-900 flex flex-col">
       <Header />
 
-      <main className="flex-1 flex gap-6 pt-4">
+      <main className="flex-1 flex gap-6 pt-4 px-4">
         {/* Left Sidebar */}
         <div className="flex-[1] flex flex-col">
           <button
@@ -261,7 +261,11 @@ const Dashboard: React.FC = () => {
 
         {/* Right Sidebar */}
         <div className="flex-[1] flex flex-col gap-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex-1 flex flex-col">
+          <div
+            className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sticky top-4"
+            style={{ height: "95vh" }} // fixed height relative to viewport
+          >
+            {/* Header */}
             <div className="flex justify-between items-center pb-2 border-b border-gray-700">
               <button
                 onClick={() => setMessagingOpen(!messagingOpen)}
@@ -272,6 +276,7 @@ const Dashboard: React.FC = () => {
               </button>
             </div>
 
+            {/* Messages / ChatWindow */}
             <div className="flex-1 mt-2 overflow-y-auto">
               {!messagingOpen && (
                 <p className="text-gray-400 text-sm p-2">
