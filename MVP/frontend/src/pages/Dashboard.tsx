@@ -37,6 +37,7 @@ const Dashboard: React.FC = () => {
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showBot, setShowBot] = useState(false);
+  const [filterOpacity, setFilterOpacity] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
@@ -82,6 +83,22 @@ const Dashboard: React.FC = () => {
     };
     fetchConversations();
   }, [user]);
+
+  // Scroll effect for fading filter
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop =
+        document.getElementById("middle-content")?.scrollTop || 0;
+      const fadeDistance = 100; // Pixels to fully fade
+      const newOpacity = Math.max(1 - scrollTop / fadeDistance, 0);
+      setFilterOpacity(newOpacity);
+    };
+
+    const middle = document.getElementById("middle-content");
+    middle?.addEventListener("scroll", handleScroll);
+
+    return () => middle?.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if (!user) return <div className="text-white p-4">Loading...</div>;
 
@@ -187,20 +204,27 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-900 flex flex-col">
       <Header />
 
-      <main className="flex-1 flex gap-6 px-6">
+      <main className="flex-1 flex gap-6 pt-4">
         {/* Left Sidebar */}
-        <div className="flex-1 flex flex-col items-center">
+        <div className="flex-[1] flex flex-col">
           <button
             onClick={() => setShowBot(true)}
-            className="bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition"
+            className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50"
           >
             <Bot size={24} />
           </button>
         </div>
 
         {/* Middle Content (larger) */}
-        <div className="flex-2 flex flex-col gap-6 max-w-4xl">
-          <div className="bg-gray-800 p-4 rounded-lg shadow sticky top-0 z-10">
+        <div
+          id="middle-content"
+          className="flex-[3] flex flex-col gap-6 max-w-full w-full overflow-y-auto"
+        >
+          {/* Filter */}
+          <div
+            className="bg-gray-800 p-4 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300"
+            style={{ opacity: filterOpacity }}
+          >
             <ArtistFilter
               priceFilter={priceFilter}
               setPriceFilter={setPriceFilter}
@@ -214,13 +238,15 @@ const Dashboard: React.FC = () => {
             <Pagination />
           </div>
 
-          <div className="flex flex-col gap-4 items-center">
+          {/* Artist Cards */}
+          <div className="flex flex-col gap-4 w-full">
             {paginatedArtists.map((artist) => (
-              <ArtistCard
-                key={artist._id}
-                artist={artist}
-                onClick={() => setSelectedArtist(artist)}
-              />
+              <div key={artist._id} className="w-full">
+                <ArtistCard
+                  artist={artist}
+                  onClick={() => setSelectedArtist(artist)}
+                />
+              </div>
             ))}
             {paginatedArtists.length === 0 && (
               <p className="text-gray-400 text-center">
@@ -233,7 +259,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-[1] flex flex-col gap-4">
           <div className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex-1 flex flex-col">
             <div className="flex justify-between items-center pb-2 border-b border-gray-700">
               <button
