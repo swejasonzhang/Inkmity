@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 export interface Message {
   senderId: string;
@@ -7,90 +7,90 @@ export interface Message {
   timestamp: number;
 }
 
-export interface ChatWindowProps {
-  userId: string;
-  otherUserId: string;
-  userName: string;
+export interface Conversation {
+  artistId: string;
+  artistName: string;
   messages: Message[];
-  onSend: (text: string) => void;
+}
+
+interface ChatWindowProps {
+  userId: string;
+  conversations: Conversation[];
+  onSelectArtist: (artistId: string) => void;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
   userId,
-  userName,
-  messages = [],
-  onSend,
+  conversations,
+  onSelectArtist,
 }) => {
-  const [newMessage, setNewMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [sortedConversations, setSortedConversations] = useState<
+    Conversation[]
+  >([]);
 
-  const handleSend = () => {
-    if (newMessage.trim()) {
-      onSend(newMessage);
-      setNewMessage("");
-    }
-  };
+  useEffect(() => {
+    // Sort conversations by latest message timestamp (descending)
+    const sorted = [...conversations].sort((a, b) => {
+      const aLast = a.messages[a.messages.length - 1]?.timestamp || 0;
+      const bLast = b.messages[b.messages.length - 1]?.timestamp || 0;
+      return bLast - aLast;
+    });
+    setSortedConversations(sorted);
+  }, [conversations]);
 
-  // Scroll to bottom whenever messages change
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = 0;
     }
-  }, [messages]);
+  }, [sortedConversations]);
 
   return (
     <div
-      className="flex flex-col w-[330px] max-w-full bg-black border border-gray-700 rounded-2xl shadow-lg"
-      style={{ height: "80vh", position: "sticky", top: 0 }}
+      ref={scrollRef}
+      className="flex flex-col gap-2 max-h-[95vh] overflow-y-auto bg-gray-900 border border-gray-700 rounded-2xl p-2"
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700 font-bold text-white text-xl bg-gray-900 rounded-t-2xl">
-        {userName}
-      </div>
+      {sortedConversations.length === 0 && (
+        <p className="text-gray-400 text-sm text-center">
+          No conversations yet.
+        </p>
+      )}
 
-      {/* Messages */}
-      <div
-        ref={scrollRef}
-        className="flex-1 p-3 overflow-y-auto flex flex-col gap-2"
-        style={{ minHeight: 0 }}
-      >
-        {messages.map((msg, index) => (
+      {sortedConversations.map((conv) => {
+        const lastMessage = conv.messages[conv.messages.length - 1];
+        return (
           <div
-            key={index}
-            className={`flex ${
-              msg.senderId === userId ? "justify-end" : "justify-start"
-            }`}
+            key={conv.artistId}
+            className="flex flex-col bg-gray-800 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition"
+            onClick={() => onSelectArtist && onSelectArtist(conv.artistId)}
           >
-            <span
-              className={`inline-block px-3 py-1 rounded-lg max-w-[100%] break-words ${
-                msg.senderId === userId
-                  ? "bg-gray-600 text-white font-medium italic"
-                  : "bg-gray-800 text-gray-300 font-normal"
-              }`}
-            >
-              {msg.text}
-            </span>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-white font-semibold">
+                {conv.artistName}
+              </span>
+              {lastMessage && (
+                <span className="text-gray-400 text-xs">
+                  {new Date(lastMessage.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              )}
+            </div>
+            {lastMessage && (
+              <p
+                className={`text-sm ${
+                  lastMessage.senderId === userId
+                    ? "text-gray-300 italic"
+                    : "text-white"
+                } truncate`}
+              >
+                {lastMessage.text}
+              </p>
+            )}
           </div>
-        ))}
-      </div>
-
-      {/* Input */}
-      <div className="p-3 border-t border-gray-700 flex gap-2 bg-gray-900 rounded-b-2xl">
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="flex-1 border border-gray-600 rounded px-3 py-2 bg-black text-white placeholder-gray-500 focus:outline-none"
-          placeholder="Type a message..."
-        />
-        <button
-          onClick={handleSend}
-          className="bg-white text-black px-5 py-2 rounded hover:bg-gray-500 transition"
-        >
-          Send
-        </button>
-      </div>
+        );
+      })}
     </div>
   );
 };
