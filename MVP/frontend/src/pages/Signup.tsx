@@ -1,13 +1,15 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignUp, useUser } from "@clerk/clerk-react";
+import { useSignUp, useUser, useClerk } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
+
+const LOGOUT_TIMESTAMP_KEY = "lastLogout";
 
 const SignUp: React.FC = () => {
   const [form, setForm] = useState({ email: "", password: "", code: "" });
@@ -19,33 +21,38 @@ const SignUp: React.FC = () => {
 
   const navigate = useNavigate();
   const { signUp, setActive } = useSignUp();
+  const { signOut } = useClerk();
   const { isSignedIn } = useUser();
-
-  useEffect(() => {
-    if (isSignedIn) {
-      toast.info("You are already signed in! Redirecting to dashboard...", {
-        position: "top-center",
-        theme: "dark",
-      });
-
-      const timer = setTimeout(() => {
-        navigate("/dashboard");
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isSignedIn, navigate]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const lastLogout = localStorage.getItem(LOGOUT_TIMESTAMP_KEY);
+    if (isSignedIn && !awaitingCode) {
+      const within3Days =
+        lastLogout &&
+        (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <= 3;
+
+      if (!within3Days) {
+        toast.info("You are already signed in! Redirecting to dashboard...", {
+          position: "top-center",
+          theme: "dark",
+        });
+        const timer = setTimeout(() => navigate("/dashboard"), 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isSignedIn, navigate, awaitingCode]);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
     if (!validateEmail(form.email)) {
       toast.error("Please enter a valid email", {
         position: "top-center",
@@ -53,6 +60,7 @@ const SignUp: React.FC = () => {
       });
       return;
     }
+
     if (!validatePassword(form.password)) {
       toast.error("Password must be 6+ chars, uppercase & number", {
         position: "top-center",
@@ -64,6 +72,8 @@ const SignUp: React.FC = () => {
     setLoading(true);
 
     try {
+      await signOut();
+
       if (!signUp) {
         toast.error("Signup unavailable", {
           position: "top-center",
@@ -101,9 +111,7 @@ const SignUp: React.FC = () => {
 
         if (result.status === "complete") {
           await setActive({ session: result.createdSessionId });
-
           localStorage.setItem("trustedDevice", form.email);
-
           toast.success("Signup successful! Redirecting...", {
             position: "top-center",
             theme: "dark",
@@ -121,7 +129,10 @@ const SignUp: React.FC = () => {
         err.errors?.[0]?.message ||
           err.message ||
           "An unexpected error occurred",
-        { position: "top-center", theme: "dark" }
+        {
+          position: "top-center",
+          theme: "dark",
+        }
       );
     } finally {
       setLoading(false);
@@ -209,7 +220,7 @@ const SignUp: React.FC = () => {
                 <FormInput
                   type="text"
                   name="code"
-                  value={form.code || ""}
+                  value={form.code}
                   placeholder="Enter verification code"
                   onChange={handleChange}
                   isValid={!!form.code}

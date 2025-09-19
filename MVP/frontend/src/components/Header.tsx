@@ -14,7 +14,7 @@ const Header: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState(
     localStorage.getItem("siteLanguage") || "en"
   );
-  const { signOut, setActive } = useClerk();
+  const { signOut } = useClerk();
   const { user } = useUser();
   let timeout: NodeJS.Timeout;
 
@@ -28,13 +28,23 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    localStorage.setItem("lastLogout", Date.now().toString());
-    await setActive({ session: null });
-    await signOut();
+    try {
+      localStorage.setItem("lastLogout", Date.now().toString());
+      localStorage.removeItem("trustedDevice");
+
+      await signOut({ redirectUrl: "/" });
+
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   };
 
   useEffect(() => {
-    // Add Google Translate script
     const script = document.createElement("script");
     script.src =
       "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
@@ -51,7 +61,6 @@ const Header: React.FC = () => {
         "google_translate_element"
       );
 
-      // Apply stored language on init
       const lang = localStorage.getItem("siteLanguage");
       if (lang && lang !== "en") {
         const select = document.querySelector<HTMLSelectElement>(
@@ -115,7 +124,6 @@ const Header: React.FC = () => {
 
       {user && (
         <div className="absolute right-6 top-1/2 transform -translate-y-1/2 flex items-center gap-4">
-          {/* Language Dropdown */}
           <div className="relative">
             <div
               onClick={() => setShowLangDropdown(!showLangDropdown)}
@@ -163,7 +171,7 @@ const Header: React.FC = () => {
               ))}
             </div>
           </div>
-          
+
           <div
             className="relative"
             onMouseEnter={handleMouseEnter}

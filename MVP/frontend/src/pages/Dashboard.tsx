@@ -152,7 +152,6 @@ const Dashboard: React.FC = () => {
       </div>
     ) : null;
 
-  // Convert conversations object to array
   const conversationList: Conversation[] = Object.entries(conversations).map(
     ([artistId, msgs]) => {
       const artist = artists.find((a) => a._id === artistId);

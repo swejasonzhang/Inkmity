@@ -1,13 +1,15 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignIn, useUser, useClerk } from "@clerk/clerk-react";
+import { useSignIn, useUser } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { validateEmail } from "@/utils/validation";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
+
+const LOGOUT_TIMESTAMP_KEY = "lastLogout";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -18,11 +20,8 @@ const Login: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(true);
 
   const navigate = useNavigate();
-  const { signIn } = useSignIn();
+  const { signIn, setActive } = useSignIn();
   const { isSignedIn } = useUser();
-  const { setActive } = useClerk();
-
-  const LOGOUT_TIMESTAMP_KEY = "lastLogout";
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);
@@ -36,24 +35,30 @@ const Login: React.FC = () => {
         lastLogout &&
         (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <= 3;
 
-      toast.info(
-        within3Days
-          ? "Login successful! Redirecting..."
-          : "You are already signed in! Redirecting to dashboard...",
-        {
+      if (!within3Days) {
+        toast.info("You are already signed in! Redirecting to dashboard...", {
           position: "top-center",
           theme: "dark",
-        }
-      );
-
-      setTimeout(() => navigate("/dashboard"), 2000);
+        });
+        const timer = setTimeout(() => navigate("/dashboard"), 2000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [isSignedIn, navigate, awaitingCode]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
     if (!validateEmail(email)) {
-      toast.error("Please enter a valid email address", {
+      toast.error("Please enter a valid email", {
+        position: "top-center",
+        theme: "dark",
+      });
+      return;
+    }
+
+    if (!signIn) {
+      toast.error("Sign in unavailable. Please try again later.", {
         position: "top-center",
         theme: "dark",
       });
@@ -63,8 +68,6 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      if (!signIn) return;
-
       if (!awaitingCode) {
         const attempt = await signIn.create({
           identifier: email,
@@ -73,55 +76,47 @@ const Login: React.FC = () => {
         setSignInAttempt(attempt);
         setAwaitingCode(true);
 
-        toast.info("We’ve sent you a login code. Check your email.", {
+        toast.info("Verification code sent to your email.", {
           position: "top-center",
           theme: "dark",
         });
       } else {
         if (!signInAttempt) return;
 
-        const verified = await signInAttempt.attemptFirstFactor({
-          strategy: "email_code",
-          code,
-        });
+        const trimmedCode = code.trim();
 
-        if (verified.status === "complete") {
-          await setActive({ session: verified.createdSessionId });
-          localStorage.setItem("trustedDevice", email);
-
-          const lastLogout = localStorage.getItem(LOGOUT_TIMESTAMP_KEY);
-          const within3Days =
-            lastLogout &&
-            (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <=
-              3;
-
-          toast.info(
-            within3Days
-              ? "Login successful! Redirecting..."
-              : "You are already signed in! Redirecting to dashboard...",
-            {
-              position: "top-center",
-              theme: "dark",
-            }
-          );
-
-          setTimeout(() => navigate("/dashboard"), 2000);
-        } else {
-          toast.error("Invalid or expired code. Please try again.", {
+        if (!trimmedCode) {
+          toast.error("Enter the verification code", {
             position: "top-center",
             theme: "dark",
           });
+          return;
         }
-      }
+
+        const verified = await signInAttempt.attemptFirstFactor({
+          strategy: "email_code",
+          code: trimmedCode,
+        });
+
+        if (verified.status === "complete") {
+          if (!isSignedIn) {
+            await setActive({ session: verified.createdSessionId });
+          }
+          localStorage.setItem("trustedDevice", email);
+
+          toast.success("Login successful! Redirecting...", {
+            position: "top-center",
+            theme: "dark",
+          });
+
+          navigate("/dashboard");
+        }      }
     } catch (err: any) {
       toast.error(
         err.errors?.[0]?.message ||
           err.message ||
           "An unexpected error occurred",
-        {
-          position: "top-center",
-          theme: "dark",
-        }
+        { position: "top-center", theme: "dark" }
       );
     } finally {
       setLoading(false);
