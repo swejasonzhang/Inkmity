@@ -4,6 +4,15 @@ const userSchema = new mongoose.Schema({
   clerkId: { type: String, required: true, unique: true },
   username: { type: String },
   email: { type: String },
+  role: { type: String, enum: ["client", "artist"], default: "client" },
+  location: { type: String },
+  style: [{ type: String }],
+  priceRange: {
+    min: { type: Number },
+    max: { type: Number },
+  },
+  rating: { type: Number, default: 0 },
+  reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
   createdAt: { type: Date, default: Date.now },
 });
 
