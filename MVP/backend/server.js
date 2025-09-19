@@ -7,7 +7,7 @@ import { Server } from "socket.io";
 import { connectDB } from "./config/db.js";
 import { initSocket } from "./services/socketService.js";
 
-import artistRoutes from "./routes/artists.js";
+import userRoutes from "./routes/users.js"; 
 import reviewRoutes from "./routes/reviews.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import messageRoutes from "./routes/messages.js";
@@ -28,12 +28,10 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(express.json());
 
-app.use("/api/artists", artistRoutes);
+app.use("/api/users", userRoutes); 
 app.use("/api/reviews", reviewRoutes);
-
 app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
 
@@ -44,7 +42,6 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-
 initSocket(io);
 
 const PORT = process.env.PORT || 5005;

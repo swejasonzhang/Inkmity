@@ -1,6 +1,5 @@
 import express from "express";
-import { requireAuth } from "../middleware/auth.js";
-import { getArtists, getArtistById } from "../controllers/artistController.js";
+import { getArtists, getArtistById } from "../controllers/userController.js";
 
 const router = express.Router();
 
