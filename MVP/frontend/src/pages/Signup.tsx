@@ -9,10 +9,23 @@ import { validateEmail, validatePassword } from "@/utils/validation";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
 
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select"; // <-- Shadcn Select import
+
 const LOGOUT_TIMESTAMP_KEY = "lastLogout";
 
 const SignUp: React.FC = () => {
-  const [form, setForm] = useState({ email: "", password: "", code: "" });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    code: "",
+    role: "client",
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -87,7 +100,9 @@ const SignUp: React.FC = () => {
         const attempt = await signUp.create({
           emailAddress: form.email,
           password: form.password,
-        });
+          publicMetadata: { role: form.role },
+        } as any); // Type cast to avoid TS error
+
         await attempt.prepareEmailAddressVerification();
         setSignUpAttempt(attempt);
         setAwaitingCode(true);
@@ -227,6 +242,27 @@ const SignUp: React.FC = () => {
                   message="Check your email for the code"
                 />
               )}
+
+              <div className="flex justify-center w-full mt-2">
+                <div className="flex items-center gap-3">
+                  <label className="text-gray-200 whitespace-nowrap">
+                    I am a:
+                  </label>
+                  <Select
+                    value={form.role}
+                    onValueChange={(value) => setForm({ ...form, role: value })}
+                  >
+                    <SelectTrigger className="bg-white/20 text-white rounded-md px-3 py-2 text-sm w-40">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black text-white">
+                      {" "}
+                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="artist">Artist</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
               <Button
                 type="submit"
