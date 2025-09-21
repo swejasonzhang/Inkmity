@@ -7,6 +7,9 @@ import ChatWindow, { Message, Conversation } from "../components/ChatWindow";
 import ArtistCard from "../components/ArtistCard";
 import ArtistModal from "../components/ArtistModal";
 import ArtistFilter from "../components/ArtistFilter";
+import CircularProgress from "@mui/material/CircularProgress";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Artist {
   _id: string;
@@ -26,10 +29,14 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [loadingArtists, setLoadingArtists] = useState(true);
+
   const [messagingOpen, setMessagingOpen] = useState(true);
   const [conversations, setConversations] = useState<Record<string, Message[]>>(
     {}
   );
+  const [loadingConversations, setLoadingConversations] = useState(true);
+
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [styleFilter, setStyleFilter] = useState<string>("all");
@@ -55,17 +62,35 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  // Fetch artists
   useEffect(() => {
+    setLoadingArtists(true);
     authFetch("http://localhost:5005/api/artists")
-      .then((res) => res.json())
-      .then((data) => setArtists(data))
-      .catch((err) => console.error("Error fetching artists:", err));
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch artists");
+        return res.json();
+      })
+      .then((data) => {
+        setArtists(data);
+        toast.success("Artists loaded successfully!", {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching artists:", err);
+        toast.error("Error loading artists.", {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      })
+      .finally(() => setLoadingArtists(false));
   }, []);
 
   // Fetch conversations
   useEffect(() => {
     if (!user) return;
+    setLoadingConversations(true);
+
     const fetchConversations = async () => {
       try {
         const res = await authFetch(
@@ -77,6 +102,8 @@ const Dashboard: React.FC = () => {
         }
       } catch (err) {
         console.error("Error fetching conversations:", err);
+      } finally {
+        setLoadingConversations(false);
       }
     };
     fetchConversations();
@@ -168,12 +195,14 @@ const Dashboard: React.FC = () => {
       <Header />
 
       <main className="flex-1 flex gap-6 pt-4 px-4">
+        {/* Left side bot button */}
         <div className="flex-[1] flex flex-col">
           <button className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50">
             <Bot size={24} />
           </button>
         </div>
 
+        {/* Middle content */}
         <div
           id="middle-content"
           className="flex-[3] flex flex-col gap-6 max-w-full w-full overflow-y-auto"
@@ -196,15 +225,20 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-4 w-full">
-            {paginatedArtists.map((artist) => (
-              <div key={artist._id} className="w-full">
-                <ArtistCard
-                  artist={artist}
-                  onClick={() => setSelectedArtist(artist)}
-                />
+            {loadingArtists ? (
+              <div className="flex justify-center py-10">
+                <CircularProgress sx={{ color: "#ffffff" }} />
               </div>
-            ))}
-            {paginatedArtists.length === 0 && (
+            ) : paginatedArtists.length > 0 ? (
+              paginatedArtists.map((artist) => (
+                <div key={artist._id} className="w-full">
+                  <ArtistCard
+                    artist={artist}
+                    onClick={() => setSelectedArtist(artist)}
+                  />
+                </div>
+              ))
+            ) : (
               <p className="text-gray-400 text-center">
                 No artists match your filters.
               </p>
@@ -216,6 +250,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Right side messaging */}
         <div className="flex-[1] flex flex-col gap-4">
           <div
             className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sticky top-4"
@@ -231,16 +266,21 @@ const Dashboard: React.FC = () => {
               </button>
             </div>
 
-            {messagingOpen && (
-              <ChatWindow
-                userId={user.id}
-                conversations={conversationList}
-                onSelectArtist={(artistId) => {
-                  const artist = artists.find((a) => a._id === artistId);
-                  if (artist) setSelectedArtist(artist);
-                }}
-              />
-            )}
+            {messagingOpen &&
+              (loadingConversations ? (
+                <div className="flex justify-center py-10">
+                  <CircularProgress sx={{ color: "#ffffff" }} />
+                </div>
+              ) : (
+                <ChatWindow
+                  userId={user.id}
+                  conversations={conversationList}
+                  onSelectArtist={(artistId) => {
+                    const artist = artists.find((a) => a._id === artistId);
+                    if (artist) setSelectedArtist(artist);
+                  }}
+                />
+              ))}
           </div>
         </div>
       </main>
