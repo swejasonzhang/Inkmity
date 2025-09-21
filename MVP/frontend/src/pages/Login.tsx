@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LOGOUT_TIMESTAMP_KEY = "lastLogout";
+const LOGOUT_TYPE_KEY = "logoutType";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -30,13 +31,15 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     const lastLogout = localStorage.getItem(LOGOUT_TIMESTAMP_KEY);
+    const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
+
     if (isSignedIn && !awaitingCode) {
       const within3Days =
         lastLogout &&
         (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <= 3;
 
-      if (!within3Days) {
-        toast.info("You are already signed in! Redirecting to dashboard...", {
+      if (within3Days && logoutType !== "manual") {
+        toast.info("Welcome back! Redirecting to dashboard...", {
           position: "top-center",
           theme: "dark",
         });
@@ -104,13 +107,18 @@ const Login: React.FC = () => {
           }
           localStorage.setItem("trustedDevice", email);
 
-          toast.success("Login successful! Redirecting...", {
+          localStorage.removeItem(LOGOUT_TYPE_KEY);
+
+          toast.success("Login successful! Redirecting to Dashboard...", {
             position: "top-center",
             theme: "dark",
           });
 
-          navigate("/dashboard");
-        }      }
+          setLoading(false);
+
+          setTimeout(() => navigate("/dashboard"), 2000);
+        }
+      }
     } catch (err: any) {
       toast.error(
         err.errors?.[0]?.message ||
