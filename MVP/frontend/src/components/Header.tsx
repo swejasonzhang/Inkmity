@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
-
-declare global {
-  interface Window {
-    google: any;
-    googleTranslateElementInit: () => void;
-  }
-}
 
 const Header: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -15,73 +8,15 @@ const Header: React.FC = () => {
     localStorage.getItem("siteLanguage") || "en"
   );
   const { signOut } = useClerk();
-  const { user } = useUser();
-  let timeout: NodeJS.Timeout;
-
-  const handleMouseEnter = () => {
-    clearTimeout(timeout);
-    setShowDropdown(true);
-  };
-
-  const handleMouseLeave = () => {
-    timeout = setTimeout(() => setShowDropdown(false), 500);
-  };
+  const { user, isSignedIn } = useUser();
 
   const handleLogout = async () => {
-    try {
-      localStorage.setItem("lastLogout", Date.now().toString());
-      localStorage.removeItem("trustedDevice");
-
-      await signOut({ redirectUrl: "/" });
-
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c
-          .replace(/^ +/, "")
-          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
+    localStorage.setItem("lastLogout", Date.now().toString());
+    localStorage.removeItem("trustedDevice");
+    await signOut({ redirectUrl: "/" });
   };
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src =
-      "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-    script.async = true;
-    document.body.appendChild(script);
-
-    window.googleTranslateElementInit = () => {
-      new window.google.translate.TranslateElement(
-        {
-          pageLanguage: "en",
-          includedLanguages: "en,es,fr,de,zh-CN,ja",
-          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-        },
-        "google_translate_element"
-      );
-
-      const lang = localStorage.getItem("siteLanguage");
-      if (lang && lang !== "en") {
-        const select = document.querySelector<HTMLSelectElement>(
-          "#google_translate_element select"
-        );
-        if (select) {
-          select.value = lang;
-          select.dispatchEvent(new Event("change"));
-        }
-      }
-    };
-  }, []);
-
   const handleLanguageClick = (lang: string) => {
-    const select = document.querySelector<HTMLSelectElement>(
-      "#google_translate_element select"
-    );
-    if (select) {
-      select.value = lang;
-      select.dispatchEvent(new Event("change"));
-    }
     setCurrentLanguage(lang);
     localStorage.setItem("siteLanguage", lang);
     setShowLangDropdown(false);
@@ -122,7 +57,7 @@ const Header: React.FC = () => {
         </nav>
       </div>
 
-      {user && (
+      {isSignedIn && user && (
         <div className="absolute right-6 top-1/2 transform -translate-y-1/2 flex items-center gap-4">
           <div className="relative">
             <div
@@ -174,8 +109,8 @@ const Header: React.FC = () => {
 
           <div
             className="relative"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onMouseEnter={() => setShowDropdown(true)}
+            onMouseLeave={() => setShowDropdown(false)}
           >
             <div className={dropdownBtnClasses + " bg-gray-50 text-gray-700"}>
               <span className="mr-2 font-semibold text-gray-600">✦</span>
@@ -202,8 +137,6 @@ const Header: React.FC = () => {
           </div>
         </div>
       )}
-
-      <div id="google_translate_element" className="hidden"></div>
     </header>
   );
 };

@@ -86,7 +86,6 @@ const Dashboard: React.FC = () => {
       .finally(() => setLoadingArtists(false));
   }, []);
 
-  // Fetch conversations
   useEffect(() => {
     if (!user) return;
     setLoadingConversations(true);
@@ -109,7 +108,6 @@ const Dashboard: React.FC = () => {
     fetchConversations();
   }, [user]);
 
-  // Filter fade effect
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop =
@@ -195,14 +193,12 @@ const Dashboard: React.FC = () => {
       <Header />
 
       <main className="flex-1 flex gap-6 pt-4 px-4">
-        {/* Left side bot button */}
         <div className="flex-[1] flex flex-col">
           <button className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50">
             <Bot size={24} />
           </button>
         </div>
 
-        {/* Middle content */}
         <div
           id="middle-content"
           className="flex-[3] flex flex-col gap-6 max-w-full w-full overflow-y-auto"
@@ -250,7 +246,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right side messaging */}
         <div className="flex-[1] flex flex-col gap-4">
           <div
             className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sticky top-4"
