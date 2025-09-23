@@ -8,16 +8,16 @@ import "react-toastify/dist/ReactToastify.css";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion, AnimatePresence } from "framer-motion";
-
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@/components/ui/select"; // <-- Shadcn Select import
+} from "@/components/ui/select";
 
-const LOGOUT_TIMESTAMP_KEY = "lastLogout";
+const LOGOUT_TYPE_KEY = "logoutType";
+const LOGIN_TIMESTAMP_KEY = "lastLogin";
 
 const SignUp: React.FC = () => {
   const [form, setForm] = useState({
@@ -43,13 +43,15 @@ const SignUp: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const lastLogout = localStorage.getItem(LOGOUT_TIMESTAMP_KEY);
+    const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
+    const lastLogin = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
+
     if (isSignedIn && !awaitingCode) {
       const within3Days =
-        lastLogout &&
-        (Date.now() - parseInt(lastLogout, 10)) / (1000 * 60 * 60 * 24) <= 3;
+        lastLogin &&
+        Date.now() - parseInt(lastLogin, 10) <= 3 * 24 * 60 * 60 * 1000;
 
-      if (!within3Days) {
+      if (within3Days && logoutType !== "manual") {
         toast.info("You are already signed in! Redirecting to dashboard...", {
           position: "top-center",
           theme: "dark",
@@ -101,7 +103,7 @@ const SignUp: React.FC = () => {
           emailAddress: form.email,
           password: form.password,
           publicMetadata: { role: form.role },
-        } as any); // Type cast to avoid TS error
+        } as any);
 
         await attempt.prepareEmailAddressVerification();
         setSignUpAttempt(attempt);
@@ -127,6 +129,8 @@ const SignUp: React.FC = () => {
         if (result.status === "complete") {
           await setActive({ session: result.createdSessionId });
           localStorage.setItem("trustedDevice", form.email);
+          localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
+          localStorage.removeItem(LOGOUT_TYPE_KEY);
           toast.success("Signup successful! Redirecting...", {
             position: "top-center",
             theme: "dark",
@@ -256,7 +260,6 @@ const SignUp: React.FC = () => {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent className="bg-black text-white">
-                      {" "}
                       <SelectItem value="client">Client</SelectItem>
                       <SelectItem value="artist">Artist</SelectItem>
                     </SelectContent>

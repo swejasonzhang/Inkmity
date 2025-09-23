@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import Artist from "../models/Artist.js";
+import { v4 as uuidv4 } from "uuid";
+import User from "../models/User.js";
 
 dotenv.config({ path: "../.env" });
 
-// Expanded list of locations
 const locations = [
   "New York",
   "Los Angeles",
@@ -28,7 +28,6 @@ const locations = [
   "Houston",
 ];
 
-// Expanded list of tattoo styles
 const styles = [
   "Traditional",
   "Realism",
@@ -52,25 +51,26 @@ const styles = [
   "New School",
 ];
 
-// Helpers
 const randomFromArray = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randomInt = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
-const seedArtists = async () => {
+const seedUsers = async () => {
   try {
-    console.log("process.env.MONGO_URI", process.env.MONGO_URI);
     await mongoose.connect(process.env.MONGO_URI);
 
-    // Clear old artists
-    await Artist.deleteMany();
+    await User.deleteMany({ role: { $in: ["artist", "client"] } });
 
-    const artists = Array.from({ length: 1000 }).map((_, i) => {
+    const artists = Array.from({ length: 50 }).map((_, i) => {
       const minPrice = randomInt(100, 5000);
       const maxPrice = randomInt(minPrice + 100, 10000);
 
       return {
+        clerkId: uuidv4(),
         name: `Artist ${i + 1}`,
+        email: `artist${i + 1}@example.com`,
+        password: "hashedPasswordHere",
+        role: "artist",
         bio: `I am Artist ${i + 1}, specializing in ${randomFromArray(
           styles
         )} tattoos.`,
@@ -87,13 +87,25 @@ const seedArtists = async () => {
       };
     });
 
-    await Artist.insertMany(artists);
-    console.log("✅ Seeded 1000 artists successfully");
+    const clients = Array.from({ length: 10 }).map((_, i) => ({
+      clerkId: uuidv4(),
+      name: `Client ${i + 1}`,
+      email: `client${i + 1}@example.com`,
+      password: "hashedPasswordHere",
+      role: "client",
+      bio: `Hi, I’m Client ${
+        i + 1
+      }, looking for a tattoo artist in ${randomFromArray(locations)}.`,
+      location: randomFromArray(locations),
+    }));
+
+    await User.insertMany([...artists, ...clients]);
+    console.log("✅ Seeded 50 artists and 10 clients successfully");
     process.exit();
   } catch (error) {
-    console.error("❌ Error seeding artists:", error);
+    console.error("❌ Error seeding users:", error);
     process.exit(1);
   }
 };
 
-seedArtists();
+seedUsers();
