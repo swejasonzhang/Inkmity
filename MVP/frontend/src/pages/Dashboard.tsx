@@ -30,13 +30,11 @@ const Dashboard: React.FC = () => {
 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loadingArtists, setLoadingArtists] = useState(true);
-
   const [messagingOpen, setMessagingOpen] = useState(true);
   const [conversations, setConversations] = useState<Record<string, Message[]>>(
     {}
   );
   const [loadingConversations, setLoadingConversations] = useState(true);
-
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [styleFilter, setStyleFilter] = useState<string>("all");
@@ -64,7 +62,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     setLoadingArtists(true);
-    authFetch("http://localhost:5005/api/artists")
+    authFetch("http://localhost:5005/api/users?role=artist")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch artists");
         return res.json();
@@ -89,7 +87,6 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     setLoadingConversations(true);
-
     const fetchConversations = async () => {
       try {
         const res = await authFetch(
@@ -113,13 +110,10 @@ const Dashboard: React.FC = () => {
       const scrollTop =
         document.getElementById("middle-content")?.scrollTop || 0;
       const fadeDistance = 100;
-      const newOpacity = Math.max(1 - scrollTop / fadeDistance, 0);
-      setFilterOpacity(newOpacity);
+      setFilterOpacity(Math.max(1 - scrollTop / fadeDistance, 0));
     };
-
     const middle = document.getElementById("middle-content");
     middle?.addEventListener("scroll", handleScroll);
-
     return () => middle?.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -127,23 +121,20 @@ const Dashboard: React.FC = () => {
 
   const filteredArtists = artists
     .filter((artist) => {
-      const inPriceRange = (() => {
-        if (!artist.priceRange) return false;
-        const min = artist.priceRange.min;
-        const max = artist.priceRange.max;
-
-        if (priceFilter === "all") return true;
-        if (priceFilter === "5000+") return max >= 5000;
-
-        const [filterMin, filterMax] = priceFilter.split("-").map(Number);
-        return max >= filterMin && min <= filterMax;
-      })();
-
+      const inPriceRange = !artist.priceRange
+        ? true
+        : priceFilter === "all"
+        ? true
+        : priceFilter === "5000+"
+        ? artist.priceRange.max >= 5000
+        : (() => {
+            const [min, max] = priceFilter.split("-").map(Number);
+            return artist.priceRange.max >= min && artist.priceRange.min <= max;
+          })();
       const inLocation =
         locationFilter === "all" || artist.location === locationFilter;
       const inStyle =
         styleFilter === "all" || artist.style?.includes(styleFilter);
-
       return inPriceRange && inLocation && inStyle;
     })
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -191,14 +182,12 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
       <Header />
-
       <main className="flex-1 flex gap-6 pt-4 px-4">
         <div className="flex-[1] flex flex-col">
           <button className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50">
             <Bot size={24} />
           </button>
         </div>
-
         <div
           id="middle-content"
           className="flex-[3] flex flex-col gap-6 max-w-full w-full overflow-y-auto"
@@ -219,7 +208,6 @@ const Dashboard: React.FC = () => {
             />
             <Pagination />
           </div>
-
           <div className="flex flex-col gap-4 w-full">
             {loadingArtists ? (
               <div className="flex justify-center py-10">
@@ -240,12 +228,10 @@ const Dashboard: React.FC = () => {
               </p>
             )}
           </div>
-
           <div className="pb-6">
             <Pagination />
           </div>
         </div>
-
         <div className="flex-[1] flex flex-col gap-4">
           <div
             className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sticky top-4"
@@ -256,11 +242,9 @@ const Dashboard: React.FC = () => {
                 onClick={() => setMessagingOpen(!messagingOpen)}
                 className="flex items-center gap-2 text-white font-bold"
               >
-                <MessageSquare size={20} />
-                <span>Messaging</span>
+                <MessageSquare size={20} /> <span>Messaging</span>
               </button>
             </div>
-
             {messagingOpen &&
               (loadingConversations ? (
                 <div className="flex justify-center py-10">
@@ -279,7 +263,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </main>
-
       {selectedArtist && (
         <ArtistModal
           artist={selectedArtist}

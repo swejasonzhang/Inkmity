@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["client", "artist"], default: "client" },
   location: { type: String },
   style: [{ type: String }],
+  bio: { type: String },
   priceRange: {
     min: { type: Number },
     max: { type: Number },
