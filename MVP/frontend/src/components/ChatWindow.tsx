@@ -45,51 +45,55 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [sortedConversations]);
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex flex-col gap-2 max-h-[95vh] overflow-y-auto bg-gray-900 border border-gray-700 rounded-2xl p-2"
-    >
-      {sortedConversations.length === 0 && (
-        <p className="text-gray-400 text-sm text-center">
-          No conversations yet.
-        </p>
-      )}
-
-      {sortedConversations.map((conv) => {
-        const lastMessage = conv.messages[conv.messages.length - 1];
-        return (
-          <div
-            key={conv.artistId}
-            className="flex flex-col bg-gray-800 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition"
-            onClick={() => onSelectArtist && onSelectArtist(conv.artistId)}
-          >
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-white font-semibold">
-                {conv.artistName}
-              </span>
-              {lastMessage && (
-                <span className="text-gray-400 text-xs">
-                  {new Date(lastMessage.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              )}
-            </div>
-            {lastMessage && (
-              <p
-                className={`text-sm ${
-                  lastMessage.senderId === userId
-                    ? "text-gray-300 italic"
-                    : "text-white"
-                } truncate`}
-              >
-                {lastMessage.text}
-              </p>
-            )}
+    <div className="flex justify-center items-center w-full h-full">
+      <div
+        ref={scrollRef}
+        className="flex flex-col gap-2 max-h-[95vh] w-full max-w-md overflow-y-auto bg-gray-900 border border-gray-700 rounded-2xl p-2"
+      >
+        {sortedConversations.length === 0 ? (
+          <div className="flex flex-1 justify-center items-center h-full">
+            <p className="text-gray-400 text-sm text-center">
+              Click an artist to start a conversation.
+            </p>
           </div>
-        );
-      })}
+        ) : (
+          sortedConversations.map((conv) => {
+            const lastMessage = conv.messages[conv.messages.length - 1];
+            return (
+              <div
+                key={conv.artistId}
+                className="flex flex-col bg-gray-800 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition"
+                onClick={() => onSelectArtist && onSelectArtist(conv.artistId)}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-white font-semibold">
+                    {conv.artistName}
+                  </span>
+                  {lastMessage && (
+                    <span className="text-gray-400 text-xs">
+                      {new Date(lastMessage.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </div>
+                {lastMessage && (
+                  <p
+                    className={`text-sm ${
+                      lastMessage.senderId === userId
+                        ? "text-gray-300 italic"
+                        : "text-white"
+                    } truncate`}
+                  >
+                    {lastMessage.text}
+                  </p>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };

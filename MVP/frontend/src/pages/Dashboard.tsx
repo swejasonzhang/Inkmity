@@ -247,7 +247,7 @@ const Dashboard: React.FC = () => {
         <div className="flex-[1] flex flex-col gap-4">
           <div
             className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sticky top-4"
-            style={{ height: "95vh" }}
+            style={{ height: "calc(97vh - 6rem)" }}
           >
             <div className="flex justify-between items-center pb-2 border-b border-gray-700">
               <button
@@ -279,7 +279,18 @@ const Dashboard: React.FC = () => {
         <ArtistModal
           artist={selectedArtist}
           onClose={() => setSelectedArtist(null)}
-          onMessage={() => setSelectedArtist(null)}
+          onMessage={(artist) => {
+            setConversations((prev) => {
+              if (prev[artist._id]) return prev;
+              return {
+                ...prev,
+                [artist._id]: [],
+              };
+            });
+
+            setSelectedArtist(null);
+            setMessagingOpen(true);
+          }}
         />
       )}
     </div>
