@@ -10,6 +10,7 @@ import ArtistFilter from "../components/ArtistFilter";
 import CircularProgress from "@mui/material/CircularProgress";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { motion } from "framer-motion";
 
 interface Artist {
   _id: string;
@@ -214,13 +215,24 @@ const Dashboard: React.FC = () => {
                 <CircularProgress sx={{ color: "#ffffff" }} />
               </div>
             ) : paginatedArtists.length > 0 ? (
-              paginatedArtists.map((artist) => (
-                <div key={artist._id} className="w-full">
+              paginatedArtists.map((artist, index) => (
+                <motion.div
+                  key={artist._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{
+                    duration: 0.6,
+                    delay: index * 0.1,
+                    ease: "easeOut",
+                  }}
+                  className="w-full"
+                >
                   <ArtistCard
                     artist={artist}
                     onClick={() => setSelectedArtist(artist)}
                   />
-                </div>
+                </motion.div>
               ))
             ) : (
               <p className="text-gray-400 text-center">
