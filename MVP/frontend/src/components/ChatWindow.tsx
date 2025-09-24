@@ -30,7 +30,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   >([]);
 
   useEffect(() => {
-    // Sort conversations by latest message timestamp (descending)
     const sorted = [...conversations].sort((a, b) => {
       const aLast = a.messages[a.messages.length - 1]?.timestamp || 0;
       const bLast = b.messages[b.messages.length - 1]?.timestamp || 0;
