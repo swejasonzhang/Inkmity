@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-  clerkId: { type: String, required: true, unique: true },
-  username: { type: String },
+  clerkId: { type: String, required: true, unique: true }, 
+  username: { type: String, required: true, unique: true },
   email: { type: String },
   role: { type: String, enum: ["client", "artist"], default: "client" },
   location: { type: String },

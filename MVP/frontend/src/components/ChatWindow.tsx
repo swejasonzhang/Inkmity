@@ -9,20 +9,20 @@ export interface Message {
 
 export interface Conversation {
   artistId: string;
-  artistName: string;
+  artistUsername: string;
   messages: Message[];
 }
 
 interface ChatWindowProps {
-  userId: string;
   conversations: Conversation[];
   onSelectArtist: (artistId: string) => void;
+  onRemoveConversation: (artistId: string) => void;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
-  userId,
   conversations,
   onSelectArtist,
+  onRemoveConversation,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [sortedConversations, setSortedConversations] = useState<
@@ -39,59 +39,43 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversations]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [sortedConversations]);
 
   return (
-    <div className="flex justify-center items-center w-full h-full">
+    <div className="flex w-full h-full p-2">
       <div
         ref={scrollRef}
-        className="flex flex-col gap-2 max-h-[95vh] w-full max-w-md overflow-y-auto bg-gray-900 border border-gray-700 rounded-2xl p-2"
+        className={`flex flex-col gap-2 max-h-[95vh] w-full max-w-md overflow-y-auto bg-gray-900 border border-gray-700 rounded-2xl p-2 ${
+          sortedConversations.length === 0
+            ? "justify-center items-center"
+            : "justify-start items-stretch"
+        }`}
       >
         {sortedConversations.length === 0 ? (
-          <div className="flex flex-1 justify-center items-center h-full">
-            <p className="text-gray-400 text-sm text-center">
-              Click an artist to start a conversation.
-            </p>
-          </div>
+          <p className="text-gray-400 text-sm text-center">
+            Click an artist to start a conversation.
+          </p>
         ) : (
-          sortedConversations.map((conv) => {
-            const lastMessage = conv.messages[conv.messages.length - 1];
-            return (
-              <div
-                key={conv.artistId}
-                className="flex flex-col bg-gray-800 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition"
-                onClick={() => onSelectArtist && onSelectArtist(conv.artistId)}
+          sortedConversations.map((conv) => (
+            <div
+              key={conv.artistId}
+              className="flex justify-between items-center bg-gray-800 p-2 rounded-lg cursor-pointer hover:bg-gray-700 transition"
+            >
+              <span
+                className="text-white font-semibold"
+                onClick={() => onSelectArtist(conv.artistId)}
               >
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-white font-semibold">
-                    {conv.artistName}
-                  </span>
-                  {lastMessage && (
-                    <span className="text-gray-400 text-xs">
-                      {new Date(lastMessage.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  )}
-                </div>
-                {lastMessage && (
-                  <p
-                    className={`text-sm ${
-                      lastMessage.senderId === userId
-                        ? "text-gray-300 italic"
-                        : "text-white"
-                    } truncate`}
-                  >
-                    {lastMessage.text}
-                  </p>
-                )}
-              </div>
-            );
-          })
+                {conv.artistUsername}
+              </span>
+              <button
+                className="text-gray-400 hover:text-white ml-2"
+                onClick={() => onRemoveConversation(conv.artistId)}
+              >
+                ×
+              </button>
+            </div>
+          ))
         )}
       </div>
     </div>

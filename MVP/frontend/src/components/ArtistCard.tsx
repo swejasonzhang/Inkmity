@@ -2,7 +2,7 @@ import React from "react";
 
 interface Artist {
   _id: string;
-  name: string;
+  username: string; // updated
   bio?: string;
   location?: string;
   style?: string[];
@@ -23,7 +23,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
       onClick={() => onClick(artist)}
     >
       <h2 className="text-3xl font-extrabold text-white mb-3 tracking-wide">
-        {artist.name}
+        {artist.username}
       </h2>
 
       <p className="text-gray-400 italic text-base mb-3 max-w-xs">
@@ -56,7 +56,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
         <span className="text-white font-semibold">
           {artist.rating?.toFixed(1) || "0"}
         </span>
-        <span className="text-gray-400">({artist.reviewsCount || 0} reviews)</span>
+        <span className="text-gray-400">
+          ({artist.reviewsCount || 0} reviews)
+        </span>
       </div>
     </div>
   );
