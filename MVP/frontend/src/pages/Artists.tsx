@@ -17,7 +17,12 @@ const Artists: React.FC = () => {
       style: styleFilter,
       page: currentPage,
     });
-    setArtists(data);
+    const updatedData = data.map((artist: any) => ({
+      ...artist,
+      reviewsCount: artist.reviews?.length || 0,
+      username: artist.username,
+    }));
+    setArtists(updatedData);
   };
 
   useEffect(() => {
@@ -38,7 +43,7 @@ const Artists: React.FC = () => {
       />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {artists.map((artist: any) => (
-          <ArtistCard key={artist._id} {...artist} />
+          <ArtistCard key={artist._id} artist={artist} onClick={() => {}} />
         ))}
       </div>
     </div>

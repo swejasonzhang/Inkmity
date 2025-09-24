@@ -264,11 +264,17 @@ const Dashboard: React.FC = () => {
                 </div>
               ) : (
                 <ChatWindow
-                  userId={user.id}
                   conversations={conversationList}
                   onSelectArtist={(artistId) => {
                     const artist = artists.find((a) => a._id === artistId);
                     if (artist) setSelectedArtist(artist);
+                  }}
+                  onRemoveConversation={(artistId) => {
+                    setConversations((prev) => {
+                      const newConversations = { ...prev };
+                      delete newConversations[artistId];
+                      return newConversations;
+                    });
                   }}
                 />
               ))}

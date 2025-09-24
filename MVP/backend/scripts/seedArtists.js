@@ -91,9 +91,8 @@ const seedUsers = async () => {
 
       return {
         clerkId: uuidv4(),
-        name: `Artist ${i + 1}`,
+        username: `artist${i + 1}`,
         email: `artist${i + 1}@example.com`,
-        password: "hashedPasswordHere",
         role: "artist",
         bio,
         location,
@@ -106,9 +105,8 @@ const seedUsers = async () => {
 
     const clients = Array.from({ length: 10 }).map((_, i) => ({
       clerkId: uuidv4(),
-      name: `Client ${i + 1}`,
+      username: `client${i + 1}`,
       email: `client${i + 1}@example.com`,
-      password: "hashedPasswordHere",
       role: "client",
       bio: `Hi, I’m Client ${
         i + 1
