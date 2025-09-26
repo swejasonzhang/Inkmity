@@ -19,7 +19,7 @@ interface ArtistCardProps {
 const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
   return (
     <div
-      className="bg-gray-900 p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:bg-gray-800 cursor-pointer flex flex-col items-center text-center border border-gray-700"
+      className="bg-gray-900 p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:bg-gray-800 cursor-pointer flex flex-col items-center text-center border border-gray-700 "
       onClick={() => onClick(artist)}
     >
       <h2 className="text-3xl font-extrabold text-white mb-3 tracking-wide">

@@ -217,7 +217,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div
           id="middle-content"
-          className="flex-[3] flex flex-col gap-6 max-w-full w-full overflow-y-auto"
+          className="flex-[3] flex flex-col max-w-full w-full overflow-y-auto"
         >
           <div
             className="bg-gray-800 p-4 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300"
@@ -235,41 +235,46 @@ const Dashboard: React.FC = () => {
             />
             <Pagination />
           </div>
-          <div className="flex flex-col gap-4 w-full">
-            {loadingArtists || !showArtists ? (
-              <div className="flex justify-center py-10">
-                <CircularProgress sx={{ color: "#ffffff" }} />
-              </div>
-            ) : paginatedArtists.length > 0 ? (
-              paginatedArtists.map((artist, index) => (
-                <motion.div
-                  key={artist._id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{
-                    duration: 0.6,
-                    delay: index * 0.1,
-                    ease: "easeOut",
-                  }}
-                  className="w-full"
-                >
-                  <ArtistCard
-                    artist={artist}
-                    onClick={() => setSelectedArtist(artist)}
-                  />
-                </motion.div>
-              ))
-            ) : (
-              <p className="text-gray-400 text-center">
-                No artists match your filters.
-              </p>
-            )}
-          </div>
-          <div className="pb-6">
-            <Pagination />
+
+          <div className="flex flex-col justify-between flex-1">
+            <div className="flex flex-col gap-4 w-full flex-1">
+              {loadingArtists || !showArtists ? (
+                <div className="flex justify-center items-center flex-1">
+                  <CircularProgress sx={{ color: "#ffffff" }} />
+                </div>
+              ) : paginatedArtists.length > 0 ? (
+                paginatedArtists.map((artist, index) => (
+                  <motion.div
+                    key={artist._id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{
+                      duration: 0.6,
+                      delay: index * 0.1,
+                      ease: "easeOut",
+                    }}
+                    className="w-full"
+                  >
+                    <ArtistCard
+                      artist={artist}
+                      onClick={() => setSelectedArtist(artist)}
+                    />
+                  </motion.div>
+                ))
+              ) : (
+                <p className="text-gray-400 text-center flex-1 flex items-center justify-center">
+                  No artists match your filters.
+                </p>
+              )}
+            </div>
+
+            <div className="py-4">
+              <Pagination />
+            </div>
           </div>
         </div>
+
         <div className="flex-[1] flex flex-col gap-4">
           <div
             className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sticky top-4"
