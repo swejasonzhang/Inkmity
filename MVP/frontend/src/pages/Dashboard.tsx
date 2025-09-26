@@ -32,12 +32,16 @@ const Dashboard: React.FC = () => {
 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loadingArtists, setLoadingArtists] = useState(true);
+  const [showArtists, setShowArtists] = useState(false); // lazy load
   const [messagingOpen, setMessagingOpen] = useState(true);
   const [conversations, setConversations] = useState<Record<string, Message[]>>(
     {}
   );
   const [conversationList, setConversationList] = useState<Conversation[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
+  const [collapsedConversations, setCollapsedConversations] = useState<
+    Record<string, boolean>
+  >({});
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [styleFilter, setStyleFilter] = useState<string>("all");
@@ -53,7 +57,7 @@ const Dashboard: React.FC = () => {
 
   const authFetch = async (url: string, options: RequestInit = {}) => {
     const token = await getToken();
-    return fetch(url, {
+    const res = await fetch(url, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -61,15 +65,24 @@ const Dashboard: React.FC = () => {
         ...(options.headers || {}),
       },
     });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Request failed ${res.status}: ${text}`);
+    }
+    return res;
   };
 
+  // Lazy load artists
+  useEffect(() => {
+    const timer = setTimeout(() => setShowArtists(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Load artists
   useEffect(() => {
     setLoadingArtists(true);
     authFetch("http://localhost:5005/api/users?role=artist")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch artists");
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((data) => {
         setArtists(data);
         toast.success("Artists loaded successfully!", {
@@ -87,6 +100,7 @@ const Dashboard: React.FC = () => {
       .finally(() => setLoadingArtists(false));
   }, []);
 
+  // Load conversations
   useEffect(() => {
     if (!user) return;
     setLoadingConversations(true);
@@ -96,12 +110,13 @@ const Dashboard: React.FC = () => {
         const res = await authFetch(
           `http://localhost:5005/api/messages/user/${user.id}`
         );
-        if (res.ok) {
-          const data: Record<string, Message[]> = await res.json();
-          setConversations(data);
-        }
+        const data: Record<string, Message[]> = await res.json();
+        setConversations(data);
       } catch (err) {
         console.error("Error fetching conversations:", err);
+        toast.error("Failed to load conversations.", {
+          position: "bottom-right",
+        });
       } finally {
         setLoadingConversations(false);
       }
@@ -110,14 +125,13 @@ const Dashboard: React.FC = () => {
     fetchConversations();
   }, [user]);
 
-  // Build conversationList when either artists or conversations change
+  // Build conversation list
   useEffect(() => {
     if (artists.length === 0) return;
-
     const list: Conversation[] = Object.entries(conversations)
       .map(([participantId, msgs]) => {
         const artist = artists.find((a) => a._id === participantId);
-        if (!artist) return null; // filter unknown participants
+        if (!artist) return null;
         return { participantId, username: artist.username, messages: msgs };
       })
       .filter((conv): conv is Conversation => conv !== null)
@@ -126,7 +140,6 @@ const Dashboard: React.FC = () => {
         const bLast = b.messages[b.messages.length - 1]?.timestamp || 0;
         return bLast - aLast;
       });
-
     setConversationList(list);
   }, [artists, conversations]);
 
@@ -223,7 +236,7 @@ const Dashboard: React.FC = () => {
             <Pagination />
           </div>
           <div className="flex flex-col gap-4 w-full">
-            {loadingArtists ? (
+            {loadingArtists || !showArtists ? (
               <div className="flex justify-center py-10">
                 <CircularProgress sx={{ color: "#ffffff" }} />
               </div>
@@ -270,27 +283,44 @@ const Dashboard: React.FC = () => {
                 <MessageSquare size={20} /> <span>Messaging</span>
               </button>
             </div>
-            {messagingOpen &&
-              (loadingConversations ? (
-                <div className="flex justify-center py-10">
-                  <CircularProgress sx={{ color: "#ffffff" }} />
-                </div>
-              ) : (
-                <ChatWindow
-                  conversations={conversationList}
-                  onSelectArtist={(participantId) => {
-                    const artist = artists.find((a) => a._id === participantId);
-                    if (artist) setSelectedArtist(artist);
-                  }}
-                  onRemoveConversation={(participantId) => {
-                    setConversations((prev) => {
-                      const newConversations = { ...prev };
-                      delete newConversations[participantId];
-                      return newConversations;
-                    });
-                  }}
-                />
-              ))}
+            {messagingOpen && (
+              <ChatWindow
+                conversations={conversationList}
+                collapsedMap={collapsedConversations}
+                currentUserId={user.id}
+                loading={loadingConversations}
+                emptyText="No conversations currently. Please click an artist to start one!"
+                onToggleCollapse={(participantId: string) => {
+                  setCollapsedConversations((prev) => ({
+                    ...prev,
+                    [participantId]: !prev[participantId],
+                  }));
+                }}
+                onRemoveConversation={async (participantId: string) => {
+                  setConversations((prev) => {
+                    const newConversations = { ...prev };
+                    delete newConversations[participantId];
+                    return newConversations;
+                  });
+                  setConversationList((prev) =>
+                    prev.filter((c) => c.participantId !== participantId)
+                  );
+                  setCollapsedConversations((prev) => {
+                    const newMap = { ...prev };
+                    delete newMap[participantId];
+                    return newMap;
+                  });
+
+                  await authFetch(
+                    `http://localhost:5005/api/messages/remove/${participantId}`,
+                    { method: "DELETE" }
+                  );
+                  toast.info("Conversation removed", {
+                    position: "bottom-right",
+                  });
+                }}
+              />
+            )}
           </div>
         </div>
       </main>
@@ -303,6 +333,20 @@ const Dashboard: React.FC = () => {
               if (prev[artist._id]) return prev;
               return { ...prev, [artist._id]: [] };
             });
+            setConversationList((prev) => {
+              const exists = prev.some((c) => c.participantId === artist._id);
+              if (exists) return prev;
+              const newConv: Conversation = {
+                participantId: artist._id,
+                username: artist.username,
+                messages: [],
+              };
+              return [newConv, ...prev];
+            });
+            setCollapsedConversations((prev) => ({
+              ...prev,
+              [artist._id]: false,
+            }));
             setSelectedArtist(null);
             setMessagingOpen(true);
           }}
