@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 
 const Header: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showLangDropdown, setShowLangDropdown] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState(
-    localStorage.getItem("siteLanguage") || "en"
-  );
+
+  // 🔒 Language dropdown temporarily disabled
+  // const [showLangDropdown, setShowLangDropdown] = useState(false);
+  // const [currentLanguage, setCurrentLanguage] = useState(
+  //   localStorage.getItem("siteLanguage") || "en"
+  // );
+
   const { signOut } = useClerk();
   const { user, isSignedIn } = useUser();
 
@@ -16,19 +19,27 @@ const Header: React.FC = () => {
     await signOut({ redirectUrl: "/" });
   };
 
-  const handleLanguageClick = (lang: string) => {
-    setCurrentLanguage(lang);
-    localStorage.setItem("siteLanguage", lang);
-    setShowLangDropdown(false);
-  };
+  // const handleLanguageClick = (lang: string) => {
+  //   setCurrentLanguage(lang);
+  //   localStorage.setItem("siteLanguage", lang);
+  //   setShowLangDropdown(false);
+  // };
 
   const dropdownBtnClasses =
     "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 transition";
-  const dropdownMenuClasses =
-    "absolute left-1/2 transform -translate-x-1/2 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-300 z-50";
+
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [buttonWidth, setButtonWidth] = useState(0);
+
+  useEffect(() => {
+    if (buttonRef.current) {
+      setButtonWidth(buttonRef.current.offsetWidth);
+    }
+  }, [user?.firstName, user?.emailAddresses]);
 
   return (
     <header className="w-full bg-gray-50 shadow-lg border-b-4 border-gray-200 relative h-24 flex items-center z-50">
+      {/* Center nav + logo */}
       <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center space-x-12">
         <nav className="flex space-x-12 text-lg font-medium text-gray-700">
           <a href="/dashboard" className="hover:text-black transition">
@@ -59,6 +70,8 @@ const Header: React.FC = () => {
 
       {isSignedIn && user && (
         <div className="absolute right-6 top-1/2 transform -translate-y-1/2 flex items-center gap-4">
+          {/* 🔒 Language dropdown temporarily disabled */}
+          {/*
           <div className="relative">
             <div
               onClick={() => setShowLangDropdown(!showLangDropdown)}
@@ -77,7 +90,7 @@ const Header: React.FC = () => {
                 : "Japanese"}
             </div>
             <div
-              className={`${dropdownMenuClasses} ${
+              className={`absolute left-1/2 transform -translate-x-1/2 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-300 z-50 ${
                 showLangDropdown
                   ? "opacity-100 translate-y-0 visible"
                   : "opacity-0 -translate-y-2 invisible"
@@ -106,13 +119,18 @@ const Header: React.FC = () => {
               ))}
             </div>
           </div>
+          */}
 
+          {/* User dropdown */}
           <div
             className="relative"
             onMouseEnter={() => setShowDropdown(true)}
             onMouseLeave={() => setShowDropdown(false)}
           >
-            <div className={dropdownBtnClasses + " bg-gray-50 text-gray-700"}>
+            <div
+              ref={buttonRef}
+              className={dropdownBtnClasses + " bg-gray-50 text-gray-700"}
+            >
               <span className="mr-2 font-semibold text-gray-600">✦</span>
               Hello,{" "}
               <span className="font-bold ml-1">
@@ -121,7 +139,8 @@ const Header: React.FC = () => {
             </div>
 
             <div
-              className={`absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg transform transition-all duration-300 ${
+              style={{ width: buttonWidth }}
+              className={`absolute left-1/2 -translate-x-1/2 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg transform transition-all duration-300 ${
                 showDropdown
                   ? "opacity-100 translate-y-0 visible"
                   : "opacity-0 -translate-y-2 invisible"
@@ -129,7 +148,7 @@ const Header: React.FC = () => {
             >
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                className="w-full px-4 py-2 text-center hover:bg-gray-100 rounded-lg"
               >
                 Logout
               </button>

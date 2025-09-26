@@ -38,7 +38,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showContent, setShowContent] = useState(false);
 
-  // Lazy load content
   useEffect(() => {
     const timer = setTimeout(() => setShowContent(true), 1500);
     return () => clearTimeout(timer);
