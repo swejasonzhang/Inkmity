@@ -45,7 +45,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
       className="flex flex-col w-[300px] max-w-full bg-black border border-gray-700 rounded-2xl shadow-lg fixed bottom-4 right-4 z-50"
       style={{ marginBottom: stackIndex * 20 }}
     >
-      {/* Header */}
       <div className="p-2 border-b border-gray-700 bg-gray-900 text-white font-bold flex justify-between items-center rounded-t-2xl">
         <span className="text-sm">{userName}</span>
         {onClose && (
@@ -58,7 +57,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         )}
       </div>
 
-      {/* Messages */}
       <div
         ref={scrollRef}
         className="flex-1 p-2 overflow-y-auto flex flex-col gap-1"
@@ -84,7 +82,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         ))}
       </div>
 
-      {/* Input */}
       <div className="p-2 border-t border-gray-700 flex gap-2 bg-gray-900 rounded-b-2xl">
         <input
           type="text"

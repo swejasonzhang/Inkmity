@@ -1,4 +1,5 @@
 import Message from "../models/Message.js";
+import User from "../models/User.js";
 
 export const sendMessage = async (req, res) => {
   try {
@@ -34,7 +35,14 @@ export const getMessages = async (req, res) => {
       ],
     }).sort({ createdAt: 1 });
 
-    res.status(200).json(messages);
+    const otherUser = await User.findById(otherUserId).select("username role");
+
+    res.status(200).json({
+      participantId: otherUserId,
+      username: otherUser?.username || "Unknown",
+      role: otherUser?.role || "Unknown",
+      messages,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch messages" });
@@ -50,12 +58,35 @@ export const getAllMessagesForUser = async (req, res) => {
       $or: [{ senderId: userId }, { receiverId: userId }],
     }).sort({ createdAt: 1 });
 
-    const conversations = {};
-    messages.forEach((msg) => {
-      const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
-      if (!conversations[otherUserId]) conversations[otherUserId] = [];
-      conversations[otherUserId].push(msg);
-    });
+    const conversationsMap = {};
+    for (const msg of messages) {
+      const participantId =
+        msg.senderId.toString() === userId
+          ? msg.receiverId.toString()
+          : msg.senderId.toString();
+
+      if (!conversationsMap[participantId])
+        conversationsMap[participantId] = [];
+      conversationsMap[participantId].push(msg);
+    }
+
+    const participantIds = Object.keys(conversationsMap);
+    const users = await User.find({ _id: { $in: participantIds } }).select(
+      "username role"
+    );
+    const userMap = users.reduce((acc, u) => {
+      acc[u._id.toString()] = { username: u.username, role: u.role };
+      return acc;
+    }, {});
+
+    const conversations = Object.entries(conversationsMap).map(
+      ([participantId, msgs]) => ({
+        participantId,
+        username: userMap[participantId]?.username || "Unknown",
+        role: userMap[participantId]?.role || "Unknown",
+        messages: msgs,
+      })
+    );
 
     res.status(200).json(conversations);
   } catch (error) {

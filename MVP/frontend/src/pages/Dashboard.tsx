@@ -14,7 +14,8 @@ import { motion } from "framer-motion";
 
 interface Artist {
   _id: string;
-  name: string;
+  clerkId: string;
+  username: string;
   bio?: string;
   location?: string;
   style?: string[];
@@ -35,6 +36,7 @@ const Dashboard: React.FC = () => {
   const [conversations, setConversations] = useState<Record<string, Message[]>>(
     {}
   );
+  const [conversationList, setConversationList] = useState<Conversation[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
@@ -88,6 +90,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     setLoadingConversations(true);
+
     const fetchConversations = async () => {
       try {
         const res = await authFetch(
@@ -103,8 +106,29 @@ const Dashboard: React.FC = () => {
         setLoadingConversations(false);
       }
     };
+
     fetchConversations();
   }, [user]);
+
+  // Build conversationList when either artists or conversations change
+  useEffect(() => {
+    if (artists.length === 0) return;
+
+    const list: Conversation[] = Object.entries(conversations)
+      .map(([participantId, msgs]) => {
+        const artist = artists.find((a) => a._id === participantId);
+        if (!artist) return null; // filter unknown participants
+        return { participantId, username: artist.username, messages: msgs };
+      })
+      .filter((conv): conv is Conversation => conv !== null)
+      .sort((a, b) => {
+        const aLast = a.messages[a.messages.length - 1]?.timestamp || 0;
+        const bLast = b.messages[b.messages.length - 1]?.timestamp || 0;
+        return bLast - aLast;
+      });
+
+    setConversationList(list);
+  }, [artists, conversations]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -168,17 +192,6 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
     ) : null;
-
-  const conversationList: Conversation[] = Object.entries(conversations).map(
-    ([artistId, msgs]) => {
-      const artist = artists.find((a) => a._id === artistId);
-      return {
-        artistId,
-        artistName: artist?.name || "Unknown",
-        messages: msgs,
-      };
-    }
-  );
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
@@ -265,14 +278,14 @@ const Dashboard: React.FC = () => {
               ) : (
                 <ChatWindow
                   conversations={conversationList}
-                  onSelectArtist={(artistId) => {
-                    const artist = artists.find((a) => a._id === artistId);
+                  onSelectArtist={(participantId) => {
+                    const artist = artists.find((a) => a._id === participantId);
                     if (artist) setSelectedArtist(artist);
                   }}
-                  onRemoveConversation={(artistId) => {
+                  onRemoveConversation={(participantId) => {
                     setConversations((prev) => {
                       const newConversations = { ...prev };
-                      delete newConversations[artistId];
+                      delete newConversations[participantId];
                       return newConversations;
                     });
                   }}
@@ -288,12 +301,8 @@ const Dashboard: React.FC = () => {
           onMessage={(artist) => {
             setConversations((prev) => {
               if (prev[artist._id]) return prev;
-              return {
-                ...prev,
-                [artist._id]: [],
-              };
+              return { ...prev, [artist._id]: [] };
             });
-
             setSelectedArtist(null);
             setMessagingOpen(true);
           }}
