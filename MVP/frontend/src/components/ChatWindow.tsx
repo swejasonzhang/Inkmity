@@ -35,9 +35,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onRemoveConversation,
 }) => {
   const [messageInput, setMessageInput] = useState<Record<string, string>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showContent, setShowContent] = useState(false);
 
-  // Lazy load content with fade-in after 1.5s
+  // Lazy load content
   useEffect(() => {
     const timer = setTimeout(() => setShowContent(true), 1500);
     return () => clearTimeout(timer);
@@ -84,77 +85,102 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setMessageInput((prev) => ({ ...prev, [participantId]: "" }));
   };
 
+  const handleToggle = (participantId: string) => {
+    const isCurrentlyExpanded = expandedId === participantId;
+    setExpandedId(isCurrentlyExpanded ? null : participantId);
+    onToggleCollapse(participantId);
+
+    // Collapse all others
+    conversations.forEach((conv) => {
+      if (
+        conv.participantId !== participantId &&
+        !collapsedMap[conv.participantId]
+      ) {
+        onToggleCollapse(conv.participantId);
+      }
+    });
+  };
+
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto h-full bg-black p-2 rounded-lg">
-      {conversations.map((conv) => (
-        <motion.div
-          key={conv.participantId}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-900 rounded-xl p-3 flex flex-col shadow-md border border-gray-800"
-        >
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-semibold text-white">{conv.username}</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onToggleCollapse(conv.participantId)}
-                className="text-xs text-gray-400 hover:text-white transition"
-              >
-                {collapsedMap[conv.participantId] ? "Open" : "Close"}
-              </button>
-              <button
-                onClick={() => onRemoveConversation(conv.participantId)}
-                className="text-xs text-red-500 hover:text-red-400 transition"
-              >
-                X
-              </button>
-            </div>
-          </div>
-
-          {!collapsedMap[conv.participantId] && (
-            <>
-              <div className="flex flex-col gap-1 max-h-48 overflow-y-auto px-1 mb-2">
-                {conv.messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`${
-                      msg.senderId === currentUserId
-                        ? "self-end bg-gray-800 text-green-300 rounded-lg px-2 py-1"
-                        : "self-start bg-gray-700 text-white rounded-lg px-2 py-1"
-                    } max-w-[80%] break-words`}
-                  >
-                    {msg.text}
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex mt-2 gap-2">
-                <input
-                  type="text"
-                  value={messageInput[conv.participantId] || ""}
-                  onChange={(e) =>
-                    setMessageInput((prev) => ({
-                      ...prev,
-                      [conv.participantId]: e.target.value,
-                    }))
-                  }
-                  className="flex-1 p-2 rounded-lg bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:outline-none focus:border-white transition"
-                  placeholder="Type a message..."
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSend(conv.participantId);
-                  }}
-                />
+    <div className="flex flex-col gap-4 overflow-y-auto h-full bg-black p-2">
+      {conversations.map((conv) => {
+        const isExpanded =
+          expandedId === conv.participantId &&
+          !collapsedMap[conv.participantId];
+        return (
+          <motion.div
+            key={conv.participantId}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`bg-black rounded-lg flex flex-col transition-all duration-300 border border-gray-700 ${
+              isExpanded ? "flex-1 min-h-[200px]" : "h-12"
+            }`}
+          >
+            <div
+              className="flex justify-between items-center px-3 pt-2 cursor-pointer"
+              onClick={() => handleToggle(conv.participantId)}
+            >
+              <span className="text-white font-extrabold text-lg">
+                {conv.username}
+              </span>
+              <div className="flex gap-2">
                 <button
-                  onClick={() => handleSend(conv.participantId)}
-                  className="bg-white text-black px-4 rounded-lg hover:bg-gray-200 transition"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveConversation(conv.participantId);
+                  }}
+                  className="text-red-400 hover:text-red-600 text-sm"
                 >
-                  Send
+                  Delete
                 </button>
               </div>
-            </>
-          )}
-        </motion.div>
-      ))}
+            </div>
+
+            {isExpanded && (
+              <div className="flex flex-col flex-1 px-3 pb-3">
+                <div className="flex-1 flex flex-col gap-1 overflow-y-auto mb-2">
+                  {conv.messages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`${
+                        msg.senderId === currentUserId
+                          ? "text-right text-white"
+                          : "text-left text-gray-300"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={messageInput[conv.participantId] || ""}
+                    onChange={(e) =>
+                      setMessageInput((prev) => ({
+                        ...prev,
+                        [conv.participantId]: e.target.value,
+                      }))
+                    }
+                    className="flex-1 p-1 rounded bg-gray-800 text-white"
+                    placeholder="Type a message..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSend(conv.participantId);
+                    }}
+                  />
+                  <button
+                    onClick={() => handleSend(conv.participantId)}
+                    className="bg-gray-700 px-3 rounded text-white"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        );
+      })}
     </div>
   );
 };
