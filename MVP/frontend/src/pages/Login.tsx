@@ -2,7 +2,7 @@ import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useSignIn, useUser } from "@clerk/clerk-react";
-import FormInput from "@/components/FormInput";
+import FormInput from "@/components/dashboard/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { validateEmail } from "@/utils/validation";
