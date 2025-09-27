@@ -195,7 +195,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           aria-modal="true"
           role="dialog"
         >
-          <div className="absolute inset-0 bg-black/80" onClick={cancelDelete} />
+          <div
+            className="absolute inset-0 bg-black/80"
+            onClick={cancelDelete}
+          />
           <motion.div
             className="relative bg-gray-900 text-white rounded-xl p-6 w-11/12 max-w-md shadow-xl"
             initial={{ scale: 0.92, opacity: 0 }}
@@ -205,7 +208,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           >
             <h3 className="text-lg font-bold mb-2">Delete conversation?</h3>
             <p className="text-gray-300 mb-4">
-              This will permanently remove the conversation for you. Are you sure you want to continue?
+              This will permanently remove the conversation for you. Are you
+              sure you want to continue?
             </p>
 
             {deleteError && (
@@ -287,19 +291,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
               {isExpanded && (
                 <div className="flex flex-col flex-1 px-3 pb-3">
-                  <div className="flex-1 flex flex-col gap-1 overflow-y-auto mb-2">
-                    {conv.messages.map((msg, idx) => (
-                      <div
-                        key={idx}
-                        className={`${
-                          msg.senderId === currentUserId
-                            ? "text-right text-white"
-                            : "text-left text-gray-300"
-                        }`}
-                      >
-                        {msg.text}
-                      </div>
-                    ))}
+                  <div className="flex-1 flex flex-col gap-2 overflow-y-auto mb-2 no-scrollbar overscroll-contain">
+                    {conv.messages.map((msg, idx) => {
+                      const isMe = msg.senderId === currentUserId;
+                      return (
+                        <div
+                          key={idx}
+                          className={`w-full flex ${
+                            isMe ? "justify-end" : "justify-start"
+                          }`}
+                        >
+                          <div
+                            className={[
+                              "bg-black text-white border border-gray-600",
+                              "px-3 py-2 rounded-2xl",
+                              "max-w-[75%] w-fit",
+                              "break-words whitespace-pre-wrap",
+                              "shadow-sm",
+                            ].join(" ")}
+                          >
+                            {msg.text}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div className="flex rounded-xl overflow-hidden">
