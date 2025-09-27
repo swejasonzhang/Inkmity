@@ -2,10 +2,11 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import User from "../models/User.js";
+import Message from "../models/Message.js";
 
 dotenv.config({ path: "../.env" });
 
-const COUNT = 10;
+const COUNT = 5;
 
 const locations = [
   "New York",
@@ -42,11 +43,16 @@ const priceRange = () => {
 
 (async () => {
   try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI not set in .env");
+    }
+
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ Connected to MongoDB");
 
-    await User.deleteMany({ role: "artist" });
-    console.log("🗑️  Removed existing artists");
+    const userDel = await User.deleteMany({});
+    const msgDel = await Message.deleteMany({});
+    console.log(`🗑️  Removed users: ${userDel.deletedCount}, messages: ${msgDel.deletedCount}`);
 
     const artists = Array.from({ length: COUNT }).map((_, i) => ({
       clerkId: uuidv4(),
@@ -63,9 +69,10 @@ const priceRange = () => {
 
     await User.insertMany(artists, { ordered: true });
     console.log(`✅ Seeded ${COUNT} artists`);
+
     process.exit(0);
   } catch (err) {
-    console.error("❌ Error seeding users:", err);
+    console.error("❌ Error during reset/seed:", err);
     process.exit(1);
   }
 })();
