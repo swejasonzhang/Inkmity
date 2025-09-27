@@ -12,9 +12,10 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion } from "framer-motion";
 
-interface Artist {
-  _id: string;
-  clerkId: string;
+// Rename to avoid any type name collisions with other "Artist" types
+interface ArtistDto {
+  _id: string;                // Mongo id (string if you cast to String, otherwise ObjectId->stringified)
+  clerkId?: string;           // Optional in case backend didn't select it; we prefer to use this
   username: string;
   bio?: string;
   location?: string;
@@ -30,27 +31,23 @@ const Dashboard: React.FC = () => {
   const { getToken } = useAuth();
   const navigate = useNavigate();
 
-  const [artists, setArtists] = useState<Artist[]>([]);
+  const [artists, setArtists] = useState<ArtistDto[]>([]);
   const [loadingArtists, setLoadingArtists] = useState(true);
   const [showArtists, setShowArtists] = useState(false);
+
   const [messagingOpen, setMessagingOpen] = useState(true);
-  const [conversations, setConversations] = useState<Record<string, Message[]>>(
-    {}
-  );
   const [conversationList, setConversationList] = useState<Conversation[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
-  const [collapsedConversations, setCollapsedConversations] = useState<
-    Record<string, boolean>
-  >({});
+  const [collapsedConversations, setCollapsedConversations] = useState<Record<string, boolean>>({});
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [styleFilter, setStyleFilter] = useState<string>("all");
-  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+  const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [filterOpacity, setFilterOpacity] = useState(1);
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
 
   const ITEMS_PER_PAGE = 5;
 
@@ -75,6 +72,19 @@ const Dashboard: React.FC = () => {
     return res;
   };
 
+  const normalizeMessages = (msgs: any[] = []): Message[] =>
+    msgs.map((m) => ({
+      senderId: m.senderId,
+      receiverId: m.receiverId,
+      text: m.text,
+      timestamp:
+        typeof m.timestamp === "number"
+          ? m.timestamp
+          : m.createdAt
+          ? new Date(m.createdAt).getTime()
+          : Date.now(),
+    }));
+
   useEffect(() => {
     if (!user) return;
 
@@ -83,22 +93,46 @@ const Dashboard: React.FC = () => {
       setLoadingConversations(true);
 
       try {
-        const artistsRes = await authFetch(
-          "http://localhost:5005/api/users?role=artist"
-        );
-        const artistsData: Artist[] = await artistsRes.json();
+        // IMPORTANT: make sure backend selects `clerkId` too
+        // e.g. .select("clerkId username email role location style bio priceRange rating reviews")
+        const artistsRes = await authFetch("http://localhost:5005/api/users?role=artist");
+        const artistsData: ArtistDto[] = await artistsRes.json();
         setArtists(artistsData);
-        toast.success("Artists loaded successfully!", {
-          position: "bottom-right",
-          autoClose: 3000,
+
+        // Conversations endpoint keyed by Clerk IDs
+        const convRes = await authFetch(`http://localhost:5005/api/messages/user/${user.id}`);
+        const raw = await convRes.json();
+
+        let convList: Conversation[] = Array.isArray(raw)
+          ? raw.map((c: any) => ({
+              participantId: c.participantId,                      // should be artist.clerkId
+              username: c.username ?? "Unknown",
+              messages: normalizeMessages(c.messages),
+            }))
+          : [];
+
+        // Hydrate username if missing
+        convList = convList.map((c) => {
+          if (c.username !== "Unknown") return c;
+          const artist = artistsData.find((a) => a.clerkId === c.participantId || a._id === c.participantId);
+          return { ...c, username: artist?.username ?? "Unknown" };
         });
 
-        const convRes = await authFetch(
-          `http://localhost:5005/api/messages/user/${user.id}`
-        );
-        const convData: Record<string, Message[]> = await convRes.json();
+        // Sort by last message timestamp (desc)
+        convList.sort((a, b) => {
+          const aLen = a.messages.length;
+          const bLen = b.messages.length;
+          const aLast = aLen ? a.messages[aLen - 1].timestamp : 0;
+          const bLast = bLen ? b.messages[bLen - 1].timestamp : 0;
+          return bLast - aLast;
+        });
 
-        setConversations(convData);
+        setConversationList(convList);
+
+        toast.success("Artists and conversations loaded!", {
+          position: "bottom-right",
+          autoClose: 2000,
+        });
       } catch (err) {
         console.error("Error fetching data:", err);
         toast.error("Error loading dashboard data.", {
@@ -114,33 +148,13 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    if (artists.length === 0 || Object.keys(conversations).length === 0) return;
-
-    const list: Conversation[] = Object.entries(conversations)
-      .map(([participantId, msgs]) => {
-        const artist = artists.find((a) => a._id === participantId);
-        if (!artist) return null;
-        return { participantId, username: artist.username, messages: msgs };
-      })
-      .filter((conv): conv is Conversation => conv !== null)
-      .sort((a, b) => {
-        const aLast = a.messages[a.messages.length - 1]?.timestamp || 0;
-        const bLast = b.messages[b.messages.length - 1]?.timestamp || 0;
-        return bLast - aLast;
-      });
-
-    setConversationList(list);
-  }, [artists, conversations]);
-
-  useEffect(() => {
     const timer = setTimeout(() => setShowArtists(true), 1500);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop =
-        document.getElementById("middle-content")?.scrollTop || 0;
+      const scrollTop = document.getElementById("middle-content")?.scrollTop || 0;
       const fadeDistance = 100;
       setFilterOpacity(Math.max(1 - scrollTop / fadeDistance, 0));
     };
@@ -163,10 +177,8 @@ const Dashboard: React.FC = () => {
             const [min, max] = priceFilter.split("-").map(Number);
             return artist.priceRange.max >= min && artist.priceRange.min <= max;
           })();
-      const inLocation =
-        locationFilter === "all" || artist.location === locationFilter;
-      const inStyle =
-        styleFilter === "all" || artist.style?.includes(styleFilter);
+      const inLocation = locationFilter === "all" || artist.location === locationFilter;
+      const inStyle = styleFilter === "all" || artist.style?.includes(styleFilter);
       return inPriceRange && inLocation && inStyle;
     })
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -203,6 +215,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
       <Header />
+
       <main className="flex-1 flex gap-6 pt-4 px-4">
         <div className="flex-[1] flex flex-col">
           <button className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50">
@@ -240,21 +253,14 @@ const Dashboard: React.FC = () => {
               ) : paginatedArtists.length > 0 ? (
                 paginatedArtists.map((artist, index) => (
                   <motion.div
-                    key={artist._id}
+                    key={(artist.clerkId ?? artist._id) + ":" + index}
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.2 }}
-                    transition={{
-                      duration: 0.6,
-                      delay: index * 0.1,
-                      ease: "easeOut",
-                    }}
+                    transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
                     className={`w-full ${index === 0 ? "mt-4" : ""}`}
                   >
-                    <ArtistCard
-                      artist={artist}
-                      onClick={() => setSelectedArtist(artist)}
-                    />
+                    <ArtistCard artist={artist} onClick={() => setSelectedArtist(artist)} />
                   </motion.div>
                 ))
               ) : (
@@ -279,6 +285,7 @@ const Dashboard: React.FC = () => {
                 <MessageSquare size={20} /> <span>Messaging</span>
               </div>
             </div>
+
             {messagingOpen && (
               <ChatWindow
                 conversations={conversationList}
@@ -293,27 +300,20 @@ const Dashboard: React.FC = () => {
                   }));
                 }}
                 onRemoveConversation={(participantId: string) => {
-                  setConversations((prev) => {
-                    const newConversations = { ...prev };
-                    delete newConversations[participantId];
-                    return newConversations;
-                  });
-
                   setConversationList((prev) =>
                     prev.filter((c) => c.participantId !== participantId)
                   );
                   setCollapsedConversations((prev) => {
-                    const newMap = { ...prev };
-                    delete newMap[participantId];
-                    return newMap;
+                    const next = { ...prev };
+                    delete next[participantId];
+                    return next;
                   });
-
                   toast.info("Conversation hidden from dashboard", {
                     position: "bottom-right",
                   });
                 }}
                 expandedId={selectedConversationId}
-                authFetch={authFetch} 
+                authFetch={authFetch}
               />
             )}
           </div>
@@ -325,50 +325,43 @@ const Dashboard: React.FC = () => {
           artist={selectedArtist}
           onClose={() => setSelectedArtist(null)}
           onMessage={(artist, preloadedMessage) => {
-            const newMessage: Message = {
-              senderId: user.id,
-              receiverId: artist._id,
+            const participantId = artist.clerkId ?? artist._id; // prefer Clerk ID
+            const newMsg: Message = {
+              senderId: user.id,            // Clerk ID of the client
+              receiverId: participantId,    // Clerk ID of the artist (or fallback)
               text: preloadedMessage,
               timestamp: Date.now(),
             };
 
-            setConversations((prev) => {
-              const existing = prev[artist._id] || [];
-              return { ...prev, [artist._id]: [...existing, newMessage] };
-            });
-
             setConversationList((prev) => {
-              const existing = prev.find((c) => c.participantId === artist._id);
-              if (existing) {
-                return [
-                  { ...existing, messages: [...existing.messages, newMessage] },
-                  ...prev.filter((c) => c.participantId !== artist._id),
-                ];
-              } else {
-                return [
-                  {
-                    participantId: artist._id,
-                    username: artist.username,
-                    messages: [newMessage],
-                  },
-                  ...prev,
-                ];
+              const idx = prev.findIndex((c) => c.participantId === participantId);
+              if (idx >= 0) {
+                const copy = [...prev];
+                copy[idx] = { ...copy[idx], messages: [...copy[idx].messages, newMsg] };
+                return copy.sort((a, b) => {
+                  const aLen = a.messages.length;
+                  const bLen = b.messages.length;
+                  const aLast = aLen ? a.messages[aLen - 1].timestamp : 0;
+                  const bLast = bLen ? b.messages[bLen - 1].timestamp : 0;
+                  return bLast - aLast;
+                });
               }
+              return [
+                { participantId, username: artist.username, messages: [newMsg] },
+                ...prev,
+              ];
             });
 
-            setCollapsedConversations((prev) => ({
-              ...prev,
-              [artist._id]: false,
-            }));
-            setSelectedConversationId(artist._id);
+            setCollapsedConversations((prev) => ({ ...prev, [participantId]: false }));
+            setSelectedConversationId(participantId);
             setMessagingOpen(true);
             setSelectedArtist(null);
 
             authFetch("http://localhost:5005/api/messages", {
               method: "POST",
               body: JSON.stringify({
-                senderId: user.id,
-                receiverId: artist._id,
+                senderId: user.id,         // client (Clerk)
+                receiverId: participantId, // artist (Clerk preferred)
                 text: preloadedMessage,
               }),
             }).catch((err) => {

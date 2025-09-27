@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 
 interface Artist {
   _id: string;
+  clerkId?: string;
   username: string;
   bio?: string;
 }
@@ -13,11 +14,7 @@ interface ArtistModalProps {
   onMessage: (artist: Artist, preloadedMessage: string) => void;
 }
 
-const ArtistModal: React.FC<ArtistModalProps> = ({
-  artist,
-  onClose,
-  onMessage,
-}) => {
+const ArtistModal: React.FC<ArtistModalProps> = ({ artist, onClose, onMessage }) => {
   const preloadedMessage = `Hi ${artist.username}, I've taken a look at your work and I'm interested! Would you be open to my ideas?`;
 
   return (
@@ -42,7 +39,7 @@ const ArtistModal: React.FC<ArtistModalProps> = ({
           <button
             onClick={() => {
               onMessage(artist, preloadedMessage);
-              onClose(); 
+              onClose();
             }}
             className="px-4 py-2 bg-black text-white rounded transition"
           >
