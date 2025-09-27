@@ -72,13 +72,11 @@ const Dashboard: React.FC = () => {
     return res;
   };
 
-  // Lazy load artists
   useEffect(() => {
     const timer = setTimeout(() => setShowArtists(true), 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Load artists
   useEffect(() => {
     setLoadingArtists(true);
     authFetch("http://localhost:5005/api/users?role=artist")
@@ -100,7 +98,6 @@ const Dashboard: React.FC = () => {
       .finally(() => setLoadingArtists(false));
   }, []);
 
-  // Load conversations
   useEffect(() => {
     if (!user) return;
     setLoadingConversations(true);
@@ -125,7 +122,6 @@ const Dashboard: React.FC = () => {
     fetchConversations();
   }, [user]);
 
-  // Build conversation list
   useEffect(() => {
     if (artists.length === 0) return;
     const list: Conversation[] = Object.entries(conversations)
@@ -217,7 +213,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div
           id="middle-content"
-          className="flex-[3] flex flex-col max-w-full w-full overflow-y-auto"
+          className="flex-[3] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-gray-900"
         >
           <div
             className="bg-gray-800 p-4 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300"
@@ -254,7 +250,7 @@ const Dashboard: React.FC = () => {
                       delay: index * 0.1,
                       ease: "easeOut",
                     }}
-                    className="w-full"
+                    className={`w-full ${index === 0 ? "mt-4" : ""}`}
                   >
                     <ArtistCard
                       artist={artist}
@@ -277,16 +273,13 @@ const Dashboard: React.FC = () => {
 
         <div className="flex-[1] flex flex-col gap-4">
           <div
-            className="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sticky top-4"
+            className="bg-gray-800 rounded-3xl p-4 flex flex-col sticky top-4"
             style={{ height: "calc(97vh - 6rem)" }}
           >
-            <div className="flex justify-between items-center pb-2 border-b border-gray-700">
-              <button
-                onClick={() => setMessagingOpen(!messagingOpen)}
-                className="flex items-center gap-2 text-white font-bold"
-              >
+            <div className="flex justify-between items-center pb-2">
+              <div className="flex items-center gap-2 text-white font-bold">
                 <MessageSquare size={20} /> <span>Messaging</span>
-              </button>
+              </div>
             </div>
             {messagingOpen && (
               <ChatWindow
@@ -301,26 +294,24 @@ const Dashboard: React.FC = () => {
                     [participantId]: !prev[participantId],
                   }));
                 }}
-                onRemoveConversation={async (participantId: string) => {
+                onRemoveConversation={(participantId: string) => {
                   setConversations((prev) => {
                     const newConversations = { ...prev };
                     delete newConversations[participantId];
                     return newConversations;
                   });
+
                   setConversationList((prev) =>
                     prev.filter((c) => c.participantId !== participantId)
                   );
+
                   setCollapsedConversations((prev) => {
                     const newMap = { ...prev };
                     delete newMap[participantId];
                     return newMap;
                   });
 
-                  await authFetch(
-                    `http://localhost:5005/api/messages/remove/${participantId}`,
-                    { method: "DELETE" }
-                  );
-                  toast.info("Conversation removed", {
+                  toast.info("Conversation hidden from dashboard", {
                     position: "bottom-right",
                   });
                 }}
@@ -333,27 +324,51 @@ const Dashboard: React.FC = () => {
         <ArtistModal
           artist={selectedArtist}
           onClose={() => setSelectedArtist(null)}
-          onMessage={(artist) => {
+          onMessage={(artist, preloadedMessage) => {
+            const newMessage: Message = {
+              senderId: user.id,
+              receiverId: artist._id,
+              text: preloadedMessage,
+              timestamp: Date.now(),
+            };
+
             setConversations((prev) => {
-              if (prev[artist._id]) return prev;
-              return { ...prev, [artist._id]: [] };
-            });
-            setConversationList((prev) => {
-              const exists = prev.some((c) => c.participantId === artist._id);
-              if (exists) return prev;
-              const newConv: Conversation = {
-                participantId: artist._id,
-                username: artist.username,
-                messages: [],
+              const existing = prev[artist._id] || [];
+              return {
+                ...prev,
+                [artist._id]: [...existing, newMessage],
               };
-              return [newConv, ...prev];
             });
+
+            setConversationList((prev) => {
+              const existing = prev.find((c) => c.participantId === artist._id);
+              if (existing) {
+                return [
+                  {
+                    ...existing,
+                    messages: [...existing.messages, newMessage],
+                  },
+                  ...prev.filter((c) => c.participantId !== artist._id),
+                ];
+              } else {
+                return [
+                  {
+                    participantId: artist._id,
+                    username: artist.username,
+                    messages: [newMessage],
+                  },
+                  ...prev,
+                ];
+              }
+            });
+
             setCollapsedConversations((prev) => ({
               ...prev,
               [artist._id]: false,
             }));
-            setSelectedArtist(null);
+
             setMessagingOpen(true);
+            setSelectedArtist(null);
           }}
         />
       )}
