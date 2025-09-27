@@ -16,6 +16,7 @@ export interface Conversation {
 }
 
 interface ChatWindowProps {
+  className?: string;
   conversations: Conversation[];
   collapsedMap: Record<string, boolean>;
   currentUserId: string;
@@ -23,6 +24,7 @@ interface ChatWindowProps {
   emptyText?: string;
   onToggleCollapse: (participantId: string) => void;
   onRemoveConversation: (participantId: string) => void;
+  expandedId?: string | null;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -33,6 +35,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   emptyText = "No conversations currently. Please click an artist to start one!",
   onToggleCollapse,
   onRemoveConversation,
+  expandedId: externalExpandedId,
 }) => {
   const [messageInput, setMessageInput] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -43,9 +46,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (externalExpandedId) {
+      setExpandedId(externalExpandedId);
+    }
+  }, [externalExpandedId]);
+
   if (!showContent || loading) {
     return (
-      <div className="flex justify-center items-center py-10 h-full bg-black">
+      <div className="flex justify-center items-center py-10 h-full bg-black rounded-3xl">
         <CircularProgress sx={{ color: "#ffffff" }} />
       </div>
     );
@@ -56,9 +65,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex justify-center items-center h-full text-center text-gray-400 px-4 bg-black"
+        className="flex flex-col justify-center items-center gap-4 overflow-y-auto h-full bg-black p-2 rounded-3xl"
       >
-        {emptyText}
+        <p className="text-gray-400 text-center mt-4">{emptyText}</p>
       </motion.div>
     );
   }
@@ -89,7 +98,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setExpandedId(isCurrentlyExpanded ? null : participantId);
     onToggleCollapse(participantId);
 
-    // Collapse all others
     conversations.forEach((conv) => {
       if (
         conv.participantId !== participantId &&
@@ -101,7 +109,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto h-full bg-black p-2">
+    <div className="flex flex-col gap-4 overflow-y-auto h-full bg-black p-2 rounded-3xl">
       {conversations.map((conv) => {
         const isExpanded =
           expandedId === conv.participantId &&
@@ -111,10 +119,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             key={conv.participantId}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className={`bg-black rounded-lg flex flex-col transition-all duration-300 border border-gray-700 ${
+            className={`bg-gray-900 rounded-2xl flex flex-col transition-all duration-300 overflow-hidden ${
               isExpanded ? "flex-1 min-h-[200px]" : "h-12"
             }`}
           >
+            {/* Header */}
             <div
               className="flex justify-between items-center px-3 pt-2 cursor-pointer"
               onClick={() => handleToggle(conv.participantId)}
@@ -123,6 +132,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 {conv.username}
               </span>
               <div className="flex gap-2">
+                {isExpanded && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedId(null); // collapse
+                      onToggleCollapse(conv.participantId);
+                    }}
+                    className="text-gray-400 hover:text-gray-200 text-sm"
+                  >
+                    Hide
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -135,6 +156,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             </div>
 
+            {/* Divider shown only when expanded */}
+            {isExpanded && (
+              <div className="border-t border-gray-700 my-2"></div>
+            )}
+
+            {/* Body */}
             {isExpanded && (
               <div className="flex flex-col flex-1 px-3 pb-3">
                 <div className="flex-1 flex flex-col gap-1 overflow-y-auto mb-2">
@@ -152,7 +179,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   ))}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex rounded-xl overflow-hidden">
                   <input
                     type="text"
                     value={messageInput[conv.participantId] || ""}
@@ -162,7 +189,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                         [conv.participantId]: e.target.value,
                       }))
                     }
-                    className="flex-1 p-1 rounded bg-gray-800 text-white"
+                    className="flex-1 p-2 bg-gray-800 text-white focus:outline-none border-none"
                     placeholder="Type a message..."
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleSend(conv.participantId);
@@ -170,7 +197,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   />
                   <button
                     onClick={() => handleSend(conv.participantId)}
-                    className="bg-gray-700 px-3 rounded text-white"
+                    className="bg-gray-700 px-4 text-white border-none"
                   >
                     Send
                   </button>
