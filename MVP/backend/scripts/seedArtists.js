@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-import User from "../models/User.js";
+import User from "../backend/models/User.js";
 
 dotenv.config({ path: "../.env" });
 
@@ -16,112 +16,60 @@ const locations = [
   "San Francisco",
   "Austin",
   "Portland",
-  "Denver",
-  "Las Vegas",
-  "Atlanta",
-  "Philadelphia",
-  "Phoenix",
-  "San Diego",
-  "Detroit",
-  "Orlando",
-  "Nashville",
-  "Houston",
 ];
 
 const styles = [
   "Traditional",
   "Realism",
-  "Tribal",
   "Japanese",
   "Watercolor",
   "Blackwork",
-  "Neo-Traditional",
   "Geometric",
-  "Minimalist",
-  "Abstract",
   "Portrait",
-  "Biomechanical",
-  "Script",
-  "Dotwork",
-  "Celtic",
-  "Chicano",
   "Fine Line",
-  "Trash Polka",
-  "Surrealism",
-  "New School",
+  "Neo-Traditional",
+  "Abstract",
 ];
 
-const inspirations = [
-  "I found my passion through street art and murals.",
-  "Music and culture inspired me to express stories in ink.",
-  "I started tattooing to immortalize memories.",
-  "Art has always been my way to connect with people.",
-  "I love turning personal experiences into visual stories.",
-  "I create designs that reflect individuality and emotion.",
-  "Every tattoo I make is a journey shared with the client.",
-  "I aim to combine creativity with meaningful symbolism.",
-  "I wanted to transform ideas into permanent art.",
-  "Tattoos are my medium to tell stories that last forever.",
-];
-
-const randomFromArray = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const randomInt = (min, max) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-
-const generateBio = (location, style) => {
-  const inspiration = randomFromArray(inspirations);
-  return `Born and raised in ${location}, I specialize in ${style} tattoos. ${inspiration}`;
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const priceRange = () => {
+  const min = Math.floor(Math.random() * 400) + 100;
+  const max = min + Math.floor(Math.random() * 1500) + 300;
+  return { min, max };
 };
 
-const seedUsers = async () => {
+(async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ Connected to MongoDB");
 
-    await User.deleteMany({ role: { $in: ["artist", "client"] } });
+    await User.deleteMany({ role: "artist" });
+    console.log("🗑️  Removed existing artists");
 
-    const artists = Array.from({ length: 50 }).map((_, i) => {
-      const location = randomFromArray(locations);
-      const stylesChosen = Array.from({ length: randomInt(1, 3) }).map(() =>
-        randomFromArray(styles)
-      );
-      const bio = generateBio(location, stylesChosen.join(", "));
-      const minPrice = randomInt(100, 5000);
-      const maxPrice = randomInt(minPrice + 100, 10000);
-
+    const artists = Array.from({ length: 5 }).map((_, i) => {
+      const clerkId = uuidv4();
+      console.log(`🎨 Creating artist${i + 1} with clerkId: ${clerkId}`);
       return {
-        clerkId: uuidv4(),
+        clerkId,
         username: `artist${i + 1}`,
         email: `artist${i + 1}@example.com`,
         role: "artist",
-        bio,
-        location,
-        style: stylesChosen,
-        priceRange: { min: minPrice, max: maxPrice },
-        rating: parseFloat((Math.random() * 5).toFixed(1)),
+        location: pick(locations),
+        style: [pick(styles), pick(styles)].filter(
+          (v, idx, a) => a.indexOf(v) === idx
+        ),
+        bio: `Tattoo artist focused on ${pick(styles)} in ${pick(locations)}.`,
+        priceRange: priceRange(),
+        rating: 0,
         reviews: [],
       };
     });
 
-    const clients = Array.from({ length: 10 }).map((_, i) => ({
-      clerkId: uuidv4(),
-      username: `client${i + 1}`,
-      email: `client${i + 1}@example.com`,
-      role: "client",
-      bio: `Hi, I’m Client ${
-        i + 1
-      }, looking for a tattoo artist in ${randomFromArray(locations)}.`,
-      location: randomFromArray(locations),
-    }));
-
-    await User.insertMany([...artists, ...clients]);
-    console.log("✅ Seeded 50 artists and 10 clients successfully");
-
-    process.exit();
-  } catch (error) {
-    console.error("❌ Error seeding users:", error);
+    await User.insertMany(artists, { ordered: true });
+    console.log("✅ Seeded 5 artists");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Error seeding users:", err);
     process.exit(1);
   }
-};
-
-seedUsers();
+})();

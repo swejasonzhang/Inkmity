@@ -1,7 +1,7 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignUp, useUser, useClerk } from "@clerk/clerk-react";
+import { useSignUp, useUser, useClerk, useAuth } from "@clerk/clerk-react";
 import FormInput from "@/components/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -35,7 +35,8 @@ const SignUp: React.FC = () => {
   const navigate = useNavigate();
   const { signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 1000);
@@ -45,12 +46,10 @@ const SignUp: React.FC = () => {
   useEffect(() => {
     const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
     const lastLogin = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
-
     if (isSignedIn && !awaitingCode) {
       const within3Days =
         lastLogin &&
         Date.now() - parseInt(lastLogin, 10) <= 3 * 24 * 60 * 60 * 1000;
-
       if (within3Days && logoutType !== "manual") {
         toast.info("You are already signed in! Redirecting to dashboard...", {
           position: "top-center",
@@ -65,6 +64,30 @@ const SignUp: React.FC = () => {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
+  const syncUserToBackend = async (role: "client" | "artist") => {
+    const token = await getToken();
+    const clerkId = user?.id ?? undefined;
+    const payload: any = {
+      clerkId,
+      email: form.email,
+      role,
+      username: form.email.split("@")[0],
+    };
+    const res = await fetch("http://localhost:5005/api/users/sync", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Sync failed ${res.status}: ${t}`);
+    }
+    return res.json();
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -75,7 +98,6 @@ const SignUp: React.FC = () => {
       });
       return;
     }
-
     if (!validatePassword(form.password)) {
       toast.error("Password must be 6+ chars, uppercase & number", {
         position: "top-center",
@@ -85,7 +107,6 @@ const SignUp: React.FC = () => {
     }
 
     setLoading(true);
-
     try {
       await signOut();
 
@@ -104,7 +125,6 @@ const SignUp: React.FC = () => {
           password: form.password,
           publicMetadata: { role: form.role },
         } as any);
-
         await attempt.prepareEmailAddressVerification();
         setSignUpAttempt(attempt);
         setAwaitingCode(true);
@@ -121,21 +141,36 @@ const SignUp: React.FC = () => {
           setLoading(false);
           return;
         }
-
         const result = await signUpAttempt.attemptEmailAddressVerification({
           code: form.code,
         });
-
         if (result.status === "complete") {
           await setActive({ session: result.createdSessionId });
           localStorage.setItem("trustedDevice", form.email);
           localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
           localStorage.removeItem(LOGOUT_TYPE_KEY);
-          toast.success("Signup successful! Redirecting...", {
-            position: "top-center",
-            theme: "dark",
-          });
-          navigate("/dashboard");
+
+          // Wait a tick to ensure Clerk user is available
+          setTimeout(async () => {
+            try {
+              await syncUserToBackend(form.role as "client" | "artist");
+              toast.success("Signup successful! Redirecting...", {
+                position: "top-center",
+                theme: "dark",
+              });
+              navigate("/dashboard");
+            } catch (syncErr: any) {
+              console.error(syncErr);
+              toast.error(
+                "Signed up but failed to sync user. You can continue, but some features may be limited.",
+                {
+                  position: "top-center",
+                  theme: "dark",
+                }
+              );
+              navigate("/dashboard");
+            }
+          }, 250);
         } else {
           toast.error("Verification failed. Check your code and try again.", {
             position: "top-center",
