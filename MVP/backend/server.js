@@ -7,10 +7,12 @@ import { Server } from "socket.io";
 import { connectDB } from "./config/db.js";
 import { initSocket } from "./services/socketService.js";
 
-import userRoutes from "./routes/users.js"; 
+import userRoutes from "./routes/users.js";
 import reviewRoutes from "./routes/reviews.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import messageRoutes from "./routes/messages.js";
+import availabilityRoutes from "./routes/availability.js";
+import bookingRoutes from "./routes/bookings.js";
 
 import { requireAuth } from "./middleware/auth.js";
 
@@ -30,10 +32,12 @@ app.use(
 );
 app.use(express.json());
 
-app.use("/api/users", userRoutes); 
+app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
+app.use("/api/availability", availabilityRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 const io = new Server(server, {
   cors: {
