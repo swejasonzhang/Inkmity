@@ -6,3 +6,15 @@ body {
   font-family: 'Rock Salt', cursive;
   overscroll-behavior: none;
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;            
+}
+
+.no-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
