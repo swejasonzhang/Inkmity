@@ -25,6 +25,7 @@ interface ChatWindowProps {
   onToggleCollapse: (participantId: string) => void;
   onRemoveConversation: (participantId: string) => void;
   expandedId?: string | null;
+  authFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -36,6 +37,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onToggleCollapse,
   onRemoveConversation,
   expandedId: externalExpandedId,
+  authFetch,
 }) => {
   const [localConversations, setLocalConversations] =
     useState<Conversation[]>(conversations);
@@ -78,7 +80,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
 
-  const handleSend = (participantId: string) => {
+  const handleSend = async (participantId: string) => {
     const text = messageInput[participantId]?.trim();
     if (!text) return;
 
@@ -98,6 +100,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
 
     setMessageInput((prev) => ({ ...prev, [participantId]: "" }));
+
+    try {
+      await authFetch("http://localhost:5005/api/messages", {
+        method: "POST",
+        body: JSON.stringify({
+          senderId: currentUserId,
+          receiverId: participantId,
+          text,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to persist message:", err);
+    }
   };
 
   const handleToggle = (participantId: string) => {
@@ -106,7 +121,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     onToggleCollapse(participantId);
 
     localConversations.forEach((conv) => {
-      if (conv.participantId !== participantId && !collapsedMap[conv.participantId]) {
+      if (
+        conv.participantId !== participantId &&
+        !collapsedMap[conv.participantId]
+      ) {
         onToggleCollapse(conv.participantId);
       }
     });
@@ -116,7 +134,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     <div className="flex flex-col gap-4 overflow-y-auto h-full bg-black p-2 rounded-3xl">
       {localConversations.map((conv) => {
         const isExpanded =
-          expandedId === conv.participantId && !collapsedMap[conv.participantId];
+          expandedId === conv.participantId &&
+          !collapsedMap[conv.participantId];
 
         return (
           <motion.div
@@ -131,7 +150,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               className="flex justify-between items-center px-3 pt-2 cursor-pointer"
               onClick={() => handleToggle(conv.participantId)}
             >
-              <span className="text-white font-extrabold text-lg">{conv.username}</span>
+              <span className="text-white font-extrabold text-lg">
+                {conv.username}
+              </span>
               <div className="flex gap-2">
                 {isExpanded && (
                   <button
@@ -157,7 +178,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             </div>
 
-            {isExpanded && <div className="border-t border-gray-700 my-2"></div>}
+            {isExpanded && (
+              <div className="border-t border-gray-700 my-2"></div>
+            )}
 
             {isExpanded && (
               <div className="flex flex-col flex-1 px-3 pb-3">

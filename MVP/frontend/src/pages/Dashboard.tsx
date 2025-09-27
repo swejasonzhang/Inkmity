@@ -76,57 +76,46 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowArtists(true), 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!user) return;
 
-  useEffect(() => {
-    setLoadingArtists(true);
-    authFetch("http://localhost:5005/api/users?role=artist")
-      .then((res) => res.json())
-      .then((data) => {
-        setArtists(data);
+    const fetchData = async () => {
+      setLoadingArtists(true);
+      setLoadingConversations(true);
+
+      try {
+        const artistsRes = await authFetch(
+          "http://localhost:5005/api/users?role=artist"
+        );
+        const artistsData: Artist[] = await artistsRes.json();
+        setArtists(artistsData);
         toast.success("Artists loaded successfully!", {
           position: "bottom-right",
           autoClose: 3000,
         });
-      })
-      .catch((err) => {
-        console.error("Error fetching artists:", err);
-        toast.error("Error loading artists.", {
-          position: "bottom-right",
-          autoClose: 3000,
-        });
-      })
-      .finally(() => setLoadingArtists(false));
-  }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    setLoadingConversations(true);
-
-    const fetchConversations = async () => {
-      try {
-        const res = await authFetch(
+        const convRes = await authFetch(
           `http://localhost:5005/api/messages/user/${user.id}`
         );
-        const data: Record<string, Message[]> = await res.json();
-        setConversations(data);
+        const convData: Record<string, Message[]> = await convRes.json();
+
+        setConversations(convData);
       } catch (err) {
-        console.error("Error fetching conversations:", err);
-        toast.error("Failed to load conversations.", {
+        console.error("Error fetching data:", err);
+        toast.error("Error loading dashboard data.", {
           position: "bottom-right",
         });
       } finally {
+        setLoadingArtists(false);
         setLoadingConversations(false);
       }
     };
 
-    fetchConversations();
+    fetchData();
   }, [user]);
 
   useEffect(() => {
-    if (artists.length === 0) return;
+    if (artists.length === 0 || Object.keys(conversations).length === 0) return;
+
     const list: Conversation[] = Object.entries(conversations)
       .map(([participantId, msgs]) => {
         const artist = artists.find((a) => a._id === participantId);
@@ -139,8 +128,14 @@ const Dashboard: React.FC = () => {
         const bLast = b.messages[b.messages.length - 1]?.timestamp || 0;
         return bLast - aLast;
       });
+
     setConversationList(list);
   }, [artists, conversations]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowArtists(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -214,6 +209,7 @@ const Dashboard: React.FC = () => {
             <Bot size={24} />
           </button>
         </div>
+
         <div
           id="middle-content"
           className="flex-[3] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-gray-900"
@@ -267,7 +263,6 @@ const Dashboard: React.FC = () => {
                 </p>
               )}
             </div>
-
             <div className="py-4">
               <Pagination />
             </div>
@@ -307,7 +302,6 @@ const Dashboard: React.FC = () => {
                   setConversationList((prev) =>
                     prev.filter((c) => c.participantId !== participantId)
                   );
-
                   setCollapsedConversations((prev) => {
                     const newMap = { ...prev };
                     delete newMap[participantId];
@@ -319,11 +313,13 @@ const Dashboard: React.FC = () => {
                   });
                 }}
                 expandedId={selectedConversationId}
+                authFetch={authFetch} 
               />
             )}
           </div>
         </div>
       </main>
+
       {selectedArtist && (
         <ArtistModal
           artist={selectedArtist}
@@ -338,20 +334,14 @@ const Dashboard: React.FC = () => {
 
             setConversations((prev) => {
               const existing = prev[artist._id] || [];
-              return {
-                ...prev,
-                [artist._id]: [...existing, newMessage],
-              };
+              return { ...prev, [artist._id]: [...existing, newMessage] };
             });
 
             setConversationList((prev) => {
               const existing = prev.find((c) => c.participantId === artist._id);
               if (existing) {
                 return [
-                  {
-                    ...existing,
-                    messages: [...existing.messages, newMessage],
-                  },
+                  { ...existing, messages: [...existing.messages, newMessage] },
                   ...prev.filter((c) => c.participantId !== artist._id),
                 ];
               } else {
@@ -370,9 +360,7 @@ const Dashboard: React.FC = () => {
               ...prev,
               [artist._id]: false,
             }));
-
             setSelectedConversationId(artist._id);
-
             setMessagingOpen(true);
             setSelectedArtist(null);
 
