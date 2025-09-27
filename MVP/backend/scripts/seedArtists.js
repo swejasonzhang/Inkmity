@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-import User from "../backend/models/User.js";
+import User from "../models/User.js";
 
 dotenv.config({ path: "../.env" });
+
+const COUNT = 10;
 
 const locations = [
   "New York",
@@ -46,27 +48,21 @@ const priceRange = () => {
     await User.deleteMany({ role: "artist" });
     console.log("🗑️  Removed existing artists");
 
-    const artists = Array.from({ length: 5 }).map((_, i) => {
-      const clerkId = uuidv4();
-      console.log(`🎨 Creating artist${i + 1} with clerkId: ${clerkId}`);
-      return {
-        clerkId,
-        username: `artist${i + 1}`,
-        email: `artist${i + 1}@example.com`,
-        role: "artist",
-        location: pick(locations),
-        style: [pick(styles), pick(styles)].filter(
-          (v, idx, a) => a.indexOf(v) === idx
-        ),
-        bio: `Tattoo artist focused on ${pick(styles)} in ${pick(locations)}.`,
-        priceRange: priceRange(),
-        rating: 0,
-        reviews: [],
-      };
-    });
+    const artists = Array.from({ length: COUNT }).map((_, i) => ({
+      clerkId: uuidv4(),
+      username: `artist${i + 1}`,
+      email: `artist${i + 1}@example.com`,
+      role: "artist",
+      location: pick(locations),
+      style: Array.from(new Set([pick(styles), pick(styles)])),
+      bio: `Tattoo artist focused on ${pick(styles)} in ${pick(locations)}.`,
+      priceRange: priceRange(),
+      rating: 0,
+      reviews: [],
+    }));
 
     await User.insertMany(artists, { ordered: true });
-    console.log("✅ Seeded 5 artists");
+    console.log(`✅ Seeded ${COUNT} artists`);
     process.exit(0);
   } catch (err) {
     console.error("❌ Error seeding users:", err);
