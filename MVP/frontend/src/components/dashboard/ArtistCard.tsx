@@ -2,7 +2,7 @@ import React from "react";
 
 interface Artist {
   _id: string;
-  username: string; // updated
+  username: string;
   bio?: string;
   location?: string;
   style?: string[];

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import ArtistCard from "../components/ArtistCard";
-import ArtistFilter from "../components/ArtistFilter";
+import ArtistCard from "../components/dashboard/ArtistCard";
+import ArtistFilter from "../components/dashboard/ArtistFilter";
 import { fetchArtists } from "../api/artists";
 
 const Artists: React.FC = () => {
