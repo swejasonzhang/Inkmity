@@ -16,6 +16,8 @@ interface Props {
   setStyleFilter: (value: string) => void;
   artists: any[];
   setCurrentPage: (page: number) => void;
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
 }
 
 const ArtistFilter: React.FC<Props> = ({
@@ -27,9 +29,29 @@ const ArtistFilter: React.FC<Props> = ({
   setStyleFilter,
   artists,
   setCurrentPage,
+  searchQuery,
+  setSearchQuery,
 }) => {
+  const uniqueLocations = [...new Set(artists.map((a) => a.location))].filter(
+    Boolean
+  );
+  const uniqueStyles = [...new Set(artists.flatMap((a) => a.style || []))];
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full">
+      <div className="sm:col-span-1">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+          placeholder="Search by name, style, location..."
+          className="w-full bg-gray-700 border border-gray-600 text-white text-sm px-4 py-2 rounded-lg placeholder-gray-300 focus:outline-none"
+        />
+      </div>
+
       <Select
         value={priceFilter}
         onValueChange={(value) => {
@@ -60,16 +82,13 @@ const ArtistFilter: React.FC<Props> = ({
         <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
           <SelectValue placeholder="All Locations" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-700 text-white">
+        <SelectContent className="bg-gray-800 text-white">
           <SelectItem value="all">All Locations</SelectItem>
-          {[...new Set(artists.map((a) => a.location))].map(
-            (loc) =>
-              loc && (
-                <SelectItem key={loc} value={loc}>
-                  {loc}
-                </SelectItem>
-              )
-          )}
+          {uniqueLocations.map((loc: string) => (
+            <SelectItem key={loc} value={loc}>
+              {loc}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
@@ -83,9 +102,9 @@ const ArtistFilter: React.FC<Props> = ({
         <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
           <SelectValue placeholder="All Styles" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-700 text-white">
+        <SelectContent className="bg-gray-800 text-white">
           <SelectItem value="all">All Styles</SelectItem>
-          {[...new Set(artists.flatMap((a) => a.style || []))].map((style) => (
+          {uniqueStyles.map((style: string) => (
             <SelectItem key={style} value={style}>
               {style}
             </SelectItem>

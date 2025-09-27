@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Bot } from "lucide-react";
+import { MessageSquare, Bot, Lock } from "lucide-react";
 import Header from "../components/Header";
 import ChatWindow, { Message, Conversation } from "../components/ChatWindow";
 import ArtistCard from "../components/ArtistCard";
@@ -55,6 +55,16 @@ const Dashboard: React.FC = () => {
   const prevConvCountRef = useRef(0);
 
   const ITEMS_PER_PAGE = 5;
+
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  useEffect(() => {
+    const t = setTimeout(
+      () => setDebouncedSearch(searchQuery.trim().toLowerCase()),
+      250
+    );
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (!isSignedIn) navigate("/login");
@@ -210,7 +220,16 @@ const Dashboard: React.FC = () => {
         locationFilter === "all" || artist.location === locationFilter;
       const inStyle =
         styleFilter === "all" || artist.style?.includes(styleFilter);
-      return inPriceRange && inLocation && inStyle;
+
+      const q = debouncedSearch;
+      const matchesKeyword =
+        q === "" ||
+        artist.username?.toLowerCase().includes(q) ||
+        artist.location?.toLowerCase().includes(q) ||
+        artist.bio?.toLowerCase().includes(q) ||
+        (artist.style || []).some((s) => s.toLowerCase().includes(q));
+
+      return inPriceRange && inLocation && inStyle && matchesKeyword;
     })
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
@@ -222,7 +241,7 @@ const Dashboard: React.FC = () => {
 
   const Pagination = () =>
     totalPages > 1 ? (
-      <div className="flex justify-center items-center gap-4 mt-4">
+      <div className="flex justify-center items-center gap-4 mt-3">
         <button
           className="px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50"
           disabled={currentPage === 1}
@@ -244,20 +263,59 @@ const Dashboard: React.FC = () => {
     ) : null;
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
+      {/* Hide the middle column scrollbar (WebKit) */}
+      <style>{`
+        #middle-content::-webkit-scrollbar { display: none; }
+      `}</style>
+
       <Header />
 
-      <main className="flex-1 flex gap-6 pt-4 px-4">
-        <button className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50">
-          <Bot size={24} />
-        </button>
-        
-        <div
+      {/* Only the middle column can scroll; the page itself is locked */}
+      <main className="flex-1 flex gap-6 pt-4 px-4 overflow-hidden">
+        {/* LEFT: Bot column (locked) */}
+        <aside className="flex-[1.6] min-w-[220px] max-w-[320px] bg-gray-900">
+          <div
+            className="sticky top-4 bg-gray-800 rounded-3xl p-5 flex flex-col items-center gap-4"
+            style={{ height: "calc(97vh - 6rem)" }}
+          >
+            <div className="text-white font-bold text-lg w-full flex items-center justify-between">
+              <span>Assistant</span>
+              <span className="text-xs bg-gray-700 text-gray-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Lock size={12} /> Coming soon
+              </span>
+            </div>
+
+            <button
+              className="w-full bg-black text-white py-4 rounded-2xl shadow-lg opacity-50 cursor-not-allowed flex items-center justify-center gap-3"
+              title="Feature locked — coming soon"
+              aria-disabled
+              disabled
+              onClick={(e) => e.preventDefault()}
+            >
+              <Bot size={22} />
+              <span className="font-semibold">Chat with Inkmity</span>
+            </button>
+
+            <div className="w-full text-gray-400 text-sm leading-relaxed text-center">
+              This feature is being polished. Stay tuned!
+            </div>
+
+            <div className="mt-auto w-full text-xs text-gray-500 text-center">
+              You’ll soon be able to ask for artist suggestions, refine briefs,
+              and more.
+            </div>
+          </div>
+        </aside>
+
+        {/* MIDDLE: Artist list — the ONLY scrollable area, scrollbar hidden */}
+        <section
           id="middle-content"
-          className="flex-[3] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-gray-900"
+          className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-gray-900"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           <div
-            className="bg-gray-800 p-4 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300"
+            className="bg-gray-800 px-3 py-3 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300"
             style={{ opacity: filterOpacity }}
           >
             <ArtistFilter
@@ -269,6 +327,8 @@ const Dashboard: React.FC = () => {
               setStyleFilter={setStyleFilter}
               artists={artists}
               setCurrentPage={setCurrentPage}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
             />
             <Pagination />
           </div>
@@ -305,13 +365,13 @@ const Dashboard: React.FC = () => {
                 </p>
               )}
             </div>
-            <div className="py-4">
+            <div className="py-3">
               <Pagination />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="flex-[1] flex flex-col gap-4">
+        <aside className="flex-[1] flex flex-col gap-4">
           <div
             className="bg-gray-800 rounded-3xl p-4 flex flex-col sticky top-4"
             style={{ height: "calc(97vh - 6rem)" }}
@@ -353,7 +413,7 @@ const Dashboard: React.FC = () => {
               />
             )}
           </div>
-        </div>
+        </aside>
       </main>
 
       {selectedArtist && (
