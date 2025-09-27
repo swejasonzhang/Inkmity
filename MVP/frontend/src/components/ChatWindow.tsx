@@ -123,7 +123,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               isExpanded ? "flex-1 min-h-[200px]" : "h-12"
             }`}
           >
-            {/* Header */}
             <div
               className="flex justify-between items-center px-3 pt-2 cursor-pointer"
               onClick={() => handleToggle(conv.participantId)}
@@ -136,7 +135,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setExpandedId(null); // collapse
+                      setExpandedId(null);
                       onToggleCollapse(conv.participantId);
                     }}
                     className="text-gray-400 hover:text-gray-200 text-sm"
@@ -156,12 +155,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               </div>
             </div>
 
-            {/* Divider shown only when expanded */}
             {isExpanded && (
               <div className="border-t border-gray-700 my-2"></div>
             )}
 
-            {/* Body */}
             {isExpanded && (
               <div className="flex flex-col flex-1 px-3 pb-3">
                 <div className="flex-1 flex flex-col gap-1 overflow-y-auto mb-2">

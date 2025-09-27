@@ -48,6 +48,9 @@ const Dashboard: React.FC = () => {
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterOpacity, setFilterOpacity] = useState(1);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
 
   const ITEMS_PER_PAGE = 5;
 
@@ -315,6 +318,7 @@ const Dashboard: React.FC = () => {
                     position: "bottom-right",
                   });
                 }}
+                expandedId={selectedConversationId}
               />
             )}
           </div>
@@ -366,6 +370,8 @@ const Dashboard: React.FC = () => {
               ...prev,
               [artist._id]: false,
             }));
+
+            setSelectedConversationId(artist._id);
 
             setMessagingOpen(true);
             setSelectedArtist(null);
