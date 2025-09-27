@@ -39,7 +39,6 @@ const Header: React.FC = () => {
 
   return (
     <header className="w-full bg-gray-50 shadow-lg border-b-4 border-gray-200 relative h-24 flex items-center z-50">
-      {/* Center nav + logo */}
       <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center space-x-12">
         <nav className="flex space-x-12 text-lg font-medium text-gray-700">
           <a href="/dashboard" className="hover:text-black transition">
@@ -121,7 +120,6 @@ const Header: React.FC = () => {
           </div>
           */}
 
-          {/* User dropdown */}
           <div
             className="relative"
             onMouseEnter={() => setShowDropdown(true)}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import { MessageSquare, Bot } from "lucide-react";
@@ -12,10 +12,9 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion } from "framer-motion";
 
-// Rename to avoid any type name collisions with other "Artist" types
 interface ArtistDto {
-  _id: string;                // Mongo id (string if you cast to String, otherwise ObjectId->stringified)
-  clerkId?: string;           // Optional in case backend didn't select it; we prefer to use this
+  _id: string;
+  clerkId?: string;
   username: string;
   bio?: string;
   location?: string;
@@ -38,8 +37,12 @@ const Dashboard: React.FC = () => {
   const [messagingOpen, setMessagingOpen] = useState(true);
   const [conversationList, setConversationList] = useState<Conversation[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
-  const [collapsedConversations, setCollapsedConversations] = useState<Record<string, boolean>>({});
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [collapsedConversations, setCollapsedConversations] = useState<
+    Record<string, boolean>
+  >({});
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
 
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
@@ -48,6 +51,8 @@ const Dashboard: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [filterOpacity, setFilterOpacity] = useState(1);
+
+  const prevConvCountRef = useRef(0);
 
   const ITEMS_PER_PAGE = 5;
 
@@ -93,41 +98,50 @@ const Dashboard: React.FC = () => {
       setLoadingConversations(true);
 
       try {
-        // IMPORTANT: make sure backend selects `clerkId` too
-        // e.g. .select("clerkId username email role location style bio priceRange rating reviews")
-        const artistsRes = await authFetch("http://localhost:5005/api/users?role=artist");
+        const artistsRes = await authFetch(
+          "http://localhost:5005/api/users?role=artist"
+        );
         const artistsData: ArtistDto[] = await artistsRes.json();
         setArtists(artistsData);
 
-        // Conversations endpoint keyed by Clerk IDs
-        const convRes = await authFetch(`http://localhost:5005/api/messages/user/${user.id}`);
+        const convRes = await authFetch(
+          `http://localhost:5005/api/messages/user/${user.id}`
+        );
         const raw = await convRes.json();
 
         let convList: Conversation[] = Array.isArray(raw)
           ? raw.map((c: any) => ({
-              participantId: c.participantId,                      // should be artist.clerkId
+              participantId: c.participantId,
               username: c.username ?? "Unknown",
               messages: normalizeMessages(c.messages),
             }))
           : [];
 
-        // Hydrate username if missing
         convList = convList.map((c) => {
           if (c.username !== "Unknown") return c;
-          const artist = artistsData.find((a) => a.clerkId === c.participantId || a._id === c.participantId);
+          const artist = artistsData.find(
+            (a) => a.clerkId === c.participantId || a._id === c.participantId
+          );
           return { ...c, username: artist?.username ?? "Unknown" };
         });
 
-        // Sort by last message timestamp (desc)
         convList.sort((a, b) => {
-          const aLen = a.messages.length;
-          const bLen = b.messages.length;
-          const aLast = aLen ? a.messages[aLen - 1].timestamp : 0;
-          const bLast = bLen ? b.messages[bLen - 1].timestamp : 0;
+          const aLast = a.messages.length
+            ? a.messages[a.messages.length - 1].timestamp
+            : 0;
+          const bLast = b.messages.length
+            ? b.messages[b.messages.length - 1].timestamp
+            : 0;
           return bLast - aLast;
         });
 
         setConversationList(convList);
+
+        if (convList.length > 0) {
+          const newest = convList[0].participantId;
+          setSelectedConversationId(newest);
+          setCollapsedConversations((prev) => ({ ...prev, [newest]: false }));
+        }
 
         toast.success("Artists and conversations loaded!", {
           position: "bottom-right",
@@ -148,13 +162,28 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
+    if (conversationList.length > prevConvCountRef.current) {
+      const newest = conversationList[0];
+      if (newest) {
+        setSelectedConversationId(newest.participantId);
+        setCollapsedConversations((prev) => ({
+          ...prev,
+          [newest.participantId]: false,
+        }));
+      }
+    }
+    prevConvCountRef.current = conversationList.length;
+  }, [conversationList]);
+
+  useEffect(() => {
     const timer = setTimeout(() => setShowArtists(true), 1500);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = document.getElementById("middle-content")?.scrollTop || 0;
+      const scrollTop =
+        document.getElementById("middle-content")?.scrollTop || 0;
       const fadeDistance = 100;
       setFilterOpacity(Math.max(1 - scrollTop / fadeDistance, 0));
     };
@@ -177,8 +206,10 @@ const Dashboard: React.FC = () => {
             const [min, max] = priceFilter.split("-").map(Number);
             return artist.priceRange.max >= min && artist.priceRange.min <= max;
           })();
-      const inLocation = locationFilter === "all" || artist.location === locationFilter;
-      const inStyle = styleFilter === "all" || artist.style?.includes(styleFilter);
+      const inLocation =
+        locationFilter === "all" || artist.location === locationFilter;
+      const inStyle =
+        styleFilter === "all" || artist.style?.includes(styleFilter);
       return inPriceRange && inLocation && inStyle;
     })
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -217,12 +248,10 @@ const Dashboard: React.FC = () => {
       <Header />
 
       <main className="flex-1 flex gap-6 pt-4 px-4">
-        <div className="flex-[1] flex flex-col">
-          <button className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50">
-            <Bot size={24} />
-          </button>
-        </div>
-
+        <button className="fixed bottom-6 left-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition z-50">
+          <Bot size={24} />
+        </button>
+        
         <div
           id="middle-content"
           className="flex-[3] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-gray-900"
@@ -257,10 +286,17 @@ const Dashboard: React.FC = () => {
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.2 }}
-                    transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
+                    transition={{
+                      duration: 0.6,
+                      delay: index * 0.1,
+                      ease: "easeOut",
+                    }}
                     className={`w-full ${index === 0 ? "mt-4" : ""}`}
                   >
-                    <ArtistCard artist={artist} onClick={() => setSelectedArtist(artist)} />
+                    <ArtistCard
+                      artist={artist}
+                      onClick={() => setSelectedArtist(artist)}
+                    />
                   </motion.div>
                 ))
               ) : (
@@ -325,34 +361,49 @@ const Dashboard: React.FC = () => {
           artist={selectedArtist}
           onClose={() => setSelectedArtist(null)}
           onMessage={(artist, preloadedMessage) => {
-            const participantId = artist.clerkId ?? artist._id; // prefer Clerk ID
+            const participantId = artist.clerkId ?? artist._id;
+
             const newMsg: Message = {
-              senderId: user.id,            // Clerk ID of the client
-              receiverId: participantId,    // Clerk ID of the artist (or fallback)
+              senderId: user!.id,
+              receiverId: participantId,
               text: preloadedMessage,
               timestamp: Date.now(),
             };
 
             setConversationList((prev) => {
-              const idx = prev.findIndex((c) => c.participantId === participantId);
+              const idx = prev.findIndex(
+                (c) => c.participantId === participantId
+              );
               if (idx >= 0) {
                 const copy = [...prev];
-                copy[idx] = { ...copy[idx], messages: [...copy[idx].messages, newMsg] };
+                copy[idx] = {
+                  ...copy[idx],
+                  messages: [...copy[idx].messages, newMsg],
+                };
                 return copy.sort((a, b) => {
-                  const aLen = a.messages.length;
-                  const bLen = b.messages.length;
-                  const aLast = aLen ? a.messages[aLen - 1].timestamp : 0;
-                  const bLast = bLen ? b.messages[bLen - 1].timestamp : 0;
+                  const aLast = a.messages.length
+                    ? a.messages[a.messages.length - 1].timestamp
+                    : 0;
+                  const bLast = b.messages.length
+                    ? b.messages[b.messages.length - 1].timestamp
+                    : 0;
                   return bLast - aLast;
                 });
               }
               return [
-                { participantId, username: artist.username, messages: [newMsg] },
+                {
+                  participantId,
+                  username: artist.username,
+                  messages: [newMsg],
+                },
                 ...prev,
               ];
             });
 
-            setCollapsedConversations((prev) => ({ ...prev, [participantId]: false }));
+            setCollapsedConversations((prev) => ({
+              ...prev,
+              [participantId]: false,
+            }));
             setSelectedConversationId(participantId);
             setMessagingOpen(true);
             setSelectedArtist(null);
@@ -360,8 +411,8 @@ const Dashboard: React.FC = () => {
             authFetch("http://localhost:5005/api/messages", {
               method: "POST",
               body: JSON.stringify({
-                senderId: user.id,         // client (Clerk)
-                receiverId: participantId, // artist (Clerk preferred)
+                senderId: user!.id,
+                receiverId: participantId,
                 text: preloadedMessage,
               }),
             }).catch((err) => {
