@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loadingArtists, setLoadingArtists] = useState(true);
-  const [showArtists, setShowArtists] = useState(false); // lazy load
+  const [showArtists, setShowArtists] = useState(false);
   const [messagingOpen, setMessagingOpen] = useState(true);
   const [conversations, setConversations] = useState<Record<string, Message[]>>(
     {}
@@ -375,6 +375,20 @@ const Dashboard: React.FC = () => {
 
             setMessagingOpen(true);
             setSelectedArtist(null);
+
+            authFetch("http://localhost:5005/api/messages", {
+              method: "POST",
+              body: JSON.stringify({
+                senderId: user.id,
+                receiverId: artist._id,
+                text: preloadedMessage,
+              }),
+            }).catch((err) => {
+              console.error("Failed to persist message:", err);
+              toast.error("Failed to send message to server.", {
+                position: "bottom-right",
+              });
+            });
           }}
         />
       )}
