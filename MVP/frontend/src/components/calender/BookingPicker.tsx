@@ -10,6 +10,7 @@ const WEEKDAYS: Weekday[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 type Props = {
   artistId: string;
+  dateISO?: string;
 };
 
 function toISODate(d: Date): string {
@@ -64,121 +65,155 @@ function fmtTime(d: Date): string {
   return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-export default function BookingPicker({ artistId }: Props) {
-  const [selectedDate, setSelectedDate] = useState<string>("");
+export default function BookingPicker({ artistId, dateISO }: Props) {
+  const [selectedDateLocal] = useState<string>("");
+  const effectiveDate = dateISO ?? selectedDateLocal;
+
   const [availability, setAvailability] = useState<Availability | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [note, setNote] = useState<string>("");
+
+  const [kind, setKind] = useState<"consultation" | "appointment">(
+    "appointment"
+  );
 
   useEffect(() => {
     getAvailability(artistId).then(setAvailability).catch(console.error);
   }, [artistId]);
 
   useEffect(() => {
-    if (!selectedDate) return;
-    getBookingsForDate(artistId, selectedDate)
+    if (!effectiveDate) return;
+    getBookingsForDate(artistId, effectiveDate)
       .then(setBookings)
       .catch(console.error);
-  }, [artistId, selectedDate]);
+  }, [artistId, effectiveDate]);
 
   const slots = useMemo(() => {
-    if (!availability || !selectedDate) return [];
-    const date = new Date(`${selectedDate}T00:00:00`);
+    if (!availability || !effectiveDate) return [];
+    const date = new Date(`${effectiveDate}T00:00:00`);
     const dateStr = toISODate(date);
     const wdKey = WEEKDAYS[date.getDay()];
     const override = (availability.exceptions as any)[dateStr];
     const ranges =
       (override !== undefined ? override : availability.weekly[wdKey]) || [];
     if (ranges.length === 0) return [];
-
     let s = generateSlots(date, ranges, availability.slotMinutes);
-
     const now = new Date();
     if (toISODate(now) === dateStr) s = s.filter((d) => d > now);
-
     s = filterBooked(s, bookings, availability.slotMinutes);
     return s;
-  }, [availability, bookings, selectedDate]);
+  }, [availability, bookings, effectiveDate]);
+
+  const canConfirm = Boolean(selectedSlot && availability && effectiveDate);
 
   return (
-    <div className="rounded-xl border border-neutral-700 p-4">
-      <h3 className="font-semibold mb-3">Book an Appointment</h3>
+    <div className="rounded-xl border border-gray-700 p-4 bg-black text-white">
+      <h3 className="font-semibold mb-4">Book an Appointment</h3>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className="text-sm block mb-1">Date</label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => {
-              setSelectedDate(e.target.value);
-              setSelectedSlot(null);
-            }}
-            className="w-full bg-neutral-800 border border-neutral-600 rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm block mb-1">Note (optional)</label>
-          <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Anything the artist should know?"
-            className="w-full bg-neutral-800 border border-neutral-600 rounded px-3 py-2"
-          />
+      <div className="mb-4">
+        <span className="block text-sm mb-2 text-gray-200">Type</span>
+        <div className="inline-flex rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setKind("consultation")}
+            className={`px-4 py-2 text-sm border-r border-gray-700 ${
+              kind === "consultation"
+                ? "bg-white text-black"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
+          >
+            Consultation
+          </button>
+          <button
+            type="button"
+            onClick={() => setKind("appointment")}
+            className={`px-4 py-2 text-sm ${
+              kind === "appointment"
+                ? "bg-white text-black"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
+          >
+            Appointment
+          </button>
         </div>
       </div>
 
-      {!selectedDate && (
-        <p className="text-sm text-neutral-400 mt-3">
+      <div className="mb-3">
+        <label className="text-sm block mb-1 text-gray-200">
+          Note (optional)
+        </label>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Describe your idea, placement, size, or any references."
+          rows={5}
+          className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 min-h-28 md:min-h-36 resize-y"
+        />
+      </div>
+
+      {!effectiveDate && (
+        <p className="text-sm text-gray-400">
           Choose a date to see available times.
         </p>
       )}
-      {selectedDate && slots.length === 0 && (
-        <p className="text-sm text-neutral-400 mt-3">
-          No times available this day.
-        </p>
+      {effectiveDate && slots.length === 0 && (
+        <p className="text-sm text-gray-400">No times available this day.</p>
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-3">
-        {slots.map((s) => (
-          <button
-            key={s.toISOString()}
-            onClick={() => setSelectedSlot(s)}
-            className={`px-3 py-2 rounded ${
-              selectedSlot?.toISOString() === s.toISOString()
-                ? "bg-white text-black"
-                : "bg-neutral-800"
-            }`}
-          >
-            {fmtTime(s)}
-          </button>
-        ))}
+        {slots.map((s) => {
+          const isActive = selectedSlot?.toISOString() === s.toISOString();
+          return (
+            <button
+              key={s.toISOString()}
+              onClick={() => setSelectedSlot(s)}
+              className={[
+                "px-3 py-2 rounded border transition",
+                isActive
+                  ? "bg-white text-black border-white"
+                  : "bg-gray-900 text-white border-gray-700 hover:bg-gray-800",
+              ].join(" ")}
+            >
+              {fmtTime(s)}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex justify-end mt-4">
         <button
-          disabled={!selectedSlot || !availability}
+          disabled={!canConfirm}
           onClick={async () => {
             if (!selectedSlot || !availability) return;
             const startISO = selectedSlot.toISOString();
             const endISO = new Date(
               selectedSlot.getTime() + availability.slotMinutes * 60 * 1000
             ).toISOString();
+            const prefixedNote = `[${kind.toUpperCase()}] ${note || ""}`.trim();
             try {
-              await createBooking({ artistId, startISO, endISO, note });
+              await createBooking({
+                artistId,
+                startISO,
+                endISO,
+                note: prefixedNote,
+              });
               alert("Booked!");
               setSelectedSlot(null);
-              if (selectedDate) {
-                const b = await getBookingsForDate(artistId, selectedDate);
+              if (effectiveDate) {
+                const b = await getBookingsForDate(artistId, effectiveDate);
                 setBookings(b);
               }
             } catch (e: any) {
               alert(e?.message || "Booking failed");
             }
           }}
-          className="px-4 py-2 rounded bg-green-600 disabled:opacity-50"
+          className={[
+            "px-4 py-2 rounded font-medium border",
+            canConfirm
+              ? "bg-white text-black border-white hover:bg-gray-200"
+              : "bg-gray-700 text-gray-300 border-gray-700 cursor-not-allowed",
+          ].join(" ")}
         >
           Confirm
         </button>

@@ -34,7 +34,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   collapsedMap,
   currentUserId,
   loading,
-  emptyText = "No conversations currently. Please click an artist to start one!",
+  emptyText = "No conversations currently.\nPlease click an artist to start one!",
   onToggleCollapse,
   onRemoveConversation,
   expandedId: externalExpandedId,
@@ -90,7 +90,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         animate={{ opacity: 1 }}
         className="flex flex-col justify-center items-center gap-4 overflow-y-auto h-full bg-black p-2 rounded-3xl"
       >
-        <p className="text-gray-400 text-center mt-4">{emptyText}</p>
+        <p className="text-gray-400 text-center mt-4 whitespace-pre-line">
+          {emptyText}
+        </p>
       </motion.div>
     );
   }
