@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import BookingPicker from "../calender/BookingPicker";
 
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+
 interface Artist {
   _id: string;
   clerkId?: string;
@@ -15,26 +21,34 @@ interface ArtistModalProps {
   onMessage: (artist: Artist, preloadedMessage: string) => void;
 }
 
-type TabKey = "about" | "book" | "message";
-
 const ArtistModal: React.FC<ArtistModalProps> = ({
   artist,
   onClose,
   onMessage,
 }) => {
-  const preloadedMessage = `Hi ${artist.username}, I've taken a look at your work and I'm interested! Would you be open to my ideas?`;
-  const [tab, setTab] = useState<TabKey>("about");
+  const preloadedMessage = `Hi ${artist.username}, I've taken a look at your work and I'm interested!
+Would you be open to my ideas?`;
 
+  const [sentOnce, setSentOnce] = useState(false);
+  const sentRef = useRef(false);
   const backdropRef = useRef<HTMLDivElement>(null);
 
-  // Close on ESC
+  const [date, setDate] = useState<Date | undefined>(new Date());
+
+  const handleSendMessage = () => {
+    if (sentRef.current) return;
+    sentRef.current = true;
+    setSentOnce(true);
+    onMessage(artist, preloadedMessage);
+    onClose();
+  };
+
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
   }, [onClose]);
 
-  // Close on outside click
   const onBackdropClick = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) onClose();
   };
@@ -42,9 +56,9 @@ const ArtistModal: React.FC<ArtistModalProps> = ({
   return (
     <motion.div
       key={artist._id}
-      initial={{ scale: 0.92, opacity: 0 }}
+      initial={{ scale: 0.96, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.92, opacity: 0 }}
+      exit={{ scale: 0.96, opacity: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       ref={backdropRef}
@@ -53,90 +67,80 @@ const ArtistModal: React.FC<ArtistModalProps> = ({
       role="dialog"
     >
       <div
-        className="w-11/12 max-w-3xl rounded-xl bg-gray-900 shadow-lg"
         onMouseDown={(e) => e.stopPropagation()}
+        className="
+          w-[92vw] max-w-[1200px]
+          h-[86vh] max-h-[900px]
+          rounded-2xl bg-gray-900 text-white shadow-2xl border border-white
+          flex flex-col
+        "
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
-          <div>
-            <h2 className="text-xl font-bold text-white">{artist.username}</h2>
-            <p className="text-sm text-gray-400">
-              {artist.bio || "No bio available"}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-700"
-          >
-            Close
-          </button>
-        </div>
+        <Separator className="bg-white/20" />
 
-        {/* Tabs */}
-        <div className="flex gap-2 border-b border-gray-800 px-4 pt-3">
-          {(["about", "book", "message"] as TabKey[]).map((k) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={`rounded-t-md px-4 py-2 text-sm ${
-                tab === k
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-300 hover:text-white"
-              }`}
-            >
-              {k === "about" ? "About" : k === "book" ? "Book" : "Message"}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
-          {tab === "about" && (
-            <div className="space-y-3">
-              <h3 className="text-white">About {artist.username}</h3>
-              <p className="text-gray-300">
+        <ScrollArea className="flex-1 h-[calc(86vh-120px)] pr-2">
+          <div className="p-6 space-y-8 text-center flex flex-col items-center">
+            <section className="space-y-3 w-full max-w-2xl">
+              <h3 className="text-xl font-semibold">About {artist.username}</h3>
+              <p className="text-white/90">
                 {artist.bio || "No bio available"}
               </p>
-              <p className="text-sm text-gray-400">
-                Explore their portfolio on the main page, then switch to the{" "}
-                <span className="text-white">Book</span> tab to reserve a time.
-              </p>
-            </div>
-          )}
+            </section>
 
-          {tab === "book" && (
-            <div className="space-y-4">
-              <h3 className="text-white">Book {artist.username}</h3>
-              {/* Booking UI */}
-              <BookingPicker artistId={artist._id} />
-              <p className="mt-2 text-xs text-gray-400">
-                After booking, the slot will disappear from the list to prevent
-                double-booking.
-              </p>
-            </div>
-          )}
+            <Separator className="bg-white/10 w-full max-w-4xl" />
 
-          {tab === "message" && (
-            <div className="space-y-4">
-              <h3 className="text-white">Message {artist.username}</h3>
-              <p className="text-gray-300">
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-5xl items-stretch auto-rows-fr">
+              <Card className="bg-gray-900 border-white/20 w-full h-full flex flex-col">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-white">Pick a date</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex justify-center">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    className="rounded-md border border-white/10 bg-gray-900 text-white"
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-white/20 w-full h-full flex flex-col">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-white">Available times</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col items-center">
+                  <div className="w-full max-w-sm">
+                    <BookingPicker artistId={artist._id} />
+                  </div>
+                  <p className="mt-3 text-xs text-white/70">
+                    After booking, the slot will disappear to prevent
+                    double-booking.
+                  </p>
+                </CardContent>
+              </Card>
+            </section>
+
+            <Separator className="bg-white/10 w-full max-w-4xl" />
+
+            <section className="space-y-4 w-full max-w-2xl">
+              <h3 className="text-xl font-semibold">
+                Message {artist.username}
+              </h3>
+              <p className="text-white/90">
                 Send a quick intro. You can also ask questions about
                 availability or designs.
               </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    onMessage(artist, preloadedMessage);
-                    onClose();
-                  }}
-                  className="rounded bg-black px-4 py-2 text-white transition hover:bg-gray-900"
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={sentOnce}
+                  className="bg-gray-800 hover:bg-gray-700 text-white disabled:bg-gray-700"
                 >
-                  Send Message
-                </button>
+                  {sentOnce ? "Message Sent" : "Send Message"}
+                </Button>
               </div>
-            </div>
-          )}
-        </div>
+            </section>
+          </div>
+        </ScrollArea>
       </div>
     </motion.div>
   );

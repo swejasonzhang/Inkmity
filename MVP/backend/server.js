@@ -1,8 +1,8 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import dotenv from "dotenv";
 
 import { connectDB } from "./config/db.js";
 import { initSocket } from "./services/socketService.js";
@@ -21,32 +21,44 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-connectDB();
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const PORT = process.env.PORT || 5005;
+
+await connectDB();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: FRONTEND_ORIGIN,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
+
+app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/dashboard", requireAuth(), dashboardRoutes);
-app.use("/api/messages", requireAuth(), messageRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/bookings", bookingRoutes);
 
+app.use("/api/dashboard", requireAuth(), dashboardRoutes);
+app.use("/api/messages", requireAuth(), messageRoutes);
+
+app.use((req, res) => res.status(404).json({ error: "Not found", path: req.originalUrl }));
+
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal Server Error" });
+});
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: FRONTEND_ORIGIN,
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 initSocket(io);
 
-const PORT = process.env.PORT || 5005;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

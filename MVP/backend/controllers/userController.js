@@ -68,3 +68,83 @@ export const syncUser = async (req, res) => {
     res.status(500).json({ error: "Failed to sync user" });
   }
 };
+
+export const getMe = async (req, res) => {
+  const userId = req.auth?.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const me = await User.findOne({ clerkId: userId }).lean();
+  if (!me) return res.status(404).json({ error: "User not found" });
+  res.json(me);
+};
+
+export const updateMyAvatar = async (req, res) => {
+  try {
+    const clerkId = req.auth?.userId;
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    const {
+      url,
+      publicId,
+      width,
+      height,
+      format,
+      bytes,
+      alt = "Profile photo",
+    } = req.body || {};
+
+    if (!url) return res.status(400).json({ error: "Missing image url" });
+
+    const update = {
+      avatar: {
+        url,
+        publicId,
+        width,
+        height,
+        format,
+        bytes,
+        alt,
+      },
+    };
+
+    const updated = await User.findOneAndUpdate({ clerkId }, update, {
+      new: true,
+      runValidators: true,
+    }).lean();
+
+    if (!updated) return res.status(404).json({ error: "User not found" });
+    res.json({ avatar: updated.avatar });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update avatar" });
+  }
+};
+
+export const deleteMyAvatar = async (req, res) => {
+  try {
+    const clerkId = req.auth?.userId;
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    const user = await User.findOne({ clerkId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const publicId = user.avatar?.publicId;
+
+    user.avatar = undefined;
+    await user.save();
+
+    if (publicId) {
+      const { default: cloudinary } = await import("../lib/cloudinary.js");
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (e) {
+        console.warn("Cloudinary destroy failed:", e?.message || e);
+      }
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete avatar" });
+  }
+};
