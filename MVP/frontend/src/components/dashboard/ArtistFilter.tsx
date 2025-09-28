@@ -7,6 +7,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface Artist {
+  location?: string;
+  style?: string[];
+}
+
 interface Props {
   priceFilter: string;
   setPriceFilter: (value: string) => void;
@@ -14,7 +19,7 @@ interface Props {
   setLocationFilter: (value: string) => void;
   styleFilter: string;
   setStyleFilter: (value: string) => void;
-  artists: any[];
+  artists: Artist[];
   setCurrentPage: (page: number) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
@@ -32,10 +37,8 @@ const ArtistFilter: React.FC<Props> = ({
   searchQuery,
   setSearchQuery,
 }) => {
-  const uniqueLocations = [...new Set(artists.map((a) => a.location))].filter(
-    Boolean
-  );
-  const uniqueStyles = [...new Set(artists.flatMap((a) => a.style || []))];
+  const uniqueLocations = [...new Set(artists.map((a) => a.location).filter(Boolean))] as string[];
+  const uniqueStyles = [...new Set(artists.flatMap((a) => a.style ?? []))];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full">
@@ -84,7 +87,7 @@ const ArtistFilter: React.FC<Props> = ({
         </SelectTrigger>
         <SelectContent className="bg-gray-800 text-white">
           <SelectItem value="all">All Locations</SelectItem>
-          {uniqueLocations.map((loc: string) => (
+          {uniqueLocations.map((loc) => (
             <SelectItem key={loc} value={loc}>
               {loc}
             </SelectItem>
@@ -104,7 +107,7 @@ const ArtistFilter: React.FC<Props> = ({
         </SelectTrigger>
         <SelectContent className="bg-gray-800 text-white">
           <SelectItem value="all">All Styles</SelectItem>
-          {uniqueStyles.map((style: string) => (
+          {uniqueStyles.map((style) => (
             <SelectItem key={style} value={style}>
               {style}
             </SelectItem>
