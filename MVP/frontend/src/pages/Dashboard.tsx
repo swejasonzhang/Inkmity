@@ -29,6 +29,25 @@ interface ArtistDto {
   socialLinks?: { platform: string; url: string }[];
 }
 
+type Tier = "free" | "amateur" | "pro" | "elite";
+
+const getTierLimit = (tierRaw: unknown): number => {
+  const tier = String(tierRaw || "free").toLowerCase() as Tier;
+  switch (tier) {
+    case "free":
+      return 5;
+    case "amateur":
+      return 15;
+    case "pro":
+    case "elite":
+      return Number.POSITIVE_INFINITY; // unlimited
+    default:
+      return 5;
+  }
+};
+
+const isFiniteNumber = (n: number) => Number.isFinite(n);
+
 const Dashboard: React.FC = () => {
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
@@ -237,8 +256,19 @@ const Dashboard: React.FC = () => {
     })
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-  const totalPages = Math.ceil(filteredArtists.length / ITEMS_PER_PAGE);
-  const paginatedArtists = filteredArtists.slice(
+  // -------- Tier gating (client-only) --------
+  const publicMeta = (user.publicMetadata || {}) as Record<string, unknown>;
+  const isClient = String(publicMeta.role || "").toLowerCase() === "client";
+  const tierLimit = getTierLimit(publicMeta.tier);
+  const gatedArtists = isClient
+    ? filteredArtists.slice(
+        0,
+        isFiniteNumber(tierLimit) ? tierLimit : filteredArtists.length
+      )
+    : filteredArtists;
+
+  const totalPages = Math.ceil(gatedArtists.length / ITEMS_PER_PAGE);
+  const paginatedArtists = gatedArtists.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );

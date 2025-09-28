@@ -1,14 +1,16 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Upgrade from "./pages/Upgrade";
 
 const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/signup" element={<SignUp />} />
       <Route path="/login" element={<Login />} />
+
       <Route
         path="/dashboard"
         element={
@@ -22,7 +24,23 @@ const App: React.FC = () => {
           </>
         }
       />
+
+      <Route
+        path="/upgrade"
+        element={
+          <>
+            <SignedIn>
+              <Upgrade />
+            </SignedIn>
+            <SignedOut>
+              <RedirectToSignIn />
+            </SignedOut>
+          </>
+        }
+      />
+
       <Route path="/" element={<Login />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
