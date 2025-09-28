@@ -74,14 +74,24 @@ const Header: React.FC = () => {
 
       <nav
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                      flex items-center gap-10 text-lg font-medium text-gray-700"
+                    flex items-center gap-10 text-lg font-medium text-gray-700"
       >
         <a href="/dashboard" className="hover:text-black transition">
           Dashboard
         </a>
-        <a href="/gallery" className="hover:text-black transition">
+
+        {/* Gallery locked / in-progress */}
+        <span
+          aria-disabled="true"
+          title="Gallery is a feature in progress"
+          className="flex items-center gap-2 text-gray-500 cursor-not-allowed opacity-60 pointer-events-none"
+        >
           Gallery
-        </a>
+          <span className="inline-flex items-center gap-1 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
+            <Lock size={10} /> In progress
+          </span>
+        </span>
+
         <a href="/contact" className="hover:text-black transition">
           Contact
         </a>

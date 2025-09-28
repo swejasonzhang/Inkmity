@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Bot, Lock } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import Header from "../components/dashboard/Header";
-import ChatWindow, { Message, Conversation } from "../components/dashboard/ChatWindow";
+import ChatWindow, {
+  Message,
+  Conversation,
+} from "../components/dashboard/ChatWindow";
 import ArtistCard from "../components/dashboard/ArtistCard";
 import ArtistModal from "../components/dashboard/ArtistModal";
 import ArtistFilter from "../components/dashboard/ArtistFilter";
@@ -11,6 +14,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion } from "framer-motion";
+import ChatBot from "../components/dashboard/ChatBot";
 
 interface ArtistDto {
   _id: string;
@@ -271,39 +275,7 @@ const Dashboard: React.FC = () => {
       <Header />
 
       <main className="flex-1 flex gap-6 pt-4 px-4 overflow-hidden">
-        <aside className="flex-[1.6] min-w-[220px] max-w-[320px] bg-gray-900">
-          <div
-            className="sticky top-4 bg-gray-800 rounded-3xl p-5 flex flex-col items-center gap-4"
-            style={{ height: "calc(97vh - 6rem)" }}
-          >
-            <div className="text-white font-bold text-lg w-full flex items-center justify-between">
-              <span>Assistant</span>
-              <span className="text-xs bg-gray-700 text-gray-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Lock size={12} /> Coming soon
-              </span>
-            </div>
-
-            <button
-              className="w-full bg-black text-white py-4 rounded-2xl shadow-lg opacity-50 cursor-not-allowed flex items-center justify-center gap-3"
-              title="Feature locked — coming soon"
-              aria-disabled
-              disabled
-              onClick={(e) => e.preventDefault()}
-            >
-              <Bot size={22} />
-              <span className="font-semibold">Chat with Inkmity</span>
-            </button>
-
-            <div className="w-full text-gray-400 text-sm leading-relaxed text-center">
-              This feature is being polished. Stay tuned!
-            </div>
-
-            <div className="mt-auto w-full text-xs text-gray-500 text-center">
-              You’ll soon be able to ask for artist suggestions, refine briefs,
-              and more.
-            </div>
-          </div>
-        </aside>
+        <ChatBot />
 
         <section
           id="middle-content"
@@ -384,7 +356,9 @@ const Dashboard: React.FC = () => {
                 collapsedMap={collapsedConversations}
                 currentUserId={user.id}
                 loading={loadingConversations}
-                emptyText="No conversations currently. Please click an artist to start one!"
+                emptyText={
+                  "No conversations currently.\nPlease click an artist to start one!"
+                }
                 onToggleCollapse={(participantId: string) => {
                   setCollapsedConversations((prev) => ({
                     ...prev,
