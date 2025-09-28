@@ -27,74 +27,72 @@ export default function BookingPicker({}: Props) {
   const canConfirm = Boolean(selectedTime);
 
   return (
-    <div className="rounded-xl border border-gray-700 p-4 bg-black text-white">
-      <h3 className="font-semibold mb-4">Book a Time</h3>
+    <div className="rounded-xl border border-gray-700 p-4 bg-black text-white grid gap-3 sm:grid-cols-2 min-h-[90vh] pb-6">
+      <h3 className="font-semibold mb-1 sm:col-span-2">Book a Time</h3>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <span className="block text-sm mb-2 text-gray-200">Type</span>
-          <div className="inline-flex rounded-lg border border-gray-700 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setKind("consultation")}
-              className={`px-4 py-2 text-sm border-r border-gray-700 ${
-                kind === "consultation"
-                  ? "bg-white text-black"
-                  : "bg-gray-900 text-white hover:bg-gray-800"
-              }`}
-            >
-              Consultation
-            </button>
-            <button
-              type="button"
-              onClick={() => setKind("appointment")}
-              className={`px-4 py-2 text-sm ${
-                kind === "appointment"
-                  ? "bg-white text-black"
-                  : "bg-gray-900 text-white hover:bg-gray-800"
-              }`}
-            >
-              Appointment
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <span className="block text-sm mb-2 text-gray-200">AM / PM</span>
-          <div className="inline-flex rounded-lg border border-gray-700 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => {
-                setMeridiem("AM");
-                setSelectedTime(null);
-              }}
-              className={`px-4 py-2 text-sm border-r border-gray-700 ${
-                meridiem === "AM"
-                  ? "bg-white text-black"
-                  : "bg-gray-900 text-white hover:bg-gray-800"
-              }`}
-            >
-              AM
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMeridiem("PM");
-                setSelectedTime(null);
-              }}
-              className={`px-4 py-2 text-sm ${
-                meridiem === "PM"
-                  ? "bg-white text-black"
-                  : "bg-gray-900 text-white hover:bg-gray-800"
-              }`}
-            >
-              PM
-            </button>
-          </div>
+      <div>
+        <span className="block text-sm mb-2 text-gray-200">Type</span>
+        <div className="inline-flex rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setKind("consultation")}
+            className={`px-4 py-2 text-sm border-r border-gray-700 ${
+              kind === "consultation"
+                ? "bg-white text-black"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
+          >
+            Consultation
+          </button>
+          <button
+            type="button"
+            onClick={() => setKind("appointment")}
+            className={`px-4 py-2 text-sm ${
+              kind === "appointment"
+                ? "bg-white text-black"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
+          >
+            Appointment
+          </button>
         </div>
       </div>
 
-      <div className="mt-4">
+      <div>
+        <span className="block text-sm mb-2 text-gray-200">AM / PM</span>
+        <div className="inline-flex rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => {
+              setMeridiem("AM");
+              setSelectedTime(null);
+            }}
+            className={`px-4 py-2 text-sm border-r border-gray-700 ${
+              meridiem === "AM"
+                ? "bg-white text-black"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
+          >
+            AM
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMeridiem("PM");
+              setSelectedTime(null);
+            }}
+            className={`px-4 py-2 text-sm ${
+              meridiem === "PM"
+                ? "bg-white text-black"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
+          >
+            PM
+          </button>
+        </div>
+      </div>
+
+      <div className="sm:col-span-2 mt-1">
         <span className="block text-sm mb-2 text-gray-200">Time</span>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
           {times.map((t) => {
@@ -129,7 +127,7 @@ export default function BookingPicker({}: Props) {
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="sm:col-span-2">
         <label className="text-sm block mb-1 text-gray-200">
           Note (optional)
         </label>
@@ -142,7 +140,10 @@ export default function BookingPicker({}: Props) {
         />
       </div>
 
-      <div className="flex justify-end mt-4">
+      <div className="sm:col-span-2 flex items-center justify-between gap-4 mt-4">
+        <p className="text-xs text-white/70">
+          After booking, the slot will disappear to prevent double-booking.
+        </p>
         <button
           disabled={!canConfirm}
           onClick={() => {

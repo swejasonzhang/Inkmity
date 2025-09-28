@@ -264,16 +264,13 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
-      {/* Hide the middle column scrollbar (WebKit) */}
       <style>{`
         #middle-content::-webkit-scrollbar { display: none; }
       `}</style>
 
       <Header />
 
-      {/* Only the middle column can scroll; the page itself is locked */}
       <main className="flex-1 flex gap-6 pt-4 px-4 overflow-hidden">
-        {/* LEFT: Bot column (locked) */}
         <aside className="flex-[1.6] min-w-[220px] max-w-[320px] bg-gray-900">
           <div
             className="sticky top-4 bg-gray-800 rounded-3xl p-5 flex flex-col items-center gap-4"
@@ -308,7 +305,6 @@ const Dashboard: React.FC = () => {
           </div>
         </aside>
 
-        {/* MIDDLE: Artist list — the ONLY scrollable area, scrollbar hidden */}
         <section
           id="middle-content"
           className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-gray-900"
