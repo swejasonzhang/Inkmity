@@ -130,11 +130,7 @@ const Upgrade: React.FC = () => {
       : "free";
   }, [user?.publicMetadata?.tier]);
 
-  const userCadenceRaw = String(
-    user?.publicMetadata?.billingCadence || "monthly"
-  ).toLowerCase() as Cadence;
-  const initialCadence: Cadence =
-    userCadenceRaw === "monthly" ? "yearly" : "monthly";
+  const initialCadence: Cadence = "monthly";
 
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [cadence, setCadence] = useState<Cadence>(initialCadence);
