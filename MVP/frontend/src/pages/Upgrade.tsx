@@ -133,7 +133,8 @@ const Upgrade: React.FC = () => {
   const userCadenceRaw = String(
     user?.publicMetadata?.billingCadence || "monthly"
   ).toLowerCase() as Cadence;
-  const initialCadence: Cadence = userCadenceRaw === "monthly" ? "yearly" : "monthly";
+  const initialCadence: Cadence =
+    userCadenceRaw === "monthly" ? "yearly" : "monthly";
 
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [cadence, setCadence] = useState<Cadence>(initialCadence);
@@ -148,7 +149,8 @@ const Upgrade: React.FC = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const priceLabel = (plan: Plan) => {
-    if (cadence === "monthly") return plan.monthly === 0 ? "$0/mo" : `$${plan.monthly}/mo`;
+    if (cadence === "monthly")
+      return plan.monthly === 0 ? "$0/mo" : `$${plan.monthly}/mo`;
     const y = plan.yearly ?? Math.round(plan.monthly * 12 * 0.7);
     return y === 0 ? "$0/yr" : `$${y}/yr`;
   };
@@ -164,7 +166,10 @@ const Upgrade: React.FC = () => {
     }
   };
 
-  const onCheckout = async (tier: Tier, productType: "subscription" | "onetime" = "subscription") => {
+  const onCheckout = async (
+    tier: Tier,
+    productType: "subscription" | "onetime" = "subscription"
+  ) => {
     if (pricing[tier].locked) return;
     scrollToTop();
     try {
@@ -185,7 +190,8 @@ const Upgrade: React.FC = () => {
           cancelUrl: `${window.location.href}`,
         }),
       });
-      if (!res.ok) throw new Error((await res.text()) || "Failed to start checkout");
+      if (!res.ok)
+        throw new Error((await res.text()) || "Failed to start checkout");
       const { url } = await res.json();
       window.location.href = url;
     } catch (e: any) {
@@ -206,9 +212,12 @@ const Upgrade: React.FC = () => {
           "Content-Type": "application/json",
           Authorization: token ? `Bearer ${token}` : "",
         },
-        body: JSON.stringify({ returnUrl: `${window.location.origin}/upgrade` }),
+        body: JSON.stringify({
+          returnUrl: `${window.location.origin}/upgrade`,
+        }),
       });
-      if (!res.ok) throw new Error((await res.text()) || "Failed to open billing portal");
+      if (!res.ok)
+        throw new Error((await res.text()) || "Failed to open billing portal");
       const { url } = await res.json();
       window.location.href = url;
     } catch (e: any) {
@@ -231,7 +240,10 @@ const Upgrade: React.FC = () => {
         },
         body: JSON.stringify({ when: cancelWhen }),
       });
-      if (!res.ok) throw new Error((await res.text()) || "Failed to schedule cancellation");
+      if (!res.ok)
+        throw new Error(
+          (await res.text()) || "Failed to schedule cancellation"
+        );
       alert("Your subscription cancellation has been scheduled.");
     } catch (e: any) {
       alert(e?.message || "Could not schedule cancellation");
@@ -244,6 +256,7 @@ const Upgrade: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="mx-auto max-w-7xl px-6 py-16">
         <ControlsBar
+          role={role}
           showManage={currentTier !== "free"}
           cadence={cadence}
           setCadence={setCadence}
@@ -253,17 +266,6 @@ const Upgrade: React.FC = () => {
           onScheduleUnsubscribe={onScheduleUnsubscribe}
           loadingKey={loadingKey}
         />
-
-        <header className="text-center mb-14">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
-            {role === "artist" ? "Plans for Tattoo Artists" : "Plans for Tattoo Clients"}
-          </h1>
-          <p className="text-white/70 mt-4 text-lg md:text-xl">
-            {role === "artist"
-              ? "Showcase your portfolio and get discovered by clients."
-              : "Discover artists and find your next tattoo with powerful search."}
-          </p>
-        </header>
 
         <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
           {ORDER.map((tier) => {
@@ -282,8 +284,13 @@ const Upgrade: React.FC = () => {
                 priceMain={priceLabel(plan)}
                 priceAlt={altPriceLabel(plan)}
                 onCheckout={() => onCheckout(tier, "subscription")}
-                onManageBilling={isCurrent && tier !== "free" ? onManageBilling : undefined}
-                managing={loadingKey === `${tier}:subscription` || loadingKey === "portal"}
+                onManageBilling={
+                  isCurrent && tier !== "free" ? onManageBilling : undefined
+                }
+                managing={
+                  loadingKey === `${tier}:subscription` ||
+                  loadingKey === "portal"
+                }
               />
             );
           })}
@@ -294,7 +301,10 @@ const Upgrade: React.FC = () => {
           onDayPass={() => onCheckout("pro", "onetime")}
           onSpotlight={() => onCheckout("pro", "onetime")}
           loadingKey={loadingKey}
-          onSwitchYearly={() => setCadence("yearly")}
+          currentCadence={cadence}
+          onToggleCadence={() =>
+            setCadence((c) => (c === "yearly" ? "monthly" : "yearly"))
+          }
         />
 
         <p className="text-center text-sm md:text-base text-white/60 mt-10">
