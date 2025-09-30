@@ -56,7 +56,7 @@ const OneTimeOptions: React.FC<OneTimeOptionsProps> = ({
             <div className="flex-1 w-full flex flex-col items-center justify-center gap-3">
               <h3 className="text-xl md:text-2xl font-bold">Day Pass</h3>
               <div className="text-3xl md:text-4xl font-extrabold">
-                $5 / 24 hours
+                $10 / 24 hours
               </div>
               <ul className="mt-2 space-y-2 text-white/85">
                 <li className="flex items-center gap-3 justify-center">
