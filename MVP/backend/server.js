@@ -16,7 +16,8 @@ import bookingRoutes from "./routes/bookings.js";
 
 import { requireAuth } from "./middleware/auth.js";
 
-dotenv.config();
+const env = process.env.NODE_ENV || "development";
+dotenv.config({ path: `.env.${env}` });
 
 const app = express();
 const server = http.createServer(app);
@@ -45,7 +46,9 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
 
-app.use((req, res) => res.status(404).json({ error: "Not found", path: req.originalUrl }));
+app.use((req, res) =>
+  res.status(404).json({ error: "Not found", path: req.originalUrl })
+);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
