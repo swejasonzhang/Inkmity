@@ -3,7 +3,6 @@ import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Upgrade from "./pages/Upgrade";
 
 const App: React.FC = () => {
   return (
@@ -29,9 +28,6 @@ const App: React.FC = () => {
         path="/upgrade"
         element={
           <>
-            <SignedIn>
-              <Upgrade />
-            </SignedIn>
             <SignedOut>
               <RedirectToSignIn />
             </SignedOut>
