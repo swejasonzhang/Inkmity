@@ -1,8 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Contact from "./pages/Contact";
+import About from "./pages/About";
 
 const App: React.FC = () => {
   return (
@@ -24,18 +27,23 @@ const App: React.FC = () => {
         }
       />
 
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/about" element={<About />} />
+
       <Route
-        path="/upgrade"
+        path="/"
         element={
           <>
+            <SignedIn>
+              <Navigate to="/dashboard" replace />
+            </SignedIn>
             <SignedOut>
-              <RedirectToSignIn />
+              <Login />
             </SignedOut>
           </>
         }
       />
 
-      <Route path="/" element={<Login />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

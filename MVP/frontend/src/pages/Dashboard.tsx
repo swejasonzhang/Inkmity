@@ -1,4 +1,3 @@
-// src/pages/Dashboard.tsx
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
@@ -6,10 +5,6 @@ import Header from "@/components/dashboard/Header";
 import ChatBot from "@/components/dashboard/ChatBot";
 import ChatWindow, { Message } from "@/components/dashboard/ChatWindow";
 import ArtistsSection from "@/components/dashboard/ArtistsSection";
-import MessagesFab from "@/components/dashboard/mobile/MessagesFab";
-import MessagesDrawer from "@/components/dashboard/mobile/MessagesDrawer";
-import AssistantFab from "@/components/dashboard/mobile/AssistantFab";
-import AssistantDrawer from "@/components/dashboard/mobile/AssistantDrawer";
 import ArtistModal from "@/components/dashboard/ArtistModal";
 import { toast } from "react-toastify";
 import { MessageSquare } from "lucide-react";
@@ -33,14 +28,7 @@ const Dashboard: React.FC = () => {
     authFetch,
   } = useDashboardData();
 
-  // desktop messaging (unchanged)
   const [messagingOpen] = useState(true);
-
-  // mobile drawers (closed by default)
-  const [messagesDrawerOpen, setMessagesDrawerOpen] = useState(false);
-  const [assistantDrawerOpen, setAssistantDrawerOpen] = useState(false);
-
-  // artist modal
   const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
 
   useEffect(() => {
@@ -55,22 +43,21 @@ const Dashboard: React.FC = () => {
 
       <Header />
 
-      <main className="flex-1 flex gap-6 pt-4 px-4 overflow-hidden">
-        {/* Desktop Assistant visible; hidden on mobile so artists are primary */}
-        <div className="hidden md:block">
+      <main className="flex-1 flex flex-row gap-4 sm:gap-6 pt-3 sm:pt-4 px-3 sm:px-4 lg:px-6 overflow-hidden">
+        <div className="flex-shrink-0">
           <ChatBot />
         </div>
 
-        {/* CENTER: artists (desktop overlay preserved) */}
-        <ArtistsSection
-          artists={artists}
-          loading={loadingArtists}
-          showArtists={showArtists}
-          onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
-        />
+        <div className="flex-1 min-w-0">
+          <ArtistsSection
+            artists={artists}
+            loading={loadingArtists}
+            showArtists={showArtists}
+            onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+          />
+        </div>
 
-        {/* RIGHT: Messaging column - keep desktop, hide on mobile */}
-        <aside className="hidden lg:flex flex-[1] flex-col gap-4">
+        <aside className="flex-shrink-0 w-full sm:w-[360px] lg:w-[420px] flex flex-col gap-4">
           <div
             className="bg-gray-800 rounded-3xl p-4 flex flex-col sticky top-4"
             style={{ height: "calc(97vh - 6rem)" }}
@@ -117,39 +104,6 @@ const Dashboard: React.FC = () => {
         </aside>
       </main>
 
-      {/* MOBILE FABs (Assistant left, Messages right) */}
-      <AssistantFab onOpen={() => setAssistantDrawerOpen(true)} />
-      <MessagesFab onOpen={() => setMessagesDrawerOpen(true)} />
-
-      {/* MOBILE Drawers (initially closed) */}
-      <AssistantDrawer
-        open={assistantDrawerOpen}
-        onClose={() => setAssistantDrawerOpen(false)}
-      />
-      <MessagesDrawer
-        open={messagesDrawerOpen}
-        onClose={() => setMessagesDrawerOpen(false)}
-        conversations={conversationList}
-        collapsedMap={collapsedConversations}
-        currentUserId={user.id}
-        loading={loadingConversations}
-        expandedId={selectedConversationId}
-        onToggleCollapse={(id) =>
-          setCollapsedConversations((prev) => ({ ...prev, [id]: !prev[id] }))
-        }
-        onRemoveConversation={(id) => {
-          setConversationList((prev) => prev.filter((c) => c.participantId !== id));
-          setCollapsedConversations((prev) => {
-            const next = { ...prev };
-            delete next[id];
-            return next;
-          });
-          toast.info("Conversation hidden from dashboard", { position: "bottom-right" });
-        }}
-        authFetch={authFetch}
-      />
-
-      {/* Artist modal */}
       {selectedArtist && (
         <ArtistModal
           artist={selectedArtist}
@@ -195,9 +149,6 @@ const Dashboard: React.FC = () => {
               console.error("Failed to persist message:", err);
               toast.error("Failed to send message to server.", { position: "bottom-right" });
             });
-
-            // On mobile, pop open the messages drawer after sending
-            setMessagesDrawerOpen(true);
           }}
         />
       )}

@@ -1,0 +1,128 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { toast } from "react-toastify";
+
+const Contact: React.FC = () => {
+    const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+    const [loading, setLoading] = useState(false);
+
+    const onChange =
+        (key: keyof typeof form) =>
+            (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                setForm((f) => ({ ...f, [key]: e.target.value }));
+
+    const validEmail = (v: string) => /\S+@\S+\.\S+/.test(v);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!form.name || !validEmail(form.email) || !form.message) {
+            toast.error("Mind adding a quick message? Jason reads each one and acts on your feedback.");
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(form),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            toast.success("Thanks! We’ll get back to you shortly.");
+            setForm({ name: "", email: "", subject: "", message: "" });
+        } catch {
+            window.location.href = `mailto:jason@inkmity.com?subject=${encodeURIComponent(
+                form.subject || "Contact"
+            )}&body=${encodeURIComponent(`From: ${form.name} <${form.email}>\n\n${form.message}`)}`;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="relative min-h-dvh bg-gray-900 text-white flex items-center justify-center px-4">
+            <div className="absolute top-4 left-4">
+                <Link to="/dashboard">
+                    <Button className="bg-white/15 hover:bg-white/25 text-white border border-white/20">
+                        ← Back to Dashboard
+                    </Button>
+                </Link>
+            </div>
+
+            <div className="w-full max-w-xl">
+                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-8 text-center">
+                    <h1 className="text-2xl sm:text-3xl font-bold">Contact</h1>
+                    <p className="mt-2 text-white/80 text-sm sm:text-base">
+                        Please enter your feedback or ideas. <span className="font-semibold">Jason</span> personally
+                        reads every message and uses your input to improve the experience and plan future features.
+                    </p>
+                    <p className="mt-2 text-white/70">
+                        Have a question, found a bug, or want to partner? Drop us a note.
+                    </p>
+
+                    <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm mb-1">Name</label>
+                                <input
+                                    className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                    value={form.name}
+                                    onChange={onChange("name")}
+                                    placeholder="Your name"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm mb-1">Email</label>
+                                <input
+                                    className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                    value={form.email}
+                                    onChange={onChange("email")}
+                                    placeholder="you@example.com"
+                                    type="email"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm mb-1">Subject (optional)</label>
+                            <input
+                                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                value={form.subject}
+                                onChange={onChange("subject")}
+                                placeholder="What’s this about?"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm mb-1">Message</label>
+                            <textarea
+                                className="w-full min-h-[140px] rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                value={form.message}
+                                onChange={onChange("message")}
+                                placeholder="Share bugs, feature ideas, or anything that would make Inkmity better. Jason reads every message."
+                            />
+                        </div>
+
+                        <div className="flex flex-col items-center sm:items-start">
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full sm:w-auto bg-white/20 hover:bg-white/30 text-white"
+                            >
+                                {loading ? "Sending..." : "Send message"}
+                            </Button>
+                            <p className="text-xs text-white/50 mt-3">
+                                Prefer email?{" "}
+                                <a href="mailto:jason@inkmity.com" className="underline">
+                                    jason@inkmity.com
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Contact;
