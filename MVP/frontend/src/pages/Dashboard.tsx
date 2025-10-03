@@ -33,11 +33,14 @@ const Dashboard: React.FC = () => {
     authFetch,
   } = useDashboardData();
 
+  // desktop messaging (unchanged)
   const [messagingOpen] = useState(true);
 
+  // mobile drawers (closed by default)
   const [messagesDrawerOpen, setMessagesDrawerOpen] = useState(false);
   const [assistantDrawerOpen, setAssistantDrawerOpen] = useState(false);
 
+  // artist modal
   const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
 
   useEffect(() => {
@@ -53,10 +56,12 @@ const Dashboard: React.FC = () => {
       <Header />
 
       <main className="flex-1 flex gap-6 pt-4 px-4 overflow-hidden">
+        {/* Desktop Assistant visible; hidden on mobile so artists are primary */}
         <div className="hidden md:block">
           <ChatBot />
         </div>
 
+        {/* CENTER: artists (desktop overlay preserved) */}
         <ArtistsSection
           artists={artists}
           loading={loadingArtists}
@@ -64,6 +69,7 @@ const Dashboard: React.FC = () => {
           onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
         />
 
+        {/* RIGHT: Messaging column - keep desktop, hide on mobile */}
         <aside className="hidden lg:flex flex-[1] flex-col gap-4">
           <div
             className="bg-gray-800 rounded-3xl p-4 flex flex-col sticky top-4"
@@ -111,9 +117,11 @@ const Dashboard: React.FC = () => {
         </aside>
       </main>
 
+      {/* MOBILE FABs (Assistant left, Messages right) */}
       <AssistantFab onOpen={() => setAssistantDrawerOpen(true)} />
       <MessagesFab onOpen={() => setMessagesDrawerOpen(true)} />
 
+      {/* MOBILE Drawers (initially closed) */}
       <AssistantDrawer
         open={assistantDrawerOpen}
         onClose={() => setAssistantDrawerOpen(false)}
@@ -141,6 +149,7 @@ const Dashboard: React.FC = () => {
         authFetch={authFetch}
       />
 
+      {/* Artist modal */}
       {selectedArtist && (
         <ArtistModal
           artist={selectedArtist}
@@ -187,6 +196,7 @@ const Dashboard: React.FC = () => {
               toast.error("Failed to send message to server.", { position: "bottom-right" });
             });
 
+            // On mobile, pop open the messages drawer after sending
             setMessagesDrawerOpen(true);
           }}
         />
