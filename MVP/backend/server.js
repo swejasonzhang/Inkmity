@@ -13,6 +13,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import messageRoutes from "./routes/messages.js";
 import availabilityRoutes from "./routes/availability.js";
 import bookingRoutes from "./routes/bookings.js";
+import contactRoutes from "./routes/contact.js"; 
 
 import { requireAuth } from "./middleware/auth.js";
 
@@ -23,7 +24,7 @@ const app = express();
 const server = http.createServer(app);
 
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
-const PORT = process.env.PORT || 5005;
+const PORT = Number(process.env.PORT) || 5005;
 
 await connectDB();
 
@@ -42,6 +43,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/contact", contactRoutes); 
 
 app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
@@ -64,4 +66,6 @@ const io = new Server(server, {
 });
 initSocket(io);
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

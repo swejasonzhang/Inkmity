@@ -73,6 +73,8 @@ const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSele
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const pageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
+    const isCenterLoading = loading || !showArtists;
+
     return (
         <section
             id="middle-content"
@@ -103,39 +105,45 @@ const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSele
                 />
             </div>
 
-            <div className="flex flex-col justify-between flex-1">
-                <div className="flex flex-col gap-4 w-full flex-1">
-                    {loading || !showArtists ? (
-                        <div className="flex justify-center items-center flex-1">
-                            <CircularProgress sx={{ color: "#ffffff" }} />
-                        </div>
-                    ) : pageItems.length > 0 ? (
-                        pageItems.map((artist, index) => (
-                            <motion.div
-                                key={(artist.clerkId ?? artist._id) + ":" + index}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, amount: 0.2 }}
-                                transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
-                                className={`w-full ${index === 0 ? "mt-4" : ""}`}
-                            >
-                                <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
-                            </motion.div>
-                        ))
-                    ) : (
-                        <p className="text-gray-400 text-center flex-1 flex items-center justify-center">
-                            No artists match your filters.
-                        </p>
-                    )}
-                </div>
+            <div className="relative flex-1 flex flex-col">
+                {isCenterLoading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center">
+                        <CircularProgress sx={{ color: "#ffffff" }} />
+                    </div>
+                )}
 
-                <div className="py-3">
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPrev={() => setCurrentPage((p) => p - 1)}
-                        onNext={() => setCurrentPage((p) => p + 1)}
-                    />
+                <div className={isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"}>
+                    <div className="flex flex-col justify-between flex-1">
+                        <div className="flex flex-col gap-4 w-full flex-1">
+                            {pageItems.length > 0 ? (
+                                pageItems.map((artist, index) => (
+                                    <motion.div
+                                        key={(artist.clerkId ?? artist._id) + ":" + index}
+                                        initial={{ opacity: 0, y: 30 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true, amount: 0.2 }}
+                                        transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
+                                        className={`w-full ${index === 0 ? "mt-4" : ""}`}
+                                    >
+                                        <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
+                                    </motion.div>
+                                ))
+                            ) : (
+                                <p className="text-gray-400 text-center flex-1 flex items-center justify-center">
+                                    No artists match your filters.
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="py-3">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPrev={() => setCurrentPage((p) => p - 1)}
+                                onNext={() => setCurrentPage((p) => p + 1)}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
