@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
+import Header from "@/components/dashboard/Header";
 
 const Contact: React.FC = () => {
     const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -40,27 +40,25 @@ const Contact: React.FC = () => {
     };
 
     return (
-        <div className="relative min-h-dvh bg-gray-900 text-white flex items-center justify-center px-4">
-            <div className="absolute top-4 left-4">
-                <Link to="/dashboard">
-                    <Button className="bg-white/15 hover:bg-white/25 text-white border border-white/20">
-                        ← Back to Dashboard
-                    </Button>
-                </Link>
-            </div>
+        <div className="min-h-dvh bg-gray-900 text-white flex flex-col">
+            <Header />
 
-            <div className="w-full max-w-xl">
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-8 text-center">
-                    <h1 className="text-2xl sm:text-3xl font-bold">Contact</h1>
-                    <p className="mt-2 text-white/80 text-sm sm:text-base">
+            {/* Center the card; leave some outer padding so it doesn't hug edges */}
+            <main className="flex-1 px-4 py-4 grid place-items-center">
+                {/* Card fills most of the viewport height but leaves breathing room.
+            min-h: target ~85% of viewport; max-h: ensure it never exceeds screen */}
+                <div className="w-full max-w-3xl min-h-[82dvh] max-h-[calc(100dvh-2rem)] rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-8 flex flex-col overflow-hidden">
+                    <h1 className="text-center text-2xl sm:text-3xl font-bold">Contact</h1>
+                    <p className="mt-2 text-center text-white/80 text-sm sm:text-base">
                         Please enter your feedback or ideas. <span className="font-semibold">Jason</span> personally
                         reads every message and uses your input to improve the experience and plan future features.
                     </p>
-                    <p className="mt-2 text-white/70">
+                    <p className="mt-2 text-center text-white/70">
                         Have a question, found a bug, or want to partner? Drop us a note.
                     </p>
 
-                    <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left">
+                    {/* Form grows and scrolls within the card if content is tall */}
+                    <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col overflow-y-auto">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm mb-1">Name</label>
@@ -83,7 +81,7 @@ const Contact: React.FC = () => {
                             </div>
                         </div>
 
-                        <div>
+                        <div className="mt-4">
                             <label className="block text-sm mb-1">Subject (optional)</label>
                             <input
                                 className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
@@ -93,17 +91,17 @@ const Contact: React.FC = () => {
                             />
                         </div>
 
-                        <div>
+                        <div className="mt-4 flex-1 flex flex-col">
                             <label className="block text-sm mb-1">Message</label>
                             <textarea
-                                className="w-full min-h-[140px] rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                className="w-full flex-1 min-h-[140px] rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
                                 value={form.message}
                                 onChange={onChange("message")}
                                 placeholder="Share bugs, feature ideas, or anything that would make Inkmity better. Jason reads every message."
                             />
                         </div>
 
-                        <div className="flex flex-col items-center sm:items-start">
+                        <div className="mt-6 flex flex-col items-center sm:items-start">
                             <Button
                                 type="submit"
                                 disabled={loading}
@@ -120,7 +118,7 @@ const Contact: React.FC = () => {
                         </div>
                     </form>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };

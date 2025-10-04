@@ -1,20 +1,15 @@
 import React from "react";
+import Header from "@/components/dashboard/Header";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const About: React.FC = () => {
     return (
-        <div className="relative min-h-dvh bg-gray-900 text-white flex items-center justify-center px-4 py-8 sm:py-12">
-            <div className="absolute top-4 left-4">
-                <Link to="/dashboard">
-                    <Button className="bg-white/15 hover:bg-white/25 text-white border border-white/20">
-                        ← Back to Dashboard
-                    </Button>
-                </Link>
-            </div>
+        <div className="min-h-dvh bg-gray-900 text-white flex flex-col">
+            <Header />
 
-            <div className="w-full max-w-3xl">
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-10">
+            <main className="flex-1 px-4 py-6 sm:py-10 grid place-items-center">
+                <div className="w-full max-w-3xl min-h-[80dvh] rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-10">
                     <h1 className="text-center text-3xl sm:text-4xl font-extrabold tracking-tight">
                         Jason’s Story
                     </h1>
@@ -70,7 +65,7 @@ const About: React.FC = () => {
                         </p>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };
