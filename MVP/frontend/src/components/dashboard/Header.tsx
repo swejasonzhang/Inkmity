@@ -3,6 +3,8 @@ import { useClerk, useUser } from "@clerk/clerk-react";
 import { Lock, Menu, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
+const THEME_MS = 600; // keep this in sync with global.css --theme-ms
+
 const Header: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -20,14 +22,34 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     const root = document.documentElement;
+    root.style.setProperty("--theme-ms", `${THEME_MS}ms`);
+    root.classList.add("theme-smooth");
     root.setAttribute("data-ink-theme", theme);
     root.classList.toggle("light", theme === "light");
     try {
       localStorage.setItem("theme", theme);
     } catch { }
+    const id = window.setTimeout(() => root.classList.remove("theme-smooth"), THEME_MS);
+    return () => window.clearTimeout(id);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
+  function runThemeSwitch(next: "light" | "dark") {
+    const root = document.documentElement;
+    const curtain = document.createElement("div");
+    curtain.className = "theme-curtain";
+    document.body.appendChild(curtain);
+
+    root.classList.add("theme-smooth");
+
+    requestAnimationFrame(() => setTheme(next));
+
+    window.setTimeout(() => {
+      curtain.remove();
+      root.classList.remove("theme-smooth");
+    }, THEME_MS);
+  }
+
+  const toggleTheme = () => runThemeSwitch(theme === "light" ? "dark" : "light");
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -81,12 +103,11 @@ const Header: React.FC = () => {
       <span className="block h-[3px] rounded-full bg-app/15 overflow-hidden">
         <span
           className={[
-            "block h-full",
-            "bg-[linear-gradient(90deg,#000,#777,#fff)]",
+            "block h-full bg-[linear-gradient(90deg,#000,#777,#fff)]",
             "origin-left will-change-transform",
-            "transition-transform duration-700 ease-out",
             active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
           ].join(" ")}
+          style={{ transition: `transform ${THEME_MS}ms ease-out` }}
         />
       </span>
     </span>
@@ -169,12 +190,13 @@ const Header: React.FC = () => {
             aria-pressed={theme === "light"}
             className="group relative inline-flex items-center rounded-full border border-app bg-elevated pr-3 pl-2 py-1.5 text-sm text-app hover:bg-elevated active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
           >
-            <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-elevated p-0.5 transition-all duration-300">
+            <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-elevated p-0.5">
               <span
                 className={[
-                  "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-sm transition-all duration-300",
+                  "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-sm",
                   theme === "light" ? "translate-x-6" : "translate-x-0",
                 ].join(" ")}
+                style={{ transition: `transform ${THEME_MS}ms` }}
               >
                 <span className="text-[11px]">{theme === "light" ? "☀︎" : "☾"}</span>
               </span>
@@ -194,13 +216,12 @@ const Header: React.FC = () => {
                 className={dropdownBtnClasses}
               >
                 <span className="mr-2 font-semibold">✦</span>
-                <span className="whitespace-nowrap">
-                  Hello,{" "}
-                  <span className="font-bold text-sm max-w-[12rem] truncate w-full text-center leading-none">
+                <span className="inline-flex items-center">
+                  <span>Hello,&nbsp;</span>
+                  <span className="font-bold text-sm max-w-[12rem] truncate text-center leading-none">
                     {userLabel}
                   </span>
                 </span>
-
               </div>
 
               <div
@@ -231,7 +252,7 @@ const Header: React.FC = () => {
           <span className="sr-only">Inkmity</span>
         </Link>
         <div className="flex-1 text-center font-semibold truncate px-2 text-app">
-          Hello,{" "}
+          Hello,&nbsp;
           <span className="font-bold text-sm max-w-[10rem] inline-block align-middle truncate">
             {userLabel}
           </span>
@@ -245,9 +266,10 @@ const Header: React.FC = () => {
           >
             <span
               className={[
-                "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-sm transition-transform duration-300",
+                "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-sm",
                 theme === "light" ? "translate-x-6" : "translate-x-0",
               ].join(" ")}
+              style={{ transition: `transform ${THEME_MS}ms` }}
             >
               <span className="text-xs">{theme === "light" ? "☀︎" : "☾"}</span>
             </span>
