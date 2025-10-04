@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import Landing from "./pages/Landing";
 
 const App: React.FC = () => {
   return (
@@ -38,7 +39,7 @@ const App: React.FC = () => {
               <Navigate to="/dashboard" replace />
             </SignedIn>
             <SignedOut>
-              <Login />
+              <Landing />
             </SignedOut>
           </>
         }
