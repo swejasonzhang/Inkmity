@@ -40,13 +40,10 @@ const Contact: React.FC = () => {
     };
 
     return (
-        <div className="min-h-dvh bg-gray-900 text-white flex flex-col">
+        <div className="min-h-dvh bg-gray-900 text-app flex flex-col">
             <Header />
 
-            {/* Center the card; leave some outer padding so it doesn't hug edges */}
             <main className="flex-1 px-4 py-4 grid place-items-center">
-                {/* Card fills most of the viewport height but leaves breathing room.
-            min-h: target ~85% of viewport; max-h: ensure it never exceeds screen */}
                 <div className="w-full max-w-3xl min-h-[82dvh] max-h-[calc(100dvh-2rem)] rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-8 flex flex-col overflow-hidden">
                     <h1 className="text-center text-2xl sm:text-3xl font-bold">Contact</h1>
                     <p className="mt-2 text-center text-white/80 text-sm sm:text-base">
@@ -57,7 +54,6 @@ const Contact: React.FC = () => {
                         Have a question, found a bug, or want to partner? Drop us a note.
                     </p>
 
-                    {/* Form grows and scrolls within the card if content is tall */}
                     <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col overflow-y-auto">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>

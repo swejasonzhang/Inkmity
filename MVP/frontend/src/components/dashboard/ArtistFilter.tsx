@@ -51,7 +51,7 @@ const ArtistFilter: React.FC<Props> = ({
             setCurrentPage(1);
           }}
           placeholder="Search by name, style, location..."
-          className="w-full bg-gray-700 border border-gray-600 text-white text-sm px-4 py-2 rounded-lg placeholder-gray-300 focus:outline-none"
+          className="w-full bg-card border-2 border-app text-app text-sm px-4 py-2 rounded-2xl placeholder-[color:var(--muted)] focus:outline-none focus:bg-elevated"
         />
       </div>
 
@@ -62,10 +62,10 @@ const ArtistFilter: React.FC<Props> = ({
           setCurrentPage(1);
         }}
       >
-        <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm px-4 py-2 rounded-lg">
+        <SelectTrigger className="w-full bg-card border-2 border-app text-app text-sm px-4 py-2 rounded-2xl">
           <SelectValue placeholder="All Prices" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 text-white">
+        <SelectContent className="bg-card text-app border-2 border-app rounded-2xl">
           <SelectItem value="all">All Prices</SelectItem>
           <SelectItem value="100-500">$100 - $500</SelectItem>
           <SelectItem value="500-1000">$500 - $1000</SelectItem>
@@ -82,10 +82,10 @@ const ArtistFilter: React.FC<Props> = ({
           setCurrentPage(1);
         }}
       >
-        <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
+        <SelectTrigger className="w-full bg-card border-2 border-app text-app text-sm rounded-2xl">
           <SelectValue placeholder="All Locations" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 text-white">
+        <SelectContent className="bg-card text-app border-2 border-app rounded-2xl">
           <SelectItem value="all">All Locations</SelectItem>
           {uniqueLocations.map((loc) => (
             <SelectItem key={loc} value={loc}>
@@ -102,10 +102,10 @@ const ArtistFilter: React.FC<Props> = ({
           setCurrentPage(1);
         }}
       >
-        <SelectTrigger className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg">
+        <SelectTrigger className="w-full bg-card border-2 border-app text-app text-sm rounded-2xl">
           <SelectValue placeholder="All Styles" />
         </SelectTrigger>
-        <SelectContent className="bg-gray-800 text-white">
+        <SelectContent className="bg-card text-app border-2 border-app rounded-2xl">
           <SelectItem value="all">All Styles</SelectItem>
           {uniqueStyles.map((style) => (
             <SelectItem key={style} value={style}>
