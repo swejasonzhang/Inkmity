@@ -13,7 +13,7 @@ type Props = {
     onSelectArtist: (a: ArtistDto) => void;
 };
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 12;
 
 const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSelectArtist }) => {
     const [priceFilter, setPriceFilter] = useState<string>("all");

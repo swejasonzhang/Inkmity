@@ -36,7 +36,7 @@ if (!MONGO) {
   );
 }
 
-const COUNT = Number(process.env.SEED_ARTISTS_COUNT || 10);
+const COUNT = 50;
 
 const locations = [
   "New York",
@@ -67,7 +67,7 @@ const styles = [
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const randomPriceRange = () => {
-  const min = Math.floor(Math.random() * 400) + 100; 
+  const min = Math.floor(Math.random() * 400) + 100;
   const max = min + Math.floor(Math.random() * 1500) + 300;
   return { min, max };
 };

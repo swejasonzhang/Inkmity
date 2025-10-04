@@ -31,6 +31,15 @@ const Header: React.FC = () => {
   const [buttonWidth, setButtonWidth] = useState(0);
 
   useEffect(() => {
+    const measure = () => {
+      if (buttonRef.current) setButtonWidth(buttonRef.current.offsetWidth);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  useEffect(() => {
     if (buttonRef.current) setButtonWidth(buttonRef.current.offsetWidth);
   }, [user?.firstName, user?.emailAddresses]);
 
@@ -146,7 +155,7 @@ const Header: React.FC = () => {
           </Link>
         </nav>
 
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+        <div className="absolute right-10 lg:right-12 top-1/2 -translate-y-1/2 flex items-center gap-3">
           <button
             onClick={() => setFlipped((v) => !v)}
             aria-label="Flip theme"
@@ -193,14 +202,20 @@ const Header: React.FC = () => {
             >
               <div
                 ref={buttonRef}
+                style={{ width: buttonWidth ? `${buttonWidth}px` : undefined }}
                 className={`${dropdownBtnClasses} bg-white/5 text-white border border-white/10`}
               >
                 <span className="mr-2 font-semibold">✦</span>
-                Hello, <span className="font-bold ml-1">{userLabel}</span>
+                <span className="whitespace-nowrap">
+                  Hello,
+                  <span className="font-bold ml-1 text-sm max-w-[12rem] inline-block align-middle truncate">
+                    {userLabel}
+                  </span>
+                </span>
               </div>
 
               <div
-                style={{ width: buttonWidth }}
+                style={{ width: buttonWidth ? `${buttonWidth}px` : undefined }}
                 className={`absolute right-0 mt-2 bg-gray-900 border border-white/10 rounded-lg shadow-xl transform transition-all duration-300 ${showDropdown
                   ? "opacity-100 translate-y-0 visible"
                   : "opacity-0 -translate-y-2 invisible"
@@ -208,7 +223,7 @@ const Header: React.FC = () => {
               >
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2 text-left hover:bg-white/10 rounded-lg text-white"
+                  className="w-full px-3 py-2 text-center hover:bg-white/10 rounded-lg text-white"
                 >
                   Logout
                 </button>
@@ -229,7 +244,10 @@ const Header: React.FC = () => {
           <span className="sr-only">Inkmity</span>
         </Link>
         <div className="flex-1 text-center font-semibold truncate px-2 text-white">
-          Hello, <span className="font-bold">{userLabel}</span>
+          Hello,{" "}
+          <span className="font-bold text-sm max-w-[10rem] inline-block align-middle truncate">
+            {userLabel}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <button
