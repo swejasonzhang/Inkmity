@@ -40,35 +40,36 @@ const Contact: React.FC = () => {
     };
 
     return (
-        <div className="min-h-dvh bg-gray-900 text-app flex flex-col">
+        <div className="min-h-dvh bg-app text-app flex flex-col">
             <Header />
 
             <main className="flex-1 px-4 py-4 grid place-items-center">
-                <div className="w-full max-w-3xl min-h-[82dvh] max-h-[calc(100dvh-2rem)] rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-8 flex flex-col overflow-hidden">
+                <div className="w-full max-w-3xl min-h-[82dvh] max-h-[calc(100dvh-2rem)] rounded-3xl border-2 border-app bg-card/90 backdrop-blur p-6 sm:p-8 flex flex-col overflow-hidden">
                     <h1 className="text-center text-2xl sm:text-3xl font-bold">Contact</h1>
-                    <p className="mt-2 text-center text-white/80 text-sm sm:text-base">
+
+                    <p className="mt-2 text-center text-subtle text-sm sm:text-base">
                         Please enter your feedback or ideas. <span className="font-semibold">Jason</span> personally
                         reads every message and uses your input to improve the experience and plan future features.
                     </p>
-                    <p className="mt-2 text-center text-white/70">
+                    <p className="mt-2 text-center text-muted">
                         Have a question, found a bug, or want to partner? Drop us a note.
                     </p>
 
-                    <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col overflow-y-auto">
+                    <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col overflow-y-auto gap-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm mb-1">Name</label>
+                                <label className="block text-sm mb-1 text-subtle">Name</label>
                                 <input
-                                    className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                    className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                     value={form.name}
                                     onChange={onChange("name")}
                                     placeholder="Your name"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm mb-1">Email</label>
+                                <label className="block text-sm mb-1 text-subtle">Email</label>
                                 <input
-                                    className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                    className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                     value={form.email}
                                     onChange={onChange("email")}
                                     placeholder="you@example.com"
@@ -77,35 +78,35 @@ const Contact: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="mt-4">
-                            <label className="block text-sm mb-1">Subject (optional)</label>
+                        <div>
+                            <label className="block text-sm mb-1 text-subtle">Subject (optional)</label>
                             <input
-                                className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                 value={form.subject}
                                 onChange={onChange("subject")}
                                 placeholder="What’s this about?"
                             />
                         </div>
 
-                        <div className="mt-4 flex-1 flex flex-col">
-                            <label className="block text-sm mb-1">Message</label>
+                        <div className="flex-1 flex flex-col">
+                            <label className="block text-sm mb-1 text-subtle">Message</label>
                             <textarea
-                                className="w-full flex-1 min-h-[140px] rounded-lg bg-white/10 border border-white/20 px-3 py-2 outline-none focus:ring-2 focus:ring-white/30"
+                                className="w-full flex-1 min-h-[140px] rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                 value={form.message}
                                 onChange={onChange("message")}
                                 placeholder="Share bugs, feature ideas, or anything that would make Inkmity better. Jason reads every message."
                             />
                         </div>
 
-                        <div className="mt-6 flex flex-col items-center sm:items-start">
+                        <div className="mt-2 flex flex-col items-center sm:items-start">
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full sm:w-auto bg-white/20 hover:bg-white/30 text-white"
+                                className="w-full sm:w-auto bg-elevated hover:bg-elevated text-app border-2 border-app"
                             >
                                 {loading ? "Sending..." : "Send message"}
                             </Button>
-                            <p className="text-xs text-white/50 mt-3">
+                            <p className="text-xs text-muted mt-3">
                                 Prefer email?{" "}
                                 <a href="mailto:jason@inkmity.com" className="underline">
                                     jason@inkmity.com
