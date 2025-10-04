@@ -43,7 +43,9 @@ const Dashboard: React.FC = () => {
 
       <Header />
 
-      <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 pb-[calc(env(safe-area-inset-bottom)+76px)] sm:pb-[calc(env(safe-area-inset-bottom)+84px)]">
+      <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3
+                 px-4 sm:px-6 lg:px-8
+                 pb-[calc(env(safe-area-inset-bottom)+76px)] sm:pb-[calc(env(safe-area-inset-bottom)+84px)]">
         <div className="flex-1 min-w-0">
           <ArtistsSection
             artists={artists}
@@ -54,7 +56,8 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-4 left-0 right-0 z-40 px-4 flex justify-between">
+
+      <div className="fixed bottom-4 left-0 right-0 z-40 px-8 flex justify-between">
         <button
           onClick={() => setAssistantOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-white/15 text-white backdrop-blur border border-white/20 shadow-md active:scale-[0.98]"
