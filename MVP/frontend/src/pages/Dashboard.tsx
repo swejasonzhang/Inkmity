@@ -43,7 +43,7 @@ const Dashboard: React.FC = () => {
 
       <Header />
 
-      <main className="flex-1 flex flex-col gap-4 sm:gap-6 pt-3 sm:pt-4 px-3 sm:px-4 lg:px-6">
+      <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 pb-[calc(env(safe-area-inset-bottom)+76px)] sm:pb-[calc(env(safe-area-inset-bottom)+84px)]">
         <div className="flex-1 min-w-0">
           <ArtistsSection
             artists={artists}

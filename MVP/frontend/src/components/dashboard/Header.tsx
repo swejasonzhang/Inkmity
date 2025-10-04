@@ -88,7 +88,7 @@ const Header: React.FC = () => {
     />
   );
 
-  const logoSrc = flipped ? "/WhiteLogo.png" : "/BlackLogo.png";
+  const logoSrc = flipped ? "/BlackLogo.png" : "/WhiteLogo.png";
 
   return (
     <>
