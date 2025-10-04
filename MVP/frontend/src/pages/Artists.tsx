@@ -11,7 +11,7 @@ interface Artist {
   reviews?: { rating: number; comment?: string }[];
 }
 
-const PAGE_SIZE_FALLBACK = 12; // used only for skeleton count & layout feel
+const PAGE_SIZE_FALLBACK = 12;
 
 const Artists: React.FC = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -27,7 +27,6 @@ const Artists: React.FC = () => {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Debounce search for mobile perf
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
     return () => clearTimeout(t);
@@ -38,7 +37,6 @@ const Artists: React.FC = () => {
     [priceFilter, locationFilter, styleFilter, debouncedSearch]
   );
 
-  // Fetch helper (reset vs append)
   const loadArtists = async (opts: { page: number; reset: boolean }) => {
     const { page, reset } = opts;
     try {
@@ -53,7 +51,6 @@ const Artists: React.FC = () => {
         search: debouncedSearch,
       });
 
-      // Map computed fields (count/avg) and keep original shape
       const enriched = data.map((artist) => {
         const reviews = artist.reviews || [];
         const reviewsCount = reviews.length;
@@ -68,16 +65,12 @@ const Artists: React.FC = () => {
 
         return {
           ...artist,
-          // you can pass these down if ArtistCard supports them
-          // @ts-ignore
           reviewsCount,
-          // @ts-ignore
           averageRating: avg,
         };
       });
 
       setArtists((prev) => (reset ? enriched : [...prev, ...enriched]));
-      // naive hasMore: if API returns zero items, we stop offering "Load more"
       setHasMore(enriched.length > 0);
     } catch (e: any) {
       setError(e?.message || "Failed to load artists");
@@ -88,21 +81,17 @@ const Artists: React.FC = () => {
     }
   };
 
-  // Initial + filters/search changes → reset list
   useEffect(() => {
     setCurrentPage(1);
     loadArtists({ page: 1, reset: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersKey]);
 
-  // Load more
   const onLoadMore = () => {
     const next = currentPage + 1;
     setCurrentPage(next);
     loadArtists({ page: next, reset: false });
   };
 
-  // Skeletons for mobile-first feel
   const SkeletonCard = () => (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-3 animate-pulse">
       <div className="h-40 w-full rounded-xl bg-white/10 mb-3" />
@@ -113,7 +102,6 @@ const Artists: React.FC = () => {
 
   return (
     <div className="min-h-dvh bg-gray-900 text-white">
-      {/* Sticky filter bar for phones */}
       <div className="sticky top-0 z-20 bg-gray-900/85 backdrop-blur supports-[backdrop-filter]:bg-gray-900/70 border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
           <ArtistFilter
@@ -132,14 +120,12 @@ const Artists: React.FC = () => {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 sm:py-6">
-        {/* Error */}
         {error && (
           <div className="mb-4 rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm">
             {error}
           </div>
         )}
 
-        {/* Grid */}
         <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {loading && artists.length === 0
             ? Array.from({ length: PAGE_SIZE_FALLBACK }).map((_, i) => (
@@ -158,7 +144,6 @@ const Artists: React.FC = () => {
           </div>
         )}
 
-        {/* Load more */}
         {hasMore && !loading && (
           <div className="flex justify-center mt-6">
             <button

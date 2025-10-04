@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 const About: React.FC = () => {
     return (
-        <div className="min-h-dvh bg-gray-900 text-white flex flex-col">
+        <div className="min-h-dvh bg-gray-900 text-app flex flex-col">
             <Header />
 
             <main className="flex-1 px-4 py-6 sm:py-10 grid place-items-center">

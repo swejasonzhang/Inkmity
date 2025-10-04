@@ -10,13 +10,24 @@ const Header: React.FC = () => {
   const { user, isSignedIn } = useUser();
   const { pathname } = useLocation();
 
-  const [flipped, setFlipped] = useState<boolean>(() => {
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
     try {
-      return localStorage.getItem("ink_theme_flip") === "1";
-    } catch {
-      return false;
-    }
+      const saved = localStorage.getItem("theme");
+      if (saved === "light" || saved === "dark") return saved;
+    } catch { }
+    return "dark";
   });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-ink-theme", theme);
+    root.classList.toggle("light", theme === "light");
+    try {
+      localStorage.setItem("theme", theme);
+    } catch { }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -25,7 +36,7 @@ const Header: React.FC = () => {
   };
 
   const dropdownBtnClasses =
-    "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/10 transition";
+    "inline-flex h-10 items-center justify-center px-3 rounded-lg cursor-pointer transition border border-app bg-elevated text-app hover:bg-elevated text-center";
 
   const buttonRef = useRef<HTMLDivElement>(null);
   const [buttonWidth, setButtonWidth] = useState(0);
@@ -54,13 +65,6 @@ const Header: React.FC = () => {
     };
   }, [mobileMenuOpen]);
 
-  useEffect(() => {
-    document.body.classList.toggle("theme-flip", flipped);
-    try {
-      localStorage.setItem("ink_theme_flip", flipped ? "1" : "0");
-    } catch { }
-  }, [flipped]);
-
   const userLabel =
     user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User";
 
@@ -70,38 +74,41 @@ const Header: React.FC = () => {
       : pathname.startsWith(to);
 
   const desktopLink =
-    "relative px-1 py-1 transition text-white/80 hover:text-white group";
+    "relative px-1 py-1 transition text-app/80 hover:text-app group";
 
   const DesktopInkBar = ({ active }: { active: boolean }) => (
-    <span
-      className={[
-        "pointer-events-none absolute -bottom-2 left-0 right-0 h-[3px] rounded-full",
-        active
-          ? "bg-gradient-to-r from-black via-gray-500 to-white shadow-[0_0_12px_rgba(255,255,255,0.25)]"
-          : "left-1/3 right-1/3 h-[2px] bg-white/10 opacity-0 group-hover:opacity-100 group-hover:left-0 group-hover:right-0 transition-all duration-300",
-      ].join(" ")}
-    />
+    <span className="pointer-events-none absolute -bottom-2 left-0 right-0">
+      <span className="block h-[3px] rounded-full bg-app/15 overflow-hidden">
+        <span
+          className={[
+            "block h-full",
+            "bg-[linear-gradient(90deg,#000,#777,#fff)]",
+            "origin-left will-change-transform",
+            "transition-transform duration-700 ease-out",
+            active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100",
+          ].join(" ")}
+        />
+      </span>
+    </span>
   );
 
   const mobileItem =
-    "w-full text-left px-4 py-3 rounded-lg font-medium flex items-center justify-between text-white";
+    "w-full text-left px-4 py-3 rounded-lg font-medium flex items-center justify-between text-app";
 
   const MobileAccent = ({ active }: { active: boolean }) => (
     <span
       className={[
         "absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full",
-        active
-          ? "bg-gradient-to-b from-black via-gray-500 to-white shadow-[0_0_8px_rgba(255,255,255,0.25)]"
-          : "bg-white/0",
+        active ? "bg-[linear-gradient(#000,#777,#fff)]" : "bg-transparent",
       ].join(" ")}
     />
   );
 
-  const logoSrc = flipped ? "/BlackLogo.png" : "/WhiteLogo.png";
+  const logoSrc = theme === "light" ? "/BlackLogo.png" : "/WhiteLogo.png";
 
   return (
     <>
-      <header className="hidden md:flex w-full bg-gray-900 border-b border-white/10 relative h-24 items-center z-50">
+      <header className="hidden md:flex w-full bg-app border-b border-app relative h-24 items-center z-50">
         <div className="absolute left-4 top-[60%] -translate-y-1/2 flex items-center">
           <Link to="/dashboard" className="flex items-center gap-3">
             <img
@@ -120,20 +127,20 @@ const Header: React.FC = () => {
             className={desktopLink}
             aria-current={isActive("/dashboard") ? "page" : undefined}
           >
-            <span className="text-white">Dashboard</span>
+            <span className="text-app">Dashboard</span>
             <DesktopInkBar active={isActive("/dashboard")} />
           </Link>
 
           <span
             aria-disabled="true"
             title="Gallery is a feature in progress"
-            className="relative flex items-center gap-2 text-white/60 cursor-not-allowed opacity-60"
+            className="relative flex items-center gap-2 text-app/60 cursor-not-allowed opacity-60"
           >
             <span>Gallery</span>
-            <span className="inline-flex items-center gap-1 text-[10px] bg-white/10 text-white px-1.5 py-0.5 rounded-full border border-white/15">
+            <span className="inline-flex items-center gap-1 text-[10px] bg-elevated text-app px-1.5 py-0.5 rounded-full border border-app">
               <Lock size={10} /> In progress
             </span>
-            <span className="pointer-events-none absolute -bottom-2 left-1/3 right-1/3 h-[2px] bg-white/10 rounded-full" />
+            <span className="pointer-events-none absolute -bottom-2 left-1/3 right-1/3 h-[2px] bg-app/10 rounded-full" />
           </span>
 
           <Link
@@ -141,7 +148,7 @@ const Header: React.FC = () => {
             className={desktopLink}
             aria-current={isActive("/contact") ? "page" : undefined}
           >
-            <span className="text-white">Contact</span>
+            <span className="text-app">Contact</span>
             <DesktopInkBar active={isActive("/contact")} />
           </Link>
 
@@ -150,48 +157,29 @@ const Header: React.FC = () => {
             className={desktopLink}
             aria-current={isActive("/about") ? "page" : undefined}
           >
-            <span className="text-white">About Inkmity</span>
+            <span className="text-app">About Inkmity</span>
             <DesktopInkBar active={isActive("/about")} />
           </Link>
         </nav>
 
         <div className="absolute right-10 lg:right-12 top-1/2 -translate-y-1/2 flex items-center gap-3">
           <button
-            onClick={() => setFlipped((v) => !v)}
-            aria-label="Flip theme"
-            aria-pressed={flipped}
-            className="group relative inline-flex items-center rounded-full border border-white/15 bg-white/5 pr-3 pl-2 py-1.5 text-sm text-white hover:bg-white/10 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/30"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            aria-pressed={theme === "light"}
+            className="group relative inline-flex items-center rounded-full border border-app bg-elevated pr-3 pl-2 py-1.5 text-sm text-app hover:bg-elevated active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
           >
-            <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-gradient-to-r from-white/20 via-white/25 to-white/20 p-0.5 transition-all duration-300">
+            <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-elevated p-0.5 transition-all duration-300">
               <span
                 className={[
-                  "absolute inset-0 rounded-full",
-                  "bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25),transparent_60%)]",
-                ].join(" ")}
-              />
-              <span
-                className={[
-                  "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-md transition-all duration-300",
-                  flipped ? "translate-x-6" : "translate-x-0",
+                  "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-sm transition-all duration-300",
+                  theme === "light" ? "translate-x-6" : "translate-x-0",
                 ].join(" ")}
               >
-                <span className="transition-opacity duration-200">
-                  {flipped ? (
-                    <span className="text-gray-800 text-[11px]">☀︎</span>
-                  ) : (
-                    <span className="text-gray-900/70 text-[11px]">☾</span>
-                  )}
-                </span>
+                <span className="text-[11px]">{theme === "light" ? "☀︎" : "☾"}</span>
               </span>
-              <span
-                className={[
-                  "absolute -inset-[1px] rounded-full opacity-0 blur-[6px] transition-opacity duration-300",
-                  "bg-[conic-gradient(from_180deg,rgba(255,255,255,0.35),transparent_50%)]",
-                  "group-hover:opacity-100",
-                ].join(" ")}
-              />
             </span>
-            <span className="font-medium">{flipped ? "Light" : "Dark"}</span>
+            <span className="font-medium">{theme === "light" ? "Light" : "Dark"}</span>
           </button>
 
           {isSignedIn && user && (
@@ -203,27 +191,26 @@ const Header: React.FC = () => {
               <div
                 ref={buttonRef}
                 style={{ width: buttonWidth ? `${buttonWidth}px` : undefined }}
-                className={`${dropdownBtnClasses} bg-white/5 text-white border border-white/10`}
+                className={dropdownBtnClasses}
               >
                 <span className="mr-2 font-semibold">✦</span>
                 <span className="whitespace-nowrap">
-                  Hello,
-                  <span className="font-bold ml-1 text-sm max-w-[12rem] inline-block align-middle truncate">
+                  Hello,{" "}
+                  <span className="font-bold text-sm max-w-[12rem] truncate w-full text-center leading-none">
                     {userLabel}
                   </span>
                 </span>
+
               </div>
 
               <div
                 style={{ width: buttonWidth ? `${buttonWidth}px` : undefined }}
-                className={`absolute right-0 mt-2 bg-gray-900 border border-white/10 rounded-lg shadow-xl transform transition-all duration-300 ${showDropdown
-                  ? "opacity-100 translate-y-0 visible"
-                  : "opacity-0 -translate-y-2 invisible"
+                className={`absolute right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-300 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"
                   }`}
               >
                 <button
                   onClick={handleLogout}
-                  className="w-full px-3 py-2 text-center hover:bg-white/10 rounded-lg text-white"
+                  className="w-full px-3 py-2 text-center hover:bg-elevated rounded-lg text-app"
                 >
                   Logout
                 </button>
@@ -233,7 +220,7 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-      <header className="md:hidden w-full bg-gray-900 border-b border-white/10 h-16 flex items-center z-50 px-3">
+      <header className="md:hidden w-full bg-app border-b border-app h-16 flex items-center z-50 px-3">
         <Link to="/dashboard" className="flex items-center gap-2">
           <img
             src={logoSrc}
@@ -243,7 +230,7 @@ const Header: React.FC = () => {
           />
           <span className="sr-only">Inkmity</span>
         </Link>
-        <div className="flex-1 text-center font-semibold truncate px-2 text-white">
+        <div className="flex-1 text-center font-semibold truncate px-2 text-app">
           Hello,{" "}
           <span className="font-bold text-sm max-w-[10rem] inline-block align-middle truncate">
             {userLabel}
@@ -251,34 +238,23 @@ const Header: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            aria-label="Flip theme"
-            aria-pressed={flipped}
-            className="group relative inline-flex h-8 w-14 items-center rounded-full border border-white/15 bg-white/5 p-1 text-white hover:bg-white/10 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/30"
-            onClick={() => setFlipped((v) => !v)}
+            aria-label="Toggle theme"
+            aria-pressed={theme === "light"}
+            className="group relative inline-flex h-8 w-14 items-center rounded-full border border-app bg-elevated p-1 text-app hover:bg-elevated active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
+            onClick={toggleTheme}
           >
             <span
               className={[
-                "absolute inset-0 rounded-full opacity-0 blur-[6px] transition-opacity duration-300",
-                "bg-[conic-gradient(from_180deg,rgba(255,255,255,0.35),transparent_50%)]",
-                "group-hover:opacity-100",
-              ].join(" ")}
-            />
-            <span
-              className={[
-                "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-md transition-transform duration-300",
-                flipped ? "translate-x-6" : "translate-x-0",
+                "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-sm transition-transform duration-300",
+                theme === "light" ? "translate-x-6" : "translate-x-0",
               ].join(" ")}
             >
-              {flipped ? (
-                <span className="text-gray-800 text-xs">☀︎</span>
-              ) : (
-                <span className="text-gray-900/70 text-xs">☾</span>
-              )}
+              <span className="text-xs">{theme === "light" ? "☀︎" : "☾"}</span>
             </span>
           </button>
           <button
             aria-label="Open menu"
-            className="p-2 rounded-lg hover:bg-white/10 active:scale-[0.98] text-white"
+            className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
             onClick={() => setMobileMenuOpen(true)}
           >
             <Menu size={22} />
@@ -289,12 +265,12 @@ const Header: React.FC = () => {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50">
           <div
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-overlay"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden
           />
-          <div className="absolute inset-0 bg-gray-900 flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="absolute inset-0 bg-app flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-app">
               <div className="flex items-center gap-2">
                 <img
                   src={logoSrc}
@@ -304,14 +280,14 @@ const Header: React.FC = () => {
               </div>
               <button
                 aria-label="Close menu"
-                className="p-2 rounded-lg hover:bg-white/10 active:scale-[0.98] text-white"
+                className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <X size={20} />
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto px-2 py-4 text-white">
+            <nav className="flex-1 overflow-y-auto px-2 py-4 text-app">
               <div className="relative">
                 <MobileAccent active={isActive("/dashboard")} />
                 <Link
@@ -326,11 +302,11 @@ const Header: React.FC = () => {
 
               <div
                 title="Gallery is a feature in progress"
-                className="relative mt-2 w-full px-6 py-3 rounded-lg bg-white/5 border border-white/10 cursor-not-allowed flex items-center justify-between text-white/80"
+                className="relative mt-2 w-full px-6 py-3 rounded-lg bg-elevated border border-app cursor-not-allowed flex items-center justify-between text-app/80"
                 aria-disabled="true"
               >
                 <span>Gallery</span>
-                <span className="inline-flex items-center gap-1 text-[10px] bg-white/10 text-white px-1.5 py-0.5 rounded-full border border-white/15">
+                <span className="inline-flex items-center gap-1 text-[10px] bg-elevated text-app px-1.5 py-0.5 rounded-full border border-app">
                   <Lock size={10} /> In progress
                 </span>
               </div>
@@ -364,7 +340,7 @@ const Header: React.FC = () => {
               <div className="px-4 pb-6">
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-3 rounded-lg bg-white text-gray-900 font-semibold hover:opacity-90 active:scale-[0.99]"
+                  className="w-full px-4 py-3 rounded-lg bg-white text-black font-semibold hover:opacity-90 active:scale-[0.99]"
                 >
                   Logout
                 </button>

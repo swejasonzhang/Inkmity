@@ -9,6 +9,7 @@ import ArtistModal from "@/components/dashboard/ArtistModal";
 import { toast } from "react-toastify";
 import { MessageSquare, Bot, X } from "lucide-react";
 import { useDashboardData, ArtistDto } from "@/hooks/useDashboardData";
+import FloatingBar from "@/components/dashboard/FloatingBar";
 
 const Dashboard: React.FC = () => {
   const { isSignedIn, user } = useUser();
@@ -35,17 +36,15 @@ const Dashboard: React.FC = () => {
     if (!isSignedIn) navigate("/login");
   }, [isSignedIn, navigate]);
 
-  if (!user) return <div className="text-white p-4">Loading...</div>;
+  if (!user) return <div className="text-app p-4">Loading...</div>;
 
   return (
-    <div className="min-h-dvh bg-gray-900 flex flex-col overflow-y-hidden">
+    <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
       <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
 
       <Header />
 
-      <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3
-                 px-4 sm:px-6 lg:px-8
-                 pb-[calc(env(safe-area-inset-bottom)+76px)] sm:pb-[calc(env(safe-area-inset-bottom)+84px)]">
+      <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-0 sm:pb-0">
         <div className="flex-1 min-w-0">
           <ArtistsSection
             artists={artists}
@@ -56,48 +55,33 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
 
-
-      <div className="fixed bottom-4 left-0 right-0 z-40 px-8 flex justify-between">
-        <button
-          onClick={() => setAssistantOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-white/15 text-white backdrop-blur border border-white/20 shadow-md active:scale-[0.98]"
-          aria-label="Open assistant"
-        >
-          <Bot size={18} />
-          <span className="text-sm font-medium">Assistant</span>
-        </button>
-        <button
-          onClick={() => setMessagesOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-white/15 text-white backdrop-blur border border-white/20 shadow-md active:scale-[0.98]"
-          aria-label="Open messages"
-        >
-          <MessageSquare size={18} />
-          <span className="text-sm font-medium">Messages</span>
-        </button>
-      </div>
+      <FloatingBar
+        onAssistantOpen={() => setAssistantOpen(true)}
+        onMessagesOpen={() => setMessagesOpen(true)}
+      />
 
       <div
         className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
       >
         <div
-          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"
+          className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"
             }`}
           onClick={() => setAssistantOpen(false)}
           aria-hidden
         />
         <div
-          className={`absolute inset-0 bg-gray-900 border-t border-white/10 shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"
+          className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"
             }`}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <div className="flex items-center gap-2 text-white font-semibold">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+            <div className="flex items-center gap-2 font-semibold">
               <Bot size={18} />
               <span>Assistant</span>
             </div>
             <button
               onClick={() => setAssistantOpen(false)}
-              className="p-2 rounded-full hover:bg-white/10"
+              className="p-2 rounded-full hover:bg-elevated"
               aria-label="Close assistant"
             >
               <X size={18} />
@@ -114,23 +98,23 @@ const Dashboard: React.FC = () => {
           }`}
       >
         <div
-          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${messagesOpen ? "opacity-100" : "opacity-0"
+          className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${messagesOpen ? "opacity-100" : "opacity-0"
             }`}
           onClick={() => setMessagesOpen(false)}
           aria-hidden
         />
         <div
-          className={`absolute inset-0 bg-gray-900 border-t border-white/10 shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"
+          className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"
             }`}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <div className="flex items-center gap-2 text-white font-semibold">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+            <div className="flex items-center gap-2 font-semibold">
               <MessageSquare size={18} />
               <span>Messaging</span>
             </div>
             <button
               onClick={() => setMessagesOpen(false)}
-              className="p-2 rounded-full hover:bg-white/10"
+              className="p-2 rounded-full hover:bg-elevated"
               aria-label="Close messages"
             >
               <X size={18} />
@@ -154,7 +138,7 @@ const Dashboard: React.FC = () => {
                   prev.filter((c) => c.participantId !== participantId)
                 );
                 setCollapsedConversations((prev) => {
-                  const next = { ...prev };
+                  const next: Record<string, boolean> = { ...prev };
                   delete next[participantId];
                   return next;
                 });
@@ -187,7 +171,10 @@ const Dashboard: React.FC = () => {
               const idx = prev.findIndex((c) => c.participantId === participantId);
               if (idx >= 0) {
                 const copy = [...prev];
-                copy[idx] = { ...copy[idx], messages: [...copy[idx].messages, newMsg] };
+                copy[idx] = {
+                  ...copy[idx],
+                  messages: [...copy[idx].messages, newMsg],
+                };
                 return copy.sort((a, b) => {
                   const aLast = a.messages.length
                     ? a.messages[a.messages.length - 1].timestamp
@@ -198,10 +185,16 @@ const Dashboard: React.FC = () => {
                   return bLast - aLast;
                 });
               }
-              return [{ participantId, username: artist.username, messages: [newMsg] }, ...prev];
+              return [
+                { participantId, username: artist.username, messages: [newMsg] },
+                ...prev,
+              ];
             });
 
-            setCollapsedConversations((prev) => ({ ...prev, [participantId]: false }));
+            setCollapsedConversations((prev) => ({
+              ...prev,
+              [participantId]: false,
+            }));
 
             authFetch("http://localhost:5005/api/messages", {
               method: "POST",
@@ -212,7 +205,9 @@ const Dashboard: React.FC = () => {
               }),
             }).catch((err: unknown) => {
               console.error("Failed to persist message:", err);
-              toast.error("Failed to send message to server.", { position: "bottom-right" });
+              toast.error("Failed to send message to server.", {
+                position: "bottom-right",
+              });
             });
 
             setMessagesOpen(true);

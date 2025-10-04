@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
-import "./index.css";
+import "./global.css";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!PUBLISHABLE_KEY) {

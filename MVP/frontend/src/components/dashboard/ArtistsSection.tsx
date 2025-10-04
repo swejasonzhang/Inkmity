@@ -15,7 +15,12 @@ type Props = {
 
 const ITEMS_PER_PAGE = 12;
 
-const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSelectArtist }) => {
+const ArtistsSection: React.FC<Props> = ({
+    artists,
+    loading,
+    showArtists,
+    onSelectArtist,
+}) => {
     const [priceFilter, setPriceFilter] = useState<string>("all");
     const [locationFilter, setLocationFilter] = useState<string>("all");
     const [styleFilter, setStyleFilter] = useState<string>("all");
@@ -25,7 +30,10 @@ const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSele
     const [filterOpacity, setFilterOpacity] = useState(1);
 
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
+        const t = setTimeout(
+            () => setDebouncedSearch(searchQuery.trim().toLowerCase()),
+            250
+        );
         return () => clearTimeout(t);
     }, [searchQuery]);
 
@@ -52,10 +60,16 @@ const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSele
                             ? artist.priceRange.max >= 5000
                             : (() => {
                                 const [min, max] = priceFilter.split("-").map(Number);
-                                return artist.priceRange.max >= min && artist.priceRange.min <= max;
+                                return (
+                                    artist.priceRange.max >= min && artist.priceRange.min <= max
+                                );
                             })();
-                const inLocation = locationFilter === "all" || artist.location === locationFilter;
-                const inStyle = styleFilter === "all" || artist.style?.includes(styleFilter);
+
+                const inLocation =
+                    locationFilter === "all" || artist.location === locationFilter;
+
+                const inStyle =
+                    styleFilter === "all" || artist.style?.includes(styleFilter);
 
                 const q = debouncedSearch;
                 const matchesKeyword =
@@ -71,18 +85,21 @@ const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSele
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const pageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const pageItems = filtered.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     const isCenterLoading = loading || !showArtists;
 
     return (
         <section
             id="middle-content"
-            className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-gray-900"
+            className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-card"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
             <div
-                className="bg-gray-800 px-3 py-3 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300 backdrop-blur supports-[backdrop-filter]:bg-gray-800/80 lg:backdrop-blur-0"
+                className="bg-card px-3 py-3 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:backdrop-blur-0 border border-app"
                 style={{ opacity: filterOpacity }}
             >
                 <ArtistFilter
@@ -110,11 +127,15 @@ const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSele
             <div className="relative flex-1 flex flex-col">
                 {isCenterLoading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center">
-                        <CircularProgress sx={{ color: "#ffffff" }} />
+                        <CircularProgress sx={{ color: "var(--fg)" }} />
                     </div>
                 )}
 
-                <div className={isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"}>
+                <div
+                    className={
+                        isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"
+                    }
+                >
                     <div className="flex flex-col justify-between flex-1">
                         <div className="w-full flex-1 px-0 pt-3 pb-2">
                             {pageItems.length > 0 ? (
@@ -125,17 +146,24 @@ const ArtistsSection: React.FC<Props> = ({ artists, loading, showArtists, onSele
                                             initial={{ opacity: 0, y: 24 }}
                                             whileInView={{ opacity: 1, y: 0 }}
                                             viewport={{ once: true, amount: 0.2 }}
-                                            transition={{ duration: 0.45, delay: index * 0.06, ease: "easeOut" }}
+                                            transition={{
+                                                duration: 0.45,
+                                                delay: index * 0.06,
+                                                ease: "easeOut",
+                                            }}
                                             className="w-full h-full"
                                         >
                                             <div className="h-full min-h-[520px] sm:min-h-[540px] md:min-h-[560px]">
-                                                <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
+                                                <ArtistCard
+                                                    artist={artist}
+                                                    onClick={() => onSelectArtist(artist)}
+                                                />
                                             </div>
                                         </motion.div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-gray-400 text-center flex-1 flex items-center justify-center py-8">
+                                <p className="text-muted text-center flex-1 flex items-center justify-center py-8">
                                     No artists match your filters.
                                 </p>
                             )}
