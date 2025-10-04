@@ -15,13 +15,15 @@ const Header: React.FC = () => {
   };
 
   const dropdownBtnClasses =
-    "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 transition";
+    "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-white/10 transition";
 
   const buttonRef = useRef<HTMLDivElement>(null);
   const [buttonWidth, setButtonWidth] = useState(0);
 
   useEffect(() => {
-    if (buttonRef.current) setButtonWidth(buttonRef.current.offsetWidth);
+    if (buttonRef.current) {
+      setButtonWidth(buttonRef.current.offsetWidth);
+    }
   }, [user?.firstName, user?.emailAddresses]);
 
   useEffect(() => {
@@ -40,39 +42,33 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="hidden md:flex w-full bg-gray-50 shadow-lg border-b-4 border-gray-200 relative h-24 items-center z-50">
+      <header className="hidden md:flex w-full bg-gray-900 border-b border-white/10 relative h-24 items-center z-50">
         <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center">
           <a href="/dashboard" className="flex items-center gap-3">
             <img
               src="/Logo.png"
               alt="Inkmity Logo"
-              className="h-16 md:h-20 w-auto object-contain"
+              className="h-20 md:h-24 w-auto object-contain"
               draggable={false}
             />
             <span className="sr-only">Inkmity</span>
           </a>
         </div>
 
-        <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-10 text-lg font-medium text-gray-700">
-          <a href="/dashboard" className="hover:text-black transition">
-            Dashboard
-          </a>
+        <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-10 text-lg font-medium text-white">
+          <a href="/dashboard" className="hover:opacity-80 transition">Dashboard</a>
           <span
             aria-disabled="true"
             title="Gallery is a feature in progress"
-            className="flex items-center gap-2 text-gray-500 cursor-not-allowed opacity-60 pointer-events-none"
+            className="flex items-center gap-2 text-white/60 cursor-not-allowed opacity-60 pointer-events-none"
           >
             Gallery
-            <span className="inline-flex items-center gap-1 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-[10px] bg-white/10 text-white px-1.5 py-0.5 rounded-full border border-white/15">
               <Lock size={10} /> In progress
             </span>
           </span>
-          <a href="/contact" className="hover:text-black transition">
-            Contact
-          </a>
-          <a href="/about" className="hover:text-black transition">
-            About Inkmity
-          </a>
+          <a href="/contact" className="hover:opacity-80 transition">Contact</a>
+          <a href="/about" className="hover:opacity-80 transition">About Inkmity</a>
         </nav>
 
         <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
@@ -84,22 +80,22 @@ const Header: React.FC = () => {
             >
               <div
                 ref={buttonRef}
-                className={dropdownBtnClasses + " bg-gray-50 text-gray-700"}
+                className={`${dropdownBtnClasses} bg-white/5 text-white border border-white/10`}
               >
-                <span className="mr-2 font-semibold text-gray-600">✦</span>
+                <span className="mr-2 font-semibold">✦</span>
                 Hello, <span className="font-bold ml-1">{userLabel}</span>
               </div>
 
               <div
                 style={{ width: buttonWidth }}
-                className={`absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg transform transition-all duration-300 ${showDropdown
+                className={`absolute right-0 mt-2 bg-gray-900 border border-white/10 rounded-lg shadow-xl transform transition-all duration-300 ${showDropdown
                   ? "opacity-100 translate-y-0 visible"
                   : "opacity-0 -translate-y-2 invisible"
                   }`}
               >
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2 text-center hover:bg-gray-100 rounded-lg"
+                  className="w-full px-4 py-2 text-left hover:bg-white/10 rounded-lg text-white"
                 >
                   Logout
                 </button>
@@ -109,22 +105,22 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile header */}
-      <header className="md:hidden w-full bg-gray-50 shadow-lg border-b-2 border-gray-200 h-16 flex items-center z-50 px-3">
+      <header className="md:hidden w-full bg-gray-900 border-b border-white/10 h-16 flex items-center z-50 px-3">
         <a href="/dashboard" className="flex items-center gap-2">
           <img
             src="/Logo.png"
+            alt="Inkmity Logo"
             className="h-10 w-auto object-contain"
             draggable={false}
           />
           <span className="sr-only">Inkmity</span>
         </a>
-        <div className="flex-1 text-center text-gray-800 font-semibold truncate px-2">
+        <div className="flex-1 text-center font-semibold truncate px-2 text-white">
           Hello, <span className="font-bold">{userLabel}</span>
         </div>
         <button
           aria-label="Open menu"
-          className="p-2 rounded-lg hover:bg-gray-100 active:scale-[0.98]"
+          className="p-2 rounded-lg hover:bg-white/10 active:scale-[0.98] text-white"
           onClick={() => setMobileMenuOpen(true)}
         >
           <Menu size={22} />
@@ -138,29 +134,28 @@ const Header: React.FC = () => {
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden
           />
-          <div className="absolute inset-0 bg-gray-50 flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="absolute inset-0 bg-gray-900 flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <img
                   src="/Logo.png"
                   alt="Inkmity Logo"
                   className="h-8 w-auto object-contain"
-                  draggable={false}
                 />
               </div>
               <button
                 aria-label="Close menu"
-                className="p-2 rounded-lg hover:bg-gray-100 active:scale-[0.98]"
+                className="p-2 rounded-lg hover:bg-white/10 active:scale-[0.98] text-white"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <X size={20} />
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto px-4 py-4">
+            <nav className="flex-1 overflow-y-auto px-4 py-4 text-white">
               <a
                 href="/dashboard"
-                className="w-full text-left px-4 py-3 rounded-lg text-gray-800 hover:bg-gray-100 font-medium flex"
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-white/10 font-medium flex"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Dashboard
@@ -168,25 +163,25 @@ const Header: React.FC = () => {
 
               <div
                 title="Gallery is a feature in progress"
-                className="w-full px-4 py-3 rounded-lg text-gray-500 bg-gray-100/50 cursor-not-allowed flex items-center justify-between"
+                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 cursor-not-allowed flex items-center justify-between text-white/80"
                 aria-disabled="true"
               >
                 <span>Gallery</span>
-                <span className="inline-flex items-center gap-1 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] bg-white/10 text-white px-1.5 py-0.5 rounded-full border border-white/15">
                   <Lock size={10} /> In progress
                 </span>
               </div>
 
               <a
                 href="/contact"
-                className="mt-2 w-full text-left px-4 py-3 rounded-lg text-gray-800 hover:bg-gray-100 font-medium flex"
+                className="mt-2 w-full text-left px-4 py-3 rounded-lg hover:bg-white/10 font-medium flex"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
               </a>
               <a
                 href="/about"
-                className="mt-2 w-full text-left px-4 py-3 rounded-lg text-gray-800 hover:bg-gray-100 font-medium flex"
+                className="mt-2 w-full text-left px-4 py-3 rounded-lg hover:bg-white/10 font-medium flex"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About Inkmity
@@ -197,7 +192,7 @@ const Header: React.FC = () => {
               <div className="px-4 pb-6">
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-900 text-white font-semibold hover:bg-black active:scale-[0.99]"
+                  className="w-full px-4 py-3 rounded-lg bg-white text-gray-900 font-semibold hover:opacity-90 active:scale-[0.99]"
                 >
                   Logout
                 </button>
