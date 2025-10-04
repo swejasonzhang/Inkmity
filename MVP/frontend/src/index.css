@@ -15,7 +15,10 @@
 
 html,
 body {
-  overflow-y: auto;
+  margin: 0;
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -23,6 +26,25 @@ html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   width: 0;
   height: 0;
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-bounce {
+  overflow-y: auto;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-bounce::-webkit-scrollbar {
   display: none;
 }
 

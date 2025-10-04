@@ -38,7 +38,7 @@ const Dashboard: React.FC = () => {
   if (!user) return <div className="text-white p-4">Loading...</div>;
 
   return (
-    <div className="min-h-dvh bg-gray-900 flex flex-col overflow-x-hidden">
+    <div className="min-h-dvh bg-gray-900 flex flex-col overflow-y-hidden">
       <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
 
       <Header />
