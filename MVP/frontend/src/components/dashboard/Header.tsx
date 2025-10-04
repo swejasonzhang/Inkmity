@@ -10,6 +10,14 @@ const Header: React.FC = () => {
   const { user, isSignedIn } = useUser();
   const { pathname } = useLocation();
 
+  const [flipped, setFlipped] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("ink_theme_flip") === "1";
+    } catch {
+      return false;
+    }
+  });
+
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
@@ -36,6 +44,13 @@ const Header: React.FC = () => {
       document.body.style.height = height;
     };
   }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    document.body.classList.toggle("theme-flip", flipped);
+    try {
+      localStorage.setItem("ink_theme_flip", flipped ? "1" : "0");
+    } catch { }
+  }, [flipped]);
 
   const userLabel =
     user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User";
@@ -73,13 +88,15 @@ const Header: React.FC = () => {
     />
   );
 
+  const logoSrc = flipped ? "/WhiteLogo.png" : "/BlackLogo.png";
+
   return (
     <>
       <header className="hidden md:flex w-full bg-gray-900 border-b border-white/10 relative h-24 items-center z-50">
         <div className="absolute left-4 top-[60%] -translate-y-1/2 flex items-center">
           <Link to="/dashboard" className="flex items-center gap-3">
             <img
-              src="/WhiteLogo.png"
+              src={logoSrc}
               alt="Inkmity Logo"
               className="h-20 md:h-24 w-auto object-contain"
               draggable={false}
@@ -129,7 +146,45 @@ const Header: React.FC = () => {
           </Link>
         </nav>
 
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+          <button
+            onClick={() => setFlipped((v) => !v)}
+            aria-label="Flip theme"
+            aria-pressed={flipped}
+            className="group relative inline-flex items-center rounded-full border border-white/15 bg-white/5 pr-3 pl-2 py-1.5 text-sm text-white hover:bg-white/10 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/30"
+          >
+            <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-gradient-to-r from-white/20 via-white/25 to-white/20 p-0.5 transition-all duration-300">
+              <span
+                className={[
+                  "absolute inset-0 rounded-full",
+                  "bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.25),transparent_60%)]",
+                ].join(" ")}
+              />
+              <span
+                className={[
+                  "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-md transition-all duration-300",
+                  flipped ? "translate-x-6" : "translate-x-0",
+                ].join(" ")}
+              >
+                <span className="transition-opacity duration-200">
+                  {flipped ? (
+                    <span className="text-gray-800 text-[11px]">☀︎</span>
+                  ) : (
+                    <span className="text-gray-900/70 text-[11px]">☾</span>
+                  )}
+                </span>
+              </span>
+              <span
+                className={[
+                  "absolute -inset-[1px] rounded-full opacity-0 blur-[6px] transition-opacity duration-300",
+                  "bg-[conic-gradient(from_180deg,rgba(255,255,255,0.35),transparent_50%)]",
+                  "group-hover:opacity-100",
+                ].join(" ")}
+              />
+            </span>
+            <span className="font-medium">{flipped ? "Light" : "Dark"}</span>
+          </button>
+
           {isSignedIn && user && (
             <div
               className="relative"
@@ -166,7 +221,7 @@ const Header: React.FC = () => {
       <header className="md:hidden w-full bg-gray-900 border-b border-white/10 h-16 flex items-center z-50 px-3">
         <Link to="/dashboard" className="flex items-center gap-2">
           <img
-            src="/WhiteLogo.png"
+            src={logoSrc}
             alt="Inkmity Logo"
             className="h-10 w-auto object-contain"
             draggable={false}
@@ -176,13 +231,41 @@ const Header: React.FC = () => {
         <div className="flex-1 text-center font-semibold truncate px-2 text-white">
           Hello, <span className="font-bold">{userLabel}</span>
         </div>
-        <button
-          aria-label="Open menu"
-          className="p-2 rounded-lg hover:bg-white/10 active:scale-[0.98] text-white"
-          onClick={() => setMobileMenuOpen(true)}
-        >
-          <Menu size={22} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            aria-label="Flip theme"
+            aria-pressed={flipped}
+            className="group relative inline-flex h-8 w-14 items-center rounded-full border border-white/15 bg-white/5 p-1 text-white hover:bg-white/10 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/30"
+            onClick={() => setFlipped((v) => !v)}
+          >
+            <span
+              className={[
+                "absolute inset-0 rounded-full opacity-0 blur-[6px] transition-opacity duration-300",
+                "bg-[conic-gradient(from_180deg,rgba(255,255,255,0.35),transparent_50%)]",
+                "group-hover:opacity-100",
+              ].join(" ")}
+            />
+            <span
+              className={[
+                "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-md transition-transform duration-300",
+                flipped ? "translate-x-6" : "translate-x-0",
+              ].join(" ")}
+            >
+              {flipped ? (
+                <span className="text-gray-800 text-xs">☀︎</span>
+              ) : (
+                <span className="text-gray-900/70 text-xs">☾</span>
+              )}
+            </span>
+          </button>
+          <button
+            aria-label="Open menu"
+            className="p-2 rounded-lg hover:bg-white/10 active:scale-[0.98] text-white"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu size={22} />
+          </button>
+        </div>
       </header>
 
       {mobileMenuOpen && (
@@ -196,7 +279,7 @@ const Header: React.FC = () => {
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <img
-                  src="/WhiteLogo.png"
+                  src={logoSrc}
                   alt="Inkmity Logo"
                   className="h-8 w-auto object-contain"
                 />

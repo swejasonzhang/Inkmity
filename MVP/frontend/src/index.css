@@ -16,6 +16,11 @@
   --tw-font-sans: var(--font-body);
 }
 
+/* Keep layout width stable when scrollbars appear/disappear */
+html {
+  scrollbar-gutter: stable both-edges;
+}
+
 /* Global */
 body {
   font-family: var(--font-body);
@@ -63,4 +68,19 @@ h3 {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Theme Flip: apply on app root (e.g., #root) to avoid OS scrollbar quirks */
+.theme-flip {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Re-invert media back to normal inside flipped area */
+.theme-flip img,
+.theme-flip video,
+.theme-flip svg,
+.theme-flip canvas,
+.theme-flip picture,
+.theme-flip [data-no-invert] {
+  filter: invert(1) hue-rotate(180deg);
 }
