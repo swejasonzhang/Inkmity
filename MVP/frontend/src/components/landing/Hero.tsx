@@ -1,5 +1,6 @@
 import React from "react";
 import { m } from "framer-motion";
+import { Link } from "react-router-dom"; // ⬅️ add this
 
 type HeroProps = {
     textFadeUp: any;
@@ -65,6 +66,47 @@ const Hero: React.FC<HeroProps> = ({ textFadeUp, prefersReduced, wc }) => {
                     Inkmity is a community-built platform with real people and real reviews—helping clients clearly
                     communicate ideas and helping artists book with context. Start aligned and keep it stress-free.
                 </m.p>
+
+                <m.div
+                    variants={textFadeUp}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.7 }}
+                    className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
+                >
+                    <Link
+                        to="/signup"
+                        className="
+              inline-flex items-center justify-center
+              rounded-xl px-5 sm:px-6 py-3
+              font-semibold
+              bg-white text-black
+              hover:opacity-95 active:scale-[0.99]
+              border border-app shadow-sm
+              transition
+              focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]
+              dark:bg-white dark:text-black
+            "
+                    >
+                        Get Started
+                    </Link>
+
+                    <Link
+                        to="/login"
+                        className="
+              inline-flex items-center justify-center
+              rounded-xl px-5 sm:px-6 py-3
+              font-semibold
+              bg-elevated text-app
+              hover:bg-elevated/90 active:scale-[0.99]
+              border border-app
+              transition
+              focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]
+            "
+                    >
+                        Already Have An Account? Login
+                    </Link>
+                </m.div>
             </div>
         </section>
     );

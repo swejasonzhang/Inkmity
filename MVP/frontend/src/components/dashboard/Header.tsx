@@ -157,8 +157,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
           "py-[10px]",
         ].join(" ")}
       >
-        <div className="w-full flex items-center justify-between px-[10px]">
-          <div className="flex items-center">
+        <div className="w-full flex items-center justify-between px-[30px]">
+          <div className="flex items-center -ml-2.5">
             <Link to={homeHref} className="flex items-center gap-3">
               <img
                 src={logoSrc}

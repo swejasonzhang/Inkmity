@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
 
       <Header />
 
-      <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-0 sm:pb-0">
+      <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
         <div className="flex-1 min-w-0">
           <ArtistsSection
             artists={artists}
@@ -54,6 +54,7 @@ const Dashboard: React.FC = () => {
           />
         </div>
       </main>
+
 
       <FloatingBar
         onAssistantOpen={() => setAssistantOpen(true)}
