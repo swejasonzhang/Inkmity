@@ -101,6 +101,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
 
   const desktopLink = "relative px-2 py-1 transition text-app/80 hover:text-app group";
 
+  const homeHref = isSignedIn ? "/dashboard" : "/landing";
+
   const DesktopInkBar = ({ active }: { active: boolean }) => (
     <span className="pointer-events-none absolute -bottom-2 left-0 right-0">
       <span className="block h-[3px] rounded-full bg-app/15 overflow-hidden">
@@ -109,13 +111,15 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
           className={[
             "block h-full origin-left transform-gpu",
             "bg-[linear-gradient(90deg,#000,#777,#fff)]",
-            active ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100",
+            active
+              ? "scale-x-100 opacity-100"
+              : "scale-x-0 opacity-0 group-hover:scale-x-100 group-hover:opacity-100",
             "transition-[transform,opacity] motion-reduce:transition-none",
-            "ease-[cubic-bezier(0.22,1,0.36,1)]"
+            "ease-[cubic-bezier(0.22,1,0.36,1)]",
           ].join(" ")}
           style={{
             transitionDuration: `calc(${THEME_MS}ms * 1.1)`,
-            willChange: "transform, opacity"
+            willChange: "transform, opacity",
           }}
         />
       </span>
@@ -150,12 +154,12 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
         className={[
           "hidden md:flex w-full relative items-center z-50",
           isAuthPage ? "bg-transparent border-transparent" : "bg-app border-b border-app",
-          "py-[10px]"
+          "py-[10px]",
         ].join(" ")}
       >
         <div className="w-full flex items-center justify-between px-[10px]">
           <div className="flex items-center">
-            <Link to="/dashboard" className="flex items-center gap-3">
+            <Link to={homeHref} className="flex items-center gap-3">
               <img
                 src={logoSrc}
                 alt="Inkmity Logo"
@@ -165,7 +169,6 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
               <span className="sr-only">Inkmity</span>
             </Link>
           </div>
-
 
           <div className="flex items-center gap-6">
             <nav className="flex items-center gap-8 text-lg font-medium">
@@ -308,7 +311,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
           isAuthPage ? "bg-transparent border-transparent" : "bg-app border-b border-app",
         ].join(" ")}
       >
-        <Link to="/dashboard" className="flex items-center gap-2">
+        <Link to={homeHref} className="flex items-center gap-2">
           <img src={logoSrc} alt="Inkmity Logo" className="h-10 w-auto object-contain" draggable={false} />
           <span className="sr-only">Inkmity</span>
         </Link>
