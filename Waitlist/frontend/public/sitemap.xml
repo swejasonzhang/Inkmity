@@ -5,16 +5,4 @@
     <lastmod>2025-10-05</lastmod>
     <priority>1.0</priority>
   </url>
-  <url>
-    <loc>https://inkmity.com/booking</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://inkmity.com/artists</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://inkmity.com/about</loc>
-    <priority>0.6</priority>
-  </url>
 </urlset>
