@@ -31,18 +31,20 @@ const Landing: React.FC = () => {
         <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
             <LazyMotion features={domAnimation} strict>
                 <div className="relative min-h-dvh bg-app text-app flex flex-col">
-                    <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="auto"
-                        className="fixed inset-0 -z-10 h-full w-full object-cover pointer-events-none"
-                        aria-hidden
-                    >
-                        <source src="/Background.mp4" type="video/mp4" />
-                    </video>
-                    <div className="fixed inset-0 -z-10 bg-black/50" />
+                    <>
+                        <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            preload="auto"
+                            className="fixed inset-0 -z-10 h-full w-full object-cover pointer-events-none"
+                            aria-hidden
+                        >
+                            <source src="/Landing.mp4" type="video/mp4" />
+                        </video>
+                        <div className="fixed inset-0 -z-10 bg-black/45" aria-hidden />
+                    </>
 
                     <Header />
 
