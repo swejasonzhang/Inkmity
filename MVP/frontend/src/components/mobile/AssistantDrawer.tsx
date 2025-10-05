@@ -32,7 +32,6 @@ const AssistantDrawer: React.FC<Props> = ({ open, onClose }) => {
         <AnimatePresence>
             {open && (
                 <div className="lg:hidden fixed inset-0 z-50">
-                    {/* overlay */}
                     <motion.div
                         className="absolute inset-0 bg-black/70"
                         initial={{ opacity: 0 }}

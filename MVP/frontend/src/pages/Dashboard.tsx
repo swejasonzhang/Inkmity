@@ -77,7 +77,6 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between px-4 py-3 border-b border-app">
             <div className="flex items-center gap-2 font-semibold">
               <Bot size={18} />
-              <span>Assistant</span>
             </div>
             <button
               onClick={() => setAssistantOpen(false)}
@@ -110,7 +109,6 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between px-4 py-3 border-b border-app">
             <div className="flex items-center gap-2 font-semibold">
               <MessageSquare size={18} />
-              <span>Messaging</span>
             </div>
             <button
               onClick={() => setMessagesOpen(false)}
