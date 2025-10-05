@@ -114,14 +114,6 @@ const ArtistsSection: React.FC<Props> = ({
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                 />
-                <div className="px-2 sm:px-4">
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPrev={() => setCurrentPage((p) => p - 1)}
-                        onNext={() => setCurrentPage((p) => p + 1)}
-                    />
-                </div>
             </div>
 
             <div className="relative flex-1 flex flex-col">
