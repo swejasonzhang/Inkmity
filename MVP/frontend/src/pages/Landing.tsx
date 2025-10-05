@@ -15,6 +15,7 @@ import Differentiators from "@/components/landing/Differentiators";
 import FounderStory from "@/components/landing/FounderStory";
 import BottomCTA from "@/components/landing/BottomCTA";
 import Divider from "@/components/landing/Divider";
+import VideoBackground from "@/components/video/VideoBackground";
 
 const SPRING_SOFT: Transition = { type: "spring", stiffness: 64, damping: 26, mass: 1.05, restDelta: 0.002 };
 
@@ -31,20 +32,13 @@ const Landing: React.FC = () => {
         <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
             <LazyMotion features={domAnimation} strict>
                 <div className="relative min-h-dvh bg-app text-app flex flex-col">
-                    <>
-                        <video
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            preload="auto"
-                            className="fixed inset-0 -z-10 h-full w-full object-cover pointer-events-none"
-                            aria-hidden
-                        >
-                            <source src="/Landing.mp4" type="video/mp4" />
-                        </video>
-                        <div className="fixed inset-0 -z-10 bg-black/45" aria-hidden />
-                    </>
+                    <VideoBackground
+                        mp4="/Landing.mp4"
+                        prefersReduced={!!prefersReduced}
+                        zClass="-z-10"
+                        overlayClass="bg-black/45"
+                        preload="metadata"
+                    />
 
                     <Header />
 
