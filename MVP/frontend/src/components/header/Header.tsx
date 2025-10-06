@@ -49,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty("--theme-ms", `${THEME_MS}ms}`);
+    root.style.setProperty("--theme-ms", `${THEME_MS}ms`);
     root.classList.add("theme-smooth");
     root.setAttribute("data-ink-theme", theme);
     root.classList.toggle("light", theme === "light");
@@ -114,11 +114,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   }, [mobileMenuOpen]);
 
   const userLabel = user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User";
-
-  const isActive = (to: string) =>
-    to === "/dashboard"
-      ? pathname === "/" || pathname.startsWith("/dashboard")
-      : pathname.startsWith(to);
+  const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
   const desktopLink = "relative px-2 py-1 transition text-app/80 hover:text-app group";
 
@@ -267,6 +263,15 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
                 <span className="text-app">About Inkmity</span>
                 <DesktopInkBar active={isActive("/about")} />
               </Link>
+
+              {!isSignedIn && (
+                <Link
+                  to="/login"
+                  className="inline-flex h-10 items-center justify-center px-3 rounded-lg border border-app bg-elevated text-app hover:bg-elevated/90 transition"
+                >
+                  Login
+                </Link>
+              )}
             </nav>
 
             <div className="flex items-center gap-3">
@@ -390,7 +395,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-overlay" onClick={() => setMobileMenuOpen(false)} aria-hidden />
           <div className="absolute inset-0 bg-app flex flex-col">
-            <div className="flex items-center justify-between px={[10px]} py-[10px] border-b border-app">
+            <div className="flex items-center justify-between px-[10px] py-[10px] border-b border-app">
               <div className="flex items-center gap-2">
                 <img src={logoSrc} alt="Inkmity Logo" className="h-8 w-auto object-contain" />
               </div>
@@ -481,6 +486,18 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
                 </Link>
               </div>
             </nav>
+
+            {!isSignedIn && (
+              <div className="px-[10px] pb-6">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center px-4 py-3 rounded-lg border border-app bg-elevated text-app font-semibold hover:bg-elevated/90 active:scale-[0.99]"
+                >
+                  Login
+                </Link>
+              </div>
+            )}
 
             {isSignedIn && (
               <div className="px-[10px] pb-6">

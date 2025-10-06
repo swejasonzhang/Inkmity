@@ -1,16 +1,17 @@
 import React from "react";
 import { m } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const FounderStory: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ textFadeUp, wc }) => {
     return (
         <section className="px-4 grid place-items-center">
-            <div className="mx-auto max-w-4xl w-full rounded-2xl border border-app bg-card/60 p-6 md:p-8 text-center">
+            <div className="mx-auto max-w-5xl w-full rounded-2xl bg-card/60 px-8 md:px-12 py-0 text-center">
                 <m.h2
                     variants={textFadeUp}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.6 }}
-                    className="text-2xl md:text-3xl font-bold"
+                    className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight"
                     style={wc}
                 >
                     Why I started Inkmity
@@ -21,14 +22,12 @@ const FounderStory: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.6 }}
-                    className="mt-3 md:mt-4 text-subtle text-base md:text-lg leading-relaxed mx-auto max-w-prose"
+                    className="mt-5 md:mt-7 text-black dark:text-white text-xl md:text-2xl leading-relaxed md:leading-loose mx-auto max-w-[72ch] font-semibold"
                     style={wc}
                 >
-                    Finding the right artist shouldn’t feel like a part-time job—but it did. I’d spend hours scrolling
-                    Instagram, DM’ing artists, waiting, following up, and still not knowing basic things like availability.
-                    The back-and-forth dragged on: “Are you taking bookings?” “What’s your waitlist?” “Do you have this date?”
-                    Half the time I’d finally get a reply only to realize the design was out of my budget or the timeline
-                    didn’t work.
+                    I was excited to get a tattoo—and ended up juggling DMs, emails, and payment apps, waiting days for answers.
+                    By the time replies came, the date was gone or the price didn’t fit. Getting something meaningful shouldn’t
+                    feel like a part-time job. I wanted the process to feel personal again, not transactional. 
                 </m.p>
 
                 <m.p
@@ -36,26 +35,42 @@ const FounderStory: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.6 }}
-                    className="mt-4 text-subtle text-base md:text-lg leading-relaxed mx-auto max-w-prose"
+                    className="mt-6 text-black dark:text-white text-xl md:text-2xl leading-relaxed md:leading-loose mx-auto max-w-[72ch] font-semibold"
                     style={wc}
                 >
-                    And then the platform hopping: DMs for questions, iMessage for updates, email for references, and a
-                    bank app like Chase for deposits. Threads got lost. Context went missing. I felt like I was managing a
-                    project plan just to get a simple booking.
+                    Inkmity is my fix: one place to discover artists you vibe with, see real availability, and book with context.
+                    Clear pricing, verified reviews, and conversations in one thread—so the process starts inspired and stays simple.
+                    It lets artists focus on their craft while the logistics take care of themselves. That’s the experience I wished I had—and the one I’m building.
                 </m.p>
 
-                <m.p
+                <m.div
                     variants={textFadeUp}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.6 }}
-                    className="mt-4 text-subtle text-base md:text-lg leading-relaxed mx-auto max-w-prose"
-                    style={wc}
+                    className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
                 >
-                    Inkmity is my fix: one place with real availability, clear pricing, verified reviews, and messaging that
-                    keeps everything together—from first idea to deposit to appointment. It’s built so clients don’t waste
-                    hours chasing answers, and artists don’t have to juggle five apps to do one job.
-                </m.p>
+                    <Link
+                        to="/signup"
+                        className="inline-flex items-center justify-center rounded-xl px-5 sm:px-6 py-3 font-bold bg-white text-black hover:opacity-95 active:scale-[0.99] border border-app shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
+                    >
+                        Get Started
+                    </Link>
+                    <Link
+                        to="/login"
+                        className="inline-flex items-center justify-center rounded-xl px-5 sm:px-6 py-3 font-bold bg-elevated text-app hover:bg-elevated/90 active:scale-[0.99] border border-app transition focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
+                    >
+                        Already Have An Account? Login
+                    </Link>
+                </m.div>
+
+                <m.div
+                    variants={textFadeUp}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.6 }}
+                    className="mx-auto mt-12 h-px w-48 md:w-64 lg:w-80 bg-gradient-to-r from-transparent via-[color:var(--border)] to-transparent"
+                />
             </div>
         </section>
     );
