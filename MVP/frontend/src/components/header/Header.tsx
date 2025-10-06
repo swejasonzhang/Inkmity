@@ -15,8 +15,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   const { signOut } = useClerk();
   const { user, isSignedIn } = useUser();
   const { pathname } = useLocation();
-
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup")
+  const showThemeToggle = pathname.startsWith("/dashboard");
 
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     try {
@@ -230,25 +230,22 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
             </nav>
 
             <div className="flex items-center gap-3">
-              {!isAuthPage && (
+              {showThemeToggle && (
                 <button
-                  onClick={toggleTheme}
                   aria-label="Toggle theme"
                   aria-pressed={theme === "light"}
-                  className="group relative inline-flex items-center rounded-full border border-app bg-elevated pr-3 pl-2 py-1.5 text-sm text-app hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
+                  className="group relative inline-flex h-8 w-14 items-center rounded-full border border-app bg-elevated p-1 text-app hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
+                  onClick={toggleTheme}
                 >
-                  <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-elevated p-0.5">
-                    <span
-                      className={[
-                        "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-sm",
-                        theme === "light" ? "translate-x-6" : "translate-x-0",
-                      ].join(" ")}
-                      style={{ transition: `transform ${THEME_MS}ms` }}
-                    >
-                      <span className="text-[11px]">{theme === "light" ? "☀︎" : "☾"}</span>
-                    </span>
+                  <span
+                    className={[
+                      "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-sm",
+                      theme === "light" ? "translate-x-6" : "translate-x-0",
+                    ].join(" ")}
+                    style={{ transition: `transform ${THEME_MS}ms` }}
+                  >
+                    <span className="text-xs">{theme === "light" ? "☀︎" : "☾"}</span>
                   </span>
-                  <span className="font-medium">{theme === "light" ? "Light" : "Dark"}</span>
                 </button>
               )}
 
@@ -317,24 +314,28 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
-          {!isAuthPage && (
+          {showThemeToggle && (
             <button
+              onClick={toggleTheme}
               aria-label="Toggle theme"
               aria-pressed={theme === "light"}
-              className="group relative inline-flex h-8 w-14 items-center rounded-full border border-app bg-elevated p-1 text-app hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
-              onClick={toggleTheme}
+              className="group relative inline-flex items-center rounded-full border border-app bg-elevated pr-3 pl-2 py-1.5 text-sm text-app hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
             >
-              <span
-                className={[
-                  "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-sm",
-                  theme === "light" ? "translate-x-6" : "translate-x-0",
-                ].join(" ")}
-                style={{ transition: `transform ${THEME_MS}ms` }}
-              >
-                <span className="text-xs">{theme === "light" ? "☀︎" : "☾"}</span>
+              <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-elevated p-0.5">
+                <span
+                  className={[
+                    "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-sm",
+                    theme === "light" ? "translate-x-6" : "translate-x-0",
+                  ].join(" ")}
+                  style={{ transition: `transform ${THEME_MS}ms` }}
+                >
+                  <span className="text-[11px]">{theme === "light" ? "☀︎" : "☾"}</span>
+                </span>
               </span>
+              <span className="font-medium">{theme === "light" ? "Light" : "Dark"}</span>
             </button>
           )}
+
           <button
             aria-label="Open menu"
             className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
