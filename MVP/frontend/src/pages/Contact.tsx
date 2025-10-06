@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import Header from "@/components/dashboard/Header";
+import Header from "@/components/header/Header";
 
 const Contact: React.FC = () => {
     const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });

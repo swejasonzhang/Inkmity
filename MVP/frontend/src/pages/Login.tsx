@@ -2,7 +2,7 @@ import { useState, FormEvent, useEffect, ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useSignIn, useUser } from "@clerk/clerk-react";
-import Header from "@/components/dashboard/Header";
+import Header from "@/components/header/Header";
 import FormInput from "@/components/dashboard/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
