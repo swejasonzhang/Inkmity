@@ -79,6 +79,24 @@ const item: Variants = {
 const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ textFadeUp, wc }) => {
     return (
         <section className="px-4 grid place-items-center">
+            <div className="mx-auto max-w-7xl w-full text-center mb-8 md:mb-12">
+                <m.h2
+                    variants={textFadeUp}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.5 }}
+                    id="features"
+                    className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight 
+                     text-transparent bg-clip-text 
+                     bg-[linear-gradient(90deg,var(--fg)_0%,var(--fg)_50%,rgba(255,255,255,0.8)_100%)]"
+                    style={wc}
+                >
+                    Features
+                </m.h2>
+
+                <div className="mx-auto mt-4 h-px w-48 md:w-64 lg:w-80 bg-gradient-to-r from-transparent via-[color:var(--border)] to-transparent" />
+            </div>
+
             <div className="relative mx-auto w-full max-w-7xl rounded-3xl border border-app bg-card/60 backdrop-blur overflow-hidden">
                 <div
                     aria-hidden
@@ -121,7 +139,6 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                         reverse ? "lg:[&>*:first-child]:order-2 lg:[&>*:last-child]:order-1" : "",
                                     ].join(" ")}
                                 >
-                                    {/* TEXT */}
                                     <div className="w-full flex items-center justify-center">
                                         <div className="rounded-2xl p-[1px] bg-[linear-gradient(135deg,rgba(255,255,255,.25),rgba(255,255,255,0)_40%),linear-gradient(315deg,rgba(255,255,255,.18),rgba(255,255,255,0)_40%)]">
                                             <div className="rounded-2xl border border-app bg-elevated/70 px-6 py-7 md:px-8 md:py-10 min-h-[320px] flex flex-col items-center justify-center text-center">
@@ -156,7 +173,6 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                                     {f.body}
                                                 </m.p>
 
-                                                {/* TAGS — now relative to each feature */}
                                                 <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                                                     {f.tags.map((tag) => (
                                                         <span
@@ -171,7 +187,6 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                         </div>
                                     </div>
 
-                                    {/* IMAGE */}
                                     <div className="w-full flex items-center justify-center">
                                         <div className="w-full max-w-3xl">
                                             <div className="relative rounded-2xl overflow-hidden">

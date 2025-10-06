@@ -30,22 +30,9 @@ const App: React.FC = () => {
 
       <Route path="/contact" element={<Contact />} />
       <Route path="/about" element={<About />} />
-
-      <Route
-        path="/"
-        element={
-          <>
-            <SignedIn>
-              <Navigate to="/dashboard" replace />
-            </SignedIn>
-            <SignedOut>
-              <Landing />
-            </SignedOut>
-          </>
-        }
-      />
-
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/landing" element={<Landing />} />
+      <Route path="/" element={<Navigate to="/landing" replace />} />
+      <Route path="*" element={<Navigate to="/landing" replace />} />
     </Routes>
   );
 };

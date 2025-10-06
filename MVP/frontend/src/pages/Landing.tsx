@@ -4,9 +4,9 @@ import {
     LazyMotion,
     domAnimation,
     type Variants,
-    type Transition,
     MotionConfig,
     useReducedMotion,
+    m,
 } from "framer-motion";
 
 import Hero from "@/components/landing/Hero";
@@ -16,16 +16,33 @@ import FounderStory from "@/components/landing/FounderStory";
 import BottomCTA from "@/components/landing/BottomCTA";
 import Divider from "@/components/landing/Divider";
 
-const SPRING_SOFT: Transition = { type: "spring", stiffness: 64, damping: 26, mass: 1.05, restDelta: 0.002 };
-
-const textFadeUp: Variants = {
-    hidden: { opacity: 0, y: 14 },
-    visible: { opacity: 1, y: 0, transition: SPRING_SOFT },
-};
-
 const Landing: React.FC = () => {
     const prefersReduced = useReducedMotion();
     const wc = prefersReduced ? undefined : ({ willChange: "transform,opacity" } as React.CSSProperties);
+
+    const textFadeUp: Variants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: prefersReduced
+                ? { duration: 0 }
+                : {
+                    type: "spring",
+                    stiffness: 220,
+                    damping: 26,
+                    mass: 0.7,
+                    velocity: 0.2,
+                },
+        },
+    };
+
+    const introStagger = {
+        hidden: {},
+        visible: {
+            transition: { staggerChildren: 0.12, delayChildren: 0.04 }
+        }
+    };
 
     return (
         <>
@@ -37,12 +54,26 @@ const Landing: React.FC = () => {
                         <Header />
 
                         <main className="flex-1">
-                            <Hero textFadeUp={textFadeUp} prefersReduced={!!prefersReduced} wc={wc} />
-                            <Divider className="mb-10" />
+                            <section className="relative">
+                                <div className="mx-auto max-w-7xl px-4">
+                                    <m.div
+                                        variants={introStagger}
+                                        initial="hidden"
+                                        whileInView="visible"
+                                        viewport={{ once: true, amount: 0.4 }}
+                                        className="space-y-16 md:space-y-24"
+                                    >
+                                        <Hero prefersReduced={!!prefersReduced} wc={wc} textFadeUp={textFadeUp} />
+                                        <FounderStory wc={wc} textFadeUp={textFadeUp} />
+                                    </m.div>
+                                </div>
+                            </section>
+
+                            <Divider className="my-10" />
                             <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
+                            <Divider className="my-10" />
                             <Differentiators textFadeUp={textFadeUp} wc={wc} />
                             <Divider className="my-10" />
-                            <FounderStory textFadeUp={textFadeUp} wc={wc} />
                             <BottomCTA textFadeUp={textFadeUp} wc={wc} />
                             <Divider />
                         </main>
@@ -68,7 +99,7 @@ const Landing: React.FC = () => {
                     "h-[100svh]",
                     "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
                     "object-contain md:object-cover",
-                    " pointer-events-none opacity-50 mix-blend-screen",
+                    "pointer-events-none opacity-50 mix-blend-screen",
                 ].join(" ")}
                 aria-hidden
             >
