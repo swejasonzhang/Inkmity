@@ -1,4 +1,3 @@
-// controllers/messageController.ts (or .js)
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 
@@ -50,7 +49,6 @@ export const createMessage = async (req, res) => {
     if (!senderId || !receiverId || !text) {
       return res.status(400).json({ error: "Missing fields" });
     }
-    // Optional: verify the sender matches the authenticated user
     if (req.auth?.userId && req.auth.userId !== senderId) {
       return res.status(403).json({ error: "Forbidden" });
     }

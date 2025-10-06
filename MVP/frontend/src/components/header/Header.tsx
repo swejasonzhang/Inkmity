@@ -27,6 +27,23 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   });
 
   useEffect(() => {
+    const anyWin = window as any;
+    const c = anyWin.Clerk;
+    if (!c) return;
+
+    const noop = () => { };
+    try {
+      c.openSignIn = noop;
+      c.openSignUp = noop;
+      c.redirectToSignIn = noop;
+      c.redirectToSignUp = noop;
+      c.mountSignIn = noop;
+      c.mountSignUp = noop;
+    } catch { }
+  }, []);
+
+
+  useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty("--theme-ms", `${THEME_MS}ms`);
     root.classList.add("theme-smooth");

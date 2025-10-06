@@ -4,7 +4,6 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Inter:opsz,wght@14..32,100..900&display=swap");
 
-/* ---------- Registered color custom props ---------- */
 @property --bg {
   syntax: "<color>";
   inherits: true;
@@ -38,7 +37,7 @@
 @property --border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.1);
+  initial-value: rgba(255, 255, 255, 0.72);
 }
 @property --elevated {
   syntax: "<color>";
@@ -46,7 +45,6 @@
   initial-value: rgba(255, 255, 255, 0.05);
 }
 
-/* ---------- Theme tokens ---------- */
 :root {
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
@@ -60,14 +58,11 @@
   --subtle: rgba(255, 255, 255, 0.72);
   --card: #1f2937;
   --overlay: rgba(0, 0, 0, 0.6);
-  --border: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 1);
   --elevated: rgba(255, 255, 255, 0.05);
 
-  /* Theme animation */
   --theme-ms: 700ms;
 
-  /* ---------- NEW: Video blending defaults (dark theme) ---------- */
-  /* Screen blends brighten on dark bases, keeps video visible */
   --video-blend: screen;
   --video-opacity: 0.5;
 
@@ -81,7 +76,6 @@
     --elevated var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* Light theme overrides */
 .light {
   --bg: #f7f7f5;
   --fg: #111827;
@@ -89,16 +83,13 @@
   --subtle: rgba(17, 24, 39, 0.72);
   --card: #ffffff;
   --overlay: rgba(0, 0, 0, 0.55);
-  --border: rgba(0, 0, 0, 0.12);
+  --border: rgba(255, 255, 255, 0.4);
   --elevated: rgba(0, 0, 0, 0.06);
 
-  /* ---------- NEW: Video blending for light theme ---------- */
-  /* Multiply darkens on light bases, keeping video visible */
   --video-blend: multiply;
   --video-opacity: 0.65;
 }
 
-/* ---------- Theme-token utilities ---------- */
 .bg-app {
   background: var(--bg);
 }
@@ -124,7 +115,6 @@
   background: var(--overlay);
 }
 
-/* ---------- Page base ---------- */
 html,
 body {
   margin: 0;
@@ -160,7 +150,6 @@ body::-webkit-scrollbar {
   display: none;
 }
 
-/* ---------- Typography ---------- */
 h1,
 h2,
 h3,
@@ -187,7 +176,6 @@ h3 {
   color: var(--muted);
 }
 
-/* ---------- Motion smoothing ---------- */
 .theme-smooth * {
   transition: opacity 200ms ease, transform 200ms ease;
 }
@@ -195,7 +183,6 @@ h3 {
   .theme-smooth * {
     transition: none !important;
   }
-  /* Optional: reduce video strength when user prefers less motion */
   :root {
     --video-opacity: 0.35;
   }
@@ -204,7 +191,6 @@ h3 {
   }
 }
 
-/* ---------- Curtain ---------- */
 .theme-curtain {
   position: fixed;
   inset: 0;
@@ -230,23 +216,31 @@ h3 {
   }
 }
 
-/* ---------- NEW: Video blending utility ---------- */
 .video-bg {
-  /* These are theme-driven from vars above */
   mix-blend-mode: var(--video-blend);
   opacity: var(--video-opacity);
-
-  /* Keep it purely decorative / non-interactive */
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
 }
 
-/* ---------- NEW (optional): Legibility overlay helpers ---------- */
-/* Use on an overlay element if you want consistent contrast on text over video */
 .overlay-readable {
   background: rgba(0, 0, 0, 0.3);
 }
 .light .overlay-readable {
   background: rgba(0, 0, 0, 0.2);
+}
+
+.cl-root,
+.cl-modal,
+.cl-card,
+.cl-userButtonPopover,
+.cl-organizationSwitcherPopover,
+.cl-component,
+[class^="cl-"][role="dialog"],
+[class*=" cl-"][role="dialog"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
 }
