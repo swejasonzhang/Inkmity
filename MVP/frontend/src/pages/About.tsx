@@ -4,15 +4,27 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const About: React.FC = () => {
+    React.useEffect(() => {
+        const html = document.documentElement;
+        const body = document.body;
+        const prevHtml = html.style.overflow;
+        const prevBody = body.style.overflow;
+        html.style.overflow = "hidden";
+        body.style.overflow = "hidden";
+        return () => {
+            html.style.overflow = prevHtml;
+            body.style.overflow = prevBody;
+        };
+    }, []);
+
     return (
-        <div className="min-h-dvh bg-app text-app flex flex-col">
+        <div className="h-dvh bg-app text-app flex flex-col overflow-hidden">
             <Header />
 
-            <main className="flex-1 px-4 py-6 sm:py-10 grid place-items-center">
-                <div className="w-full max-w-3xl min-h-[80dvh] rounded-3xl border-2 border-app bg-card/90 backdrop-blur p-6 sm:p-10">
-                    <h1 className="text-center text-3xl sm:text-4xl font-extrabold tracking-tight">
-                        Jason’s Story
-                    </h1>
+            <main className="relative z-10 grid place-items-center h-[100svh] px-4 py-0">
+                <div className="w-full max-w-3xl mx-auto rounded-3xl border-2 border-app bg-card/90 backdrop-blur p-6 sm:p-10 text-center
+                        max-h-[80svh] overflow-y-hidden">
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Jason’s Story</h1>
 
                     <p className="mt-4 text-subtle leading-relaxed text-base sm:text-lg">
                         I’ve always been drawn to tattoos—the way a simple line becomes a story you carry with you.
@@ -38,7 +50,7 @@ const About: React.FC = () => {
 
                     <div className="mt-8 rounded-2xl bg-elevated border-2 border-app p-5 sm:p-6">
                         <h2 className="text-xl font-semibold text-app">What guides the work</h2>
-                        <ul className="mt-3 space-y-2 text-subtle">
+                        <ul className="mt-3 space-y-2 text-subtle inline-block text-left mx-auto">
                             <li>• Clarity over noise—make it easy to find, talk, and book.</li>
                             <li>• Respect for artists’ time—fewer dead ends, better context.</li>
                             <li>• Real feedback loops—ship, listen, refine.</li>
@@ -66,6 +78,25 @@ const About: React.FC = () => {
                     </div>
                 </div>
             </main>
+
+            <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className={[
+                    "fixed top-0 left-1/2 -translate-x-1/2 z-[999]",
+                    "w-auto max-w-none",
+                    "h-[100svh]",
+                    "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
+                    "object-contain md:object-cover",
+                    "pointer-events-none opacity-50 mix-blend-screen",
+                ].join(" ")}
+                aria-hidden
+            >
+                <source src="/Landing.mp4" type="video/mp4" />
+            </video>
         </div>
     );
 };

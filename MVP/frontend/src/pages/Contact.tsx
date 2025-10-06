@@ -40,25 +40,28 @@ const Contact: React.FC = () => {
     };
 
     return (
-        <div className="min-h-dvh bg-app text-app flex flex-col">
+        <div className="h-dvh bg-app text-app flex flex-col overflow-hidden">
             <Header />
 
-            <main className="flex-1 px-4 py-4 grid place-items-center">
-                <div className="w-full max-w-3xl min-h-[82dvh] max-h-[calc(100dvh-2rem)] rounded-3xl border-2 border-app bg-card/90 backdrop-blur p-6 sm:p-8 flex flex-col overflow-hidden">
-                    <h1 className="text-center text-2xl sm:text-3xl font-bold">Contact</h1>
+            <main className="relative z-10 grid place-items-center h-[100svh] px-4 py-0">
+                <div
+                    className="w-full max-w-3xl mx-auto rounded-3xl border-2 border-app bg-card/90 backdrop-blur p-6 sm:p-10 text-center
+               min-h-[0svh] max-h-[92svh] overflow-y-hidden"
+                >
+                    <h1 className="text-2xl sm:text-3xl font-bold">Contact</h1>
 
-                    <p className="mt-2 text-center text-subtle text-sm sm:text-base">
+                    <p className="mt-2 text-subtle text-sm sm:text-base leading-relaxed">
                         Please enter your feedback or ideas. <span className="font-semibold">Jason</span> personally
                         reads every message and uses your input to improve the experience and plan future features.
                     </p>
-                    <p className="mt-2 text-center text-muted">
+                    <p className="mt-2 text-muted">
                         Have a question, found a bug, or want to partner? Drop us a note.
                     </p>
 
-                    <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col overflow-y-auto gap-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col items-center gap-4 overflow-y-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl mx-auto">
                             <div>
-                                <label className="block text-sm mb-1 text-subtle">Name</label>
+                                <label className="block text-sm mb-1 text-subtle text-center">Name</label>
                                 <input
                                     className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                     value={form.name}
@@ -67,7 +70,7 @@ const Contact: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm mb-1 text-subtle">Email</label>
+                                <label className="block text-sm mb-1 text-subtle text-center">Email</label>
                                 <input
                                     className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                     value={form.email}
@@ -78,8 +81,8 @@ const Contact: React.FC = () => {
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm mb-1 text-subtle">Subject (optional)</label>
+                        <div className="w-full max-w-xl mx-auto">
+                            <label className="block text-sm mb-1 text-subtle text-center">Subject (optional)</label>
                             <input
                                 className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                 value={form.subject}
@@ -88,17 +91,17 @@ const Contact: React.FC = () => {
                             />
                         </div>
 
-                        <div className="flex-1 flex flex-col">
-                            <label className="block text-sm mb-1 text-subtle">Message</label>
+                        <div className="w-full max-w-xl mx-auto flex flex-col">
+                            <label className="block text-sm mb-1 text-subtle text-center">Message</label>
                             <textarea
-                                className="w-full flex-1 min-h-[140px] rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
+                                className="w-full min-h-[140px] rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
                                 value={form.message}
                                 onChange={onChange("message")}
                                 placeholder="Share bugs, feature ideas, or anything that would make Inkmity better. Jason reads every message."
                             />
                         </div>
 
-                        <div className="mt-2 flex flex-col items-center sm:items-start">
+                        <div className="mt-2 flex flex-col items-center">
                             <Button
                                 type="submit"
                                 disabled={loading}
@@ -116,6 +119,25 @@ const Contact: React.FC = () => {
                     </form>
                 </div>
             </main>
+
+            <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className={[
+                    "fixed top-0 left-1/2 -translate-x-1/2 z-[999]",
+                    "w-auto max-w-none",
+                    "h-[100svh]",
+                    "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
+                    "object-contain md:object-cover",
+                    "pointer-events-none opacity-50 mix-blend-screen",
+                ].join(" ")}
+                aria-hidden
+            >
+                <source src="/Landing.mp4" type="video/mp4" />
+            </video>
         </div>
     );
 };
