@@ -1,5 +1,5 @@
 import React from "react";
-import Header from "@/components/dashboard/Header";
+import Header from "@/components/header/Header";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 

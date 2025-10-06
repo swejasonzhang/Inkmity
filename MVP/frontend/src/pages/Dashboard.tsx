@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/dashboard/Header";
+import Header from "@/components/header/Header";
 import ChatBot from "@/components/dashboard/ChatBot";
 import ChatWindow, { Message } from "@/components/dashboard/ChatWindow";
 import ArtistsSection from "@/components/dashboard/ArtistsSection";

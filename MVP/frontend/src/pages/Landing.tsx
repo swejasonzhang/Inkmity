@@ -1,5 +1,5 @@
 import React from "react";
-import Header from "@/components/dashboard/Header";
+import Header from "@/components/header/Header";
 import {
     LazyMotion,
     domAnimation,
@@ -15,7 +15,6 @@ import Differentiators from "@/components/landing/Differentiators";
 import FounderStory from "@/components/landing/FounderStory";
 import BottomCTA from "@/components/landing/BottomCTA";
 import Divider from "@/components/landing/Divider";
-import VideoBackground from "@/components/video/VideoBackground";
 
 const SPRING_SOFT: Transition = { type: "spring", stiffness: 64, damping: 26, mass: 1.05, restDelta: 0.002 };
 
@@ -29,45 +28,46 @@ const Landing: React.FC = () => {
     const wc = prefersReduced ? undefined : ({ willChange: "transform,opacity" } as React.CSSProperties);
 
     return (
-        <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
-            <LazyMotion features={domAnimation} strict>
-                <div className="relative min-h-dvh bg-app text-app flex flex-col">
-                    <VideoBackground
-                        mp4="/Landing.mp4"
-                        prefersReduced={!!prefersReduced}
-                        zClass="-z-10"
-                        overlayClass="bg-black/45"
-                        preload="metadata"
-                    />
+        <>
+            <div className="fixed inset-0 -z-20 bg-app" aria-hidden />
 
-                    <Header />
+            <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
+                <LazyMotion features={domAnimation} strict>
+                    <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
+                        <Header />
 
-                    <main className="flex-1">
-                        <Hero textFadeUp={textFadeUp} prefersReduced={!!prefersReduced} wc={wc} />
+                        <main className="flex-1">
+                            <Hero textFadeUp={textFadeUp} prefersReduced={!!prefersReduced} wc={wc} />
+                            <Divider className="mb-10" />
+                            <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
+                            <Differentiators textFadeUp={textFadeUp} wc={wc} />
+                            <Divider className="my-10" />
+                            <FounderStory textFadeUp={textFadeUp} wc={wc} />
+                            <BottomCTA textFadeUp={textFadeUp} wc={wc} />
+                            <Divider />
+                        </main>
 
-                        <Divider className="mb-10" />
+                        <footer className="px-4 pb-6">
+                            <div className="mx-auto max-w-7xl text-center text-sm text-subtle">
+                                © {new Date().getFullYear()} Inkmity. All rights reserved.
+                            </div>
+                        </footer>
+                    </div>
+                </LazyMotion>
+            </MotionConfig>
 
-                        <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
-
-                        <Differentiators textFadeUp={textFadeUp} wc={wc} />
-
-                        <Divider className="my-10" />
-
-                        <FounderStory textFadeUp={textFadeUp} wc={wc} />
-
-                        <BottomCTA textFadeUp={textFadeUp} wc={wc} />
-
-                        <Divider />
-                    </main>
-
-                    <footer className="px-4 pb-6">
-                        <div className="mx-auto max-w-7xl text-center text-sm text-subtle">
-                            © {new Date().getFullYear()} Inkmity. All rights reserved.
-                        </div>
-                    </footer>
-                </div>
-            </LazyMotion>
-        </MotionConfig>
+            <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className="fixed inset-0 z-[999] h-full w-full object-cover pointer-events-none opacity-50 mix-blend-screen"
+                aria-hidden
+            >
+                <source src="/Landing.mp4" type="video/mp4" />
+            </video>
+        </>
     );
 };
 
