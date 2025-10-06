@@ -12,7 +12,6 @@ import {
 import Hero from "@/components/landing/Hero";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import Differentiators from "@/components/landing/Differentiators";
-import FounderStory from "@/components/landing/FounderStory";
 import BottomCTA from "@/components/landing/BottomCTA";
 import Divider from "@/components/landing/Divider";
 
@@ -64,7 +63,6 @@ const Landing: React.FC = () => {
                                         className="space-y-16 md:space-y-24"
                                     >
                                         <Hero prefersReduced={!!prefersReduced} wc={wc} textFadeUp={textFadeUp} />
-                                        <FounderStory wc={wc} textFadeUp={textFadeUp} />
                                     </m.div>
                                 </div>
                             </section>

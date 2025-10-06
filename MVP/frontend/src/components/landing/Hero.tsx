@@ -57,7 +57,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp }) => {
                 >
                     Inkmity brings real availability, real context, and verified reviews—so you can align fast and book with confidence.
                 </m.p>
-
+                
             </div>
 
             <m.div
