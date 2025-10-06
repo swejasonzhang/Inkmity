@@ -67,13 +67,13 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                 ].join(" ")}
                             >
                                 <div className="w-full lg:w-1/2">
-                                    <div className="rounded-2xl border border-app bg-elevated/70 p-6 md:p-8">
+                                    <div className="rounded-2xl border border-app bg-elevated/70 p-6 md:p-8 min-h-[330px] md:min-h-[330px]">
                                         <m.h3
                                             variants={textFadeUp}
                                             initial="hidden"
                                             whileInView="visible"
                                             viewport={{ once: true, amount: 0.6 }}
-                                            className="text-2xl md:text-3xl font-semibold leading-tight"
+                                            className="text-2xl md:text-3xl font-semibold leading-tight flex justify-center align-middle"
                                             style={wc}
                                         >
                                             {f.title}
@@ -83,7 +83,7 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                             initial="hidden"
                                             whileInView="visible"
                                             viewport={{ once: true, amount: 0.6 }}
-                                            className="mt-3 md:mt-4 text-subtle text-base md:text-lg"
+                                            className="mt-7 md:mt-4 text-subtle text-base md:text-lg flex justify-center text-center"
                                             style={wc}
                                         >
                                             {f.body}

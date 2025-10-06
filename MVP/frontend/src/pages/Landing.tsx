@@ -62,11 +62,19 @@ const Landing: React.FC = () => {
                 muted
                 playsInline
                 preload="metadata"
-                className="fixed inset-0 z-[999] h-full w-full object-cover pointer-events-none opacity-50 mix-blend-screen"
+                className={[
+                    "fixed top-0 left-1/2 -translate-x-1/2 z-[999]",
+                    "w-auto max-w-none",
+                    "h-[100svh]",
+                    "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
+                    "object-contain md:object-cover",
+                    "pointer-events-none opacity-50 mix-blend-screen",
+                ].join(" ")}
                 aria-hidden
             >
                 <source src="/Landing.mp4" type="video/mp4" />
             </video>
+
         </>
     );
 };
