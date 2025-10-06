@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import { Lock, Menu, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import whiteLogo from "@/assets/WhiteLogo.png";
+import blackLogo from "@/assets/BlackLogo.png";
 
 const THEME_MS = 600;
 
@@ -15,7 +17,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   const { signOut } = useClerk();
   const { user, isSignedIn } = useUser();
   const { pathname } = useLocation();
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup")
+  const navigate = useNavigate();
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
   const showThemeToggle = pathname.startsWith("/dashboard");
 
   const [theme, setTheme] = useState<"dark" | "light">(() => {
@@ -25,6 +28,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
     } catch { }
     return "dark";
   });
+
+  const logoSrc = theme === "light" ? blackLogo : whiteLogo;
 
   useEffect(() => {
     const anyWin = window as any;
@@ -42,10 +47,9 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
     } catch { }
   }, []);
 
-
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty("--theme-ms", `${THEME_MS}ms`);
+    root.style.setProperty("--theme-ms", `${THEME_MS}ms}`);
     root.classList.add("theme-smooth");
     root.setAttribute("data-ink-theme", theme);
     root.classList.toggle("light", theme === "light");
@@ -155,7 +159,6 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
     />
   );
 
-  const logoSrc = theme === "light" ? "/BlackLogo.png" : "/WhiteLogo.png";
   const dashboardDisabled = disableDashboardLink && !isSignedIn;
 
   const [tip, setTip] = useState({ show: false, x: 0, y: 0 });
@@ -164,6 +167,15 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
     setTip({ show: true, x: e.clientX + 16, y: e.clientY - 8 });
   };
   const onDashLeave = () => setTip((t) => ({ ...t, show: false }));
+
+  const onDashboardClick: React.MouseEventHandler<
+    HTMLAnchorElement | HTMLDivElement | HTMLSpanElement
+  > = (e) => {
+    if (!isSignedIn) {
+      e.preventDefault();
+      navigate("/login", { state: { from: pathname } });
+    }
+  };
 
   return (
     <>
@@ -189,10 +201,20 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
 
           <div className="flex items-center gap-6">
             <nav className="flex items-center gap-8 text-lg font-medium">
+              <Link
+                to="/landing"
+                className={desktopLink}
+                aria-current={isActive("/landing") ? "page" : undefined}
+              >
+                <span className="text-app">Landing</span>
+                <DesktopInkBar active={isActive("/landing")} />
+              </Link>
+
               {dashboardDisabled ? (
                 <span
                   role="button"
                   tabIndex={0}
+                  onClick={onDashboardClick}
                   onMouseMove={onDashMouseMove}
                   onMouseLeave={onDashLeave}
                   onKeyDown={(e) => {
@@ -209,6 +231,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
                   to="/dashboard"
                   className={desktopLink}
                   aria-current={isActive("/dashboard") ? "page" : undefined}
+                  onClick={onDashboardClick}
                 >
                   <span className="text-app">Dashboard</span>
                   <DesktopInkBar active={isActive("/dashboard")} />
@@ -367,7 +390,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-overlay" onClick={() => setMobileMenuOpen(false)} aria-hidden />
           <div className="absolute inset-0 bg-app flex flex-col">
-            <div className="flex items-center justify-between px-[10px] py-[10px] border-b border-app">
+            <div className="flex items-center justify-between px={[10px]} py-[10px] border-b border-app">
               <div className="flex items-center gap-2">
                 <img src={logoSrc} alt="Inkmity Logo" className="h-8 w-auto object-contain" />
               </div>
@@ -381,6 +404,18 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
             </div>
 
             <nav className="flex-1 overflow-y-auto px-2 py-4 text-app">
+              <div className="relative mt-2">
+                <MobileAccent active={isActive("/landing")} />
+                <Link
+                  to="/landing"
+                  className={`${mobileItem} pl-6`}
+                  aria-current={isActive("/landing") ? "page" : undefined}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Landing
+                </Link>
+              </div>
+
               <div className="relative">
                 <MobileAccent active={isActive("/dashboard")} />
                 {dashboardDisabled ? (
@@ -389,10 +424,11 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
                     role="button"
                     tabIndex={0}
                     title="Not authorized. Sign up first."
+                    onClick={onDashboardClick}
                   >
                     <div className="flex flex-col">
                       <span className="text-app/60">Dashboard</span>
-                      <span className="text-red-400 text-xs mt-1">Not authorized. Sign up first.</span>
+                      <span className="text-black text-xs mt-1">Not authorized. Sign up first.</span>
                     </div>
                   </div>
                 ) : (
@@ -400,7 +436,10 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
                     to="/dashboard"
                     className={`${mobileItem} pl-6`}
                     aria-current={isActive("/dashboard") ? "page" : undefined}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={(e) => {
+                      onDashboardClick(e);
+                      if (isSignedIn) setMobileMenuOpen(false);
+                    }}
                   >
                     Dashboard
                   </Link>
