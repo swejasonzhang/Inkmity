@@ -44,11 +44,11 @@
 
     <!-- Preconnect / Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <!-- fonts.gstatic requires crossorigin for preconnect -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!-- Social Profiles -->
     <link rel="me" href="https://www.instagram.com/inkmity" />
+    <link rel="me" href="https://www.linkedin.com/company/inkmity" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -71,23 +71,7 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="Inkmity — Book Tattoo Artists, Explore Styles, Chat & Schedule"
-    />
-    <meta
-      name="twitter:description"
-      content="Discover tattoo artists by style, browse portfolios, chat, and book sessions securely on Inkmity."
-    />
-    <meta
-      name="twitter:image"
-      content="https://inkmity.com/og/inkmity-og.jpg"
-    />
-    <!-- If you create a Twitter/X handle later, add: <meta name="twitter:site" content="@inkmity"> -->
-
-    <!-- JSON-LD: Website + Organization + WebApplication (AIO structured data) -->
+    <!-- JSON-LD: Website + Organization + WebApplication -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -113,7 +97,10 @@
               "@type": "ImageObject",
               "url": "https://inkmity.com/og/inkmity-logo.png"
             },
-            "sameAs": ["https://www.instagram.com/inkmity"]
+            "sameAs": [
+              "https://www.instagram.com/inkmity",
+              "https://www.linkedin.com/company/inkmity"
+            ]
           },
           {
             "@type": "WebApplication",
@@ -142,7 +129,6 @@
 
   <body class="bg-gray-900 text-white">
     <div id="root"></div>
-    <!-- Vite entry -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
