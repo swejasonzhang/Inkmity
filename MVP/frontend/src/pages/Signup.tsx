@@ -260,7 +260,6 @@ const SignUp: React.FC = () => {
                       isValid={!codeInvalid}
                       message="Check your email for the code"
                     />
-                    {codeInvalid && <p className="mt-1 text-red-400 text-sm">Enter the verification code.</p>}
                   </div>
                 )}
 
