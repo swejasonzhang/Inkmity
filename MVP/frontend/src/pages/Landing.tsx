@@ -71,7 +71,6 @@ const Landing: React.FC = () => {
                             <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
                             <Divider className="my-10" />
                             <Differentiators textFadeUp={textFadeUp} wc={wc} />
-                            <Divider className="my-10" />
                             <BottomCTA textFadeUp={textFadeUp} wc={wc} />
                             <Divider />
                         </main>

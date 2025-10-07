@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 
 const BottomCTA: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ textFadeUp, wc }) => {
     return (
-        <section className="px-4 pb-16 pt-8 grid place-items-center min-h-[50svh] md:min-h-[40svh]">
-            <div className="mx-auto max-w-7xl rounded-2xl border border-app bg-card/60 p-8 text-center">
+        <section className="grid place-items-center md:min-h-[20svh]">
+            <div className="mx-auto max-w-7xl rounded-2xl bg-card/60 p-8 text-center">
                 <m.h2
                     variants={textFadeUp}
                     initial="hidden"

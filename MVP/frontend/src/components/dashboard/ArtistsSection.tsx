@@ -99,7 +99,7 @@ const ArtistsSection: React.FC<Props> = ({
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
             <div
-                className="bg-card px-3 py-3 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:backdrop-blur-0 border border-app"
+                className="bg-card px-3 py-3 rounded-lg shadow sticky top-0 z-10 w-full transition-opacity duration-300 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:backdrop-blur-0"
                 style={{ opacity: filterOpacity }}
             >
                 <ArtistFilter

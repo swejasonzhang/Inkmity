@@ -4,7 +4,7 @@ import { m } from "framer-motion";
 const Differentiators: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ textFadeUp, wc }) => {
     return (
         <section className="px-4 mt-2 grid place-items-center">
-            <div className="mx-auto max-w-7xl rounded-2xl border border-app bg-card/60 p-6 md:p-8 text-center">
+            <div className="mx-auto max-w-7xl rounded-2xl bg-card/60 p-6 md:p-8 text-center">
                 <m.h2
                     variants={textFadeUp}
                     initial="hidden"
