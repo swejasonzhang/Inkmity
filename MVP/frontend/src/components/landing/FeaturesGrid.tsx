@@ -30,7 +30,7 @@ const features: Feature[] = [
         title: "Free for artists",
         body:
             "Artists pay nothing to join or get booked. Clients cover a small booking fee to keep the lights on.",
-        img: "/src/assets/features/free-for-artists.jpg",
+        img: "/src/assets/features/Fees.jpg",
         alt: "Artist dashboard showing free signup",
         tags: ["No signup fees", "Client-backed", "Fair model"],
     },
