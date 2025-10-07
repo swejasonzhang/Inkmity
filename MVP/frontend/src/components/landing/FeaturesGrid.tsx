@@ -14,7 +14,7 @@ const features: Feature[] = [
         title: "Real-time messaging",
         body:
             "Chat instantly with artists and clients. Share references, clarify details, and keep everything in one thread.",
-        img: "/images/features/messaging.jpg",
+        img: "/src/assets/features/Messaging.jpg",
         alt: "In-app real-time chat between client and artist",
         tags: ["Instant chat", "Share refs", "Keep context"],
     },
@@ -22,7 +22,7 @@ const features: Feature[] = [
         title: "Rewards for artists & clients",
         body:
             "Earn perks as bookings grow—priority placement, profile boosts, and community recognition for artists. Clients unlock discounts, early access to flash deals, and other members-only perks.",
-        img: "/images/features/rewards.jpg",
+        img: "/src/assets/features/Rewards.jpg",
         alt: "Badges and rewards showcasing user perks",
         tags: ["Loyalty", "Flash deals", "Profile boosts"],
     },
@@ -30,7 +30,7 @@ const features: Feature[] = [
         title: "Free for artists",
         body:
             "Artists pay nothing to join or get booked. Clients cover a small booking fee to keep the lights on.",
-        img: "/images/features/free-for-artists.jpg",
+        img: "/src/assets/features/free-for-artists.jpg",
         alt: "Artist dashboard showing free signup",
         tags: ["No signup fees", "Client-backed", "Fair model"],
     },
@@ -38,7 +38,7 @@ const features: Feature[] = [
         title: "Fast, powerful filters",
         body:
             "Find the right fit fast—filter by style, location, budget, availability, and healed portfolio quality.",
-        img: "/images/features/filters.jpg",
+        img: "/src/assets/features/filters.jpg",
         alt: "Search filters UI for finding artists quickly",
         tags: ["Style & budget", "Availability", "Healed work"],
     },
@@ -46,7 +46,7 @@ const features: Feature[] = [
         title: "Community-built",
         body:
             "Shaped by artists and clients who use it. Share ideas, vote on features, and help set the roadmap.",
-        img: "/images/features/community.jpg",
+        img: "/src/assets/features/community.jpg",
         alt: "Community forum and voting interface",
         tags: ["Roadmap votes", "Artist & client input", "Open feedback"],
     },
@@ -54,7 +54,7 @@ const features: Feature[] = [
         title: "Reviews that matter",
         body:
             "Ratings from verified clients only—no spam, no bots—so reputations reflect real studio experiences.",
-        img: "/images/features/reviews.jpg",
+        img: "/src/assets/features/reviews.jpg",
         alt: "Verified review cards from real clients",
         tags: ["Verified only", "Spam-free", "Trustworthy"],
     },
@@ -74,13 +74,13 @@ const innerStagger: Variants = {
 };
 
 const item: Variants = {
-    hidden: { opacity: 0, y: 6 },
-    show: { opacity: 1, y: 0, transition: { ...TWEEN } },
+    hidden: { opacity: 0, y: 6, scale: 0.985 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { ...TWEEN } },
 };
 
 const media: Variants = {
-    hidden: { opacity: 0, y: 4 },
-    show: { opacity: 1, y: 0, transition: { ...TWEEN_SLOW } },
+    hidden: { opacity: 0, y: 4, scale: 0.97 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { ...TWEEN_SLOW } },
 };
 
 const tagsWrap: Variants = {
@@ -91,8 +91,8 @@ const tagsWrap: Variants = {
 };
 
 const tagItem: Variants = {
-    hidden: { opacity: 0, y: 4 },
-    show: { opacity: 1, y: 0, transition: { ...TWEEN } },
+    hidden: { opacity: 0, y: 4, scale: 0.985 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { ...TWEEN } },
 };
 
 const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ textFadeUp, wc }) => {
@@ -169,7 +169,7 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                             variants={item}
                                             className="rounded-2xl p-[1px] bg-[linear-gradient(135deg,rgba(255,255,255,.25),rgba(255,255,255,0)_40%),linear-gradient(315deg,rgba(255,255,255,.18),rgba(255,255,255,0)_40%)] transform-gpu will-change-[transform,opacity]"
                                         >
-                                            <div className="rounded-2xl border border-app bg-elevated/70 px-6 py-7 md:px-8 md:py-10 min-h-[320px] flex flex-col items-center justify-center text-center">
+                                            <div className="rounded-2xl border border-app bg-elevated/70 px-6 py-8 md:px-10 md:py-12 min-h-[420px] flex flex-col items-center justify-center text-center">
                                                 <div className="mb-3 inline-flex items-center gap-2">
                                                     <span className="rounded-full border border-app bg-elevated/70 px-2.5 py-0.5 text-[11px] text-subtle">
                                                         Feature
@@ -223,12 +223,13 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                             initial="hidden"
                                             whileInView="show"
                                             viewport={vp}
-                                            className="w-full max-w-3xl transform-gpu will-change-[transform,opacity]"
+                                            className="w-full max-w-5xl lg:max-w-6xl transform-gpu will-change-[transform,opacity]"
+                                            style={prefersReduced ? { transform: "none" } : undefined}
                                         >
                                             <div className="relative rounded-2xl overflow-hidden">
                                                 <div className="absolute -inset-[1px] rounded-2xl bg-[conic-gradient(from_140deg,rgba(255,255,255,.24),rgba(255,255,255,.06),rgba(255,255,255,.24))] opacity-60" />
                                                 <div className="relative rounded-2xl border border-app bg-card/60 shadow-sm transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]">
-                                                    <div className="aspect-video">
+                                                    <div className="h-[420px] md:h-[520px] lg:h-[600px]">
                                                         <img
                                                             src={f.img}
                                                             alt={f.alt}
