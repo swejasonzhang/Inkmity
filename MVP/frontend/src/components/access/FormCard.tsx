@@ -11,7 +11,7 @@ import ReviewStep from "@/components/access/ReviewStep";
 import OtpStep from "@/components/access/OtpStep";
 
 type Role = "client" | "artist";
-type SharedAccount = { username: string; email: string; password: string };
+type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
 type ClientProfile = { budget: string; location: string; placement: string; size: string; notes: string };
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 
