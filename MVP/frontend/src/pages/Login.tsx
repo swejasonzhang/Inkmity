@@ -1,79 +1,85 @@
-import { useState, FormEvent, useEffect, ChangeEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
-import { useSignIn, useUser } from "@clerk/clerk-react";
+import { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import Header from "@/components/header/Header";
-import FormInput from "@/components/dashboard/FormInput";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { motion, useReducedMotion } from "framer-motion";
+import { useSignIn, useUser } from "@clerk/clerk-react";
 import { validateEmail } from "@/utils/validation";
-import CircularProgress from "@mui/material/CircularProgress";
-import { motion, AnimatePresence } from "framer-motion";
+import InfoPanel from "@/components/signup/InfoPanel";
+import FormInput from "@/components/dashboard/FormInput";
+import { Button } from "@/components/ui/button";
+import { container } from "@/components/signup/animations";
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
 
-const Login: React.FC = () => {
+export default function Login() {
+  const prefersReduced = !!useReducedMotion();
+
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [signInAttempt, setSignInAttempt] = useState<any>(null);
   const [awaitingCode, setAwaitingCode] = useState(false);
+  const [signInAttempt, setSignInAttempt] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [submitted, setSubmitted] = useState(false);
 
-  const navigate = useNavigate();
+  const [showInfo, setShowInfo] = useState(false);
+  const [mascotError, setMascotError] = useState(false);
+  const isPasswordHidden = false;
+
   const { signIn, setActive } = useSignIn();
   const { isSignedIn } = useUser();
 
   useEffect(() => {
-    const timer = setTimeout(() => setPageLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
+    const lastLogin = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
+    if (isSignedIn && !awaitingCode) {
+      const within3Days = lastLogin && Date.now() - parseInt(lastLogin, 10) <= 3 * 24 * 60 * 60 * 1000;
+      if (within3Days && logoutType !== "manual") {
+        toast.info("You are already signed in! Redirecting to dashboard...", { position: "top-center", theme: "dark" });
+      }
+    }
+  }, [isSignedIn, awaitingCode]);
 
   useEffect(() => {
-    if (isSignedIn && !awaitingCode) {
-      toast.info("Already signed in! Redirecting to dashboard...", {
-        position: "top-center",
-        theme: "dark",
-      });
-      const t = setTimeout(() => navigate("/dashboard"), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [isSignedIn, navigate, awaitingCode]);
+    const t = setTimeout(() => setShowInfo(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const triggerMascotError = () => {
+    setMascotError(true);
+    window.setTimeout(() => setMascotError(false), 900);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
 
-    const emailOk = validateEmail(email);
-    const codeOk = !awaitingCode || !!code.trim();
-
-    if (!emailOk || !codeOk) {
-      if (!emailOk) toast.error("Please enter a valid email", { position: "top-center", theme: "dark" });
-      if (!codeOk) toast.error("Enter the verification code", { position: "top-center", theme: "dark" });
-      return;
+    if (!awaitingCode) {
+      if (!validateEmail(email)) {
+        toast.error("Please enter a valid email", { position: "top-center", theme: "dark" });
+        triggerMascotError();
+        return;
+      }
+    } else {
+      if (!code.trim()) {
+        toast.error("Enter the verification code", { position: "top-center", theme: "dark" });
+        triggerMascotError();
+        return;
+      }
     }
 
     if (!signIn) {
-      toast.error("Sign in unavailable. Please try again later.", {
-        position: "top-center",
-        theme: "dark",
-      });
+      toast.error("Sign in unavailable. Please try again later.", { position: "top-center", theme: "dark" });
       return;
     }
 
     setLoading(true);
-
     try {
       if (!awaitingCode) {
         const attempt = await signIn.create({ identifier: email, strategy: "email_code" });
         setSignInAttempt(attempt);
         setAwaitingCode(true);
-        toast.info("Verification code sent to your email.", { position: "top-center", theme: "dark" });
+        toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
       } else {
-        if (!signInAttempt) return;
-
         const verified = await signInAttempt.attemptFirstFactor({
           strategy: "email_code",
           code: code.trim(),
@@ -81,133 +87,89 @@ const Login: React.FC = () => {
 
         if (verified.status === "complete") {
           await setActive({ session: verified.createdSessionId });
-
           localStorage.setItem("trustedDevice", email);
           localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
           localStorage.removeItem(LOGOUT_TYPE_KEY);
-
-          toast.success("Login successful! Redirecting to Dashboard...", {
-            position: "top-center",
-            theme: "dark",
-          });
-          setTimeout(() => navigate("/dashboard"), 2000);
+          toast.success("Login successful! Redirecting...", { position: "top-center", theme: "dark" });
+          window.location.href = "/dashboard";
         } else {
-          toast.error("Verification failed. Check your code and try again.", {
-            position: "top-center",
-            theme: "dark",
-          });
+          toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
+          triggerMascotError();
         }
       }
     } catch (err: any) {
-      toast.error(err.errors?.[0]?.message || err.message || "Unexpected error occurred", {
+      toast.error(err?.errors?.[0]?.message || err?.message || "Unexpected error occurred", {
         position: "top-center",
         theme: "dark",
       });
+      triggerMascotError();
     } finally {
       setLoading(false);
     }
   };
 
-  const emailInvalid = submitted && !validateEmail(email);
-  const codeInvalid = submitted && awaitingCode && !code.trim();
-
   return (
-    <div className="relative min-h-dvh bg-app text-app flex flex-col">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        className="fixed inset-0 z-0 h-full w-full object-cover pointer-events-none"
-        aria-hidden
-      >
+    <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
+      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 z-0 h-full w-full object-cover pointer-events-none" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
-      <div className="fixed inset-0 -z-10 bg-black/50" />
 
       <Header disableDashboardLink />
 
-      <main className="flex-1 grid place-items-center px-4 py-8">
-        <motion.div
-          className="w-full max-w-md p-8 mx-4 rounded-2xl border border-app bg-elevated backdrop-blur flex flex-col items-center justify-center min-h-[500px]"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
-          <AnimatePresence>
-            {pageLoading && (
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center rounded-2xl bg-elevated"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <CircularProgress sx={{ color: "#ffffff" }} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <main className="flex-1 grid place-items-center px-4 py-10">
+        <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-5xl mx-auto">
+          <div className="relative flex items-center justify-center gap-0">
+            <div className="flex items-center justify-center">
+              <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={isPasswordHidden} />
+            </div>
 
-          {!pageLoading && (
-            <motion.div className="flex flex-col w-full">
-              <h1 className="text-3xl font-bold text-center mb-4">Welcome Back!</h1>
-              <p className="text-subtle text-center mb-6 text-sm sm:text-base">
-                Login to continue exploring tattoo artists, styles, and your personalized tattoo journey.
-              </p>
+            <div className="bg-[#0b0b0b]/70 backdrop-blur-xl p-10 sm:p-12 rounded-r-3xl flex items-center justify-center">
+              <div className="grid gap-6 text-center place-items-center w-full">
+                <div className="w-full max-w-sm mx-auto">
+                  <h1 className="text-4xl font-semibold text-white">Welcome Back!</h1>
+                  <p className="text-white/60 mt-3 text-base">
+                    Login to continue exploring artists, styles, and your tattoo journey.
+                  </p>
+                </div>
 
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <div>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm mx-auto">
                   <FormInput
                     type="email"
                     name="email"
                     value={email}
                     placeholder="Email"
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                    isValid={!emailInvalid}
-                    message={
-                      !email
-                        ? "Enter your email"
-                        : validateEmail(email)
-                          ? "Valid email address"
-                          : "Enter a valid email address"
-                    }
+                    isValid={!email || validateEmail(email)}
+                    message={!email ? "Enter your email" : validateEmail(email) ? "Valid email address" : "Enter a valid email address"}
                   />
-                  {emailInvalid && <p className="mt-1 text-red-400 text-sm">Please enter a valid email.</p>}
-                </div>
 
-                {awaitingCode && (
-                  <div>
+                  {awaitingCode && (
                     <FormInput
                       type="text"
                       name="code"
                       value={code}
                       placeholder="Enter verification code"
                       onChange={(e: ChangeEvent<HTMLInputElement>) => setCode(e.target.value)}
-                      isValid={!codeInvalid}
+                      isValid={!!code}
                       message={code ? "Code entered" : "Check your email for the code"}
                     />
-                    {codeInvalid && <p className="mt-1 text-red-400 text-sm">Enter the verification code.</p>}
-                  </div>
-                )}
+                  )}
 
-                <Button
-                  type="submit"
-                  className="bg-white/20 hover:bg-white/30 text-white font-semibold py-3 rounded-lg transition-colors"
-                  disabled={loading}
-                >
-                  {loading ? (awaitingCode ? "Verifying..." : "Sending Code...") : awaitingCode ? "Verify Code" : "Send Code"}
-                </Button>
-              </form>
+                  <Button
+                    type="submit"
+                    className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl w-full"
+                    disabled={loading}
+                  >
+                    {loading ? (awaitingCode ? "Verifying..." : "Sending Code...") : awaitingCode ? "Verify Code" : "Send Code"}
+                  </Button>
+                </form>
 
-              <p className="text-subtle text-center text-sm mt-4">
-                Don't have an account?{" "}
-                <Link to="/signup" className="underline hover:opacity-80">
-                  Sign Up
-                </Link>
-              </p>
-            </motion.div>
-          )}
+                <p className="text-white/60 text-center text-sm">
+                  Don&apos;t have an account? <a href="/signup" className="underline hover:opacity-80">Sign Up</a>
+                </p>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </main>
 
@@ -218,10 +180,8 @@ const Login: React.FC = () => {
         closeOnClick
         pauseOnHover={false}
         draggable={false}
-        toastClassName="bg-black/80 text-white text-lg rounded-lg shadow-lg text-center px-6 py-4 min-w-[300px] flex items-center justify-center"
+        toastClassName="bg-black/80 text-white text-base rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
       />
     </div>
   );
-};
-
-export default Login;
+}
