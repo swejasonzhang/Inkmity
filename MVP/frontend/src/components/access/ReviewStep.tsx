@@ -1,51 +1,60 @@
-import { Sparkles } from "lucide-react";
-
 type Role = "client" | "artist";
-type SharedAccount = { username: string; email: string; password: string };
+
+type SharedAccount = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+};
+
 type ClientProfile = { budget: string; location: string; placement: string; size: string; notes: string };
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 
-export default function ReviewStep({
-    role, shared, client, artist,
-}: {
+type Props = {
     role: Role;
     shared: SharedAccount;
     client: ClientProfile;
     artist: ArtistProfile;
-}) {
-    const rows =
-        role === "client"
-            ? [
-                ["Username", shared.username],
-                ["Email", shared.email],
-                ["Budget", client.budget ? `$${client.budget}` : "-"],
-                ["Location", client.location || "-"],
-                ["Placement", client.placement || "-"],
-                ["Size", client.size || "-"],
-            ]
-            : [
-                ["Username", shared.username],
-                ["Email", shared.email],
-                ["Location", artist.location || "-"],
-                ["Shop", artist.shop || "-"],
-                ["Experience", artist.years ? `${artist.years} yrs` : "-"],
-                ["Base rate", artist.baseRate ? `$${artist.baseRate}/hr` : "-"],
-            ];
+};
 
+export default function ReviewStep({ role, shared, client, artist }: Props) {
     return (
-        <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Review</span>
+        <div className="grid gap-4 text-white/90 w-full max-w-md mx-auto">
+            <h3 className="text-xl font-semibold text-white">Review</h3>
+
+            <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                <div className="text-sm text-white/60 mb-2">Account</div>
+                <div className="grid gap-1">
+                    <div><span className="text-white/60">Name:</span> {shared.firstName} {shared.lastName}</div>
+                    <div><span className="text-white/60">Email:</span> {shared.email}</div>
+                    <div><span className="text-white/60">Role:</span> {role}</div>
+                </div>
             </div>
-            <div className="grid gap-2 text-sm text-white/80">
-                {rows.map(([k, v]) => (
-                    <div key={k} className="flex justify-between">
-                        <span>{k}</span>
-                        <span className="font-medium text-white">{v}</span>
+
+            {role === "client" ? (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                    <div className="text-sm text-white/60 mb-2">Client details</div>
+                    <div className="grid gap-1">
+                        <div><span className="text-white/60">Budget:</span> {client.budget || "—"}</div>
+                        <div><span className="text-white/60">Location:</span> {client.location || "—"}</div>
+                        <div><span className="text-white/60">Placement:</span> {client.placement || "—"}</div>
+                        <div><span className="text-white/60">Size:</span> {client.size || "—"}</div>
+                        <div><span className="text-white/60">Notes:</span> {client.notes || "—"}</div>
                     </div>
-                ))}
-            </div>
+                </div>
+            ) : (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                    <div className="text-sm text-white/60 mb-2">Artist details</div>
+                    <div className="grid gap-1">
+                        <div><span className="text-white/60">Location:</span> {artist.location || "—"}</div>
+                        <div><span className="text-white/60">Shop:</span> {artist.shop || "—"}</div>
+                        <div><span className="text-white/60">Years:</span> {artist.years || "—"}</div>
+                        <div><span className="text-white/60">Base rate:</span> {artist.baseRate || "—"}</div>
+                        <div><span className="text-white/60">Instagram:</span> {artist.instagram || "—"}</div>
+                        <div><span className="text-white/60">Portfolio:</span> {artist.portfolio || "—"}</div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

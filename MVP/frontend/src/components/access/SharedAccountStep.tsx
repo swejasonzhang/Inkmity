@@ -1,88 +1,111 @@
-import FormInput from "@/components/dashboard/FormInput";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, User, Paintbrush } from "lucide-react";
-import { validateEmail, validatePassword } from "@/utils/validation";
-import { useState } from "react";
+import React from "react";
 
 type Role = "client" | "artist";
-type SharedAccount = { username: string; email: string; password: string };
 
-export default function SharedAccountStep({
-    role, setRole, shared, onChange, onPasswordVisibilityChange,
-}: {
+type SharedAccount = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+};
+
+type Props = {
     role: Role;
     setRole: (r: Role) => void;
     shared: SharedAccount;
     onChange: React.ChangeEventHandler<HTMLInputElement>;
     onPasswordVisibilityChange?: (hidden: boolean) => void;
-}) {
-    const [showPassword, setShowPassword] = useState(true);
+};
 
-    const togglePassword = () => {
-        const next = !showPassword;
-        setShowPassword(next);
-        if (onPasswordVisibilityChange) onPasswordVisibilityChange(!next);
-    };
-
+export default function SharedAccountStep({
+    role,
+    setRole,
+    shared,
+    onChange,
+    onPasswordVisibilityChange,
+}: Props) {
     return (
-        <div className="flex flex-col gap-5">
-            <div className="text-center">
-                <h1 className="text-3xl font-semibold text-white">Create your account</h1>
-                <p className="text-white/60 mt-2">Tell us who you are to tailor the flow.</p>
-            </div>
-
-            <div className="w-full flex items-center gap-3">
-                <label className="shrink-0 text-white/70 whitespace-nowrap flex items-center gap-1.5">
-                    <ShieldCheck className="h-4 w-4" /> I am a:
-                </label>
-                <div className="flex-1">
-                    <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-                        <SelectTrigger className="w-full bg-black/70 text-white rounded-lg px-3 py-2 text-sm border border-white/20 focus:ring-2 focus:ring-white/30">
-                            <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent className="w-[--radix-select-trigger-width] bg-[#0b0b0b] text-white border border-white/10 rounded-xl shadow-xl">
-                            <SelectItem value="client" className="focus:bg-white/10">
-                                <span className="inline-flex items-center gap-2"><User className="h-4 w-4" /> Client</span>
-                            </SelectItem>
-                            <SelectItem value="artist" className="focus:bg-white/10">
-                                <span className="inline-flex items-center gap-2"><Paintbrush className="h-4 w-4" /> Artist</span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+        <div className="grid gap-5 w-full max-w-md mx-auto">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="text-left">
+                    <label className="block text-sm text-white/70 mb-1" htmlFor="firstName">
+                        First name
+                    </label>
+                    <input
+                        id="firstName"
+                        type="text"
+                        name="firstName"
+                        value={shared.firstName}
+                        placeholder="First name"
+                        onChange={onChange}
+                        className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
+                    />
+                </div>
+                <div className="text-left">
+                    <label className="block text-sm text-white/70 mb-1" htmlFor="lastName">
+                        Last name
+                    </label>
+                    <input
+                        id="lastName"
+                        type="text"
+                        name="lastName"
+                        value={shared.lastName}
+                        placeholder="Last name"
+                        onChange={onChange}
+                        className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
+                    />
                 </div>
             </div>
 
-            <div className="grid gap-4">
-                <FormInput
-                    type="text"
-                    name="username"
-                    value={shared.username}
-                    placeholder="Username"
-                    onChange={onChange}
-                    isValid={!!shared.username.trim()}
-                    message={shared.username ? "Looks good" : "Choose a username"}
-                />
-                <FormInput
+            <div className="text-left">
+                <label className="block text-sm text-white/70 mb-1" htmlFor="email">
+                    Email
+                </label>
+                <input
+                    id="email"
                     type="email"
                     name="email"
                     value={shared.email}
                     placeholder="Email"
                     onChange={onChange}
-                    isValid={validateEmail(shared.email)}
-                    message={shared.email ? (validateEmail(shared.email) ? "Valid email" : "Enter a valid email") : "Enter your email"}
+                    className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
                 />
-                <FormInput
+            </div>
+
+            <div className="text-left">
+                <label className="block text-sm text-white/70 mb-1" htmlFor="password">
+                    Password
+                </label>
+                <input
+                    id="password"
                     type="password"
                     name="password"
                     value={shared.password}
-                    placeholder="Create password"
+                    placeholder="Password"
                     onChange={onChange}
-                    isValid={validatePassword(shared.password)}
-                    message={validatePassword(shared.password) ? "Strong password" : "Must be 6+ chars, uppercase & number"}
-                    showPasswordToggle
-                    showPassword={showPassword}
-                    onTogglePassword={togglePassword}
+                    className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
+                    onFocus={() => onPasswordVisibilityChange?.(true)}
+                    onBlur={() => onPasswordVisibilityChange?.(false)}
                 />
+            </div>
+
+            <div className="flex gap-2 items-center justify-center">
+                <button
+                    type="button"
+                    onClick={() => setRole("client")}
+                    className={`px-4 py-2 rounded-xl text-sm ${role === "client" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"
+                        }`}
+                >
+                    I’m a client
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setRole("artist")}
+                    className={`px-4 py-2 rounded-xl text-sm ${role === "artist" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"
+                        }`}
+                >
+                    I’m an artist
+                </button>
             </div>
         </div>
     );

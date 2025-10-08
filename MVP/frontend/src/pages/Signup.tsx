@@ -10,7 +10,7 @@ import FormCard from "@/components/access/FormCard";
 import { container } from "@/components/access/animations";
 
 type Role = "client" | "artist";
-type SharedAccount = { username: string; email: string; password: string };
+type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
 type ClientProfile = { budget: string; location: string; placement: string; size: string; notes: string };
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
@@ -20,16 +20,19 @@ const LOGIN_TIMESTAMP_KEY = "lastLogin";
 
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
+
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
-  const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
+  const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
   const [client, setClient] = useState<ClientProfile>({ budget: "", location: "", placement: "", size: "", notes: "" });
   const [artist, setArtist] = useState<ArtistProfile>({ location: "", shop: "", years: "", baseRate: "", instagram: "", portfolio: "" });
+
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
   const [showInfo, setShowInfo] = useState(false);
+
   const [isPasswordHidden, setIsPasswordHidden] = useState(false);
   const [mascotError, setMascotError] = useState(false);
 
@@ -59,11 +62,21 @@ export default function SignUp() {
     return () => clearTimeout(t);
   }, []);
 
-  const handleShared = (e: ChangeEvent<HTMLInputElement>) => setShared({ ...shared, [e.target.name]: e.target.value });
-  const handleClient = (e: ChangeEvent<HTMLInputElement>) => setClient({ ...client, [e.target.name]: e.target.value });
-  const handleArtist = (e: ChangeEvent<HTMLInputElement>) => setArtist({ ...artist, [e.target.name]: e.target.value });
+  const handleShared = (e: ChangeEvent<HTMLInputElement>) =>
+    setShared({ ...shared, [e.target.name]: e.target.value });
 
-  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
+  const handleClient = (e: ChangeEvent<HTMLInputElement>) =>
+    setClient({ ...client, [e.target.name]: e.target.value });
+
+  const handleArtist = (e: ChangeEvent<HTMLInputElement>) =>
+    setArtist({ ...artist, [e.target.name]: e.target.value });
+
+  const allSharedValid =
+    validateEmail(shared.email) &&
+    validatePassword(shared.password) &&
+    !!shared.firstName.trim() &&
+    !!shared.lastName.trim();
+
   const allClientValid = !!client.budget && !!client.location;
   const allArtistValid = !!artist.location && !!artist.years && !!artist.baseRate;
 
@@ -112,14 +125,26 @@ export default function SignUp() {
       const attempt = await signUp.create({
         emailAddress: shared.email,
         password: shared.password,
-        publicMetadata: { role, username: shared.username, profile: role === "client" ? client : artist },
+        publicMetadata: {
+          role,
+          firstName: shared.firstName,
+          lastName: shared.lastName,
+          profile: role === "client" ? client : artist,
+        },
       } as any);
       await attempt.prepareEmailAddressVerification();
-      setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
+      setSignUpAttempt(
+        attempt as unknown as {
+          attemptEmailAddressVerification: (args: { code: string }) => Promise<any>;
+        }
+      );
       setAwaitingCode(true);
       toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
     } catch (err: any) {
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
+      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", {
+        position: "top-center",
+        theme: "dark",
+      });
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -129,7 +154,14 @@ export default function SignUp() {
   const syncUserToBackend = async (r: Role) => {
     const token = await getToken();
     const clerkId = user?.id ?? undefined;
-    const payload: any = { clerkId, email: shared.email, role: r, username: shared.username, profile: r === "client" ? { ...client } : { ...artist } };
+    const payload: any = {
+      clerkId,
+      email: shared.email,
+      role: r,
+      firstName: shared.firstName,
+      lastName: shared.lastName,
+      profile: r === "client" ? { ...client } : { ...artist },
+    };
     const res = await fetch("http://localhost:5005/api/users/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -170,7 +202,10 @@ export default function SignUp() {
           toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
           window.location.href = "/dashboard";
         } catch {
-          toast.error("Signed up but failed to sync user. You can continue; some features may be limited.", { position: "top-center", theme: "dark" });
+          toast.error("Signed up but failed to sync user. You can continue; some features may be limited.", {
+            position: "top-center",
+            theme: "dark",
+          });
           window.location.href = "/dashboard";
         }
       } else {
@@ -178,7 +213,10 @@ export default function SignUp() {
         triggerMascotError();
       }
     } catch (err: any) {
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
+      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", {
+        position: "top-center",
+        theme: "dark",
+      });
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -190,7 +228,9 @@ export default function SignUp() {
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 z-0 h-full w-full object-cover pointer-events-none" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
+
       <Header disableDashboardLink />
+
       <main className="flex-1 grid place-items-center px-4 py-10">
         <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-5xl mx-auto">
           <div className="relative flex items-stretch justify-center">
@@ -232,6 +272,7 @@ export default function SignUp() {
           </div>
         </motion.div>
       </main>
+
       <ToastContainer
         position="top-center"
         autoClose={2000}
