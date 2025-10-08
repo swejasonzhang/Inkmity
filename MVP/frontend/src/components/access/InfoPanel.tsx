@@ -9,24 +9,26 @@ type Props = {
     prefersReduced: boolean;
     hasError?: boolean;
     isPasswordHidden?: boolean;
+    className?: string;
+    mode?: "signup" | "login";
 };
 
 export default function InfoPanel({
     show,
     prefersReduced,
-    hasError = false,
-    isPasswordHidden = false
+    hasError,
+    isPasswordHidden,
+    className,
+    mode = "signup",
 }: Props) {
     const panelRef = useRef<HTMLDivElement | null>(null);
-
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
     const smoothX = useSpring(mouseX, { stiffness: 150, damping: 30, mass: 0.8 });
     const smoothY = useSpring(mouseY, { stiffness: 150, damping: 30, mass: 0.8 });
-
     const [pupil, setPupil] = useState({ dx: 0, dy: 0 });
-
     const [delayed, setDelayed] = useState(false);
+
     useEffect(() => {
         let t: number | null = null;
         if (show) {
@@ -41,6 +43,7 @@ export default function InfoPanel({
     }, [show]);
 
     const [revealText, setRevealText] = useState(prefersReduced);
+
     useEffect(() => {
         let t: number | null = null;
         if (prefersReduced) {
@@ -86,12 +89,17 @@ export default function InfoPanel({
         return () => cancelAnimationFrame(raf);
     }, [smoothX, smoothY, prefersReduced, delayed]);
 
+    const message =
+        mode === "login"
+            ? "Thanks for using Inkmity! Share with friends and make finding an artist easier—with rewards!"
+            : "We connect clients with artists through clear expectations, transparent pricing, and respectful collaboration.";
+
     return (
         <motion.div
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: delayed ? 520 : 0, opacity: delayed ? 1 : 0 }}
             transition={prefersReduced ? { duration: 0 } : slide}
-            className="overflow-hidden will-change-transform"
+            className={`overflow-hidden will-change-transform self-stretch ${className ?? ""}`}
         >
             <div
                 ref={panelRef}
@@ -99,26 +107,18 @@ export default function InfoPanel({
                 style={{
                     background:
                         "linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.06))",
-                    boxShadow:
-                        "0 0 0 1px rgba(255,255,255,0.12), 0 10px 40px -12px rgba(0,0,0,0.5)",
+                    boxShadow: "0 0 0 1px rgba(255,255,255,0.12), 0 10px 40px -12px rgba(0,0,0,0.5)",
                 }}
             >
-                <div className="h-full rounded-l-3xl bg-[#0b0b0b]/80 backdrop-blur-xl px-10 py-12 flex">
-                    <div className="m-auto w-full max-w-md text-center flex flex-col items-center justify-center">
+                <div className="h-full rounded-l-3xl bg-[#0b0b0b]/80 backdrop-blur-xl px-10 py-12 flex flex-col">
+                    <div className="w-full max-w-md mx-auto text-center flex-1 flex flex-col items-center justify-center">
                         <div className="inline-flex items-center gap-2 text-white/80 text-sm mb-4 select-none">
                             <Sparkles className="h-4 w-4" />
                             <span>Inkmity</span>
                         </div>
-
-                        <h2 className="text-3xl font-semibold text-white select-none">Our Mission</h2>
-
+                        <h2 className="text-3xl font-semibold text-white select-none">{mode === "login" ? "Welcome back" : "Our Mission"}</h2>
                         {prefersReduced ? (
-                            delayed && (
-                                <p className="mt-4 text-white/70 text-base leading-relaxed select-none">
-                                    We connect clients with artists through clear expectations, transparent pricing,
-                                    and respectful collaboration.
-                                </p>
-                            )
+                            delayed && <p className="mt-4 text-white/70 text-base leading-relaxed select-none">{message}</p>
                         ) : (
                             <motion.p
                                 initial={false}
@@ -126,13 +126,11 @@ export default function InfoPanel({
                                 transition={{ duration: 0.45, ease: "easeOut" }}
                                 className="mt-4 text-white/70 text-base leading-relaxed select-none will-change-[opacity]"
                             >
-                                We connect clients with artists through clear expectations, transparent pricing,
-                                and respectful collaboration.
+                                {message}
                             </motion.p>
                         )}
-
                         <div
-                            className="mt-8 w-full flex items-center justify-center h-40 isolate"
+                            className="mt-8 w-full flex items-center justify-center h-40 md:h-48 isolate flex-none"
                             style={{ contain: "layout paint", willChange: "transform" }}
                         >
                             <InkMascot dx={pupil.dx} dy={pupil.dy} hasError={hasError} isPasswordHidden={isPasswordHidden} />
