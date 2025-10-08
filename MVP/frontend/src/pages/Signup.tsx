@@ -5,9 +5,9 @@ import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth, useClerk, useSignUp, useUser } from "@clerk/clerk-react";
 import { validateEmail, validatePassword } from "@/utils/validation";
-import InfoPanel from "@/components/signup/InfoPanel";
-import FormCard from "@/components/signup/FormCard";
-import { container } from "@/components/signup/animations";
+import InfoPanel from "@/components/access/InfoPanel";
+import FormCard from "@/components/access/FormCard";
+import { container } from "@/components/access/animations";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
@@ -20,30 +20,28 @@ const LOGIN_TIMESTAMP_KEY = "lastLogin";
 
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
-
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
   const [client, setClient] = useState<ClientProfile>({ budget: "", location: "", placement: "", size: "", notes: "" });
   const [artist, setArtist] = useState<ArtistProfile>({ location: "", shop: "", years: "", baseRate: "", instagram: "", portfolio: "" });
-
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
   const [showInfo, setShowInfo] = useState(false);
-
   const [isPasswordHidden, setIsPasswordHidden] = useState(false);
   const [mascotError, setMascotError] = useState(false);
-  const triggerMascotError = () => {
-    setMascotError(true);
-    window.setTimeout(() => setMascotError(false), 900);
-  };
 
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
+
+  const triggerMascotError = () => {
+    setMascotError(true);
+    window.setTimeout(() => setMascotError(false), 900);
+  };
 
   useEffect(() => {
     const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
@@ -192,20 +190,27 @@ export default function SignUp() {
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 z-0 h-full w-full object-cover pointer-events-none" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
-
       <Header disableDashboardLink />
-
       <main className="flex-1 grid place-items-center px-4 py-10">
         <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-5xl mx-auto">
           <div className="relative flex items-stretch justify-center">
-            <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={isPasswordHidden} />
+            <InfoPanel
+              show={showInfo}
+              prefersReduced={prefersReduced}
+              hasError={mascotError}
+              isPasswordHidden={isPasswordHidden}
+              className="self-stretch"
+              mode="signup"
+            />
             <FormCard
+              mode="signup"
               showInfo={showInfo}
+              hasError={mascotError}
               role={role}
               setRole={setRole}
               step={step}
               setStep={setStep}
-              slides={slides as readonly { key: string; valid: boolean }[]}
+              slides={slides}
               shared={shared}
               client={client}
               artist={artist}
@@ -221,12 +226,12 @@ export default function SignUp() {
               onBack={handleBack}
               onStartVerification={startVerification}
               onVerify={verifyCode}
-              onPasswordVisibilityChange={(hidden: boolean) => setIsPasswordHidden(hidden)}
+              onPasswordVisibilityChange={setIsPasswordHidden}
+              className="self-stretch min-h-[560px]"
             />
           </div>
         </motion.div>
       </main>
-
       <ToastContainer
         position="top-center"
         autoClose={2000}
