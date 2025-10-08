@@ -33,7 +33,7 @@ const FormInput: React.FC<FormInputProps> = ({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className={`p-3 rounded-md bg-black/40 border border-gray-500 focus:border-white focus:ring-1 focus:ring-white outline-none placeholder-gray-300 text-white w-full`}
+      className="p-3 rounded-md bg-black/40 border border-gray-500 focus:border-white focus:ring-1 focus:ring-white outline-none placeholder-gray-300 text-white w-full"
       required
     />
     {showPasswordToggle && (

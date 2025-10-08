@@ -2,18 +2,28 @@ import FormInput from "@/components/dashboard/FormInput";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { ShieldCheck, User, Paintbrush } from "lucide-react";
 import { validateEmail, validatePassword } from "@/utils/validation";
+import { useState } from "react";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
 
 export default function SharedAccountStep({
-    role, setRole, shared, onChange,
+    role, setRole, shared, onChange, onPasswordVisibilityChange,
 }: {
     role: Role;
     setRole: (r: Role) => void;
     shared: SharedAccount;
     onChange: React.ChangeEventHandler<HTMLInputElement>;
+    onPasswordVisibilityChange?: (hidden: boolean) => void;
 }) {
+    const [showPassword, setShowPassword] = useState(true);
+
+    const togglePassword = () => {
+        const next = !showPassword;
+        setShowPassword(next);
+        if (onPasswordVisibilityChange) onPasswordVisibilityChange(!next);
+    };
+
     return (
         <div className="flex flex-col gap-5">
             <div className="text-center">
@@ -43,15 +53,36 @@ export default function SharedAccountStep({
             </div>
 
             <div className="grid gap-4">
-                <FormInput type="text" name="username" value={shared.username} placeholder="Username"
-                    onChange={onChange} isValid={!!shared.username.trim()} message={shared.username ? "Looks good" : "Choose a username"} />
-                <FormInput type="email" name="email" value={shared.email} placeholder="Email"
-                    onChange={onChange} isValid={validateEmail(shared.email)}
-                    message={shared.email ? (validateEmail(shared.email) ? "Valid email" : "Enter a valid email") : "Enter your email"} />
-                <FormInput type="password" name="password" value={shared.password} placeholder="Create password"
-                    onChange={onChange} isValid={validatePassword(shared.password)}
+                <FormInput
+                    type="text"
+                    name="username"
+                    value={shared.username}
+                    placeholder="Username"
+                    onChange={onChange}
+                    isValid={!!shared.username.trim()}
+                    message={shared.username ? "Looks good" : "Choose a username"}
+                />
+                <FormInput
+                    type="email"
+                    name="email"
+                    value={shared.email}
+                    placeholder="Email"
+                    onChange={onChange}
+                    isValid={validateEmail(shared.email)}
+                    message={shared.email ? (validateEmail(shared.email) ? "Valid email" : "Enter a valid email") : "Enter your email"}
+                />
+                <FormInput
+                    type="password"
+                    name="password"
+                    value={shared.password}
+                    placeholder="Create password"
+                    onChange={onChange}
+                    isValid={validatePassword(shared.password)}
                     message={validatePassword(shared.password) ? "Strong password" : "Must be 6+ chars, uppercase & number"}
-                    showPasswordToggle />
+                    showPasswordToggle
+                    showPassword={showPassword}
+                    onTogglePassword={togglePassword}
+                />
             </div>
         </div>
     );
