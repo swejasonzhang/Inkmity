@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 type Role = "client" | "artist";
 
@@ -24,13 +25,19 @@ export default function SharedAccountStep({
     onChange,
     onPasswordVisibilityChange,
 }: Props) {
+    const [showPassword, setShowPassword] = useState(false);
+
+    const togglePassword = () => {
+        const next = !showPassword;
+        setShowPassword(next);
+        onPasswordVisibilityChange?.(!next);
+    };
+
     return (
         <div className="grid gap-5 w-full max-w-md mx-auto">
             <div className="grid grid-cols-2 gap-4">
                 <div className="text-left">
-                    <label className="block text-sm text-white/70 mb-1" htmlFor="firstName">
-                        First name
-                    </label>
+                    <label className="block text-sm text-white/70 mb-1" htmlFor="firstName">First name</label>
                     <input
                         id="firstName"
                         type="text"
@@ -42,9 +49,7 @@ export default function SharedAccountStep({
                     />
                 </div>
                 <div className="text-left">
-                    <label className="block text-sm text-white/70 mb-1" htmlFor="lastName">
-                        Last name
-                    </label>
+                    <label className="block text-sm text-white/70 mb-1" htmlFor="lastName">Last name</label>
                     <input
                         id="lastName"
                         type="text"
@@ -58,9 +63,7 @@ export default function SharedAccountStep({
             </div>
 
             <div className="text-left">
-                <label className="block text-sm text-white/70 mb-1" htmlFor="email">
-                    Email
-                </label>
+                <label className="block text-sm text-white/70 mb-1" htmlFor="email">Email</label>
                 <input
                     id="email"
                     type="email"
@@ -76,33 +79,45 @@ export default function SharedAccountStep({
                 <label className="block text-sm text-white/70 mb-1" htmlFor="password">
                     Password
                 </label>
-                <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    value={shared.password}
-                    placeholder="Password"
-                    onChange={onChange}
-                    className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
-                    onFocus={() => onPasswordVisibilityChange?.(true)}
-                    onBlur={() => onPasswordVisibilityChange?.(false)}
-                />
+
+                <div className="relative">
+                    <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={shared.password}
+                        placeholder="Password"
+                        onChange={onChange}
+                        className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
+                        onFocus={() => onPasswordVisibilityChange?.(!showPassword ? true : false)}
+                        onBlur={() => onPasswordVisibilityChange?.(false)}
+                    />
+
+                    <button
+                        type="button"
+                        onClick={togglePassword}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
+                    </button>
+                </div>
             </div>
+
 
             <div className="flex gap-2 items-center justify-center">
                 <button
                     type="button"
                     onClick={() => setRole("client")}
-                    className={`px-4 py-2 rounded-xl text-sm ${role === "client" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"
-                        }`}
+                    className={`px-4 py-2 rounded-xl text-sm ${role === "client" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
                 >
                     I’m a client
                 </button>
                 <button
                     type="button"
                     onClick={() => setRole("artist")}
-                    className={`px-4 py-2 rounded-xl text-sm ${role === "artist" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"
-                        }`}
+                    className={`px-4 py-2 rounded-xl text-sm ${role === "artist" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
                 >
                     I’m an artist
                 </button>
