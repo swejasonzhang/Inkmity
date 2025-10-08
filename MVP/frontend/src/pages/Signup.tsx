@@ -33,8 +33,7 @@ export default function SignUp() {
   const [code, setCode] = useState("");
   const [showInfo, setShowInfo] = useState(false);
 
-  const [isPasswordHidden, setIsPasswordHidden] = useState(false);
-  const [mascotError, setMascotError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
@@ -42,9 +41,10 @@ export default function SignUp() {
   const { getToken } = useAuth();
 
   const triggerMascotError = () => {
+    setTimeout(() => setMascotError(false), 900);
     setMascotError(true);
-    window.setTimeout(() => setMascotError(false), 900);
   };
+  const [mascotError, setMascotError] = useState(false);
 
   useEffect(() => {
     const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
@@ -223,6 +223,12 @@ export default function SignUp() {
     }
   };
 
+  const mascotEyesClosed = showPassword || shared.password.length > 0;
+
+  const handlePasswordVisibilityChange = (hidden: boolean) => {
+    setShowPassword(!hidden);
+  };
+
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 z-0 h-full w-full object-cover pointer-events-none" aria-hidden>
@@ -233,15 +239,23 @@ export default function SignUp() {
 
       <main className="flex-1 grid place-items-center px-4 py-10">
         <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-5xl mx-auto">
-          <div className="relative flex items-stretch justify-center">
-            <InfoPanel
-              show={showInfo}
-              prefersReduced={prefersReduced}
-              hasError={mascotError}
-              isPasswordHidden={isPasswordHidden}
-              className="self-stretch"
-              mode="signup"
-            />
+          <div className="relative w-full min-h-[610px] flex items-center justify-center">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: showInfo ? 520 : 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="relative shrink-0 self-stretch overflow-hidden"
+            >
+              <InfoPanel
+                show={showInfo}
+                prefersReduced={prefersReduced}
+                hasError={mascotError}
+                isPasswordHidden={mascotEyesClosed}
+                className="absolute inset-0"
+                mode="signup"
+              />
+            </motion.div>
+
             <FormCard
               mode="signup"
               showInfo={showInfo}
@@ -266,8 +280,8 @@ export default function SignUp() {
               onBack={handleBack}
               onStartVerification={startVerification}
               onVerify={verifyCode}
-              onPasswordVisibilityChange={setIsPasswordHidden}
-              className="self-stretch min-h-[560px]"
+              onPasswordVisibilityChange={handlePasswordVisibilityChange}
+              className="self-stretch min-h-[610px] max-w-[680px]"
             />
           </div>
         </motion.div>
