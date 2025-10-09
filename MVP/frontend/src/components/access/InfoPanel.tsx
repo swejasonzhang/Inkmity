@@ -9,7 +9,6 @@ type Props = {
     prefersReduced: boolean;
     hasError?: boolean;
     isPasswordHidden?: boolean;
-    className?: string;
     mode?: "signup" | "login";
 };
 
@@ -18,7 +17,6 @@ export default function InfoPanel({
     prefersReduced,
     hasError,
     isPasswordHidden,
-    className,
     mode = "signup",
 }: Props) {
     const panelRef = useRef<HTMLDivElement | null>(null);
@@ -29,10 +27,6 @@ export default function InfoPanel({
 
     const [pupil, setPupil] = useState({ dx: 0, dy: 0 });
     const [delayed, setDelayed] = useState(false);
-
-    const [targetWidth, setTargetWidth] = useState<string | number>(() =>
-        typeof window !== "undefined" && window.innerWidth < 768 ? "100%" : 520
-    );
 
     useEffect(() => {
         let t: number | null = null;
@@ -46,15 +40,6 @@ export default function InfoPanel({
             if (t !== null) window.clearTimeout(t);
         };
     }, [show]);
-
-    useEffect(() => {
-        const onResize = () => {
-            setTargetWidth(window.innerWidth < 768 ? "100%" : 520);
-        };
-        onResize();
-        window.addEventListener("resize", onResize, { passive: true });
-        return () => window.removeEventListener("resize", onResize);
-    }, []);
 
     useEffect(() => {
         if (prefersReduced || !delayed) return;
@@ -94,29 +79,31 @@ export default function InfoPanel({
 
     return (
         <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: delayed ? targetWidth : 0, opacity: delayed ? 1 : 0 }}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: delayed ? 1 : 0, x: delayed ? 0 : 16 }}
             transition={prefersReduced ? { duration: 0 } : slide}
-            className={`overflow-hidden will-change-transform self-stretch ${className ?? ""}`}
+            className="w-full h-full"
         >
             <div
                 ref={panelRef}
-                className="h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none p-[1px] transform-gpu"
+                className="w-full h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none"
                 style={{
                     background:
                         "linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.06))",
                     boxShadow: "0 0 0 1px rgba(255,255,255,0.12), 0 10px 40px -12px rgba(0,0,0,0.5)",
                 }}
             >
-                <div className="h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none bg-[#0b0b0b]/80 backdrop-blur-xl px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-12 flex flex-col">
-                    <div className="w-full max-w-md mx-auto text-center flex-1 flex flex-col items-center justify-center">
+                <div className="w-full h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none bg-[#0b0b0b]/80 backdrop-blur-xl px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-12 flex flex-col">
+                    <div className="w-full mx-auto text-center flex-1 flex flex-col items-center justify-center">
                         <div className="inline-flex items-center gap-2 text-white/80 text-xs sm:text-sm mb-3 sm:mb-4 select-none">
                             <Sparkles className="h-4 w-4" />
                             <span>Inkmity</span>
                         </div>
+
                         <h2 className="text-2xl sm:text-3xl md:text-3xl font-semibold text-white select-none">
                             {mode === "login" ? "We’ve missed you" : "Our Mission"}
                         </h2>
+
                         <motion.p
                             initial={false}
                             animate={{ opacity: delayed ? 1 : 0 }}
@@ -125,10 +112,8 @@ export default function InfoPanel({
                         >
                             {message}
                         </motion.p>
-                        <div
-                            className="mt-6 sm:mt-7 md:mt-8 w-full flex items-center justify-center h-32 sm:h-36 md:h-48 isolate flex-none"
-                            style={{ contain: "layout paint", willChange: "transform" }}
-                        >
+
+                        <div className="mt-6 sm:mt-7 md:mt-8 isolate">
                             <InkMascot dx={pupil.dx} dy={pupil.dy} hasError={hasError} isPasswordHidden={isPasswordHidden} />
                         </div>
                     </div>
