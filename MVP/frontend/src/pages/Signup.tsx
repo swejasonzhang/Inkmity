@@ -34,17 +34,13 @@ export default function SignUp() {
   const [showInfo, setShowInfo] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [pwdFocused, setPwdFocused] = useState(false);
+  const [mascotError, setMascotError] = useState(false);
 
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
-
-  const triggerMascotError = () => {
-    setTimeout(() => setMascotError(false), 900);
-    setMascotError(true);
-  };
-  const [mascotError, setMascotError] = useState(false);
 
   useEffect(() => {
     const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
@@ -62,21 +58,49 @@ export default function SignUp() {
     return () => clearTimeout(t);
   }, []);
 
-  const handleShared = (e: ChangeEvent<HTMLInputElement>) =>
-    setShared({ ...shared, [e.target.name]: e.target.value });
+  useEffect(() => {
+    const recomputeFocus = () => {
+      const ae = document.activeElement as HTMLInputElement | null;
+      setPwdFocused(!!ae && ae.tagName === "INPUT" && ae.name === "password");
+    };
 
-  const handleClient = (e: ChangeEvent<HTMLInputElement>) =>
-    setClient({ ...client, [e.target.name]: e.target.value });
+    const recomputeShow = () => {
+      const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
+      setShowPassword(!!input && input.type === "text");
+    };
 
-  const handleArtist = (e: ChangeEvent<HTMLInputElement>) =>
-    setArtist({ ...artist, [e.target.name]: e.target.value });
+    const handleFocusIn = () => {
+      recomputeFocus();
+      recomputeShow();
+    };
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        recomputeFocus();
+        recomputeShow();
+      }, 0);
+    };
+    const handleClickOrInput = () => {
+      recomputeShow();
+    };
 
-  const allSharedValid =
-    validateEmail(shared.email) &&
-    validatePassword(shared.password) &&
-    !!shared.firstName.trim() &&
-    !!shared.lastName.trim();
+    document.addEventListener("focusin", handleFocusIn, true);
+    document.addEventListener("focusout", handleFocusOut, true);
+    document.addEventListener("click", handleClickOrInput, true);
+    document.addEventListener("input", handleClickOrInput, true);
 
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn, true);
+      document.removeEventListener("focusout", handleFocusOut, true);
+      document.removeEventListener("click", handleClickOrInput, true);
+      document.removeEventListener("input", handleClickOrInput, true);
+    };
+  }, []);
+
+  const handleShared = (e: ChangeEvent<HTMLInputElement>) => setShared({ ...shared, [e.target.name]: e.target.value });
+  const handleClient = (e: ChangeEvent<HTMLInputElement>) => setClient({ ...client, [e.target.name]: e.target.value });
+  const handleArtist = (e: ChangeEvent<HTMLInputElement>) => setArtist({ ...artist, [e.target.name]: e.target.value });
+
+  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
   const allClientValid = !!client.budget && !!client.location;
   const allArtistValid = !!artist.location && !!artist.years && !!artist.baseRate;
 
@@ -97,6 +121,11 @@ export default function SignUp() {
 
   const isLastFormSlide = step === slides.length - 1;
 
+  const triggerMascotError = () => {
+    setMascotError(true);
+    window.setTimeout(() => setMascotError(false), 900);
+  };
+
   const handleNext = () => {
     const currentValid = slides[step].valid;
     if (!currentValid) {
@@ -104,10 +133,10 @@ export default function SignUp() {
       triggerMascotError();
       return;
     }
-    if (!isLastFormSlide) setStep((s) => s + 1);
+    if (!isLastFormSlide) setStep(s => s + 1);
   };
 
-  const handleBack = () => setStep((s) => Math.max(0, s - 1));
+  const handleBack = () => setStep(s => Math.max(0, s - 1));
 
   const startVerification = async () => {
     if (!allSharedValid) {
@@ -133,18 +162,11 @@ export default function SignUp() {
         },
       } as any);
       await attempt.prepareEmailAddressVerification();
-      setSignUpAttempt(
-        attempt as unknown as {
-          attemptEmailAddressVerification: (args: { code: string }) => Promise<any>;
-        }
-      );
+      setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
       setAwaitingCode(true);
       toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
     } catch (err: any) {
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", {
-        position: "top-center",
-        theme: "dark",
-      });
+      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -154,14 +176,7 @@ export default function SignUp() {
   const syncUserToBackend = async (r: Role) => {
     const token = await getToken();
     const clerkId = user?.id ?? undefined;
-    const payload: any = {
-      clerkId,
-      email: shared.email,
-      role: r,
-      firstName: shared.firstName,
-      lastName: shared.lastName,
-      profile: r === "client" ? { ...client } : { ...artist },
-    };
+    const payload: any = { clerkId, email: shared.email, role: r, firstName: shared.firstName, lastName: shared.lastName, profile: r === "client" ? { ...client } : { ...artist } };
     const res = await fetch("http://localhost:5005/api/users/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -202,10 +217,7 @@ export default function SignUp() {
           toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
           window.location.href = "/dashboard";
         } catch {
-          toast.error("Signed up but failed to sync user. You can continue; some features may be limited.", {
-            position: "top-center",
-            theme: "dark",
-          });
+          toast.error("Signed up but failed to sync user. You can continue; some features may be limited.", { position: "top-center", theme: "dark" });
           window.location.href = "/dashboard";
         }
       } else {
@@ -213,17 +225,14 @@ export default function SignUp() {
         triggerMascotError();
       }
     } catch (err: any) {
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", {
-        position: "top-center",
-        theme: "dark",
-      });
+      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
       triggerMascotError();
     } finally {
       setLoading(false);
     }
   };
 
-  const mascotEyesClosed = showPassword || shared.password.length > 0;
+  const mascotEyesClosed = pwdFocused && showPassword;
 
   const handlePasswordVisibilityChange = (hidden: boolean) => {
     setShowPassword(!hidden);
@@ -237,7 +246,7 @@ export default function SignUp() {
 
       <Header disableDashboardLink />
 
-      <main className="flex-1 grid place-items-center px-4 py-10">
+      <main className="flex-1 grid place-items-center px-2 py-10">
         <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-5xl mx-auto">
           <div className="relative w-full min-h-[610px] flex items-center justify-center">
             <motion.div

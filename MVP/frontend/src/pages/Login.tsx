@@ -35,6 +35,45 @@ export default function Login() {
     return () => clearTimeout(t);
   }, []);
 
+  // Keep mascot state perfectly in sync with actual focus & input type
+  useEffect(() => {
+    const recomputeFocus = () => {
+      const ae = document.activeElement as HTMLInputElement | null;
+      setPwdFocused(!!ae && ae.tagName === "INPUT" && ae.name === "password");
+    };
+
+    const recomputeShow = () => {
+      const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
+      setShowPassword(!!input && input.type === "text");
+    };
+
+    const handleFocusIn = () => {
+      recomputeFocus();
+      recomputeShow();
+    };
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        recomputeFocus();
+        recomputeShow();
+      }, 0);
+    };
+    const handleClickOrInput = () => {
+      recomputeShow();
+    };
+
+    document.addEventListener("focusin", handleFocusIn, true);
+    document.addEventListener("focusout", handleFocusOut, true);
+    document.addEventListener("click", handleClickOrInput, true);
+    document.addEventListener("input", handleClickOrInput, true);
+
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn, true);
+      document.removeEventListener("focusout", handleFocusOut, true);
+      document.removeEventListener("click", handleClickOrInput, true);
+      document.removeEventListener("input", handleClickOrInput, true);
+    };
+  }, []);
+
   const triggerMascotError = () => {
     setMascotError(true);
     window.setTimeout(() => setMascotError(false), 900);
@@ -79,7 +118,8 @@ export default function Login() {
     }
   };
 
-  const mascotEyesClosed = showPassword || (pwdFocused && password.length > 0);
+  // Close eyes only when password field is focused AND the password is shown
+  const mascotEyesClosed = pwdFocused && showPassword;
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
@@ -154,8 +194,6 @@ export default function Login() {
                       name="password"
                       value={password}
                       placeholder="Password"
-                      onFocus={() => setPwdFocused(true)}
-                      onBlur={() => setPwdFocused(false)}
                       onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                       className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
                     />
