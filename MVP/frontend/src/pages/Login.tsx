@@ -35,7 +35,6 @@ export default function Login() {
     return () => clearTimeout(t);
   }, []);
 
-  // Keep mascot state perfectly in sync with actual focus & input type
   useEffect(() => {
     const recomputeFocus = () => {
       const ae = document.activeElement as HTMLInputElement | null;
@@ -118,8 +117,9 @@ export default function Login() {
     }
   };
 
-  // Close eyes only when password field is focused AND the password is shown
   const mascotEyesClosed = pwdFocused && showPassword;
+
+  const CARD_H = "h-[520px] sm:h-[560px] md:h-[580px]";
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
@@ -129,7 +129,7 @@ export default function Login() {
         muted
         playsInline
         preload="auto"
-        className="fixed inset-0 z-0 h-full w-full object-cover pointer-events-none"
+        className="fixed inset-0 object-cover pointer-events-none"
         aria-hidden
       >
         <source src="/Background.mp4" type="video/mp4" />
@@ -137,99 +137,112 @@ export default function Login() {
 
       <Header disableDashboardLink />
 
-      <main className="flex-1 grid place-items-center px-4 py-10">
-        <motion.div
-          variants={container}
-          initial={prefersReduced ? false : "hidden"}
-          animate={prefersReduced ? undefined : "show"}
-          className="w-full max-w-5xl mx-auto"
-        >
-          <div className="relative w-full min-h-[610px] flex items-center justify-center">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: showInfo ? 520 : 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="relative shrink-0 self-stretch overflow-hidden"
+      <main className="flex-1 min-h-0 grid place-items-center">
+        <div className="mx-auto w-full max-w-5xl flex items-center justify-center">
+          <motion.div
+            variants={container}
+            initial={prefersReduced ? false : "hidden"}
+            animate={prefersReduced ? undefined : "show"}
+            className="w-full"
+          >
+            <div
+              className={`relative grid w-full ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : "grid-cols-1 place-items-center"
+                }`}
             >
-              <InfoPanel
-                show={showInfo}
-                prefersReduced={prefersReduced}
-                hasError={mascotError}
-                isPasswordHidden={mascotEyesClosed}
-                className="absolute inset-0"
-                mode="login"
-              />
-            </motion.div>
-
-            <FormCard
-              mode="login"
-              showInfo={showInfo}
-              hasError={mascotError}
-              titleOverride="Welcome Back!"
-              subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey."
-              className="flex-1 self-stretch min-h-[610px] max-w-[680px]"
-            >
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm mx-auto">
-                <div className="text-left">
-                  <label className="block text-sm text-white/70 mb-1" htmlFor="email">Email</label>
-                  <div className="relative">
-                    <input
-                      id="email"
-                      type="email"
-                      name="email"
-                      value={email}
-                      placeholder="Email"
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                      className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
+              {showInfo && (
+                <motion.div layout className={`w-full max-w-xl ${CARD_H}`}>
+                  <div className="h-full">
+                    <InfoPanel
+                      show={showInfo}
+                      prefersReduced={prefersReduced}
+                      hasError={mascotError}
+                      isPasswordHidden={mascotEyesClosed}
+                      mode="login"
                     />
                   </div>
-                </div>
+                </motion.div>
+              )}
 
-                <div className="text-left">
-                  <label className="block text-sm text-white/70 mb-1" htmlFor="password">Password</label>
-                  <div className="relative">
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={password}
-                      placeholder="Password"
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                      className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? (
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3.11-11-8 0-1.26.31-2.45.86-3.5M6.1 6.1C7.94 4.8 9.94 4 12 4c5 0 9.27 3.11 11 8-.39 1.01-.93 1.96-1.58 2.81M1 1l22 22" />
-                          <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
-                        </svg>
-                      ) : (
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                      )}
-                      <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl w-full"
-                  disabled={loading}
+              <motion.div layout className={`w-full max-w-xl ${CARD_H} justify-self-center`}>
+                <FormCard
+                  mode="login"
+                  showInfo={showInfo}
+                  hasError={mascotError}
+                  titleOverride="Welcome Back!"
+                  subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey."
+                  className="h-full min-w-0"
                 >
-                  {loading ? "Signing In..." : "Sign In"}
-                </Button>
-              </form>
-            </FormCard>
-          </div>
-        </motion.div>
+                  <div className="grid place-items-center h-full overflow-hidden">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
+                      <div className="text-left">
+                        <label className="block text-sm text-white/70 mb-1" htmlFor="email">
+                          Email
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={email}
+                            placeholder="Email"
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                            className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
+                            autoComplete="email"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="text-left">
+                        <label className="block text-sm text-white/70 mb-1" htmlFor="password">
+                          Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={password}
+                            placeholder="Password"
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                            className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
+                            autoComplete="current-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? (
+                              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3.11-11-8 0-1.26.31-2.45.86-3.5M6.1 6.1C7.94 4.8 9.94 4 12 4c5 0 9.27 3.11 11 8-.39 1.01-.93 1.96-1.58 2.81M1 1l22 22" />
+                                <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            )}
+                            <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl w-full"
+                        disabled={loading}
+                      >
+                        {loading ? "Signing In..." : "Sign In"}
+                      </Button>
+                    </form>
+                  </div>
+                </FormCard>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
       </main>
 
       <ToastContainer

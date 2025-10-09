@@ -19,7 +19,6 @@ type ClientProfile = {
   size: string;
   notes: string;
 };
-
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
 
@@ -40,7 +39,6 @@ export default function SignUp() {
     size: "",
     notes: "",
   });
-
   const [artist, setArtist] = useState<ArtistProfile>({ location: "", shop: "", years: "", baseRate: "", instagram: "", portfolio: "" });
 
   const [awaitingCode, setAwaitingCode] = useState(false);
@@ -117,10 +115,7 @@ export default function SignUp() {
   const handleArtist = (e: ChangeEvent<HTMLInputElement>) => setArtist({ ...artist, [e.target.name]: e.target.value });
 
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
-  const allClientValid =
-    !!client.location &&
-    Number(client.budgetMin) >= 50 &&
-    Number(client.budgetMax) > Number(client.budgetMin);
+  const allClientValid = !!client.location && Number(client.budgetMin) >= 50 && Number(client.budgetMax) > Number(client.budgetMin);
   const allArtistValid = !!artist.location && !!artist.years && !!artist.baseRate;
 
   const slides = useMemo(() => {
@@ -259,60 +254,72 @@ export default function SignUp() {
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
-      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 z-0 h-full w-full object-cover pointer-events-none" aria-hidden>
+      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 z-0 object-cover pointer-events-none" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
 
       <Header disableDashboardLink />
 
-      <main className="flex-1 grid place-items-center px-2 py-10">
-        <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-5xl mx-auto">
-          <div className="relative w-full min-h-[610px] flex items-center justify-center">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: showInfo ? 520 : 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="relative shrink-0 self-stretch overflow-hidden"
+      <main className="flex-1 min-h-0 grid place-items-center">
+        <div className="mx-auto w-full max-w-5xl flex items-center justify-center">
+          <motion.div variants={container} initial="hidden" animate="show" className="w-full">
+            <div
+              className={`
+              relative grid w-full
+              ${showInfo ? "md:grid-cols-2 md:place-items-stretch" : "grid-cols-1 place-items-center"}
+              gap-0
+            `}
             >
-              <InfoPanel
-                show={showInfo}
-                prefersReduced={prefersReduced}
-                hasError={mascotError}
-                isPasswordHidden={mascotEyesClosed}
-                className="absolute inset-0"
-                mode="signup"
-              />
-            </motion.div>
+              {showInfo && (
+                <motion.div
+                  layout
+                  className="flex"
+                >
+                  <InfoPanel
+                    show={showInfo}
+                    prefersReduced={prefersReduced}
+                    hasError={mascotError}
+                    isPasswordHidden={mascotEyesClosed}
+                    mode="signup"
+                  />
+                </motion.div>
+              )}
 
-            <FormCard
-              mode="signup"
-              showInfo={showInfo}
-              hasError={mascotError}
-              role={role}
-              setRole={setRole}
-              step={step}
-              setStep={setStep}
-              slides={slides}
-              shared={shared}
-              client={client}
-              artist={artist}
-              onSharedChange={handleShared}
-              onClientChange={handleClient}
-              onArtistChange={handleArtist}
-              awaitingCode={awaitingCode}
-              code={code}
-              setCode={setCode}
-              loading={loading}
-              isLoaded={isLoaded}
-              onNext={handleNext}
-              onBack={handleBack}
-              onStartVerification={startVerification}
-              onVerify={verifyCode}
-              onPasswordVisibilityChange={handlePasswordVisibilityChange}
-              className="w-full max-w-[92vw] sm:max-w-md md:self-stretch md:min-h-[610px] md:max-w-[680px] md:mt-0"
-            />
-          </div>
-        </motion.div>
+              <motion.div
+                layout
+                className="w-full max-w-xl justify-self-center"
+              >
+                <FormCard
+                  mode="signup"
+                  showInfo={showInfo}
+                  hasError={mascotError}
+                  role={role}
+                  setRole={setRole}
+                  step={step}
+                  setStep={setStep}
+                  slides={slides}
+                  shared={shared}
+                  client={client}
+                  artist={artist}
+                  onSharedChange={handleShared}
+                  onClientChange={handleClient}
+                  onArtistChange={handleArtist}
+                  awaitingCode={awaitingCode}
+                  code={code}
+                  setCode={setCode}
+                  loading={loading}
+                  isLoaded={isLoaded}
+                  onNext={handleNext}
+                  onBack={handleBack}
+                  onStartVerification={startVerification}
+                  onVerify={verifyCode}
+                  onPasswordVisibilityChange={handlePasswordVisibilityChange}
+                  className=""
+                />
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
       </main>
 
       <ToastContainer
