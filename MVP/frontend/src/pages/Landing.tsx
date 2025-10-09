@@ -46,7 +46,6 @@ const Landing: React.FC = () => {
     return (
         <>
             <div className="fixed inset-0 -z-20 bg-app" aria-hidden />
-
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
                     <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
