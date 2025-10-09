@@ -27,8 +27,6 @@ export default function ArtistDetailsStep({
                 onChange={onChange} isValid={!!artist.baseRate} message={artist.baseRate ? "Thanks" : "Add your rate"} />
             <FormInput type="text" name="instagram" value={artist.instagram} placeholder="Instagram (optional)"
                 onChange={onChange} isValid message={artist.instagram ? "Noted" : "Optional"} />
-            <FormInput type="text" name="portfolio" value={artist.portfolio} placeholder="Portfolio URL (optional)"
-                onChange={onChange} isValid message={artist.portfolio ? "Noted" : "Optional"} />
         </div>
     );
 }

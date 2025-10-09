@@ -11,7 +11,15 @@ import { container } from "@/components/access/animations";
 
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
-type ClientProfile = { budget: string; location: string; placement: string; size: string; notes: string };
+type ClientProfile = {
+  budgetMin: string;
+  budgetMax: string;
+  location: string;
+  placement: string;
+  size: string;
+  notes: string;
+};
+
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
 
@@ -24,7 +32,15 @@ export default function SignUp() {
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
-  const [client, setClient] = useState<ClientProfile>({ budget: "", location: "", placement: "", size: "", notes: "" });
+  const [client, setClient] = useState<ClientProfile>({
+    budgetMin: "200",
+    budgetMax: "500",
+    location: "",
+    placement: "",
+    size: "",
+    notes: "",
+  });
+
   const [artist, setArtist] = useState<ArtistProfile>({ location: "", shop: "", years: "", baseRate: "", instagram: "", portfolio: "" });
 
   const [awaitingCode, setAwaitingCode] = useState(false);
@@ -101,7 +117,10 @@ export default function SignUp() {
   const handleArtist = (e: ChangeEvent<HTMLInputElement>) => setArtist({ ...artist, [e.target.name]: e.target.value });
 
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
-  const allClientValid = !!client.budget && !!client.location;
+  const allClientValid =
+    !!client.location &&
+    Number(client.budgetMin) >= 50 &&
+    Number(client.budgetMax) > Number(client.budgetMin);
   const allArtistValid = !!artist.location && !!artist.years && !!artist.baseRate;
 
   const slides = useMemo(() => {
@@ -290,7 +309,7 @@ export default function SignUp() {
               onStartVerification={startVerification}
               onVerify={verifyCode}
               onPasswordVisibilityChange={handlePasswordVisibilityChange}
-              className="self-stretch min-h-[610px] max-w-[680px]"
+              className="w-full max-w-[92vw] sm:max-w-md md:self-stretch md:min-h-[610px] md:max-w-[680px] md:mt-0"
             />
           </div>
         </motion.div>
