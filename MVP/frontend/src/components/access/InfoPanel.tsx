@@ -26,8 +26,13 @@ export default function InfoPanel({
     const mouseY = useMotionValue(0);
     const smoothX = useSpring(mouseX, { stiffness: 150, damping: 30, mass: 0.8 });
     const smoothY = useSpring(mouseY, { stiffness: 150, damping: 30, mass: 0.8 });
+
     const [pupil, setPupil] = useState({ dx: 0, dy: 0 });
     const [delayed, setDelayed] = useState(false);
+
+    const [targetWidth, setTargetWidth] = useState<string | number>(() =>
+        typeof window !== "undefined" && window.innerWidth < 768 ? "100%" : 520
+    );
 
     useEffect(() => {
         let t: number | null = null;
@@ -42,21 +47,14 @@ export default function InfoPanel({
         };
     }, [show]);
 
-    const [revealText, setRevealText] = useState(prefersReduced);
-
     useEffect(() => {
-        let t: number | null = null;
-        if (prefersReduced) {
-            setRevealText(delayed);
-        } else if (!delayed) {
-            setRevealText(false);
-        } else {
-            t = window.setTimeout(() => setRevealText(true), 1000);
-        }
-        return () => {
-            if (t !== null) window.clearTimeout(t);
+        const onResize = () => {
+            setTargetWidth(window.innerWidth < 768 ? "100%" : 520);
         };
-    }, [delayed, prefersReduced]);
+        onResize();
+        window.addEventListener("resize", onResize, { passive: true });
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
 
     useEffect(() => {
         if (prefersReduced || !delayed) return;
@@ -97,40 +95,38 @@ export default function InfoPanel({
     return (
         <motion.div
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: delayed ? 520 : 0, opacity: delayed ? 1 : 0 }}
+            animate={{ width: delayed ? targetWidth : 0, opacity: delayed ? 1 : 0 }}
             transition={prefersReduced ? { duration: 0 } : slide}
             className={`overflow-hidden will-change-transform self-stretch ${className ?? ""}`}
         >
             <div
                 ref={panelRef}
-                className="h-full rounded-l-3xl p-[1px] transform-gpu"
+                className="h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none p-[1px] transform-gpu"
                 style={{
                     background:
                         "linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.06))",
                     boxShadow: "0 0 0 1px rgba(255,255,255,0.12), 0 10px 40px -12px rgba(0,0,0,0.5)",
                 }}
             >
-                <div className="h-full rounded-l-3xl bg-[#0b0b0b]/80 backdrop-blur-xl px-10 py-12 flex flex-col">
+                <div className="h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none bg-[#0b0b0b]/80 backdrop-blur-xl px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-12 flex flex-col">
                     <div className="w-full max-w-md mx-auto text-center flex-1 flex flex-col items-center justify-center">
-                        <div className="inline-flex items-center gap-2 text-white/80 text-sm mb-4 select-none">
+                        <div className="inline-flex items-center gap-2 text-white/80 text-xs sm:text-sm mb-3 sm:mb-4 select-none">
                             <Sparkles className="h-4 w-4" />
                             <span>Inkmity</span>
                         </div>
-                        <h2 className="text-3xl font-semibold text-white select-none">{mode === "login" ? "Welcome back" : "Our Mission"}</h2>
-                        {prefersReduced ? (
-                            delayed && <p className="mt-4 text-white/70 text-base leading-relaxed select-none">{message}</p>
-                        ) : (
-                            <motion.p
-                                initial={false}
-                                animate={{ opacity: revealText ? 1 : 0 }}
-                                transition={{ duration: 0.45, ease: "easeOut" }}
-                                className="mt-4 text-white/70 text-base leading-relaxed select-none will-change-[opacity]"
-                            >
-                                {message}
-                            </motion.p>
-                        )}
+                        <h2 className="text-2xl sm:text-3xl md:text-3xl font-semibold text-white select-none">
+                            {mode === "login" ? "We’ve missed you" : "Our Mission"}
+                        </h2>
+                        <motion.p
+                            initial={false}
+                            animate={{ opacity: delayed ? 1 : 0 }}
+                            transition={{ duration: 0.45, ease: "easeOut" }}
+                            className="mt-3 sm:mt-4 text-white/70 text-sm sm:text-base leading-relaxed select-none will-change-[opacity]"
+                        >
+                            {message}
+                        </motion.p>
                         <div
-                            className="mt-8 w-full flex items-center justify-center h-40 md:h-48 isolate flex-none"
+                            className="mt-6 sm:mt-7 md:mt-8 w-full flex items-center justify-center h-32 sm:h-36 md:h-48 isolate flex-none"
                             style={{ contain: "layout paint", willChange: "transform" }}
                         >
                             <InkMascot dx={pupil.dx} dy={pupil.dy} hasError={hasError} isPasswordHidden={isPasswordHidden} />

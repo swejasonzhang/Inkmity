@@ -12,7 +12,7 @@ import OtpStep from "@/components/access/OtpStep";
 
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
-type ClientProfile = { budget: string; location: string; placement: string; size: string; notes: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 
 type BaseProps = {
@@ -68,7 +68,10 @@ export default function FormCard(props: Props) {
   return (
     <motion.div
       layout
-      className={`relative -ml-px p-[1px] ${showInfo ? "rounded-r-3xl rounded-l-none" : "rounded-3xl"} ${className ?? ""}`}
+      className={`relative md:-ml-px p-[1px] ${showInfo
+        ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none"
+        : "rounded-3xl"
+        } ${className ?? ""}`}
       animate={{
         boxShadow: [
           "0 0 0 1px rgba(255,255,255,0.10), 0 10px 40px -12px rgba(0,0,0,0.5)",
@@ -85,24 +88,27 @@ export default function FormCard(props: Props) {
       <motion.div
         variants={shake}
         animate={hasError ? "error" : "idle"}
-        className={`bg-[#0b0b0b]/80 p-10 sm:p-12 ${showInfo ? "rounded-r-3xl rounded-l-none" : "rounded-3xl"} h-full`}
+        className={`bg-[#0b0b0b]/80 px-5 py-6 sm:px-6 sm:py-8 md:p-10 md:py-12 ${showInfo
+          ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none"
+          : "rounded-3xl"
+          } h-full`}
       >
-        <motion.div variants={fadeUp} className="mb-6 flex items-center justify-center gap-2 text-white/80">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm">
+        <motion.div variants={fadeUp} className="mb-5 sm:mb-6 flex items-center justify-center gap-2 text-white/80">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm">
             <Sparkles className="h-4 w-4" />
             <span>{isSignup ? "Join the Inkmity community" : "Welcome to Inkmity"}</span>
           </div>
         </motion.div>
 
         <div className="text-center">
-          <h1 className="text-4xl font-semibold text-white">{title}</h1>
-          <p className="text-white/60 mt-3 text-base">{subtitle}</p>
+          <h1 className="text-3xl sm:text-4xl font-semibold text-white">{title}</h1>
+          <p className="text-white/60 mt-2 sm:mt-3 text-sm sm:text-base">{subtitle}</p>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           {isSignup ? (
             <>
-              <div className="mb-6">
+              <div className="mb-5 sm:mb-6">
                 <ProgressDots total={props.slides.length} current={props.step} showVerify={props.awaitingCode} />
               </div>
               <div className="relative overflow-hidden">
@@ -126,33 +132,42 @@ export default function FormCard(props: Props) {
                             onPasswordVisibilityChange={props.onPasswordVisibilityChange}
                           />
                         )}
-                        {props.slides[props.step].key === "client-1" && <ClientDetailsStep client={props.client} onChange={props.onClientChange} />}
-                        {props.slides[props.step].key === "artist-1" && <ArtistDetailsStep artist={props.artist} onChange={props.onArtistChange} />}
-                        {props.slides[props.step].key === "review" && <ReviewStep role={props.role} shared={props.shared} client={props.client} artist={props.artist} />}
+                        {props.slides[props.step].key === "client-1" && (
+                          <ClientDetailsStep client={props.client} onChange={props.onClientChange} />
+                        )}
+                        {props.slides[props.step].key === "artist-1" && (
+                          <ArtistDetailsStep artist={props.artist} onChange={props.onArtistChange} />
+                        )}
+                        {props.slides[props.step].key === "review" && (
+                          <ReviewStep role={props.role} shared={props.shared} client={props.client} artist={props.artist} />
+                        )}
                       </motion.div>
-                      <div className="flex items-center gap-4 mt-2">
+
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-2">
                         <Button
                           type="button"
                           onClick={props.onBack}
                           disabled={props.step === 0}
-                          className="bg-white/10 hover:bg-white/20 text-white w-32 h-11 text-base rounded-xl"
+                          className="bg-white/10 hover:bg-white/20 text-white h-11 text-base rounded-xl sm:w-32"
                         >
                           Back
                         </Button>
+
                         {props.step < props.slides.length - 1 && (
                           <Button
                             type="button"
                             onClick={props.onNext}
-                            className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl"
+                            className="bg-white/15 hover:bg-white/25 text-white h-11 text-base rounded-xl sm:flex-1"
                           >
                             Next
                           </Button>
                         )}
+
                         {props.step === props.slides.length - 1 && (
                           <Button
                             type="button"
                             onClick={props.onStartVerification}
-                            className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl"
+                            className="bg-white/15 hover:bg-white/25 text-white h-11 text-base rounded-xl sm:flex-1"
                             disabled={props.loading || !props.isLoaded}
                           >
                             Send Verification Code
@@ -180,14 +195,15 @@ export default function FormCard(props: Props) {
                   )}
                 </AnimatePresence>
               </div>
-              <p className="text-white/60 text-center text-sm mt-6">
+
+              <p className="text-white/60 text-center text-xs sm:text-sm mt-5 sm:mt-6">
                 Already have an account? <a href="/login" className="underline hover:opacity-80">Login</a>
               </p>
             </>
           ) : (
             <>
               <div className="relative">{children}</div>
-              <p className="text-white/60 text-center text-sm mt-6">
+              <p className="text-white/60 text-center text-xs sm:text-sm mt-5 sm:mt-6">
                 Don&apos;t have an account? <a href="/signup" className="underline hover:opacity-80">Sign Up</a>
               </p>
             </>
