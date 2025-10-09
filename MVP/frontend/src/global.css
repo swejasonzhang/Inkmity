@@ -222,7 +222,6 @@ h3 {
   }
 }
 
-/* Keep the theme curtain lightweight (opacity only) */
 .theme-curtain {
   position: fixed;
   inset: 0;
@@ -232,6 +231,7 @@ h3 {
   animation: curtain var(--theme-ms) ease;
   will-change: opacity;
 }
+
 @keyframes curtain {
   0% {
     opacity: 0;

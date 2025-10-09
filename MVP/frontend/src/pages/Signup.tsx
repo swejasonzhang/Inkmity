@@ -254,26 +254,34 @@ export default function SignUp() {
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
-      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 z-0 object-cover pointer-events-none" aria-hidden>
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0"
+        aria-hidden
+      >
         <source src="/Background.mp4" type="video/mp4" />
       </video>
 
       <Header disableDashboardLink />
 
-      <main className="flex-1 min-h-0 grid place-items-center">
-        <div className="mx-auto w-full max-w-5xl flex items-center justify-center">
+      {/* content above video + mobile padding */}
+      <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
+        <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
             <div
               className={`
-              relative grid w-full
+              relative grid w-full p-2 gap-0 md:p-0 md:gap-0
               ${showInfo ? "md:grid-cols-2 md:place-items-stretch" : "grid-cols-1 place-items-center"}
-              gap-0
             `}
             >
               {showInfo && (
                 <motion.div
                   layout
-                  className="flex"
+                  className="flex w-full max-w-xl p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
                 >
                   <InfoPanel
                     show={showInfo}
@@ -287,7 +295,7 @@ export default function SignUp() {
 
               <motion.div
                 layout
-                className="w-full max-w-xl justify-self-center"
+                className="w-full max-w-xl justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
               >
                 <FormCard
                   mode="signup"
