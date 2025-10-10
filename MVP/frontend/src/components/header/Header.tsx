@@ -2,18 +2,34 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "./useTheme";
+import { useTheme as useThemeHook } from "./useTheme";
+import whiteLogo from "@/assets/WhiteLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "./buildNavItems";
 import { NavDesktop } from "./NavDesktop";
 import { NavMobile } from "./NavMobile";
 
-export type HeaderProps = { disableDashboardLink?: boolean; };
+export type HeaderProps = {
+  disableDashboardLink?: boolean;
+  theme?: "light" | "dark";
+  toggleTheme?: () => void;
+  logoSrc?: string;
+};
+
 type TipState = { show: boolean; x: number; y: number };
-type ThemeSwitchProps = { theme: "light" | "dark"; toggleTheme: () => void; size?: "md" | "sm" };
+
+type ThemeSwitchProps = {
+  theme: "light" | "dark";
+  toggleTheme: () => void;
+  size?: "md" | "sm";
+};
 
 const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
   const isLight = theme === "light";
-  const dims = size === "md" ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 18 } : { h: "h-8", w: "w-16", knob: "h-6 w-6", icon: 16 };
+  const dims =
+    size === "md"
+      ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 18 }
+      : { h: "h-8", w: "w-16", knob: "h-6 w-6", icon: 16 };
+
   return (
     <button
       type="button"
@@ -21,23 +37,20 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
       aria-label="Toggle theme"
       aria-checked={isLight}
       onClick={toggleTheme}
-      className={[
-        "relative inline-flex items-center rounded-full border border-app transition-colors focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
-        dims.h, dims.w,
-        isLight ? "bg-gradient-to-r from-amber-200/30 via-yellow-200/20 to-sky-200/20"
-          : "bg-gradient-to-r from-indigo-900/40 via-slate-800/40 to-zinc-800/40",
-      ].join(" ")}
+      className={["relative inline-flex items-center rounded-full border border-app focus:outline-none focus:ring-2 focus:ring-[color:var(--border)] bg-card", dims.h, dims.w].join(" ")}
     >
       <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-        <Moon size={dims.icon} className="text-indigo-400" />
+        <Moon size={dims.icon} className="text-app/80" />
       </span>
       <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-        <Sun size={dims.icon} className="text-amber-500" />
+        <Sun size={dims.icon} className="text-app/80" />
       </span>
       <span
         className={[
-          "absolute top-1/2 -translate-y-1/2 rounded-full bg-white shadow-md grid place-items-center transition-all duration-300",
-          dims.knob, isLight ? "right-1" : "left-1",
+          "absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300",
+          "bg-[color:var(--fg)]",
+          dims.knob,
+          isLight ? "right-1" : "left-1",
         ].join(" ")}
       />
       <span className="sr-only">{isLight ? "Switch to dark theme" : "Switch to light theme"}</span>
@@ -45,15 +58,28 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
   );
 };
 
-const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
+const Header: React.FC<HeaderProps> = ({
+  disableDashboardLink = false,
+  theme: themeProp,
+  toggleTheme: toggleThemeProp,
+  logoSrc: logoSrcProp,
+}) => {
   const { signOut } = useClerk();
   const { user } = useUser();
   const isSignedIn = Boolean(user?.id);
   const { pathname } = useLocation();
   const navigate = useNavigate();
+
+  const { theme: hookTheme, toggleTheme: hookToggle, logoSrc: hookLogo } = useThemeHook();
+
+  const theme = themeProp ?? hookTheme;
+  const toggleTheme = toggleThemeProp ?? hookToggle;
+
+  const isDashboard = pathname.startsWith("/dashboard");
+  const logoSrc = isDashboard ? (logoSrcProp ?? hookLogo) : whiteLogo;
+
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
-  const showThemeToggle = pathname.startsWith("/dashboard");
-  const { theme, toggleTheme, logoSrc } = useTheme();
+  const showThemeToggle = isDashboard;
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -64,6 +90,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
   const userLabel = user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User";
   const dashboardDisabled = disableDashboardLink && !isSignedIn;
+
   const onDashboardGate: React.MouseEventHandler = (e) => {
     if (!isSignedIn) {
       e.preventDefault();
@@ -143,8 +170,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
                   </div>
 
                   <div
-                    className={`absolute left-0 right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"
-                      }`}
+                    className={`absolute left-0 right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
                   >
                     <button
                       onClick={async () => await signOut({ redirectUrl: "/" })}
@@ -160,10 +186,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
         </div>
 
         {dashboardDisabled && tip.show && (
-          <div
-            className="fixed z-[70] pointer-events-none"
-            style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}
-          >
+          <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
             <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
               <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
               <span className="text-xs text-app whitespace-nowrap">

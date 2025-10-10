@@ -4,51 +4,26 @@ import blackLogo from "@/assets/BlackLogo.png";
 
 export const THEME_MS = 600;
 type Theme = "dark" | "light";
-const KEY = "theme";
-const EVT = "ink-theme-change";
-
-function readInitialTheme(): Theme {
-  try {
-    const saved = localStorage.getItem(KEY);
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {}
-  if (
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-color-scheme: light)").matches
-  ) {
-    return "light";
-  }
-  return "dark";
-}
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(readInitialTheme);
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const saved = localStorage.getItem("theme");
+      if (saved === "light" || saved === "dark") return saved;
+    } catch {}
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: light)").matches
+    ) {
+      return "light";
+    }
+    return "dark";
+  });
 
   useEffect(() => {
     try {
-      localStorage.setItem(KEY, theme);
+      localStorage.setItem("theme", theme);
     } catch {}
-    const ev = new CustomEvent(EVT, { detail: theme });
-    window.dispatchEvent(ev);
-  }, [theme]);
-
-  useEffect(() => {
-    const onCustom = (e: Event) => {
-      const t = (e as CustomEvent).detail as Theme | undefined;
-      if (t && t !== theme) setTheme(t);
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === KEY && (e.newValue === "light" || e.newValue === "dark")) {
-        const t = e.newValue as Theme;
-        if (t !== theme) setTheme(t);
-      }
-    };
-    window.addEventListener(EVT, onCustom);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(EVT, onCustom);
-      window.removeEventListener("storage", onStorage);
-    };
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
@@ -56,7 +31,8 @@ export function useTheme() {
     () => (theme === "light" ? blackLogo : whiteLogo),
     [theme]
   );
-  const themeClass = theme === "light" ? "light" : "";
+
+  const themeClass = theme === "light" ? "ink-light" : "";
 
   return { theme, toggleTheme, logoSrc, themeClass };
 }
