@@ -91,7 +91,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
           {artist.style?.slice(0, 2).map((s) => (
             <span
               key={s}
-              className="rounded-full px-2.5 py-0.5 text-[10px] font-medium backdrop-blur border"
+              className="rounded-full px-2.5 py-0.5 text-[10px] font-medium border"
               style={{
                 background: "color-mix(in oklab, var(--elevated) 70%, transparent)",
                 color: "var(--fg)",
