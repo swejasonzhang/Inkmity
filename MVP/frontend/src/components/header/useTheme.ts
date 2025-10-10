@@ -5,11 +5,11 @@ import blackLogo from "@/assets/BlackLogo.png";
 export const THEME_MS = 600;
 type Theme = "dark" | "light";
 
-export function useTheme() {
+export function useTheme(scopeEl?: Element | null) {
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       const saved = localStorage.getItem("theme");
-      if (saved === "light" || saved === "dark") return saved;
+      if (saved === "light" || saved === "dark") return saved as Theme;
     } catch {}
     if (
       typeof window !== "undefined" &&
@@ -24,15 +24,21 @@ export function useTheme() {
     try {
       localStorage.setItem("theme", theme);
     } catch {}
-  }, [theme]);
+
+    if (!scopeEl) return;
+
+    scopeEl.classList.toggle("ink-light", theme === "light");
+    scopeEl.classList.toggle("dark", theme === "dark");
+  }, [theme, scopeEl]);
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
+
   const logoSrc = useMemo(
     () => (theme === "light" ? blackLogo : whiteLogo),
     [theme]
   );
 
-  const themeClass = theme === "light" ? "ink-light" : "";
+  const themeClass = theme === "light" ? "ink-light" : "dark";
 
   return { theme, toggleTheme, logoSrc, themeClass };
 }
