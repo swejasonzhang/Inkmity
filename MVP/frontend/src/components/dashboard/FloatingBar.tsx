@@ -14,7 +14,7 @@ export default function FloatingBar({ onAssistantOpen, onMessagesOpen, portalTar
   const bar = (
     <div
       className="fixed inset-x-0 z-[1000] pointer-events-none"
-      style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+      style={{ bottom: "calc(0.25rem + env(safe-area-inset-bottom, 0px))" }}
     >
       <div
         className="w-full flex items-center justify-between"
