@@ -33,6 +33,10 @@ const App: React.FC = () => {
       <Route path="/landing" element={<Landing />} />
       <Route path="/" element={<Navigate to="/landing" replace />} />
       <Route path="*" element={<Navigate to="/landing" replace />} />
+
+
+      <Route path="/sign-in/*" element={<Navigate to="/login" replace />} />
+      <Route path="/sign-up/*" element={<Navigate to="/signup" replace />} />
     </Routes>
   );
 };

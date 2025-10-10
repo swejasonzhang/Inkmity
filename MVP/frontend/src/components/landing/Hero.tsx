@@ -30,9 +30,6 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp }) => {
     const gradientTransition = {
         backgroundPositionX: { duration: 2, ease: [0.22, 1, 0.36, 1], delay: 0.1 },
     } as const;
-    const gradientClass =
-        "text-transparent bg-clip-text bg-[linear-gradient(90deg,var(--fg)_0%,var(--fg)_40%,var(--bg)_60%,var(--bg)_100%)]";
-    const gradientStyle: React.CSSProperties = { backgroundSize: "200% 100%", backgroundPositionX: "100%" };
 
     return (
         <section className="px-3">
@@ -43,8 +40,6 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp }) => {
                         initial={gradientInitial}
                         {...(!prefersReduced && { animate: gradientAnimate })}
                         transition={gradientTransition}
-                        className={gradientClass}
-                        style={gradientStyle}
                     >
                         Find the right tattoo artist—<span className="text-inherit">without the chaos</span>.
                     </m.span>
@@ -52,7 +47,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp }) => {
 
                 <m.p
                     variants={textFadeUp}
-                    className="mt-5 text-2xl md:text-2xl lg:text-3xl font-bold leading-tight text-black dark:text-white max-w-4xl mx-auto"
+                    className="mt-5 text-2xl md:text-2xl lg:text-3xl font-bold leading-tight max-w-4xl mx-auto"
                     style={wc}
                 >
                     Inkmity brings real availability, real context, and verified reviews—so you can align fast and book with
@@ -93,7 +88,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp }) => {
               focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]
             "
                     >
-                        Already have an account? 
+                        Already have an account?
                     </Link>
                 </m.div>
             </div>
