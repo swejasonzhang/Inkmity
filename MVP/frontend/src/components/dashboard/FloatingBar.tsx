@@ -9,15 +9,23 @@ type Props = {
 
 export default function FloatingBar({ onAssistantOpen, onMessagesOpen, portalTarget }: Props) {
   const btnCommon =
-    "pointer-events-auto inline-flex items-center gap-2 px-4 py-3 rounded-full border shadow-md active:scale-[0.98] " +
-    "bg-elevated text-app border-app hover:shadow-lg transition";
+    "bg-card text-app inline-flex items-center gap-2 px-4 py-3 rounded-full pointer-events-auto border border-app shadow-md active:scale-[0.98] hover:shadow-lg transition";
 
   const bar = (
-    <div className="fixed bottom-4 left-0 right-0 z-[1000] px-8 flex justify-between pointer-events-none">
-      <div className="flex w-full justify-between">
+    <div
+      className="fixed inset-x-0 z-[1000] pointer-events-none"
+      style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+    >
+      <div
+        className="w-full flex items-center justify-between"
+        style={{
+          paddingLeft: "calc(1.85rem + env(safe-area-inset-left, 0px))",
+          paddingRight: "calc(1.85rem + env(safe-area-inset-right, 0px))",
+        }}
+      >
         <button
           onClick={onAssistantOpen}
-          className={btnCommon + " ml-0.5 md:ml-0"}
+          className={btnCommon}
           aria-label="Open assistant"
         >
           <Bot size={18} />
@@ -26,7 +34,7 @@ export default function FloatingBar({ onAssistantOpen, onMessagesOpen, portalTar
 
         <button
           onClick={onMessagesOpen}
-          className={btnCommon + " mr-0.5 md:mr-0"}
+          className={btnCommon}
           aria-label="Open messages"
         >
           <MessageSquare size={18} />

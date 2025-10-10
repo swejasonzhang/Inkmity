@@ -110,153 +110,148 @@ const ArtistFilter: React.FC<Props> = ({
       role="region"
       aria-label="Artist filters"
     >
-      <div className="-mx-2 md:mx-0">
-        <div className="flex flex-wrap items-center gap-3 px-2 w-full">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Search artists or tattoos they’ve done (e.g., dragon, koi, portrait)"
-              aria-label="Search artists or tattoo subjects"
-              className="pl-9 h-10 bg-elevated border-app text-app rounded-xl placeholder:text-muted-foreground"
-            />
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
+          <Input
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="Search artists or tattoos they’ve done (e.g., dragon, koi, portrait)"
+            aria-label="Search artists or tattoo subjects"
+            className="pl-9 h-10 w-full bg-elevated border-app text-app rounded-xl placeholder:text-muted-foreground"
+          />
+        </div>
 
-          <div className="relative flex-1 min-w-[160px]">
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-              <CircleDollarSign className="size-4 text-muted-foreground" aria-hidden />
-            </div>
-            <Select
-              value={priceFilter}
-              onValueChange={(value) => {
-                setPriceFilter(value);
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
-                <SelectValue placeholder="All Prices" />
-              </SelectTrigger>
-              <SelectContent className="bg-card text-app border-2 border-app rounded-2xl">
-                {PRICE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="relative">
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+            <CircleDollarSign className="size-4 text-muted-foreground" aria-hidden />
           </div>
+          <Select
+            value={priceFilter}
+            onValueChange={(value) => {
+              setPriceFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
+              <SelectValue placeholder="All Prices" />
+            </SelectTrigger>
+            <SelectContent className="bg-card text-app border-2 border-app rounded-2xl">
+              {PRICE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="relative flex-1 min-w-[160px]">
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-              <MapPin className="size-4 text-muted-foreground" aria-hidden />
-            </div>
-            <Select
-              value={locationFilter}
-              onValueChange={(value) => {
-                setLocationFilter(value);
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
-                <SelectValue placeholder="All Locations" />
-              </SelectTrigger>
-              <SelectContent className="bg-card text-app border-2 border-app rounded-2xl max-h-72 overflow-y-auto">
-                <SelectItem value="all">All Locations</SelectItem>
-                {uniqueLocations.map((loc) => (
-                  <SelectItem key={loc} value={loc}>
-                    {loc}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="relative">
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+            <MapPin className="size-4 text-muted-foreground" aria-hidden />
           </div>
+          <Select
+            value={locationFilter}
+            onValueChange={(value) => {
+              setLocationFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
+              <SelectValue placeholder="All Locations" />
+            </SelectTrigger>
+            <SelectContent className="bg-card text-app border-2 border-app rounded-2xl max-h-72 overflow-y-auto">
+              <SelectItem value="all">All Locations</SelectItem>
+              {uniqueLocations.map((loc) => (
+                <SelectItem key={loc} value={loc}>
+                  {loc}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="relative shrink-0 min-w-[160px]">
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-              <Brush className="size-4 text-muted-foreground" aria-hidden />
-            </div>
-            <Select
-              value={styleFilter}
-              onValueChange={(value) => {
-                setStyleFilter(value);
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
-                <SelectValue placeholder="All Styles" />
-              </SelectTrigger>
-              <SelectContent className="bg-card text-app border-2 border-app rounded-2xl max-h-72 overflow-y-auto">
-                <SelectItem value="all">All Styles</SelectItem>
-                {uniqueStyles.map((style) => (
-                  <SelectItem key={style} value={style}>
-                    {style}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="relative">
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+            <Brush className="size-4 text-muted-foreground" aria-hidden />
           </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            {isDirty && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-10 rounded-xl px-3 text-muted-foreground hover:text-foreground"
-                onClick={resetAll}
-                aria-label="Clear all filters"
-              >
-                <X className="size-4" />
-                <span className="hidden sm:inline">Clear</span>
-              </Button>
-            )}
-          </div>
+          <Select
+            value={styleFilter}
+            onValueChange={(value) => {
+              setStyleFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
+              <SelectValue placeholder="All Styles" />
+            </SelectTrigger>
+            <SelectContent className="bg-card text-app border-2 border-app rounded-2xl max-h-72 overflow-y-auto">
+              <SelectItem value="all">All Styles</SelectItem>
+              {uniqueStyles.map((style) => (
+                <SelectItem key={style} value={style}>
+                  {style}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       <Separator className="my-3" />
 
       {isDirty && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {localSearch.trim() && (
-            <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
-              Search: “{localSearch.trim()}”
-              <button
-                className="ml-2 inline-flex"
-                onClick={() => setLocalSearch("")}
-                aria-label="Clear search"
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
-          )}
-          {locationFilter !== "all" && (
-            <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
-              {locationFilter}
-              <button
-                className="ml-2 inline-flex"
-                onClick={() => setLocationFilter("all")}
-                aria-label="Clear location filter"
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
-          )}
-          {styleFilter !== "all" && (
-            <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
-              {styleFilter}
-              <button
-                className="ml-2 inline-flex"
-                onClick={() => setStyleFilter("all")}
-                aria-label="Clear style filter"
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
-          )}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {localSearch.trim() && (
+              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+                Search: “{localSearch.trim()}”
+                <button
+                  className="ml-2 inline-flex"
+                  onClick={() => setLocalSearch("")}
+                  aria-label="Clear search"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {locationFilter !== "all" && (
+              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+                {locationFilter}
+                <button
+                  className="ml-2 inline-flex"
+                  onClick={() => setLocationFilter("all")}
+                  aria-label="Clear location filter"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {styleFilter !== "all" && (
+              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+                {styleFilter}
+                <button
+                  className="ml-2 inline-flex"
+                  onClick={() => setStyleFilter("all")}
+                  aria-label="Clear style filter"
+                >
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+          </div>
+
+          <div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 rounded-xl px-3 text-muted-foreground hover:text-foreground"
+              onClick={resetAll}
+              aria-label="Clear all filters"
+            >
+              <X className="size-4" />
+              <span className="ml-1 hidden sm:inline">Clear all</span>
+            </Button>
+          </div>
         </div>
       )}
     </div>
