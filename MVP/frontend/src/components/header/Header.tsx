@@ -173,7 +173,7 @@ const Header: React.FC<HeaderProps> = ({
                     className={`absolute left-0 right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
                   >
                     <button
-                      onClick={async () => await signOut({ redirectUrl: "/" })}
+                      onClick={async () => await signOut({ redirectUrl: "/login" })}
                       className="w-full px-3 py-2 text-center hover:bg-elevated rounded-lg text-app"
                     >
                       Logout
