@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { NavItem as BuildNavItem } from "./buildNavItems";
 import { InkBar } from "@/components/header/InkBar";
+import { Lock } from "lucide-react";
 
 export type NavItem = BuildNavItem;
 
@@ -19,24 +20,32 @@ export function NavDesktop({
     className?: string;
 }) {
     return (
-        <nav className={["flex items-center gap-6 lg:gap-8", className].join(" ")}>
+        <nav className={["flex items-center gap-8", className].join(" ")}>
             {items.map((item) => {
                 const active = isActive(item.to);
                 const base =
-                    "relative group inline-flex items-center rounded-md px-3 py-2 text-[px] md:text-[22px] font-bold text-app/90 hover:text-app transition-colors";
+                    "relative group inline-flex items-center gap-3 px-4 py-2 text-[17px] md:text-[18px] font-extrabold uppercase tracking-wide text-app/90 hover:text-app";
 
-                if (item.to === "#") {
+                const isDisabled = item.to === "#" || item.disabled;
+
+                if (isDisabled) {
                     return (
                         <button
                             key={item.label}
                             type="button"
-                            disabled={!!item.disabled}
+                            disabled
                             onMouseEnter={onDisabledDashboardHover}
                             onMouseLeave={onDisabledDashboardLeave}
                             onClick={item.onClick}
                             className={base}
+                            aria-disabled="true"
+                            title="In Development"
                         >
-                            {item.label}
+                            <Lock size={16} className="opacity-80" />
+                            <span>{item.label}</span>
+                            <span className="rounded-md px-2 py-0.5 text-[11px] font-black uppercase tracking-wider bg-elevated border border-app text-app">
+                                In Development
+                            </span>
                             <InkBar active={active} />
                         </button>
                     );
@@ -44,7 +53,7 @@ export function NavDesktop({
 
                 return (
                     <Link key={item.label} to={item.to} className={base}>
-                        {item.label}
+                        <span>{item.label}</span>
                         <InkBar active={active} />
                     </Link>
                 );
