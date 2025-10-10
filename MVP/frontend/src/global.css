@@ -77,15 +77,14 @@
 }
 
 .light {
-  --bg: #f7f7f5;
+  --bg: #ffffff;
   --fg: #111827;
   --muted: rgba(17, 24, 39, 0.56);
   --subtle: rgba(17, 24, 39, 0.72);
   --card: #ffffff;
-  --overlay: rgba(0, 0, 0, 0.55);
-  --border: rgba(255, 255, 255, 0.4);
+  --overlay: rgba(0, 0, 0, 0.45);
+  --border: #000000;
   --elevated: rgba(0, 0, 0, 0.06);
-
   --video-blend: normal;
   --video-opacity: 0.65;
 }

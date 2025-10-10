@@ -26,7 +26,7 @@ export default function ClientDetailsStep({
 }) {
     const [openCity, setOpenCity] = useState(false);
 
-    const MIN = 0;
+    const MIN = 100;
     const MAX = 5000;
     const STEP = 50;
     const MIN_GAP = 100;
@@ -54,6 +54,8 @@ export default function ClientDetailsStep({
         if (h - l < MIN_GAP) {
             if (l !== low) l = clamp(h - MIN_GAP, MIN, MAX - MIN_GAP);
             if (h !== high) h = clamp(l + MIN_GAP, MIN + MIN_GAP, MAX);
+            l = snap(l);
+            h = snap(h);
         }
         emit("budgetMin", l);
         emit("budgetMax", h);
@@ -136,7 +138,14 @@ export default function ClientDetailsStep({
                         <SelectTrigger className="h-11 w-64 rounded-xl border border-white/10 bg-white/10 px-4 text-white">
                             <SelectValue placeholder="Choose a city" />
                         </SelectTrigger>
-                        <SelectContent side="bottom" align="start" className="border-white/10 bg-[#0b0b0b] text-white">
+                        <SelectContent
+                            position="popper"
+                            side="bottom"
+                            align="start"
+                            sideOffset={6}
+                            avoidCollisions={false}
+                            className="max-h-64 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white"
+                        >
                             {cities.map((c) => (
                                 <SelectItem key={c} value={c} className="text-white">
                                     {c}

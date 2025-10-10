@@ -1,7 +1,7 @@
 import React from "react";
 import { THEME_MS } from "./useTheme";
 
-export const DesktopInkBar: React.FC<{ active: boolean }> = ({ active }) => (
+export const InkBar: React.FC<{ active: boolean }> = ({ active }) => (
     <span className="pointer-events-none absolute -bottom-2 left-0 right-0">
         <span className="block h-[3px] rounded-full bg-app/15 overflow-hidden">
             <span
@@ -21,7 +21,7 @@ export const DesktopInkBar: React.FC<{ active: boolean }> = ({ active }) => (
     </span>
 );
 
-export const MobileAccent: React.FC<{ active: boolean }> = ({ active }) => (
+export const InkAccentMobile: React.FC<{ active: boolean }> = ({ active }) => (
     <span
         className={[
             "absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full",
