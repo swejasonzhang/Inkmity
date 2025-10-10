@@ -268,7 +268,6 @@ export default function SignUp() {
 
       <Header disableDashboardLink />
 
-      {/* content above video + mobile padding */}
       <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
         <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
