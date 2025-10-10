@@ -1,27 +1,58 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "./useTheme";
 import { buildNavItems, NavItem as BuildNavItem } from "./buildNavItems";
 import { NavDesktop } from "./NavDesktop";
 import { NavMobile } from "./NavMobile";
 
-export type HeaderProps = {
-  disableDashboardLink?: boolean;
-};
-
+export type HeaderProps = { disableDashboardLink?: boolean; };
 type TipState = { show: boolean; x: number; y: number };
+type ThemeSwitchProps = { theme: "light" | "dark"; toggleTheme: () => void; size?: "md" | "sm" };
+
+const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
+  const isLight = theme === "light";
+  const dims = size === "md" ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 18 } : { h: "h-8", w: "w-16", knob: "h-6 w-6", icon: 16 };
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-label="Toggle theme"
+      aria-checked={isLight}
+      onClick={toggleTheme}
+      className={[
+        "relative inline-flex items-center rounded-full border border-app transition-colors focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
+        dims.h, dims.w,
+        isLight ? "bg-gradient-to-r from-amber-200/30 via-yellow-200/20 to-sky-200/20"
+          : "bg-gradient-to-r from-indigo-900/40 via-slate-800/40 to-zinc-800/40",
+      ].join(" ")}
+    >
+      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+        <Moon size={dims.icon} className="text-indigo-400" />
+      </span>
+      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+        <Sun size={dims.icon} className="text-amber-500" />
+      </span>
+      <span
+        className={[
+          "absolute top-1/2 -translate-y-1/2 rounded-full bg-white shadow-md grid place-items-center transition-all duration-300",
+          dims.knob, isLight ? "right-1" : "left-1",
+        ].join(" ")}
+      />
+      <span className="sr-only">{isLight ? "Switch to dark theme" : "Switch to light theme"}</span>
+    </button>
+  );
+};
 
 const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   const { signOut } = useClerk();
-  const { user, isSignedIn } = useUser();
+  const { user } = useUser();
+  const isSignedIn = Boolean(user?.id);
   const { pathname } = useLocation();
   const navigate = useNavigate();
-
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
   const showThemeToggle = pathname.startsWith("/dashboard");
-
   const { theme, toggleTheme, logoSrc } = useTheme();
 
   const handleLogout = async () => {
@@ -32,9 +63,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
   const userLabel = user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User";
-
   const dashboardDisabled = disableDashboardLink && !isSignedIn;
-
   const onDashboardGate: React.MouseEventHandler = (e) => {
     if (!isSignedIn) {
       e.preventDefault();
@@ -44,27 +73,10 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
 
   const NAV_ITEMS: BuildNavItem[] = useMemo(
     () => buildNavItems(dashboardDisabled, onDashboardGate),
-    [dashboardDisabled, isSignedIn, pathname]
+    [dashboardDisabled, onDashboardGate]
   );
 
-  const isActive = (to: string) =>
-    to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false;
-
-  const [showDropdown, setShowDropdown] = useState(false);
-  const buttonRef = useRef<HTMLDivElement>(null);
-  const [buttonWidth, setButtonWidth] = useState(0);
-
-  useEffect(() => {
-    if (!buttonRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const w = entry.contentRect.width;
-        setButtonWidth((prev) => (Math.abs(prev - w) > 0.5 ? w : prev));
-      }
-    });
-    ro.observe(buttonRef.current);
-    return () => ro.disconnect();
-  }, []);
+  const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => {
@@ -79,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   }, [mobileMenuOpen]);
 
   const dropdownBtnClasses =
-    "inline-flex h-10 items-center justify-center px-3 rounded-lg cursor-pointer transition border border-app bg-elevated text-white hover:bg-elevated text-center";
+    "inline-flex h-10 items-center justify-center px-3 rounded-lg cursor-pointer transition border border-app bg-elevated text-app hover:bg-elevated text-center whitespace-nowrap";
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
@@ -88,9 +100,11 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   };
   const onDashLeave = () => setTip((t) => ({ ...t, show: false }));
 
+  const [showDropdown, setShowDropdown] = useState(false);
+
   return (
     <>
-      <header className={"hidden md:flex w-full relative items-center z-50 text-white py-[10px]"}>
+      <header className="hidden md:flex w-full relative items-center z-50 text-app py-[10px]">
         <div className="w-full flex items-center justify-between md:px-[30px] px-[30px]">
           <div className="flex items-center -ml-2.5">
             <Link to={homeHref} className="flex items-center gap-3">
@@ -100,62 +114,41 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
           </div>
 
           <div className="flex items-center gap-6">
-            <NavDesktop
-              items={NAV_ITEMS}
-              isActive={isActive}
-              isSignedIn={!!isSignedIn}
-              onDisabledDashboardHover={onDashMouseMove}
-              onDisabledDashboardLeave={onDashLeave}
-            />
+            <span className="[&_*]:text-app [&_*]:border-app">
+              <NavDesktop
+                items={NAV_ITEMS}
+                isActive={isActive}
+                isSignedIn={!!isSignedIn}
+                onDisabledDashboardHover={onDashMouseMove}
+                onDisabledDashboardLeave={onDashLeave}
+                className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app"
+              />
+            </span>
 
             <div className="flex items-center gap-3">
-              {showThemeToggle && (
-                <button
-                  aria-label="Toggle theme"
-                  aria-pressed={theme === "light"}
-                  className="group relative inline-flex h-8 w-14 items-center rounded-full border border-app bg-elevated p-1 text-white hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
-                  onClick={toggleTheme}
-                >
-                  <span
-                    className={[
-                      "z-10 grid h-6 w-6 place-items-center rounded-full bg-white shadow-sm",
-                      theme === "light" ? "translate-x-6" : "translate-x-0",
-                    ].join(" ")}
-                    style={{ transition: "transform 600ms" }}
-                  >
-                    <span className="text-xs">{theme === "light" ? "☀︎" : "☾"}</span>
-                  </span>
-                </button>
-              )}
+              {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />}
 
               {isSignedIn && user && (
                 <div
-                  className="relative"
+                  className="relative inline-block align-top group text-app [&_*]:text-app [&_*]:border-app"
                   onMouseEnter={() => setShowDropdown(true)}
                   onMouseLeave={() => setShowDropdown(false)}
                 >
-                  <div
-                    ref={buttonRef}
-                    style={{ width: buttonWidth ? `${buttonWidth}px` : undefined }}
-                    className={dropdownBtnClasses}
-                  >
+                  <div className={dropdownBtnClasses}>
                     <span className="mr-2 font-semibold">✦</span>
                     <span className="inline-flex items-center">
                       <span>Hello,&nbsp;</span>
-                      <span className="font-bold text-sm max-w-[12rem] truncate text-center leading-none">
-                        {userLabel}
-                      </span>
+                      <span className="font-bold text-sm max-w-[12rem] truncate leading-none">{userLabel}</span>
                     </span>
                   </div>
 
                   <div
-                    style={{ width: buttonWidth ? `${buttonWidth}px` : undefined }}
-                    className={`absolute right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-300 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"
+                    className={`absolute left-0 right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"
                       }`}
                   >
                     <button
                       onClick={async () => await signOut({ redirectUrl: "/" })}
-                      className="w-full px-3 py-2 text-center hover:bg-elevated rounded-lg text-white"
+                      className="w-full px-3 py-2 text-center hover:bg-elevated rounded-lg text-app"
                     >
                       Logout
                     </button>
@@ -173,8 +166,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
           >
             <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
               <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
-              <span className="text-xs text-white whitespace-nowrap">
-                Not authorized. <span className="text-white">Sign up first.</span>
+              <span className="text-xs text-app whitespace-nowrap">
+                Not authorized. <span className="text-app">Sign up first.</span>
               </span>
             </div>
           </div>
@@ -183,7 +176,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
 
       <header
         className={[
-          "md:hidden w-full flex items-center z-50 px-[10px] py-[10px] text-white",
+          "md:hidden w-full flex items-center z-50 px-[10px] py-[10px] text-app",
           isAuthPage ? "bg-transparent border-transparent" : "bg-app border-b border-app",
         ].join(" ")}
       >
@@ -193,31 +186,11 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
-          {showThemeToggle && (
-            <button
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              aria-pressed={theme === "light"}
-              className="group relative inline-flex items-center rounded-full border border-app bg-elevated pr-3 pl-2 py-1.5 text-sm text-white hover:bg-elevated focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]"
-            >
-              <span className="relative mr-2 inline-flex h-6 w-12 items-center rounded-full bg-elevated p-0.5">
-                <span
-                  className={[
-                    "z-10 grid h-5 w-5 place-items-center rounded-full bg-white shadow-sm",
-                    theme === "light" ? "translate-x-6" : "translate-x-0",
-                  ].join(" ")}
-                  style={{ transition: "transform 600ms" }}
-                >
-                  <span className="text-[11px]">{theme === "light" ? "☀︎" : "☾"}</span>
-                </span>
-              </span>
-              <span className="font-medium"> {theme === "light" ? "Light" : "Dark"} </span>
-            </button>
-          )}
+          {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />}
 
           <button
             aria-label="Open menu"
-            className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-white"
+            className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
             onClick={() => setMobileMenuOpen(true)}
           >
             <Menu size={22} />
@@ -228,14 +201,14 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-overlay" onClick={() => setMobileMenuOpen(false)} aria-hidden />
-          <div className="absolute inset-0 bg-app flex flex-col">
+          <div className="absolute inset-0 bg-app flex flex-col text-app [&_*]:text-app [&_*]:border-app">
             <div className="flex items-center justify-between px-[10px] py-[10px] border-b border-app">
               <div className="flex items-center gap-2">
                 <img src={logoSrc} alt="Inkmity Logo" className="h-8 w-auto object-contain" />
               </div>
               <button
                 aria-label="Close menu"
-                className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-white"
+                className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <X size={20} />

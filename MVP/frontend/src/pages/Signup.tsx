@@ -169,9 +169,14 @@ export default function SignUp() {
       toast.error("Sign up is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
       return;
     }
+
     setLoading(true);
+
     try {
-      await signOut();
+      if (isSignedIn) {
+        await signOut();
+      }
+
       const attempt = await signUp.create({
         emailAddress: shared.email,
         password: shared.password,
@@ -182,17 +187,27 @@ export default function SignUp() {
           profile: role === "client" ? client : artist,
         },
       } as any);
-      await attempt.prepareEmailAddressVerification();
-      setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
+
+      setSignUpAttempt(
+        attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> }
+      );
       setAwaitingCode(true);
+
+      await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
+
       toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
     } catch (err: any) {
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
+      setAwaitingCode(false);
+      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", {
+        position: "top-center",
+        theme: "dark",
+      });
       triggerMascotError();
     } finally {
       setLoading(false);
     }
   };
+
 
   const syncUserToBackend = async (r: Role) => {
     const token = await getToken();
