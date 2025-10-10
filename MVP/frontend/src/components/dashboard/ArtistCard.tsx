@@ -194,27 +194,27 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                 No portfolio images yet.
               </div>
             )}
-          </div>
-        </div>
 
-        <div className="pt-4 flex justify-end" onClick={stop}>
-          <span
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition"
-            style={{
-              border: `1px solid var(--border)`,
-              background: "color-mix(in oklab, var(--elevated) 85%, transparent)",
-              color: "var(--fg)",
-            }}
-          >
-            View profile
-            <svg
-              className="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform group-hover:translate-x-0.5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M12.293 4.293a1 1 0 011.414 0L18 8.586a2 2 0 010 2.828l-4.293 4.293a1 1 0 01-1.414-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 010-1.414z" />
-            </svg>
-          </span>
+            <div className="pt-4 flex justify-end" onClick={stop}>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition"
+                style={{
+                  border: `1px solid var(--border)`,
+                  background: "color-mix(in oklab, var(--elevated) 85%, transparent)",
+                  color: "var(--fg)",
+                }}
+              >
+                View profile
+                <svg
+                  className="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform group-hover:translate-x-0.5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M12.293 4.293a1 1 0 011.414 0L18 8.586a2 2 0 010 2.828l-4.293 4.293a1 1 0 01-1.414-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 010-1.414z" />
+                </svg>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

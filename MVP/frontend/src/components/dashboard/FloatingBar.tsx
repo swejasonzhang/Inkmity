@@ -10,8 +10,7 @@ type Props = {
 export default function FloatingBar({ onAssistantOpen, onMessagesOpen, portalTarget }: Props) {
   const btnCommon =
     "pointer-events-auto inline-flex items-center gap-2 px-4 py-3 rounded-full border shadow-md active:scale-[0.98] " +
-    "bg-transparent text-white border-white " +
-    "[.ink-light_&]:bg-transparent [.ink-light_&]:text-black [.ink-light_&]:border-black";
+    "bg-elevated text-app border-app hover:shadow-lg transition";
 
   const bar = (
     <div className="fixed bottom-4 left-0 right-0 z-[1000] px-8 flex justify-between pointer-events-none">
