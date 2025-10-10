@@ -49,9 +49,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
       onClick={() => onClick(artist)}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick(artist)}
       className="group w-full h-full min-h-[460px] sm:min-h-[480px] md:min-h-[500px] overflow-hidden rounded-2xl border bg-card shadow-lg transition hover:-translate-y-[1px] hover:shadow-xl focus:outline-none flex flex-col"
-      style={{
-        borderColor: "var(--border)",
-      }}
     >
       <div className="relative w-full overflow-hidden">
         <div className="aspect-[4/3] w-full" style={{ background: "var(--elevated)" }}>
@@ -111,12 +108,35 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2
-                className="text-lg sm:text-xl font-extrabold tracking-wide truncate"
-                style={{ color: "var(--fg)" }}
-              >
-                {artist.username}
-              </h2>
+              <div className="flex items-center gap-2 min-w-0">
+                <h2
+                  className="text-lg sm:text-xl font-extrabold tracking-wide truncate"
+                  style={{ color: "var(--fg)" }}
+                >
+                  {artist.username}
+                </h2>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick(artist);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs sm:text-sm font-medium transition border"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "color-mix(in oklab, var(--elevated) 85%, transparent)",
+                    color: "var(--fg)",
+                    whiteSpace: "nowrap",
+                    flex: "0 0 auto",
+                  }}
+                  aria-label="View profile"
+                >
+                  View profile
+                  <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M12.293 4.293a1 1 0 011.414 0L18 8.586a2 2 0 010 2.828l-4.293 4.293a1 1 0 01-1.414-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 010-1.414z" />
+                  </svg>
+                </button>
+              </div>
               <p
                 className="mt-1 text-xs sm:text-sm"
                 style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}
@@ -194,26 +214,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                 No portfolio images yet.
               </div>
             )}
-
-            <div className="pt-4 flex justify-end" onClick={stop}>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition"
-                style={{
-                  border: `1px solid var(--border)`,
-                  background: "color-mix(in oklab, var(--elevated) 85%, transparent)",
-                  color: "var(--fg)",
-                }}
-              >
-                View profile
-                <svg
-                  className="h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform group-hover:translate-x-0.5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M12.293 4.293a1 1 0 011.414 0L18 8.586a2 2 0 010 2.828l-4.293 4.293a1 1 0 01-1.414-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 010-1.414z" />
-                </svg>
-              </span>
-            </div>
           </div>
         </div>
       </div>
