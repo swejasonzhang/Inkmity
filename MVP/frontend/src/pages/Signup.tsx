@@ -25,6 +25,8 @@ type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string })
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
 
+type InputLike = { target: { name: string; value: string } };
+
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
 
@@ -32,7 +34,7 @@ export default function SignUp() {
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
   const [client, setClient] = useState<ClientProfile>({
-    budgetMin: "200",
+    budgetMin: "0",
     budgetMax: "500",
     location: "",
     placement: "",
@@ -77,12 +79,10 @@ export default function SignUp() {
       const ae = document.activeElement as HTMLInputElement | null;
       setPwdFocused(!!ae && ae.tagName === "INPUT" && ae.name === "password");
     };
-
     const recomputeShow = () => {
       const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
       setShowPassword(!!input && input.type === "text");
     };
-
     const handleFocusIn = () => {
       recomputeFocus();
       recomputeShow();
@@ -96,12 +96,10 @@ export default function SignUp() {
     const handleClickOrInput = () => {
       recomputeShow();
     };
-
     document.addEventListener("focusin", handleFocusIn, true);
     document.addEventListener("focusout", handleFocusOut, true);
     document.addEventListener("click", handleClickOrInput, true);
     document.addEventListener("input", handleClickOrInput, true);
-
     return () => {
       document.removeEventListener("focusin", handleFocusIn, true);
       document.removeEventListener("focusout", handleFocusOut, true);
@@ -111,11 +109,20 @@ export default function SignUp() {
   }, []);
 
   const handleShared = (e: ChangeEvent<HTMLInputElement>) => setShared({ ...shared, [e.target.name]: e.target.value });
-  const handleClient = (e: ChangeEvent<HTMLInputElement>) => setClient({ ...client, [e.target.name]: e.target.value });
+  const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
+    const name = (e as InputLike).target?.name;
+    const value = (e as InputLike).target?.value;
+    if (!name) return;
+    setClient(prev => ({ ...prev, [name]: value }));
+  };
   const handleArtist = (e: ChangeEvent<HTMLInputElement>) => setArtist({ ...artist, [e.target.name]: e.target.value });
 
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  const minVal = Math.max(0, Math.min(5000, num(client.budgetMin)));
+  const maxVal = Math.max(0, Math.min(5000, num(client.budgetMax)));
+
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
-  const allClientValid = !!client.location && Number(client.budgetMin) >= 50 && Number(client.budgetMax) > Number(client.budgetMin);
+  const allClientValid = !!client.location && maxVal > minVal;
   const allArtistValid = !!artist.location && !!artist.years && !!artist.baseRate;
 
   const slides = useMemo(() => {
