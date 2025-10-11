@@ -10,6 +10,7 @@ interface Artist {
   rating?: number;
   reviewsCount?: number;
   profileImage?: string;
+  coverImage?: string;
   images?: string[];
 }
 
@@ -19,7 +20,9 @@ interface ArtistCardProps {
 }
 
 const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
-  const [coverOk, setCoverOk] = useState(Boolean(artist.profileImage));
+  const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
+  const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
+
   const initials = useMemo(
     () =>
       (artist.username || "A")
@@ -51,47 +54,62 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
       className="group w-full h-full min-h-[460px] sm:min-h-[480px] md:min-h-[500px] overflow-hidden rounded-2xl border bg-card shadow-lg transition hover:-translate-y-[1px] hover:shadow-xl focus:outline-none flex flex-col"
     >
       <div className="relative w-full overflow-hidden">
-        <div className="aspect-[4/3] w-full" style={{ background: "var(--elevated)" }}>
-          {artist.profileImage && coverOk ? (
+        <div className="relative w-full h-40 sm:h-48 md:h-56" style={{ background: "var(--elevated)" }}>
+          {artist.coverImage && bgOk ? (
             <img
-              src={artist.profileImage}
-              alt={`${artist.username} cover`}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+              src={artist.coverImage}
+              alt={`${artist.username} background`}
+              className="absolute inset-0 h-full w-full object-cover"
               loading="lazy"
               referrerPolicy="no-referrer"
-              onError={() => setCoverOk(false)}
+              onError={() => setBgOk(false)}
             />
           ) : (
             <div
-              className="h-full w-full grid place-items-center"
+              className="absolute inset-0"
               style={{
                 background:
                   "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))",
               }}
+            />
+          )}
+
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+            style={{
+              background:
+                "linear-gradient(to top, color-mix(in oklab, var(--bg) 92%, transparent), transparent)",
+            }}
+          />
+
+          <div className="absolute left-4 top-4">
+            <div
+              className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 rounded-2xl overflow-hidden border shadow-md bg-card grid place-items-center"
+              style={{ borderColor: "var(--border)" }}
             >
-              <div
-                className="h-14 w-14 rounded-full grid place-items-center border"
-                style={{ background: "var(--card)", borderColor: "var(--border)" }}
-              >
-                <span className="font-semibold text-lg" style={{ color: "var(--fg)" }}>
+              {artist.profileImage && avatarOk ? (
+                <img
+                  src={artist.profileImage}
+                  alt={`${artist.username} profile`}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  onError={() => setAvatarOk(false)}
+                />
+              ) : (
+                <span className="text-2xl font-semibold" style={{ color: "var(--fg)" }}>
                   {initials}
                 </span>
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
-          style={{
-            background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 92%, transparent), transparent)",
-          }}
-        />
         <div className="absolute bottom-2 right-3 flex flex-wrap items-center gap-1.5">
           {artist.style?.slice(0, 2).map((s) => (
             <span
               key={s}
-              className="rounded-full px-2.5 py-0.5 text-[10px] font-medium border"
+              className="rounded-full px-2.5 py-0.5 text-[10px] font-medium backdrop-blur border"
               style={{
                 background: "color-mix(in oklab, var(--elevated) 70%, transparent)",
                 color: "var(--fg)",
@@ -152,15 +170,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
               >
                 Rating
               </div>
-              <div
-                className="font-semibold text-sm sm:text-base"
-                style={{ color: "var(--fg)" }}
-              >
+              <div className="font-semibold text-sm sm:text-base" style={{ color: "var(--fg)" }}>
                 {ratingText}{" "}
-                <span
-                  className="text-xs"
-                  style={{ color: "color-mix(in oklab, var(--fg) 55%, transparent)" }}
-                >
+                <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 55%, transparent)" }}>
                   ({artist.reviewsCount || 0})
                 </span>
               </div>
@@ -172,9 +184,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
             style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
           >
             <div>
-              <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                Location
-              </span>{" "}
+              <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Location</span>{" "}
               <span className="font-medium" style={{ color: "var(--fg)" }}>
                 {artist.location || "Unknown"}
               </span>
@@ -184,9 +194,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
               style={{ background: "color-mix(in oklab, var(--fg) 15%, transparent)" }}
             />
             <div>
-              <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                Price
-              </span>{" "}
+              <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Price</span>{" "}
               <span className="font-semibold" style={{ color: "var(--fg)" }}>
                 {artist.priceRange ? `$${artist.priceRange.min}–$${artist.priceRange.max}` : "N/A"}
               </span>
@@ -207,10 +215,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                 />
               ))
             ) : (
-              <div
-                className="text-xs"
-                style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}
-              >
+              <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
                 No portfolio images yet.
               </div>
             )}
