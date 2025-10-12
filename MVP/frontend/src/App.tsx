@@ -13,6 +13,8 @@ const App: React.FC = () => {
     <Routes>
       <Route path="/signup" element={<SignUp />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/sign-in/*" element={<Navigate to="/login" replace />} />
+      <Route path="/sign-up/*" element={<Navigate to="/signup" replace />} />
 
       <Route
         path="/dashboard"
@@ -31,12 +33,34 @@ const App: React.FC = () => {
       <Route path="/contact" element={<Contact />} />
       <Route path="/about" element={<About />} />
       <Route path="/landing" element={<Landing />} />
-      <Route path="/" element={<Navigate to="/landing" replace />} />
-      <Route path="*" element={<Navigate to="/landing" replace />} />
 
+      <Route
+        path="/"
+        element={
+          <>
+            <SignedIn>
+              <Navigate to="/dashboard" replace />
+            </SignedIn>
+            <SignedOut>
+              <Navigate to="/landing" replace />
+            </SignedOut>
+          </>
+        }
+      />
 
-      <Route path="/sign-in/*" element={<Navigate to="/login" replace />} />
-      <Route path="/sign-up/*" element={<Navigate to="/signup" replace />} />
+      <Route
+        path="*"
+        element={
+          <>
+            <SignedIn>
+              <Navigate to="/dashboard" replace />
+            </SignedIn>
+            <SignedOut>
+              <Navigate to="/landing" replace />
+            </SignedOut>
+          </>
+        }
+      />
     </Routes>
   );
 };
