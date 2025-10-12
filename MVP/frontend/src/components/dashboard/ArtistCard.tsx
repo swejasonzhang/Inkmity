@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { Camera } from "lucide-react";
 
 interface Artist {
   _id: string;
@@ -16,12 +17,24 @@ interface Artist {
 
 interface ArtistCardProps {
   artist: Artist;
-  onClick: (artist: Artist) => void;
+  onClick: (artist: Artist) => void; // opens the modal
+  onUpdateProfileImage?: (file: File, artist: Artist) => void;
+  onUpdateCoverImage?: (file: File, artist: Artist) => void;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
+const ArtistCard: React.FC<ArtistCardProps> = ({
+  artist,
+  onClick,
+  onUpdateProfileImage,
+  onUpdateCoverImage,
+}) => {
   const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
   const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const [localCoverUrl, setLocalCoverUrl] = useState<string | null>(null);
+
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
 
   const initials = useMemo(
     () =>
@@ -40,24 +53,56 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
 
   const gallery = (artist.images || []).filter(Boolean).slice(0, 6);
 
-  const stop = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  const avatarSrc = localAvatarUrl || (avatarOk ? artist.profileImage : undefined);
+  const coverSrc = localCoverUrl || (bgOk ? artist.coverImage : undefined);
+
+  const handleAvatarPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setLocalAvatarUrl(url);
+    setAvatarOk(true);
+    onUpdateProfileImage?.(file, artist);
+  };
+
+  const handleCoverPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setLocalCoverUrl(url);
+    setBgOk(true);
+    onUpdateCoverImage?.(file, artist);
+  };
+
+  const isFromInteractive = (target: EventTarget | null) => {
+    return target instanceof HTMLElement && !!target.closest('[data-interactive="true"]');
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (isFromInteractive(e.target)) return; // ignore clicks from inner interactive controls
+    onClick(artist); // open modal once
+  };
+
+  const handleCardKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === "Enter" || e.key === " ") && e.currentTarget === e.target) {
+      e.preventDefault();
+      onClick(artist);
+    }
   };
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onClick(artist)}
-      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick(artist)}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
       className="group w-full h-full min-h-[460px] sm:min-h-[480px] md:min-h-[500px] overflow-hidden rounded-2xl border bg-card shadow-lg transition hover:-translate-y-[1px] hover:shadow-xl focus:outline-none flex flex-col"
     >
       <div className="relative w-full overflow-hidden">
         <div className="relative w-full h-40 sm:h-48 md:h-56" style={{ background: "var(--elevated)" }}>
-          {artist.coverImage && bgOk ? (
+          {coverSrc ? (
             <img
-              src={artist.coverImage}
+              src={coverSrc}
               alt={`${artist.username} background`}
               className="absolute inset-0 h-full w-full object-cover"
               loading="lazy"
@@ -74,6 +119,29 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
             />
           )}
 
+          <button
+            type="button"
+            data-interactive="true"
+            className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border bg-card/90 backdrop-blur"
+            style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              coverInputRef.current?.click();
+            }}
+            aria-label="Upload background image"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            Change cover
+          </button>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleCoverPick}
+            data-interactive="true"
+          />
+
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
             style={{
@@ -84,12 +152,12 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
 
           <div className="absolute left-4 top-4">
             <div
-              className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 rounded-2xl overflow-hidden border shadow-md bg-card grid place-items-center"
+              className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 rounded-full overflow-hidden border shadow-md bg-card grid place-items-center"
               style={{ borderColor: "var(--border)" }}
             >
-              {artist.profileImage && avatarOk ? (
+              {avatarSrc ? (
                 <img
-                  src={artist.profileImage}
+                  src={avatarSrc}
                   alt={`${artist.username} profile`}
                   className="h-full w-full object-cover"
                   loading="lazy"
@@ -102,6 +170,29 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                 </span>
               )}
             </div>
+
+            <button
+              type="button"
+              data-interactive="true"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border bg-card/90 backdrop-blur"
+              style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                avatarInputRef.current?.click();
+              }}
+              aria-label="Upload profile picture"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              Change photo
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarPick}
+              data-interactive="true"
+            />
           </div>
         </div>
 
@@ -135,9 +226,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                 </h2>
                 <button
                   type="button"
+                  data-interactive="true"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    onClick(artist);
+                    e.stopPropagation();       // prevent parent
+                    onClick(artist);           // open modal ONLY once
                   }}
                   className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs sm:text-sm font-medium transition border"
                   style={{
@@ -201,7 +293,14 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
             </div>
           </div>
 
-          <div className="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar" onClick={stop}>
+          <div
+            className="mt-4 flex gap-1.5 overflow-x-auto no-scrollbar"
+            onClick={(e) => {
+              // Interactions inside gallery should not open modal
+              e.stopPropagation();
+            }}
+            data-interactive="true"
+          >
             {gallery.length ? (
               gallery.map((src, i) => (
                 <img
