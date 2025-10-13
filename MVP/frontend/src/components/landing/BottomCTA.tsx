@@ -29,7 +29,7 @@ const BottomCTA: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ te
                 </m.p>
                 <div className="mt-6">
                     <Link to="/signup">
-                        <Button className="rounded-lg px-6 py-3 border-2 border-black dark:border-white hover:border-black/80 dark:hover:border-white/80">
+                        <Button className="rounded-lg px-6 py-3 border-2 border-white">
                             Create your account
                         </Button>
                     </Link>

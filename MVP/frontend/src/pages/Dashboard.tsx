@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/header/Header";
 import ChatBot from "@/components/dashboard/ChatBot";
 import ChatWindow, { Message } from "@/components/dashboard/ChatWindow";
-import ArtistsSection from "@/components/dashboard/ArtistsSection";
-import ArtistModal from "@/components/dashboard/ArtistModal";
+import ArtistsSection from "@/components/dashboard/artist/ArtistsSection";
+import ArtistModal from "@/components/dashboard/artist/ArtistModal";
 import { toast } from "react-toastify";
 import { MessageSquare, Bot, X } from "lucide-react";
 import { useDashboardData, ArtistDto } from "@/hooks/useDashboardData";
@@ -47,6 +47,27 @@ const Dashboard: React.FC = () => {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
 
+  const modalArtist = useMemo(() => {
+    if (!selectedArtist) return null;
+    const imgs = (selectedArtist.images || []).filter(Boolean);
+    const fallback = [
+      `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23E5E7EB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-size='20' font-family='sans-serif'>Mock Image 1</text></svg>`,
+      `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239CA3AF' font-size='20' font-family='sans-serif'>Mock Image 2</text></svg>`,
+      `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`,
+    ];
+    const pool = imgs.length ? imgs : fallback;
+    const pastWorks = pool.filter((_, i) => i % 2 === 0);
+    const sketches = pool.filter((_, i) => i % 2 === 1);
+    return {
+      _id: selectedArtist._id,
+      clerkId: (selectedArtist as any).clerkId,
+      username: selectedArtist.username,
+      bio: selectedArtist.bio,
+      pastWorks,
+      sketches,
+    };
+  }, [selectedArtist]);
+
   if (!user) return <div className="text-app p-4">Loading...</div>;
 
   return (
@@ -76,18 +97,15 @@ const Dashboard: React.FC = () => {
         />
 
         <div
-          className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+          className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         >
           <div
-            className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"
-              }`}
+            className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`}
             onClick={() => setAssistantOpen(false)}
             aria-hidden
           />
           <div
-            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"
-              }`}
+            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-app">
               <div className="flex items-center gap-2 font-semibold">
@@ -108,18 +126,15 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div
-          className={`fixed inset-0 z-50 transition-all duration-300 ${messagesOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+          className={`fixed inset-0 z-50 transition-all duration-300 ${messagesOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         >
           <div
-            className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${messagesOpen ? "opacity-100" : "opacity-0"
-              }`}
+            className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${messagesOpen ? "opacity-100" : "opacity-0"}`}
             onClick={() => setMessagesOpen(false)}
             aria-hidden
           />
           <div
-            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"
-              }`}
+            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"}`}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-app">
               <div className="flex items-center gap-2 font-semibold">
@@ -166,9 +181,10 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {selectedArtist && (
+        {modalArtist && (
           <ArtistModal
-            artist={selectedArtist}
+            open={Boolean(selectedArtist)}
+            artist={modalArtist}
             onClose={() => setSelectedArtist(null)}
             onMessage={(artist, preloadedMessage) => {
               const participantId = artist.clerkId ?? artist._id;
@@ -179,9 +195,7 @@ const Dashboard: React.FC = () => {
                 timestamp: Date.now(),
               };
               setConversationList((prev) => {
-                const idx = prev.findIndex(
-                  (c) => c.participantId === participantId
-                );
+                const idx = prev.findIndex((c) => c.participantId === participantId);
                 if (idx >= 0) {
                   const copy = [...prev];
                   copy[idx] = {

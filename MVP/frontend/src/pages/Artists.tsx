@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import ArtistCard from "../components/dashboard/ArtistCard";
-import ArtistFilter from "../components/dashboard/ArtistFilter";
+import ArtistCard from "../components/dashboard/artist/ArtistCard";
+import ArtistFilter from "../components/dashboard/artist/ArtistFilter";
 import { fetchArtists } from "../api/artists";
 
 interface Artist {
@@ -136,7 +136,6 @@ const Artists: React.FC = () => {
             ))}
         </div>
 
-        {/* Empty state */}
         {!loading && artists.length === 0 && !error && (
           <div className="text-center text-white/70 py-16">
             <p className="text-lg">No artists match your filters.</p>
