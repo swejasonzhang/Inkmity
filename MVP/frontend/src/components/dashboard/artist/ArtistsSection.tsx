@@ -11,6 +11,7 @@ type Props = {
     loading: boolean;
     showArtists: boolean;
     onSelectArtist: (a: ArtistDto) => void;
+    onRequestCloseModal?: () => void;
 };
 
 const ITEMS_PER_PAGE = 12;
@@ -20,6 +21,7 @@ const ArtistsSection: React.FC<Props> = ({
     loading,
     showArtists,
     onSelectArtist,
+    onRequestCloseModal,
 }) => {
     const [priceFilter, setPriceFilter] = useState<string>("all");
     const [locationFilter, setLocationFilter] = useState<string>("all");
@@ -30,10 +32,7 @@ const ArtistsSection: React.FC<Props> = ({
     const [filterOpacity, setFilterOpacity] = useState(1);
 
     useEffect(() => {
-        const t = setTimeout(
-            () => setDebouncedSearch(searchQuery.trim().toLowerCase()),
-            250
-        );
+        const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
         return () => clearTimeout(t);
     }, [searchQuery]);
 
@@ -60,16 +59,11 @@ const ArtistsSection: React.FC<Props> = ({
                             ? artist.priceRange.max >= 5000
                             : (() => {
                                 const [min, max] = priceFilter.split("-").map(Number);
-                                return (
-                                    artist.priceRange.max >= min && artist.priceRange.min <= max
-                                );
+                                return artist.priceRange.max >= min && artist.priceRange.min <= max;
                             })();
 
-                const inLocation =
-                    locationFilter === "all" || artist.location === locationFilter;
-
-                const inStyle =
-                    styleFilter === "all" || artist.style?.includes(styleFilter);
+                const inLocation = locationFilter === "all" || artist.location === locationFilter;
+                const inStyle = styleFilter === "all" || artist.style?.includes(styleFilter);
 
                 const q = debouncedSearch;
                 const matchesKeyword =
@@ -85,12 +79,21 @@ const ArtistsSection: React.FC<Props> = ({
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const pageItems = filtered.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    const pageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const isCenterLoading = loading || !showArtists;
+
+    const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!onRequestCloseModal) return;
+        const target = e.target as HTMLElement;
+        const interactive = target.closest(
+            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
+        );
+        if (interactive) return;
+        const insideCard = target.closest('[data-artist-card="true"]');
+        if (insideCard) return;
+        onRequestCloseModal();
+    };
 
     return (
         <section
@@ -123,12 +126,11 @@ const ArtistsSection: React.FC<Props> = ({
                     </div>
                 )}
 
-                <div
-                    className={
-                        isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"
-                    }
-                >
-                    <div className="flex flex-col justify-between flex-1">
+                <div className={isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"}>
+                    <div
+                        className="flex flex-col justify-between flex-1"
+                        onPointerDownCapture={handleGridPointerDown}
+                    >
                         <div className="w-full flex-1 px-0 pt-3 pb-2">
                             {pageItems.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[1fr] gap-6 md:gap-5">
@@ -138,14 +140,13 @@ const ArtistsSection: React.FC<Props> = ({
                                             initial={{ opacity: 0, y: 24 }}
                                             whileInView={{ opacity: 1, y: 0 }}
                                             viewport={{ once: true, amount: 0.2 }}
-                                            transition={{
-                                                duration: 0.45,
-                                                delay: index * 0.06,
-                                                ease: "easeOut",
-                                            }}
+                                            transition={{ duration: 0.45, delay: index * 0.06, ease: "easeOut" }}
                                             className="w-full h-full"
                                         >
-                                            <div className="h-full min-h-[520px] sm:min-h-[540px] md:min-h-[560px]">
+                                            <div
+                                                className="h-full min-h[520px] sm:min-h-[540px] md:min-h-[560px]"
+                                                data-artist-card="true"
+                                            >
                                                 <ArtistCard
                                                     artist={artist}
                                                     onClick={() => onSelectArtist(artist)}

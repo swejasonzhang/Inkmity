@@ -16,7 +16,7 @@ type BookingProps = {
     onMessage: (artist: ArtistWithGroups, preloadedMessage: string) => void;
     onBack?: () => void;
     onClose?: () => void;
-    onGoToStep?: (step: 0 | 1) => void;
+    onGoToStep?: (step: 0 | 1 | 2) => void;
 };
 
 const ArtistBooking: React.FC<BookingProps> = ({ artist, onMessage, onBack, onClose, onGoToStep }) => {
@@ -50,7 +50,7 @@ Would you be open to my ideas?`,
     };
 
     return (
-        <div className="w-full p-6 space-y-8 flex flex-col items-center text-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
+        <div className="w-full px-6 py-8 sm:py-10 space-y-8 flex flex-col items-center text-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <button
                 onClick={onClose}
                 aria-label="Close"
@@ -68,15 +68,15 @@ Would you be open to my ideas?`,
                 style={{ background: "color-mix(in oklab, var(--elevated) 90%, transparent)", color: "color-mix(in oklab, var(--fg) 90%, transparent)", border: `1px solid var(--border)` }}
             >
                 <ChevronDown className="h-4 w-4" />
-                <span>Scroll down to see more images</span>
+                <span>Scroll down to see more</span>
             </motion.div>
 
             <div className="flex items-center justify-center gap-2">
-                {[0, 1].map((i) => (
+                {[0, 1, 2].map((i) => (
                     <button
                         key={i}
-                        onClick={() => onGoToStep?.(i as 0 | 1)}
-                        aria-label={i === 0 ? "Portfolio" : "Booking & Message"}
+                        onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
+                        aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
                         className={`h-2.5 w-2.5 rounded-full transition-transform ${i === 1 ? "scale-110" : "opacity-50 hover:opacity-80"}`}
                         style={{ background: "var(--fg)" }}
                     />
@@ -102,7 +102,6 @@ Would you be open to my ideas?`,
                         <CardHeader className="text-center">
                             <CardTitle>Pick a date</CardTitle>
                         </CardHeader>
-
                         <CardContent className="flex flex-col items-center gap-3">
                             <div className="flex items-center justify-center gap-2">
                                 <Select value={String(month.getMonth())} onValueChange={(value) => setMonth(new Date(month.getFullYear(), Number(value), 1))}>
@@ -151,9 +150,7 @@ Would you be open to my ideas?`,
                             <div className="w-full max-w-[920px] text-center mt-1">
                                 <span style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Selected: </span>
                                 <span className="font-medium" style={{ color: "var(--fg)" }}>
-                                    {date
-                                        ? date.toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" })
-                                        : "—"}
+                                    {date ? date.toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" }) : "—"}
                                 </span>
                             </div>
                         </CardContent>

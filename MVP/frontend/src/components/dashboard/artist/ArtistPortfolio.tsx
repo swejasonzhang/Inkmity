@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, X, Maximize2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,17 +17,11 @@ export type PortfolioProps = {
     artist: ArtistWithGroups;
     onNext?: () => void;
     onGoToStep?: (step: 0 | 1 | 2) => void;
-    onClose?: () => void; // used for closing the whole sheet/wizard if desired
+    onClose?: () => void;
 };
 
-const sr = (text: string) => (
-    <span className="sr-only">{text}</span>
-);
-
-const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep, onClose }) => {
+const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep }) => {
     const prefersReducedMotion = useReducedMotion();
-
-    // --- Modal zoom state ---
     const [zoomIndex, setZoomIndex] = useState<number | null>(null);
     const allImages = useMemo(() => {
         const works = artist?.pastWorks ?? [];
@@ -40,7 +34,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep,
     const goPrev = () => setZoomIndex((i) => (i === null ? i : (i + allImages.length - 1) % allImages.length));
     const goNext = () => setZoomIndex((i) => (i === null ? i : (i + 1) % allImages.length));
 
-    // --- Global key handling (Esc + arrows when modal is open) ---
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") return closeZoom();
@@ -53,7 +46,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep,
         return () => window.removeEventListener("keydown", onKey);
     }, [zoomIndex]);
 
-    // --- ImageGrid subcomponent ---
     const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; startOffset?: number }> = ({ images, imgAltPrefix, startOffset = 0 }) => (
         <div className="w-full flex justify-center">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 place-items-center w-full">
@@ -88,47 +80,63 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep,
     );
 
     return (
-        <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="sticky top-0 z-20 border-b backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ borderColor: "var(--border)" }}>
+        <div className="w-full mt-5" style={{ background: "var(--card)", color: "var(--fg)" }}>
+            <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-                    <div className="flex items-center justify-between py-3">
-                        <div className="flex items-center gap-2">
-                            {[0, 1, 2].map((i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
-                                    aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                                    className={`h-2.5 w-6 rounded-full transition-all ${i === 0 ? "bg-foreground/90" : "bg-foreground/30 hover:bg-foreground/60"}`}
-                                    style={{ background: i === 0 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
-                                />
-                            ))}
-                        </div>
+                    <div className="py-3">
+                        <div className="mx-auto w-full max-w-3xl grid grid-cols-3 items-center">
+                            <div className="justify-self-center">
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                    {[0, 1, 2].map((i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
+                                            aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
+                                            className={`h-2.5 w-6 rounded-full transition-all ${i === 0 ? "bg-foreground/90" : "bg-foreground/30 hover:bg-foreground/60"
+                                                }`}
+                                            style={{
+                                                background:
+                                                    i === 0
+                                                        ? "color-mix(in oklab, var(--fg) 95%, transparent)"
+                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
 
-                        <motion.div
-                            initial={{ y: 0, opacity: 0.95 }}
-                            animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
-                            transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                            className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium shadow-sm"
-                            style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "color-mix(in oklab, var(--fg) 90%, transparent)", border: `1px solid var(--border)` }}
-                        >
-                            <ChevronDown className="h-4 w-4" />
-                            <span>Scroll to explore the portfolio</span>
-                        </motion.div>
+                            <div className="justify-self-center">
+                                <motion.div
+                                    initial={{ y: 0, opacity: 0.95 }}
+                                    animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
+                                    transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                                    className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
+                                    style={{
+                                        background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
+                                        color: "color-mix(in oklab, var(--fg) 90%, transparent)",
+                                        border: `1px solid var(--border)`,
+                                    }}
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                    <span>Scroll to explore the portfolio</span>
+                                </motion.div>
+                                <div className="sm:hidden block h-6" />
+                            </div>
 
-                        <div className="flex items-center gap-2">
-                            <Button
-                                onClick={onNext}
-                                className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm"
-                                style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
-                                variant="outline"
-                            >
-                                Next: Booking & Message
-                            </Button>
-                            {onClose && (
-                                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
-                                    <X className="h-5 w-5" />{sr("Close")}
+                            <div className="justify-self-center">
+                                <Button
+                                    onClick={onNext}
+                                    className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm"
+                                    style={{
+                                        background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
+                                        color: "var(--fg)",
+                                        border: `1px solid var(--border)`,
+                                    }}
+                                    variant="outline"
+                                >
+                                    Next: Booking &amp; Message
                                 </Button>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -164,7 +172,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep,
                     )}
                 </section>
 
-                {/* Sketches */}
                 {artist.sketches && artist.sketches.length > 0 && (
                     <section className="w-full">
                         <header className="mb-4 flex items-end justify-between">
@@ -189,7 +196,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep,
                 >
                     <div className="absolute inset-0 backdrop-blur-sm" aria-hidden />
 
-                    {/* Controls */}
                     <div className="absolute top-4 right-4 flex items-center gap-2">
                         <Button
                             variant="ghost"
