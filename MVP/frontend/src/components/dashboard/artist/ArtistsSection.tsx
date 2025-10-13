@@ -3,7 +3,7 @@ import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion } from "framer-motion";
-import Pagination from "./Pagination";
+import Pagination from "../Pagination";
 import type { ArtistDto } from "@/hooks/useDashboardData";
 
 type Props = {

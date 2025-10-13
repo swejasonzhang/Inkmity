@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Camera } from "lucide-react";
-import ArtistModal from "@/components/dashboard/ArtistModal";
+import ArtistModal from "@/components/dashboard/artist/ArtistModal";
 
 interface Artist {
   _id: string;
@@ -319,6 +319,25 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
                   />
                 </div>
               ))}
+            </div>
+
+            <div className="mt-4 text-center text-xs sm:text-sm">
+              <span style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
+                Want to see everything, check availability, or send a message?
+              </span>{" "}
+              <button
+                type="button"
+                onClick={openProfile}
+                className="underline-offset-2 hover:underline font-medium"
+                style={{ color: "var(--fg)" }}
+                aria-label="Open full portfolio, booking, and messaging"
+                title="Open full portfolio, booking, and messaging"
+              >
+                View Full Portfolio
+              </button>
+              <span style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
+                {" "}to view all images, book/availability, and messaging.
+              </span>
             </div>
           </div>
         </div>
