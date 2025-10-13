@@ -1,3 +1,4 @@
+// src/components/dashboard/artist/ArtistsSection.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
@@ -32,10 +33,7 @@ const ArtistsSection: React.FC<Props> = ({
     const [filterOpacity] = useState(1);
 
     useEffect(() => {
-        const t = setTimeout(
-            () => setDebouncedSearch(searchQuery.trim().toLowerCase()),
-            250
-        );
+        const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
         return () => clearTimeout(t);
     }, [searchQuery]);
 
@@ -52,10 +50,8 @@ const ArtistsSection: React.FC<Props> = ({
                                 const [min, max] = priceFilter.split("-").map(Number);
                                 return artist.priceRange.max >= min && artist.priceRange.min <= max;
                             })();
-
                 const inLocation = locationFilter === "all" || artist.location === locationFilter;
                 const inStyle = styleFilter === "all" || artist.style?.includes(styleFilter);
-
                 const q = debouncedSearch;
                 const matchesKeyword =
                     q === "" ||
@@ -63,18 +59,13 @@ const ArtistsSection: React.FC<Props> = ({
                     artist.location?.toLowerCase().includes(q) ||
                     artist.bio?.toLowerCase().includes(q) ||
                     (artist.style || []).some((s) => s.toLowerCase().includes(q));
-
                 return inPriceRange && inLocation && inStyle && matchesKeyword;
             })
             .sort((a, b) => (b.rating || 0) - (a.rating || 0));
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const pageItems = filtered.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-
+    const pageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const isCenterLoading = loading || !showArtists;
 
     const motionKey = [
@@ -130,10 +121,7 @@ const ArtistsSection: React.FC<Props> = ({
                 )}
 
                 <div className={isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"}>
-                    <div
-                        className="flex flex-col justify-between flex-1"
-                        onPointerDownCapture={handleGridPointerDown}
-                    >
+                    <div className="flex flex-col justify-between flex-1" onPointerDownCapture={handleGridPointerDown}>
                         <div className="w-full flex-1 px-0 pt-3 pb-2">
                             {pageItems.length > 0 ? (
                                 !isCenterLoading && (
@@ -158,10 +146,7 @@ const ArtistsSection: React.FC<Props> = ({
                                                     className="h-full min-h-[520px] sm:min-h-[540px] md:min-h-[560px]"
                                                     data-artist-card="true"
                                                 >
-                                                    <ArtistCard
-                                                        artist={artist}
-                                                        onClick={() => onSelectArtist(artist)}
-                                                    />
+                                                    <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
                                                 </div>
                                             </motion.div>
                                         ))}

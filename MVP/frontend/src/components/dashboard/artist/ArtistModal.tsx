@@ -1,3 +1,4 @@
+// src/components/dashboard/artist/ArtistModal.tsx
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
@@ -18,8 +19,10 @@ type Props = {
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const portalRef = useRef<HTMLDivElement | null>(null);
-  const contentRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
+  const scrollYRef = useRef<number>(0);
 
   useEffect(() => {
     if (!portalRef.current) {
@@ -46,30 +49,65 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
 
   useEffect(() => {
     if (!open) {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
       document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+      (document.documentElement as HTMLElement).style.overscrollBehavior = "";
+      document.body.style.overscrollBehavior = "";
       return;
     }
+
     setStep(0);
-    const prev = document.body.style.overflow;
+    scrollYRef.current = window.scrollY || window.pageYOffset || 0;
+    (document.documentElement as HTMLElement).style.overscrollBehavior = "none";
+    document.body.style.overscrollBehavior = "none";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollYRef.current}px`;
+    document.body.style.width = "100%";
     document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    const block = (e: Event) => e.preventDefault();
+    overlayRef.current?.addEventListener("wheel", block, { passive: false });
+    overlayRef.current?.addEventListener("touchmove", block, { passive: false });
+
     return () => {
-      document.body.style.overflow = prev;
+      overlayRef.current?.removeEventListener("wheel", block as EventListener);
+      overlayRef.current?.removeEventListener("touchmove", block as EventListener);
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+      (document.documentElement as HTMLElement).style.overscrollBehavior = "";
+      document.body.style.overscrollBehavior = "";
+      window.scrollTo(0, scrollYRef.current || 0);
     };
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: PointerEvent) => {
-      const node = contentRef.current;
-      const target = e.target as Node | null;
-      if (!node || !target) return;
-      if (!node.contains(target)) onClose();
-    };
-    document.addEventListener("pointerdown", handler, { capture: true });
-    return () => document.removeEventListener("pointerdown", handler as EventListener, { capture: true } as any);
-  }, [open, onClose]);
-
   if (!open || !mounted || !portalRef.current) return null;
+
+  const swallowNextClick = () => {
+    const handler = (e: MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+    };
+    document.addEventListener("click", handler, true);
+    setTimeout(() => document.removeEventListener("click", handler, true), 0);
+  };
+
+  const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    if (!panel.contains(e.target as Node)) {
+      e.stopPropagation();
+      e.preventDefault();
+      swallowNextClick();
+      onClose();
+    }
+  };
 
   const handleAnyCloseClickCapture = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -82,24 +120,24 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
 
   const modalUI = (
     <motion.div
+      ref={overlayRef}
       key={artist._id}
       initial={{ scale: 0.96, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.96, opacity: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       className="fixed inset-0 z-[1200] flex items-center justify-center"
-      style={{ background: "color-mix(in oklab, var(--bg) 30%, transparent)" }}
+      style={{ background: "color-mix(in oklab, var(--bg) 30%, transparent)", overscrollBehavior: "contain" } as React.CSSProperties}
       aria-modal="true"
       role="dialog"
+      onMouseDown={handleOverlayMouseDown}
     >
-      <div
-        ref={contentRef}
-        className="pointer-events-auto w-full flex items-center justify-center"
-        onClickCapture={handleAnyCloseClickCapture}
-      >
+      <div className="pointer-events-none w-full h-full flex items-center justify-center">
         <ScrollArea
-          className="w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col items-center text-center"
+          ref={panelRef as any}
+          className="pointer-events-auto w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col items-center text-center"
           style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
+          onClickCapture={handleAnyCloseClickCapture}
         >
           <div className="w-full max-w-[1100px] mx-auto px-6 pt-5 relative flex flex-col items-center">
             <h2 className="text-2xl font-extrabold">{artist.username}</h2>
@@ -122,10 +160,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
                 />
               ))}
             </div>
-            <Separator
-              className="mt-4 w-full"
-              style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }}
-            />
+            <Separator className="mt-4 w-full" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
           </div>
 
           <div className="w-full max-w-[1200px] mx-auto">
