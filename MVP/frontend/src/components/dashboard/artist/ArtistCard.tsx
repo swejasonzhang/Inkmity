@@ -16,6 +16,7 @@ interface Artist {
   images?: string[];
   pastWorks?: string[];
   sketches?: string[];
+  clerkId?: string;
 }
 
 interface ArtistCardProps {
@@ -165,13 +166,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
               <Camera className="h-4 w-4" />
               <span className="hidden sm:inline">Change cover</span>
             </button>
-            <input
-              ref={coverInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleCoverPick}
-            />
+            <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverPick} />
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 grid place-items-center gap-2">
               <div
@@ -207,13 +202,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
                 <Camera className="h-4 w-4" />
                 <span>Change photo</span>
               </button>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarPick}
-              />
+              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
             </div>
 
             {!!artist.style?.length && (
@@ -261,42 +250,27 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
               </svg>
             </button>
 
-            <p
-              className="text-sm leading-relaxed max-w-prose"
-              style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}
-            >
+            <p className="text-sm leading-relaxed max-w-prose" style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
               {artist.bio || "No bio available."}
             </p>
 
-            <div
-              className="flex flex-wrap items-center justify-center gap-3 text-xs"
-              style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
-            >
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
               <div>
-                <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                  Location
-                </span>{" "}
+                <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Location</span>{" "}
                 <span className="font-medium" style={{ color: "var(--fg)" }}>
                   {artist.location || "Unknown"}
                 </span>
               </div>
-              <span
-                className="h-3 w-px"
-                style={{ background: "color-mix(in oklab, var(--fg) 15%, transparent)" }}
-              />
+              <span className="h-3 w-px" style={{ background: "color-mix(in oklab, var(--fg) 15%, transparent)" }} />
               <div>
-                <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                  Price
-                </span>{" "}
+                <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Price</span>{" "}
                 <span className="font-semibold" style={{ color: "var(--fg)" }}>
                   {artist.priceRange ? `$${artist.priceRange.min}–$${artist.priceRange.max}` : "N/A"}
                 </span>
               </div>
             </div>
 
-            <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-              Rating
-            </div>
+            <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Rating</div>
             <div className="font-semibold text-base" style={{ color: "var(--fg)" }}>
               {ratingText}{" "}
               <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 55%, transparent)" }}>
