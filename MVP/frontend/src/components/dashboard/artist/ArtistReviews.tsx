@@ -33,8 +33,7 @@ const fmtDate = (d: string | Date) => {
 const Stars: React.FC<{ value: number }> = ({ value }) => {
     const full = Math.floor(value);
     const hasHalf = value - full >= 0.5;
-    const total = 5;
-    const items = Array.from({ length: total }, (_, i) => i);
+    const items = Array.from({ length: 5 }, (_, i) => i);
     return (
         <div className="inline-flex items-center gap-0.5">
             {items.map((i) => {
@@ -95,7 +94,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
     }, [reviews, sort]);
 
     return (
-        <div className="w-full p-6 space-y-8 flex flex-col items-center text-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
+        <div className="w-full px-6 py-8 sm:py-10 space-y-8 flex flex-col items-center text-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <button
                 onClick={onClose}
                 aria-label="Close"
@@ -134,9 +133,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                         )}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
-                        <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
-                            Sort:
-                        </label>
+                        <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Sort:</label>
                         <select
                             value={sort}
                             onChange={(e) => setSort(e.target.value as typeof sort)}
@@ -157,8 +154,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                         {sorted.map((r) => (
-                            <Card key={r._id} className="w-full h-full flex flex-col"
-                                style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                            <Card key={r._id} className="w-full h-full flex flex-col" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
                                 <CardHeader className="text-left">
                                     <CardTitle className="text-base flex items-center justify-between">
                                         <span className="truncate">{r.title || "Untitled review"}</span>
@@ -171,9 +167,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                                     </div>
                                 </CardHeader>
                                 <CardContent className="text-left space-y-3">
-                                    <p className="text-sm leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>
-                                        {r.body}
-                                    </p>
+                                    <p className="text-sm leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>{r.body}</p>
                                     {r.photos && r.photos.length > 0 && (
                                         <div className="grid grid-cols-3 gap-2">
                                             {r.photos.slice(0, 6).map((src, idx) => (
@@ -184,13 +178,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                                                     style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                                     aria-label={`Open review photo ${idx + 1}`}
                                                 >
-                                                    <img
-                                                        src={src}
-                                                        alt={`Review photo ${idx + 1}`}
-                                                        className="w-full h-full object-cover"
-                                                        loading="lazy"
-                                                        referrerPolicy="no-referrer"
-                                                    />
+                                                    <img src={src} alt={`Review photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
                                                 </button>
                                             ))}
                                         </div>
