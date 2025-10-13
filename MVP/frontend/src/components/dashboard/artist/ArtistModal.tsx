@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import ArtistPortfolio, { ArtistWithGroups } from "./ArtistPortfolio";
 import ArtistBooking from "./ArtistBooking";
+import ArtistReviews from "./ArtistReviews";
 
 type Props = {
   open: boolean;
@@ -14,8 +16,27 @@ type Props = {
 };
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
-  const [step, setStep] = useState<0 | 1>(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!containerRef.current) {
+      const el = document.createElement("div");
+      el.id = "inkmity-modal-root";
+      containerRef.current = el;
+      document.body.appendChild(el);
+    }
+    setMounted(true);
+    return () => {
+      if (containerRef.current) {
+        document.body.removeChild(containerRef.current);
+        containerRef.current = null;
+      }
+      setMounted(false);
+    };
+  }, []);
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -23,18 +44,22 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
     return () => window.removeEventListener("keydown", onEsc);
   }, [open, onClose]);
 
-  const onBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === backdropRef.current) onClose();
-  };
-
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      document.body.style.overflow = "";
+      return;
+    }
     setStep(0);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
   }, [open]);
 
-  if (!open) return null;
+  if (!open || !mounted || !containerRef.current) return null;
 
-  return (
+  const modalUI = (
     <motion.div
       key={artist._id}
       initial={{ scale: 0.96, opacity: 0 }}
@@ -44,54 +69,80 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
       className="fixed inset-0 z-[1200] flex items-center justify-center"
       style={{ background: "color-mix(in oklab, var(--bg) 30%, transparent)" }}
       ref={backdropRef}
-      onMouseDown={onBackdropClick}
+      onClick={(e) => {
+        if (e.currentTarget === e.target) onClose();
+      }}
       aria-modal="true"
       role="dialog"
     >
-      <ScrollArea
-        onMouseDown={(e) => e.stopPropagation()}
-        className="w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col"
-        style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
-      >
-        <div className="px-6 pt-5 relative">
-          <h2 className="text-2xl font-extrabold text-center">{artist.username}</h2>
+      <div className="pointer-events-auto w-full flex items-center justify-center">
+        <ScrollArea
+          onClick={(e) => e.stopPropagation()}
+          className="w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col items-center text-center"
+          style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
+        >
+          <div className="w-full max-w-[1100px] mx-auto px-6 pt-5 relative flex flex-col items-center">
+            <h2 className="text-2xl font-extrabold">{artist.username}</h2>
 
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full p-2 hover:opacity-80"
-            style={{ color: "var(--fg)" }}
-          >
-            <X className="h-5 w-5" />
-          </button>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full p-2 hover:opacity-80"
+              style={{ color: "var(--fg)" }}
+            >
+              <X className="h-5 w-5" />
+            </button>
 
-          <div className="mt-4 flex items-center justify-center gap-2">
-            {[0, 1].map((i) => (
-              <button
-                key={i}
-                onClick={() => setStep(i as 0 | 1)}
-                aria-label={i === 0 ? "Portfolio" : "Booking & Message"}
-                className={`h-2.5 w-2.5 rounded-full transition-transform ${step === i ? "scale-110" : "opacity-50 hover:opacity-80"
-                  }`}
-                style={{ background: "var(--fg)" }}
-              />
-            ))}
+            <div className="mt-4 flex items-center justify-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <button
+                  key={i}
+                  onClick={() => setStep(i as 0 | 1 | 2)}
+                  aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
+                  className={`h-2.5 w-2.5 rounded-full transition-transform ${step === i ? "scale-110" : "opacity-50 hover:opacity-80"
+                    }`}
+                  style={{ background: "var(--fg)" }}
+                />
+              ))}
+            </div>
+
+            <Separator
+              className="mt-4 w-full"
+              style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }}
+            />
           </div>
-        </div>
 
-        <Separator
-          className="mt-4"
-          style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }}
-        />
-
-        {step === 0 ? (
-          <ArtistPortfolio artist={artist} onNext={() => setStep(1)} />
-        ) : (
-          <ArtistBooking artist={artist} onMessage={onMessage} onClose={onClose} />
-        )}
-      </ScrollArea>
+          <div className="w-full max-w-[1200px] mx-auto">
+            {step === 0 && (
+              <ArtistPortfolio
+                artist={artist}
+                onNext={() => setStep(1)}
+                onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
+                onClose={onClose}
+              />
+            )}
+            {step === 1 && (
+              <ArtistBooking
+                artist={artist}
+                onMessage={onMessage}
+                onBack={() => setStep(0)}
+                onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
+                onClose={onClose}
+              />
+            )}
+            {step === 2 && (
+              <ArtistReviews
+                artist={artist}
+                onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
+              />
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </motion.div>
   );
+
+  return ReactDOM.createPortal(modalUI, containerRef.current);
 };
 
 export default ArtistModal;
