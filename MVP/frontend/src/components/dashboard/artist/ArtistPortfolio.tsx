@@ -48,7 +48,9 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
     const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; startOffset?: number }> = ({ images, imgAltPrefix, startOffset = 0 }) => (
         <div className="w-full flex justify-center">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 place-items-center w-full">
+            <div className="mx-auto grid justify-items-center gap-4
+                  max-w-[calc(4*20rem+3*1rem)]
+                  grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
                 {images.map((src, i) => (
                     <button
                         key={`${src}-${i}`}
@@ -83,9 +85,11 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         <div className="w-full mt-5" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-                    <div className="py-3">
-                        <div className="mx-auto w-full max-w-3xl grid grid-cols-3 items-center">
-                            <div className="justify-self-center">
+                    <div className="py-3 sm:py-4">
+                        <div className="mx-auto w-full max-w-3xl
+                            flex items-center justify-evenly
+                            gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
+                            <div className="justify-self-end">
                                 <div className="flex items-center gap-3 sm:gap-4">
                                     {[0, 1, 2].map((i) => (
                                         <button
