@@ -1,12 +1,11 @@
 import React, { useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { ChevronDown, X } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -20,6 +19,8 @@ type BookingProps = {
 };
 
 const ArtistBooking: React.FC<BookingProps> = ({ artist, onMessage, onBack, onClose, onGoToStep }) => {
+    const prefersReducedMotion = useReducedMotion();
+
     const preloadedMessage = useMemo(
         () => `Hi ${artist.username}, I've taken a look at your work and I'm interested!
 Would you be open to my ideas?`,
@@ -49,61 +50,95 @@ Would you be open to my ideas?`,
         onClose?.();
     };
 
+    const handleNext = () => onGoToStep?.(2);
+
     return (
-        <div className="w-full px-6 py-8 sm:py-10 space-y-8 flex flex-col items-center text-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <button
-                onClick={onClose}
-                aria-label="Close"
-                className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full p-2 hover:opacity-80"
-                style={{ color: "var(--fg)" }}
-            >
-                <X className="h-5 w-5" />
-            </button>
+        <div className="w-full mt-5" style={{ background: "var(--card)", color: "var(--fg)" }}>
+            <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+                <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
+                    <div className="py-3 sm:py-4">
+                        <div className="mx-auto w-full max-w-3xl
+                            flex items-center justify-evenly
+                            gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
+                            <div className="justify-self-end">
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                    {[0, 1, 2].map((i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
+                                            aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
+                                            className={`h-2.5 w-6 rounded-full transition-all ${i === 1 ? "bg-foreground/90" : "bg-foreground/30 hover:bg-foreground/60"}`}
+                                            style={{
+                                                background:
+                                                    i === 1
+                                                        ? "color-mix(in oklab, var(--fg) 95%, transparent)"
+                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
 
-            <motion.div
-                initial={{ y: 0, opacity: 0.9 }}
-                animate={{ y: [0, 4, 0] }}
-                transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium shadow-sm mb-3"
-                style={{ background: "color-mix(in oklab, var(--elevated) 90%, transparent)", color: "color-mix(in oklab, var(--fg) 90%, transparent)", border: `1px solid var(--border)` }}
-            >
-                <ChevronDown className="h-4 w-4" />
-                <span>Scroll down to see more</span>
-            </motion.div>
+                            <div className="justify-self-center">
+                                <motion.div
+                                    initial={{ y: 0, opacity: 0.95 }}
+                                    animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
+                                    transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                                    className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
+                                    style={{
+                                        background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
+                                        color: "color-mix(in oklab, var(--fg) 90%, transparent)",
+                                        border: `1px solid var(--border)`,
+                                    }}
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                    <span>Scroll to explore the message the artist and book an appointment</span>
+                                </motion.div>
+                                <div className="sm:hidden h-6" />
+                            </div>
 
-            <div className="flex items-center justify-center gap-2">
-                {[0, 1, 2].map((i) => (
-                    <button
-                        key={i}
-                        onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
-                        aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                        className={`h-2.5 w-2.5 rounded-full transition-transform ${i === 1 ? "scale-110" : "opacity-50 hover:opacity-80"}`}
-                        style={{ background: "var(--fg)" }}
-                    />
-                ))}
+                            <div className="justify-self-start">
+                                <div className="inline-flex items-center gap-2 sm:gap-3 flex-nowrap whitespace-nowrap">
+                                    <Button
+                                        onClick={onBack}
+                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm"
+                                        style={{
+                                            background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
+                                            color: "var(--fg)",
+                                            border: `1px solid var(--border)`,
+                                        }}
+                                        variant="outline"
+                                    >
+                                        Back: Portfolio
+                                    </Button>
+
+                                    <Button
+                                        onClick={handleNext}
+                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm"
+                                        style={{
+                                            background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
+                                            color: "var(--fg)",
+                                            border: `1px solid var(--border)`,
+                                        }}
+                                        variant="outline"
+                                    >
+                                        Next: Reviews
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className="flex items-center justify-center gap-3 pt-2">
-                <Button
-                    onClick={onBack}
-                    className="rounded-lg px-4 py-2 text-sm font-medium"
-                    variant="outline"
-                    style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
-                >
-                    Back to Portfolio
-                </Button>
-            </div>
-
-            <Separator className="w-full max-w-2xl" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
-
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center justify-items-center w-full max-w-6xl relative">
-                <div className="flex flex-col gap-6 items-center w-full">
+            <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 items-start justify-items-center">
+                <div className="w-full flex flex-col items-center gap-8 md:gap-10">
                     <Card className="w-full max-w-[920px]" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                        <CardHeader className="text-center">
+                        <CardHeader className="text-center space-y-1">
                             <CardTitle>Pick a date</CardTitle>
                         </CardHeader>
-                        <CardContent className="flex flex-col items-center gap-3">
-                            <div className="flex items-center justify-center gap-2">
+                        <CardContent className="flex flex-col items-center gap-5 sm:gap-6">
+                            <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
                                 <Select value={String(month.getMonth())} onValueChange={(value) => setMonth(new Date(month.getFullYear(), Number(value), 1))}>
                                     <SelectTrigger className="h-9 w-40" style={{ background: "var(--elevated)", borderColor: "var(--border)", color: "var(--fg)" }}>
                                         <SelectValue placeholder="Month" />
@@ -143,11 +178,11 @@ Would you be open to my ideas?`,
                                 showOutsideDays={false}
                                 modifiersClassNames={{ selected: "ring-2 border !ring-offset-0 !bg-transparent !shadow-none" }}
                                 classNames={{ day: "h-12 w-12 m-1.5 p-0 font-normal rounded-md outline-none focus:outline-none" }}
-                                className="w-full max-w-[920px] rounded-md p-4 mx-auto"
+                                className="w-full max-w-[920px] rounded-md p-4 sm:p-5 mx-auto"
                                 style={{ background: "var(--elevated)", color: "var(--fg)", border: `1px solid var(--border)` }}
                             />
 
-                            <div className="w-full max-w-[920px] text-center mt-1">
+                            <div className="w-full max-w-[920px] text-center">
                                 <span style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Selected: </span>
                                 <span className="font-medium" style={{ color: "var(--fg)" }}>
                                     {date ? date.toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" }) : "—"}
@@ -157,10 +192,10 @@ Would you be open to my ideas?`,
                     </Card>
 
                     <Card className="w-full max-w-[920px]" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                        <CardHeader className="text-center">
+                        <CardHeader className="text-center space-y-1">
                             <CardTitle>Message {artist.username}</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-5 sm:space-y-6">
                             <p className="px-3 py-2 rounded-md text-center mx-auto max-w-prose" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
                                 Send a quick intro. You can also ask questions about availability or designs.
                             </p>
@@ -178,8 +213,8 @@ Would you be open to my ideas?`,
                     </Card>
                 </div>
 
-                <CardContent className="flex flex-col items-center justify-center px-4 lg:px-8 w-full">
-                    <div className="w-full max-w-[920px]">
+                <CardContent className="w-full px-0 lg:px-4">
+                    <div className="w-full max-w-[920px] mx-auto">
                         <BookingPicker artistId={artist._id} />
                     </div>
                 </CardContent>
