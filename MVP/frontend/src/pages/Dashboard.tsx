@@ -11,6 +11,7 @@ import { MessageSquare, Bot, X } from "lucide-react";
 import { useDashboardData, ArtistDto } from "@/hooks/useDashboardData";
 import FloatingBar from "@/components/dashboard/FloatingBar";
 import { useTheme } from "@/components/header/useTheme";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const Dashboard: React.FC = () => {
   const { isSignedIn, user } = useUser();
@@ -68,15 +69,18 @@ const Dashboard: React.FC = () => {
     };
   }, [selectedArtist]);
 
-  if (!user) return <div className="text-app p-4">Loading...</div>;
+  if (!user)
+    return (
+      <div className="fixed inset-0 grid place-items-center bg-app text-app">
+        <CircularProgress sx={{ color: "var(--fg)" }} />
+      </div>
+    );
 
   return (
     <div className={themeClass}>
       <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
         <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
-
         <Header theme={theme} toggleTheme={toggleTheme} logoSrc={logoSrc} />
-
         <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
           <div className="flex-1 min-w-0">
             <ArtistsSection
@@ -87,35 +91,24 @@ const Dashboard: React.FC = () => {
             />
           </div>
         </main>
-
         <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
-
         <FloatingBar
           onAssistantOpen={() => setAssistantOpen(true)}
           onMessagesOpen={() => setMessagesOpen(true)}
           portalTarget={portalEl}
         />
-
-        <div
-          className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        >
+        <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
           <div
             className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`}
             onClick={() => setAssistantOpen(false)}
             aria-hidden
           />
-          <div
-            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}
-          >
+          <div className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-app">
               <div className="flex items-center gap-2 font-semibold">
                 <Bot size={18} />
               </div>
-              <button
-                onClick={() => setAssistantOpen(false)}
-                className="p-2 rounded-full hover:bg-elevated"
-                aria-label="Close assistant"
-              >
+              <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
                 <X size={18} />
               </button>
             </div>
@@ -124,27 +117,18 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
-        <div
-          className={`fixed inset-0 z-50 transition-all duration-300 ${messagesOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        >
+        <div className={`fixed inset-0 z-50 transition-all duration-300 ${messagesOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
           <div
             className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${messagesOpen ? "opacity-100" : "opacity-0"}`}
             onClick={() => setMessagesOpen(false)}
             aria-hidden
           />
-          <div
-            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"}`}
-          >
+          <div className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"}`}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-app">
               <div className="flex items-center gap-2 font-semibold">
                 <MessageSquare size={18} />
               </div>
-              <button
-                onClick={() => setMessagesOpen(false)}
-                className="p-2 rounded-full hover:bg-elevated"
-                aria-label="Close messages"
-              >
+              <button onClick={() => setMessagesOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close messages">
                 <X size={18} />
               </button>
             </div>
@@ -162,17 +146,13 @@ const Dashboard: React.FC = () => {
                   }));
                 }}
                 onRemoveConversation={(participantId: string) => {
-                  setConversationList((prev) =>
-                    prev.filter((c) => c.participantId !== participantId)
-                  );
+                  setConversationList((prev) => prev.filter((c) => c.participantId !== participantId));
                   setCollapsedConversations((prev) => {
                     const next: Record<string, boolean> = { ...prev };
                     delete next[participantId];
                     return next;
                   });
-                  toast.info("Conversation hidden from dashboard", {
-                    position: "bottom-right",
-                  });
+                  toast.info("Conversation hidden from dashboard", { position: "bottom-right" });
                 }}
                 expandedId={selectedConversationId}
                 authFetch={authFetch}
@@ -180,7 +160,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
         {modalArtist && (
           <ArtistModal
             open={Boolean(selectedArtist)}
@@ -198,33 +177,16 @@ const Dashboard: React.FC = () => {
                 const idx = prev.findIndex((c) => c.participantId === participantId);
                 if (idx >= 0) {
                   const copy = [...prev];
-                  copy[idx] = {
-                    ...copy[idx],
-                    messages: [...copy[idx].messages, newMsg],
-                  };
+                  copy[idx] = { ...copy[idx], messages: [...copy[idx].messages, newMsg] };
                   return copy.sort((a, b) => {
-                    const aLast = a.messages.length
-                      ? a.messages[a.messages.length - 1].timestamp
-                      : 0;
-                    const bLast = b.messages.length
-                      ? b.messages[b.messages.length - 1].timestamp
-                      : 0;
+                    const aLast = a.messages.length ? a.messages[a.messages.length - 1].timestamp : 0;
+                    const bLast = b.messages.length ? b.messages[b.messages.length - 1].timestamp : 0;
                     return bLast - aLast;
                   });
                 }
-                return [
-                  {
-                    participantId,
-                    username: artist.username,
-                    messages: [newMsg],
-                  },
-                  ...prev,
-                ];
+                return [{ participantId, username: artist.username, messages: [newMsg] }, ...prev];
               });
-              setCollapsedConversations((prev) => ({
-                ...prev,
-                [participantId]: false,
-              }));
+              setCollapsedConversations((prev) => ({ ...prev, [participantId]: false }));
               authFetch("http://localhost:5005/api/messages", {
                 method: "POST",
                 body: JSON.stringify({
@@ -233,9 +195,7 @@ const Dashboard: React.FC = () => {
                   text: preloadedMessage,
                 }),
               }).catch(() => {
-                toast.error("Failed to send message to server.", {
-                  position: "bottom-right",
-                });
+                toast.error("Failed to send message to server.", { position: "bottom-right" });
               });
               setMessagesOpen(true);
             }}
