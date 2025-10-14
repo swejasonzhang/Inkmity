@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, X, Maximize2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ export type PortfolioProps = {
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep }) => {
     const prefersReducedMotion = useReducedMotion();
     const [zoomIndex, setZoomIndex] = useState<number | null>(null);
+
     const allImages = useMemo(() => {
         const works = artist?.pastWorks ?? [];
         const sketches = artist?.sketches ?? [];
@@ -46,11 +47,17 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         return () => window.removeEventListener("keydown", onKey);
     }, [zoomIndex]);
 
-    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; startOffset?: number }> = ({ images, imgAltPrefix, startOffset = 0 }) => (
+    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; startOffset?: number }> = ({
+        images,
+        imgAltPrefix,
+        startOffset = 0,
+    }) => (
         <div className="w-full flex justify-center">
-            <div className="mx-auto grid justify-items-center gap-4
-                  max-w-[calc(4*20rem+3*1rem)]
-                  grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]">
+            <div
+                className="mx-auto grid justify-items-center gap-4
+        max-w-[calc(4*20rem+3*1rem)]
+        grid-cols-[repeat(auto-fit,minmax(20rem,1fr))]"
+            >
                 {images.map((src, i) => (
                     <button
                         key={`${src}-${i}`}
@@ -70,8 +77,14 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                         />
                         <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                            <div className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                                style={{ background: "color-mix(in oklab, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                            <div
+                                className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium shadow-sm backdrop-blur-sm border"
+                                style={{
+                                    background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
+                                    borderColor: "var(--border)",
+                                    color: "var(--fg)",
+                                }}
+                            >
                                 <Maximize2 className="h-3.5 w-3.5" /> View
                             </div>
                         </div>
@@ -86,9 +99,11 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
             <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
                     <div className="py-3 sm:py-4">
-                        <div className="mx-auto w-full max-w-3xl
-                            flex items-center justify-evenly
-                            gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
+                        <div
+                            className="mx-auto w-full max-w-3xl
+              flex items-center justify-evenly
+              gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3"
+                        >
                             <div className="justify-self-end">
                                 <div className="flex items-center gap-3 sm:gap-4">
                                     {[0, 1, 2].map((i) => (
@@ -148,12 +163,16 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
             <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8 sm:py-10 space-y-10">
                 <section className="w-full">
-                    <div className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-6 sm:p-8 text-center bg-gradient-to-b from-transparent to-black/[.02]"
-                        style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 92%, transparent)" }}>
+                    <div
+                        className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-6 sm:p-8 text-center bg-gradient-to-b from-transparent to-black/[.02]"
+                        style={{
+                            borderColor: "var(--border)",
+                            background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
+                        }}
+                    >
                         <h3 className="text-xl font-semibold tracking-tight">About {artist.username}</h3>
                         <Separator className="my-4 opacity-60" />
-                        <p className="mx-auto max-w-2xl text-sm sm:text-base leading-7"
-                            style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                        <p className="mx-auto max-w-2xl text-sm sm:text-base leading-7" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                             {artist.bio || "No bio available."}
                         </p>
                     </div>
@@ -189,67 +208,201 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                 )}
             </div>
 
+            {/* Fullscreen Zoom + Magnifier */}
             {zoomIndex !== null && allImages[zoomIndex] && (
-                <div
-                    className="fixed inset-0 z-[1300] flex items-center justify-center p-4 md:p-6"
-                    style={{ background: "color-mix(in oklab, var(--bg) 70%, black 30%)" }}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Zoomed artwork"
-                    onClick={closeZoom}
-                >
-                    <div className="absolute inset-0 backdrop-blur-sm" aria-hidden />
-
-                    <div className="absolute top-4 right-4 flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => { e.stopPropagation(); goPrev(); }}
-                            className="rounded-full"
-                            aria-label="Previous image"
-                        >
-                            <ChevronLeft className="h-5 w-5" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => { e.stopPropagation(); goNext(); }}
-                            className="rounded-full"
-                            aria-label="Next image"
-                        >
-                            <ChevronRight className="h-5 w-5" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => { e.stopPropagation(); closeZoom(); }}
-                            className="rounded-full"
-                            aria-label="Close image"
-                        >
-                            <X className="h-5 w-5" />
-                        </Button>
-                    </div>
-
-                    <motion.img
-                        key={allImages[zoomIndex]}
-                        src={allImages[zoomIndex]}
-                        alt="Zoomed artwork"
-                        className="max-h-[90vh] max-w-[92vw] object-contain rounded-2xl border shadow-2xl"
-                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                        onClick={(e) => e.stopPropagation()}
-                        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.98 }}
-                        animate={prefersReducedMotion ? {} : { opacity: 1, scale: 1 }}
-                        transition={{ type: "spring", stiffness: 260, damping: 26 }}
-                    />
-
-                    <div className="absolute left-1/2 -translate-x-1/2 bottom-5 rounded-full px-3 py-1 text-xs font-medium shadow-sm border"
-                        style={{ background: "color-mix(in oklab, var(--elevated) 88%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                        {zoomIndex + 1} / {allImages.length}
-                    </div>
-                </div>
+                <FullscreenZoom
+                    src={allImages[zoomIndex]}
+                    count={`${zoomIndex + 1} / ${allImages.length}`}
+                    onPrev={goPrev}
+                    onNext={goNext}
+                    onClose={closeZoom}
+                    prefersReducedMotion={!!prefersReducedMotion}
+                />
             )}
         </div>
     );
 };
 
 export default ArtistPortfolio;
+
+/** =================== Fullscreen Zoom with Magnifier =================== */
+
+const FullscreenZoom: React.FC<{
+    src: string;
+    count: string;
+    onPrev: () => void;
+    onNext: () => void;
+    onClose: () => void;
+    prefersReducedMotion: boolean;
+}> = ({ src, count, onPrev, onNext, onClose, prefersReducedMotion }) => {
+    const imgWrapRef = useRef<HTMLDivElement | null>(null);
+    const [lensOn, setLensOn] = useState(false);
+    const [lensPos, setLensPos] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(2.2); // magnification
+    const lensSize = useResponsiveLensSize();
+
+    const updatePos = (clientX: number, clientY: number) => {
+        const wrap = imgWrapRef.current;
+        if (!wrap) return;
+        const rect = wrap.getBoundingClientRect();
+        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
+        setLensPos({ x, y });
+    };
+
+    const onPointerDown: React.PointerEventHandler<HTMLDivElement> = (e) => {
+        e.preventDefault();
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        setLensOn(true);
+        updatePos(e.clientX, e.clientY);
+    };
+
+    const onPointerMove: React.PointerEventHandler<HTMLDivElement> = (e) => {
+        if (!lensOn) return;
+        updatePos(e.clientX, e.clientY);
+    };
+
+    const onPointerUp: React.PointerEventHandler<HTMLDivElement> = (e) => {
+        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+        setLensOn(false);
+    };
+
+    const toggleLens = () => setLensOn((v) => !v);
+
+    return (
+        <div
+            className="fixed inset-0 z-[1300] flex items-center justify-center"
+            style={{
+                background: "color-mix(in oklab, var(--bg) 85%, black 15%)",
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Zoomed artwork"
+            onClick={onClose}
+        >
+            <div className="absolute inset-0 backdrop-blur-sm" aria-hidden />
+
+            <div
+                className="relative w-screen h-screen flex items-center justify-center px-2 sm:px-4"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Prev / Next beside image */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onPrev}
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full"
+                    aria-label="Previous image"
+                >
+                    <ChevronLeft className="h-7 w-7" />
+                </Button>
+
+                <div
+                    ref={imgWrapRef}
+                    className="relative max-w-[98vw] max-h-[96vh] w-screen h-screen flex items-center justify-center"
+                    style={{ overflow: "hidden" }}
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerLeave={() => setLensOn(false)}
+                >
+                    <motion.img
+                        key={src}
+                        src={src}
+                        alt="Zoomed artwork"
+                        className="w-screen h-screen object-contain select-none"
+                        draggable={false}
+                        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.985 }}
+                        animate={prefersReducedMotion ? {} : { opacity: 1, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                    />
+
+                    {/* Magnifier lens */}
+                    {lensOn && (
+                        <div
+                            className="pointer-events-none absolute rounded-full border shadow-xl"
+                            style={{
+                                width: lensSize,
+                                height: lensSize,
+                                left: lensPos.x - lensSize / 2,
+                                top: lensPos.y - lensSize / 2,
+                                borderColor: "var(--border)",
+                                boxShadow: "0 8px 24px rgba(0,0,0,.35)",
+                                backgroundImage: `url("${src}")`,
+                                backgroundRepeat: "no-repeat",
+                                backgroundSize: `${zoom * 100}% ${zoom * 100}%`,
+                                backgroundPosition: `${-(lensPos.x * (zoom - 1))}px ${-(lensPos.y * (zoom - 1))}px`,
+                                backdropFilter: "none",
+                            }}
+                        />
+                    )}
+
+                    {/* Lens controls (mobile-friendly) */}
+                    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-card/70 backdrop-blur rounded-full border px-2 py-1"
+                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}>
+                        <Button size="sm" variant="ghost" onClick={toggleLens} className="h-7 px-3 rounded-full">
+                            {lensOn ? "Hide Lens" : "Show Lens"}
+                        </Button>
+                        <input
+                            type="range"
+                            min={1.4}
+                            max={3.5}
+                            step={0.1}
+                            value={zoom}
+                            onChange={(e) => setZoom(parseFloat(e.target.value))}
+                            className="h-1.5 w-28 accent-current"
+                            aria-label="Magnification"
+                        />
+                    </div>
+                </div>
+
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onNext}
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full"
+                    aria-label="Next image"
+                >
+                    <ChevronRight className="h-7 w-7" />
+                </Button>
+
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="absolute top-3 right-3 sm:top-4 sm:right-4 rounded-full"
+                    aria-label="Close image"
+                >
+                    <X className="h-5 w-5" />
+                </Button>
+
+                <div
+                    className="absolute left-1/2 -translate-x-1/2 top-3 sm:top-4 rounded-full px-3 py-1 text-xs font-medium shadow-sm border"
+                    style={{
+                        background: "color-mix(in oklab, var(--elevated) 88%, transparent)",
+                        borderColor: "var(--border)",
+                        color: "var(--fg)",
+                    }}
+                >
+                    {count}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+function useResponsiveLensSize() {
+    const [size, setSize] = useState(220);
+    useEffect(() => {
+        const onResize = () => {
+            const w = window.innerWidth;
+            if (w < 480) setSize(160);
+            else if (w < 768) setSize(190);
+            else setSize(220);
+        };
+        onResize();
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+    return size;
+}

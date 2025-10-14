@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, MapPin, Brush, CircleDollarSign, X } from "lucide-react";
+import { Search, MapPin, Brush, CircleDollarSign, CalendarDays, X } from "lucide-react";
 import clsx from "clsx";
 
 interface Artist {
@@ -30,6 +30,8 @@ interface Props {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   className?: string;
+  availabilityFilter: string;
+  setAvailabilityFilter: (value: string) => void;
 }
 
 const PRICE_OPTIONS = [
@@ -39,6 +41,15 @@ const PRICE_OPTIONS = [
   { value: "1000-2000", label: "$1,000 – $2,000" },
   { value: "2000-5000", label: "$2,000 – $5,000" },
   { value: "5000+", label: "$5,000+" },
+] as const;
+
+const AVAILABILITY_OPTIONS = [
+  { value: "all", label: "All Availability" },
+  { value: "7d", label: "Next week" },
+  { value: "lt1m", label: "Under 1 month" },
+  { value: "1to3m", label: "1–3 months" },
+  { value: "lte6m", label: "Up to 6 months" },
+  { value: "waitlist", label: "Waitlist / Closed" },
 ] as const;
 
 const ArtistFilter: React.FC<Props> = ({
@@ -53,6 +64,8 @@ const ArtistFilter: React.FC<Props> = ({
   searchQuery,
   setSearchQuery,
   className,
+  availabilityFilter,
+  setAvailabilityFilter,
 }) => {
   const uniqueLocations = useMemo(() => {
     const set = new Set<string>();
@@ -68,7 +81,9 @@ const ArtistFilter: React.FC<Props> = ({
 
   const [localSearch, setLocalSearch] = useState(searchQuery ?? "");
   const debounceRef = useRef<number | null>(null);
+
   useEffect(() => setLocalSearch(searchQuery ?? ""), [searchQuery]);
+
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
@@ -78,7 +93,7 @@ const ArtistFilter: React.FC<Props> = ({
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [localSearch]);
+  }, [localSearch, setSearchQuery, setCurrentPage]);
 
   const isDirty = useMemo(
     () =>
@@ -86,9 +101,10 @@ const ArtistFilter: React.FC<Props> = ({
         localSearch.trim() ||
         (priceFilter && priceFilter !== "all") ||
         (locationFilter && locationFilter !== "all") ||
-        (styleFilter && styleFilter !== "all")
+        (styleFilter && styleFilter !== "all") ||
+        (availabilityFilter && availabilityFilter !== "all")
       ),
-    [localSearch, priceFilter, locationFilter, styleFilter]
+    [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter]
   );
 
   const resetAll = () => {
@@ -97,8 +113,19 @@ const ArtistFilter: React.FC<Props> = ({
     setPriceFilter("all");
     setLocationFilter("all");
     setStyleFilter("all");
+    setAvailabilityFilter("all");
     setCurrentPage(1);
   };
+
+  const handleAvailabilityChange = (val: string) => {
+    setAvailabilityFilter(val);
+    setCurrentPage(1);
+  };
+
+  const triggerBase =
+    "w-full h-10 bg-elevated border-app text-app rounded-xl text-sm sm:text-base text-center justify-center pl-9 pr-9";
+  const contentBase = "bg-card text-app border-2 border-app rounded-2xl";
+  const itemCentered = "justify-center text-center";
 
   return (
     <div
@@ -110,15 +137,22 @@ const ArtistFilter: React.FC<Props> = ({
       role="region"
       aria-label="Artist filters"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
           <Input
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search artists or tattoos they’ve done (e.g., dragon, koi, portrait)"
+            placeholder="Search artists or tattoos (e.g., dragon, koi, portrait)"
             aria-label="Search artists or tattoo subjects"
-            className="pl-9 h-10 w-full bg-elevated border-app text-app rounded-xl placeholder:text-muted-foreground"
+            className={clsx(
+              "pl-9 pr-9 h-10 w-full bg-elevated border-app text-app rounded-xl",
+              "text-center",
+              "text-sm sm:text-base",
+              "placeholder:text-center",
+              "placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base",
+              "placeholder:text-muted-foreground"
+            )}
           />
         </div>
 
@@ -133,12 +167,12 @@ const ArtistFilter: React.FC<Props> = ({
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
+            <SelectTrigger className={triggerBase}>
               <SelectValue placeholder="All Prices" />
             </SelectTrigger>
-            <SelectContent className="bg-card text-app border-2 border-app rounded-2xl">
+            <SelectContent className={contentBase}>
               {PRICE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
+                <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
                   {opt.label}
                 </SelectItem>
               ))}
@@ -157,13 +191,15 @@ const ArtistFilter: React.FC<Props> = ({
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
+            <SelectTrigger className={triggerBase}>
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
-            <SelectContent className="bg-card text-app border-2 border-app rounded-2xl max-h-72 overflow-y-auto">
-              <SelectItem value="all">All Locations</SelectItem>
+            <SelectContent className={clsx(contentBase, "max-h-72 overflow-y-auto")}>
+              <SelectItem value="all" className={itemCentered}>
+                All Locations
+              </SelectItem>
               {uniqueLocations.map((loc) => (
-                <SelectItem key={loc} value={loc}>
+                <SelectItem key={loc} value={loc} className={itemCentered}>
                   {loc}
                 </SelectItem>
               ))}
@@ -182,14 +218,34 @@ const ArtistFilter: React.FC<Props> = ({
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-full h-10 pl-9 bg-elevated border-app text-app rounded-xl">
+            <SelectTrigger className={triggerBase}>
               <SelectValue placeholder="All Styles" />
             </SelectTrigger>
-            <SelectContent className="bg-card text-app border-2 border-app rounded-2xl max-h-72 overflow-y-auto">
-              <SelectItem value="all">All Styles</SelectItem>
+            <SelectContent className={clsx(contentBase, "max-h-72 overflow-y-auto")}>
+              <SelectItem value="all" className={itemCentered}>
+                All Styles
+              </SelectItem>
               {uniqueStyles.map((style) => (
-                <SelectItem key={style} value={style}>
+                <SelectItem key={style} value={style} className={itemCentered}>
                   {style}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="relative">
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+            <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
+          </div>
+          <Select value={availabilityFilter} onValueChange={handleAvailabilityChange}>
+            <SelectTrigger className={triggerBase}>
+              <SelectValue placeholder="All Availability" />
+            </SelectTrigger>
+            <SelectContent className={contentBase}>
+              {AVAILABILITY_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -205,11 +261,7 @@ const ArtistFilter: React.FC<Props> = ({
             {localSearch.trim() && (
               <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
                 Search: “{localSearch.trim()}”
-                <button
-                  className="ml-2 inline-flex"
-                  onClick={() => setLocalSearch("")}
-                  aria-label="Clear search"
-                >
+                <button className="ml-2 inline-flex" onClick={() => setLocalSearch("")} aria-label="Clear search">
                   <X className="size-3" />
                 </button>
               </Badge>
@@ -217,11 +269,7 @@ const ArtistFilter: React.FC<Props> = ({
             {locationFilter !== "all" && (
               <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
                 {locationFilter}
-                <button
-                  className="ml-2 inline-flex"
-                  onClick={() => setLocationFilter("all")}
-                  aria-label="Clear location filter"
-                >
+                <button className="ml-2 inline-flex" onClick={() => setLocationFilter("all")} aria-label="Clear location filter">
                   <X className="size-3" />
                 </button>
               </Badge>
@@ -229,11 +277,15 @@ const ArtistFilter: React.FC<Props> = ({
             {styleFilter !== "all" && (
               <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
                 {styleFilter}
-                <button
-                  className="ml-2 inline-flex"
-                  onClick={() => setStyleFilter("all")}
-                  aria-label="Clear style filter"
-                >
+                <button className="ml-2 inline-flex" onClick={() => setStyleFilter("all")} aria-label="Clear style filter">
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {availabilityFilter !== "all" && (
+              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+                {AVAILABILITY_OPTIONS.find((o) => o.value === availabilityFilter)?.label ?? "Availability"}
+                <button className="ml-2 inline-flex" onClick={() => setAvailabilityFilter("all")} aria-label="Clear availability filter">
                   <X className="size-3" />
                 </button>
               </Badge>
