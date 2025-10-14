@@ -167,17 +167,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
             >
               <X className="h-5 w-5" />
             </button>
-            <div className="mt-4 flex items-center justify-center gap-2">
-              {[0, 1, 2].map((i) => (
-                <button
-                  key={i}
-                  onClick={() => setStep(i as 0 | 1 | 2)}
-                  aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                  className={`h-2.5 w-2.5 rounded-full transition-transform ${step === i ? "scale-110" : "opacity-50 hover:opacity-80"}`}
-                  style={{ background: "var(--fg)" }}
-                />
-              ))}
-            </div>
             <Separator className="mt-4 w-full" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
           </div>
 
