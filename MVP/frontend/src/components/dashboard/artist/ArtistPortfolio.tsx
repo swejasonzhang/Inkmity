@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import ImageGrid from "./ImageGrid";
 import FullscreenZoom from "./FullscreenZoom";
 
 export type ArtistWithGroups = {
@@ -24,30 +23,78 @@ export type PortfolioProps = {
 
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep }) => {
     const prefersReducedMotion = useReducedMotion();
-    const [zoomIndex, setZoomIndex] = useState<number | null>(null);
+    const past = useMemo(() => artist?.pastWorks ?? [], [artist]);
+    const sketches = useMemo(() => artist?.sketches ?? [], [artist]);
 
-    const allImages = useMemo(() => {
-        const works = artist?.pastWorks ?? [];
-        const sketches = artist?.sketches ?? [];
-        return [...works, ...sketches];
-    }, [artist]);
+    const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Upcoming Sketches" }>(null);
 
-    const openZoom = (index: number) => setZoomIndex(index);
-    const closeZoom = () => setZoomIndex(null);
-    const goPrev = () => setZoomIndex(i => (i === null ? i : (i + allImages.length - 1) % allImages.length));
-    const goNext = () => setZoomIndex(i => (i === null ? i : (i + 1) % allImages.length));
+    const openZoom = (items: string[], index: number, label: "Past Works" | "Upcoming Sketches") =>
+        setZoom({ items, index, label });
+
+    const closeZoom = () => setZoom(null);
+
+    const goPrev = () =>
+        setZoom((z) =>
+            z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z
+        );
+
+    const goNext = () =>
+        setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
+
+    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({
+        images,
+        imgAltPrefix,
+        label
+    }) => (
+        <div className="w-full flex justify-center">
+            <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
+                {images.map((src, i) => (
+                    <button
+                        key={`${src}-${i}`}
+                        onClick={() => openZoom(images, i, label)}
+                        className="group relative w-full max-w-[360px] aspect-[4/3] rounded-3xl border shadow-sm overflow-hidden flex items-center justify-center ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                        aria-label={`Open ${imgAltPrefix} ${i + 1}`}
+                    >
+                        <img
+                            src={src}
+                            alt={`${imgAltPrefix} ${i + 1}`}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                            loading={i < 4 ? "eager" : "lazy"}
+                            fetchPriority={i < 4 ? "high" : undefined}
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                        />
+                        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                            <div
+                                className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
+                                style={{
+                                    background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
+                                    borderColor: "var(--border)",
+                                    color: "var(--fg)"
+                                }}
+                            >
+                                <Maximize2 className="h-3.5 w-3.5" /> View
+                            </div>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") return closeZoom();
-            if (zoomIndex !== null) {
+            if (zoom) {
                 if (e.key === "ArrowLeft") return goPrev();
                 if (e.key === "ArrowRight") return goNext();
             }
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [zoomIndex]);
+    }, [zoom]);
 
     return (
         <div className="w-full mt-6" style={{ background: "var(--card)", color: "var(--fg)" }}>
@@ -57,7 +104,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                         <div className="mx-auto w-full max-w-3xl flex items-center justify-evenly gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
                             <div className="justify-self-end">
                                 <div className="flex items-center gap-3 sm:gap-4">
-                                    {[0, 1, 2].map(i => (
+                                    {[0, 1, 2].map((i) => (
                                         <button
                                             key={i}
                                             onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
@@ -67,13 +114,12 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                                 background:
                                                     i === 0
                                                         ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)"
                                             }}
                                         />
                                     ))}
                                 </div>
                             </div>
-
                             <div className="justify-self-center">
                                 <motion.div
                                     initial={{ y: 0, opacity: 0.95 }}
@@ -83,7 +129,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                     style={{
                                         background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
                                         color: "color-mix(in oklab, var(--fg) 90%, transparent)",
-                                        border: `1px solid var(--border)`,
+                                        border: `1px solid var(--border)`
                                     }}
                                 >
                                     <ChevronDown className="h-4 w-4" />
@@ -91,7 +137,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 </motion.div>
                                 <div className="sm:hidden block h-6" />
                             </div>
-
                             <div className="justify-self-center">
                                 <Button
                                     onClick={onNext}
@@ -99,7 +144,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                     style={{
                                         background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
                                         color: "var(--fg)",
-                                        border: `1px solid var(--border)`,
+                                        border: `1px solid var(--border)`
                                     }}
                                     variant="outline"
                                 >
@@ -129,12 +174,11 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                     <header className="mb-5 flex items-end justify-between">
                         <h3 className="text-lg font-semibold">Past Works</h3>
                         <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                            {artist.pastWorks?.length ? `${artist.pastWorks.length} image${artist.pastWorks.length === 1 ? "" : "s"}` : "—"}
+                            {past.length ? `${past.length} image${past.length === 1 ? "" : "s"}` : "—"}
                         </span>
                     </header>
-
-                    {artist.pastWorks?.length ? (
-                        <ImageGrid images={artist.pastWorks} imgAltPrefix="Past work" startOffset={0} onOpenZoom={openZoom} />
+                    {past.length ? (
+                        <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
                     ) : (
                         <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                             No past works to show yet.
@@ -142,28 +186,23 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                     )}
                 </section>
 
-                {artist.sketches && artist.sketches.length > 0 && (
+                {sketches.length > 0 && (
                     <section className="w-full">
                         <header className="mb-5 flex items-end justify-between">
                             <h3 className="text-lg font-semibold">Upcoming Sketches & Ideas</h3>
                             <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                                {artist.sketches.length} image{artist.sketches.length === 1 ? "" : "s"}
+                                {sketches.length} image{sketches.length === 1 ? "" : "s"}
                             </span>
                         </header>
-                        <ImageGrid
-                            images={artist.sketches}
-                            imgAltPrefix="Sketch"
-                            startOffset={artist.pastWorks?.length ?? 0}
-                            onOpenZoom={openZoom}
-                        />
+                        <ImageGrid images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
                     </section>
                 )}
             </div>
 
-            {zoomIndex !== null && allImages[zoomIndex] && (
+            {zoom && (
                 <FullscreenZoom
-                    src={allImages[zoomIndex]}
-                    count={`${zoomIndex + 1} / ${allImages.length}`}
+                    src={zoom.items[zoom.index]}
+                    count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`}
                     onPrev={goPrev}
                     onNext={goNext}
                     onClose={closeZoom}

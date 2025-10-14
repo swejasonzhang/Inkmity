@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import useResponsiveLensSize from "./useResponsiveLensSize.ts";
 
 type Props = {
@@ -61,6 +60,11 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
         setLensOn(false);
     };
 
+    const stop = (e: React.MouseEvent | React.PointerEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+    };
+
     return (
         <div
             className="fixed inset-0 z-[1300] flex items-center justify-center"
@@ -74,24 +78,21 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
 
             <div
                 className="relative w-screen h-screen flex items-center justify-center px-2 sm:px-4"
-                onClick={(e) => e.stopPropagation()}
+                onClick={stop}
             >
                 <div
-                    className="absolute left-1/2 -translate-x-1/2 top-3 sm:top-4 flex items-center gap-2 rounded-full border px-2 py-1.5 shadow-sm bg-card/80 backdrop-blur"
-                    style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                    className="absolute left-1/2 -translate-x-1/2 top-3 sm:top-4 rounded-full shadow-sm z-[9999] pointer-events-none"
+                    style={{ background: "var(--bg)", border: "2px solid #000", color: "#000" }}
                 >
-                    <Button variant="ghost" size="icon" onClick={onPrev} className="rounded-full h-8 w-8" aria-label="Previous image">
-                        <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <span className="text-sm font-semibold px-2">{count}</span>
-                    <Button variant="ghost" size="icon" onClick={onNext} className="rounded-full h-8 w-8" aria-label="Next image">
-                        <ChevronRight className="h-5 w-5" />
-                    </Button>
+                    <div className="flex items-center gap-2 px-5 py-2 text-white font-semibold">
+                        <span>{count}</span>
+                    </div>
                 </div>
 
                 <div
                     ref={wrapRef}
-                    className="relative max-w-[98vw] max-h-[96vh] w-screen h-screen flex items-center justify-center overflow-hidden"
+                    className="relative max-w-[98vw] w-screen flex items-center justify-center overflow-hidden"
+                    style={{ maxHeight: "calc(100vh - 20px)", height: "calc(100vh - 20px)" }}
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}
@@ -102,7 +103,8 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                         key={src}
                         src={src}
                         alt="Zoomed artwork"
-                        className="w-screen h-screen object-contain select-none"
+                        className="w-screen select-none"
+                        style={{ height: "calc(100vh - 20px)", objectFit: "contain" }}
                         draggable={false}
                         initial={{ opacity: 0, scale: 0.985 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -118,8 +120,13 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                                 <img
                                     src={src}
                                     alt=""
-                                    className="w-screen h-screen object-contain select-none"
-                                    style={{ transform: `scale(${zoom})`, transformOrigin: `${origin.oxPct}% ${origin.oyPct}%` }}
+                                    className="w-screen select-none"
+                                    style={{
+                                        height: "calc(100vh - 20px)",
+                                        objectFit: "contain",
+                                        transform: `scale(${zoom})`,
+                                        transformOrigin: `${origin.oxPct}% ${origin.oyPct}%`,
+                                    }}
                                     draggable={false}
                                 />
                             </div>
@@ -137,17 +144,34 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                             />
                         </>
                     )}
+
+                    <button
+                        onClick={(e) => { stop(e); onPrev(); }}
+                        className="group absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 h-14 w-14 sm:h-16 sm:w-16 rounded-full border backdrop-blur bg-card/70 shadow-xl grid place-items-center z-10"
+                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                        aria-label="Previous image"
+                    >
+                        <ChevronLeft className="h-7 w-7 transition-transform group-hover:-translate-x-0.5" />
+                    </button>
+
+                    <button
+                        onClick={(e) => { stop(e); onNext(); }}
+                        className="group absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 h-14 w-14 sm:h-16 sm:w-16 rounded-full border backdrop-blur bg-card/70 shadow-xl grid place-items-center z-10"
+                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                        aria-label="Next image"
+                    >
+                        <ChevronRight className="h-7 w-7 transition-transform group-hover:translate-x-0.5" />
+                    </button>
                 </div>
 
-                <Button
-                    variant="ghost"
-                    size="icon"
+                <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 sm:top-4 sm:right-4 rounded-full"
+                    className="absolute top-3 right-3 sm:top-4 sm:right-4 h-12 w-12 rounded-full border backdrop-blur bg-card/75 shadow-xl grid place-items-center z-20"
+                    style={{ borderColor: "var(--border)", color: "var(--fg)" }}
                     aria-label="Close image"
                 >
-                    <X className="h-5 w-5" />
-                </Button>
+                    <X className="h-8 w-8" />
+                </button>
             </div>
         </div>
     );
