@@ -1,7 +1,7 @@
 import FormInput from "@/components/dashboard/FormInput";
 
 export default function OtpStep({
-    code, setCode, onBack, onVerify, loading,
+    code, setCode, onVerify, loading,
 }: {
     code: string;
     setCode: (v: string) => void;
@@ -21,9 +21,6 @@ export default function OtpStep({
                 message={code ? "Code entered" : "Check your email for the code"}
             />
             <div className="flex items-center gap-3 mt-2">
-                <button type="button" onClick={onBack} className="bg-white/10 hover:bg-white/20 text-white w-28 rounded-xl px-3 py-2">
-                    Back
-                </button>
                 <button
                     type="button"
                     onClick={onVerify}
