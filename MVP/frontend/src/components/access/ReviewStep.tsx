@@ -14,6 +14,8 @@ type ClientProfile = {
     placement: string;
     size: string;
     notes: string;
+    style?: string;
+    availability?: string;
 };
 
 type ArtistProfile = {
@@ -23,6 +25,24 @@ type ArtistProfile = {
     baseRate: string;
     instagram: string;
     portfolio: string;
+};
+
+const SIZE_LABELS: Record<string, string> = {
+    tiny: "Tiny (≤ 2 in)",
+    small: "Small (2–4 in)",
+    medium: "Medium (4–6 in)",
+    large: "Large (6–10 in)",
+    xl: "XL (10–14 in)",
+    xxl: "XXL (≥ 14 in)",
+};
+
+const AVAIL_LABELS: Record<string, string> = {
+    all: "No preference",
+    "7d": "Next week",
+    lt1m: "Under 1 month",
+    "1to3m": "1–3 months",
+    lte6m: "Up to 6 months",
+    waitlist: "Waitlist / Closed",
 };
 
 type Props = {
@@ -37,6 +57,10 @@ export default function ReviewStep({ role, shared, client, artist }: Props) {
         client.budgetMin && client.budgetMax
             ? `$${Number(client.budgetMin).toLocaleString()} – $${Number(client.budgetMax).toLocaleString()}`
             : "Not set";
+
+    const sizeText = client.size ? (SIZE_LABELS[client.size] ?? client.size) : "Optional";
+    const availText = client.availability ? (AVAIL_LABELS[client.availability] ?? client.availability) : "Optional";
+    const styleText = client.style && client.style !== "all" ? client.style : "Optional";
 
     return (
         <div className="grid gap-6 text-white">
@@ -71,16 +95,20 @@ export default function ReviewStep({ role, shared, client, artist }: Props) {
                             <span>{client.location || "Not set"}</span>
                         </div>
                         <div>
+                            <span className="text-white/60">Preferred Style: </span>
+                            <span>{styleText}</span>
+                        </div>
+                        <div>
+                            <span className="text-white/60">Availability: </span>
+                            <span>{availText}</span>
+                        </div>
+                        <div>
                             <span className="text-white/60">Placement: </span>
                             <span>{client.placement || "Optional"}</span>
                         </div>
                         <div>
                             <span className="text-white/60">Size: </span>
-                            <span>{client.size || "Optional"}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Notes: </span>
-                            <span>{client.notes || "Optional"}</span>
+                            <span>{sizeText}</span>
                         </div>
                     </div>
                 </section>

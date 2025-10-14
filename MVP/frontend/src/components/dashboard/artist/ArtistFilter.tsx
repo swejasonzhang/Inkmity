@@ -52,6 +52,8 @@ const AVAILABILITY_OPTIONS = [
   { value: "waitlist", label: "Waitlist / Closed" },
 ] as const;
 
+const PRESET_STORAGE_KEY = "inkmity_artist_filters";
+
 const ArtistFilter: React.FC<Props> = ({
   priceFilter,
   setPriceFilter,
@@ -95,6 +97,34 @@ const ArtistFilter: React.FC<Props> = ({
     };
   }, [localSearch, setSearchQuery, setCurrentPage]);
 
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+      if (raw) {
+        const p = JSON.parse(raw) as Partial<{
+          priceFilter: string;
+          locationFilter: string;
+          styleFilter: string;
+          availabilityFilter: string;
+          searchQuery: string;
+        }>;
+        if (p.priceFilter) setPriceFilter(p.priceFilter);
+        if (p.locationFilter) setLocationFilter(p.locationFilter);
+        if (p.styleFilter) setStyleFilter(p.styleFilter);
+        if (p.availabilityFilter) setAvailabilityFilter(p.availabilityFilter);
+        if (typeof p.searchQuery === "string") {
+          setLocalSearch(p.searchQuery);
+          setSearchQuery(p.searchQuery);
+        }
+        setCurrentPage(1);
+      }
+    } catch { }
+    hydratedRef.current = true;
+  }, [setAvailabilityFilter, setCurrentPage, setLocationFilter, setPriceFilter, setSearchQuery, setStyleFilter]);
+
   const isDirty = useMemo(
     () =>
       !!(
@@ -115,6 +145,9 @@ const ArtistFilter: React.FC<Props> = ({
     setStyleFilter("all");
     setAvailabilityFilter("all");
     setCurrentPage(1);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(PRESET_STORAGE_KEY);
+    }
   };
 
   const handleAvailabilityChange = (val: string) => {
@@ -286,6 +319,14 @@ const ArtistFilter: React.FC<Props> = ({
               <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
                 {AVAILABILITY_OPTIONS.find((o) => o.value === availabilityFilter)?.label ?? "Availability"}
                 <button className="ml-2 inline-flex" onClick={() => setAvailabilityFilter("all")} aria-label="Clear availability filter">
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {priceFilter !== "all" && (
+              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+                {PRICE_OPTIONS.find((p) => p.value === priceFilter)?.label ?? priceFilter}
+                <button className="ml-2 inline-flex" onClick={() => setPriceFilter("all")} aria-label="Clear price filter">
                   <X className="size-3" />
                 </button>
               </Badge>
