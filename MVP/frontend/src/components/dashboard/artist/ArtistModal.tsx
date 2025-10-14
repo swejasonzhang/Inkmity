@@ -1,4 +1,3 @@
-// src/components/dashboard/artist/ArtistModal.tsx
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { motion } from "framer-motion";
@@ -8,6 +7,12 @@ import { Separator } from "@/components/ui/separator";
 import ArtistPortfolio, { ArtistWithGroups } from "./ArtistPortfolio";
 import ArtistBooking from "./ArtistBooking";
 import ArtistReviews from "./ArtistReviews";
+
+declare global {
+  interface Window {
+    __INK_MODAL_JUST_CLOSED_AT__?: number;
+  }
+}
 
 type Props = {
   open: boolean;
@@ -23,6 +28,34 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const scrollYRef = useRef<number>(0);
+
+  const swallowGestureTail = () => {
+    const handler = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      (e as any).stopImmediatePropagation?.();
+    };
+    document.addEventListener("click", handler, true);
+    document.addEventListener("pointerup", handler, true);
+    document.addEventListener("mouseup", handler, true);
+    document.addEventListener("touchend", handler, true);
+    setTimeout(() => {
+      document.removeEventListener("click", handler, true);
+      document.removeEventListener("pointerup", handler, true);
+      document.removeEventListener("mouseup", handler, true);
+      document.removeEventListener("touchend", handler, true);
+    }, 300);
+  };
+
+  const markJustClosed = () => {
+    window.__INK_MODAL_JUST_CLOSED_AT__ = Date.now();
+  };
+
+  const closeNow = () => {
+    swallowGestureTail();
+    markJustClosed();
+    onClose();
+  };
 
   useEffect(() => {
     if (!portalRef.current) {
@@ -42,10 +75,12 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
   }, []);
 
   useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeNow();
+    };
     if (open) window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
-  }, [open, onClose]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -58,7 +93,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
       document.body.style.overscrollBehavior = "";
       return;
     }
-
     setStep(0);
     scrollYRef.current = window.scrollY || window.pageYOffset || 0;
     (document.documentElement as HTMLElement).style.overscrollBehavior = "none";
@@ -68,14 +102,12 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
     document.body.style.width = "100%";
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
-
-    const block = (e: Event) => e.preventDefault();
-    overlayRef.current?.addEventListener("wheel", block, { passive: false });
-    overlayRef.current?.addEventListener("touchmove", block, { passive: false });
-
+    const preventScrollChain = (e: Event) => e.preventDefault();
+    overlayRef.current?.addEventListener("wheel", preventScrollChain, { passive: false });
+    overlayRef.current?.addEventListener("touchmove", preventScrollChain, { passive: false });
     return () => {
-      overlayRef.current?.removeEventListener("wheel", block as EventListener);
-      overlayRef.current?.removeEventListener("touchmove", block as EventListener);
+      overlayRef.current?.removeEventListener("wheel", preventScrollChain as EventListener);
+      overlayRef.current?.removeEventListener("touchmove", preventScrollChain as EventListener);
       document.body.style.position = "";
       document.body.style.top = "";
       document.body.style.width = "";
@@ -89,33 +121,20 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
 
   if (!open || !mounted || !portalRef.current) return null;
 
-  const swallowNextClick = () => {
-    const handler = (e: MouseEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
-    };
-    document.addEventListener("click", handler, true);
-    setTimeout(() => document.removeEventListener("click", handler, true), 0);
-  };
-
-  const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleOverlayPointerDown: React.PointerEventHandler<HTMLDivElement> = (e) => {
     const panel = panelRef.current;
-    if (!panel) return;
-    if (!panel.contains(e.target as Node)) {
-      e.stopPropagation();
-      e.preventDefault();
-      swallowNextClick();
-      onClose();
-    }
+    if (!panel || panel.contains(e.target as Node)) return;
+    (e as any).nativeEvent?.stopImmediatePropagation?.();
+    e.stopPropagation();
+    e.preventDefault();
+    closeNow();
   };
 
-  const handleAnyCloseClickCapture = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const closer = target.closest<HTMLElement>('[aria-label="Close"], [data-close-modal="true"]');
-    if (closer) {
-      e.stopPropagation();
-      onClose();
-    }
+  const handleClosePointerDown: React.PointerEventHandler = (e) => {
+    (e as any).nativeEvent?.stopImmediatePropagation?.();
+    e.stopPropagation();
+    e.preventDefault();
+    closeNow();
   };
 
   const modalUI = (
@@ -130,19 +149,18 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
       style={{ background: "color-mix(in oklab, var(--bg) 30%, transparent)", overscrollBehavior: "contain" } as React.CSSProperties}
       aria-modal="true"
       role="dialog"
-      onMouseDown={handleOverlayMouseDown}
+      onPointerDown={handleOverlayPointerDown}
     >
       <div className="pointer-events-none w-full h-full flex items-center justify-center">
         <ScrollArea
           ref={panelRef as any}
           className="pointer-events-auto w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col items-center text-center"
           style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
-          onClickCapture={handleAnyCloseClickCapture}
         >
           <div className="w-full max-w-[1100px] mx-auto px-6 pt-5 relative flex flex-col items-center">
             <h2 className="text-2xl font-extrabold">{artist.username}</h2>
             <button
-              onClick={onClose}
+              onPointerDown={handleClosePointerDown}
               aria-label="Close"
               className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full p-2 hover:opacity-80"
               style={{ color: "var(--fg)" }}
@@ -169,7 +187,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
                 artist={artist}
                 onNext={() => setStep(1)}
                 onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
-                onClose={onClose}
+                onClose={closeNow}
               />
             )}
             {step === 1 && (
@@ -178,14 +196,14 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
                 onMessage={onMessage}
                 onBack={() => setStep(0)}
                 onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
-                onClose={onClose}
+                onClose={closeNow}
               />
             )}
             {step === 2 && (
               <ArtistReviews
                 artist={artist}
                 onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
-                onClose={onClose}
+                onClose={closeNow}
               />
             )}
           </div>

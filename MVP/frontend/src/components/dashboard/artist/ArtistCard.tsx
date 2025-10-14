@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Camera } from "lucide-react";
-import ArtistModal from "@/components/dashboard/artist/ArtistModal";
 
 interface Artist {
   _id: string;
@@ -48,13 +47,11 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   onClick,
   onUpdateProfileImage,
   onUpdateCoverImage,
-  onMessage,
 }) => {
   const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
   const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const [localCoverUrl, setLocalCoverUrl] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
@@ -106,7 +103,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   };
 
   const openProfile = () => {
-    setIsModalOpen(true);
+    if (window.__INK_MODAL_JUST_CLOSED_AT__ && Date.now() - window.__INK_MODAL_JUST_CLOSED_AT__ < 350) {
+      return;
+    }
     onClick?.({
       ...artist,
       pastWorks,
@@ -316,24 +315,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
           </div>
         </div>
       </div>
-
-      <ArtistModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        artist={{
-          _id: artist._id,
-          username: artist.username,
-          bio: artist.bio,
-          pastWorks,
-          sketches,
-        }}
-        onMessage={
-          onMessage ??
-          ((a, msg) => {
-            console.log("Message to artist:", a.username, msg);
-          })
-        }
-      />
     </>
   );
 };

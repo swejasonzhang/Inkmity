@@ -1,4 +1,3 @@
-// src/components/dashboard/artist/ArtistsSection.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
@@ -22,7 +21,7 @@ const ArtistsSection: React.FC<Props> = ({
     loading,
     showArtists,
     onSelectArtist,
-    onRequestCloseModal,
+    onRequestCloseModal
 }) => {
     const [priceFilter, setPriceFilter] = useState<string>("all");
     const [locationFilter, setLocationFilter] = useState<string>("all");
@@ -68,21 +67,12 @@ const ArtistsSection: React.FC<Props> = ({
     const pageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const isCenterLoading = loading || !showArtists;
 
-    const motionKey = [
-        currentPage,
-        priceFilter,
-        locationFilter,
-        styleFilter,
-        debouncedSearch,
-        pageItems.length,
-    ].join("|");
+    const motionKey = [currentPage, priceFilter, locationFilter, styleFilter, debouncedSearch, pageItems.length].join("|");
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest(
-            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
-        );
+        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
@@ -95,10 +85,7 @@ const ArtistsSection: React.FC<Props> = ({
             className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-card"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-            <div
-                className="bg-card px-3 py-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300"
-                style={{ opacity: filterOpacity }}
-            >
+            <div className="bg-card px-3 py-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300" style={{ opacity: filterOpacity }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={setPriceFilter}
@@ -135,17 +122,10 @@ const ArtistsSection: React.FC<Props> = ({
                                                 initial={{ opacity: 0, y: 24 }}
                                                 whileInView={{ opacity: 1, y: 0 }}
                                                 viewport={{ once: true, amount: 0.2 }}
-                                                transition={{
-                                                    duration: 0.45,
-                                                    delay: index * 0.1,
-                                                    ease: [0.16, 1, 0.3, 1] as const,
-                                                }}
+                                                transition={{ duration: 0.45, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] as const }}
                                                 className="w-full h-full"
                                             >
-                                                <div
-                                                    className="h-full min-h-[520px] sm:min-h-[540px] md:min-h-[560px]"
-                                                    data-artist-card="true"
-                                                >
+                                                <div className="h-full min-h-[520px] sm:min-h-[540px] md:min-h-[560px]" data-artist-card="true">
                                                     <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
                                                 </div>
                                             </motion.div>
@@ -153,19 +133,12 @@ const ArtistsSection: React.FC<Props> = ({
                                     </div>
                                 )
                             ) : (
-                                <p className="text-muted text-center flex-1 flex items-center justify-center py-8">
-                                    No artists match your filters.
-                                </p>
+                                <p className="text-muted text-center flex-1 flex items-center justify-center py-8">No artists match your filters.</p>
                             )}
                         </div>
 
                         <div className="py-4 px-3 sm:px-4 md:px-6">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPrev={() => setCurrentPage((p) => p - 1)}
-                                onNext={() => setCurrentPage((p) => p + 1)}
-                            />
+                            <Pagination currentPage={currentPage} totalPages={totalPages} onPrev={() => setCurrentPage((p) => p - 1)} onNext={() => setCurrentPage((p) => p + 1)} />
                         </div>
                     </div>
                 </div>
