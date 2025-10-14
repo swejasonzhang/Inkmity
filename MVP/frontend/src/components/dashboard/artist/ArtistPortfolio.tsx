@@ -34,9 +34,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
     const closeZoom = () => setZoom(null);
 
     const goPrev = () =>
-        setZoom((z) =>
-            z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z
-        );
+        setZoom((z) => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
 
     const goNext = () =>
         setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
@@ -46,7 +44,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         imgAltPrefix,
         label
     }) => (
-        <div className="w-full flex justify-center">
+        <div className="w-full hidden sm:flex justify-center">
             <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
                 {images.map((src, i) => (
                     <button
@@ -84,6 +82,112 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         </div>
     );
 
+    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({
+        images,
+        imgAltPrefix,
+        label
+    }) => {
+        const [index, setIndex] = useState(0);
+
+        const swipeTo = (dir: "prev" | "next") => {
+            setIndex((i) => {
+                if (dir === "prev") return (i + images.length - 1) % images.length;
+                return (i + 1) % images.length;
+            });
+        };
+
+        const onDragEnd = (_: any, info: { offset: { x: number } }) => {
+            const threshold = 50; // px
+            if (info.offset.x < -threshold) swipeTo("next");
+            else if (info.offset.x > threshold) swipeTo("prev");
+        };
+
+        if (!images.length) return null;
+
+        const src = images[index];
+
+        return (
+            <div className="sm:hidden">
+                <div className="w-full">
+                    <div
+                        className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border"
+                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                    >
+                        <motion.button
+                            key={src}
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={0.2}
+                            dragSnapToOrigin
+                            onDragEnd={onDragEnd}
+                            onClick={() => openZoom(images, index, label)}
+                            aria-label={`Open ${imgAltPrefix} ${index + 1}`}
+                            className="block w-full"
+                        >
+                            <div className="w-full aspect-[4/3]">
+                                <img
+                                    src={src}
+                                    alt={`${imgAltPrefix} ${index + 1}`}
+                                    className="h-full w-full object-cover"
+                                    loading="eager"
+                                    decoding="async"
+                                    referrerPolicy="no-referrer"
+                                />
+                            </div>
+                        </motion.button>
+
+                        {/* View pill */}
+                        <div className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
+                            style={{
+                                background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
+                                borderColor: "var(--border)",
+                                color: "var(--fg)"
+                            }}>
+                            <Maximize2 className="h-3.5 w-3.5" /> View
+                        </div>
+
+                        {/* Dots */}
+                        <div className="absolute left-0 right-0 -bottom-8 flex justify-center gap-2 py-3">
+                            {images.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setIndex(i)}
+                                    aria-label={`Go to ${label} ${i + 1}`}
+                                    className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
+                                    style={{
+                                        background:
+                                            i === index
+                                                ? "color-mix(in oklab, var(--fg) 95%, transparent)"
+                                                : "color-mix(in oklab, var(--fg) 40%, transparent)"
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="sm:hidden grid grid-cols-2 gap-3 mt-6">
+                        <Button
+                            variant="outline"
+                            onClick={() => swipeTo("prev")}
+                            className="rounded-xl"
+                            style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
+                        >
+                            Prev
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => swipeTo("next")}
+                            className="rounded-xl"
+                            style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") return closeZoom();
@@ -101,15 +205,15 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
             <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
                     <div className="py-3 sm:py-4">
-                        <div className="mx-auto w-full max-w-3xl flex items-center justify-evenly gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
+                        <div className="mx-auto w-full max-w-3xl flex items-center justify-evenly gap-3 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
                             <div className="justify-self-end">
-                                <div className="flex items-center gap-3 sm:gap-4">
+                                <div className="flex items-center gap-2 sm:gap-4">
                                     {[0, 1, 2].map((i) => (
                                         <button
                                             key={i}
                                             onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
                                             aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                                            className={`h-2.5 w-6 rounded-full transition-all ${i === 0 ? "bg-foreground/90" : "bg-foreground/30 hover:bg-foreground/60"}`}
+                                            className="h-2.5 w-6 rounded-full transition-all"
                                             style={{
                                                 background:
                                                     i === 0
@@ -140,7 +244,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             <div className="justify-self-center">
                                 <Button
                                     onClick={onNext}
-                                    className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm"
+                                    className="rounded-xl px-3 sm:px-4 py-2 text-sm font-medium shadow-sm"
                                     style={{
                                         background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
                                         color: "var(--fg)",
@@ -156,30 +260,35 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                 </div>
             </div>
 
-            <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-10 sm:py-12 space-y-12">
-                <section className="w-full mt-2">
-                    <div
-                        className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-7 sm:p-9 text-center"
-                    >
-                        <h3 className="text-xl font-semibold tracking-tight">About {artist.username}</h3>
-                        <Separator className="my-5 opacity-60" />
-                        <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+            <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
+                <section className="w-full mt-1">
+                    <div className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-5 sm:p-9 text-center"
+                        style={{ borderColor: "var(--border)" }}>
+                        <h3 className="text-lg sm:text-xl font-semibold tracking-tight">About {artist.username}</h3>
+                        <Separator className="my-4 sm:my-5 opacity-60" />
+                        <p
+                            className="mx-auto max-w-2xl text-base sm:text-lg leading-7"
+                            style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
+                        >
                             {artist.bio || "No bio available."}
                         </p>
                     </div>
                 </section>
 
                 <section className="w-full">
-                    <header className="mb-5 flex items-end justify-between">
-                        <h3 className="text-lg font-semibold">Past Works</h3>
+                    <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                        <h3 className="text-base sm:text-lg font-semibold">Past Works</h3>
                         <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                             {past.length ? `${past.length} image${past.length === 1 ? "" : "s"}` : "—"}
                         </span>
                     </header>
+
+                    <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
+
                     {past.length ? (
                         <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
                     ) : (
-                        <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                        <p className="hidden sm:block text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                             No past works to show yet.
                         </p>
                     )}
@@ -187,12 +296,15 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
                 {sketches.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-5 flex items-end justify-between">
-                            <h3 className="text-lg font-semibold">Upcoming Sketches & Ideas</h3>
+                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                            <h3 className="text-base sm:text-lg font-semibold">Upcoming Sketches & Ideas</h3>
                             <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                                 {sketches.length} image{sketches.length === 1 ? "" : "s"}
                             </span>
                         </header>
+
+                        <MobileCarousel images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
+
                         <ImageGrid images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
                     </section>
                 )}
