@@ -160,7 +160,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                 <section className="w-full mt-2">
                     <div
                         className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-7 sm:p-9 text-center"
-                        style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 92%, transparent)" }}
                     >
                         <h3 className="text-xl font-semibold tracking-tight">About {artist.username}</h3>
                         <Separator className="my-5 opacity-60" />
