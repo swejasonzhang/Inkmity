@@ -12,6 +12,7 @@ export type ArtistWithGroups = {
     bio?: string;
     pastWorks: string[];
     sketches?: string[];
+    avatarUrl?: string;
 };
 
 export type PortfolioProps = {
@@ -25,6 +26,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
     const prefersReducedMotion = useReducedMotion();
     const past = useMemo(() => artist?.pastWorks ?? [], [artist]);
     const sketches = useMemo(() => artist?.sketches ?? [], [artist]);
+    const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
 
     const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Upcoming Sketches" }>(null);
 
@@ -97,7 +99,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         };
 
         const onDragEnd = (_: any, info: { offset: { x: number } }) => {
-            const threshold = 50; // px
+            const threshold = 50;
             if (info.offset.x < -threshold) swipeTo("next");
             else if (info.offset.x > threshold) swipeTo("prev");
         };
@@ -135,18 +137,16 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 />
                             </div>
                         </motion.button>
-
-                        {/* View pill */}
-                        <div className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
+                        <div
+                            className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
                             style={{
                                 background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
                                 borderColor: "var(--border)",
                                 color: "var(--fg)"
-                            }}>
+                            }}
+                        >
                             <Maximize2 className="h-3.5 w-3.5" /> View
                         </div>
-
-                        {/* Dots */}
                         <div className="absolute left-0 right-0 -bottom-8 flex justify-center gap-2 py-3">
                             {images.map((_, i) => (
                                 <button
@@ -164,7 +164,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             ))}
                         </div>
                     </div>
-
                     <div className="sm:hidden grid grid-cols-2 gap-3 mt-6">
                         <Button
                             variant="outline"
@@ -262,9 +261,36 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
             <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
                 <section className="w-full mt-1">
-                    <div className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-5 sm:p-9 text-center"
-                        style={{ borderColor: "var(--border)" }}>
-                        <h3 className="text-lg sm:text-xl font-semibold tracking-tight">About {artist.username}</h3>
+                    <div
+                        className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-5 sm:p-9 text-center"
+                        style={{ borderColor: "var(--border)" }}
+                    >
+                        <div className="flex flex-col items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
+                            {artist.avatarUrl ? (
+                                <img
+                                    src={artist.avatarUrl}
+                                    alt={`${artist.username} profile picture`}
+                                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover border shadow"
+                                    style={{ borderColor: "var(--border)" }}
+                                    loading="eager"
+                                    decoding="async"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <div
+                                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-full grid place-items-center border shadow text-2xl sm:text-3xl font-semibold"
+                                    style={{
+                                        borderColor: "var(--border)",
+                                        background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
+                                        color: "var(--fg)"
+                                    }}
+                                    aria-label={`${artist.username} profile placeholder`}
+                                >
+                                    {initials}
+                                </div>
+                            )}
+                            <h3 className="text-lg sm:text-xl font-semibold tracking-tight">About {artist.username}</h3>
+                        </div>
                         <Separator className="my-4 sm:my-5 opacity-60" />
                         <p
                             className="mx-auto max-w-2xl text-base sm:text-lg leading-7"
