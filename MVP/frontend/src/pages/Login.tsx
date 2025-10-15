@@ -1,6 +1,6 @@
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, FormEvent, ChangeEvent, useRef } from "react";
 import Header from "@/components/header/Header";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSignIn, useUser } from "@clerk/clerk-react";
@@ -10,24 +10,53 @@ import FormCard from "@/components/access/FormCard";
 import { Button } from "@/components/ui/button";
 import { container } from "@/components/access/animations";
 
+const TOAST_H = 72;
+const TOAST_GAP = 50;
+
 export default function Login() {
   const prefersReduced = !!useReducedMotion();
-
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
-
   const { signIn, setActive } = useSignIn();
   const { isSignedIn } = useUser();
 
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [toastTop, setToastTop] = useState<number | undefined>(undefined);
   useEffect(() => {
-    if (isSignedIn) window.location.href = "/dashboard";
+    const updateTop = () => {
+      const el = cardRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const top = Math.max(12, Math.floor(rect.top) - TOAST_H - TOAST_GAP);
+      setToastTop(top);
+    };
+    updateTop();
+    const onEvents = ["resize", "scroll"];
+    onEvents.forEach((evt) => window.addEventListener(evt, updateTop, { passive: true }));
+    const ro = new ResizeObserver(updateTop);
+    if (cardRef.current) ro.observe(cardRef.current);
+    return () => {
+      onEvents.forEach((evt) => window.removeEventListener(evt, updateTop));
+      ro.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    toast.info("You are already signed in! Redirecting to dashboard...", {
+      theme: "dark",
+      icon: false,
+      closeButton: false,
+    });
+    const t = setTimeout(() => {
+      window.location.replace("/dashboard");
+    }, 1500);
+    return () => clearTimeout(t);
   }, [isSignedIn]);
 
   useEffect(() => {
@@ -40,12 +69,10 @@ export default function Login() {
       const ae = document.activeElement as HTMLInputElement | null;
       setPwdFocused(!!ae && ae.tagName === "INPUT" && ae.name === "password");
     };
-
     const recomputeShow = () => {
       const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
       setShowPassword(!!input && input.type === "text");
     };
-
     const handleFocusIn = () => {
       recomputeFocus();
       recomputeShow();
@@ -59,12 +86,10 @@ export default function Login() {
     const handleClickOrInput = () => {
       recomputeShow();
     };
-
     document.addEventListener("focusin", handleFocusIn, true);
     document.addEventListener("focusout", handleFocusOut, true);
     document.addEventListener("click", handleClickOrInput, true);
     document.addEventListener("input", handleClickOrInput, true);
-
     return () => {
       document.removeEventListener("focusin", handleFocusIn, true);
       document.removeEventListener("focusout", handleFocusOut, true);
@@ -80,7 +105,6 @@ export default function Login() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     if (!validateEmail(email)) {
       toast.error("Please enter a valid email", { position: "top-center", theme: "dark" });
       triggerMascotError();
@@ -95,7 +119,6 @@ export default function Login() {
       toast.error("Sign in unavailable. Please try again later.", { position: "top-center", theme: "dark" });
       return;
     }
-
     setLoading(true);
     try {
       const result = await signIn.create({ identifier: email, password });
@@ -118,43 +141,24 @@ export default function Login() {
   };
 
   const mascotEyesClosed = pwdFocused && showPassword;
-
   const CARD_H = "h-[520px] sm:h-[560px] md:h-[580px]";
 
   return (
     <>
       <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
         <Header disableDashboardLink />
-
         <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
           <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
-            <motion.div
-              variants={container}
-              initial={prefersReduced ? false : "hidden"}
-              animate={prefersReduced ? undefined : "show"}
-              className="w-full"
-            >
-              <div
-                className={`relative grid w-full p-2 gap-0 md:p-0 md:gap-0 ${showInfo
-                  ? "md:grid-cols-2 md:items-stretch md:justify-items-center"
-                  : "grid-cols-1 place-items-center"
-                  }`}
-              >
+            <motion.div variants={container} initial={prefersReduced ? false : "hidden"} animate={prefersReduced ? undefined : "show"} className="w-full">
+              <div className={`relative grid w-full p-2 gap-0 md:p-0 md:gap-0 ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : "grid-cols-1 place-items-center"}`}>
                 {showInfo && (
                   <motion.div layout className={`w-full max-w-xl ${CARD_H} p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100`}>
                     <div className="h-full">
-                      <InfoPanel
-                        show={showInfo}
-                        prefersReduced={prefersReduced}
-                        hasError={mascotError}
-                        isPasswordHidden={mascotEyesClosed}
-                        mode="login"
-                      />
+                      <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                     </div>
                   </motion.div>
                 )}
-
-                <motion.div layout className={`w-full max-w-xl ${CARD_H} justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100`}>
+                <motion.div ref={cardRef} layout className={`w-full max-w-xl ${CARD_H} justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100`}>
                   <FormCard
                     mode="login"
                     showInfo={showInfo}
@@ -166,9 +170,7 @@ export default function Login() {
                     <div className="grid place-items-center h-full overflow-hidden">
                       <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
                         <div className="text-left">
-                          <label className="block text-sm text-white/70 mb-1" htmlFor="email">
-                            Email
-                          </label>
+                          <label className="block text-sm text-white/70 mb-1" htmlFor="email">Email</label>
                           <div className="relative">
                             <input
                               id="email"
@@ -182,11 +184,8 @@ export default function Login() {
                             />
                           </div>
                         </div>
-
                         <div className="text-left">
-                          <label className="block text-sm text-white/70 mb-1" htmlFor="password">
-                            Password
-                          </label>
+                          <label className="block text-sm text-white/70 mb-1" htmlFor="password">Password</label>
                           <div className="relative">
                             <input
                               id="password"
@@ -219,12 +218,7 @@ export default function Login() {
                             </button>
                           </div>
                         </div>
-
-                        <Button
-                          type="submit"
-                          className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl w-full"
-                          disabled={loading}
-                        >
+                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl w-full" disabled={loading}>
                           {loading ? "Signing In..." : "Sign In"}
                         </Button>
                       </form>
@@ -235,7 +229,6 @@ export default function Login() {
             </motion.div>
           </div>
         </main>
-
         <ToastContainer
           position="top-center"
           autoClose={2000}
@@ -243,20 +236,13 @@ export default function Login() {
           closeOnClick
           pauseOnHover={false}
           draggable={false}
-          toastClassName="bg-black/80 text-white text-base rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
+          limit={1}
+          transition={Slide}
+          toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
+          style={{ top: toastTop !== undefined ? toastTop : 12 }}
         />
-
       </div>
-
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0"
-        aria-hidden
-      >
+      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
     </>

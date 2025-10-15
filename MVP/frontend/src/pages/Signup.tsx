@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, ChangeEvent } from "react";
+import { useEffect, useMemo, useState, ChangeEvent, useRef } from "react";
 import Header from "@/components/header/Header";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAuth, useClerk, useSignUp, useUser } from "@clerk/clerk-react";
@@ -25,11 +25,13 @@ type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string })
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
 
+const TOAST_H = 72;
+const TOAST_GAP = 50;
+
 type InputLike = { target: { name: string; value: string } };
 
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
-
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
@@ -42,32 +44,39 @@ export default function SignUp() {
     notes: "",
   });
   const [artist, setArtist] = useState<ArtistProfile>({ location: "", shop: "", years: "", baseRate: "", instagram: "", portfolio: "" });
-
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
   const [showInfo, setShowInfo] = useState(false);
-
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
   const [mascotError, setMascotError] = useState(false);
-
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
 
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [toastTop, setToastTop] = useState<number | undefined>(undefined);
   useEffect(() => {
-    const logoutType = localStorage.getItem(LOGOUT_TYPE_KEY);
-    const lastLogin = localStorage.getItem(LOGIN_TIMESTAMP_KEY);
-    if (isSignedIn && !awaitingCode) {
-      const within3Days = lastLogin && Date.now() - parseInt(lastLogin, 10) <= 3 * 24 * 60 * 60 * 1000;
-      if (within3Days && logoutType !== "manual") {
-        toast.info("You are already signed in! Redirecting to dashboard...", { position: "top-center", theme: "dark" });
-      }
-    }
-  }, [isSignedIn, awaitingCode]);
+    const updateTop = () => {
+      const el = cardRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const top = Math.max(12, Math.floor(rect.top) - TOAST_H - TOAST_GAP);
+      setToastTop(top);
+    };
+    updateTop();
+    const onEvents = ["resize", "scroll"];
+    onEvents.forEach((evt) => window.addEventListener(evt, updateTop, { passive: true }));
+    const ro = new ResizeObserver(updateTop);
+    if (cardRef.current) ro.observe(cardRef.current);
+    return () => {
+      onEvents.forEach((evt) => window.removeEventListener(evt, updateTop));
+      ro.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
@@ -108,12 +117,25 @@ export default function SignUp() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isSignedIn || awaitingCode) return;
+    toast.info("You are already signed in! Redirecting to dashboard...", {
+      theme: "dark",
+      icon: false,
+      closeButton: false,
+    });
+    const t = setTimeout(() => {
+      window.location.replace("/dashboard");
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [isSignedIn, awaitingCode]);
+
   const handleShared = (e: ChangeEvent<HTMLInputElement>) => setShared({ ...shared, [e.target.name]: e.target.value });
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
     const name = (e as InputLike).target?.name;
     const value = (e as InputLike).target?.value;
     if (!name) return;
-    setClient(prev => ({ ...prev, [name]: value }));
+    setClient((prev) => ({ ...prev, [name]: value }));
   };
   const handleArtist = (e: ChangeEvent<HTMLInputElement>) => setArtist({ ...artist, [e.target.name]: e.target.value });
 
@@ -154,10 +176,10 @@ export default function SignUp() {
       triggerMascotError();
       return;
     }
-    if (!isLastFormSlide) setStep(s => s + 1);
+    if (!isLastFormSlide) setStep((s) => s + 1);
   };
 
-  const handleBack = () => setStep(s => Math.max(0, s - 1));
+  const handleBack = () => setStep((s) => Math.max(0, s - 1));
 
   const startVerification = async () => {
     if (!allSharedValid) {
@@ -169,14 +191,11 @@ export default function SignUp() {
       toast.error("Sign up is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
       return;
     }
-
     setLoading(true);
-
     try {
       if (isSignedIn) {
         await signOut();
       }
-
       const attempt = await signUp.create({
         emailAddress: shared.email,
         password: shared.password,
@@ -187,14 +206,9 @@ export default function SignUp() {
           profile: role === "client" ? client : artist,
         },
       } as any);
-
-      setSignUpAttempt(
-        attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> }
-      );
+      setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
       setAwaitingCode(true);
-
       await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
-
       toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
     } catch (err: any) {
       setAwaitingCode(false);
@@ -207,7 +221,6 @@ export default function SignUp() {
       setLoading(false);
     }
   };
-
 
   const syncUserToBackend = async (r: Role) => {
     const token = await getToken();
@@ -276,48 +289,20 @@ export default function SignUp() {
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0"
-        aria-hidden
-      >
+      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
-
       <Header disableDashboardLink />
-
       <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
         <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
-            <div
-              className={`
-              relative grid w-full p-2 gap-0 md:p-0 md:gap-0
-              ${showInfo ? "md:grid-cols-2 md:place-items-stretch" : "grid-cols-1 place-items-center"}
-            `}
-            >
+            <div className={`relative grid w-full p-2 gap-0 md:p-0 md:gap-0 ${showInfo ? "md:grid-cols-2 md:place-items-stretch" : "grid-cols-1 place-items-center"}`}>
               {showInfo && (
-                <motion.div
-                  layout
-                  className="flex w-full max-w-xl p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
-                >
-                  <InfoPanel
-                    show={showInfo}
-                    prefersReduced={prefersReduced}
-                    hasError={mascotError}
-                    isPasswordHidden={mascotEyesClosed}
-                    mode="signup"
-                  />
+                <motion.div layout className="flex w-full max-w-xl p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100">
+                  <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
                 </motion.div>
               )}
-
-              <motion.div
-                layout
-                className="w-full max-w-xl justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
-              >
+              <motion.div ref={cardRef} layout className="w-full max-w-xl justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100">
                 <FormCard
                   mode="signup"
                   showInfo={showInfo}
@@ -350,7 +335,6 @@ export default function SignUp() {
           </motion.div>
         </div>
       </main>
-
       <ToastContainer
         position="top-center"
         autoClose={2000}
@@ -358,7 +342,10 @@ export default function SignUp() {
         closeOnClick
         pauseOnHover={false}
         draggable={false}
-        toastClassName="bg-black/80 text-white text-base rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
+        limit={1}
+        transition={Slide}
+        toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
+        style={{ top: toastTop !== undefined ? toastTop : 12 }}
       />
     </div>
   );
