@@ -26,31 +26,53 @@ export default function BookingPicker({ }: Props) {
   const times = generateHalfHourTimes(meridiem);
   const canConfirm = Boolean(selectedTime);
 
-  return (
-    <div className="flex flex-col h-full rounded-xl border border-gray-700 p-4 bg-black text-white gap-3">
-      <h3 className="font-semibold mb-1">Book a Time</h3>
+  const chipBase =
+    "px-3.5 sm:px-4 py-2 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 rounded-md";
+  const chipGroup =
+    "inline-flex items-center gap-1 bg-transparent p-1 rounded-xl border";
+  const chipBorderStyle = { borderColor: "var(--border)" };
+  const chipInactive = {
+    background: "color-mix(in oklab, var(--card) 92%, transparent)",
+    color: "var(--fg)",
+  };
+  const chipActive = {
+    background: "var(--fg)",
+    color: "var(--card)",
+  };
 
-      <div className="grid gap-3 sm:grid-cols-2">
+  return (
+    <div
+      className="flex flex-col h-full rounded-2xl p-4 sm:p-5 gap-4"
+      style={{ background: "var(--elevated)", color: "var(--fg)" }}
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="text-base sm:text-lg font-semibold">Book a Time</h3>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <span className="block text-sm mb-2 text-gray-200">Type</span>
-          <div className="inline-flex rounded-lg border border-gray-700 overflow-hidden">
+          <span
+            className="block text-xs sm:text-sm mb-2"
+            style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
+          >
+            Type
+          </span>
+          <div className={chipGroup} style={chipBorderStyle} role="group" aria-label="Booking type">
             <button
               type="button"
+              aria-pressed={kind === "consultation"}
               onClick={() => setKind("consultation")}
-              className={`px-4 py-2 text-sm border-r border-gray-700 ${kind === "consultation"
-                ? "bg-white text-black"
-                : "bg-gray-900 text-white hover:bg-gray-800"
-                }`}
+              className={chipBase}
+              style={kind === "consultation" ? chipActive : chipInactive}
             >
               Consultation
             </button>
             <button
               type="button"
+              aria-pressed={kind === "appointment"}
               onClick={() => setKind("appointment")}
-              className={`px-4 py-2 text-sm ${kind === "appointment"
-                ? "bg-white text-black"
-                : "bg-gray-900 text-white hover:bg-gray-800"
-                }`}
+              className={chipBase}
+              style={kind === "appointment" ? chipActive : chipInactive}
             >
               Appointment
             </button>
@@ -58,31 +80,34 @@ export default function BookingPicker({ }: Props) {
         </div>
 
         <div>
-          <span className="block text-sm mb-2 text-gray-200">AM / PM</span>
-          <div className="inline-flex rounded-lg border border-gray-700 overflow-hidden">
+          <span
+            className="block text-xs sm:text-sm mb-2"
+            style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
+          >
+            AM / PM
+          </span>
+          <div className={chipGroup} style={chipBorderStyle} role="group" aria-label="Meridiem">
             <button
               type="button"
+              aria-pressed={meridiem === "AM"}
               onClick={() => {
                 setMeridiem("AM");
                 setSelectedTime(null);
               }}
-              className={`px-4 py-2 text-sm border-r border-gray-700 ${meridiem === "AM"
-                ? "bg-white text-black"
-                : "bg-gray-900 text-white hover:bg-gray-800"
-                }`}
+              className={chipBase}
+              style={meridiem === "AM" ? chipActive : chipInactive}
             >
               AM
             </button>
             <button
               type="button"
+              aria-pressed={meridiem === "PM"}
               onClick={() => {
                 setMeridiem("PM");
                 setSelectedTime(null);
               }}
-              className={`px-4 py-2 text-sm ${meridiem === "PM"
-                ? "bg-white text-black"
-                : "bg-gray-900 text-white hover:bg-gray-800"
-                }`}
+              className={chipBase}
+              style={meridiem === "PM" ? chipActive : chipInactive}
             >
               PM
             </button>
@@ -90,21 +115,29 @@ export default function BookingPicker({ }: Props) {
         </div>
       </div>
 
-      <div className="mt-1">
-        <span className="block text-sm mb-2 text-gray-200">Time</span>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+      <div>
+        <span
+          className="block text-xs sm:text-sm mb-2"
+          style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
+        >
+          Time
+        </span>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
           {times.map((t) => {
             const isActive = selectedTime === t;
             return (
               <button
                 key={t}
                 onClick={() => setSelectedTime(t)}
-                className={[
-                  "px-3 py-2 rounded border transition",
-                  isActive
-                    ? "bg-white text-black border-white"
-                    : "bg-gray-900 text-white border-gray-700 hover:bg-gray-800",
-                ].join(" ")}
+                className="px-3 py-2 rounded-lg transition outline-none focus-visible:ring-2"
+                style={{
+                  background: isActive
+                    ? "var(--fg)"
+                    : "color-mix(in oklab, var(--card) 95%, transparent)",
+                  color: isActive ? "var(--card)" : "var(--fg)",
+                  border: `1px solid ${isActive ? "var(--fg)" : "var(--border)"}`,
+                }}
               >
                 {t}
               </button>
@@ -112,12 +145,20 @@ export default function BookingPicker({ }: Props) {
           })}
         </div>
 
-        <div className="mt-3 text-sm text-gray-300">
+        <div
+          className="mt-3 text-xs sm:text-sm"
+          style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
+        >
           {selectedTime ? (
             <span>
               Selected:{" "}
-              <span className="text-white font-medium">{selectedTime}</span> •{" "}
-              <span className="text-white font-medium capitalize">{kind}</span>
+              <span className="font-medium" style={{ color: "var(--fg)" }}>
+                {selectedTime}
+              </span>{" "}
+              •{" "}
+              <span className="font-medium capitalize" style={{ color: "var(--fg)" }}>
+                {kind}
+              </span>
             </span>
           ) : (
             <span>Select a time above.</span>
@@ -126,18 +167,32 @@ export default function BookingPicker({ }: Props) {
       </div>
 
       <div>
-        <label className="text-sm block mb-1 text-gray-200">Note (optional)</label>
+        <label
+          className="text-xs sm:text-sm block mb-1"
+          style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
+        >
+          Note (optional)
+        </label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Describe your idea, placement, size, or any references."
           rows={5}
-          className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 min-h-28 md:min-h-36 resize-y"
+          className="w-full rounded-xl px-3 py-2 placeholder-opacity-70 focus:outline-none focus-visible:ring-2 resize-y"
+          style={{
+            background: "var(--card)",
+            color: "var(--fg)",
+            border: "1px solid var(--border)",
+            minHeight: "7.5rem",
+          }}
         />
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-4">
-        <p className="text-xs text-white/70">
+      <div className="mt-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p
+          className="text-[11px] sm:text-xs text-center sm:text-left"
+          style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}
+        >
           After booking, the slot will disappear to prevent double-booking.
         </p>
         <button
@@ -151,12 +206,15 @@ export default function BookingPicker({ }: Props) {
             setSelectedTime(null);
             setNote("");
           }}
-          className={[
-            "px-4 py-2 rounded font-medium border",
-            canConfirm
-              ? "bg-white text-black border-white hover:bg-gray-200"
-              : "bg-gray-700 text-gray-300 border-gray-700 cursor-not-allowed",
-          ].join(" ")}
+          className="px-4 py-2 rounded-xl font-medium transition outline-none focus-visible:ring-2"
+          style={{
+            background: canConfirm
+              ? "var(--fg)"
+              : "color-mix(in oklab, var(--elevated) 80%, transparent)",
+            color: canConfirm ? "var(--card)" : "color-mix(in oklab, var(--fg) 60%, transparent)",
+            border: `1px solid ${canConfirm ? "var(--fg)" : "var(--border)"}`,
+            cursor: canConfirm ? "pointer" : "not-allowed",
+          }}
         >
           Confirm
         </button>
