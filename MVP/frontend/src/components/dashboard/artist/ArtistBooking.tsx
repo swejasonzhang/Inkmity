@@ -65,7 +65,7 @@ Would you be open to my ideas?`,
                                             key={i}
                                             onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
                                             aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                                            className={`h-2.5 w-6 rounded-full transition-all ${i === 1 ? "bg-foreground/90" : "bg-foreground/30 hover:bg-foreground/60"}`}
+                                            className="h-2.5 w-6 rounded-full transition-all"
                                             style={{
                                                 background:
                                                     i === 1
@@ -85,8 +85,7 @@ Would you be open to my ideas?`,
                                     className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
                                     style={{
                                         background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                                        color: "color-mix(in oklab, var(--fg) 90%, transparent)",
-                                        border: `1px solid var(--border)`
+                                        color: "color-mix(in oklab, var(--fg) 90%, transparent)"
                                     }}
                                 >
                                     <ChevronDown className="h-4 w-4" />
@@ -99,11 +98,10 @@ Would you be open to my ideas?`,
                                 <div className="inline-flex items-center gap-2 sm:gap-3 flex-nowrap whitespace-nowrap">
                                     <Button
                                         onClick={onBack}
-                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm"
+                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm border-0"
                                         style={{
                                             background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
-                                            color: "var(--fg)",
-                                            border: `1px solid var(--border)`
+                                            color: "var(--fg)"
                                         }}
                                         variant="outline"
                                     >
@@ -112,11 +110,10 @@ Would you be open to my ideas?`,
 
                                     <Button
                                         onClick={handleNext}
-                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm"
+                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm border-0"
                                         style={{
                                             background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
-                                            color: "var(--fg)",
-                                            border: `1px solid var(--border)`
+                                            color: "var(--fg)"
                                         }}
                                         variant="outline"
                                     >
@@ -130,9 +127,8 @@ Would you be open to my ideas?`,
             </div>
 
             <section className="w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-0 grid grid-cols-1 gap-6 lg:gap-8">
-                <Card
-                    className="w-full"
-                >
+                {/* Message the artist - WITH BORDER */}
+                <Card className="w-full shadow-none" style={{ border: "1px solid var(--border)" }}>
                     <CardHeader className="text-center space-y-1">
                         <CardTitle>Message {artist.username}</CardTitle>
                     </CardHeader>
@@ -149,8 +145,8 @@ Would you be open to my ideas?`,
                             <Button
                                 onClick={handleSendMessage}
                                 disabled={sentOnce}
-                                className="transition w-full sm:w-auto"
-                                style={{ background: "var(--elevated)", color: "var(--fg)", border: `1px solid var(--border)` }}
+                                className="transition w-full sm:w-auto border-0"
+                                style={{ background: "var(--elevated)", color: "var(--fg)" }}
                             >
                                 {sentOnce ? "Message Sent" : "Send Message"}
                             </Button>
@@ -158,7 +154,8 @@ Would you be open to my ideas?`,
                     </CardContent>
                 </Card>
 
-                <Card className="w-full">
+                {/* Book an appointment - WITH BORDER */}
+                <Card className="w-full shadow-none" style={{ border: "1px solid var(--border)" }}>
                     <CardHeader className="text-center space-y-1">
                         <CardTitle>Book an appointment</CardTitle>
                     </CardHeader>
@@ -166,37 +163,90 @@ Would you be open to my ideas?`,
                     <CardContent className="p-3 sm:p-5">
                         <div className="grid md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
                             <div
-                                className="flex flex-col h-full rounded-md border"
-                                style={{ background: "var(--elevated)", borderColor: "var(--border)" }}
+                                className="flex flex-col h-full min-h-[640px] rounded-md"
+                                style={{ background: "var(--elevated)" }}
                             >
                                 <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 p-3 sm:p-4">
                                     <Select
                                         value={String(month.getMonth())}
-                                        onValueChange={(value) => setMonth(new Date(month.getFullYear(), Number(value), 1))}
+                                        onValueChange={(value) =>
+                                            setMonth(new Date(month.getFullYear(), Number(value), 1))
+                                        }
                                     >
-                                        <SelectTrigger className="h-9 w-40" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                                        <SelectTrigger
+                                            className="h-9 w-40 border-0"
+                                            style={{
+                                                background: "var(--card)",
+                                                color: "var(--fg)"
+                                            }}
+                                        >
                                             <SelectValue placeholder="Month" />
                                         </SelectTrigger>
-                                        <SelectContent style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}>
+                                        <SelectContent
+                                            className="border-0"
+                                            style={{
+                                                background: "var(--card)",
+                                                color: "var(--fg)"
+                                            }}
+                                        >
                                             {MONTHS.map((m, i) => (
-                                                <SelectItem key={m} value={String(i)}>{m}</SelectItem>
+                                                <SelectItem key={m} value={String(i)}>
+                                                    {m}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
 
-                                    <Select value={String(month.getFullYear())} onValueChange={(value) => setMonth(new Date(Number(value), month.getMonth(), 1))}>
-                                        <SelectTrigger className="h-9 w-28" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                                    <Select
+                                        value={String(month.getFullYear())}
+                                        onValueChange={(value) =>
+                                            setMonth(new Date(Number(value), month.getMonth(), 1))
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            className="h-9 w-28 border-0"
+                                            style={{
+                                                background: "var(--card)",
+                                                color: "var(--fg)"
+                                            }}
+                                        >
                                             <SelectValue placeholder="Year" />
                                         </SelectTrigger>
-                                        <SelectContent style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}>
+                                        <SelectContent
+                                            className="border-0"
+                                            style={{
+                                                background: "var(--card)",
+                                                color: "var(--fg)"
+                                            }}
+                                        >
                                             {years.map((y) => (
-                                                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                                <SelectItem key={y} value={String(y)}>
+                                                    {y}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
 
                                 <div className="flex-1 px-3 sm:px-4 pb-4 sm:pb-5">
+                                    <div className="w-full text-center mb-2">
+                                        <span
+                                            style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}
+                                        >
+                                            Selected:{" "}
+                                        </span>
+                                        <span className="font-medium" style={{ color: "var(--fg)" }}>
+                                            {date
+                                                ? date.toLocaleDateString(undefined, {
+                                                    weekday: "short",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })
+                                                : "—"}
+                                        </span>
+                                    </div>
+
                                     <Calendar
                                         mode="single"
                                         month={month}
@@ -211,24 +261,24 @@ Would you be open to my ideas?`,
                                         fromDate={startOfToday}
                                         disabled={{ before: startOfToday }}
                                         showOutsideDays={false}
-                                        modifiersClassNames={{ selected: "ring-2 border !ring-offset-0 !bg-transparent !shadow-none" }}
-                                        classNames={{ day: "h-12 w-12 m-1.5 p-0 font-normal rounded-md outline-none focus:outline-none" }}
-                                        className="w-full rounded-md p-3 sm:p-4 mx-auto"
-                                        style={{ background: "var(--card)", color: "var(--fg)", border: `1px solid var(--border)` }}
+                                        modifiersClassNames={{
+                                            selected: "ring-2 !ring-offset-0 !bg-transparent !shadow-none"
+                                        }}
+                                        classNames={{
+                                            day: "h-12 w-12 m-2 sm:m-2.5 p-0 font-normal rounded-md outline-none focus:outline-none",
+                                        }}
+                                        className="w-full rounded-md p-3 sm:p-4 mx-auto h-full border-0"
+                                        style={{
+                                            background: "var(--card)",
+                                            color: "var(--fg)"
+                                        }}
                                     />
-
-                                    <div className="w-full text-center pt-2">
-                                        <span style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Selected: </span>
-                                        <span className="font-medium" style={{ color: "var(--fg)" }}>
-                                            {date ? date.toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" }) : "—"}
-                                        </span>
-                                    </div>
                                 </div>
                             </div>
 
                             <div
-                                className="flex flex-col h-full rounded-md border"
-                                style={{ background: "var(--elevated)", borderColor: "var(--border)" }}
+                                className="flex flex-col h-full min-h-[640px] rounded-md"
+                                style={{ background: "var(--elevated)" }}
                             >
                                 <div className="flex-1 p-3 sm:p-4 lg:p-5">
                                     <div className="w-full h-full max-w-[920px] mx-auto">

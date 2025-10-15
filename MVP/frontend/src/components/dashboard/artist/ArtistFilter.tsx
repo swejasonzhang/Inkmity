@@ -156,9 +156,10 @@ const ArtistFilter: React.FC<Props> = ({
   };
 
   const triggerBase =
-    "w-full h-10 bg-elevated border-app text-app rounded-xl text-sm sm:text-base text-center justify-center pl-9 pr-9";
-  const contentBase = "bg-card text-app border-2 border-app rounded-2xl";
-  const itemCentered = "justify-center text-center";
+    "w-full h-10 bg-elevated border-app text-app rounded-xl text-sm sm:text-base text-center justify-center pl-9 pr-9 focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
+  const contentBase = "bg-card text-app rounded-2xl focus:outline-none ring-0 outline-none";
+  const itemCentered =
+    "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
 
   return (
     <div
