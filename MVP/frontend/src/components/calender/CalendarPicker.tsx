@@ -1,5 +1,6 @@
-import { useMemo } from "react";
-import { Calendar } from "@/components/ui/calendar";
+import React, { useMemo } from "react";
+import { Calendar } from "@/components/ui/calendar"
+import { DayButton as RDPDayButton } from "react-day-picker";
 import {
     Select,
     SelectContent,
@@ -7,6 +8,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 const MONTHS = [
     "January", "February", "March", "April", "May", "June",
@@ -21,6 +23,54 @@ type Props = {
     startOfToday: Date;
 };
 
+function LegendTile({
+    number,
+    variant,
+}: {
+    label: string; 
+    number: string;
+    variant: "available" | "unavailable" | "selected";
+}) {
+    const base =
+        "aspect-square h-9 w-9 rounded-md font-normal leading-none flex items-center justify-center";
+    const classes =
+        variant === "available"
+            ? "text-white"
+            : variant === "unavailable"
+                ? "text-muted-foreground opacity-70"
+                : "ring-2 ring-white";
+    return (
+        <div className="inline-flex items-center gap-2">
+            <div className={`${base} ${classes}`}>
+                <span className="text-[11px]">{number}</span>
+            </div>
+            <span style={{ color: "var(--fg)" }}>
+                {variant === "available"
+                    ? "Available"
+                    : variant === "unavailable"
+                        ? "Unavailable"
+                        : "Selected"}
+            </span>
+        </div>
+    );
+}
+
+function WhiteBorderDayButton({
+    className,
+    modifiers,
+    ...props
+}: React.ComponentProps<typeof RDPDayButton>) {
+    const ring = modifiers.selected ? "ring-2 ring-white" : "";
+    return (
+        <Button
+            variant="ghost"
+            size="icon"
+            className={`aspect-square size-auto w-full min-w-[var(--cell-size)] rounded-md ${ring} ${className ?? ""}`}
+            {...props}
+        />
+    );
+}
+
 export default function CalendarPicker({
     date,
     month,
@@ -30,6 +80,7 @@ export default function CalendarPicker({
 }: Props) {
     const currentYear = startOfToday.getFullYear();
     const currentMonth = startOfToday.getMonth();
+    const todayNumber = String(startOfToday.getDate());
 
     const years = useMemo(() => {
         const toYear = currentYear + 5;
@@ -48,17 +99,29 @@ export default function CalendarPicker({
     const handleYearSelect = (v: string) => {
         let y = Number(v);
         if (y < currentYear) y = currentYear;
-        const safeMonth = month.getMonth() < currentMonth && y === currentYear ? currentMonth : month.getMonth();
+        const safeMonth =
+            month.getMonth() < currentMonth && y === currentYear
+                ? currentMonth
+                : month.getMonth();
         onMonthChange(new Date(y, safeMonth, 1));
     };
 
     return (
         <div
-            className="flex flex-col items-center justify-center rounded-xl min-h-[560px] px-4 py-4"
+            className="flex flex-col items-center justify-center rounded-xl px-4 py-6 w-full min-h-[640px]"
             style={{ background: "var(--elevated)" }}
         >
-            <div className="w-full max-w-[560px] mx-auto flex flex-col items-center justify-center gap-3">
-                <div className="relative z-[9999] isolate flex flex-wrap items-center justify-center gap-2">
+            <div className="w-full max-w-[640px] mx-auto flex flex-col items-center justify-center gap-5">
+                <div className="flex flex-col items-center justify-center text-center gap-1">
+                    <h3 className="text-base font-semibold" style={{ color: "var(--fg)" }}>
+                        Choose a date
+                    </h3>
+                    <p className="text-xs opacity-80" style={{ color: "var(--fg)" }}>
+                        Only dates from today onward are available.
+                    </p>
+                </div>
+
+                <div className="relative z-[9999] isolate flex items-center justify-center gap-2">
                     <Select value={String(month.getMonth())} onValueChange={handleMonthSelect}>
                         <SelectTrigger
                             className="h-9 w-36 border-0 rounded-xl px-3 text-sm shadow-sm"
@@ -123,7 +186,7 @@ export default function CalendarPicker({
                     </Select>
                 </div>
 
-                <div className="w-full text-center -mb-1 px-2">
+                <div className="w-full text-center">
                     <span className="text-base sm:text-lg font-semibold" style={{ color: "var(--fg)" }}>
                         {date
                             ? date.toLocaleDateString(undefined, {
@@ -136,24 +199,31 @@ export default function CalendarPicker({
                     </span>
                 </div>
 
-                <div className="w-full px-2">
+                <div className="flex items-center justify-center gap-6 text-xs">
+                    <LegendTile label="Available" number={todayNumber} variant="available" />
+                    <LegendTile label="Unavailable" number={todayNumber} variant="unavailable" />
+                    <LegendTile label="Selected" number={todayNumber} variant="selected" />
+                </div>
+
+                <div className="w-full flex items-center justify-center">
                     <Calendar
+                        components={{ DayButton: WhiteBorderDayButton }}
                         mode="single"
                         selected={date}
-                        onSelect={(d) => {
+                        onSelect={(d: Date | undefined) => {
                             if (!d) return;
                             if (d < startOfToday) return;
                             onDateChange(d);
                         }}
                         month={month}
-                        onMonthChange={(m) => {
+                        onMonthChange={(m: Date) => {
                             const guard = new Date(currentYear, currentMonth, 1);
                             onMonthChange(m < guard ? guard : m);
                         }}
                         fromDate={startOfToday}
                         disabled={{ before: startOfToday }}
                         showOutsideDays={false}
-                        className="w-full max-w-[560px] rounded-lg p-3 border"
+                        className="w-full max-w-[640px] rounded-lg p-4 border"
                         style={{
                             background: "var(--card)",
                             color: "var(--fg)",
@@ -164,12 +234,22 @@ export default function CalendarPicker({
                             head_cell: "text-xs font-medium",
                             caption_label: "text-sm font-medium",
                         }}
-                        modifiersClassNames={{
-                            selected: "ring-2 ring-white !ring-offset-0 !bg-transparent !text-[inherit]",
-                            today: "font-semibold",
-                            disabled: "opacity-40",
-                        }}
                     />
+                </div>
+
+                <div className="w-full flex items-center justify-between pt-1">
+                    <div className="text-xs opacity-70" style={{ color: "var(--fg)" }}>
+                        Times shown in your local timezone.
+                    </div>
+                    <Button
+                        variant="ghost"
+                        className="h-8 rounded-lg"
+                        style={{ color: "var(--fg)" }}
+                        onClick={() => onDateChange(undefined)}
+                        disabled={!date}
+                    >
+                        Clear
+                    </Button>
                 </div>
             </div>
         </div>
