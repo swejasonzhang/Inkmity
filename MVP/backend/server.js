@@ -29,9 +29,19 @@ const PORT = Number(process.env.PORT) || 5005;
 
 await connectDB();
 
+const allowed = new Set([
+  FRONTEND_ORIGIN,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
 app.use(
   cors({
-    origin: FRONTEND_ORIGIN,
+    origin(origin, cb) {
+      if (!origin) return cb(null, true);
+      if (allowed.has(origin)) return cb(null, true);
+      return cb(new Error(`CORS: Origin ${origin} not allowed`));
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
@@ -59,11 +69,7 @@ app.use((err, _req, res, _next) => {
 });
 
 const io = new Server(server, {
-  cors: {
-    origin: FRONTEND_ORIGIN,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
+  cors: { origin: [...allowed], methods: ["GET", "POST"], credentials: true },
 });
 initSocket(io);
 

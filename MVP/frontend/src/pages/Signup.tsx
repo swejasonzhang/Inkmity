@@ -20,9 +20,14 @@ const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
 const TOAST_H = 72;
 const TOAST_GAP = 50;
-const API_BASE =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) ||
-  "http://localhost:5005/api";
+
+const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:5005/api";
+const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
+function apiUrl(path: string, qs?: Record<string, string>) {
+  const url = new URL(path.replace(/^\/+/, ""), API_BASE + "/");
+  if (qs) Object.entries(qs).forEach(([k, v]) => url.searchParams.set(k, v));
+  return url.toString();
+}
 
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
@@ -50,6 +55,18 @@ export default function SignUp() {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
 
+  const goToLogin = () => {
+    const loginUrl = "/login";
+    setTimeout(() => {
+      window.location.href = loginUrl;
+    }, 1400);
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowInfo(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
   useEffect(() => {
     const updateTop = () => {
       const el = cardRef.current;
@@ -70,9 +87,13 @@ export default function SignUp() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setShowInfo(true), 2000);
+    if (!isSignedIn || awaitingCode) return;
+    toast.info("You’re already signed in. Sending you to your dashboard…", { theme: "dark", icon: false, closeButton: false });
+    const t = setTimeout(() => {
+      window.location.replace("/dashboard");
+    }, 1500);
     return () => clearTimeout(t);
-  }, []);
+  }, [isSignedIn, awaitingCode]);
 
   useEffect(() => {
     const recomputeFocus = () => {
@@ -107,15 +128,6 @@ export default function SignUp() {
       document.removeEventListener("input", handleClickOrInput, true);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isSignedIn || awaitingCode) return;
-    toast.info("You are already signed in! Redirecting to dashboard...", { theme: "dark", icon: false, closeButton: false });
-    const t = setTimeout(() => {
-      window.location.replace("/dashboard");
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [isSignedIn, awaitingCode]);
 
   useEffect(() => {
     setEmailTaken(false);
@@ -170,10 +182,20 @@ export default function SignUp() {
     window.setTimeout(() => setMascotError(false), 900);
   };
 
+  const toastAndRedirectToLogin = () => {
+    toast.error(
+      <span>
+        This email is already registered. Redirecting to <a className="underline" href="/login">Login</a>…
+      </span>,
+      { position: "top-center", theme: "dark" }
+    );
+    goToLogin();
+  };
+
   const blockIfEmailTaken = () => {
     if (emailTaken) {
-      toast.error("This email has already been registered, so go to login.", { position: "top-center", theme: "dark" });
       triggerMascotError();
+      toastAndRedirectToLogin();
       return true;
     }
     return false;
@@ -222,7 +244,8 @@ export default function SignUp() {
       const code = err?.errors?.[0]?.code;
       if (code === "identifier_already_exists") {
         setEmailTaken(true);
-        toast.error("This email has already been registered, so go to login.", { position: "top-center", theme: "dark" });
+        triggerMascotError();
+        toastAndRedirectToLogin();
         setLoading(false);
         return;
       }
@@ -237,10 +260,12 @@ export default function SignUp() {
     const token = await getToken();
     const clerkId = user?.id ?? undefined;
     const payload: any = { clerkId, email: shared.email, role: r, firstName: shared.firstName, lastName: shared.lastName, profile: r === "client" ? { ...client } : { ...artist } };
-    const res = await fetch(`${API_BASE}/api/users/sync`, {
+    const endpoint = apiUrl("/users/sync");
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(payload),
+      credentials: "include",
     });
     if (!res.ok) {
       const t = await res.text();
@@ -306,12 +331,16 @@ export default function SignUp() {
       if (abortRef.current) abortRef.current.abort();
       const ac = new AbortController();
       abortRef.current = ac;
-      const res = await fetch(`${API_BASE}/api/auth/check-email?email=${encodeURIComponent(email)}`, { signal: ac.signal });
+      const endpoint = apiUrl("/auth/check-email", { email });
+      const res = await fetch(endpoint, { signal: ac.signal, credentials: "include" });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { exists?: boolean };
       if (data.exists) {
         setEmailTaken(true);
-        if (showToast) toast.error("This email has already been registered, so go to login.", { position: "top-center", theme: "dark" });
+        if (showToast) {
+          triggerMascotError();
+          toastAndRedirectToLogin();
+        }
       } else {
         setEmailTaken(false);
       }
@@ -374,18 +403,7 @@ export default function SignUp() {
           </motion.div>
         </div>
       </main>
-      <ToastContainer
-        position="top-center"
-        autoClose={2000}
-        hideProgressBar
-        closeOnClick
-        pauseOnHover={false}
-        draggable={false}
-        limit={1}
-        transition={Slide}
-        toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
-        style={{ top: toastTop !== undefined ? toastTop : 12 }}
-      />
+      <ToastContainer position="top-center" autoClose={1800} hideProgressBar closeOnClick pauseOnHover={false} draggable={false} limit={1} transition={Slide} toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10" style={{ top: toastTop !== undefined ? toastTop : 12 }} />
     </div>
   );
 }
