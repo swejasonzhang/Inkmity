@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import ArtistPortfolio, { ArtistWithGroups } from "./ArtistPortfolio";
-import ArtistBooking from "./ArtistBooking";
+import ArtistBookingComponent from "./ArtistBooking";
 import ArtistReviews from "./ArtistReviews";
 
 declare global {
@@ -20,6 +20,15 @@ type Props = {
   artist: ArtistWithGroups;
   onMessage: (artist: ArtistWithGroups, preloadedMessage: string) => void;
 };
+
+type BookingProps = {
+  artist: ArtistWithGroups;
+  onMessage: (artist: ArtistWithGroups, preloadedMessage: string) => void;
+  onBack?: () => void;
+  onClose?: () => void;
+  onGoToStep?: (step: 0 | 1 | 2) => void;
+};
+const ArtistBooking = ArtistBookingComponent as React.ComponentType<BookingProps>;
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
   const [step, setStep] = useState<0 | 1 | 2>(0);

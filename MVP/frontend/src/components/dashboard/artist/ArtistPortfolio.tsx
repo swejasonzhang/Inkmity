@@ -1,3 +1,4 @@
+// ArtistPortfolio.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Maximize2 } from "lucide-react";
@@ -27,24 +28,18 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
     const past = useMemo(() => artist?.pastWorks ?? [], [artist]);
     const sketches = useMemo(() => artist?.sketches ?? [], [artist]);
     const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
-
     const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Upcoming Sketches" }>(null);
 
     const openZoom = (items: string[], index: number, label: "Past Works" | "Upcoming Sketches") =>
         setZoom({ items, index, label });
-
     const closeZoom = () => setZoom(null);
-
-    const goPrev = () =>
-        setZoom((z) => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
-
-    const goNext = () =>
-        setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
+    const goPrev = () => setZoom((z) => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
+    const goNext = () => setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
 
     const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({
         images,
         imgAltPrefix,
-        label
+        label,
     }) => (
         <div className="w-full hidden sm:flex justify-center">
             <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
@@ -72,7 +67,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 style={{
                                     background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
                                     borderColor: "var(--border)",
-                                    color: "var(--fg)"
+                                    color: "var(--fg)",
                                 }}
                             >
                                 <Maximize2 className="h-3.5 w-3.5" /> View
@@ -87,25 +82,21 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
     const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({
         images,
         imgAltPrefix,
-        label
+        label,
     }) => {
         const [index, setIndex] = useState(0);
-
         const swipeTo = (dir: "prev" | "next") => {
             setIndex((i) => {
                 if (dir === "prev") return (i + images.length - 1) % images.length;
                 return (i + 1) % images.length;
             });
         };
-
         const onDragEnd = (_: any, info: { offset: { x: number } }) => {
             const threshold = 50;
             if (info.offset.x < -threshold) swipeTo("next");
             else if (info.offset.x > threshold) swipeTo("prev");
         };
-
         if (!images.length) return null;
-
         const src = images[index];
 
         return (
@@ -142,7 +133,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             style={{
                                 background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
                                 borderColor: "var(--border)",
-                                color: "var(--fg)"
+                                color: "var(--fg)",
                             }}
                         >
                             <Maximize2 className="h-3.5 w-3.5" /> View
@@ -158,7 +149,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                         background:
                                             i === index
                                                 ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                                                : "color-mix(in oklab, var(--fg) 40%, transparent)"
+                                                : "color-mix(in oklab, var(--fg) 40%, transparent)",
                                     }}
                                 />
                             ))}
@@ -204,8 +195,9 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
             <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
                     <div className="py-3 sm:py-4">
-                        <div className="mx-auto w-full max-w-3xl flex items-center justify-evenly gap-3 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
-                            <div className="justify-self-end">
+                        {/* PAGINATION BAR — no borders anywhere in this block */}
+                        <div className="mx-auto w-full max-w-3xl grid grid-cols-3 items-stretch gap-3 sm:gap-6 h-12 sm:h-14 px-2 sm:px-3">
+                            <div className="flex items-center h-full">
                                 <div className="flex items-center gap-2 sm:gap-4">
                                     {[0, 1, 2].map((i) => (
                                         <button
@@ -217,13 +209,13 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                                 background:
                                                     i === 0
                                                         ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)"
+                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)",
                                             }}
                                         />
                                     ))}
                                 </div>
                             </div>
-                            <div className="justify-self-center">
+                            <div className="flex items-center justify-center h-full">
                                 <motion.div
                                     initial={{ y: 0, opacity: 0.95 }}
                                     animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
@@ -232,7 +224,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                     style={{
                                         background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
                                         color: "color-mix(in oklab, var(--fg) 90%, transparent)",
-                                        border: `1px solid var(--border)`
                                     }}
                                 >
                                     <ChevronDown className="h-4 w-4" />
@@ -240,14 +231,13 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 </motion.div>
                                 <div className="sm:hidden block h-6" />
                             </div>
-                            <div className="justify-self-center">
+                            <div className="flex items-center justify-end h-full">
                                 <Button
                                     onClick={onNext}
-                                    className="rounded-xl px-3 sm:px-4 py-2 text-sm font-medium shadow-sm"
+                                    className="rounded-xl px-3 sm:px-4 py-2 text-sm font-medium shadow-sm border-0"
                                     style={{
                                         background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
                                         color: "var(--fg)",
-                                        border: `1px solid var(--border)`
                                     }}
                                     variant="outline"
                                 >
@@ -255,16 +245,14 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 </Button>
                             </div>
                         </div>
+                        {/* END PAGINATION BAR */}
                     </div>
                 </div>
             </div>
 
             <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
                 <section className="w-full mt-1">
-                    <div
-                        className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-5 sm:p-9 text-center"
-                        style={{ borderColor: "var(--border)" }}
-                    >
+                    <div className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-5 sm:p-9 text-center" style={{ borderColor: "var(--border)" }}>
                         <div className="flex flex-col items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
                             {artist.avatarUrl ? (
                                 <img
@@ -282,7 +270,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                     style={{
                                         borderColor: "var(--border)",
                                         background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                                        color: "var(--fg)"
+                                        color: "var(--fg)",
                                     }}
                                     aria-label={`${artist.username} profile placeholder`}
                                 >
@@ -292,10 +280,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             <h3 className="text-lg sm:text-xl font-semibold tracking-tight">About {artist.username}</h3>
                         </div>
                         <Separator className="my-4 sm:my-5 opacity-60" />
-                        <p
-                            className="mx-auto max-w-2xl text-base sm:text-lg leading-7"
-                            style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
-                        >
+                        <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                             {artist.bio || "No bio available."}
                         </p>
                     </div>
