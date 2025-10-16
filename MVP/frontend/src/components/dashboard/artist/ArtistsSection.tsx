@@ -19,6 +19,25 @@ type Props = {
 
 const ITEMS_PER_PAGE = 12;
 
+const normalizeYears = (y: unknown): number | undefined => {
+    if (typeof y === "number" && Number.isFinite(y)) return Math.trunc(y);
+    if (typeof y === "string") {
+        const n = Number(y.toString().replace(/[^\d]/g, ""));
+        if (Number.isFinite(n)) return Math.trunc(n);
+    }
+    return undefined;
+};
+
+const matchesExperience = (years: number | undefined, filter: string) => {
+    if (filter === "all") return true;
+    if (years === undefined) return false;
+    if (filter === "amateur") return years >= 0 && years <= 2;
+    if (filter === "experienced") return years >= 3 && years <= 5;
+    if (filter === "professional") return years >= 6 && years <= 10;
+    if (filter === "veteran") return years >= 10;
+    return true;
+};
+
 const ArtistsSection: React.FC<Props> = ({
     artists,
     loading,
@@ -34,7 +53,7 @@ const ArtistsSection: React.FC<Props> = ({
     const [styleFilter, setStyleFilter] = useState<string>("all");
     const [availabilityFilter, setAvailabilityFilter] = useState<string>("all");
     const [experienceFilter, setExperienceFilter] = useState<string>("all");
-    const [sort, setSort] = useState<string>("rating_desc");
+    const [sort, setSort] = useState<string>("experience_desc");
 
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [debouncedSearch, setDebouncedSearch] = useState<string>("");
@@ -42,7 +61,9 @@ const ArtistsSection: React.FC<Props> = ({
     const [filterOpacity] = useState(1);
 
     const usingExternalPaging =
-        typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
+        typeof page === "number" &&
+        typeof totalPages === "number" &&
+        typeof onPageChange === "function";
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
@@ -51,10 +72,11 @@ const ArtistsSection: React.FC<Props> = ({
 
     const filtered = useMemo(() => {
         const now = new Date();
+
         const inAvailability = (a: ArtistDto) => {
-            const isNow = (a as any).isAvailableNow === true;
-            const nextRaw = (a as any).nextAvailableDate;
-            const waitlist = (a as any).acceptingWaitlist === true || (a as any).isClosed === true;
+            const isNow = a.isAvailableNow === true;
+            const nextRaw = a.nextAvailableDate;
+            const waitlist = a.acceptingWaitlist === true || a.isClosed === true;
 
             if (availabilityFilter === "waitlist") return waitlist;
 
@@ -76,39 +98,72 @@ const ArtistsSection: React.FC<Props> = ({
             return true;
         };
 
-        return artists
-            .filter((artist) => {
-                const inPriceRange = !artist.priceRange
-                    ? true
-                    : priceFilter === "all"
-                        ? true
-                        : priceFilter === "5000+"
-                            ? artist.priceRange.max >= 5000
-                            : (() => {
-                                const [min, max] = priceFilter.split("-").map(Number);
-                                return artist.priceRange.max >= min && artist.priceRange.min <= max;
-                            })();
+        const inPriceRange = (a: ArtistDto) => {
+            if (!a.priceRange || priceFilter === "all") return true;
+            if (priceFilter === "5000+") return a.priceRange.max >= 5000;
+            const [min, max] = priceFilter.split("-").map(Number);
+            if (!Number.isFinite(min) && !Number.isFinite(max)) return true;
+            const overlaps =
+                (Number.isFinite(min) ? a.priceRange.max >= (min as number) : true) &&
+                (Number.isFinite(max) ? a.priceRange.min <= (max as number) : true);
+            return overlaps;
+        };
 
-                const inLocation = locationFilter === "all" || artist.location === locationFilter;
-                const inStyle = styleFilter === "all" || artist.style?.includes(styleFilter);
+        const matchesKeyword = (a: ArtistDto, q: string) => {
+            if (!q) return true;
+            return (
+                a.username?.toLowerCase().includes(q) ||
+                a.location?.toLowerCase().includes(q) ||
+                a.bio?.toLowerCase().includes(q) ||
+                (a.style || []).some((s) => s.toLowerCase().includes(q))
+            );
+        };
 
-                const q = debouncedSearch;
-                const matchesKeyword =
-                    q === "" ||
-                    artist.username?.toLowerCase().includes(q) ||
-                    artist.location?.toLowerCase().includes(q) ||
-                    artist.bio?.toLowerCase().includes(q) ||
-                    (artist.style || []).some((s) => s.toLowerCase().includes(q));
+        let list = artists.filter((a) => {
+            if (!inPriceRange(a)) return false;
+            if (!(locationFilter === "all" || a.location === locationFilter)) return false;
+            if (!(styleFilter === "all" || (a.style ?? []).includes(styleFilter))) return false;
+            if (!matchesKeyword(a, debouncedSearch)) return false;
+            if (!inAvailability(a)) return false;
+            const y = normalizeYears(a.yearsExperience);
+            if (!matchesExperience(y, experienceFilter)) return false;
+            return true;
+        });
 
-                const availOK = inAvailability(artist);
+        if (sort === "experience_desc" || sort === "experience_asc") {
+            list = list.slice().sort((a, b) => {
+                const ay = normalizeYears(a.yearsExperience);
+                const by = normalizeYears(b.yearsExperience);
+                const av = ay ?? (sort === "experience_desc" ? -Infinity : Infinity);
+                const bv = by ?? (sort === "experience_desc" ? -Infinity : Infinity);
+                return sort === "experience_desc" ? bv - av : av - bv;
+            });
+        } else if (sort === "newest") {
+            list = list
+                .slice()
+                .sort(
+                    (a, b) =>
+                        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+                );
+        }
 
-                return inPriceRange && inLocation && inStyle && matchesKeyword && availOK;
-            })
-            .sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter]);
+        return list;
+    }, [
+        artists,
+        priceFilter,
+        locationFilter,
+        styleFilter,
+        debouncedSearch,
+        availabilityFilter,
+        experienceFilter,
+        sort,
+    ]);
 
     const clientTotalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const clientPageItems = filtered.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
     const listItems = usingExternalPaging ? filtered : clientPageItems;
 
     const isCenterLoading = loading || !showArtists;
@@ -119,6 +174,8 @@ const ArtistsSection: React.FC<Props> = ({
         locationFilter,
         styleFilter,
         availabilityFilter,
+        experienceFilter,
+        sort,
         debouncedSearch,
         listItems.length,
     ].join("|");
@@ -126,7 +183,9 @@ const ArtistsSection: React.FC<Props> = ({
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
+        const interactive = target.closest(
+            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
+        );
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
@@ -198,7 +257,7 @@ const ArtistsSection: React.FC<Props> = ({
                                                 className="w-full h-full"
                                             >
                                                 <div
-                                                    className="h-full min-h-[520px] sm:min-h-[540px] md:min-h-[560px]"
+                                                    className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]"
                                                     data-artist-card="true"
                                                 >
                                                     <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
