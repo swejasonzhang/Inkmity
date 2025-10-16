@@ -13,7 +13,8 @@ import dashboardRoutes from "./routes/dashboard.js";
 import messageRoutes from "./routes/messages.js";
 import availabilityRoutes from "./routes/availability.js";
 import bookingRoutes from "./routes/bookings.js";
-import contactRoutes from "./routes/contact.js"; 
+import contactRoutes from "./routes/contact.js";
+import authRoutes from "./routes/auth.js";
 
 import { requireAuth } from "./middleware/auth.js";
 
@@ -39,12 +40,12 @@ app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/contact", contactRoutes); 
-
+app.use("/api/contact", contactRoutes);
 app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
 

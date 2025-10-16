@@ -11,38 +11,25 @@ import { container } from "@/components/access/animations";
 
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
-type ClientProfile = {
-  budgetMin: string;
-  budgetMax: string;
-  location: string;
-  placement: string;
-  size: string;
-  notes: string;
-};
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
+type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
-
 const TOAST_H = 72;
 const TOAST_GAP = 50;
-
-type InputLike = { target: { name: string; value: string } };
+const API_BASE =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) ||
+  "http://localhost:5005/api";
 
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
-  const [client, setClient] = useState<ClientProfile>({
-    budgetMin: "0",
-    budgetMax: "500",
-    location: "",
-    placement: "",
-    size: "",
-    notes: "",
-  });
+  const [client, setClient] = useState<ClientProfile>({ budgetMin: "0", budgetMax: "500", location: "", placement: "", size: "", notes: "" });
   const [artist, setArtist] = useState<ArtistProfile>({ location: "", shop: "", years: "", baseRate: "", instagram: "", portfolio: "" });
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
@@ -52,6 +39,9 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
   const [mascotError, setMascotError] = useState(false);
+  const [emailTaken, setEmailTaken] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isSignedIn, user } = useUser();
@@ -59,6 +49,7 @@ export default function SignUp() {
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
+
   useEffect(() => {
     const updateTop = () => {
       const el = cardRef.current;
@@ -119,16 +110,26 @@ export default function SignUp() {
 
   useEffect(() => {
     if (!isSignedIn || awaitingCode) return;
-    toast.info("You are already signed in! Redirecting to dashboard...", {
-      theme: "dark",
-      icon: false,
-      closeButton: false,
-    });
+    toast.info("You are already signed in! Redirecting to dashboard...", { theme: "dark", icon: false, closeButton: false });
     const t = setTimeout(() => {
       window.location.replace("/dashboard");
     }, 1500);
     return () => clearTimeout(t);
   }, [isSignedIn, awaitingCode]);
+
+  useEffect(() => {
+    setEmailTaken(false);
+    if (abortRef.current) abortRef.current.abort();
+    const email = shared.email.trim().toLowerCase();
+    if (!validateEmail(email)) return;
+    const t = setTimeout(() => {
+      checkEmailExists(email, false);
+    }, 500);
+    return () => {
+      clearTimeout(t);
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, [shared.email]);
 
   const handleShared = (e: ChangeEvent<HTMLInputElement>) => setShared({ ...shared, [e.target.name]: e.target.value });
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
@@ -169,7 +170,17 @@ export default function SignUp() {
     window.setTimeout(() => setMascotError(false), 900);
   };
 
+  const blockIfEmailTaken = () => {
+    if (emailTaken) {
+      toast.error("This email has already been registered, so go to login.", { position: "top-center", theme: "dark" });
+      triggerMascotError();
+      return true;
+    }
+    return false;
+  };
+
   const handleNext = () => {
+    if (blockIfEmailTaken()) return;
     const currentValid = slides[step].valid;
     if (!currentValid) {
       toast.error("Please complete the required fields", { position: "top-center", theme: "dark" });
@@ -182,6 +193,7 @@ export default function SignUp() {
   const handleBack = () => setStep((s) => Math.max(0, s - 1));
 
   const startVerification = async () => {
+    if (blockIfEmailTaken()) return;
     if (!allSharedValid) {
       toast.error("Please complete account details", { position: "top-center", theme: "dark" });
       triggerMascotError();
@@ -199,12 +211,7 @@ export default function SignUp() {
       const attempt = await signUp.create({
         emailAddress: shared.email,
         password: shared.password,
-        publicMetadata: {
-          role,
-          firstName: shared.firstName,
-          lastName: shared.lastName,
-          profile: role === "client" ? client : artist,
-        },
+        publicMetadata: { role, firstName: shared.firstName, lastName: shared.lastName, profile: role === "client" ? client : artist },
       } as any);
       setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
       setAwaitingCode(true);
@@ -212,10 +219,14 @@ export default function SignUp() {
       toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
     } catch (err: any) {
       setAwaitingCode(false);
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", {
-        position: "top-center",
-        theme: "dark",
-      });
+      const code = err?.errors?.[0]?.code;
+      if (code === "identifier_already_exists") {
+        setEmailTaken(true);
+        toast.error("This email has already been registered, so go to login.", { position: "top-center", theme: "dark" });
+        setLoading(false);
+        return;
+      }
+      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -226,7 +237,7 @@ export default function SignUp() {
     const token = await getToken();
     const clerkId = user?.id ?? undefined;
     const payload: any = { clerkId, email: shared.email, role: r, firstName: shared.firstName, lastName: shared.lastName, profile: r === "client" ? { ...client } : { ...artist } };
-    const res = await fetch("http://localhost:5005/api/users/sync", {
+    const res = await fetch(`${API_BASE}/api/users/sync`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(payload),
@@ -282,10 +293,36 @@ export default function SignUp() {
   };
 
   const mascotEyesClosed = pwdFocused && showPassword;
+  const handlePasswordVisibilityChange = (hidden: boolean) => setShowPassword(!hidden);
 
-  const handlePasswordVisibilityChange = (hidden: boolean) => {
-    setShowPassword(!hidden);
+  const checkEmailExists = async (emailParam?: string, showToast = true) => {
+    const email = (emailParam ?? shared.email).trim().toLowerCase();
+    if (!validateEmail(email)) {
+      setEmailTaken(false);
+      return;
+    }
+    try {
+      setCheckingEmail(true);
+      if (abortRef.current) abortRef.current.abort();
+      const ac = new AbortController();
+      abortRef.current = ac;
+      const res = await fetch(`${API_BASE}/api/auth/check-email?email=${encodeURIComponent(email)}`, { signal: ac.signal });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { exists?: boolean };
+      if (data.exists) {
+        setEmailTaken(true);
+        if (showToast) toast.error("This email has already been registered, so go to login.", { position: "top-center", theme: "dark" });
+      } else {
+        setEmailTaken(false);
+      }
+    } catch {
+      setEmailTaken(false);
+    } finally {
+      setCheckingEmail(false);
+    }
   };
+
+  const onEmailBlur = () => checkEmailExists(shared.email, true);
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
@@ -321,13 +358,15 @@ export default function SignUp() {
                   awaitingCode={awaitingCode}
                   code={code}
                   setCode={setCode}
-                  loading={loading}
+                  loading={loading || checkingEmail}
                   isLoaded={isLoaded}
                   onNext={handleNext}
                   onBack={handleBack}
                   onStartVerification={startVerification}
                   onVerify={verifyCode}
                   onPasswordVisibilityChange={handlePasswordVisibilityChange}
+                  onEmailBlur={onEmailBlur}
+                  emailTaken={emailTaken}
                   className=""
                 />
               </motion.div>
