@@ -9,13 +9,14 @@ const reviewSchema = new mongoose.Schema(
     },
     artist: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Artist",
+      ref: "User",
       required: true,
-    },
-    rating: { type: Number, required: true },
-    comment: { type: String },
+    }, 
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    comment: { type: String, default: "" },
+    createdAt: { type: Date, default: Date.now }, 
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Review", reviewSchema);
+export default mongoose.models.Review || mongoose.model("Review", reviewSchema);

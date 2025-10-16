@@ -12,6 +12,9 @@ type Props = {
     showArtists: boolean;
     onSelectArtist: (a: ArtistDto) => void;
     onRequestCloseModal?: () => void;
+    page?: number;
+    totalPages?: number;
+    onPageChange?: (p: number) => void;
 };
 
 const ITEMS_PER_PAGE = 12;
@@ -22,15 +25,24 @@ const ArtistsSection: React.FC<Props> = ({
     showArtists,
     onSelectArtist,
     onRequestCloseModal,
+    page,
+    totalPages,
+    onPageChange,
 }) => {
     const [priceFilter, setPriceFilter] = useState<string>("all");
     const [locationFilter, setLocationFilter] = useState<string>("all");
     const [styleFilter, setStyleFilter] = useState<string>("all");
     const [availabilityFilter, setAvailabilityFilter] = useState<string>("all");
+    const [experienceFilter, setExperienceFilter] = useState<string>("all");
+    const [sort, setSort] = useState<string>("rating_desc");
+
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [debouncedSearch, setDebouncedSearch] = useState<string>("");
     const [currentPage, setCurrentPage] = useState(1);
     const [filterOpacity] = useState(1);
+
+    const usingExternalPaging =
+        typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
@@ -95,30 +107,35 @@ const ArtistsSection: React.FC<Props> = ({
             .sort((a, b) => (b.rating || 0) - (a.rating || 0));
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter]);
 
-    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const pageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const clientTotalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const listItems = usingExternalPaging ? filtered : clientPageItems;
+
     const isCenterLoading = loading || !showArtists;
 
     const motionKey = [
-        currentPage,
+        usingExternalPaging ? page : currentPage,
         priceFilter,
         locationFilter,
         styleFilter,
         availabilityFilter,
         debouncedSearch,
-        pageItems.length,
+        listItems.length,
     ].join("|");
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest(
-            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
-        );
+        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
         onRequestCloseModal();
+    };
+
+    const handleSetCurrentPage = (p: number) => {
+        if (usingExternalPaging) onPageChange!(p);
+        else setCurrentPage(p);
     };
 
     return (
@@ -138,12 +155,16 @@ const ArtistsSection: React.FC<Props> = ({
                     setLocationFilter={setLocationFilter}
                     styleFilter={styleFilter}
                     setStyleFilter={setStyleFilter}
+                    availabilityFilter={availabilityFilter}
+                    setAvailabilityFilter={setAvailabilityFilter}
+                    experienceFilter={experienceFilter}
+                    setExperienceFilter={setExperienceFilter}
+                    sort={sort}
+                    setSort={setSort}
                     artists={artists}
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
-                    availabilityFilter={availabilityFilter}
-                    setAvailabilityFilter={setAvailabilityFilter}
                 />
             </div>
 
@@ -157,13 +178,13 @@ const ArtistsSection: React.FC<Props> = ({
                 <div className={isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"}>
                     <div className="flex flex-col justify-between flex-1" onPointerDownCapture={handleGridPointerDown}>
                         <div className="w-full flex-1 px-0 pt-3 pb-2">
-                            {pageItems.length > 0 ? (
+                            {listItems.length > 0 ? (
                                 !isCenterLoading && (
                                     <div
                                         key={motionKey}
                                         className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[1fr] gap-6 md:gap-5"
                                     >
-                                        {pageItems.map((artist, index) => (
+                                        {listItems.map((artist, index) => (
                                             <motion.div
                                                 key={(artist.clerkId ?? artist._id) + ":" + index}
                                                 initial={{ opacity: 0, y: 24 }}
@@ -194,12 +215,21 @@ const ArtistsSection: React.FC<Props> = ({
                         </div>
 
                         <div className="py-4 px-3 sm:px-4 md:px-6">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPrev={() => setCurrentPage((p) => p - 1)}
-                                onNext={() => setCurrentPage((p) => p + 1)}
-                            />
+                            {usingExternalPaging ? (
+                                <Pagination
+                                    currentPage={page!}
+                                    totalPages={totalPages!}
+                                    onPrev={() => handleSetCurrentPage((page as number) - 1)}
+                                    onNext={() => handleSetCurrentPage((page as number) + 1)}
+                                />
+                            ) : (
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={clientTotalPages}
+                                    onPrev={() => handleSetCurrentPage(currentPage - 1)}
+                                    onNext={() => handleSetCurrentPage(currentPage + 1)}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

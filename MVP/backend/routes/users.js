@@ -5,7 +5,7 @@ import {
   syncUser,
   getMe,
   updateMyAvatar,
-  deleteMyAvatar, 
+  deleteMyAvatar,
 } from "../controllers/userController.js";
 import { getAvatarSignature } from "../controllers/uploadController.js";
 import { requireAuth } from "../middleware/auth.js";

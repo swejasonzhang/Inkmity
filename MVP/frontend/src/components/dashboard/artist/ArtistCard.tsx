@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Camera } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
 
 interface Artist {
   _id: string;
@@ -10,6 +11,7 @@ interface Artist {
   priceRange?: { min: number; max: number };
   rating?: number;
   reviewsCount?: number;
+  yearsExperience?: number;
   profileImage?: string;
   coverImage?: string;
   images?: string[];
@@ -42,16 +44,32 @@ const MOCK_GALLERY: string[] = [
   `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`,
 ];
 
+const ENV_API = (import.meta as any)?.env?.VITE_API_URL || import.meta.env?.VITE_API_URL || "";
+const PRIMARY_BASE = String(ENV_API).replace(/\/$/, "");
+const API_BASES = [PRIMARY_BASE, "/api"].filter(Boolean);
+const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`;
+
 const ArtistCard: React.FC<ArtistCardProps> = ({
   artist,
   onClick,
   onUpdateProfileImage,
   onUpdateCoverImage,
 }) => {
+  const { getToken } = useAuth();
+
   const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
   const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const [localCoverUrl, setLocalCoverUrl] = useState<string | null>(null);
+
+  const [avgRating, setAvgRating] = useState<number | null>(
+    typeof artist.rating === "number" ? Math.round(artist.rating * 10) / 10 : null
+  );
+  const [numRatings, setNumRatings] = useState<number | null>(
+    typeof artist.reviewsCount === "number" ? artist.reviewsCount : null
+  );
+  const [ratingErr, setRatingErr] = useState<string | null>(null);
+  const [ratingLoading, setRatingLoading] = useState<boolean>(false);
 
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
@@ -66,11 +84,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
     [artist.username]
   );
 
-  const ratingText =
-    typeof artist.rating === "number" && !Number.isNaN(artist.rating)
-      ? artist.rating.toFixed(1)
-      : "0.0";
-
   const hasRealImages = Boolean(artist.images && artist.images.filter(Boolean).length > 0);
   const allImages = (hasRealImages ? artist.images!.filter(Boolean) : MOCK_GALLERY).slice(0, 12);
 
@@ -83,6 +96,85 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
 
   const avatarSrc = localAvatarUrl || (avatarOk ? artist.profileImage : undefined);
   const coverSrc = localCoverUrl || (bgOk ? artist.coverImage : undefined);
+
+  useEffect(() => {
+    let abort = false;
+
+    const alreadyHas = avgRating !== null && numRatings !== null;
+    if (alreadyHas) {
+      setRatingErr(null);
+      return;
+    }
+
+    const fetchRatings = async () => {
+      setRatingLoading(true);
+      setRatingErr(null);
+      try {
+        const token = await getToken();
+        let lastErr: any = null;
+        for (const base of API_BASES) {
+          try {
+            const url = joinUrl(base, `/users/${artist._id}`);
+            const res = await fetch(url, {
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+            });
+            const ctype = res.headers.get("content-type") || "";
+            if (!res.ok) {
+              const txt = await res.text().catch(() => "");
+              throw new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\n${txt.slice(0, 200)}`);
+            }
+            if (!ctype.toLowerCase().includes("application/json")) {
+              const txt = await res.text().catch(() => "");
+              throw new Error(`Non-JSON response @ ${url}\n${txt.slice(0, 200)}`);
+            }
+            const json = await res.json();
+
+            const reviews: any[] = Array.isArray(json?.reviews) ? json.reviews : [];
+            const count = reviews.length;
+            let avg = 0;
+            if (count > 0) {
+              const sum = reviews.reduce((acc, r) => acc + Number(r?.rating || 0), 0);
+              avg = Math.round((sum / count) * 10) / 10;
+            } else if (typeof json?.rating === "number") {
+              avg = Math.round(json.rating * 10) / 10;
+            }
+
+            if (!abort) {
+              setAvgRating(count > 0 ? avg : avg || 0);
+              setNumRatings(count > 0 ? count : Number(json?.reviewsCount ?? 0));
+            }
+            lastErr = null;
+            break;
+          } catch (e: any) {
+            lastErr = e;
+            continue;
+          }
+        }
+        if (lastErr) throw lastErr;
+      } catch (e: any) {
+        if (!abort) setRatingErr(e?.message || "Failed to load rating");
+      } finally {
+        if (!abort) setRatingLoading(false);
+      }
+    };
+
+    fetchRatings();
+    return () => {
+      abort = true;
+    };
+  }, [artist._id, getToken, avgRating, numRatings]);
+
+  const ratingText =
+    ratingLoading
+      ? "…"
+      : avgRating !== null && !Number.isNaN(avgRating)
+        ? avgRating.toFixed(1)
+        : "—";
+
+  const countText = numRatings !== null ? `(${numRatings})` : "(—)";
 
   const handleAvatarPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -103,9 +195,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   };
 
   const openProfile = () => {
-    if (window.__INK_MODAL_JUST_CLOSED_AT__ && Date.now() - window.__INK_MODAL_JUST_CLOSED_AT__ < 350) {
-      return;
-    }
+    if ((window as any).__INK_MODAL_JUST_CLOSED_AT__ && Date.now() - (window as any).__INK_MODAL_JUST_CLOSED_AT__ < 350) return;
     onClick?.({
       ...artist,
       pastWorks,
@@ -167,7 +257,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
             </button>
             <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverPick} />
 
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 grid place-items-center gap-2">
+            <div className="absolute left-1/2 top-[44%] sm:top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
               <div
                 className="relative rounded-full overflow-hidden h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 shadow-2xl ring-2 ring-[color:var(--card)]"
                 style={{ border: `1px solid var(--border)`, background: "var(--card)" }}
@@ -205,7 +295,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
             </div>
 
             {!!artist.style?.length && (
-              <div className="absolute bottom-3 right-3 flex flex-wrap items-center gap-1.5">
+              <div className="absolute right-3 bottom-1 sm:bottom-3 flex flex-wrap items-center gap-1.5">
                 {artist.style.slice(0, 3).map((s) => (
                   <span
                     key={s}
@@ -267,15 +357,27 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
                   {artist.priceRange ? `$${artist.priceRange.min}–$${artist.priceRange.max}` : "N/A"}
                 </span>
               </div>
+              <span className="h-3 w-px" style={{ background: "color-mix(in oklab, var(--fg) 15%, transparent)" }} />
+              <div>
+                <span style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Experience</span>{" "}
+                <span className="font-medium" style={{ color: "var(--fg)" }}>
+                  {typeof artist.yearsExperience === "number" ? `${artist.yearsExperience} yr${artist.yearsExperience === 1 ? "" : "s"}` : "N/A"}
+                </span>
+              </div>
             </div>
 
             <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Rating</div>
             <div className="font-semibold text-base" style={{ color: "var(--fg)" }}>
               {ratingText}{" "}
               <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 55%, transparent)" }}>
-                ({artist.reviewsCount || 0})
+                {countText}
               </span>
             </div>
+            {ratingErr && (
+              <div className="text-[11px]" style={{ color: "color-mix(in oklab, var(--fg) 55%, transparent)" }}>
+                {ratingErr}
+              </div>
+            )}
           </div>
 
           <div className="w-full px-6 sm:px-8">

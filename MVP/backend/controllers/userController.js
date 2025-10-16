@@ -1,42 +1,69 @@
 import User from "../models/User.js";
 
-export const getArtists = async (req, res) => {
+export const getMe = async (req, res) => {
+  const userId = req.auth?.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const me = await User.findOne({ clerkId: userId }).lean();
+  if (!me) return res.status(404).json({ error: "User not found" });
+  res.json(me);
+};
+
+export const updateMyAvatar = async (req, res) => {
   try {
-    const { location, style, minPrice, maxPrice, minRating } = req.query;
+    const clerkId = req.auth?.userId;
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
 
-    const filter = { role: "artist" };
-    if (location) filter.location = location;
-    if (style) filter.style = { $in: [style] };
-    if (minPrice) filter["priceRange.min"] = { $gte: Number(minPrice) };
-    if (maxPrice) filter["priceRange.max"] = { $lte: Number(maxPrice) };
-    if (minRating) filter.rating = { $gte: Number(minRating) };
+    const {
+      url,
+      publicId,
+      width,
+      height,
+      format,
+      bytes,
+      alt = "Profile photo",
+    } = req.body || {};
 
-    const artists = await User.find(filter)
-      .select(
-        "clerkId username email role location style bio priceRange rating reviews"
-      )
-      .populate("reviews");
+    if (!url) return res.status(400).json({ error: "Missing image url" });
 
-    res.status(200).json(artists);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch artists" });
+    const updated = await User.findOneAndUpdate(
+      { clerkId },
+      { avatar: { url, publicId, width, height, format, bytes, alt } },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!updated) return res.status(404).json({ error: "User not found" });
+    res.json({ avatar: updated.avatar });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update avatar" });
   }
 };
 
-export const getArtistById = async (req, res) => {
+export const deleteMyAvatar = async (req, res) => {
   try {
-    const artist = await User.findOne({ _id: req.params.id, role: "artist" })
-      .select(
-        "clerkId username email role location style bio priceRange rating reviews"
-      )
-      .populate("reviews");
+    const clerkId = req.auth?.userId;
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
 
-    if (!artist) return res.status(404).json({ error: "Artist not found" });
-    res.status(200).json(artist);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch artist" });
+    const user = await User.findOne({ clerkId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const publicId = user.avatar?.publicId;
+    user.avatar = undefined;
+    await user.save();
+
+    if (publicId) {
+      const { default: cloudinary } = await import("../lib/cloudinary.js");
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (e) {
+        console.warn("Cloudinary destroy failed:", e?.message || e);
+      }
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete avatar" });
   }
 };
 
@@ -69,82 +96,102 @@ export const syncUser = async (req, res) => {
   }
 };
 
-export const getMe = async (req, res) => {
-  const userId = req.auth?.userId;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-  const me = await User.findOne({ clerkId: userId }).lean();
-  if (!me) return res.status(404).json({ error: "User not found" });
-  res.json(me);
-};
-
-export const updateMyAvatar = async (req, res) => {
+export const getArtists = async (req, res) => {
   try {
-    const clerkId = req.auth?.userId;
-    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-
     const {
-      url,
-      publicId,
-      width,
-      height,
-      format,
-      bytes,
-      alt = "Profile photo",
-    } = req.body || {};
+      search = "",
+      location,
+      style,
+      minPrice,
+      maxPrice,
+      priceMin,
+      priceMax,
+      minRating,
+      minExperience,
+      maxExperience,
+      page = "1",
+      pageSize = "12",
+      sort = "rating_desc",
+      includeReviews = "false",
+      topRated = "false",
+    } = req.query;
 
-    if (!url) return res.status(400).json({ error: "Missing image url" });
+    const q = { role: "artist" };
 
-    const update = {
-      avatar: {
-        url,
-        publicId,
-        width,
-        height,
-        format,
-        bytes,
-        alt,
-      },
+    if (location) q.location = location;
+    if (style) q.style = { $in: [style] };
+
+    const min = minPrice ?? priceMin;
+    const max = maxPrice ?? priceMax;
+    if (min || max) {
+      const and = [];
+      if (min) and.push({ "priceRange.max": { $gte: Number(min) } });
+      if (max) and.push({ "priceRange.min": { $lte: Number(max) } });
+      if (and.length) q.$and = (q.$and || []).concat(and);
+    }
+
+    if (minRating) q.rating = { $gte: Number(minRating) };
+
+    if (minExperience || maxExperience) {
+      q.yearsExperience = {};
+      if (minExperience) q.yearsExperience.$gte = Number(minExperience);
+      if (maxExperience) q.yearsExperience.$lte = Number(maxExperience);
+    }
+
+    if (topRated === "true" && !minRating) {
+      q.rating = { $gte: 4.5 };
+    }
+
+    if (search) {
+      const rx = new RegExp(String(search), "i");
+      q.$or = [{ username: rx }, { location: rx }, { bio: rx }, { style: rx }];
+    }
+
+    const sortMap = {
+      rating_desc: { rating: -1, reviewsCount: -1 },
+      rating_asc: { rating: 1 },
+      newest: { createdAt: -1 },
+      experience_desc: { yearsExperience: -1, rating: -1 },
+      experience_asc: { yearsExperience: 1 },
+      highly_rated: { rating: -1, reviewsCount: -1 },
     };
+    const sortSpec = sortMap[sort] || sortMap.rating_desc;
 
-    const updated = await User.findOneAndUpdate({ clerkId }, update, {
-      new: true,
-      runValidators: true,
-    }).lean();
+    const p = Math.max(1, parseInt(page));
+    const ps = Math.min(48, Math.max(1, parseInt(pageSize)));
 
-    if (!updated) return res.status(404).json({ error: "User not found" });
-    res.json({ avatar: updated.avatar });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to update avatar" });
+    const baseQuery = User.find(q)
+      .select(
+        "clerkId username email role location style bio priceRange rating reviews reviewsCount yearsExperience avatar"
+      )
+      .sort(sortSpec)
+      .skip((p - 1) * ps)
+      .limit(ps)
+      .lean();
+
+    const query =
+      includeReviews === "true" ? baseQuery.populate("reviews") : baseQuery;
+
+    const [items, total] = await Promise.all([query, User.countDocuments(q)]);
+    res.status(200).json({ items, total });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch artists" });
   }
 };
 
-export const deleteMyAvatar = async (req, res) => {
+export const getArtistById = async (req, res) => {
   try {
-    const clerkId = req.auth?.userId;
-    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+    const artist = await User.findOne({ _id: req.params.id, role: "artist" })
+      .select(
+        "clerkId username email role location style bio priceRange rating reviews reviewsCount yearsExperience avatar"
+      )
+      .populate("reviews");
 
-    const user = await User.findOne({ clerkId });
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const publicId = user.avatar?.publicId;
-
-    user.avatar = undefined;
-    await user.save();
-
-    if (publicId) {
-      const { default: cloudinary } = await import("../lib/cloudinary.js");
-      try {
-        await cloudinary.uploader.destroy(publicId);
-      } catch (e) {
-        console.warn("Cloudinary destroy failed:", e?.message || e);
-      }
-    }
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to delete avatar" });
+    if (!artist) return res.status(404).json({ error: "Artist not found" });
+    res.status(200).json(artist);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch artist" });
   }
 };

@@ -8,16 +8,27 @@ interface Artist {
   username: string;
   location?: string;
   style?: string[];
+  rating?: number;
+  reviewsCount?: number;
+  yearsExperience?: number;
   reviews?: { rating: number; comment?: string }[];
+  images?: string[];
+  priceRange?: { min: number; max: number };
+  bio?: string;
 }
 
 const PAGE_SIZE_FALLBACK = 12;
 
 const Artists: React.FC = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
+
   const [priceFilter, setPriceFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [styleFilter, setStyleFilter] = useState("all");
+  const [availabilityFilter, setAvailabilityFilter] = useState("all");
+  const [experienceFilter, setExperienceFilter] = useState("all");
+  const [sort, setSort] = useState("rating_desc");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,8 +44,17 @@ const Artists: React.FC = () => {
   }, [searchQuery]);
 
   const filtersKey = useMemo(
-    () => `${priceFilter}|${locationFilter}|${styleFilter}|${debouncedSearch}`,
-    [priceFilter, locationFilter, styleFilter, debouncedSearch]
+    () =>
+      [
+        priceFilter,
+        locationFilter,
+        styleFilter,
+        availabilityFilter,
+        experienceFilter,
+        sort,
+        debouncedSearch,
+      ].join("|"),
+    [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort, debouncedSearch]
   );
 
   const loadArtists = async (opts: { page: number; reset: boolean }) => {
@@ -47,27 +67,30 @@ const Artists: React.FC = () => {
         price: priceFilter,
         location: locationFilter,
         style: styleFilter,
+        availability: availabilityFilter,
+        experience: experienceFilter,
+        sort,
         page,
         search: debouncedSearch,
       });
 
       const enriched = data.map((artist) => {
         const reviews = artist.reviews || [];
-        const reviewsCount = reviews.length;
-        const avg =
-          reviewsCount > 0
+        const backendAvg = typeof artist.rating === "number" ? artist.rating : undefined;
+        const backendCount = typeof artist.reviewsCount === "number" ? artist.reviewsCount : undefined;
+        const derivedCount = reviews.length || undefined;
+        const derivedAvg =
+          reviews.length > 0
             ? Math.round(
-              (reviews.reduce((s, r) => s + (r?.rating || 0), 0) /
-                reviewsCount) *
-              10
+              (reviews.reduce((s, r) => s + (r?.rating || 0), 0) / reviews.length) * 10
             ) / 10
             : undefined;
 
         return {
           ...artist,
-          reviewsCount,
-          averageRating: avg,
-        };
+          reviewsCount: backendCount ?? derivedCount ?? 0,
+          averageRating: backendAvg ?? derivedAvg,
+        } as Artist & { reviewsCount: number; averageRating?: number };
       });
 
       setArtists((prev) => (reset ? enriched : [...prev, ...enriched]));
@@ -111,6 +134,12 @@ const Artists: React.FC = () => {
             setLocationFilter={setLocationFilter}
             styleFilter={styleFilter}
             setStyleFilter={setStyleFilter}
+            availabilityFilter={availabilityFilter}
+            setAvailabilityFilter={setAvailabilityFilter}
+            experienceFilter={experienceFilter}
+            setExperienceFilter={setExperienceFilter}
+            sort={sort}
+            setSort={setSort}
             artists={artists}
             setCurrentPage={setCurrentPage}
             searchQuery={searchQuery}
