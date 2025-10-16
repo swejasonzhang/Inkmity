@@ -1,5 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
-import { Camera } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
 
 interface Artist {
@@ -49,19 +48,11 @@ const PRIMARY_BASE = String(ENV_API).replace(/\/$/, "");
 const API_BASES = [PRIMARY_BASE, "/api"].filter(Boolean);
 const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`;
 
-const ArtistCard: React.FC<ArtistCardProps> = ({
-  artist,
-  onClick,
-  onUpdateProfileImage,
-  onUpdateCoverImage,
-}) => {
+const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
   const { getToken } = useAuth();
 
   const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
   const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
-  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
-  const [localCoverUrl, setLocalCoverUrl] = useState<string | null>(null);
-
   const [avgRating, setAvgRating] = useState<number | null>(
     typeof artist.rating === "number" ? Math.round(artist.rating * 10) / 10 : null
   );
@@ -70,9 +61,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   );
   const [ratingErr, setRatingErr] = useState<string | null>(null);
   const [ratingLoading, setRatingLoading] = useState<boolean>(false);
-
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const coverInputRef = useRef<HTMLInputElement | null>(null);
 
   const initials = useMemo(
     () =>
@@ -87,25 +75,20 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   const hasRealImages = Boolean(artist.images && artist.images.filter(Boolean).length > 0);
   const allImages = (hasRealImages ? artist.images!.filter(Boolean) : MOCK_GALLERY).slice(0, 12);
 
-  const pastWorks =
-    artist.pastWorks?.length ? artist.pastWorks : allImages.filter((_, i) => i % 2 === 0);
-  const sketches =
-    artist.sketches?.length ? artist.sketches : allImages.filter((_, i) => i % 2 === 1);
-
+  const pastWorks = artist.pastWorks?.length ? artist.pastWorks : allImages.filter((_, i) => i % 2 === 0);
+  const sketches = artist.sketches?.length ? artist.sketches : allImages.filter((_, i) => i % 2 === 1);
   const highlights = allImages.slice(0, 3);
 
-  const avatarSrc = localAvatarUrl || (avatarOk ? artist.profileImage : undefined);
-  const coverSrc = localCoverUrl || (bgOk ? artist.coverImage : undefined);
+  const avatarSrc = avatarOk ? artist.profileImage : undefined;
+  const coverSrc = bgOk ? artist.coverImage : undefined;
 
   useEffect(() => {
     let abort = false;
-
     const alreadyHas = avgRating !== null && numRatings !== null;
     if (alreadyHas) {
       setRatingErr(null);
       return;
     }
-
     const fetchRatings = async () => {
       setRatingLoading(true);
       setRatingErr(null);
@@ -131,7 +114,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
               throw new Error(`Non-JSON response @ ${url}\n${txt.slice(0, 200)}`);
             }
             const json = await res.json();
-
             const reviews: any[] = Array.isArray(json?.reviews) ? json.reviews : [];
             const count = reviews.length;
             let avg = 0;
@@ -141,7 +123,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
             } else if (typeof json?.rating === "number") {
               avg = Math.round(json.rating * 10) / 10;
             }
-
             if (!abort) {
               setAvgRating(count > 0 ? avg : avg || 0);
               setNumRatings(count > 0 ? count : Number(json?.reviewsCount ?? 0));
@@ -160,7 +141,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
         if (!abort) setRatingLoading(false);
       }
     };
-
     fetchRatings();
     return () => {
       abort = true;
@@ -168,31 +148,12 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   }, [artist._id, getToken, avgRating, numRatings]);
 
   const ratingText =
-    ratingLoading
-      ? "…"
-      : avgRating !== null && !Number.isNaN(avgRating)
-        ? avgRating.toFixed(1)
-        : "—";
+    ratingLoading ? "…" : avgRating !== null && !Number.isNaN(avgRating) ? avgRating.toFixed(1) : "—";
 
-  const countText = numRatings !== null ? `(${numRatings})` : "(—)";
-
-  const handleAvatarPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setLocalAvatarUrl(url);
-    setAvatarOk(true);
-    onUpdateProfileImage?.(file, artist);
-  };
-
-  const handleCoverPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setLocalCoverUrl(url);
-    setBgOk(true);
-    onUpdateCoverImage?.(file, artist);
-  };
+  const countText =
+    numRatings !== null
+      ? `(${numRatings} ${numRatings === 1 ? "Review" : "Reviews"})`
+      : "(— Reviews)";
 
   const openProfile = () => {
     if ((window as any).__INK_MODAL_JUST_CLOSED_AT__ && Date.now() - (window as any).__INK_MODAL_JUST_CLOSED_AT__ < 350) return;
@@ -206,7 +167,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
   return (
     <>
       <div
-        className="group w-full h-full min-h-[620px] overflow-hidden rounded-3xl border bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75 shadow-xl transition hover:-translate-y-0.5 hover:shadow-2xl focus-within:ring-1 focus-within:ring-[color:var(--fg)]/20"
+        className="group w-full h-full min-h[620px] min-h-[620px] overflow-hidden rounded-3xl border bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75 shadow-xl transition hover:-translate-y-0.5 hover:shadow-2xl focus-within:ring-1 focus-within:ring-[color:var(--fg)]/20"
         style={{ borderColor: "var(--border)" }}
       >
         <div className="relative w-full overflow-hidden">
@@ -245,18 +206,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
               }}
             />
 
-            <button
-              type="button"
-              className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border bg-card/95 backdrop-blur hover:bg-card transition"
-              style={{ borderColor: "var(--border)", color: "var(--fg)" }}
-              onClick={() => coverInputRef.current?.click()}
-              aria-label="Upload background image"
-            >
-              <Camera className="h-4 w-4" />
-              <span className="hidden sm:inline">Change cover</span>
-            </button>
-            <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverPick} />
-
             <div className="absolute left-1/2 top-[44%] sm:top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
               <div
                 className="relative rounded-full overflow-hidden h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 shadow-2xl ring-2 ring-[color:var(--card)]"
@@ -280,18 +229,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({
                   </span>
                 )}
               </div>
-
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border bg-card/95 backdrop-blur hover:bg-card transition"
-                style={{ borderColor: "var(--border)", color: "var(--fg)" }}
-                onClick={() => avatarInputRef.current?.click()}
-                aria-label="Upload profile picture"
-              >
-                <Camera className="h-4 w-4" />
-                <span>Change photo</span>
-              </button>
-              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
             </div>
 
             {!!artist.style?.length && (
