@@ -262,7 +262,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
     const onZoom = useCallback((src: string) => setZoomSrc(src), []);
 
     return (
-        <div className="w-full px-6 py-6 sm:py-8 space-y-6 flex flex-col items-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
+        <div className="w-full px-6 py-5 sm:py-5 space-y-5 flex flex-col items-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <div className="sticky top-0 z-20 w-full backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
                     <div className="py-3 sm:py-4">
