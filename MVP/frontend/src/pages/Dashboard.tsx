@@ -13,6 +13,8 @@ import FloatingBar from "@/components/dashboard/FloatingBar";
 import { useTheme } from "@/components/header/useTheme";
 import CircularProgress from "@mui/material/CircularProgress";
 
+const PAGE_SIZE = 12;
+
 const Dashboard: React.FC = () => {
   const { isSignedIn, user } = useUser();
   const navigate = useNavigate();
@@ -42,11 +44,41 @@ const Dashboard: React.FC = () => {
     setConversationList,
     setCollapsedConversations,
     authFetch,
+    queryArtists,
   } = useDashboardData();
 
   const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState<number>(0);
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const { total: t = 0 } = await queryArtists({ sort: "rating_desc" }, page, PAGE_SIZE);
+        setTotal(t);
+      } catch (err: any) {
+        setTotal(0);
+        toast.error(err?.message || "Failed to load artists.", { position: "bottom-right" });
+      }
+    };
+    run();
+  }, [user]);
+
+  const totalPages = Math.max(1, Math.ceil((total || 0) / PAGE_SIZE));
+
+  const handlePageChange = async (next: number) => {
+    if (next < 1 || next > totalPages) return;
+    setPage(next);
+    try {
+      const { total: t = total } = await queryArtists({ sort: "rating_desc" }, next, PAGE_SIZE);
+      setTotal(t);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load page.", { position: "bottom-right" });
+    }
+  };
 
   const modalArtist = useMemo(() => {
     if (!selectedArtist) return null;
@@ -88,6 +120,9 @@ const Dashboard: React.FC = () => {
               loading={loadingArtists}
               showArtists={showArtists}
               onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+              page={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
             />
           </div>
         </main>
@@ -187,15 +222,15 @@ const Dashboard: React.FC = () => {
                 return [{ participantId, username: artist.username, messages: [newMsg] }, ...prev];
               });
               setCollapsedConversations((prev) => ({ ...prev, [participantId]: false }));
-              authFetch("http://localhost:5005/api/messages", {
+              authFetch("/messages", {
                 method: "POST",
                 body: JSON.stringify({
                   senderId: user!.id,
                   receiverId: participantId,
                   text: preloadedMessage,
                 }),
-              }).catch(() => {
-                toast.error("Failed to send message to server.", { position: "bottom-right" });
+              }).catch((err: any) => {
+                toast.error(err?.message || "Failed to send message to server.", { position: "bottom-right" });
               });
               setMessagesOpen(true);
             }}

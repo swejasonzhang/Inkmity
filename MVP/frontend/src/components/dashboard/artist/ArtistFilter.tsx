@@ -25,13 +25,17 @@ interface Props {
   setLocationFilter: (value: string) => void;
   styleFilter: string;
   setStyleFilter: (value: string) => void;
+  availabilityFilter: string;
+  setAvailabilityFilter: (value: string) => void;
+  experienceFilter: string;
+  setExperienceFilter: (value: string) => void;
+  sort: string;
+  setSort: (value: string) => void;
   artists: Artist[];
   setCurrentPage: (page: number) => void;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   className?: string;
-  availabilityFilter: string;
-  setAvailabilityFilter: (value: string) => void;
 }
 
 const PRICE_OPTIONS = [
@@ -52,6 +56,22 @@ const AVAILABILITY_OPTIONS = [
   { value: "waitlist", label: "Waitlist / Closed" },
 ] as const;
 
+const EXPERIENCE_OPTIONS = [
+  { value: "all", label: "All Experience" },
+  { value: "0-2", label: "0–2 years" },
+  { value: "3-5", label: "3–5 years" },
+  { value: "6-10", label: "6–10 years" },
+  { value: "10+", label: "10+ years" },
+] as const;
+
+const SORT_OPTIONS = [
+  { value: "rating_desc", label: "Highly rated" },
+  { value: "rating_asc", label: "Lowest rating" },
+  { value: "experience_desc", label: "Most experience" },
+  { value: "experience_asc", label: "Least experience" },
+  { value: "newest", label: "Newest" },
+] as const;
+
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
 
 const ArtistFilter: React.FC<Props> = ({
@@ -61,13 +81,17 @@ const ArtistFilter: React.FC<Props> = ({
   setLocationFilter,
   styleFilter,
   setStyleFilter,
+  availabilityFilter,
+  setAvailabilityFilter,
+  experienceFilter,
+  setExperienceFilter,
+  sort,
+  setSort,
   artists,
   setCurrentPage,
   searchQuery,
   setSearchQuery,
   className,
-  availabilityFilter,
-  setAvailabilityFilter,
 }) => {
   const uniqueLocations = useMemo(() => {
     const set = new Set<string>();
@@ -109,12 +133,16 @@ const ArtistFilter: React.FC<Props> = ({
           locationFilter: string;
           styleFilter: string;
           availabilityFilter: string;
+          experienceFilter: string;
+          sort: string;
           searchQuery: string;
         }>;
         if (p.priceFilter) setPriceFilter(p.priceFilter);
         if (p.locationFilter) setLocationFilter(p.locationFilter);
         if (p.styleFilter) setStyleFilter(p.styleFilter);
         if (p.availabilityFilter) setAvailabilityFilter(p.availabilityFilter);
+        if (p.experienceFilter) setExperienceFilter(p.experienceFilter);
+        if (p.sort) setSort(p.sort);
         if (typeof p.searchQuery === "string") {
           setLocalSearch(p.searchQuery);
           setSearchQuery(p.searchQuery);
@@ -123,7 +151,7 @@ const ArtistFilter: React.FC<Props> = ({
       }
     } catch { }
     hydratedRef.current = true;
-  }, [setAvailabilityFilter, setCurrentPage, setLocationFilter, setPriceFilter, setSearchQuery, setStyleFilter]);
+  }, [setAvailabilityFilter, setCurrentPage, setExperienceFilter, setLocationFilter, setPriceFilter, setSearchQuery, setSort, setStyleFilter]);
 
   const isDirty = useMemo(
     () =>
@@ -132,9 +160,11 @@ const ArtistFilter: React.FC<Props> = ({
         (priceFilter && priceFilter !== "all") ||
         (locationFilter && locationFilter !== "all") ||
         (styleFilter && styleFilter !== "all") ||
-        (availabilityFilter && availabilityFilter !== "all")
+        (availabilityFilter && availabilityFilter !== "all") ||
+        (experienceFilter && experienceFilter !== "all") ||
+        (sort && sort !== "rating_desc")
       ),
-    [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter]
+    [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort]
   );
 
   const resetAll = () => {
@@ -144,156 +174,194 @@ const ArtistFilter: React.FC<Props> = ({
     setLocationFilter("all");
     setStyleFilter("all");
     setAvailabilityFilter("all");
+    setExperienceFilter("all");
+    setSort("rating_desc");
     setCurrentPage(1);
     if (typeof window !== "undefined") {
       localStorage.removeItem(PRESET_STORAGE_KEY);
     }
   };
 
-  const handleAvailabilityChange = (val: string) => {
-    setAvailabilityFilter(val);
-    setCurrentPage(1);
-  };
-
   const triggerBase =
-    "w-full h-10 bg-elevated border-app text-app rounded-xl text-sm sm:text-base text-center justify-center pl-9 pr-9 focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
-  const contentBase = "bg-card text-app rounded-2xl focus:outline-none ring-0 outline-none";
+    "h-9 bg-elevated border-app text-app rounded-lg text-sm text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
+  const contentBase = "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none";
   const itemCentered =
     "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
 
   return (
     <div
       className={clsx(
-        "w-full bg-card border border-app rounded-2xl shadow-sm",
-        "p-3 sm:p-4 md:p-5",
+        "w-full bg-card border border-app rounded-xl shadow-sm",
+        "p-2 sm:p-3",
         className
       )}
       role="region"
       aria-label="Artist filters"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
-          <Input
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search artists or tattoos (e.g., dragon, koi, portrait)"
-            aria-label="Search artists or tattoo subjects"
-            className={clsx(
-              "pl-9 pr-9 h-10 w-full bg-elevated border-app text-app rounded-xl",
-              "text-center",
-              "text-sm sm:text-base",
-              "placeholder:text-center",
-              "placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base",
-              "placeholder:text-muted-foreground"
-            )}
-          />
-        </div>
-
-        <div className="relative">
-          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-            <CircleDollarSign className="size-4 text-muted-foreground" aria-hidden />
+      <div className="w-full md:overflow-x-auto pb-0.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-nowrap md:min-w-[980px]">
+          <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
+            <Input
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder="Search artists or tattoos (e.g., dragon, koi, portrait)"
+              aria-label="Search artists or tattoo subjects"
+              className={clsx(
+                "pl-9 pr-9 h-9 w-full bg-elevated border-app text-app rounded-lg",
+                "text-sm",
+                "placeholder:text-muted-foreground"
+              )}
+            />
           </div>
-          <Select
-            value={priceFilter}
-            onValueChange={(value) => {
-              setPriceFilter(value);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className={triggerBase}>
-              <SelectValue placeholder="All Prices" />
-            </SelectTrigger>
-            <SelectContent className={contentBase}>
-              {PRICE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
-        <div className="relative">
-          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-            <MapPin className="size-4 text-muted-foreground" aria-hidden />
+          <div className="relative w-full sm:w-[170px] sm:shrink-0">
+            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+              <CircleDollarSign className="size-4 text-muted-foreground" aria-hidden />
+            </div>
+            <Select
+              value={priceFilter}
+              onValueChange={(value) => {
+                setPriceFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className={clsx(triggerBase, "w-full pl-9")}>
+                <SelectValue placeholder="All Prices" />
+              </SelectTrigger>
+              <SelectContent className={contentBase}>
+                {PRICE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select
-            value={locationFilter}
-            onValueChange={(value) => {
-              setLocationFilter(value);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className={triggerBase}>
-              <SelectValue placeholder="All Locations" />
-            </SelectTrigger>
-            <SelectContent className={clsx(contentBase, "max-h-72 overflow-y-auto")}>
-              <SelectItem value="all" className={itemCentered}>
-                All Locations
-              </SelectItem>
-              {uniqueLocations.map((loc) => (
-                <SelectItem key={loc} value={loc} className={itemCentered}>
-                  {loc}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
-        <div className="relative">
-          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-            <Brush className="size-4 text-muted-foreground" aria-hidden />
-          </div>
-          <Select
-            value={styleFilter}
-            onValueChange={(value) => {
-              setStyleFilter(value);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className={triggerBase}>
-              <SelectValue placeholder="All Styles" />
-            </SelectTrigger>
-            <SelectContent className={clsx(contentBase, "max-h-72 overflow-y-auto")}>
-              <SelectItem value="all" className={itemCentered}>
-                All Styles
-              </SelectItem>
-              {uniqueStyles.map((style) => (
-                <SelectItem key={style} value={style} className={itemCentered}>
-                  {style}
+          <div className="relative w-full sm:w-[185px] sm:shrink-0">
+            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+              <MapPin className="size-4 text-muted-foreground" aria-hidden />
+            </div>
+            <Select
+              value={locationFilter}
+              onValueChange={(value) => {
+                setLocationFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className={clsx(triggerBase, "w-full pl-9")}>
+                <SelectValue placeholder="All Locations" />
+              </SelectTrigger>
+              <SelectContent className={clsx(contentBase, "max-h-64 overflow-y-auto")}>
+                <SelectItem value="all" className={itemCentered}>
+                  All Locations
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+                {uniqueLocations.map((loc) => (
+                  <SelectItem key={loc} value={loc} className={itemCentered}>
+                    {loc}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="relative">
-          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-            <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
-          </div>
-          <Select value={availabilityFilter} onValueChange={handleAvailabilityChange}>
-            <SelectTrigger className={triggerBase}>
-              <SelectValue placeholder="All Availability" />
-            </SelectTrigger>
-            <SelectContent className={contentBase}>
-              {AVAILABILITY_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
-                  {opt.label}
+          <div className="relative w-full sm:w-[185px] sm:shrink-0">
+            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+              <Brush className="size-4 text-muted-foreground" aria-hidden />
+            </div>
+            <Select
+              value={styleFilter}
+              onValueChange={(value) => {
+                setStyleFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className={clsx(triggerBase, "w-full pl-9")}>
+                <SelectValue placeholder="All Styles" />
+              </SelectTrigger>
+              <SelectContent className={clsx(contentBase, "max-h-64 overflow-y-auto")}>
+                <SelectItem value="all" className={itemCentered}>
+                  All Styles
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                {uniqueStyles.map((style) => (
+                  <SelectItem key={style} value={style} className={itemCentered}>
+                    {style}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="relative w-full sm:w-[175px] sm:shrink-0">
+            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+              <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
+            </div>
+            <Select value={availabilityFilter} onValueChange={(v) => { setAvailabilityFilter(v); setCurrentPage(1); }}>
+              <SelectTrigger className={clsx(triggerBase, "w-full pl-9")}>
+                <SelectValue placeholder="Availability" />
+              </SelectTrigger>
+              <SelectContent className={contentBase}>
+                {AVAILABILITY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="relative w-full sm:w-[165px] sm:shrink-0">
+            <Select
+              value={experienceFilter}
+              onValueChange={(v) => {
+                setExperienceFilter(v);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectValue placeholder="Experience" />
+              </SelectTrigger>
+              <SelectContent className={contentBase}>
+                {EXPERIENCE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="relative w-full sm:w-[165px] sm:shrink-0">
+            <Select
+              value={sort}
+              onValueChange={(v) => {
+                setSort(v);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent className={contentBase}>
+                {SORT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      <Separator className="my-3" />
+      <Separator className="my-2" />
 
       {isDirty && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            {localSearch.trim() && (
-              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+            {!!localSearch.trim() && (
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 Search: “{localSearch.trim()}”
                 <button className="ml-2 inline-flex" onClick={() => setLocalSearch("")} aria-label="Clear search">
                   <X className="size-3" />
@@ -301,7 +369,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Badge>
             )}
             {locationFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 {locationFilter}
                 <button className="ml-2 inline-flex" onClick={() => setLocationFilter("all")} aria-label="Clear location filter">
                   <X className="size-3" />
@@ -309,7 +377,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Badge>
             )}
             {styleFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 {styleFilter}
                 <button className="ml-2 inline-flex" onClick={() => setStyleFilter("all")} aria-label="Clear style filter">
                   <X className="size-3" />
@@ -317,7 +385,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Badge>
             )}
             {availabilityFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 {AVAILABILITY_OPTIONS.find((o) => o.value === availabilityFilter)?.label ?? "Availability"}
                 <button className="ml-2 inline-flex" onClick={() => setAvailabilityFilter("all")} aria-label="Clear availability filter">
                   <X className="size-3" />
@@ -325,9 +393,25 @@ const ArtistFilter: React.FC<Props> = ({
               </Badge>
             )}
             {priceFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-xs">
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 {PRICE_OPTIONS.find((p) => p.value === priceFilter)?.label ?? priceFilter}
                 <button className="ml-2 inline-flex" onClick={() => setPriceFilter("all")} aria-label="Clear price filter">
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {experienceFilter !== "all" && (
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
+                {EXPERIENCE_OPTIONS.find((e) => e.value === experienceFilter)?.label ?? experienceFilter}
+                <button className="ml-2 inline-flex" onClick={() => setExperienceFilter("all")} aria-label="Clear experience filter">
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {sort !== "rating_desc" && (
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
+                {SORT_OPTIONS.find((s) => s.value === sort)?.label ?? "Sort"}
+                <button className="ml-2 inline-flex" onClick={() => setSort("rating_desc")} aria-label="Reset sort">
                   <X className="size-3" />
                 </button>
               </Badge>
@@ -338,7 +422,7 @@ const ArtistFilter: React.FC<Props> = ({
             <Button
               type="button"
               variant="ghost"
-              className="h-9 rounded-xl px-3 text-muted-foreground hover:text-foreground"
+              className="h-8 rounded-lg px-2.5 text-muted-foreground hover:text-foreground text-sm"
               onClick={resetAll}
               aria-label="Clear all filters"
             >

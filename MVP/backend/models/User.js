@@ -16,7 +16,6 @@ const userSchema = new mongoose.Schema(
     clerkId: { type: String, required: true, unique: true, index: true },
     username: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-
     role: {
       type: String,
       enum: ["client", "artist"],
@@ -24,15 +23,15 @@ const userSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-
     avatar: { type: ImageSchema },
     location: { type: String },
     style: [{ type: String }],
     bio: { type: String },
     priceRange: { min: Number, max: Number },
-    rating: { type: Number, default: 0 },
+    rating: { type: Number, default: 0, index: true },
     reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
-
+    reviewsCount: { type: Number, default: 0, index: true },
+    yearsExperience: { type: Number, default: 0, min: 0, index: true },
     bookingsCount: { type: Number, default: 0 },
     totalBookingFeesPaid: { type: Number, default: 0 },
     discountPercent: { type: Number, default: 0, min: 0, max: 100 },
