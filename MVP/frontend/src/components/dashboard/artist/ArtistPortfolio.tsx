@@ -1,4 +1,3 @@
-// ArtistPortfolio.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Maximize2 } from "lucide-react";
@@ -195,7 +194,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
             <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
                     <div className="py-3 sm:py-4">
-                        {/* PAGINATION BAR — no borders anywhere in this block */}
                         <div className="mx-auto w-full max-w-3xl grid grid-cols-3 items-stretch gap-3 sm:gap-6 h-12 sm:h-14 px-2 sm:px-3">
                             <div className="flex items-center h-full">
                                 <div className="flex items-center gap-2 sm:gap-4">
@@ -245,7 +243,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 </Button>
                             </div>
                         </div>
-                        {/* END PAGINATION BAR */}
                     </div>
                 </div>
             </div>
@@ -282,6 +279,18 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                         <Separator className="my-4 sm:my-5 opacity-60" />
                         <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                             {artist.bio || "No bio available."}
+                        </p>
+                    </div>
+                </section>
+
+                <section className="w-full -mt-2">
+                    <div className="mx-auto max-w-4xl text-center px-4">
+                        <p
+                            className="text-lg sm:text-xl font-bold leading-relaxed"
+                            style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}
+                        >
+                            View the gallery below and click any image to zoom. Press &amp; hold while zoomed for a
+                            powerful “microscope” magnification.
                         </p>
                     </div>
                 </section>

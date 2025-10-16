@@ -199,7 +199,7 @@ const ArtistFilter: React.FC<Props> = ({
       aria-label="Artist filters"
     >
       <div className="w-full md:overflow-x-auto pb-0.5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-nowrap md:min-w-[980px]">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-nowrap md:min-w-[1220px]">
           <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
             <Input
@@ -215,7 +215,7 @@ const ArtistFilter: React.FC<Props> = ({
             />
           </div>
 
-          <div className="relative w-full sm:w-[170px] sm:shrink-0">
+          <div className="relative w-full sm:w-[210px] sm:shrink-0">
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <CircleDollarSign className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -239,7 +239,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[185px] sm:shrink-0">
+          <div className="relative w-full sm:w-[225px] sm:shrink-0">
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <MapPin className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -266,7 +266,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[185px] sm:shrink-0">
+          <div className="relative w-full sm:w-[225px] sm:shrink-0">
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <Brush className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -293,7 +293,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[175px] sm:shrink-0">
+          <div className="relative w-full sm:w-[215px] sm:shrink-0">
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -311,7 +311,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[165px] sm:shrink-0">
+          <div className="relative w-full sm:w-[205px] sm:shrink-0">
             <Select
               value={experienceFilter}
               onValueChange={(v) => {
@@ -332,7 +332,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[165px] sm:shrink-0">
+          <div className="relative w-full sm:w-[205px] sm:shrink-0">
             <Select
               value={sort}
               onValueChange={(v) => {
