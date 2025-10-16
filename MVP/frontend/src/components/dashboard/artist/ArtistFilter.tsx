@@ -15,8 +15,8 @@ interface Artist {
   style?: string[];
   priceRange?: { min: number; max: number };
   yearsExperience?: number | string;
-  rating?: number;
-  reviewsCount?: number;
+  rating?: number | string;
+  reviewsCount?: number | string;
   createdAt?: string | number | Date;
   availabilityCode?: "7d" | "lt1m" | "1to3m" | "lte6m" | "waitlist";
   availabilityDays?: number;
@@ -41,7 +41,6 @@ interface Props {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   className?: string;
-  onFilteredArtists?: (list: Artist[]) => void;
 }
 
 const PRICE_OPTIONS = [
@@ -71,6 +70,8 @@ const EXPERIENCE_OPTIONS = [
 ] as const;
 
 const SORT_OPTIONS = [
+  { value: "highest_rated", label: "Highest rated" },
+  { value: "most_reviews", label: "Most reviews" },
   { value: "experience_desc", label: "Most experience" },
   { value: "experience_asc", label: "Least experience" },
   { value: "newest", label: "Newest" },
@@ -78,84 +79,24 @@ const SORT_OPTIONS = [
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
 
-const parseRange = (v: string): { min?: number; max?: number } => {
-  if (!v || v === "all") return {};
-  const s = v.toString().toLowerCase().replace(/\s+/g, "").replace(/years?|yrs?|yoe|exp/g, "").replace(/\u2013|\u2014/g, "-");
-  if (s.endsWith("+")) {
-    const n = Number(s.replace("+", "").replace(/[^\d]/g, ""));
-    return { min: Number.isFinite(n) ? n : undefined, max: Infinity };
-  }
-  const [aRaw, bRaw] = s.split("-");
-  const a = Number(aRaw?.replace(/[^\d]/g, ""));
-  const b = Number(bRaw?.replace(/[^\d]/g, ""));
-  return { min: Number.isFinite(a) ? a : undefined, max: Number.isFinite(b) ? b : undefined };
-};
-
-const normalizeYears = (y: unknown): number | undefined => {
-  if (typeof y === "number" && Number.isFinite(y)) return Math.trunc(y);
-  if (typeof y === "string") {
-    const s = y.toLowerCase().replace(/\s+/g, "").replace(/years?|yrs?|yoe|exp/g, "").replace(/\+$/, "");
-    const n = Number(s);
-    if (Number.isFinite(n)) return Math.trunc(n);
-  }
-  return undefined;
-};
-
-const EXPERIENCE_BOUNDS: Record<"amateur" | "experienced" | "professional" | "veteran", { min: number; max: number }> = {
-  amateur: { min: 0, max: 2 },
-  experienced: { min: 3, max: 5 },
-  professional: { min: 6, max: 10 },
-  veteran: { min: 10, max: Infinity },
-};
-
 const getExperienceCategory = (value: string | undefined): "all" | "amateur" | "experienced" | "professional" | "veteran" | undefined => {
   if (!value) return undefined;
   const raw = value.toString().trim().toLowerCase();
   if (raw === "all") return "all";
   if (["amateur", "experienced", "professional", "veteran"].includes(raw)) return raw as any;
-
   const cleaned = raw.replace(/\s+/g, "").replace(/years?|yrs?|yoe|exp/g, "").replace(/\u2013|\u2014/g, "-");
   if (/amateur/.test(raw)) return "amateur";
   if (/experienced/.test(raw)) return "experienced";
   if (/professional/.test(raw)) return "professional";
   if (/veteran/.test(raw)) return "veteran";
-
-  const { min, max } = parseRange(cleaned);
-  if (min === 0 && max === 2) return "amateur";
-  if (min === 3 && max === 5) return "experienced";
-  if (min === 6 && max === 10) return "professional";
-  if (min === 10 && max === Infinity) return "veteran";
+  const endsPlus = cleaned.endsWith("+");
+  if (endsPlus && Number(cleaned.replace("+", "")) >= 10) return "veteran";
+  const [a, b] = cleaned.split("-").map((n) => Number(n));
+  if (a === 0 && b === 2) return "amateur";
+  if (a === 3 && b === 5) return "experienced";
+  if (a === 6 && b === 10) return "professional";
+  if (a === 10 && !Number.isFinite(b)) return "veteran";
   return undefined;
-};
-
-const inExperience = (artist: Artist, filter: string) => {
-  const cat = getExperienceCategory(filter);
-  if (!cat || cat === "all") return true;
-  const y = normalizeYears(artist.yearsExperience);
-  if (y === undefined) return false;
-  const { min, max } = EXPERIENCE_BOUNDS[cat];
-  return y >= min && y <= max;
-};
-
-const inAvailability = (artist: Artist, filter: string) => {
-  if (filter === "all") return true;
-  if (artist.availabilityCode) return artist.availabilityCode === filter;
-  if (typeof artist.availabilityDays === "number") {
-    const d = artist.availabilityDays;
-    if (filter === "7d") return d <= 7;
-    if (filter === "lt1m") return d <= 30;
-    if (filter === "1to3m") return d > 30 && d <= 90;
-    if (filter === "lte6m") return d <= 180;
-    if (filter === "waitlist") return d === Infinity || d < 0;
-  }
-  return true;
-};
-
-const matchesSearch = (artist: Artist, q: string) => {
-  const s = q.trim().toLowerCase();
-  if (!s) return true;
-  const hay = [artist.username, artist.bio, artist.location, ...(artist.style ?? []), ...(artist.tags ?? [])].filter(Boolean).join(" ").toLowerCase();
-  return hay.includes(s);
 };
 
 const ArtistFilter: React.FC<Props> = ({
@@ -176,7 +117,6 @@ const ArtistFilter: React.FC<Props> = ({
   searchQuery,
   setSearchQuery,
   className,
-  onFilteredArtists,
 }) => {
   const uniqueLocations = useMemo(() => {
     const set = new Set<string>();
@@ -226,10 +166,7 @@ const ArtistFilter: React.FC<Props> = ({
         if (p.locationFilter) setLocationFilter(p.locationFilter);
         if (p.styleFilter) setStyleFilter(p.styleFilter);
         if (p.availabilityFilter) setAvailabilityFilter(p.availabilityFilter);
-        if (p.experienceFilter) {
-          const cat = getExperienceCategory(p.experienceFilter) ?? "all";
-          setExperienceFilter(cat);
-        }
+        if (p.experienceFilter) setExperienceFilter(getExperienceCategory(p.experienceFilter) ?? "all");
         if (p.sort) setSort(p.sort);
         if (typeof p.searchQuery === "string") {
           setLocalSearch(p.searchQuery);
@@ -243,15 +180,7 @@ const ArtistFilter: React.FC<Props> = ({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const payload = {
-      priceFilter,
-      locationFilter,
-      styleFilter,
-      availabilityFilter,
-      experienceFilter,
-      sort,
-      searchQuery,
-    };
+    const payload = { priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort, searchQuery };
     try {
       localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
     } catch { }
@@ -271,55 +200,17 @@ const ArtistFilter: React.FC<Props> = ({
     [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort]
   );
 
-  const filteredSorted = useMemo(() => {
-    const q = searchQuery;
-    const { min: pMin, max: pMax } = parseRange(priceFilter);
-    let list = artists.filter((a) => {
-      if (!matchesSearch(a, q)) return false;
-      if (locationFilter !== "all" && a.location !== locationFilter) return false;
-      if (styleFilter !== "all" && !(a.style ?? []).includes(styleFilter)) return false;
-
-      if (pMin !== undefined || pMax !== undefined) {
-        const pr = a.priceRange;
-        if (pr) {
-          const ok = (pMin === undefined || pr.max >= pMin) && (pMax === undefined || pr.min <= pMax);
-          if (!ok) return false;
-        }
-      }
-
-      if (!inExperience(a, experienceFilter)) return false;
-      if (!inAvailability(a, availabilityFilter)) return false;
-      return true;
-    });
-
-    if (sort === "experience_desc" || sort === "experience_asc") {
-      list = list.slice().sort((a, b) => {
-        const ay = normalizeYears(a.yearsExperience);
-        const by = normalizeYears(b.yearsExperience);
-        const av = ay ?? (sort === "experience_desc" ? -Infinity : Infinity);
-        const bv = by ?? (sort === "experience_desc" ? -Infinity : Infinity);
-        return sort === "experience_desc" ? bv - av : av - bv;
-      });
-    } else if (sort === "newest") {
-      list = list.slice().sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
-    }
-
-    return list;
-  }, [artists, availabilityFilter, experienceFilter, locationFilter, priceFilter, searchQuery, sort, styleFilter]);
-
-  useEffect(() => {
-    onFilteredArtists?.(filteredSorted);
-  }, [filteredSorted, onFilteredArtists]);
-
   const triggerBase = "h-9 bg-elevated border-app text-app rounded-lg text-sm text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
   const contentBase = "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none";
   const itemCentered = "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
+  const FILTER_W = "w-full sm:w-[260px] sm:shrink-0";
+  const SEARCH_W = "w-full sm:flex-1 sm:min-w-[320px]";
 
   return (
     <div className={clsx("w-full bg-card border border-app rounded-xl shadow-sm", "p-2 sm:p-3", className)} role="region" aria-label="Artist filters">
       <div className="w-full md:overflow-x-auto pb-0.5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-nowrap md:min-w-[1470px]">
-          <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-nowrap">
+          <div className={clsx("relative", SEARCH_W)}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" aria-hidden />
             <Input
               value={localSearch}
@@ -330,7 +221,7 @@ const ArtistFilter: React.FC<Props> = ({
             />
           </div>
 
-          <div className="relative w-full sm:w-[260px] sm:shrink-0">
+          <div className={clsx("relative", FILTER_W)}>
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <CircleDollarSign className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -348,7 +239,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[275px] sm:shrink-0">
+          <div className={clsx("relative", FILTER_W)}>
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <MapPin className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -365,7 +256,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[275px] sm:shrink-0">
+          <div className={clsx("relative", FILTER_W)}>
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <Brush className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -382,7 +273,7 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[265px] sm:shrink-0">
+          <div className={clsx("relative", FILTER_W)}>
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
             </div>
@@ -398,13 +289,26 @@ const ArtistFilter: React.FC<Props> = ({
             </Select>
           </div>
 
-          <div className="relative w-full sm:w-[255px] sm:shrink-0">
+          <div className={clsx("relative", FILTER_W)}>
             <Select value={experienceFilter} onValueChange={(v) => { setExperienceFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className={clsx(triggerBase, "w-full")}>
                 <SelectValue placeholder="Experience" />
               </SelectTrigger>
               <SelectContent className={contentBase}>
                 {EXPERIENCE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={clsx("relative", FILTER_W)}>
+            <Select value={sort} onValueChange={(v) => { setSort(v); setCurrentPage(1); }}>
+              <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent className={contentBase}>
+                {SORT_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
                 ))}
               </SelectContent>

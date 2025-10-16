@@ -38,6 +38,15 @@ const matchesExperience = (years: number | undefined, filter: string) => {
     return true;
 };
 
+const toNumber = (v: unknown, fallback = 0): number => {
+    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+    if (typeof v === "string") {
+        const n = Number(v.replace(/[, ]/g, ""));
+        return Number.isFinite(n) ? n : fallback;
+    }
+    return fallback;
+};
+
 const ArtistsSection: React.FC<Props> = ({
     artists,
     loading,
@@ -141,10 +150,25 @@ const ArtistsSection: React.FC<Props> = ({
         } else if (sort === "newest") {
             list = list
                 .slice()
-                .sort(
-                    (a, b) =>
-                        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
-                );
+                .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+        } else if (sort === "highest_rated") {
+            list = list.slice().sort((a, b) => {
+                const ar = toNumber(a.rating, 0);
+                const br = toNumber(b.rating, 0);
+                if (br !== ar) return br - ar;
+                const arv = toNumber(a.reviewsCount, 0);
+                const brv = toNumber(b.reviewsCount, 0);
+                return brv - arv;
+            });
+        } else if (sort === "most_reviews") {
+            list = list.slice().sort((a, b) => {
+                const arv = toNumber(a.reviewsCount, 0);
+                const brv = toNumber(b.reviewsCount, 0);
+                if (brv !== arv) return brv - arv;
+                const ar = toNumber(a.rating, 0);
+                const br = toNumber(b.rating, 0);
+                return br - ar;
+            });
         }
 
         return list;
@@ -183,9 +207,7 @@ const ArtistsSection: React.FC<Props> = ({
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest(
-            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
-        );
+        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
@@ -256,10 +278,7 @@ const ArtistsSection: React.FC<Props> = ({
                                                 }}
                                                 className="w-full h-full"
                                             >
-                                                <div
-                                                    className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]"
-                                                    data-artist-card="true"
-                                                >
+                                                <div className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]" data-artist-card="true">
                                                     <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
                                                 </div>
                                             </motion.div>
