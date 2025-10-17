@@ -18,13 +18,13 @@ type ClientProfile = {
     availability?: string;
 };
 
-type ArtistProfile = {
+type ArtistProfileReview = {
     location: string;
     shop: string;
     years: string;
     baseRate: string;
-    instagram: string;
-    portfolio: string;
+    bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+    travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
 };
 
 const SIZE_LABELS: Record<string, string> = {
@@ -45,11 +45,27 @@ const AVAIL_LABELS: Record<string, string> = {
     waitlist: "Waitlist / Closed",
 };
 
+const BOOKING_LABELS: Record<NonNullable<ArtistProfileReview["bookingPreference"]>, string> = {
+    open: "Open to new clients",
+    waitlist: "Waitlist",
+    closed: "Books closed",
+    referral: "Referral only",
+    guest: "Guest spots only",
+};
+
+const TRAVEL_LABELS: Record<NonNullable<ArtistProfileReview["travelFrequency"]>, string> = {
+    rare: "Rarely",
+    sometimes: "Sometimes",
+    often: "Often",
+    touring: "Touring",
+    guest_only: "Guest only",
+};
+
 type Props = {
     role: Role;
     shared: SharedAccount;
     client: ClientProfile;
-    artist: ArtistProfile;
+    artist: ArtistProfileReview;
 };
 
 export default function ReviewStep({ role, shared, client, artist }: Props) {
@@ -62,6 +78,8 @@ export default function ReviewStep({ role, shared, client, artist }: Props) {
     const availText = client.availability ? (AVAIL_LABELS[client.availability] ?? client.availability) : "Optional";
     const styleText = client.style && client.style !== "all" ? client.style : "Optional";
 
+    const shopText = artist.shop?.trim() ? artist.shop : "No shop / Independent";
+
     return (
         <div className="grid gap-6 text-white">
             <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -69,7 +87,9 @@ export default function ReviewStep({ role, shared, client, artist }: Props) {
                 <div className="grid gap-2 text-sm text-white/80">
                     <div>
                         <span className="text-white/60">Name: </span>
-                        <span>{shared.firstName} {shared.lastName}</span>
+                        <span>
+                            {shared.firstName} {shared.lastName}
+                        </span>
                     </div>
                     <div>
                         <span className="text-white/60">Email: </span>
@@ -122,7 +142,7 @@ export default function ReviewStep({ role, shared, client, artist }: Props) {
                         </div>
                         <div>
                             <span className="text-white/60">Shop: </span>
-                            <span>{artist.shop || "Optional"}</span>
+                            <span>{shopText}</span>
                         </div>
                         <div>
                             <span className="text-white/60">Years Experience: </span>
@@ -133,12 +153,12 @@ export default function ReviewStep({ role, shared, client, artist }: Props) {
                             <span>{artist.baseRate ? `$${Number(artist.baseRate).toLocaleString()}` : "Not set"}</span>
                         </div>
                         <div>
-                            <span className="text-white/60">Instagram: </span>
-                            <span>{artist.instagram || "Optional"}</span>
+                            <span className="text-white/60">Booking Preference: </span>
+                            <span>{artist.bookingPreference ? BOOKING_LABELS[artist.bookingPreference] : "Not set"}</span>
                         </div>
                         <div>
-                            <span className="text-white/60">Portfolio: </span>
-                            <span>{artist.portfolio || "Optional"}</span>
+                            <span className="text-white/60">Travel Frequency: </span>
+                            <span>{artist.travelFrequency ? TRAVEL_LABELS[artist.travelFrequency] : "Not set"}</span>
                         </div>
                     </div>
                 </section>
