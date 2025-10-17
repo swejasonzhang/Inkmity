@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Conversation, Message } from "@/components/dashboard/ChatWindow";
+import {
+  Conversation,
+  Message,
+} from "@/components/dashboard/shared/ChatWindow";
 import { toast } from "react-toastify";
 
 export interface ArtistDto {
@@ -24,6 +27,10 @@ export interface ArtistDto {
   availabilityDays?: number;
   createdAt?: string | number | Date;
   tags?: string[];
+  bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+  travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
+  instagram?: string;
+  portfolio?: string;
 }
 
 type ArtistFilters = {
@@ -33,6 +40,8 @@ type ArtistFilters = {
   price?: string;
   availability?: string;
   experience?: string;
+  booking?: string;
+  travel?: string;
   sort?: string;
 };
 
@@ -256,6 +265,22 @@ export function useDashboardData() {
         }
       }
       if (!inAvailability(a, filters.availability)) return false;
+      if (filters.booking && filters.booking !== "all") {
+        const booking = (
+          (a as any).bookingPreference ??
+          (a as any).instagram ??
+          ""
+        ).toString();
+        if (booking !== filters.booking) return false;
+      }
+      if (filters.travel && filters.travel !== "all") {
+        const travel = (
+          (a as any).travelFrequency ??
+          (a as any).portfolio ??
+          ""
+        ).toString();
+        if (travel !== filters.travel) return false;
+      }
       return true;
     });
   };
@@ -318,6 +343,10 @@ export function useDashboardData() {
         params.set("availability", filters.availability);
       if (typeof eMin === "number") params.set("expMin", String(eMin));
       if (!plus && typeof eMax === "number") params.set("expMax", String(eMax));
+      if (filters.booking && filters.booking !== "all")
+        params.set("booking", filters.booking);
+      if (filters.travel && filters.travel !== "all")
+        params.set("travel", filters.travel);
       params.set("page", String(Math.max(1, page)));
       params.set("pageSize", String(Math.max(1, Math.min(48, pageSize))));
       params.set("sort", filters.sort || "rating_desc");

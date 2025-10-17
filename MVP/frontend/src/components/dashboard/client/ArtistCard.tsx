@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 
 interface Artist {
@@ -17,6 +17,8 @@ interface Artist {
   pastWorks?: string[];
   sketches?: string[];
   clerkId?: string;
+  bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+  travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
 }
 
 interface ArtistCardProps {
@@ -53,12 +55,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
 
   const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
   const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
-  const [avgRating, setAvgRating] = useState<number | null>(
-    typeof artist.rating === "number" ? Math.round(artist.rating * 10) / 10 : null
-  );
-  const [numRatings, setNumRatings] = useState<number | null>(
-    typeof artist.reviewsCount === "number" ? artist.reviewsCount : null
-  );
+  const [avgRating, setAvgRating] = useState<number | null>(typeof artist.rating === "number" ? Math.round(artist.rating * 10) / 10 : null);
+  const [numRatings, setNumRatings] = useState<number | null>(typeof artist.reviewsCount === "number" ? artist.reviewsCount : null);
   const [ratingErr, setRatingErr] = useState<string | null>(null);
   const [ratingLoading, setRatingLoading] = useState<boolean>(false);
 
@@ -147,13 +145,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
     };
   }, [artist._id, getToken, avgRating, numRatings]);
 
-  const ratingText =
-    ratingLoading ? "…" : avgRating !== null && !Number.isNaN(avgRating) ? avgRating.toFixed(1) : "—";
-
-  const countText =
-    numRatings !== null
-      ? `(${numRatings} ${numRatings === 1 ? "Review" : "Reviews"})`
-      : "(— Reviews)";
+  const ratingText = ratingLoading ? "…" : avgRating !== null && !Number.isNaN(avgRating) ? avgRating.toFixed(1) : "—";
+  const countText = numRatings !== null ? `(${numRatings} ${numRatings === 1 ? "Review" : "Reviews"})` : "(— Reviews)";
 
   const openProfile = () => {
     if ((window as any).__INK_MODAL_JUST_CLOSED_AT__ && Date.now() - (window as any).__INK_MODAL_JUST_CLOSED_AT__ < 350) return;
@@ -162,6 +155,23 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
       pastWorks,
       sketches,
     });
+  };
+
+  const booking = artist.bookingPreference;
+  const travel = artist.travelFrequency;
+  const bookingLabel: Record<string, string> = {
+    open: "Open to new clients",
+    waitlist: "Waitlist",
+    closed: "Books closed",
+    referral: "Referral only",
+    guest: "Guest spots only",
+  };
+  const travelLabel: Record<string, string> = {
+    rare: "Rarely travels",
+    sometimes: "Sometimes travels",
+    often: "Travels often",
+    touring: "Touring",
+    guest_only: "Guest spots only",
   };
 
   return (
@@ -182,35 +192,14 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                 onError={() => setBgOk(false)}
               />
             ) : (
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))",
-                }}
-              />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
             )}
 
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)",
-              }}
-            />
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
-              style={{
-                background:
-                  "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)",
-              }}
-            />
+            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20" style={{ background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
 
             <div className="absolute left-1/2 top-[44%] sm:top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
-              <div
-                className="relative rounded-full overflow-hidden h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 shadow-2xl ring-2 ring-[color:var(--card)]"
-                style={{ border: `1px solid var(--border)`, background: "var(--card)" }}
-              >
+              <div className="relative rounded-full overflow-hidden h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 shadow-2xl ring-2 ring-[color:var(--card)]" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
                 {avatarSrc ? (
                   <img
                     src={avatarSrc}
@@ -221,10 +210,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                     onError={() => setAvatarOk(false)}
                   />
                 ) : (
-                  <span
-                    className="absolute inset-0 grid place-items-center text-2xl sm:text-3xl font-semibold"
-                    style={{ color: "var(--fg)" }}
-                  >
+                  <span className="absolute inset-0 grid place-items-center text-2xl sm:text-3xl font-semibold" style={{ color: "var(--fg)" }}>
                     {initials}
                   </span>
                 )}
@@ -313,6 +299,27 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
             {ratingErr && (
               <div className="text-[11px]" style={{ color: "color-mix(in oklab, var(--fg) 55%, transparent)" }}>
                 {ratingErr}
+              </div>
+            )}
+
+            {(booking || travel) && (
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                {booking && (
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-[10px] font-medium border backdrop-blur"
+                    style={{ background: "color-mix(in oklab, var(--elevated) 70%, transparent)", color: "var(--fg)", borderColor: "var(--border)" }}
+                  >
+                    {bookingLabel[booking] ?? "Booking"}
+                  </span>
+                )}
+                {travel && (
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-[10px] font-medium border backdrop-blur"
+                    style={{ background: "color-mix(in oklab, var(--elevated) 70%, transparent)", color: "var(--fg)", borderColor: "var(--border)" }}
+                  >
+                    {travelLabel[travel] ?? "Travel"}
+                  </span>
+                )}
               </div>
             )}
           </div>
