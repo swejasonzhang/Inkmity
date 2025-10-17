@@ -1,5 +1,5 @@
 import React from "react";
-import FormInput from "@/components/dashboard/FormInput";
+import FormInput from "@/components/dashboard/shared/FormInput";
 import {
     Select,
     SelectContent,
