@@ -317,7 +317,7 @@ export default function SignUp() {
     }
   };
 
-  const mascotEyesClosed = pwdFocused && showPassword;
+  const mascotEyesClosed = showPassword || pwdFocused;
   const handlePasswordVisibilityChange = (hidden: boolean) => setShowPassword(!hidden);
 
   const checkEmailExists = async (emailParam?: string, showToast = true) => {

@@ -1,12 +1,6 @@
 import React from "react";
 import FormInput from "@/components/dashboard/shared/FormInput";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type ArtistProfile = {
     location: string;
@@ -24,11 +18,17 @@ export default function ArtistDetailsStep({
     artist: ArtistProfile;
     onChange: React.ChangeEventHandler<HTMLInputElement>;
 }) {
+    const normalizeSelectOutbound = (name: keyof ArtistProfile, v: string) => {
+        if ((name === "shop" || name === "instagram" || name === "portfolio") && v === "__skip__") return "";
+        return v;
+    };
+
     const handleSelect =
         (name: keyof ArtistProfile) =>
             (value: string): void => {
+                const normalized = normalizeSelectOutbound(name, value);
                 const syntheticEvent = {
-                    target: { name, value },
+                    target: { name, value: normalized },
                 } as unknown as React.ChangeEvent<HTMLInputElement>;
                 onChange(syntheticEvent);
             };
@@ -38,14 +38,13 @@ export default function ArtistDetailsStep({
     const labelCls = "text-sm font-medium text-white/90";
     const helpCls = "text-xs text-white/50";
 
+    const isEmpty = (v?: string) => !v || v === "__skip__";
+
     return (
         <div className="space-y-6">
             <div>
                 <h3 className="text-lg font-semibold">Artist Details</h3>
-                <p className="text-sm text-muted-foreground">
-                    Replicated client details styling with dropdowns for every field and a
-                    “Custom…” option that reveals an input.
-                </p>
+                <p className="text-sm text-muted-foreground">Tell us a bit more about your practice.</p>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -69,20 +68,10 @@ export default function ArtistDetailsStep({
                     </Select>
                     {artist.location === "__custom__" && (
                         <div className="mt-2">
-                            <input
-                                name="location"
-                                type="text"
-                                placeholder="City, State / Region"
-                                className={inputCls}
-                                onChange={onChange}
-                            />
+                            <input name="location" type="text" placeholder="City, State / Region" className={inputCls} onChange={onChange} />
                         </div>
                     )}
-                    <p className={helpCls}>
-                        {artist.location && artist.location !== "__custom__"
-                            ? "Looks good."
-                            : "Where are you based?"}
-                    </p>
+                    <p className={helpCls}>{artist.location && artist.location !== "__custom__" ? "Looks good." : "Where are you based?"}</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -92,7 +81,7 @@ export default function ArtistDetailsStep({
                             <SelectValue placeholder="Select your shop or Custom…" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">No shop / Independent</SelectItem>
+                            <SelectItem value="__skip__">No shop / Independent</SelectItem>
                             <SelectItem value="Bang Bang Tattoo">Bang Bang Tattoo</SelectItem>
                             <SelectItem value="Shamrock Social Club">Shamrock Social Club</SelectItem>
                             <SelectItem value="Great Lakes Tattoo">Great Lakes Tattoo</SelectItem>
@@ -103,16 +92,10 @@ export default function ArtistDetailsStep({
                     </Select>
                     {artist.shop === "__custom__" && (
                         <div className="mt-2">
-                            <input
-                                name="shop"
-                                type="text"
-                                placeholder="Studio or collective name"
-                                className={inputCls}
-                                onChange={onChange}
-                            />
+                            <input name="shop" type="text" placeholder="Studio or collective name" className={inputCls} onChange={onChange} />
                         </div>
                     )}
-                    <p className={helpCls}>{artist.shop ? "Noted." : "Optional"}</p>
+                    <p className={helpCls}>{!isEmpty(artist.shop) ? "Noted." : "Optional"}</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -122,35 +105,14 @@ export default function ArtistDetailsStep({
                             <SelectValue placeholder="Select years" />
                         </SelectTrigger>
                         <SelectContent>
-                            {[
-                                "0",
-                                "1",
-                                "2",
-                                "3",
-                                "4",
-                                "5",
-                                "6",
-                                "7",
-                                "8",
-                                "9",
-                                "10",
-                                "12",
-                                "15",
-                                "20",
-                                "25",
-                                "30",
-                                "35",
-                                "40",
-                            ].map((y) => (
+                            {["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "15", "20", "25", "30", "35", "40"].map((y) => (
                                 <SelectItem key={y} value={y}>
                                     {y}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
-                    <p className={helpCls}>
-                        {artist.years ? "Thanks." : "Add years of experience."}
-                    </p>
+                    <p className={helpCls}>{artist.years ? "Thanks." : "Add years of experience."}</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -184,11 +146,7 @@ export default function ArtistDetailsStep({
                             />
                         </div>
                     )}
-                    <p className={helpCls}>
-                        {artist.baseRate && artist.baseRate !== "__custom__"
-                            ? "Thanks."
-                            : "Pick a rate or set a custom amount."}
-                    </p>
+                    <p className={helpCls}>{artist.baseRate && artist.baseRate !== "__custom__" ? "Thanks." : "Pick a rate or set a custom amount."}</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -198,34 +156,30 @@ export default function ArtistDetailsStep({
                             <SelectValue placeholder="Choose format or Custom…" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">Skip</SelectItem>
+                            <SelectItem value="__skip__">Skip</SelectItem>
                             <SelectItem value="@">Handle (e.g., @yourname)</SelectItem>
-                            <SelectItem value="https://instagram.com/">
-                                Full URL (e.g., https://instagram.com/yourname)
-                            </SelectItem>
+                            <SelectItem value="https://instagram.com/">Full URL (e.g., https://instagram.com/yourname)</SelectItem>
                             <SelectItem value="__custom__">Custom…</SelectItem>
                         </SelectContent>
                     </Select>
-                    {(artist.instagram === "__custom__" ||
-                        artist.instagram === "@" ||
-                        artist.instagram === "https://instagram.com/") && (
-                            <div className="mt-2">
-                                <input
-                                    name="instagram"
-                                    type="text"
-                                    placeholder={
-                                        artist.instagram === "@"
-                                            ? "@yourname"
-                                            : artist.instagram === "https://instagram.com/"
-                                                ? "https://instagram.com/yourname"
-                                                : "Handle or URL"
-                                    }
-                                    className={inputCls}
-                                    onChange={onChange}
-                                />
-                            </div>
-                        )}
-                    <p className={helpCls}>{artist.instagram ? "Noted." : "Optional"}</p>
+                    {(artist.instagram === "__custom__" || artist.instagram === "@" || artist.instagram === "https://instagram.com/") && (
+                        <div className="mt-2">
+                            <input
+                                name="instagram"
+                                type="text"
+                                placeholder={
+                                    artist.instagram === "@"
+                                        ? "@yourname"
+                                        : artist.instagram === "https://instagram.com/"
+                                            ? "https://instagram.com/yourname"
+                                            : "Handle or URL"
+                                }
+                                className={inputCls}
+                                onChange={onChange}
+                            />
+                        </div>
+                    )}
+                    <p className={helpCls}>{!isEmpty(artist.instagram) ? "Noted." : "Optional"}</p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -235,7 +189,7 @@ export default function ArtistDetailsStep({
                             <SelectValue placeholder="Choose a platform or Custom…" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">Skip</SelectItem>
+                            <SelectItem value="__skip__">Skip</SelectItem>
                             <SelectItem value="https://behance.net/">Behance</SelectItem>
                             <SelectItem value="https://dribbble.com/">Dribbble</SelectItem>
                             <SelectItem value="https://instagram.com/">Instagram</SelectItem>
@@ -262,7 +216,7 @@ export default function ArtistDetailsStep({
                                 />
                             </div>
                         )}
-                    <p className={helpCls}>{artist.portfolio ? "Noted." : "Optional"}</p>
+                    <p className={helpCls}>{!isEmpty(artist.portfolio) ? "Noted." : "Optional"}</p>
                 </div>
             </div>
         </div>
