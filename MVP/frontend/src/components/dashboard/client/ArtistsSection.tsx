@@ -65,6 +65,8 @@ export default function ArtistsSection({
         styleFilter: string;
         availabilityFilter: string;
         experienceFilter: string;
+        bookingFilter: string;
+        travelFilter: string;
         sort: string;
         searchQuery: string;
     }> =
@@ -79,40 +81,23 @@ export default function ArtistsSection({
             })()
             : {};
 
-    const [priceFilter, setPriceFilter] = useState<string>(
-        initialPreset.priceFilter ?? "all"
-    );
-    const [locationFilter, setLocationFilter] = useState<string>(
-        initialPreset.locationFilter ?? "all"
-    );
-    const [styleFilter, setStyleFilter] = useState<string>(
-        initialPreset.styleFilter ?? "all"
-    );
-    const [availabilityFilter, setAvailabilityFilter] = useState<string>(
-        initialPreset.availabilityFilter ?? "all"
-    );
-    const [experienceFilter, setExperienceFilter] = useState<string>(
-        initialPreset.experienceFilter ?? "all"
-    );
-
+    const [priceFilter, setPriceFilter] = useState<string>(initialPreset.priceFilter ?? "all");
+    const [locationFilter, setLocationFilter] = useState<string>(initialPreset.locationFilter ?? "all");
+    const [styleFilter, setStyleFilter] = useState<string>(initialPreset.styleFilter ?? "all");
+    const [availabilityFilter, setAvailabilityFilter] = useState<string>(initialPreset.availabilityFilter ?? "all");
+    const [experienceFilter, setExperienceFilter] = useState<string>(initialPreset.experienceFilter ?? "all");
+    const [bookingFilter, setBookingFilter] = useState<string>(initialPreset.bookingFilter ?? "all");
+    const [travelFilter, setTravelFilter] = useState<string>(initialPreset.travelFilter ?? "all");
     const [sort, setSort] = useState<string>(initialPreset.sort || "experience_desc");
 
-    const [searchQuery, setSearchQuery] = useState<string>(
-        typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : ""
-    );
+    const [searchQuery, setSearchQuery] = useState<string>(typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "");
     const [debouncedSearch, setDebouncedSearch] = useState<string>(
-        (typeof initialPreset.searchQuery === "string"
-            ? initialPreset.searchQuery
-            : ""
-        ).trim().toLowerCase()
+        (typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "").trim().toLowerCase()
     );
     const [currentPage, setCurrentPage] = useState(1);
     const [filterOpacity] = useState(1);
 
-    const usingExternalPaging =
-        typeof page === "number" &&
-        typeof totalPages === "number" &&
-        typeof onPageChange === "function";
+    const usingExternalPaging = typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -122,27 +107,18 @@ export default function ArtistsSection({
             styleFilter,
             availabilityFilter,
             experienceFilter,
+            bookingFilter,
+            travelFilter,
             sort,
             searchQuery,
         };
         try {
             localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
         } catch { }
-    }, [
-        priceFilter,
-        locationFilter,
-        styleFilter,
-        availabilityFilter,
-        experienceFilter,
-        sort,
-        searchQuery,
-    ]);
+    }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
     useEffect(() => {
-        const t = setTimeout(
-            () => setDebouncedSearch(searchQuery.trim().toLowerCase()),
-            250
-        );
+        const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
         return () => clearTimeout(t);
     }, [searchQuery]);
 
@@ -190,6 +166,18 @@ export default function ArtistsSection({
             );
         };
 
+        const matchesBooking = (a: ArtistDto, v: string) => {
+            if (!v || v === "all") return true;
+            const booking = ((a as any).bookingPreference ?? (a as any).instagram ?? "").toString();
+            return booking === v;
+        };
+
+        const matchesTravel = (a: ArtistDto, v: string) => {
+            if (!v || v === "all") return true;
+            const travel = ((a as any).travelFrequency ?? (a as any).portfolio ?? "").toString();
+            return travel === v;
+        };
+
         let list = artists.filter((a) => {
             if (!inPriceRange(a)) return false;
             if (!(locationFilter === "all" || a.location === locationFilter)) return false;
@@ -198,6 +186,8 @@ export default function ArtistsSection({
             if (!inAvailability(a)) return false;
             const y = normalizeYears(a.yearsExperience);
             if (!matchesExperience(y, experienceFilter)) return false;
+            if (!matchesBooking(a, bookingFilter)) return false;
+            if (!matchesTravel(a, travelFilter)) return false;
             return true;
         });
 
@@ -210,10 +200,7 @@ export default function ArtistsSection({
                 return sort === "experience_desc" ? bv - av : av - bv;
             });
         } else if (sort === "newest") {
-            list = list.slice().sort(
-                (a, b) =>
-                    new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
-            );
+            list = list.slice().sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
         } else if (sort === "highest_rated") {
             list = list.slice().sort((a, b) => {
                 const ar = toNumber(a.rating, 0);
@@ -235,22 +222,10 @@ export default function ArtistsSection({
         }
 
         return list;
-    }, [
-        artists,
-        priceFilter,
-        locationFilter,
-        styleFilter,
-        debouncedSearch,
-        availabilityFilter,
-        experienceFilter,
-        sort,
-    ]);
+    }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]);
 
     const clientTotalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const clientPageItems = filtered.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const listItems = usingExternalPaging ? filtered : clientPageItems;
 
     const isCenterLoading = loading || !showArtists;
@@ -262,6 +237,8 @@ export default function ArtistsSection({
         styleFilter,
         availabilityFilter,
         experienceFilter,
+        bookingFilter,
+        travelFilter,
         sort,
         debouncedSearch,
         listItems.length,
@@ -270,9 +247,7 @@ export default function ArtistsSection({
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest(
-            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
-        );
+        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
@@ -285,28 +260,49 @@ export default function ArtistsSection({
     };
 
     return (
-        <section
-            id="middle-content"
-            className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-card"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-            <div
-                className="bg-card px-3 py-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300"
-                style={{ opacity: filterOpacity }}
-            >
+        <section id="middle-content" className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-card" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            <div className="bg-card px-3 py-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300" style={{ opacity: filterOpacity }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
-                    setPriceFilter={(v) => { setPriceFilter(v); setCurrentPage(1); }}
+                    setPriceFilter={(v) => {
+                        setPriceFilter(v);
+                        setCurrentPage(1);
+                    }}
                     locationFilter={locationFilter}
-                    setLocationFilter={(v) => { setLocationFilter(v); setCurrentPage(1); }}
+                    setLocationFilter={(v) => {
+                        setLocationFilter(v);
+                        setCurrentPage(1);
+                    }}
                     styleFilter={styleFilter}
-                    setStyleFilter={(v) => { setStyleFilter(v); setCurrentPage(1); }}
+                    setStyleFilter={(v) => {
+                        setStyleFilter(v);
+                        setCurrentPage(1);
+                    }}
                     availabilityFilter={availabilityFilter}
-                    setAvailabilityFilter={(v) => { setAvailabilityFilter(v); setCurrentPage(1); }}
+                    setAvailabilityFilter={(v) => {
+                        setAvailabilityFilter(v);
+                        setCurrentPage(1);
+                    }}
                     experienceFilter={experienceFilter}
-                    setExperienceFilter={(v) => { setExperienceFilter(v); setCurrentPage(1); }}
+                    setExperienceFilter={(v) => {
+                        setExperienceFilter(v);
+                        setCurrentPage(1);
+                    }}
+                    bookingFilter={bookingFilter}
+                    setBookingFilter={(v) => {
+                        setBookingFilter(v);
+                        setCurrentPage(1);
+                    }}
+                    travelFilter={travelFilter}
+                    setTravelFilter={(v) => {
+                        setTravelFilter(v);
+                        setCurrentPage(1);
+                    }}
                     sort={sort}
-                    setSort={(v) => { setSort(v); setCurrentPage(1); }}
+                    setSort={(v) => {
+                        setSort(v);
+                        setCurrentPage(1);
+                    }}
                     artists={artists}
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
@@ -326,10 +322,7 @@ export default function ArtistsSection({
                         <div className="w-full flex-1 px-0 pt-3 pb-2">
                             {listItems.length > 0 ? (
                                 !isCenterLoading && (
-                                    <div
-                                        key={motionKey}
-                                        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[1fr] gap-6 md:gap-5"
-                                    >
+                                    <div key={motionKey} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[1fr] gap-6 md:gap-5">
                                         {listItems.map((artist, index) => (
                                             <motion.div
                                                 key={(artist.clerkId ?? artist._id) + ":" + index}
@@ -343,38 +336,23 @@ export default function ArtistsSection({
                                                 }}
                                                 className="w-full h-full"
                                             >
-                                                <div
-                                                    className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]"
-                                                    data-artist-card="true"
-                                                >
-                                                    <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
+                                                <div className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]" data-artist-card="true">
+                                                    <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} />
                                                 </div>
                                             </motion.div>
                                         ))}
                                     </div>
                                 )
                             ) : (
-                                <p className="text-muted text-center flex-1 flex items-center justify-center py-8">
-                                    No artists match your filters.
-                                </p>
+                                <p className="text-muted text-center flex-1 flex items-center justify-center py-8">No artists match your filters.</p>
                             )}
                         </div>
 
                         <div className="py-4 px-3 sm:px-4 md:px-6">
                             {usingExternalPaging ? (
-                                <Pagination
-                                    currentPage={page!}
-                                    totalPages={totalPages!}
-                                    onPrev={() => handleSetCurrentPage((page as number) - 1)}
-                                    onNext={() => handleSetCurrentPage((page as number) + 1)}
-                                />
+                                <Pagination currentPage={page!} totalPages={totalPages!} onPrev={() => handleSetCurrentPage((page as number) - 1)} onNext={() => handleSetCurrentPage((page as number) + 1)} />
                             ) : (
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalPages={clientTotalPages}
-                                    onPrev={() => handleSetCurrentPage(currentPage - 1)}
-                                    onNext={() => handleSetCurrentPage(currentPage + 1)}
-                                />
+                                <Pagination currentPage={currentPage} totalPages={clientTotalPages} onPrev={() => handleSetCurrentPage(currentPage - 1)} onNext={() => handleSetCurrentPage(currentPage + 1)} />
                             )}
                         </div>
                     </div>

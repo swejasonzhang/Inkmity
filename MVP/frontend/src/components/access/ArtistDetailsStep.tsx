@@ -1,14 +1,14 @@
 import React from "react";
-import FormInput from "@/components/dashboard/shared/FormInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import FormInput from "@/components/dashboard/shared/FormInput";
 
 type ArtistProfile = {
     location: string;
     shop: string;
     years: string;
     baseRate: string;
-    instagram: string;
-    portfolio: string;
+    bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+    travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
 };
 
 export default function ArtistDetailsStep({
@@ -19,7 +19,7 @@ export default function ArtistDetailsStep({
     onChange: React.ChangeEventHandler<HTMLInputElement>;
 }) {
     const normalizeSelectOutbound = (name: keyof ArtistProfile, v: string) => {
-        if ((name === "shop" || name === "instagram" || name === "portfolio") && v === "__skip__") return "";
+        if (name === "shop" && v === "__skip__") return "";
         return v;
     };
 
@@ -37,50 +37,67 @@ export default function ArtistDetailsStep({
         "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20";
     const labelCls = "text-sm font-medium text-white/90";
     const helpCls = "text-xs text-white/50";
-
-    const isEmpty = (v?: string) => !v || v === "__skip__";
+    const triggerCls = "h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white";
+    const contentCls = "rounded-2xl max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white";
 
     return (
         <div className="space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold">Artist Details</h3>
-                <p className="text-sm text-muted-foreground">Tell us a bit more about your practice.</p>
+            <div className="flex items-center justify-center text-center">
+                <div>
+                    <h3 className="text-lg font-semibold">Artist Details</h3>
+                    <p className="text-sm text-muted-foreground">Tell us a bit more about your practice.</p>
+                </div>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-1.5">
                     <label className={labelCls}>Location</label>
-                    <Select value={artist.location || ""} onValueChange={handleSelect("location")}>
-                        <SelectTrigger className="w-full rounded-xl border border-white/10 bg-white/5 text-white">
-                            <SelectValue placeholder="Select your location" />
+                    <Select value={artist.location || "__unset__"} onValueChange={handleSelect("location")}>
+                        <SelectTrigger className={triggerCls}>
+                            <SelectValue placeholder="Select your location (US only)" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className={contentCls}>
                             <SelectItem value="New York, NY">New York, NY</SelectItem>
                             <SelectItem value="Los Angeles, CA">Los Angeles, CA</SelectItem>
                             <SelectItem value="Chicago, IL">Chicago, IL</SelectItem>
-                            <SelectItem value="San Francisco, CA">San Francisco, CA</SelectItem>
-                            <SelectItem value="Seattle, WA">Seattle, WA</SelectItem>
+                            <SelectItem value="Houston, TX">Houston, TX</SelectItem>
+                            <SelectItem value="Phoenix, AZ">Phoenix, AZ</SelectItem>
+                            <SelectItem value="Philadelphia, PA">Philadelphia, PA</SelectItem>
+                            <SelectItem value="San Antonio, TX">San Antonio, TX</SelectItem>
+                            <SelectItem value="San Diego, CA">San Diego, CA</SelectItem>
+                            <SelectItem value="Dallas, TX">Dallas, TX</SelectItem>
+                            <SelectItem value="San Jose, CA">San Jose, CA</SelectItem>
                             <SelectItem value="Austin, TX">Austin, TX</SelectItem>
-                            <SelectItem value="London, UK">London, UK</SelectItem>
-                            <SelectItem value="Toronto, CA">Toronto, CA</SelectItem>
+                            <SelectItem value="Jacksonville, FL">Jacksonville, FL</SelectItem>
+                            <SelectItem value="San Francisco, CA">San Francisco, CA</SelectItem>
+                            <SelectItem value="Columbus, OH">Columbus, OH</SelectItem>
+                            <SelectItem value="Charlotte, NC">Charlotte, NC</SelectItem>
+                            <SelectItem value="Seattle, WA">Seattle, WA</SelectItem>
+                            <SelectItem value="Denver, CO">Denver, CO</SelectItem>
+                            <SelectItem value="Washington, DC">Washington, DC</SelectItem>
+                            <SelectItem value="Boston, MA">Boston, MA</SelectItem>
+                            <SelectItem value="Nashville, TN">Nashville, TN</SelectItem>
+                            <SelectItem value="Portland, OR">Portland, OR</SelectItem>
+                            <SelectItem value="Las Vegas, NV">Las Vegas, NV</SelectItem>
+                            <SelectItem value="Miami, FL">Miami, FL</SelectItem>
                             <SelectItem value="__custom__">Custom…</SelectItem>
                         </SelectContent>
                     </Select>
                     {artist.location === "__custom__" && (
                         <div className="mt-2">
-                            <input name="location" type="text" placeholder="City, State / Region" className={inputCls} onChange={onChange} />
+                            <input name="location" type="text" placeholder="City, State (US)" className={inputCls} onChange={onChange} />
                         </div>
                     )}
-                    <p className={helpCls}>{artist.location && artist.location !== "__custom__" ? "Looks good." : "Where are you based?"}</p>
+                    <p className={helpCls}>Choose a U.S. city. Use “Custom…” to type any U.S. location.</p>
                 </div>
 
                 <div className="space-y-1.5">
                     <label className={labelCls}>Shop (optional)</label>
-                    <Select value={artist.shop || ""} onValueChange={handleSelect("shop")}>
-                        <SelectTrigger className="w-full rounded-xl border border-white/10 bg-white/5 text-white">
+                    <Select value={artist.shop || "__skip__"} onValueChange={handleSelect("shop")}>
+                        <SelectTrigger className={triggerCls}>
                             <SelectValue placeholder="Select your shop or Custom…" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className={contentCls}>
                             <SelectItem value="__skip__">No shop / Independent</SelectItem>
                             <SelectItem value="Bang Bang Tattoo">Bang Bang Tattoo</SelectItem>
                             <SelectItem value="Shamrock Social Club">Shamrock Social Club</SelectItem>
@@ -95,16 +112,16 @@ export default function ArtistDetailsStep({
                             <input name="shop" type="text" placeholder="Studio or collective name" className={inputCls} onChange={onChange} />
                         </div>
                     )}
-                    <p className={helpCls}>{!isEmpty(artist.shop) ? "Noted." : "Optional"}</p>
+                    <p className={helpCls}>Pick your studio, select independent, or enter a custom name.</p>
                 </div>
 
                 <div className="space-y-1.5">
                     <label className={labelCls}>Years of experience</label>
-                    <Select value={artist.years || ""} onValueChange={handleSelect("years")}>
-                        <SelectTrigger className="w-full rounded-xl border border-white/10 bg-white/5 text-white">
+                    <Select value={artist.years || "__unset__"} onValueChange={handleSelect("years")}>
+                        <SelectTrigger className={triggerCls}>
                             <SelectValue placeholder="Select years" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className={contentCls}>
                             {["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "12", "15", "20", "25", "30", "35", "40"].map((y) => (
                                 <SelectItem key={y} value={y}>
                                     {y}
@@ -112,16 +129,16 @@ export default function ArtistDetailsStep({
                             ))}
                         </SelectContent>
                     </Select>
-                    <p className={helpCls}>{artist.years ? "Thanks." : "Add years of experience."}</p>
+                    <p className={helpCls}>Select your total years of tattooing experience.</p>
                 </div>
 
                 <div className="space-y-1.5">
                     <label className={labelCls}>Base hourly rate (USD)</label>
-                    <Select value={artist.baseRate || ""} onValueChange={handleSelect("baseRate")}>
-                        <SelectTrigger className="w-full rounded-xl border border-white/10 bg-white/5 text-white">
+                    <Select value={artist.baseRate || "__unset__"} onValueChange={handleSelect("baseRate")}>
+                        <SelectTrigger className={triggerCls}>
                             <SelectValue placeholder="Choose a rate or Custom…" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className={contentCls}>
                             {["100", "125", "150", "175", "200", "250", "300"].map((r) => (
                                 <SelectItem key={r} value={r}>
                                     ${r}
@@ -146,77 +163,41 @@ export default function ArtistDetailsStep({
                             />
                         </div>
                     )}
-                    <p className={helpCls}>{artist.baseRate && artist.baseRate !== "__custom__" ? "Thanks." : "Pick a rate or set a custom amount."}</p>
+                    <p className={helpCls}>Choose an hourly rate or enter a custom amount.</p>
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className={labelCls}>Instagram (optional)</label>
-                    <Select value={artist.instagram || ""} onValueChange={handleSelect("instagram")}>
-                        <SelectTrigger className="w-full rounded-xl border border-white/10 bg-white/5 text-white">
-                            <SelectValue placeholder="Choose format or Custom…" />
+                    <label className={labelCls}>Booking preference</label>
+                    <Select value={artist.bookingPreference || "open"} onValueChange={handleSelect("bookingPreference")}>
+                        <SelectTrigger className={triggerCls}>
+                            <SelectValue placeholder="Booking preference" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="__skip__">Skip</SelectItem>
-                            <SelectItem value="@">Handle (e.g., @yourname)</SelectItem>
-                            <SelectItem value="https://instagram.com/">Full URL (e.g., https://instagram.com/yourname)</SelectItem>
-                            <SelectItem value="__custom__">Custom…</SelectItem>
+                        <SelectContent className={contentCls}>
+                            <SelectItem value="open">Open to new clients</SelectItem>
+                            <SelectItem value="waitlist">Waitlist</SelectItem>
+                            <SelectItem value="closed">Books closed</SelectItem>
+                            <SelectItem value="referral">Referral only</SelectItem>
+                            <SelectItem value="guest">Guest spots only</SelectItem>
                         </SelectContent>
                     </Select>
-                    {(artist.instagram === "__custom__" || artist.instagram === "@" || artist.instagram === "https://instagram.com/") && (
-                        <div className="mt-2">
-                            <input
-                                name="instagram"
-                                type="text"
-                                placeholder={
-                                    artist.instagram === "@"
-                                        ? "@yourname"
-                                        : artist.instagram === "https://instagram.com/"
-                                            ? "https://instagram.com/yourname"
-                                            : "Handle or URL"
-                                }
-                                className={inputCls}
-                                onChange={onChange}
-                            />
-                        </div>
-                    )}
-                    <p className={helpCls}>{!isEmpty(artist.instagram) ? "Noted." : "Optional"}</p>
+                    <p className={helpCls}>How you’re currently accepting clients.</p>
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className={labelCls}>Portfolio website (optional)</label>
-                    <Select value={artist.portfolio || ""} onValueChange={handleSelect("portfolio")}>
-                        <SelectTrigger className="w-full rounded-xl border border-white/10 bg-white/5 text-white">
-                            <SelectValue placeholder="Choose a platform or Custom…" />
+                    <label className={labelCls}>Travel frequency</label>
+                    <Select value={artist.travelFrequency || "rare"} onValueChange={handleSelect("travelFrequency")}>
+                        <SelectTrigger className={triggerCls}>
+                            <SelectValue placeholder="Travel frequency" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="__skip__">Skip</SelectItem>
-                            <SelectItem value="https://behance.net/">Behance</SelectItem>
-                            <SelectItem value="https://dribbble.com/">Dribbble</SelectItem>
-                            <SelectItem value="https://instagram.com/">Instagram</SelectItem>
-                            <SelectItem value="https://linktr.ee/">Linktree</SelectItem>
-                            <SelectItem value="__custom__">Custom…</SelectItem>
+                        <SelectContent className={contentCls}>
+                            <SelectItem value="rare">Rarely</SelectItem>
+                            <SelectItem value="sometimes">Sometimes</SelectItem>
+                            <SelectItem value="often">Often</SelectItem>
+                            <SelectItem value="touring">Touring</SelectItem>
+                            <SelectItem value="guest_only">Guest only</SelectItem>
                         </SelectContent>
                     </Select>
-                    {(artist.portfolio === "__custom__" ||
-                        artist.portfolio === "https://behance.net/" ||
-                        artist.portfolio === "https://dribbble.com/" ||
-                        artist.portfolio === "https://instagram.com/" ||
-                        artist.portfolio === "https://linktr.ee/") && (
-                            <div className="mt-2">
-                                <input
-                                    name="portfolio"
-                                    type="url"
-                                    placeholder={
-                                        artist.portfolio && artist.portfolio !== "__custom__"
-                                            ? `${artist.portfolio}your-page`
-                                            : "https://your-portfolio.com"
-                                    }
-                                    className={inputCls}
-                                    onChange={onChange}
-                                />
-                            </div>
-                        )}
-                    <p className={helpCls}>{!isEmpty(artist.portfolio) ? "Noted." : "Optional"}</p>
+                    <p className={helpCls}>How often you travel for guest spots or tours.</p>
                 </div>
             </div>
         </div>

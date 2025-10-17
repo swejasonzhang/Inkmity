@@ -12,7 +12,16 @@ import { container } from "@/components/access/animations";
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
 type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
-type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
+type ArtistProfile = {
+  location: string;
+  shop: string;
+  years: string;
+  baseRate: string;
+  bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+  travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
+  instagram: string;
+  portfolio: string;
+};
 type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
 type InputLike = { target: { name: string; value: string } };
 
@@ -35,7 +44,16 @@ export default function SignUp() {
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
   const [client, setClient] = useState<ClientProfile>({ budgetMin: "0", budgetMax: "500", location: "", placement: "", size: "", notes: "" });
-  const [artist, setArtist] = useState<ArtistProfile>({ location: "", shop: "", years: "", baseRate: "", instagram: "", portfolio: "" });
+  const [artist, setArtist] = useState<ArtistProfile>({
+    location: "",
+    shop: "",
+    years: "",
+    baseRate: "",
+    bookingPreference: "open",
+    travelFrequency: "rare",
+    instagram: "",
+    portfolio: "",
+  });
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
   const [loading, setLoading] = useState(false);
@@ -54,13 +72,6 @@ export default function SignUp() {
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
-
-  const goToLogin = () => {
-    const loginUrl = "/login";
-    setTimeout(() => {
-      window.location.href = loginUrl;
-    }, 1400);
-  };
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
@@ -143,7 +154,6 @@ export default function SignUp() {
     };
   }, [shared.email]);
 
-  const handleShared = (e: ChangeEvent<HTMLInputElement>) => setShared({ ...shared, [e.target.name]: e.target.value });
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
     const name = (e as InputLike).target?.name;
     const value = (e as InputLike).target?.value;
@@ -158,7 +168,7 @@ export default function SignUp() {
 
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
   const allClientValid = !!client.location && maxVal > minVal;
-  const allArtistValid = !!artist.location && !!artist.years && !!artist.baseRate;
+  const allArtistValid = !!artist.location && artist.location !== "__unset__" && !!artist.years && artist.years !== "__unset__" && !!artist.baseRate && artist.baseRate !== "__unset__";
 
   const slides = useMemo(() => {
     if (role === "client") {
@@ -189,7 +199,10 @@ export default function SignUp() {
       </span>,
       { position: "top-center", theme: "dark" }
     );
-    goToLogin();
+    const loginUrl = "/login";
+    setTimeout(() => {
+      window.location.href = loginUrl;
+    }, 1400);
   };
 
   const blockIfEmailTaken = () => {
@@ -259,7 +272,14 @@ export default function SignUp() {
   const syncUserToBackend = async (r: Role) => {
     const token = await getToken();
     const clerkId = user?.id ?? undefined;
-    const payload: any = { clerkId, email: shared.email, role: r, firstName: shared.firstName, lastName: shared.lastName, profile: r === "client" ? { ...client } : { ...artist } };
+    const payload: any = {
+      clerkId,
+      email: shared.email,
+      role: r,
+      firstName: shared.firstName,
+      lastName: shared.lastName,
+      profile: r === "client" ? { ...client } : { ...artist },
+    };
     const endpoint = apiUrl("/users/sync");
     const res = await fetch(endpoint, {
       method: "POST",
@@ -381,7 +401,7 @@ export default function SignUp() {
                   shared={shared}
                   client={client}
                   artist={artist}
-                  onSharedChange={handleShared}
+                  onSharedChange={(e) => setShared({ ...shared, [e.target.name]: e.target.value })}
                   onClientChange={handleClient}
                   onArtistChange={handleArtist}
                   awaitingCode={awaitingCode}
@@ -403,7 +423,18 @@ export default function SignUp() {
           </motion.div>
         </div>
       </main>
-      <ToastContainer position="top-center" autoClose={1800} hideProgressBar closeOnClick pauseOnHover={false} draggable={false} limit={1} transition={Slide} toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10" style={{ top: toastTop !== undefined ? toastTop : 12 }} />
+      <ToastContainer
+        position="top-center"
+        autoClose={1800}
+        hideProgressBar
+        closeOnClick
+        pauseOnHover={false}
+        draggable={false}
+        limit={1}
+        transition={Slide}
+        toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
+        style={{ top: toastTop !== undefined ? toastTop : 12 }}
+      />
     </div>
   );
 }

@@ -21,6 +21,10 @@ interface Artist {
   availabilityCode?: "7d" | "lt1m" | "1to3m" | "lte6m" | "waitlist";
   availabilityDays?: number;
   tags?: string[];
+  bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+  travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
+  instagram?: string;
+  portfolio?: string;
 }
 
 interface Props {
@@ -34,6 +38,10 @@ interface Props {
   setAvailabilityFilter: (value: string) => void;
   experienceFilter: string;
   setExperienceFilter: (value: string) => void;
+  bookingFilter: string;
+  setBookingFilter: (value: string) => void;
+  travelFilter: string;
+  setTravelFilter: (value: string) => void;
   sort: string;
   setSort: (value: string) => void;
   artists: Artist[];
@@ -67,6 +75,24 @@ const EXPERIENCE_OPTIONS = [
   { value: "experienced", label: "Experienced (3–5 yrs)" },
   { value: "professional", label: "Professional (6–10 yrs)" },
   { value: "veteran", label: "Veteran (10+ yrs)" },
+] as const;
+
+const BOOKING_OPTIONS = [
+  { value: "all", label: "All Booking" },
+  { value: "open", label: "Open to new clients" },
+  { value: "waitlist", label: "Waitlist" },
+  { value: "closed", label: "Books closed" },
+  { value: "referral", label: "Referral only" },
+  { value: "guest", label: "Guest spots only" },
+] as const;
+
+const TRAVEL_OPTIONS = [
+  { value: "all", label: "All Travel" },
+  { value: "rare", label: "Rarely" },
+  { value: "sometimes", label: "Sometimes" },
+  { value: "often", label: "Often" },
+  { value: "touring", label: "Touring" },
+  { value: "guest_only", label: "Guest only" },
 ] as const;
 
 const SORT_OPTIONS = [
@@ -110,6 +136,10 @@ const ArtistFilter: React.FC<Props> = ({
   setAvailabilityFilter,
   experienceFilter,
   setExperienceFilter,
+  bookingFilter,
+  setBookingFilter,
+  travelFilter,
+  setTravelFilter,
   sort,
   setSort,
   artists,
@@ -159,6 +189,8 @@ const ArtistFilter: React.FC<Props> = ({
           styleFilter: string;
           availabilityFilter: string;
           experienceFilter: string;
+          bookingFilter: string;
+          travelFilter: string;
           sort: string;
           searchQuery: string;
         }>;
@@ -167,6 +199,8 @@ const ArtistFilter: React.FC<Props> = ({
         if (p.styleFilter) setStyleFilter(p.styleFilter);
         if (p.availabilityFilter) setAvailabilityFilter(p.availabilityFilter);
         if (p.experienceFilter) setExperienceFilter(getExperienceCategory(p.experienceFilter) ?? "all");
+        if (p.bookingFilter) setBookingFilter(p.bookingFilter);
+        if (p.travelFilter) setTravelFilter(p.travelFilter);
         if (p.sort) setSort(p.sort);
         if (typeof p.searchQuery === "string") {
           setLocalSearch(p.searchQuery);
@@ -176,15 +210,15 @@ const ArtistFilter: React.FC<Props> = ({
       }
     } catch { }
     hydratedRef.current = true;
-  }, [setAvailabilityFilter, setCurrentPage, setExperienceFilter, setLocationFilter, setPriceFilter, setSearchQuery, setSort, setStyleFilter]);
+  }, [setAvailabilityFilter, setCurrentPage, setExperienceFilter, setLocationFilter, setPriceFilter, setSearchQuery, setSort, setStyleFilter, setBookingFilter, setTravelFilter]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const payload = { priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort, searchQuery };
+    const payload = { priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery };
     try {
       localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
     } catch { }
-  }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort, searchQuery]);
+  }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
   const isDirty = useMemo(
     () =>
@@ -195,9 +229,11 @@ const ArtistFilter: React.FC<Props> = ({
         (styleFilter && styleFilter !== "all") ||
         (availabilityFilter && availabilityFilter !== "all") ||
         (experienceFilter && experienceFilter !== "all") ||
+        (bookingFilter && bookingFilter !== "all") ||
+        (travelFilter && travelFilter !== "all") ||
         (sort && sort !== "experience_desc")
       ),
-    [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort]
+    [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]
   );
 
   const triggerBase = "h-9 bg-elevated border-app text-app rounded-lg text-sm text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
@@ -303,6 +339,32 @@ const ArtistFilter: React.FC<Props> = ({
           </div>
 
           <div className={clsx("relative", FILTER_W)}>
+            <Select value={bookingFilter} onValueChange={(v) => { setBookingFilter(v); setCurrentPage(1); }}>
+              <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectValue placeholder="Booking" />
+              </SelectTrigger>
+              <SelectContent className={contentBase}>
+                {BOOKING_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={clsx("relative", FILTER_W)}>
+            <Select value={travelFilter} onValueChange={(v) => { setTravelFilter(v); setCurrentPage(1); }}>
+              <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectValue placeholder="Travel" />
+              </SelectTrigger>
+              <SelectContent className={contentBase}>
+                {TRAVEL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={clsx("relative", FILTER_W)}>
             <Select value={sort} onValueChange={(v) => { setSort(v); setCurrentPage(1); }}>
               <SelectTrigger className={clsx(triggerBase, "w-full")}>
                 <SelectValue placeholder="Sort by" />
@@ -370,6 +432,22 @@ const ArtistFilter: React.FC<Props> = ({
                 </button>
               </Badge>
             )}
+            {bookingFilter !== "all" && (
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
+                {BOOKING_OPTIONS.find((b) => b.value === bookingFilter)?.label ?? "Booking"}
+                <button className="ml-2 inline-flex" onClick={() => setBookingFilter("all")} aria-label="Clear booking filter">
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
+            {travelFilter !== "all" && (
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
+                {TRAVEL_OPTIONS.find((t) => t.value === travelFilter)?.label ?? "Travel"}
+                <button className="ml-2 inline-flex" onClick={() => setTravelFilter("all")} aria-label="Clear travel filter">
+                  <X className="size-3" />
+                </button>
+              </Badge>
+            )}
             {sort !== "experience_desc" && (
               <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 {SORT_OPTIONS.find((s) => s.value === sort)?.label ?? "Sort"}
@@ -393,6 +471,8 @@ const ArtistFilter: React.FC<Props> = ({
                 setStyleFilter("all");
                 setAvailabilityFilter("all");
                 setExperienceFilter("all");
+                setBookingFilter("all");
+                setTravelFilter("all");
                 setSort("experience_desc");
                 setCurrentPage(1);
                 if (typeof window !== "undefined") {
