@@ -3,7 +3,7 @@ import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion } from "framer-motion";
-import Pagination from "../Pagination";
+import Pagination from "../shared/Pagination";
 import type { ArtistDto } from "@/hooks/useDashboardData";
 
 type Props = {
@@ -95,14 +95,7 @@ export default function ArtistsSection({
         initialPreset.experienceFilter ?? "all"
     );
 
-    const [sort, setSort] = useState<string>(
-        (initialPreset.priceFilter ||
-            initialPreset.locationFilter ||
-            initialPreset.styleFilter ||
-            initialPreset.availabilityFilter)
-            ? initialPreset.sort || "highest_rated"
-            : initialPreset.sort || "experience_desc"
-    );
+    const [sort, setSort] = useState<string>(initialPreset.sort || "experience_desc");
 
     const [searchQuery, setSearchQuery] = useState<string>(
         typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : ""

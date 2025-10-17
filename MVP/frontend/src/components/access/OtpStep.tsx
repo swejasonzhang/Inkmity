@@ -1,4 +1,4 @@
-import FormInput from "@/components/dashboard/FormInput";
+import FormInput from "@/components/dashboard/shared/FormInput";
 
 export default function OtpStep({
     code, setCode, onVerify, loading,
