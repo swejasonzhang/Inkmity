@@ -18,7 +18,7 @@ type CalendarViewProps = {
 export default function CalendarView({
     bookings = [],
     onSelectBooking = () => { },
-    rowMinHeight = 160,
+    rowMinHeight = 140,
 }: CalendarViewProps) {
     const [cursor, setCursor] = useState(() => {
         const d = new Date();
@@ -73,28 +73,26 @@ export default function CalendarView({
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between border-b border-app px-4 py-3">
-                <div className="font-semibold text-base">
+        <div className="flex flex-col h-full min-h-[55vh] p-3 gap-2">
+            <div className="border-b border-app px-3 py-3 rounded-xl bg-card text-center">
+                <div className="font-semibold text-sm">
                     {monthName} {cursor.getFullYear()}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="mt-2 flex items-center justify-center gap-1.5">
                     <button
-                        className="px-3 py-1.5 rounded-md border border-app bg-card hover:bg-elevated"
+                        className="px-2.5 py-1.5 rounded-md border border-app bg-card hover:bg-elevated text-xs"
                         onClick={() => changeMonth(-1)}
                     >
                         Prev
                     </button>
                     <button
-                        className="px-3 py-1.5 rounded-md border border-app bg-card hover:bg-elevated"
-                        onClick={() =>
-                            setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
-                        }
+                        className="px-2.5 py-1.5 rounded-md border border-app bg-card hover:bg-elevated text-xs"
+                        onClick={() => setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
                     >
                         Today
                     </button>
                     <button
-                        className="px-3 py-1.5 rounded-md border border-app bg-card hover:bg-elevated"
+                        className="px-2.5 py-1.5 rounded-md border border-app bg-card hover:bg-elevated text-xs"
                         onClick={() => changeMonth(1)}
                     >
                         Next
@@ -102,15 +100,15 @@ export default function CalendarView({
                 </div>
             </div>
 
-            <div className="grid grid-cols-7 text-xs text-muted-foreground px-4 py-2">
+            <div className="grid grid-cols-7 text-[11px] text-muted-foreground px-2 sm:px-3 text-center">
                 {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                    <div key={d} className="text-center font-medium tracking-wide">
+                    <div key={d} className="font-medium tracking-wide py-1.5">
                         {d}
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-px px-4 pb-4">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 flex-1" style={{ gridAutoRows: "minmax(0,1fr)" }}>
                 {cells.map((c, i) => {
                     const key =
                         c.date &&
@@ -125,24 +123,21 @@ export default function CalendarView({
                     return (
                         <div
                             key={i}
-                            className={[
-                                "rounded-lg border border-app bg-card p-2 sm:p-3",
-                                !c.inMonth ? "opacity-40" : "",
-                            ].join(" ")}
+                            className={["rounded-lg border border-app bg-card p-2 flex flex-col", !c.inMonth ? "opacity-40" : ""].join(" ")}
                             style={{ minHeight: rowMinHeight }}
                         >
                             <div className="flex items-center justify-between">
-                                <div className="text-xs text-muted-foreground">{c.dayNum ?? ""}</div>
-                                {isToday && <div className="text-[10px] px-1 rounded bg-white/10">Today</div>}
+                                <div className="text-[11px] text-muted-foreground">{c.dayNum ?? ""}</div>
+                                {isToday && <div className="text-[10px] px-1 py-0.5 rounded bg-white/10">Today</div>}
                             </div>
 
-                            <div className="mt-2 flex flex-col gap-1.5">
-                                {dayBookings.slice(0, 4).map((b: Booking) => (
+                            <div className="mt-2 flex flex-col gap-1">
+                                {dayBookings.slice(0, 3).map((b: Booking) => (
                                     <button
                                         key={b.id}
                                         onClick={() => onSelectBooking(b)}
                                         className={[
-                                            "w-full text-left text-xs rounded-md border px-2 py-1.5 hover:bg-white/5",
+                                            "w-full text-[11px] rounded border px-2 py-1 hover:bg-white/5 text-left",
                                             statusBadge[b.status ?? ""] ?? "border-white/10",
                                         ].join(" ")}
                                         title={`${b.title} • ${b.clientName ?? ""}`}
@@ -155,8 +150,8 @@ export default function CalendarView({
                                         </div>
                                     </button>
                                 ))}
-                                {dayBookings.length > 4 && (
-                                    <div className="text-[11px] text-muted-foreground">+{dayBookings.length - 4} more</div>
+                                {dayBookings.length > 3 && (
+                                    <div className="text-[10px] text-muted-foreground">+{dayBookings.length - 3} more</div>
                                 )}
                             </div>
                         </div>
