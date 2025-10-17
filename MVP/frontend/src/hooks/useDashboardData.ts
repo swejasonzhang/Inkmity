@@ -17,7 +17,6 @@ export interface ArtistDto {
   rating?: number;
   reviewsCount?: number;
   images?: string[];
-  socialLinks?: { platform: string; url: string }[];
   isAvailableNow?: boolean;
   nextAvailableDate?: string | null;
   acceptingWaitlist?: boolean;
@@ -29,8 +28,6 @@ export interface ArtistDto {
   tags?: string[];
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
-  instagram?: string;
-  portfolio?: string;
 }
 
 type ArtistFilters = {
@@ -228,7 +225,7 @@ export function useDashboardData() {
           : Date.now(),
     }));
 
-  const applyClientFilters = (list: ArtistDto[], filters: ArtistFilters) => {
+  function applyClientFilters(list: ArtistDto[], filters: ArtistFilters) {
     const { min: pMin, max: pMax } = parsePrice(filters.price);
     const { min: eMin, max: eMax, plus } = parseExperience(filters.experience);
     return list.filter((a) => {
@@ -269,26 +266,18 @@ export function useDashboardData() {
       }
       if (!inAvailability(a, filters.availability)) return false;
       if (filters.booking && filters.booking !== "all") {
-        const booking = (
-          (a as any).bookingPreference ??
-          (a as any).instagram ??
-          ""
-        ).toString();
+        const booking = (a as any).bookingPreference?.toString() ?? "";
         if (booking !== filters.booking) return false;
       }
       if (filters.travel && filters.travel !== "all") {
-        const travel = (
-          (a as any).travelFrequency ??
-          (a as any).portfolio ??
-          ""
-        ).toString();
+        const travel = (a as any).travelFrequency?.toString() ?? "";
         if (travel !== filters.travel) return false;
       }
       return true;
     });
-  };
+  }
 
-  const sortClient = (list: ArtistDto[], sort?: string) => {
+  function sortClient(list: ArtistDto[], sort?: string) {
     if (sort === "experience_desc" || sort === "experience_asc") {
       return list
         .slice()
@@ -316,7 +305,7 @@ export function useDashboardData() {
         return (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0);
       return (b.rating ?? 0) - (a.rating ?? 0);
     });
-  };
+  }
 
   const queryArtists = async (
     filters: ArtistFilters = {},
@@ -358,16 +347,22 @@ export function useDashboardData() {
         signal: ac.signal,
       })) as { items: ArtistDto[]; total: number } | ArtistDto[];
 
-      const raw = Array.isArray(json) ? json : json.items || [];
-      const serverTotal = Array.isArray(json)
-        ? raw.length
-        : Number(json.total ?? raw.length);
-      const filtered = applyClientFilters(raw, filters);
-      const sorted = sortClient(filtered, filters.sort);
-      const total = serverTotal;
-      const start = (Math.max(1, page) - 1) * Math.max(1, pageSize);
-      const end = start + Math.max(1, pageSize);
-      const items = sorted.slice(start, end);
+      let items: ArtistDto[] = [];
+      let total = 0;
+
+      if (Array.isArray(json)) {
+        const filteredAll = applyClientFilters(json, filters);
+        const sortedAll = sortClient(filteredAll, filters.sort);
+        total = sortedAll.length;
+        const start = (Math.max(1, page) - 1) * Math.max(1, pageSize);
+        items = sortedAll.slice(start, start + Math.max(1, pageSize));
+      } else {
+        const serverItems = json.items ?? [];
+        total =
+          typeof json.total === "number" ? json.total : serverItems.length;
+        const filtered = applyClientFilters(serverItems, filters);
+        items = sortClient(filtered, filters.sort);
+      }
 
       setArtists(items);
       setTotalCount(total);

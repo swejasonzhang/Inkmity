@@ -258,59 +258,25 @@ function Pagination({
     const canPrev = page > 1 && !disabled;
     const canNext = page < totalPages && !disabled;
 
-    const makeRange = () => {
-        const span = 2;
-        const start = Math.max(1, page - span);
-        const end = Math.min(totalPages, page + span);
-        const arr: number[] = [];
-        for (let i = start; i <= end; i++) arr.push(i);
-        if (!arr.includes(1)) arr.unshift(1);
-        if (!arr.includes(totalPages)) arr.push(totalPages);
-        return Array.from(new Set(arr)).sort((a, b) => a - b);
-    };
-
-    const pages = makeRange();
-
     return (
-        <nav className="flex items-center justify-between pt-2">
+        <nav className="pt-2">
             <div className="sm:hidden flex w-full items-center justify-between">
-                <button className="px-3 py-1 rounded border disabled:opacity-50" disabled={!canPrev} onClick={() => onChange(page - 1)}>
+                <button
+                    className="px-3 py-1 rounded border disabled:opacity-50"
+                    disabled={!canPrev}
+                    onClick={() => onChange(page - 1)}
+                    aria-label="Previous page"
+                >
                     Prev
                 </button>
-                <span className="text-sm">Page {page} of {totalPages}</span>
-                <button className="px-3 py-1 rounded border disabled:opacity-50" disabled={!canNext} onClick={() => onChange(page + 1)}>
+                <button
+                    className="px-3 py-1 rounded border disabled:opacity-50"
+                    disabled={!canNext}
+                    onClick={() => onChange(page + 1)}
+                    aria-label="Next page"
+                >
                     Next
                 </button>
-            </div>
-
-            <div className="hidden sm:flex w-full items-center justify-between">
-                <div className="text-sm opacity-80">Page {page} of {totalPages}</div>
-                <div className="flex items-center gap-1">
-                    <button className="px-3 py-1 rounded border disabled:opacity-50" disabled={!canPrev} onClick={() => onChange(page - 1)} aria-label="Previous page">
-                        Prev
-                    </button>
-                    {pages.map((p, idx) => {
-                        const isActive = p === page;
-                        const prev = pages[idx - 1];
-                        const showEllipsis = idx > 0 && p - (prev ?? p) > 1;
-                        return (
-                            <span key={p} className="inline-flex">
-                                {showEllipsis && <span className="px-2 select-none">…</span>}
-                                <button
-                                    className={["px-3 py-1 rounded border", isActive ? "bg-elevated" : "hover:bg-elevated/60", disabled ? "opacity-50" : ""].join(" ")}
-                                    disabled={disabled}
-                                    onClick={() => onChange(p)}
-                                    aria-current={isActive ? "page" : undefined}
-                                >
-                                    {p}
-                                </button>
-                            </span>
-                        );
-                    })}
-                    <button className="px-3 py-1 rounded border disabled:opacity-50" disabled={!canNext} onClick={() => onChange(page + 1)} aria-label="Next page">
-                        Next
-                    </button>
-                </div>
             </div>
         </nav>
     );
