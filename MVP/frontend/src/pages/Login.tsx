@@ -140,7 +140,7 @@ export default function Login() {
     }
   };
 
-  const mascotEyesClosed = pwdFocused && showPassword;
+  const mascotEyesClosed = showPassword || pwdFocused;
   const CARD_H = "h-[520px] sm:h-[560px] md:h-[580px]";
 
   return (
