@@ -231,7 +231,7 @@ const ArtistFilter: React.FC<Props> = ({
         (experienceFilter && experienceFilter !== "all") ||
         (bookingFilter && bookingFilter !== "all") ||
         (travelFilter && travelFilter !== "all") ||
-        (sort && sort !== "experience_desc")
+        (sort && sort !== "highest_rated")
       ),
     [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]
   );
@@ -448,10 +448,10 @@ const ArtistFilter: React.FC<Props> = ({
                 </button>
               </Badge>
             )}
-            {sort !== "experience_desc" && (
+            {sort !== "highest_rated" && (
               <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 {SORT_OPTIONS.find((s) => s.value === sort)?.label ?? "Sort"}
-                <button className="ml-2 inline-flex" onClick={() => setSort("experience_desc")} aria-label="Reset sort">
+                <button className="ml-2 inline-flex" onClick={() => setSort("highest_rated")} aria-label="Reset sort">
                   <X className="size-3" />
                 </button>
               </Badge>
@@ -473,7 +473,7 @@ const ArtistFilter: React.FC<Props> = ({
                 setExperienceFilter("all");
                 setBookingFilter("all");
                 setTravelFilter("all");
-                setSort("experience_desc");
+                setSort("highest_rated");
                 setCurrentPage(1);
                 if (typeof window !== "undefined") {
                   localStorage.removeItem(PRESET_STORAGE_KEY);
