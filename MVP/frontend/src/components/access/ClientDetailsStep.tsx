@@ -1,11 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
 type ClientProfile = {
@@ -20,15 +14,54 @@ type ClientProfile = {
 };
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
+const CITY_JSON_URL = "/us-cities.min.json";
 
 const STYLE_OPTIONS = [
     "All Styles",
-    "Realism",
-    "Traditional",
+    "American Traditional",
     "Neo-traditional",
-    "Japanese",
-    "Fine line",
+    "Japanese (Irezumi)",
     "Blackwork",
+    "Black & Grey",
+    "Fine line",
+    "Single Needle",
+    "Realism",
+    "Micro Realism",
+    "Surrealism",
+    "Illustrative",
+    "Watercolor",
+    "Minimalist",
+    "Geometric",
+    "Linework",
+    "Dotwork",
+    "Ornamental",
+    "Tribal",
+    "Polynesian",
+    "Maori",
+    "Samoan",
+    "Celtic",
+    "Chicano",
+    "Script/Lettering",
+    "Calligraphy",
+    "Trash Polka",
+    "Biomechanical",
+    "Bio-organic",
+    "New School",
+    "Old School",
+    "Ignorant Style",
+    "Abstract",
+    "Sketch/Etching",
+    "Etching/Woodcut",
+    "Anime/Manga",
+    "Korean Fine Line",
+    "Botanical",
+    "Floral",
+    "Portrait",
+    "Color Realism",
+    "Neo-Japanese",
+    "Whip Shading",
+    "Hand-Poke",
+    "UV/Blacklight",
 ];
 
 const AVAILABILITY_OPTIONS = [
@@ -82,6 +115,7 @@ export default function ClientDetailsStep({
     const [openCity, setOpenCity] = useState(false);
     const [prefStyle, setPrefStyle] = useState<string>(client.style ?? "all");
     const [prefAvail, setPrefAvail] = useState<string>(client.availability ?? "all");
+    const [cities, setCities] = useState<string[]>([]);
 
     const MIN = 100;
     const MAX = 5000;
@@ -119,15 +153,12 @@ export default function ClientDetailsStep({
         const loc = opts?.location ?? client.location ?? "";
         const style = opts?.style ?? prefStyle ?? "all";
         const avail = opts?.avail ?? prefAvail ?? "all";
-
         const bucket = priceBucketFromRange(l, h);
         const preset: Record<string, string> = {};
-
         if (bucket !== "all") preset.priceFilter = bucket;
         if (loc && loc !== "all") preset.locationFilter = loc;
         if (style && style !== "all" && style !== "All Styles") preset.styleFilter = style;
         if (avail && avail !== "all") preset.availabilityFilter = avail;
-
         if (Object.keys(preset).length === 0) {
             if (typeof window !== "undefined") localStorage.removeItem(PRESET_STORAGE_KEY);
             return;
@@ -156,31 +187,81 @@ export default function ClientDetailsStep({
     const leftPct = percent(low);
     const rightPct = 100 - percent(high);
 
-    const cities = useMemo(
+    const fallbackCities = useMemo(
         () => [
-            "New York",
-            "Los Angeles",
-            "Chicago",
-            "San Francisco",
-            "Miami",
-            "London",
-            "Paris",
-            "Berlin",
-            "Tokyo",
-            "Seoul",
-            "Sydney",
-            "Toronto",
-            "Vancouver",
-            "Mexico City",
-            "São Paulo",
-            "Buenos Aires",
-            "Johannesburg",
-            "Dubai",
-            "Singapore",
-            "Hong Kong",
+            "New York, NY",
+            "Los Angeles, CA",
+            "Chicago, IL",
+            "Houston, TX",
+            "Phoenix, AZ",
+            "Philadelphia, PA",
+            "San Antonio, TX",
+            "San Diego, CA",
+            "Dallas, TX",
+            "San Jose, CA",
+            "Austin, TX",
+            "Jacksonville, FL",
+            "San Francisco, CA",
+            "Columbus, OH",
+            "Fort Worth, TX",
+            "Indianapolis, IN",
+            "Charlotte, NC",
+            "Seattle, WA",
+            "Denver, CO",
+            "Washington, DC",
+            "Boston, MA",
+            "Nashville, TN",
+            "El Paso, TX",
+            "Detroit, MI",
+            "Oklahoma City, OK",
+            "Portland, OR",
+            "Las Vegas, NV",
+            "Memphis, TN",
+            "Louisville, KY",
+            "Baltimore, MD",
+            "Milwaukee, WI",
+            "Albuquerque, NM",
+            "Tucson, AZ",
+            "Fresno, CA",
+            "Mesa, AZ",
+            "Sacramento, CA",
+            "Atlanta, GA",
+            "Kansas City, MO",
+            "Colorado Springs, CO",
+            "Miami, FL",
         ],
         []
     );
+
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            try {
+                const res = await fetch(CITY_JSON_URL, { cache: "force-cache" });
+                if (!res.ok) throw new Error(String(res.status));
+                const json = (await res.json()) as Array<{ city: string; state_code?: string; state?: string }>;
+                const seen = new Set<string>();
+                const list: string[] = [];
+                for (const item of json) {
+                    const stateCode = (item.state_code || "").toUpperCase();
+                    const stateName = item.state || "";
+                    const label = stateCode ? `${item.city}, ${stateCode}` : `${item.city}, ${stateName}`;
+                    const key = label.toLowerCase();
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push(label);
+                    }
+                }
+                list.sort((a, b) => a.localeCompare(b));
+                if (active) setCities(list);
+            } catch {
+                if (active) setCities(fallbackCities);
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [fallbackCities]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -202,20 +283,15 @@ export default function ClientDetailsStep({
                 emit("availability", p.availabilityFilter);
             }
         } catch { }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
         <div className="grid gap-5">
             <div className="text-left">
                 <label className="mb-2 block text-sm text-white/70">Estimated budget (USD)</label>
-
                 <div className="relative pb-4 pt-5">
                     <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/10" />
-                    <div
-                        className="pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/40"
-                        style={{ left: `${leftPct}%`, right: `${rightPct}%` }}
-                    />
+                    <div className="pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/40" style={{ left: `${leftPct}%`, right: `${rightPct}%` }} />
                     <Slider
                         min={MIN}
                         max={MAX}
@@ -227,21 +303,17 @@ export default function ClientDetailsStep({
                         aria-label="Budget range"
                     />
                 </div>
-
                 <div className="mt-1 flex items-center justify-between text-xs text-white/60">
                     <span>${MIN.toLocaleString()}</span>
                     <span>${low.toLocaleString()} – ${high.toLocaleString()}</span>
                     <span>${MAX.toLocaleString()}+</span>
                 </div>
-
-                <p className="mt-2 text-xs text-white/45">
-                    Most preferences can be edited later in <span className="underline">Dashboard → Filters</span>. Some core profile settings may be restricted from frequent changes.
-                </p>
+                <p className="mt-2 text-xs text-white/45">Most preferences can be edited later in <span className="underline">Dashboard → Filters</span>. Some core profile settings may be restricted from frequent changes.</p>
             </div>
 
             <div className="text-left">
                 <div className="flex items-center gap-3">
-                    <label className="text-sm text-white/70">Your city / region</label>
+                    <label className="text-sm text-white/70">Your city</label>
                     <Select
                         open={openCity}
                         onOpenChange={setOpenCity}
@@ -251,17 +323,10 @@ export default function ClientDetailsStep({
                             savePreset({ location: val });
                         }}
                     >
-                        <SelectTrigger className="h-11 w-64 rounded-xl border border-white/10 bg-white/10 px-4 text-white">
+                        <SelectTrigger className="h-11 w-72 rounded-xl border border-white/10 bg-white/10 px-4 text-white">
                             <SelectValue placeholder="Choose a city" />
                         </SelectTrigger>
-                        <SelectContent
-                            position="popper"
-                            side="bottom"
-                            align="start"
-                            sideOffset={6}
-                            avoidCollisions={false}
-                            className="max-h-64 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white"
-                        >
+                        <SelectContent position="popper" side="bottom" align="start" sideOffset={6} avoidCollisions={false} className="max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white">
                             {cities.map((c) => (
                                 <SelectItem key={c} value={c} className="text-white">
                                     {c}
@@ -270,9 +335,7 @@ export default function ClientDetailsStep({
                         </SelectContent>
                     </Select>
                 </div>
-                <p className="mt-2 text-xs text-white/45">
-                    You can update your city later in <span className="underline">Settings → Profile</span>.
-                </p>
+                <p className="mt-2 text-xs text-white/45">You can update your city later in <span className="underline">Settings → Profile</span>.</p>
             </div>
 
             <div className="text-left grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -327,10 +390,7 @@ export default function ClientDetailsStep({
             <div className="text-left grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label className="mb-1 block text-sm text-white/70">Placement (optional)</label>
-                    <Select
-                        value={client.placement || ""}
-                        onValueChange={(v) => emit("placement", v)}
-                    >
+                    <Select value={client.placement || ""} onValueChange={(v) => emit("placement", v)}>
                         <SelectTrigger className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white">
                             <SelectValue placeholder="Select placement" />
                         </SelectTrigger>
@@ -346,10 +406,7 @@ export default function ClientDetailsStep({
 
                 <div>
                     <label className="mb-1 block text-sm text-white/70">Approximate size (optional)</label>
-                    <Select
-                        value={client.size || ""}
-                        onValueChange={(v) => emit("size", v)}
-                    >
+                    <Select value={client.size || ""} onValueChange={(v) => emit("size", v)}>
                         <SelectTrigger className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white">
                             <SelectValue placeholder="Select size" />
                         </SelectTrigger>

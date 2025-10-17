@@ -11,7 +11,7 @@ import { container } from "@/components/access/animations";
 
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string; style?: string; availability?: string };
 type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
 type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
 type InputLike = { target: { name: string; value: string } };
@@ -27,6 +27,58 @@ function apiUrl(path: string, qs?: Record<string, string>) {
   const url = new URL(path.replace(/^\/+/, ""), API_BASE + "/");
   if (qs) Object.entries(qs).forEach(([k, v]) => url.searchParams.set(k, v));
   return url.toString();
+}
+
+async function waitForToken(getToken: any, tries = 10, delayMs = 150) {
+  for (let i = 0; i < tries; i++) {
+    const t = await getToken({ skipCache: true });
+    if (t) return t;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return null;
+}
+
+function safeJson<T = any>(text: string) {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
+}
+
+const PRESET_STORAGE_KEY = "inkmity_artist_filters";
+function priceBucketFromRange(min: number, max: number) {
+  if (min <= 100 && max >= 5000) return "all";
+  if (max <= 500) return "100-500";
+  if (max <= 1000) return "500-1000";
+  if (max <= 2000) return "1000-2000";
+  if (max <= 5000) return "2000-5000";
+  return "5000+";
+}
+function persistDashboardFiltersFromClient(client: ClientProfile) {
+  const min = Number(client.budgetMin) || 0;
+  const max = Number(client.budgetMax) || 0;
+  const payload: Record<string, string> = {};
+  if (min || max) {
+    const bucket = priceBucketFromRange(min, max);
+    if (bucket !== "all") payload.priceFilter = bucket;
+  }
+  if (client.location?.trim()) {
+    payload.locationFilter = client.location.trim();
+  }
+  if (client.style && client.style !== "all") {
+    payload.styleFilter = String(client.style);
+  }
+  if (client.availability && client.availability !== "all") {
+    payload.availabilityFilter = String(client.availability);
+  }
+  try {
+    if (Object.keys(payload).length > 0) {
+      localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
+    } else {
+      localStorage.removeItem(PRESET_STORAGE_KEY);
+    }
+  } catch { }
 }
 
 export default function SignUp() {
@@ -214,6 +266,30 @@ export default function SignUp() {
 
   const handleBack = () => setStep((s) => Math.max(0, s - 1));
 
+  const prewarmVerification = async () => {
+    if (awaitingCode || signUpAttempt) return;
+    if (!validateEmail(shared.email) || !validatePassword(shared.password)) return;
+    if (emailTaken || !isLoaded || !signUp) return;
+    try {
+      const attempt = await signUp.create({
+        emailAddress: shared.email,
+        password: shared.password,
+        publicMetadata: { role, firstName: shared.firstName, lastName: shared.lastName, profile: role === "client" ? client : artist },
+      } as any);
+      setSignUpAttempt(attempt as any);
+      setAwaitingCode(true);
+      await (attempt as any).prepareEmailAddressVerification({ strategy: "email_code" });
+      toast.info("We sent a verification code to your email.", { position: "top-center", theme: "dark", autoClose: 1200 });
+    } catch (err: any) {
+      const code = err?.errors?.[0]?.code;
+      if (code === "identifier_already_exists") {
+        setEmailTaken(true);
+        triggerMascotError();
+        toastAndRedirectToLogin();
+      }
+    }
+  };
+
   const startVerification = async () => {
     if (blockIfEmailTaken()) return;
     if (!allSharedValid) {
@@ -225,6 +301,14 @@ export default function SignUp() {
       toast.error("Sign up is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
       return;
     }
+    if (signUpAttempt) {
+      try {
+        setAwaitingCode(true);
+        await (signUpAttempt as any).prepareEmailAddressVerification({ strategy: "email_code" });
+        toast.info("Verification code sent.", { position: "top-center", theme: "dark", autoClose: 1000 });
+        return;
+      } catch { }
+    }
     setLoading(true);
     try {
       if (isSignedIn) {
@@ -235,9 +319,9 @@ export default function SignUp() {
         password: shared.password,
         publicMetadata: { role, firstName: shared.firstName, lastName: shared.lastName, profile: role === "client" ? client : artist },
       } as any);
-      setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
+      setSignUpAttempt(attempt as any);
       setAwaitingCode(true);
-      await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
+      await (attempt as any).prepareEmailAddressVerification({ strategy: "email_code" });
       toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
     } catch (err: any) {
       setAwaitingCode(false);
@@ -256,9 +340,9 @@ export default function SignUp() {
     }
   };
 
-  const syncUserToBackend = async (r: Role) => {
-    const token = await getToken();
-    const clerkId = user?.id ?? undefined;
+  const syncUserToBackend = async (r: Role, clerkIdOverride?: string, tokenOverride?: string | null) => {
+    const token = tokenOverride ?? (await getToken());
+    const clerkId = clerkIdOverride ?? user?.id ?? undefined;
     const payload: any = { clerkId, email: shared.email, role: r, firstName: shared.firstName, lastName: shared.lastName, profile: r === "client" ? { ...client } : { ...artist } };
     const endpoint = apiUrl("/users/sync");
     const res = await fetch(endpoint, {
@@ -266,10 +350,12 @@ export default function SignUp() {
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(payload),
       credentials: "include",
+      mode: "cors",
     });
     if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Sync failed ${res.status}: ${t}`);
+      const txt = await res.text().catch(() => "");
+      const body = safeJson(txt);
+      throw new Error(`Sync failed ${res.status}: ${typeof body === "string" ? body.slice(0, 400) : JSON.stringify(body).slice(0, 400)}`);
     }
     return res.json();
   };
@@ -294,15 +380,24 @@ export default function SignUp() {
       const result = await signUpAttempt.attemptEmailAddressVerification({ code: code.trim() });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
+        const createdUserId = (result as any).createdUserId as string | undefined;
+        const freshToken = await waitForToken(getToken as any, 12, 150);
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         localStorage.removeItem(LOGOUT_TYPE_KEY);
+        if (role === "client") {
+          persistDashboardFiltersFromClient(client);
+        } else {
+          try {
+            localStorage.removeItem(PRESET_STORAGE_KEY);
+          } catch { }
+        }
         try {
-          await syncUserToBackend(role);
+          await syncUserToBackend(role, createdUserId, freshToken);
           toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
           window.location.href = "/dashboard";
-        } catch {
-          toast.error("Signed up but failed to sync user. You can continue; some features may be limited.", { position: "top-center", theme: "dark" });
+        } catch (e: any) {
+          toast.error(e?.message || "Signed up but failed to sync user. You can continue; some features may be limited.", { position: "top-center", theme: "dark" });
           window.location.href = "/dashboard";
         }
       } else {
@@ -351,7 +446,10 @@ export default function SignUp() {
     }
   };
 
-  const onEmailBlur = () => checkEmailExists(shared.email, true);
+  const onEmailBlur = async () => {
+    await checkEmailExists(shared.email, true);
+    if (!emailTaken) await prewarmVerification();
+  };
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
