@@ -17,6 +17,7 @@ type Props = {
     onPageChange?: (p: number) => void;
 };
 
+const PRESET_STORAGE_KEY = "inkmity_artist_filters";
 const ITEMS_PER_PAGE = 12;
 
 const normalizeYears = (y: unknown): number | undefined => {
@@ -26,6 +27,16 @@ const normalizeYears = (y: unknown): number | undefined => {
         if (Number.isFinite(n)) return Math.trunc(n);
     }
     return undefined;
+};
+
+const toNumber = (v: unknown, fallback = 0): number => {
+    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+    if (typeof v === "string") {
+        const cleaned = v.replace(/[, ]/g, "");
+        const n = Number(cleaned);
+        return Number.isFinite(n) ? n : fallback;
+    }
+    return fallback;
 };
 
 const matchesExperience = (years: number | undefined, filter: string) => {
@@ -38,16 +49,7 @@ const matchesExperience = (years: number | undefined, filter: string) => {
     return true;
 };
 
-const toNumber = (v: unknown, fallback = 0): number => {
-    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
-    if (typeof v === "string") {
-        const n = Number(v.replace(/[, ]/g, ""));
-        return Number.isFinite(n) ? n : fallback;
-    }
-    return fallback;
-};
-
-const ArtistsSection: React.FC<Props> = ({
+export default function ArtistsSection({
     artists,
     loading,
     showArtists,
@@ -56,16 +58,61 @@ const ArtistsSection: React.FC<Props> = ({
     page,
     totalPages,
     onPageChange,
-}) => {
-    const [priceFilter, setPriceFilter] = useState<string>("all");
-    const [locationFilter, setLocationFilter] = useState<string>("all");
-    const [styleFilter, setStyleFilter] = useState<string>("all");
-    const [availabilityFilter, setAvailabilityFilter] = useState<string>("all");
-    const [experienceFilter, setExperienceFilter] = useState<string>("all");
-    const [sort, setSort] = useState<string>("experience_desc");
+}: Props) {
+    const initialPreset: Partial<{
+        priceFilter: string;
+        locationFilter: string;
+        styleFilter: string;
+        availabilityFilter: string;
+        experienceFilter: string;
+        sort: string;
+        searchQuery: string;
+    }> =
+        typeof window !== "undefined"
+            ? (() => {
+                try {
+                    const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+                    return raw ? JSON.parse(raw) : {};
+                } catch {
+                    return {};
+                }
+            })()
+            : {};
 
-    const [searchQuery, setSearchQuery] = useState<string>("");
-    const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+    const [priceFilter, setPriceFilter] = useState<string>(
+        initialPreset.priceFilter ?? "all"
+    );
+    const [locationFilter, setLocationFilter] = useState<string>(
+        initialPreset.locationFilter ?? "all"
+    );
+    const [styleFilter, setStyleFilter] = useState<string>(
+        initialPreset.styleFilter ?? "all"
+    );
+    const [availabilityFilter, setAvailabilityFilter] = useState<string>(
+        initialPreset.availabilityFilter ?? "all"
+    );
+    const [experienceFilter, setExperienceFilter] = useState<string>(
+        initialPreset.experienceFilter ?? "all"
+    );
+
+    const [sort, setSort] = useState<string>(
+        (initialPreset.priceFilter ||
+            initialPreset.locationFilter ||
+            initialPreset.styleFilter ||
+            initialPreset.availabilityFilter)
+            ? initialPreset.sort || "highest_rated"
+            : initialPreset.sort || "experience_desc"
+    );
+
+    const [searchQuery, setSearchQuery] = useState<string>(
+        typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : ""
+    );
+    const [debouncedSearch, setDebouncedSearch] = useState<string>(
+        (typeof initialPreset.searchQuery === "string"
+            ? initialPreset.searchQuery
+            : ""
+        ).trim().toLowerCase()
+    );
     const [currentPage, setCurrentPage] = useState(1);
     const [filterOpacity] = useState(1);
 
@@ -75,7 +122,34 @@ const ArtistsSection: React.FC<Props> = ({
         typeof onPageChange === "function";
 
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
+        if (typeof window === "undefined") return;
+        const payload = {
+            priceFilter,
+            locationFilter,
+            styleFilter,
+            availabilityFilter,
+            experienceFilter,
+            sort,
+            searchQuery,
+        };
+        try {
+            localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
+        } catch { }
+    }, [
+        priceFilter,
+        locationFilter,
+        styleFilter,
+        availabilityFilter,
+        experienceFilter,
+        sort,
+        searchQuery,
+    ]);
+
+    useEffect(() => {
+        const t = setTimeout(
+            () => setDebouncedSearch(searchQuery.trim().toLowerCase()),
+            250
+        );
         return () => clearTimeout(t);
     }, [searchQuery]);
 
@@ -86,24 +160,19 @@ const ArtistsSection: React.FC<Props> = ({
             const isNow = a.isAvailableNow === true;
             const nextRaw = a.nextAvailableDate;
             const waitlist = a.acceptingWaitlist === true || a.isClosed === true;
-
             if (availabilityFilter === "waitlist") return waitlist;
-
             const next = nextRaw ? new Date(nextRaw) : null;
             if (!next && !isNow) {
                 if (availabilityFilter === "all") return true;
                 return false;
             }
-
             const msDay = 24 * 60 * 60 * 1000;
             const diffDays = isNow ? 0 : Math.ceil(((next as Date).getTime() - now.getTime()) / msDay);
-
             if (availabilityFilter === "all") return true;
             if (availabilityFilter === "7d") return diffDays <= 7;
             if (availabilityFilter === "lt1m") return diffDays <= 30;
             if (availabilityFilter === "1to3m") return diffDays > 30 && diffDays <= 90;
             if (availabilityFilter === "lte6m") return diffDays <= 180;
-
             return true;
         };
 
@@ -148,9 +217,10 @@ const ArtistsSection: React.FC<Props> = ({
                 return sort === "experience_desc" ? bv - av : av - bv;
             });
         } else if (sort === "newest") {
-            list = list
-                .slice()
-                .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+            list = list.slice().sort(
+                (a, b) =>
+                    new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+            );
         } else if (sort === "highest_rated") {
             list = list.slice().sort((a, b) => {
                 const ar = toNumber(a.rating, 0);
@@ -207,7 +277,9 @@ const ArtistsSection: React.FC<Props> = ({
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
+        const interactive = target.closest(
+            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
+        );
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
@@ -231,17 +303,17 @@ const ArtistsSection: React.FC<Props> = ({
             >
                 <ArtistFilter
                     priceFilter={priceFilter}
-                    setPriceFilter={setPriceFilter}
+                    setPriceFilter={(v) => { setPriceFilter(v); setCurrentPage(1); }}
                     locationFilter={locationFilter}
-                    setLocationFilter={setLocationFilter}
+                    setLocationFilter={(v) => { setLocationFilter(v); setCurrentPage(1); }}
                     styleFilter={styleFilter}
-                    setStyleFilter={setStyleFilter}
+                    setStyleFilter={(v) => { setStyleFilter(v); setCurrentPage(1); }}
                     availabilityFilter={availabilityFilter}
-                    setAvailabilityFilter={setAvailabilityFilter}
+                    setAvailabilityFilter={(v) => { setAvailabilityFilter(v); setCurrentPage(1); }}
                     experienceFilter={experienceFilter}
-                    setExperienceFilter={setExperienceFilter}
+                    setExperienceFilter={(v) => { setExperienceFilter(v); setCurrentPage(1); }}
                     sort={sort}
-                    setSort={setSort}
+                    setSort={(v) => { setSort(v); setCurrentPage(1); }}
                     artists={artists}
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
@@ -278,7 +350,10 @@ const ArtistsSection: React.FC<Props> = ({
                                                 }}
                                                 className="w-full h-full"
                                             >
-                                                <div className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]" data-artist-card="true">
+                                                <div
+                                                    className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]"
+                                                    data-artist-card="true"
+                                                >
                                                     <ArtistCard artist={artist} onClick={() => onSelectArtist(artist)} />
                                                 </div>
                                             </motion.div>
@@ -314,6 +389,4 @@ const ArtistsSection: React.FC<Props> = ({
             </div>
         </section>
     );
-};
-
-export default ArtistsSection;
+}
