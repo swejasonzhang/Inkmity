@@ -1,9 +1,25 @@
 import { useMemo, useState } from "react";
 
-export default function CalendarView(props: any) {
-    const bookings = props?.bookings ?? [];
-    const onSelectBooking = props?.onSelectBooking ?? (() => { });
+type Booking = {
+    id: string | number;
+    title: string;
+    clientName?: string;
+    start: string | number | Date;
+    end: string | number | Date;
+    status?: "confirmed" | "pending" | "cancelled" | string;
+};
 
+type CalendarViewProps = {
+    bookings?: Booking[];
+    onSelectBooking?: (b: Booking) => void;
+    rowMinHeight?: number;
+};
+
+export default function CalendarView({
+    bookings = [],
+    onSelectBooking = () => { },
+    rowMinHeight = 160,
+}: CalendarViewProps) {
     const [cursor, setCursor] = useState(() => {
         const d = new Date();
         return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -14,7 +30,7 @@ export default function CalendarView(props: any) {
         const m = cursor.getMonth();
         const start = new Date(y, m, 1);
         const end = new Date(y, m + 1, 0);
-        const firstWeekday = (start.getDay() + 6) % 7; 
+        const firstWeekday = (start.getDay() + 6) % 7;
         const days = end.getDate();
         return { year: y, month: m, days, firstWeekday };
     }, [cursor]);
@@ -30,7 +46,7 @@ export default function CalendarView(props: any) {
     }, [monthMeta]);
 
     const bookingsByDay = useMemo(() => {
-        const map = new Map<string, any[]>();
+        const map = new Map<string, Booking[]>();
         for (const b of bookings) {
             const d = new Date(b.start);
             const key = [
@@ -46,7 +62,7 @@ export default function CalendarView(props: any) {
 
     const monthName = new Intl.DateTimeFormat(undefined, { month: "long" }).format(cursor);
 
-    const statusBadge: any = {
+    const statusBadge: Record<string, string> = {
         confirmed: "bg-green-500/20 text-green-300 border-green-600/30",
         pending: "bg-yellow-500/20 text-yellow-300 border-yellow-600/30",
         cancelled: "bg-red-500/20 text-red-300 border-red-600/30",
@@ -58,25 +74,27 @@ export default function CalendarView(props: any) {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between border-b border-app px-3 py-2">
-                <div className="font-semibold">
+            <div className="flex items-center justify-between border-b border-app px-4 py-3">
+                <div className="font-semibold text-base">
                     {monthName} {cursor.getFullYear()}
                 </div>
                 <div className="flex items-center gap-2">
                     <button
-                        className="px-2 py-1 rounded-md border border-app bg-card hover:bg-elevated"
+                        className="px-3 py-1.5 rounded-md border border-app bg-card hover:bg-elevated"
                         onClick={() => changeMonth(-1)}
                     >
                         Prev
                     </button>
                     <button
-                        className="px-2 py-1 rounded-md border border-app bg-card hover:bg-elevated"
-                        onClick={() => setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
+                        className="px-3 py-1.5 rounded-md border border-app bg-card hover:bg-elevated"
+                        onClick={() =>
+                            setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+                        }
                     >
                         Today
                     </button>
                     <button
-                        className="px-2 py-1 rounded-md border border-app bg-card hover:bg-elevated"
+                        className="px-3 py-1.5 rounded-md border border-app bg-card hover:bg-elevated"
                         onClick={() => changeMonth(1)}
                     >
                         Next
@@ -84,13 +102,15 @@ export default function CalendarView(props: any) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-7 text-xs text-muted-foreground px-3 py-2">
+            <div className="grid grid-cols-7 text-xs text-muted-foreground px-4 py-2">
                 {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                    <div key={d} className="text-center">{d}</div>
+                    <div key={d} className="text-center font-medium tracking-wide">
+                        {d}
+                    </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-px px-3 pb-3">
+            <div className="grid grid-cols-7 gap-px px-4 pb-4">
                 {cells.map((c, i) => {
                     const key =
                         c.date &&
@@ -100,26 +120,32 @@ export default function CalendarView(props: any) {
                             String(c.date.getDate()).padStart(2, "0"),
                         ].join("-");
                     const dayBookings = key ? bookingsByDay.get(key) ?? [] : [];
-                    const isToday =
-                        c.date &&
-                        new Date().toDateString() === c.date.toDateString();
+                    const isToday = c.date && new Date().toDateString() === c.date.toDateString();
 
                     return (
                         <div
                             key={i}
-                            className={`min-h-[108px] rounded-lg border border-app bg-card p-2 ${!c.inMonth ? "opacity-40" : ""}`}
+                            className={[
+                                "rounded-lg border border-app bg-card p-2 sm:p-3",
+                                !c.inMonth ? "opacity-40" : "",
+                            ].join(" ")}
+                            style={{ minHeight: rowMinHeight }}
                         >
                             <div className="flex items-center justify-between">
                                 <div className="text-xs text-muted-foreground">{c.dayNum ?? ""}</div>
                                 {isToday && <div className="text-[10px] px-1 rounded bg-white/10">Today</div>}
                             </div>
-                            <div className="mt-2 flex flex-col gap-1">
-                                {dayBookings.slice(0, 3).map((b: any) => (
+
+                            <div className="mt-2 flex flex-col gap-1.5">
+                                {dayBookings.slice(0, 4).map((b: Booking) => (
                                     <button
                                         key={b.id}
                                         onClick={() => onSelectBooking(b)}
-                                        className={`w-full text-left text-xs rounded-md border px-2 py-1 hover:bg-white/5 ${statusBadge[b.status] ?? "border-white/10"}`}
-                                        title={`${b.title} • ${b.clientName}`}
+                                        className={[
+                                            "w-full text-left text-xs rounded-md border px-2 py-1.5 hover:bg-white/5",
+                                            statusBadge[b.status ?? ""] ?? "border-white/10",
+                                        ].join(" ")}
+                                        title={`${b.title} • ${b.clientName ?? ""}`}
                                     >
                                         <div className="truncate font-medium">{b.title}</div>
                                         <div className="opacity-80 truncate">
@@ -129,10 +155,8 @@ export default function CalendarView(props: any) {
                                         </div>
                                     </button>
                                 ))}
-                                {dayBookings.length > 3 && (
-                                    <div className="text-[11px] text-muted-foreground">
-                                        +{dayBookings.length - 3} more
-                                    </div>
+                                {dayBookings.length > 4 && (
+                                    <div className="text-[11px] text-muted-foreground">+{dayBookings.length - 4} more</div>
                                 )}
                             </div>
                         </div>

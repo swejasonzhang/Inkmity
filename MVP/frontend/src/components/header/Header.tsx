@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import { Menu, X, Sun, Moon } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTheme as useThemeHook } from "./useTheme";
 import whiteLogo from "@/assets/WhiteLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "./buildNavItems";
@@ -58,6 +58,37 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
   );
 };
 
+function DevRoleToggleInline({
+  current,
+  onSet,
+}: {
+  current: "client" | "artist";
+  onSet: (v: "client" | "artist" | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        className={`px-3 py-1 rounded-lg text-sm ${current === "client" ? "bg-elevated" : "hover:bg-elevated"}`}
+        onClick={() => onSet("client")}
+      >
+        Client
+      </button>
+      <button
+        className={`px-3 py-1 rounded-lg text-sm ${current === "artist" ? "bg-elevated" : "hover:bg-elevated"}`}
+        onClick={() => onSet("artist")}
+      >
+        Artist
+      </button>
+      <button
+        className="px-3 py-1 rounded-lg text-sm hover:bg-elevated"
+        onClick={() => onSet(null)}
+      >
+        Follow Clerk
+      </button>
+    </div>
+  );
+}
+
 const Header: React.FC<HeaderProps> = ({
   disableDashboardLink = false,
   theme: themeProp,
@@ -69,6 +100,7 @@ const Header: React.FC<HeaderProps> = ({
   const isSignedIn = Boolean(user?.id);
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { theme: hookTheme, toggleTheme: hookToggle, logoSrc: hookLogo } = useThemeHook();
 
@@ -129,6 +161,23 @@ const Header: React.FC<HeaderProps> = ({
 
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const isDev = import.meta.env.MODE !== "production";
+  const currentOverride = (searchParams.get("as") as "client" | "artist" | null) ??
+    ((localStorage.getItem("roleOverride") as "client" | "artist" | null) ?? null) ??
+    "client";
+
+  const setOverride = (val: "client" | "artist" | null) => {
+    if (val) {
+      localStorage.setItem("roleOverride", val);
+      searchParams.set("as", val);
+      setSearchParams(searchParams, { replace: true });
+    } else {
+      localStorage.removeItem("roleOverride");
+      searchParams.delete("as");
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
+
   return (
     <>
       <header className="hidden md:flex w-full relative items-center z-50 text-app py-[10px]">
@@ -154,6 +203,13 @@ const Header: React.FC<HeaderProps> = ({
 
             <div className="flex items-center gap-3">
               {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />}
+
+              {isDev && isDashboard && (
+                <DevRoleToggleInline
+                  current={currentOverride as "client" | "artist"}
+                  onSet={setOverride}
+                />
+              )}
 
               {isSignedIn && user && (
                 <div
@@ -210,6 +266,13 @@ const Header: React.FC<HeaderProps> = ({
 
         <div className="ml-auto flex items-center gap-2">
           {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />}
+
+          {isDev && isDashboard && (
+            <DevRoleToggleInline
+              current={currentOverride as "client" | "artist"}
+              onSet={setOverride}
+            />
+          )}
 
           <button
             aria-label="Open menu"

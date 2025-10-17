@@ -137,13 +137,12 @@ function bayesianScore(avg?: number, n?: number, C = 3.8, m = 8) {
 }
 
 export function useDashboardData() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
 
   const [artists, setArtists] = useState<ArtistDto[]>([]);
   const [loadingArtists, setLoadingArtists] = useState(true);
   const [showArtists, setShowArtists] = useState(false);
-
   const [conversationList, setConversationList] = useState<Conversation[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [collapsedConversations, setCollapsedConversations] = useState<
@@ -152,10 +151,14 @@ export function useDashboardData() {
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [initialized, setInitialized] = useState(false);
 
   const prevConvCountRef = useRef(0);
   const artistReqRef = useRef<AbortController | null>(null);
   const workingBaseRef = useRef<string | null>(null);
+  const didInitRef = useRef(false);
+  const toastsShownRef = useRef({ artistsLoaded: false });
 
   const authFetch = async (pathOrUrl: string, options: RequestInit = {}) => {
     const token = await getToken();
@@ -356,85 +359,99 @@ export function useDashboardData() {
       })) as { items: ArtistDto[]; total: number } | ArtistDto[];
 
       const raw = Array.isArray(json) ? json : json.items || [];
+      const serverTotal = Array.isArray(json)
+        ? raw.length
+        : Number(json.total ?? raw.length);
       const filtered = applyClientFilters(raw, filters);
       const sorted = sortClient(filtered, filters.sort);
-      const total = sorted.length;
+      const total = serverTotal;
       const start = (Math.max(1, page) - 1) * Math.max(1, pageSize);
       const end = start + Math.max(1, pageSize);
       const items = sorted.slice(start, end);
 
       setArtists(items);
+      setTotalCount(total);
       return { items, total };
     } catch (e: any) {
       if (e?.name === "AbortError") return { items: [], total: 0 };
       throw e;
     } finally {
-      if (!artistReqRef.current?.signal.aborted) setLoadingArtists(false);
+      if (artistReqRef.current?.signal === ac.signal && !ac.signal.aborted) {
+        setLoadingArtists(false);
+      }
+    }
+  };
+
+  const loadAll = async () => {
+    if (!isLoaded || !isSignedIn) return;
+    setLoadingArtists(true);
+    setLoadingConversations(true);
+    try {
+      const payload = await queryArtists({ sort: "rating_desc" }, 1, 12);
+      const artistsNow = payload.items || [];
+      let convList: Conversation[] = [];
+      try {
+        const raw = await authFetchJson(`/messages/user/${user!.id}`);
+        convList = Array.isArray(raw)
+          ? raw.map((c: any) => ({
+              participantId: c.participantId,
+              username: c.username ?? "Unknown",
+              messages: normalizeMessages(c.messages),
+            }))
+          : [];
+        convList = convList.map((c) => {
+          if (c.username !== "Unknown") return c;
+          const artist = artistsNow.find(
+            (a) => a.clerkId === c.participantId || a._id === c.participantId
+          );
+          return { ...c, username: artist?.username ?? "Unknown" };
+        });
+        convList.sort((a, b) => {
+          const aLast = a.messages.length
+            ? a.messages[a.messages.length - 1].timestamp
+            : 0;
+          const bLast = b.messages.length
+            ? b.messages[b.messages.length - 1].timestamp
+            : 0;
+          return bLast - aLast;
+        });
+      } catch {
+        convList = [];
+      }
+      setConversationList(convList);
+      if (convList.length > 0) {
+        const newest = convList[0].participantId;
+        setSelectedConversationId(newest);
+        setCollapsedConversations((prev) => ({ ...prev, [newest]: false }));
+      }
+      if (!toastsShownRef.current.artistsLoaded) {
+        toastsShownRef.current.artistsLoaded = true;
+        toast.success("Artists loaded", {
+          position: "bottom-right",
+          autoClose: 1200,
+        });
+      }
+    } catch (err: any) {
+      console.error("Error fetching data:", err);
+      toast.error(
+        err?.message?.includes("ERR_CONNECTION_REFUSED")
+          ? "API unreachable. Start your backend or use a Vite proxy."
+          : err?.message || "Error loading dashboard data.",
+        { position: "bottom-right" }
+      );
+    } finally {
+      setLoadingArtists(false);
+      setLoadingConversations(false);
+      setInitialized(true);
     }
   };
 
   useEffect(() => {
-    if (!user) return;
-    const loadAll = async () => {
-      setLoadingArtists(true);
-      setLoadingConversations(true);
-      try {
-        const payload = await queryArtists({ sort: "rating_desc" }, 1, 12);
-        const artistsNow = payload.items || [];
-        let convList: Conversation[] = [];
-        try {
-          const raw = await authFetchJson(`/messages/user/${user.id}`);
-          convList = Array.isArray(raw)
-            ? raw.map((c: any) => ({
-                participantId: c.participantId,
-                username: c.username ?? "Unknown",
-                messages: normalizeMessages(c.messages),
-              }))
-            : [];
-          convList = convList.map((c) => {
-            if (c.username !== "Unknown") return c;
-            const artist = artistsNow.find(
-              (a) => a.clerkId === c.participantId || a._id === c.participantId
-            );
-            return { ...c, username: artist?.username ?? "Unknown" };
-          });
-          convList.sort((a, b) => {
-            const aLast = a.messages.length
-              ? a.messages[a.messages.length - 1].timestamp
-              : 0;
-            const bLast = b.messages.length
-              ? b.messages[b.messages.length - 1].timestamp
-              : 0;
-            return bLast - aLast;
-          });
-        } catch {
-          convList = [];
-        }
-        setConversationList(convList);
-        if (convList.length > 0) {
-          const newest = convList[0].participantId;
-          setSelectedConversationId(newest);
-          setCollapsedConversations((prev) => ({ ...prev, [newest]: false }));
-        }
-        toast.success("Artists loaded", {
-          position: "bottom-right",
-          autoClose: 1500,
-        });
-      } catch (err: any) {
-        console.error("Error fetching data:", err);
-        toast.error(
-          err?.message?.includes("ERR_CONNECTION_REFUSED")
-            ? "API unreachable. Start your backend or use a Vite proxy."
-            : err?.message || "Error loading dashboard data.",
-          { position: "bottom-right" }
-        );
-      } finally {
-        setLoadingArtists(false);
-        setLoadingConversations(false);
-      }
-    };
-    loadAll();
-  }, [user]);
+    if (!isLoaded || !isSignedIn) return;
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+    void loadAll();
+  }, [isLoaded, isSignedIn]);
 
   useEffect(() => {
     if (conversationList.length > prevConvCountRef.current) {
@@ -455,6 +472,10 @@ export function useDashboardData() {
     return () => clearTimeout(t);
   }, []);
 
+  const refreshDashboard = async () => {
+    await loadAll();
+  };
+
   return {
     artists,
     conversationList,
@@ -463,10 +484,13 @@ export function useDashboardData() {
     loadingArtists,
     loadingConversations,
     showArtists,
+    totalCount,
+    initialized,
     setConversationList,
     setCollapsedConversations,
     setSelectedConversationId,
     queryArtists,
     authFetch,
+    refreshDashboard,
   };
 }
