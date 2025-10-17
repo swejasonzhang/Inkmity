@@ -38,6 +38,8 @@ function apiUrl(path: string, qs?: Record<string, string>) {
   return url.toString();
 }
 
+type TipState = { show: boolean; x: number; y: number };
+
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
@@ -69,6 +71,34 @@ export default function SignUp() {
   const { signOut } = useClerk();
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
+
+  const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
+
+  useEffect(() => {
+    const mm = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      const anchor = t?.closest('a[href="/dashboard"]');
+      if (anchor) {
+        setTip({ show: true, x: e.clientX, y: e.clientY });
+      } else {
+        setTip((prev) => (prev.show ? { ...prev, show: false } : prev));
+      }
+    };
+    const click = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      const anchor = t?.closest('a[href="/dashboard"]');
+      if (anchor) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("mousemove", mm, true);
+    document.addEventListener("click", click, true);
+    return () => {
+      document.removeEventListener("mousemove", mm, true);
+      document.removeEventListener("click", click, true);
+    };
+  }, []);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
@@ -378,7 +408,7 @@ export default function SignUp() {
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
-      <Header disableDashboardLink />
+      <Header />
       <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
         <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
@@ -435,6 +465,14 @@ export default function SignUp() {
         toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
         style={{ top: toastTop !== undefined ? toastTop : 12 }}
       />
+      {(!isSignedIn && tip.show) && (
+        <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
+          <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
+            <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
+            <span className="text-xs text-app whitespace-nowrap">Login to access your dashboard</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

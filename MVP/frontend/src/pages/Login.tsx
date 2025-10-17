@@ -13,6 +13,8 @@ import { container } from "@/components/access/animations";
 const TOAST_H = 72;
 const TOAST_GAP = 50;
 
+type TipState = { show: boolean; x: number; y: number };
+
 export default function Login() {
   const prefersReduced = !!useReducedMotion();
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +26,34 @@ export default function Login() {
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive } = useSignIn();
   const { isSignedIn } = useUser();
+
+  const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
+
+  useEffect(() => {
+    const mm = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      const anchor = t?.closest('a[href="/dashboard"]');
+      if (anchor) {
+        setTip({ show: true, x: e.clientX, y: e.clientY });
+      } else {
+        setTip((prev) => (prev.show ? { ...prev, show: false } : prev));
+      }
+    };
+    const click = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      const anchor = t?.closest('a[href="/dashboard"]');
+      if (anchor) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("mousemove", mm, true);
+    document.addEventListener("click", click, true);
+    return () => {
+      document.removeEventListener("mousemove", mm, true);
+      document.removeEventListener("click", click, true);
+    };
+  }, []);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
@@ -48,11 +78,7 @@ export default function Login() {
 
   useEffect(() => {
     if (!isSignedIn) return;
-    toast.info("You are already signed in! Redirecting to dashboard...", {
-      theme: "dark",
-      icon: false,
-      closeButton: false,
-    });
+    toast.info("You are already signed in! Redirecting to dashboard...", { theme: "dark", icon: false, closeButton: false });
     const t = setTimeout(() => {
       window.location.replace("/dashboard");
     }, 1500);
@@ -130,10 +156,7 @@ export default function Login() {
         triggerMascotError();
       }
     } catch (err: any) {
-      toast.error(err?.errors?.[0]?.message || err?.message || "Unexpected error occurred", {
-        position: "top-center",
-        theme: "dark",
-      });
+      toast.error(err?.errors?.[0]?.message || err?.message || "Unexpected error occurred", { position: "top-center", theme: "dark" });
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -146,7 +169,7 @@ export default function Login() {
   return (
     <>
       <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
-        <Header disableDashboardLink />
+        <Header />
         <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
           <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
             <motion.div variants={container} initial={prefersReduced ? false : "hidden"} animate={prefersReduced ? undefined : "show"} className="w-full">
@@ -241,6 +264,14 @@ export default function Login() {
           toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
           style={{ top: toastTop !== undefined ? toastTop : 12 }}
         />
+        {(!isSignedIn && tip.show) && (
+          <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
+            <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
+              <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
+              <span className="text-xs text-app whitespace-nowrap">Log in to view your dashboard</span>
+            </div>
+          </div>
+        )}
       </div>
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
