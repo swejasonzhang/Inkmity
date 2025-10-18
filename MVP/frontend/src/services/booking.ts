@@ -41,3 +41,7 @@ export async function cancelBooking(id: string) {
 export async function completeBooking(id: string) {
   return apiPost<Booking>(`/bookings/${id}/complete`);
 }
+
+export async function getBooking(id: string) {
+  return apiGet<Booking>(`/bookings/${id}`);
+}

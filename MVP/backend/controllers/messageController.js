@@ -19,6 +19,7 @@ export const getAllMessagesForUser = async (req, res) => {
         receiverId: m.receiverId,
         text: m.text,
         timestamp: m.createdAt.getTime(),
+        meta: m.meta || undefined,
       });
     }
 
@@ -38,30 +39,51 @@ export const getAllMessagesForUser = async (req, res) => {
 
     res.status(200).json(conversations);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 };
 
 export const createMessage = async (req, res) => {
   try {
-    const { senderId, receiverId, text } = req.body;
-    if (!senderId || !receiverId || !text) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
-    if (req.auth?.userId && req.auth.userId !== senderId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+    const {
+      receiverId,
+      text,
+      budgetCents,
+      style,
+      targetDateISO,
+      referenceUrls,
+      senderId: bodySenderId,
+    } = req.body || {};
+    if (!receiverId || !text)
+      return res.status(400).json({ error: "missing_fields" });
 
-    const msg = await Message.create({ senderId, receiverId, text });
+    const authSenderId = String(
+      req.user?.clerkId || req.auth?.userId || bodySenderId || ""
+    );
+    if (!authSenderId) return res.status(401).json({ error: "Unauthorized" });
+    if (bodySenderId && bodySenderId !== authSenderId)
+      return res.status(403).json({ error: "Forbidden" });
+
+    const msg = await Message.create({
+      senderId: authSenderId,
+      receiverId: String(receiverId),
+      text,
+      meta: {
+        budgetCents: Number.isFinite(budgetCents) ? budgetCents : undefined,
+        style: style || undefined,
+        targetDateISO: targetDateISO || undefined,
+        referenceUrls: Array.isArray(referenceUrls) ? referenceUrls : undefined,
+      },
+    });
+
     res.status(201).json({
       senderId: msg.senderId,
       receiverId: msg.receiverId,
       text: msg.text,
       timestamp: msg.createdAt.getTime(),
+      meta: msg.meta || undefined,
     });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to create message" });
   }
 };
@@ -69,13 +91,12 @@ export const createMessage = async (req, res) => {
 export const deleteConversationForUser = async (req, res) => {
   try {
     const { userId, participantId } = req.body;
-    if (!userId || !participantId) {
+    if (!userId || !participantId)
       return res.status(400).json({ error: "Missing userId or participantId" });
-    }
 
-    if (req.auth?.userId && req.auth.userId !== userId) {
+    const authUserId = String(req.user?.clerkId || req.auth?.userId || "");
+    if (authUserId && authUserId !== userId)
       return res.status(403).json({ error: "Forbidden" });
-    }
 
     const { deletedCount } = await Message.deleteMany({
       $or: [
@@ -84,14 +105,8 @@ export const deleteConversationForUser = async (req, res) => {
       ],
     });
 
-    return res.status(200).json({
-      ok: true,
-      deletedCount,
-      userId,
-      participantId,
-    });
+    res.status(200).json({ ok: true, deletedCount, userId, participantId });
   } catch (err) {
-    console.error("Failed to delete conversation:", err);
     res.status(500).json({ error: "Failed to delete conversation" });
   }
 };

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
-  createCheckoutSession,
+  checkoutPlatformFee,
+  checkoutDeposit,
   refundBilling,
   createPortalSession,
   scheduleCancel,
@@ -9,7 +10,8 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-router.post("/checkout", requireAuth(), createCheckoutSession);
+router.post("/checkout", requireAuth(), checkoutPlatformFee);
+router.post("/deposit", requireAuth(), checkoutDeposit);
 router.post("/refund", requireAuth(), refundBilling);
 router.post("/portal", requireAuth(), createPortalSession);
 router.post("/schedule-cancel", requireAuth(), scheduleCancel);
