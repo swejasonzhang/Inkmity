@@ -20,12 +20,6 @@ router.delete("/me/avatar", requireAuth(), deleteMyAvatar);
 router.get("/", getArtists);
 router.get("/:id", getArtistById);
 
-router.post("/sync", syncUser);
+router.post("/sync", requireAuth(), syncUser);
 
 export default router;
-
-// routes/users.js (add new endpoints)
-import { getReferenceSignature, saveMyReferences } from "../controllers/userReferencesController.js";
-
-router.get("/me/references/signature", requireAuth(), getReferenceSignature);
-router.put("/me/references", requireAuth(), saveMyReferences);

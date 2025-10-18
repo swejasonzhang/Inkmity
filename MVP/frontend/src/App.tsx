@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { useSyncOnAuth } from "@/hooks/useSyncOnAuth";
 
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
@@ -9,6 +10,8 @@ import About from "./pages/About";
 import Landing from "./pages/Landing";
 
 const App: React.FC = () => {
+  useSyncOnAuth();
+
   return (
     <Routes>
       <Route path="/signup" element={<SignUp />} />

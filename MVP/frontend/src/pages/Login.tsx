@@ -9,6 +9,7 @@ import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { Button } from "@/components/ui/button";
 import { container } from "@/components/access/animations";
+import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
 const TOAST_H = 72;
 const TOAST_GAP = 50;
@@ -26,6 +27,8 @@ export default function Login() {
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive } = useSignIn();
   const { isSignedIn } = useUser();
+
+  useAlreadySignedInRedirect();
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
@@ -75,15 +78,6 @@ export default function Login() {
       ro.disconnect();
     };
   }, []);
-
-  useEffect(() => {
-    if (!isSignedIn) return;
-    toast.info("You are already signed in! Redirecting to dashboard...", { theme: "dark", icon: false, closeButton: false });
-    const t = setTimeout(() => {
-      window.location.replace("/dashboard");
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [isSignedIn]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
