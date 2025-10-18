@@ -1,7 +1,6 @@
-const mongoose = require("mongoose");
-const { Schema, Types } = mongoose;
+import mongoose from "mongoose";
 
-const DepositPolicySchema = new Schema(
+const DepositPolicySchema = new mongoose.Schema(
   {
     mode: { type: String, enum: ["flat", "percent"], default: "percent" },
     amountCents: { type: Number, default: 5000 },
@@ -14,20 +13,18 @@ const DepositPolicySchema = new Schema(
   { _id: false }
 );
 
-const ArtistPolicySchema = new Schema(
+const ArtistPolicySchema = new mongoose.Schema(
   {
     artistId: {
-      type: Types.ObjectId,
+      type: mongoose.Types.ObjectId,
       index: true,
       unique: true,
       required: true,
     },
     deposit: { type: DepositPolicySchema, default: () => ({}) },
-    updatedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
-module.exports =
-  mongoose.models.ArtistPolicy ||
+export default mongoose.models.ArtistPolicy ||
   mongoose.model("ArtistPolicy", ArtistPolicySchema);

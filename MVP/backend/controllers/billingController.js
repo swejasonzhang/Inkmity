@@ -5,14 +5,17 @@ import Booking from "../models/Booking.js";
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null;
+
 const isFreeMode = () =>
   process.env.FREE_MODE === "1" || process.env.NODE_ENV === "test";
+
 const PLATFORM_FEE_CENTS = isFreeMode() ? 0 : 1000;
 
 export async function checkoutPlatformFee(req, res) {
   try {
     const { bookingId, label } = req.body || {};
     if (!bookingId) return res.status(400).json({ error: "missing_bookingId" });
+
     const booking = await Booking.findById(bookingId);
     if (!booking) return res.status(404).json({ error: "booking_not_found" });
 
@@ -27,8 +30,12 @@ export async function checkoutPlatformFee(req, res) {
       paidAt: isFreeMode() ? new Date() : undefined,
     });
 
-    if (isFreeMode())
+    if (isFreeMode()) {
       return res.json({ ok: true, mode: "free", billingId: bill._id });
+    }
+
+    if (!stripe)
+      return res.status(500).json({ error: "stripe_not_configured" });
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -54,9 +61,10 @@ export async function checkoutPlatformFee(req, res) {
     await Billing.findByIdAndUpdate(bill._id, {
       stripeCheckoutSessionId: session.id,
     });
-    res.json({ ok: true, url: session.url, billingId: bill._id });
+
+    return res.json({ ok: true, url: session.url, billingId: bill._id });
   } catch {
-    res.status(500).json({ error: "platform_fee_failed" });
+    return res.status(500).json({ error: "platform_fee_failed" });
   }
 }
 
@@ -116,9 +124,10 @@ export async function checkoutDeposit(req, res) {
     await Billing.findByIdAndUpdate(bill._id, {
       stripeCheckoutSessionId: session.id,
     });
-    res.json({ ok: true, url: session.url, billingId: bill._id });
+
+    return res.json({ ok: true, url: session.url, billingId: bill._id });
   } catch {
-    res.status(500).json({ error: "deposit_failed" });
+    return res.status(500).json({ error: "deposit_failed" });
   }
 }
 
@@ -151,8 +160,9 @@ export async function refundBilling(req, res) {
           ? sess.payment_intent
           : sess.payment_intent?.id;
     }
-    if (!paymentIntentId)
+    if (!paymentIntentId) {
       return res.status(400).json({ error: "no_payment_intent_to_refund" });
+    }
 
     await stripe.refunds.create({
       payment_intent: paymentIntentId,
@@ -162,8 +172,35 @@ export async function refundBilling(req, res) {
     bill.status = "refunded";
     bill.refundedAt = new Date();
     await bill.save();
-    res.json(bill);
+    return res.json(bill);
   } catch {
-    res.status(500).json({ error: "refund_failed" });
+    return res.status(500).json({ error: "refund_failed" });
   }
+}
+
+export async function createCheckoutSession(req, res) {
+  return checkoutPlatformFee(req, res);
+}
+
+export async function createPortalSession(req, res) {
+  try {
+    if (!stripe)
+      return res.status(500).json({ error: "stripe_not_configured" });
+    const { stripeCustomerId } = req.body || {};
+    if (!stripeCustomerId)
+      return res.status(400).json({ error: "missing_stripeCustomerId" });
+
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: process.env.APP_URL || "http://localhost:5173",
+    });
+
+    return res.json({ ok: true, url: portal.url });
+  } catch {
+    return res.status(500).json({ error: "portal_failed" });
+  }
+}
+
+export async function scheduleCancel(_req, res) {
+  return res.status(501).json({ error: "not_implemented" });
 }

@@ -13,8 +13,9 @@ import dashboardRoutes from "./routes/dashboard.js";
 import messageRoutes from "./routes/messages.js";
 import availabilityRoutes from "./routes/availability.js";
 import bookingRoutes from "./routes/bookings.js";
-import contactRoutes from "./routes/contact.js";
 import authRoutes from "./routes/auth.js";
+import artistPolicyRoutes from "./routes/artistPolicy.js";
+import billingRoutes from "./routes/billing.js";
 
 import { requireAuth } from "./middleware/auth.js";
 
@@ -55,9 +56,10 @@ app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/contact", contactRoutes);
 app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
+app.use("/api/artist-policy", artistPolicyRoutes);
+app.use("/api/billing", billingRoutes);
 
 app.use((req, res) =>
   res.status(404).json({ error: "Not found", path: req.originalUrl })
