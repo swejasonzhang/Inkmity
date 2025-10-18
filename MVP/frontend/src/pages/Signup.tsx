@@ -8,6 +8,7 @@ import { validateEmail, validatePassword } from "@/utils/validation";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { container } from "@/components/access/animations";
+import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
@@ -45,7 +46,7 @@ export default function SignUp() {
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
-  const [client, setClient] = useState<ClientProfile>({ budgetMin: "0", budgetMax: "500", location: "", placement: "", size: "", notes: "" });
+  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "", placement: "", size: "", notes: "" });
   const [artist, setArtist] = useState<ArtistProfile>({
     location: "",
     shop: "",
@@ -69,8 +70,10 @@ export default function SignUp() {
   const abortRef = useRef<AbortController | null>(null);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const { getToken } = useAuth();
+
+  useAlreadySignedInRedirect({ suppress: awaitingCode });
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
@@ -128,15 +131,6 @@ export default function SignUp() {
   }, []);
 
   useEffect(() => {
-    if (!isSignedIn || awaitingCode) return;
-    toast.info("You’re already signed in. Sending you to your dashboard…", { theme: "dark", icon: false, closeButton: false });
-    const t = setTimeout(() => {
-      window.location.replace("/dashboard");
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [isSignedIn, awaitingCode]);
-
-  useEffect(() => {
     const recomputeFocus = () => {
       const ae = document.activeElement as HTMLInputElement | null;
       setPwdFocused(!!ae && ae.tagName === "INPUT" && ae.name === "password");
@@ -169,20 +163,6 @@ export default function SignUp() {
       document.removeEventListener("input", handleClickOrInput, true);
     };
   }, []);
-
-  useEffect(() => {
-    setEmailTaken(false);
-    if (abortRef.current) abortRef.current.abort();
-    const email = shared.email.trim().toLowerCase();
-    if (!validateEmail(email)) return;
-    const t = setTimeout(() => {
-      checkEmailExists(email, false);
-    }, 500);
-    return () => {
-      clearTimeout(t);
-      if (abortRef.current) abortRef.current.abort();
-    };
-  }, [shared.email]);
 
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
     const name = (e as InputLike).target?.name;
@@ -300,23 +280,45 @@ export default function SignUp() {
   };
 
   const syncUserToBackend = async (r: Role) => {
-    const token = await getToken();
-    const clerkId = user?.id ?? undefined;
+    const getJwt = async () => {
+      let attempts = 0;
+      while (attempts < 8) {
+        const t = await getToken().catch(() => null);
+        if (t) return t;
+        await new Promise((res) => setTimeout(res, 150));
+        attempts++;
+      }
+      return null;
+    };
+
+    const token = await getJwt();
+    const clientPayload = (() => {
+      if (r !== "client") return undefined;
+      const minNum = Math.max(0, Math.min(5000, Number(client.budgetMin || 100)));
+      const maxNum = Math.max(0, Math.min(5000, Number(client.budgetMax || 200)));
+      const normMin = Number.isFinite(minNum) ? minNum : 100;
+      const normMax = Number.isFinite(maxNum) && maxNum > normMin ? maxNum : 200;
+      return { ...client, budgetMin: String(normMin), budgetMax: String(normMax) };
+    })();
+
     const payload: any = {
-      clerkId,
       email: shared.email,
       role: r,
       firstName: shared.firstName,
       lastName: shared.lastName,
-      profile: r === "client" ? { ...client } : { ...artist },
+      profile: r === "client" ? clientPayload : { ...artist },
     };
-    const endpoint = apiUrl("/users/sync");
-    const res = await fetch(endpoint, {
+
+    const res = await fetch(apiUrl("/users/sync"), {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(payload),
       credentials: "include",
     });
+
     if (!res.ok) {
       const t = await res.text();
       throw new Error(`Sync failed ${res.status}: ${t}`);

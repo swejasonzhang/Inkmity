@@ -1,3 +1,5 @@
+import { useAuth } from "@clerk/clerk-react";
+
 const API_BASE =
   (import.meta as any).env?.VITE_API_URL?.replace(/\/+$/, "") ||
   "http://localhost:5005/api";
@@ -62,4 +64,31 @@ export async function apiDelete<T>(path: string, body?: any) {
   });
   if (!res.ok) throw new Error(await res.text());
   return (await res.json()) as T;
+}
+
+export function useApi(
+  base = import.meta.env.VITE_API_URL?.replace(/\/+$/, "") ||
+    "http://localhost:5005/api"
+) {
+  const { getToken } = useAuth();
+
+  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const token = await getToken();
+    const res = await fetch(`${base}${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init.headers || {}),
+      },
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`${res.status} ${res.statusText}: ${text}`);
+    }
+    return res.json() as Promise<T>;
+  }
+
+  return { request };
 }

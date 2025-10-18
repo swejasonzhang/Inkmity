@@ -12,7 +12,7 @@ const ImageSchema = new Schema(
   { _id: false }
 );
 
-const UserSchema = new Schema(
+const UserBaseSchema = new Schema(
   {
     clerkId: { type: String, required: true, unique: true, index: true },
     username: { type: String, required: true, unique: true, index: true },
@@ -20,39 +20,20 @@ const UserSchema = new Schema(
     role: {
       type: String,
       enum: ["client", "artist"],
-      default: "client",
       required: true,
       index: true,
     },
-
     avatar: { type: ImageSchema },
     clerkImageUrl: { type: String },
-
-    location: { type: String },
-    style: [{ type: String }],
-    bio: { type: String },
-    priceRange: { min: Number, max: Number },
-
-    rating: { type: Number, default: 0, index: true },
-    reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
-    reviewsCount: { type: Number, default: 0, index: true },
-    yearsExperience: { type: Number, default: 0, min: 0, index: true },
-
-    bookingsCount: { type: Number, default: 0 },
-    totalBookingFeesPaid: { type: Number, default: 0 },
-    discountPercent: { type: Number, default: 0, min: 0, max: 100 },
-    freeTattooEligibleUnderUSD: { type: Number, default: 0 },
-    lastRewardAt: { type: Date },
-
     references: { type: [String], default: [] },
   },
-  { timestamps: true }
+  { timestamps: true, discriminatorKey: "role" }
 );
 
-UserSchema.methods.getAvatarUrl = function () {
+UserBaseSchema.methods.getAvatarUrl = function () {
   if (this.avatar?.url) return this.avatar.url;
   if (this.clerkImageUrl) return this.clerkImageUrl;
   return "https://stock.adobe.com/search?k=default+profile+picture&asset_id=589932782";
 };
 
-export default mongoose.models.User || mongoose.model("User", UserSchema);
+export default mongoose.models.User || mongoose.model("User", UserBaseSchema);

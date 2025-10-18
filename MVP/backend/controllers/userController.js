@@ -1,187 +1,95 @@
 import User from "../models/User.js";
 
-export const getMe = async (req, res) => {
-  const clerkId = req.auth?.userId;
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const me = await User.findOne({ clerkId }).lean();
-  if (!me) return res.status(404).json({ error: "User not found" });
-  res.json(me);
-};
+const SAFE_ROLES = new Set(["client", "artist"]);
 
-export const updateMyAvatar = async (req, res) => {
-  try {
-    const clerkId = req.auth?.userId;
-    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-
-    const {
-      url,
-      publicId,
-      width,
-      height,
-      format,
-      bytes,
-      alt = "Profile photo",
-    } = req.body || {};
-    if (!url) return res.status(400).json({ error: "Missing image url" });
-
-    const updated = await User.findOneAndUpdate(
-      { clerkId },
-      { avatar: { url, publicId, width, height, format, bytes, alt } },
-      { new: true, runValidators: true }
-    ).lean();
-
-    if (!updated) return res.status(404).json({ error: "User not found" });
-    res.json({ avatar: updated.avatar });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to update avatar" });
-  }
-};
-
-export const deleteMyAvatar = async (req, res) => {
-  try {
-    const clerkId = req.auth?.userId;
-    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-
-    const user = await User.findOne({ clerkId });
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const publicId = user.avatar?.publicId;
-    user.avatar = undefined;
-    await user.save();
-
-    if (publicId) {
-      const { default: cloudinary } = await import("../lib/cloudinary.js");
-      try {
-        await cloudinary.uploader.destroy(publicId);
-      } catch {}
-    }
-
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to delete avatar" });
-  }
-};
+function slugify(s = "") {
+  return String(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 24);
+}
+function randomSuffix(n = 4) {
+  const chars = "abcdefghjkmnpqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < n; i++)
+    out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
 
 export const syncUser = async (req, res) => {
   try {
-    const { clerkId, email, role, username, ...rest } = req.body || {};
-    if (!clerkId || !email || !role || !username) {
+    const authClerkId = req.auth?.userId || null;
+    const {
+      clerkId: bodyClerkId,
+      email,
+      role: rawRole,
+      username,
+      firstName,
+      lastName,
+      profile,
+      ...rest
+    } = req.body || {};
+
+    const clerkId = authClerkId || bodyClerkId;
+    if (!clerkId || !email || !rawRole) {
       return res
         .status(400)
-        .json({ error: "clerkId, email, role, username are required" });
+        .json({ error: "clerkId, email, role are required" });
     }
 
-    const base = { clerkId, email, role, username };
-    const updateDoc = role === "client" ? base : { ...base, ...rest };
+    const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
+
+    let finalUsername = (username || "").trim();
+    if (!finalUsername) {
+      const baseSource =
+        firstName && lastName
+          ? `${firstName}-${lastName}`
+          : email?.split("@")[0] || "user";
+      const base = slugify(baseSource) || "user";
+      let candidate = base;
+      let tries = 0;
+      while (tries < 10) {
+        const exists = await User.findOne(
+          { username: candidate },
+          { _id: 1, clerkId: 1 }
+        ).lean();
+        if (!exists || String(exists.clerkId) === String(clerkId)) break;
+        candidate = `${base}-${randomSuffix()}`;
+        tries++;
+      }
+      finalUsername = candidate;
+    }
+
+    const baseDoc = { clerkId, email, role, username: finalUsername };
+
+    if (role === "artist" && profile && typeof profile === "object") {
+      if (profile.location) baseDoc.location = profile.location;
+      if (profile.years) baseDoc.yearsExperience = Number(profile.years) || 0;
+      if (profile.baseRate) {
+        const rate = Number(profile.baseRate) || 0;
+        baseDoc.priceRange = { min: rate, max: rate };
+      }
+      if (Array.isArray(profile.style)) baseDoc.style = profile.style;
+      if (profile.bio) baseDoc.bio = profile.bio;
+    }
+
+    const updateDoc = role === "client" ? baseDoc : { ...baseDoc, ...rest };
 
     const user = await User.findOneAndUpdate(
       { clerkId },
       { $set: updateDoc },
-      { new: true, upsert: true }
+      { new: true, upsert: true, runValidators: true }
     );
 
     res.status(200).json(user);
   } catch (error) {
-    if (error?.code === 11000 && req.body?.clerkId) {
-      const existing = await User.findOne({ clerkId: req.body.clerkId });
+    if (error?.code === 11000 && (req.auth?.userId || req.body?.clerkId)) {
+      const existing = await User.findOne({
+        clerkId: req.auth?.userId || req.body.clerkId,
+      });
       return res.status(200).json(existing);
     }
     res.status(500).json({ error: "Failed to sync user" });
-  }
-};
-
-export const getArtists = async (req, res) => {
-  try {
-    const {
-      search = "",
-      location,
-      style,
-      minPrice,
-      maxPrice,
-      priceMin,
-      priceMax,
-      minRating,
-      minExperience,
-      maxExperience,
-      page = "1",
-      pageSize = "12",
-      sort = "rating_desc",
-      includeReviews = "false",
-      topRated = "false",
-    } = req.query;
-
-    const q = { role: "artist" };
-
-    if (location) q.location = location;
-    if (style) q.style = { $in: [style] };
-
-    const min = minPrice ?? priceMin;
-    const max = maxPrice ?? priceMax;
-    if (min || max) {
-      const and = [];
-      if (min) and.push({ "priceRange.max": { $gte: Number(min) } });
-      if (max) and.push({ "priceRange.min": { $lte: Number(max) } });
-      if (and.length) q.$and = (q.$and || []).concat(and);
-    }
-
-    if (minRating) q.rating = { $gte: Number(minRating) };
-
-    if (minExperience || maxExperience) {
-      q.yearsExperience = {};
-      if (minExperience) q.yearsExperience.$gte = Number(minExperience);
-      if (maxExperience) q.yearsExperience.$lte = Number(maxExperience);
-    }
-
-    if (topRated === "true" && !minRating) q.rating = { $gte: 4.5 };
-
-    if (search) {
-      const rx = new RegExp(String(search), "i");
-      q.$or = [{ username: rx }, { location: rx }, { bio: rx }, { style: rx }];
-    }
-
-    const sortMap = {
-      rating_desc: { rating: -1, reviewsCount: -1 },
-      rating_asc: { rating: 1 },
-      newest: { createdAt: -1 },
-      experience_desc: { yearsExperience: -1, rating: -1 },
-      experience_asc: { yearsExperience: 1 },
-      highly_rated: { rating: -1, reviewsCount: -1 },
-    };
-    const sortSpec = sortMap[sort] || sortMap.rating_desc;
-
-    const p = Math.max(1, parseInt(page));
-    const ps = Math.min(48, Math.max(1, parseInt(pageSize)));
-
-    const baseQuery = User.find(q)
-      .select(
-        "clerkId username email role location style bio priceRange rating reviews reviewsCount yearsExperience avatar"
-      )
-      .sort(sortSpec)
-      .skip((p - 1) * ps)
-      .limit(ps)
-      .lean();
-
-    const query =
-      includeReviews === "true" ? baseQuery.populate("reviews") : baseQuery;
-
-    const [items, total] = await Promise.all([query, User.countDocuments(q)]);
-    res.status(200).json({ items, total });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch artists" });
-  }
-};
-
-export const getArtistById = async (req, res) => {
-  try {
-    const artist = await User.findOne({ _id: req.params.id, role: "artist" })
-      .select(
-        "clerkId username email role location style bio priceRange rating reviews reviewsCount yearsExperience avatar"
-      )
-      .populate("reviews");
-
-    if (!artist) return res.status(404).json({ error: "Artist not found" });
-    res.status(200).json(artist);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch artist" });
   }
 };
