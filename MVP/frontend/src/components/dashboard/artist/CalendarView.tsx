@@ -1,4 +1,19 @@
 import { useMemo, useState } from "react";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationPrevious,
+    PaginationNext,
+    PaginationLink,
+} from "@/components/ui/pagination";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 type Booking = {
     id: string | number;
@@ -60,8 +75,6 @@ export default function CalendarView({
         return map;
     }, [bookings]);
 
-    const monthName = new Intl.DateTimeFormat(undefined, { month: "long" }).format(cursor);
-
     const statusBadge: Record<string, string> = {
         confirmed: "bg-green-500/20 text-green-300 border-green-600/30",
         pending: "bg-yellow-500/20 text-yellow-300 border-yellow-600/30",
@@ -72,31 +85,105 @@ export default function CalendarView({
         setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
     };
 
+    const goToday = () => {
+        const now = new Date();
+        setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
+    };
+
+    const months = useMemo(
+        () => [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December",
+        ],
+        []
+    );
+
+    const years = useMemo(() => {
+        const current = new Date().getFullYear();
+        const start = current - 50;
+        const end = current + 50;
+        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    }, []);
+
+    const onSelectMonth = (value: string) => {
+        const m = Number(value);
+        setCursor(new Date(cursor.getFullYear(), m, 1));
+    };
+
+    const onSelectYear = (value: string) => {
+        const y = Number(value);
+        setCursor(new Date(y, cursor.getMonth(), 1));
+    };
+
     return (
         <div className="flex flex-col h-full min-h-[55vh] p-3 gap-2">
-            <div className="border-b border-app px-3 py-3 rounded-xl bg-card text-center">
-                <div className="font-semibold text-sm">
-                    {monthName} {cursor.getFullYear()}
-                </div>
-                <div className="mt-2 flex items-center justify-center gap-1.5">
-                    <button
-                        className="px-2.5 py-1.5 rounded-md border border-app bg-card hover:bg-elevated text-xs"
-                        onClick={() => changeMonth(-1)}
-                    >
-                        Prev
-                    </button>
-                    <button
-                        className="px-2.5 py-1.5 rounded-md border border-app bg-card hover:bg-elevated text-xs"
-                        onClick={() => setCursor(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}
-                    >
-                        Today
-                    </button>
-                    <button
-                        className="px-2.5 py-1.5 rounded-md border border-app bg-card hover:bg-elevated text-xs"
-                        onClick={() => changeMonth(1)}
-                    >
-                        Next
-                    </button>
+            <div className="border-b border-app px-3 py-3 rounded-xl bg-card">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Select value={String(monthMeta.month)} onValueChange={onSelectMonth}>
+                            <SelectTrigger className="w-[160px]">
+                                <SelectValue placeholder="Month" />
+                            </SelectTrigger>
+                            <SelectContent align="start">
+                                {months.map((m, i) => (
+                                    <SelectItem key={m} value={String(i)}>
+                                        {m}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={String(monthMeta.year)} onValueChange={onSelectYear}>
+                            <SelectTrigger className="w-[120px]">
+                                <SelectValue placeholder="Year" />
+                            </SelectTrigger>
+                            <SelectContent align="start">
+                                {years.map((y) => (
+                                    <SelectItem key={y} value={String(y)}>
+                                        {y}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="mt-1">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            changeMonth(-1);
+                                        }}
+                                    />
+                                </PaginationItem>
+
+                                <PaginationItem>
+                                    <PaginationLink
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            goToday();
+                                        }}
+                                    >
+                                        Today
+                                    </PaginationLink>
+                                </PaginationItem>
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            changeMonth(1);
+                                        }}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
                 </div>
             </div>
 
@@ -123,7 +210,10 @@ export default function CalendarView({
                     return (
                         <div
                             key={i}
-                            className={["rounded-lg border border-app bg-card p-2 flex flex-col", !c.inMonth ? "opacity-40" : ""].join(" ")}
+                            className={[
+                                "rounded-lg border border-app bg-card p-2 flex flex-col",
+                                !c.inMonth ? "opacity-40" : "",
+                            ].join(" ")}
                             style={{ minHeight: rowMinHeight }}
                         >
                             <div className="flex items-center justify-between">
@@ -144,8 +234,7 @@ export default function CalendarView({
                                     >
                                         <div className="truncate font-medium">{b.title}</div>
                                         <div className="opacity-80 truncate">
-                                            {new Date(b.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                            {" – "}
+                                            {new Date(b.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}{" – "}
                                             {new Date(b.end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                         </div>
                                     </button>

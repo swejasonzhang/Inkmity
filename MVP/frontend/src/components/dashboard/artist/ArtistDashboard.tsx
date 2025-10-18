@@ -24,8 +24,10 @@ export default function ArtistDashboard() {
                 <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[60vh]">
-                            <CardHeader className="px-4 py-3 border-b border-app">
-                                <CardTitle className="font-semibold text-base">Bookings Calendar</CardTitle>
+                            <CardHeader className="px-4 py-5 border-b border-app">
+                                <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">
+                                    Bookings Calendar
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="p-0 flex-1 overflow-y-auto">
                                 <Suspense
@@ -47,8 +49,10 @@ export default function ArtistDashboard() {
                         </Card>
 
                         <Card className="rounded-2xl bg-card border border-app overflow-hidden min-h-[60vh]">
-                            <CardHeader className="px-4 py-3 border-b border-app">
-                                <CardTitle className="font-semibold text-base">Analytics</CardTitle>
+                            <CardHeader className="px-4 py-5 border-b border-app">
+                                <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">
+                                    Analytics
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="p-4">
                                 <Suspense

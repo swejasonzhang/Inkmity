@@ -1,18 +1,25 @@
-import mongoose from "mongoose";
-const { Schema, model } = mongoose;
+const mongoose = require("mongoose");
+const { Schema, Types } = mongoose;
 
-const BookingSchema = new Schema(
-  {
-    artistId: { type: Schema.Types.ObjectId, required: true, index: true },
-    userId: { type: Schema.Types.ObjectId, required: true, index: true },
-    start: { type: Date, required: true, index: true },
-    end: { type: Date, required: true },
-    note: { type: String },
-    status: { type: String, enum: ["booked", "cancelled"], default: "booked" },
-  },
-  { timestamps: true }
-);
+const BookingSchema = new Schema({
+  artistId: { type: Types.ObjectId, index: true, required: true },
+  clientId: { type: Types.ObjectId, index: true },
+  serviceId: { type: Types.ObjectId, index: true },
+  startAt: { type: Date, index: true, required: true },
+  endAt: { type: Date, required: true },
+  status: { type: String, index: true, default: "pending" },
+  priceCents: { type: Number, default: 0 },
+  tipCents: { type: Number, default: 0 },
+  style: { type: String },
+  leadSource: { type: String },
+  suppliesCostCents: { type: Number, default: 0 },
+  touchUp: { type: Boolean, default: false },
+  aftercareIssue: { type: Boolean, default: false },
+  completedAt: { type: Date },
+  createdAt: { type: Date, default: Date.now },
+});
 
-BookingSchema.index({ artistId: 1, start: 1 });
+BookingSchema.index({ artistId: 1, startAt: 1 });
 
-export default model("Booking", BookingSchema);
+module.exports =
+  mongoose.models.Booking || mongoose.model("Booking", BookingSchema);
