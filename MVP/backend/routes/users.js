@@ -23,3 +23,9 @@ router.get("/:id", getArtistById);
 router.post("/sync", syncUser);
 
 export default router;
+
+// routes/users.js (add new endpoints)
+import { getReferenceSignature, saveMyReferences } from "../controllers/userReferencesController.js";
+
+router.get("/me/references/signature", requireAuth(), getReferenceSignature);
+router.put("/me/references", requireAuth(), saveMyReferences);

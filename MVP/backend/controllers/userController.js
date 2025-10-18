@@ -1,9 +1,9 @@
 import User from "../models/User.js";
 
 export const getMe = async (req, res) => {
-  const userId = req.auth?.userId;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const me = await User.findOne({ clerkId: userId }).lean();
+  const clerkId = req.auth?.userId;
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const me = await User.findOne({ clerkId }).lean();
   if (!me) return res.status(404).json({ error: "User not found" });
   res.json(me);
 };
@@ -22,7 +22,6 @@ export const updateMyAvatar = async (req, res) => {
       bytes,
       alt = "Profile photo",
     } = req.body || {};
-
     if (!url) return res.status(400).json({ error: "Missing image url" });
 
     const updated = await User.findOneAndUpdate(
@@ -34,7 +33,6 @@ export const updateMyAvatar = async (req, res) => {
     if (!updated) return res.status(404).json({ error: "User not found" });
     res.json({ avatar: updated.avatar });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to update avatar" });
   }
 };
@@ -55,14 +53,11 @@ export const deleteMyAvatar = async (req, res) => {
       const { default: cloudinary } = await import("../lib/cloudinary.js");
       try {
         await cloudinary.uploader.destroy(publicId);
-      } catch (e) {
-        console.warn("Cloudinary destroy failed:", e?.message || e);
-      }
+      } catch {}
     }
 
     res.json({ ok: true });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to delete avatar" });
   }
 };
@@ -91,7 +86,6 @@ export const syncUser = async (req, res) => {
       const existing = await User.findOne({ clerkId: req.body.clerkId });
       return res.status(200).json(existing);
     }
-    console.error(error);
     res.status(500).json({ error: "Failed to sync user" });
   }
 };
@@ -138,9 +132,7 @@ export const getArtists = async (req, res) => {
       if (maxExperience) q.yearsExperience.$lte = Number(maxExperience);
     }
 
-    if (topRated === "true" && !minRating) {
-      q.rating = { $gte: 4.5 };
-    }
+    if (topRated === "true" && !minRating) q.rating = { $gte: 4.5 };
 
     if (search) {
       const rx = new RegExp(String(search), "i");
@@ -175,7 +167,6 @@ export const getArtists = async (req, res) => {
     const [items, total] = await Promise.all([query, User.countDocuments(q)]);
     res.status(200).json({ items, total });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Failed to fetch artists" });
   }
 };
@@ -191,7 +182,6 @@ export const getArtistById = async (req, res) => {
     if (!artist) return res.status(404).json({ error: "Artist not found" });
     res.status(200).json(artist);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Failed to fetch artist" });
   }
 };
