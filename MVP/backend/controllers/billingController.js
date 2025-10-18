@@ -7,9 +7,9 @@ const stripe = process.env.STRIPE_SECRET_KEY
   : null;
 const isFreeMode = () =>
   process.env.FREE_MODE === "1" || process.env.NODE_ENV === "test";
-const FIXED_FEE_CENTS = isFreeMode() ? 0 : 1000;
+const PLATFORM_FEE_CENTS = isFreeMode() ? 0 : 1000;
 
-export async function createCheckoutSession(req, res) {
+export async function checkoutPlatformFee(req, res) {
   try {
     const { bookingId, label } = req.body || {};
     if (!bookingId) return res.status(400).json({ error: "missing_bookingId" });
@@ -20,15 +20,15 @@ export async function createCheckoutSession(req, res) {
       bookingId,
       artistId: booking.artistId,
       clientId: booking.clientId,
-      amountCents: FIXED_FEE_CENTS,
+      type: "platform_fee",
+      amountCents: PLATFORM_FEE_CENTS,
       status: isFreeMode() ? "paid" : "pending",
-      metadata: { label: label || "Appointment Booking Fee" },
+      metadata: { label: label || "Platform Fee" },
       paidAt: isFreeMode() ? new Date() : undefined,
     });
 
-    if (isFreeMode()) {
+    if (isFreeMode())
       return res.json({ ok: true, mode: "free", billingId: bill._id });
-    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -36,8 +36,8 @@ export async function createCheckoutSession(req, res) {
         {
           price_data: {
             currency: "usd",
-            product_data: { name: label || "Appointment Booking Fee" },
-            unit_amount: FIXED_FEE_CENTS,
+            product_data: { name: label || "Platform Fee" },
+            unit_amount: PLATFORM_FEE_CENTS,
           },
           quantity: 1,
         },
@@ -47,7 +47,7 @@ export async function createCheckoutSession(req, res) {
       metadata: {
         bookingId: String(bookingId),
         billingId: String(bill._id),
-        kind: "booking_fee",
+        kind: "platform_fee",
       },
     });
 
@@ -56,7 +56,69 @@ export async function createCheckoutSession(req, res) {
     });
     res.json({ ok: true, url: session.url, billingId: bill._id });
   } catch {
-    res.status(500).json({ error: "checkout_failed" });
+    res.status(500).json({ error: "platform_fee_failed" });
+  }
+}
+
+export async function checkoutDeposit(req, res) {
+  try {
+    const { bookingId, overrideAmountCents } = req.body || {};
+    if (!bookingId) return res.status(400).json({ error: "missing_bookingId" });
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ error: "booking_not_found" });
+
+    const rawAmount = overrideAmountCents ?? booking.depositRequiredCents ?? 0;
+    const amount = Math.max(0, Number(rawAmount));
+
+    const bill = await Billing.create({
+      bookingId,
+      artistId: booking.artistId,
+      clientId: booking.clientId,
+      type: "deposit",
+      amountCents: isFreeMode() ? 0 : amount,
+      status: isFreeMode() ? "paid" : "pending",
+      metadata: { originalRequiredCents: booking.depositRequiredCents },
+      paidAt: isFreeMode() ? new Date() : undefined,
+    });
+
+    if (isFreeMode()) {
+      booking.depositPaidCents = amount;
+      booking.depositPaidAt = new Date();
+      await booking.save();
+      return res.json({ ok: true, mode: "free", billingId: bill._id });
+    }
+
+    if (!stripe)
+      return res.status(500).json({ error: "stripe_not_configured" });
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: { name: "Deposit" },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${process.env.APP_URL}/checkout/success?booking=${bookingId}`,
+      cancel_url: `${process.env.APP_URL}/checkout/cancel?booking=${bookingId}`,
+      metadata: {
+        bookingId: String(bookingId),
+        billingId: String(bill._id),
+        kind: "deposit",
+      },
+    });
+
+    await Billing.findByIdAndUpdate(bill._id, {
+      stripeCheckoutSessionId: session.id,
+    });
+    res.json({ ok: true, url: session.url, billingId: bill._id });
+  } catch {
+    res.status(500).json({ error: "deposit_failed" });
   }
 }
 
@@ -65,7 +127,7 @@ export async function refundBilling(req, res) {
     const { billingId, bookingId } = req.body || {};
     const bill = billingId
       ? await Billing.findById(billingId)
-      : await Billing.findOne({ bookingId });
+      : await Billing.findOne({ bookingId }).sort({ createdAt: -1 });
     if (!bill) return res.status(404).json({ error: "billing_not_found" });
     if (bill.status === "refunded") return res.json(bill);
 
@@ -73,10 +135,6 @@ export async function refundBilling(req, res) {
       bill.status = "refunded";
       bill.refundedAt = new Date();
       await bill.save();
-      if (bill.bookingId)
-        await Booking.findByIdAndUpdate(bill.bookingId, {
-          status: "cancelled",
-        });
       return res.json(bill);
     }
 
@@ -104,60 +162,8 @@ export async function refundBilling(req, res) {
     bill.status = "refunded";
     bill.refundedAt = new Date();
     await bill.save();
-    if (bill.bookingId)
-      await Booking.findByIdAndUpdate(bill.bookingId, { status: "cancelled" });
-
     res.json(bill);
   } catch {
     res.status(500).json({ error: "refund_failed" });
-  }
-}
-
-export async function createPortalSession(req, res) {
-  try {
-    if (isFreeMode())
-      return res.status(400).json({ error: "portal_disabled_in_free_mode" });
-    const { customerId, returnUrl } = req.body || {};
-    if (!customerId)
-      return res.status(400).json({ error: "missing_customerId" });
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: returnUrl || process.env.APP_URL,
-    });
-    res.json({ url: session.url });
-  } catch {
-    res.status(500).json({ error: "portal_failed" });
-  }
-}
-
-export async function scheduleCancel(req, res) {
-  try {
-    if (isFreeMode())
-      return res.status(400).json({ error: "not_applicable_in_free_mode" });
-    const { subscriptionId, when } = req.body || {};
-    if (!subscriptionId)
-      return res.status(400).json({ error: "missing_subscriptionId" });
-    if (when !== "current_period_end" && when !== "next_period_end")
-      return res.status(400).json({ error: "bad_when" });
-    if (!stripe)
-      return res.status(500).json({ error: "stripe_not_configured" });
-
-    if (when === "current_period_end") {
-      await stripe.subscriptions.update(subscriptionId, {
-        cancel_at_period_end: true,
-      });
-    } else {
-      const sub = await stripe.subscriptions.retrieve(subscriptionId);
-      if (!sub.current_period_end)
-        return res.status(400).json({ error: "no_current_period_end" });
-      const interval = sub.items?.data?.[0]?.plan?.interval;
-      const seconds = interval === "year" ? 365 * 24 * 3600 : 30 * 24 * 3600;
-      await stripe.subscriptions.update(subscriptionId, {
-        cancel_at: sub.current_period_end + seconds,
-      });
-    }
-    res.json({ ok: true, subscriptionId });
-  } catch {
-    res.status(500).json({ error: "schedule_cancel_failed" });
   }
 }
