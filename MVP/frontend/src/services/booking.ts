@@ -12,7 +12,7 @@ export type Booking = {
 };
 
 export async function listBookingsForDay(artistId: string, dateISO: string) {
-  return apiGet<Booking[]>("/api/bookings", { artistId, date: dateISO });
+  return apiGet<Booking[]>("/bookings", { artistId, date: dateISO });
 }
 
 export async function createBooking(input: {
@@ -23,13 +23,21 @@ export async function createBooking(input: {
   endISO: string;
   note?: string;
 }) {
-  return apiPost<Booking>("/api/bookings", input);
+  const payload = {
+    artistId: input.artistId,
+    clientId: input.clientId,
+    serviceId: input.serviceId,
+    startAt: input.startISO,
+    endAt: input.endISO,
+    note: input.note,
+  };
+  return apiPost<Booking>("/bookings", payload);
 }
 
 export async function cancelBooking(id: string) {
-  return apiPost<Booking>(`/api/bookings/${id}/cancel`);
+  return apiPost<Booking>(`/bookings/${id}/cancel`);
 }
 
 export async function completeBooking(id: string) {
-  return apiPost<Booking>(`/api/bookings/${id}/complete`);
+  return apiPost<Booking>(`/bookings/${id}/complete`);
 }

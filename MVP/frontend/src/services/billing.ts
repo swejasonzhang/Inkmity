@@ -6,9 +6,9 @@ export async function startCheckout(bookingId: string, label?: string) {
     mode?: "free";
     url?: string;
     billingId?: string;
-  }>("/api/billing/checkout", { bookingId, label });
+  }>("/billing/checkout", { bookingId, label });
 }
 
 export async function refundByBooking(bookingId: string) {
-  return apiPost("/api/billing/refund", { bookingId });
+  return apiPost("/billing/refund", { bookingId });
 }
