@@ -13,11 +13,16 @@ export function useSyncOnAuth() {
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user || syncing.current) return;
 
+    const isVerified =
+      user.primaryEmailAddress?.verification?.status === "verified" ||
+      user.emailAddresses?.some((e) => e.verification?.status === "verified");
+
+    if (!isVerified) return;
+
     const run = async () => {
       syncing.current = true;
       try {
         await request("/users/me");
-
       } catch (e: any) {
         if (String(e.message).includes("404")) {
           const pm = (user.publicMetadata || {}) as any;

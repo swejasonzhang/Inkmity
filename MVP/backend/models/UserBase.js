@@ -35,5 +35,4 @@ UserBaseSchema.methods.getAvatarUrl = function () {
 };
 
 const UserBase = mongoose.models.User || mongoose.model("User", UserBaseSchema);
-
 export default UserBase;

@@ -351,21 +351,27 @@ export default function SignUp() {
       toast.error("Account session is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
       return;
     }
+
     setLoading(true);
     try {
       const result = await signUpAttempt.attemptEmailAddressVerification({ code: code.trim() });
+
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         localStorage.removeItem(LOGOUT_TYPE_KEY);
+
         await syncUserToBackend(role);
+
         toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
         window.location.href = "/dashboard";
-      } else {
-        toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
-        triggerMascotError();
+        return;
       }
+
+      toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
+      triggerMascotError();
+      try { await signOut(); } catch { }
     } catch (err: any) {
       const msg = err?.errors?.[0]?.message || err?.message || "An unexpected error occurred";
       if (String(msg).startsWith("Sync failed")) {
@@ -374,10 +380,13 @@ export default function SignUp() {
         toast.error(msg, { position: "top-center", theme: "dark" });
       }
       triggerMascotError();
+
+      try { await signOut(); } catch { }
     } finally {
       setLoading(false);
     }
   };
+
 
   const mascotEyesClosed = showPassword || pwdFocused;
   const handlePasswordVisibilityChange = (hidden: boolean) => setShowPassword(!hidden);

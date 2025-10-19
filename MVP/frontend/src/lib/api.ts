@@ -4,26 +4,27 @@ const API_BASE =
   (import.meta as any).env?.VITE_API_URL?.replace(/\/+$/, "") ||
   "http://localhost:5005/api";
 
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("auth_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+async function authHeaders(): Promise<Record<string, string>> {
+  try {
+    const token = await (window as any)?.Clerk?.session?.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
 }
 
 export async function apiGet<T>(path: string, qs?: Record<string, string>) {
   const url = new URL(`${API_BASE}${path}`);
   if (qs) Object.entries(qs).forEach(([k, v]) => url.searchParams.set(k, v));
-  const headers: HeadersInit = { ...authHeaders() };
-  const res = await fetch(url.toString(), {
-    credentials: "include",
-    headers,
-  });
+  const headers: HeadersInit = { ...(await authHeaders()) };
+  const res = await fetch(url.toString(), { credentials: "include", headers });
   if (!res.ok) throw new Error(await res.text());
   return (await res.json()) as T;
 }
 
 export async function apiPost<T>(path: string, body?: any) {
   const headers: HeadersInit = {
-    ...authHeaders(),
+    ...(await authHeaders()),
     "Content-Type": "application/json",
   };
   const res = await fetch(`${API_BASE}${path}`, {
@@ -38,7 +39,7 @@ export async function apiPost<T>(path: string, body?: any) {
 
 export async function apiPut<T>(path: string, body?: any) {
   const headers: HeadersInit = {
-    ...authHeaders(),
+    ...(await authHeaders()),
     "Content-Type": "application/json",
   };
   const res = await fetch(`${API_BASE}${path}`, {
@@ -53,7 +54,7 @@ export async function apiPut<T>(path: string, body?: any) {
 
 export async function apiDelete<T>(path: string, body?: any) {
   const headers: HeadersInit = {
-    ...authHeaders(),
+    ...(await authHeaders()),
     "Content-Type": "application/json",
   };
   const res = await fetch(`${API_BASE}${path}`, {
