@@ -71,7 +71,7 @@ export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isSignedIn } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
 
   useAlreadySignedInRedirect({ suppress: awaitingCode });
 
@@ -302,6 +302,7 @@ export default function SignUp() {
     };
 
     const token = await getJwt();
+
     const clientPayload = (() => {
       if (r !== "client") return undefined;
       const minNum = Math.max(0, Math.min(5000, Number(client.budgetMin || 100)));
@@ -311,12 +312,23 @@ export default function SignUp() {
       return { ...client, budgetMin: String(normMin), budgetMax: String(normMax) };
     })();
 
+    const artistPayload = (() => {
+      if (r !== "artist") return undefined;
+      const shop = artist.shop === "__skip__" ? "" : artist.shop;
+      return {
+        ...artist,
+        shop,
+      };
+    })();
+
     const payload: any = {
+      clerkId: userId || undefined,
       email: shared.email,
       role: r,
+      username: `${shared.firstName} ${shared.lastName}`.trim(),
       firstName: shared.firstName,
       lastName: shared.lastName,
-      profile: r === "client" ? clientPayload : { ...artist },
+      profile: r === "client" ? clientPayload : artistPayload,
     };
 
     const res = await fetch(apiUrl("/users/sync"), {
@@ -361,9 +373,7 @@ export default function SignUp() {
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         localStorage.removeItem(LOGOUT_TYPE_KEY);
-
         await syncUserToBackend(role);
-
         toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
         window.location.href = "/dashboard";
         return;
@@ -380,13 +390,11 @@ export default function SignUp() {
         toast.error(msg, { position: "top-center", theme: "dark" });
       }
       triggerMascotError();
-
       try { await signOut(); } catch { }
     } finally {
       setLoading(false);
     }
   };
-
 
   const mascotEyesClosed = showPassword || pwdFocused;
   const handlePasswordVisibilityChange = (hidden: boolean) => setShowPassword(!hidden);
