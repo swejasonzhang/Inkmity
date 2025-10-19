@@ -164,6 +164,16 @@ export default function SignUp() {
     };
   }, []);
 
+  useEffect(() => {
+    setEmailTaken(false);
+    if (abortRef.current) abortRef.current.abort();
+    const email = shared.email.trim().toLowerCase();
+    if (!validateEmail(email)) return;
+    return () => {
+      if (abortRef.current) abortRef.current.abort();
+    };
+  }, [shared.email]);
+
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
     const name = (e as InputLike).target?.name;
     const value = (e as InputLike).target?.value;
@@ -349,20 +359,20 @@ export default function SignUp() {
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         localStorage.removeItem(LOGOUT_TYPE_KEY);
-        try {
-          await syncUserToBackend(role);
-          toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
-          window.location.href = "/dashboard";
-        } catch {
-          toast.error("Signed up but failed to sync user. You can continue; some features may be limited.", { position: "top-center", theme: "dark" });
-          window.location.href = "/dashboard";
-        }
+        await syncUserToBackend(role);
+        toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
+        window.location.href = "/dashboard";
       } else {
         toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
         triggerMascotError();
       }
     } catch (err: any) {
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
+      const msg = err?.errors?.[0]?.message || err?.message || "An unexpected error occurred";
+      if (String(msg).startsWith("Sync failed")) {
+        toast.error("We couldn't finish setting up your account. Please try again.", { position: "top-center", theme: "dark" });
+      } else {
+        toast.error(msg, { position: "top-center", theme: "dark" });
+      }
       triggerMascotError();
     } finally {
       setLoading(false);
