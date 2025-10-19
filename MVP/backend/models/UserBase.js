@@ -17,17 +17,15 @@ const UserBaseSchema = new Schema(
     clerkId: { type: String, required: true, unique: true, index: true },
     username: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    role: {
-      type: String,
-      enum: ["client", "artist"],
-      required: true,
-      index: true,
-    },
     avatar: { type: ImageSchema },
     clerkImageUrl: { type: String },
     references: { type: [String], default: [] },
   },
-  { timestamps: true, discriminatorKey: "role" }
+  {
+    timestamps: true,
+    discriminatorKey: "role",
+    collection: "users",
+  }
 );
 
 UserBaseSchema.methods.getAvatarUrl = function () {
@@ -36,4 +34,6 @@ UserBaseSchema.methods.getAvatarUrl = function () {
   return "https://stock.adobe.com/search?k=default+profile+picture&asset_id=589932782";
 };
 
-export default mongoose.models.User || mongoose.model("User", UserBaseSchema);
+const UserBase = mongoose.models.User || mongoose.model("User", UserBaseSchema);
+
+export default UserBase;

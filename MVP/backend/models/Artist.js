@@ -18,7 +18,7 @@ const ArtistSchema = new Schema(
     freeTattooEligibleUnderUSD: { type: Number, default: 0 },
     lastRewardAt: { type: Date },
   },
-  { timestamps: true }
+  { _id: false } 
 );
 
 export default mongoose.models.Artist ||

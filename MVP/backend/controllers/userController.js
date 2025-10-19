@@ -1,4 +1,6 @@
-import User from "../models/User.js";
+import User from "../models/UserBase.js";
+import "../models/Client.js";
+import "../models/Artist.js";
 
 const SAFE_ROLES = new Set(["client", "artist"]);
 
@@ -40,6 +42,13 @@ export const syncUser = async (req, res) => {
 
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
 
+    const existing = await User.findOne({ clerkId }).lean();
+    if (existing && existing.role && existing.role !== role) {
+      return res
+        .status(409)
+        .json({ error: `User already exists as ${existing.role}` });
+    }
+
     let finalUsername = (username || "").trim();
     if (!finalUsername) {
       const baseSource =
@@ -50,35 +59,56 @@ export const syncUser = async (req, res) => {
       let candidate = base;
       let tries = 0;
       while (tries < 10) {
-        const exists = await User.findOne(
+        const hit = await User.findOne(
           { username: candidate },
           { _id: 1, clerkId: 1 }
         ).lean();
-        if (!exists || String(exists.clerkId) === String(clerkId)) break;
+        if (!hit || String(hit.clerkId) === String(clerkId)) break;
         candidate = `${base}-${randomSuffix()}`;
         tries++;
       }
       finalUsername = candidate;
     }
 
-    const baseDoc = { clerkId, email, role, username: finalUsername };
+    const setDoc = { clerkId, email, username: finalUsername, role };
 
-    if (role === "artist" && profile && typeof profile === "object") {
-      if (profile.location) baseDoc.location = profile.location;
-      if (profile.years) baseDoc.yearsExperience = Number(profile.years) || 0;
-      if (profile.baseRate) {
-        const rate = Number(profile.baseRate) || 0;
-        baseDoc.priceRange = { min: rate, max: rate };
-      }
-      if (Array.isArray(profile.style)) baseDoc.style = profile.style;
-      if (profile.bio) baseDoc.bio = profile.bio;
+    if (role === "client") {
+      const min = Number(profile?.budgetMin ?? 100);
+      const max = Number(profile?.budgetMax ?? 200);
+      const budgetMin = Number.isFinite(min)
+        ? Math.max(0, Math.min(5000, min))
+        : 100;
+      let budgetMax = Number.isFinite(max)
+        ? Math.max(0, Math.min(5000, max))
+        : 200;
+      if (budgetMax <= budgetMin) budgetMax = Math.max(budgetMin + 1, 200);
+
+      Object.assign(setDoc, {
+        budget: { min: budgetMin, max: budgetMax }, // <-- matches Client schema
+        location: profile?.location ?? "",
+        placement: profile?.placement ?? "",
+        size: profile?.size ?? "",
+        notes: profile?.notes ?? "",
+      });
+    } else if (role === "artist") {
+      const years = Number(profile?.years ?? 0);
+      const baseRate = Number(profile?.baseRate ?? 0);
+      Object.assign(setDoc, {
+        location: profile?.location ?? "",
+        yearsExperience: Number.isFinite(years) ? Math.max(0, years) : 0,
+        priceRange: {
+          min: Number.isFinite(baseRate) ? baseRate : 0,
+          max: Number.isFinite(baseRate) ? baseRate : 0,
+        },
+        style: Array.isArray(profile?.style) ? profile.style : [],
+        bio: profile?.bio ?? "",
+      });
+      if (rest && typeof rest === "object") Object.assign(setDoc, rest);
     }
-
-    const updateDoc = role === "client" ? baseDoc : { ...baseDoc, ...rest };
 
     const user = await User.findOneAndUpdate(
       { clerkId },
-      { $set: updateDoc },
+      { $set: setDoc },
       { new: true, upsert: true, runValidators: true }
     );
 

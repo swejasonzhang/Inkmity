@@ -4,16 +4,14 @@ const { Schema } = mongoose;
 
 const ClientSchema = new Schema(
   {
-    budget: {
-      min: { type: Number, default: 100 },
-      max: { type: Number, default: 200 },
-    },
+    budgetMin: { type: Number, default: 100 },
+    budgetMax: { type: Number, default: 200 },
     location: { type: String },
     placement: { type: String },
     size: { type: String },
     notes: { type: String },
   },
-  { timestamps: true }
+  { _id: false } 
 );
 
 export default mongoose.models.Client ||
