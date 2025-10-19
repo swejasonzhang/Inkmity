@@ -22,6 +22,7 @@ type ArtistProfile = {
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
   instagram: string;
   portfolio: string;
+  styles: string[];
 };
 type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
 type InputLike = { target: { name: string; value: string } };
@@ -56,6 +57,7 @@ export default function SignUp() {
     travelFrequency: "rare",
     instagram: "",
     portfolio: "",
+    styles: [],
   });
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
@@ -180,7 +182,19 @@ export default function SignUp() {
     if (!name) return;
     setClient((prev) => ({ ...prev, [name]: value }));
   };
-  const handleArtist = (e: ChangeEvent<HTMLInputElement>) => setArtist({ ...artist, [e.target.name]: e.target.value });
+
+  const handleArtist = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === "stylesCSV") {
+      const arr = value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      setArtist((prev) => ({ ...prev, styles: arr }));
+    } else {
+      setArtist((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
   const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
   const minVal = Math.max(0, Math.min(5000, num(client.budgetMin)));
@@ -188,7 +202,15 @@ export default function SignUp() {
 
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
   const allClientValid = !!client.location && maxVal > minVal;
-  const allArtistValid = !!artist.location && artist.location !== "__unset__" && !!artist.years && artist.years !== "__unset__" && !!artist.baseRate && artist.baseRate !== "__unset__";
+  const allArtistValid =
+    !!artist.location &&
+    artist.location !== "__unset__" &&
+    !!artist.years &&
+    artist.years !== "__unset__" &&
+    !!artist.baseRate &&
+    artist.baseRate !== "__unset__" &&
+    Array.isArray(artist.styles) &&
+    artist.styles.length >= 1;
 
   const slides = useMemo(() => {
     if (role === "client") {
@@ -315,10 +337,7 @@ export default function SignUp() {
     const artistPayload = (() => {
       if (r !== "artist") return undefined;
       const shop = artist.shop === "__skip__" ? "" : artist.shop;
-      return {
-        ...artist,
-        shop,
-      };
+      return { ...artist, shop, styles: Array.isArray(artist.styles) ? artist.styles : [] };
     })();
 
     const payload: any = {

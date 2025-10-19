@@ -2,41 +2,32 @@ import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
 import cloudinary from "../lib/cloudinary.js";
-import mongoose from "mongoose";
 
 const authObj = (req) =>
   typeof req.auth === "function" ? req.auth() : req.auth;
 const getClerkId = (req) => authObj(req)?.userId || null;
 const SAFE_ROLES = new Set(["client", "artist"]);
 
-function trimStr(v) {
-  return typeof v === "string" ? v.trim() : v;
-}
+const slugify = (s = "") =>
+  String(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 24);
 
-function buildUsername(firstName, lastName) {
-  const base = `${trimStr(firstName) ?? ""} ${trimStr(lastName) ?? ""}`.trim();
-  return base || "User";
-}
-
-async function ensureUniqueUsername(desired, selfClerkId) {
-  let candidate = desired;
-  let n = 1;
-  while (true) {
-    const hit = await User.findOne(
-      { username: candidate },
-      { _id: 1, clerkId: 1 }
-    ).lean();
-    if (!hit || String(hit.clerkId) === String(selfClerkId)) return candidate;
-    n += 1;
-    candidate = `${desired} (${n})`;
-  }
+function randomSuffix(n = 4) {
+  const chars = "abcdefghjkmnpqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < n; i++)
+    out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
 }
 
 export async function getMe(req, res) {
   const clerkId = getClerkId(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const me = await User.findOne({ clerkId }).lean();
-  if (!me) return res.status(200).json({ exists: false });
+  if (!me) return res.status(404).json({ error: "Not found" });
   res.json(me);
 }
 
@@ -131,7 +122,7 @@ export async function getArtists(_req, res) {
   const items = await User.find({ role: "artist" })
     .sort({ rating: -1, createdAt: -1 })
     .select(
-      "_id username role location shop yearsExperience baseRate bookingPreference travelFrequency rating"
+      "_id username role location shop yearsExperience baseRate bookingPreference travelFrequency rating style"
     )
     .lean();
   res.json(items);
@@ -139,8 +130,6 @@ export async function getArtists(_req, res) {
 
 export async function getArtistById(req, res) {
   const { id } = req.params;
-  if (!mongoose.isValidObjectId(id))
-    return res.status(400).json({ error: "bad_id" });
   const doc = await User.findOne({ _id: id, role: "artist" }).lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
   res.json(doc);
@@ -151,36 +140,48 @@ export async function syncUser(req, res) {
     const authClerkId = getClerkId(req);
     const {
       clerkId: bodyClerkId,
-      email: rawEmail,
+      email,
       role: rawRole,
-      username: rawUsername,
+      username,
       firstName,
       lastName,
       profile,
     } = req.body || {};
-
-    const email = String(rawEmail || "")
-      .trim()
-      .toLowerCase();
     const clerkId = authClerkId || bodyClerkId;
-    if (!clerkId || !email || !rawRole) {
+    if (!clerkId || !email || !rawRole)
       return res
         .status(400)
         .json({ error: "clerkId, email, role are required" });
-    }
 
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
 
-    const existingByClerk = await User.findOne({ clerkId });
-    const existingByEmail = !existingByClerk
-      ? await User.findOne({ email })
-      : null;
-    const existing = existingByClerk || existingByEmail || null;
+    const existing = await User.findOne({ clerkId }).lean();
+    if (existing && existing.role && existing.role !== role) {
+      return res
+        .status(409)
+        .json({ error: `User already exists as ${existing.role}` });
+    }
 
-    let desiredUsername = buildUsername(firstName, lastName);
-    if (rawUsername && String(rawUsername).trim())
-      desiredUsername = String(rawUsername).trim();
-    const finalUsername = await ensureUniqueUsername(desiredUsername, clerkId);
+    let finalUsername = String(username || "").trim();
+    if (!finalUsername) {
+      const baseSource =
+        (firstName && lastName && `${firstName} ${lastName}`) ||
+        email.split("@")[0] ||
+        "user";
+      const base = slugify(baseSource.replace(/\s+/g, "-")) || "user";
+      let candidate = base;
+      let tries = 0;
+      while (tries < 10) {
+        const hit = await User.findOne(
+          { username: candidate },
+          { _id: 1, clerkId: 1 }
+        ).lean();
+        if (!hit || String(hit.clerkId) === String(clerkId)) break;
+        candidate = `${base}-${randomSuffix()}`;
+        tries++;
+      }
+      finalUsername = candidate;
+    }
 
     const setDoc = { clerkId, email, username: finalUsername, role };
 
@@ -197,55 +198,51 @@ export async function syncUser(req, res) {
       Object.assign(setDoc, {
         budgetMin,
         budgetMax,
-        location: trimStr(profile?.location) ?? "",
-        placement: trimStr(profile?.placement) ?? "",
-        size: trimStr(profile?.size) ?? "",
-        notes: trimStr(profile?.notes) ?? "",
+        location: profile?.location ?? "",
+        placement: profile?.placement ?? "",
+        size: profile?.size ?? "",
+        notes: profile?.notes ?? "",
       });
     } else if (role === "artist") {
-      const years = Number(profile?.years ?? profile?.yearsExperience ?? 0);
+      const years = Number(profile?.years ?? 0);
       const baseRate = Number(profile?.baseRate ?? 0);
       const bookingPreference = profile?.bookingPreference || "open";
       const travelFrequency = profile?.travelFrequency || "rare";
       const shop = profile?.shop || "";
+      const styles = Array.isArray(profile?.styles)
+        ? profile.styles
+        : Array.isArray(profile?.style)
+        ? profile.style
+        : [];
+
       Object.assign(setDoc, {
-        location: trimStr(profile?.location) ?? "",
+        location: profile?.location ?? "",
         shop,
         yearsExperience: Number.isFinite(years) ? Math.max(0, years) : 0,
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
         bookingPreference,
         travelFrequency,
-        style: Array.isArray(profile?.style) ? profile.style : [],
-        bio: trimStr(profile?.bio) ?? "",
+        style: styles
+          .filter((s) => typeof s === "string")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        bio: profile?.bio ?? "",
       });
     }
 
-    let saved;
-    if (existing) {
-      if (existing.role && existing.role !== role) {
-        return res
-          .status(409)
-          .json({ error: `User already exists as ${existing.role}` });
+    const user = await User.findOneAndUpdate(
+      { clerkId },
+      { $set: setDoc },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
       }
-      await User.updateOne(
-        { _id: existing._id },
-        { $set: setDoc },
-        { runValidators: true }
-      );
-      saved = await User.findById(existing._id).lean();
-    } else {
-      saved = await User.create(setDoc);
-      saved = saved.toObject();
-    }
+    );
 
-    res.status(200).json(saved);
+    res.status(200).json(user);
   } catch (error) {
-    if (error && error.code === 11000) {
-      return res
-        .status(409)
-        .json({ error: "duplicate_key", details: error.keyValue || {} });
-    }
-    console.error("[syncUser] failed:", error);
     res.status(500).json({ error: "Failed to sync user" });
   }
 }
