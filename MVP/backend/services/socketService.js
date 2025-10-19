@@ -7,33 +7,59 @@ export const initSocket = (ioInstance) => {
   io = ioInstance;
 
   io.on("connection", (socket) => {
-    console.log("✅ Socket connected:", socket.id);
-
-    socket.on("register", (userId) => {
-      onlineUsers.set(userId, socket.id);
-      console.log(`User ${userId} registered with socket ${socket.id}`);
+    socket.on("register", (clerkId) => {
+      if (typeof clerkId !== "string" || !clerkId) return;
+      onlineUsers.set(clerkId, socket.id);
     });
 
-    socket.on("send_message", async (data) => {
-      const { sender, recipient, text } = data;
-
-      try {
-        const message = await Message.create({ sender, recipient, text });
-
-        const recipientSocket = onlineUsers.get(recipient);
-        if (recipientSocket) {
-          io.to(recipientSocket).emit("receive_message", message);
+    socket.on("unregister", () => {
+      for (const [uid, sid] of onlineUsers.entries()) {
+        if (sid === socket.id) {
+          onlineUsers.delete(uid);
+          break;
         }
-      } catch (err) {
-        console.error("❌ Error saving message:", err);
+      }
+    });
+
+    socket.on("send_message", async (data, ack) => {
+      try {
+        const { senderId, receiverId, text, meta } = data || {};
+        if (!senderId || !receiverId || !text) {
+          const err = { error: "missing_fields" };
+          if (ack) return ack(err);
+          return;
+        }
+
+        const message = await Message.create({
+          senderId: String(senderId),
+          receiverId: String(receiverId),
+          text: String(text),
+          meta: meta && typeof meta === "object" ? meta : undefined,
+        });
+
+        const payload = {
+          senderId: message.senderId,
+          receiverId: message.receiverId,
+          text: message.text,
+          timestamp: message.createdAt.getTime(),
+          meta: message.meta || undefined,
+        };
+
+        const recipientSocket = onlineUsers.get(String(receiverId));
+        if (recipientSocket) {
+          io.to(recipientSocket).emit("receive_message", payload);
+        }
+
+        if (ack) ack({ ok: true, message: payload });
+      } catch {
+        if (ack) ack({ error: "save_failed" });
       }
     });
 
     socket.on("disconnect", () => {
-      for (const [userId, socketId] of onlineUsers.entries()) {
-        if (socketId === socket.id) {
-          onlineUsers.delete(userId);
-          console.log(`User ${userId} disconnected`);
+      for (const [uid, sid] of onlineUsers.entries()) {
+        if (sid === socket.id) {
+          onlineUsers.delete(uid);
           break;
         }
       }
