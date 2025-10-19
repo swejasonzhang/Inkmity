@@ -6,7 +6,7 @@ const ArtistSchema = new Schema(
   {
     location: { type: String },
     shop: { type: String },
-    style: [{ type: String }],
+    styles: [{ type: String, index: true }],
     bio: { type: String },
     priceRange: { min: Number, max: Number },
     rating: { type: Number, default: 0, index: true },
@@ -14,11 +14,6 @@ const ArtistSchema = new Schema(
     reviewsCount: { type: Number, default: 0, index: true },
     yearsExperience: { type: Number, default: 0, min: 0, index: true },
     bookingsCount: { type: Number, default: 0 },
-    totalBookingFeesPaid: { type: Number, default: 0 },
-    discountPercent: { type: Number, default: 0, min: 0, max: 100 },
-    freeTattooEligibleUnderUSD: { type: Number, default: 0 },
-    lastRewardAt: { type: Date },
-
     bookingPreference: {
       type: String,
       enum: ["open", "waitlist", "closed", "referral", "guest"],
@@ -29,7 +24,7 @@ const ArtistSchema = new Schema(
       enum: ["rare", "sometimes", "often", "touring", "guest_only"],
       default: "rare",
     },
-    baseRate: { type: Number, default: 0 }, 
+    baseRate: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

@@ -10,6 +10,10 @@ const ClientSchema = new Schema(
     placement: { type: String },
     size: { type: String },
     notes: { type: String },
+    totalFeesPaid: { type: Number, default: 0 },
+    rewardsPoints: { type: Number, default: 0, index: true },
+    lifetimeDiscountUsd: { type: Number, default: 0 },
+    lastRewardAt: { type: Date },
   },
   { timestamps: true }
 );
