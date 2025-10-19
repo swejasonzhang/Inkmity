@@ -13,12 +13,6 @@ export function useSyncOnAuth() {
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user || syncing.current) return;
 
-    const isVerified =
-      user.primaryEmailAddress?.verification?.status === "verified" ||
-      user.emailAddresses?.some((e) => e.verification?.status === "verified");
-
-    if (!isVerified) return;
-
     const run = async () => {
       syncing.current = true;
       try {
@@ -27,7 +21,7 @@ export function useSyncOnAuth() {
         if (String(e.message).includes("404")) {
           const pm = (user.publicMetadata || {}) as any;
           const role: Role = pm.role === "artist" ? "artist" : "client";
-          const profile = pm.profile || undefined;
+          const profile = pm.profile || {};
 
           const payload = buildSyncPayload({
             clerkId: user.id,
@@ -35,8 +29,8 @@ export function useSyncOnAuth() {
             role,
             firstName: user.firstName || undefined,
             lastName: user.lastName || undefined,
+            username: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim(),
             profile,
-            username: pm.username,
           });
 
           await request("/users/sync", {
