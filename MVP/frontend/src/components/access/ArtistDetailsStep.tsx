@@ -9,6 +9,7 @@ type ArtistProfile = {
     baseRate: string;
     bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
     travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
+    styles?: string[];
 };
 
 export default function ArtistDetailsStep({
@@ -32,6 +33,44 @@ export default function ArtistDetailsStep({
                 } as unknown as React.ChangeEvent<HTMLInputElement>;
                 onChange(syntheticEvent);
             };
+
+    const styles = Array.isArray(artist.styles) ? artist.styles : [];
+    const setStylesCSV = (next: string[]) => {
+        const syntheticEvent = {
+            target: { name: "stylesCSV", value: next.join(", ") },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        onChange(syntheticEvent);
+    };
+    const toggleStyle = (style: string) => {
+        const s = style.trim();
+        const has = styles.includes(s);
+        const next = has ? styles.filter((x) => x !== s) : [...styles, s];
+        setStylesCSV(next);
+    };
+    const setStylesFromCSV = (csv: string) => {
+        const next = csv
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        setStylesCSV(next);
+    };
+
+    const SUGGESTED_STYLES = [
+        "Fine Line",
+        "Traditional",
+        "Neo-Traditional",
+        "Blackwork",
+        "Japanese",
+        "Realism",
+        "Surrealism",
+        "Watercolor",
+        "Tribal",
+        "Geometric",
+        "Script",
+        "Illustrative",
+        "Micro",
+        "Dotwork",
+    ];
 
     const inputCls =
         "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20";
@@ -164,6 +203,41 @@ export default function ArtistDetailsStep({
                         </div>
                     )}
                     <p className={helpCls}>Choose an hourly rate or enter a custom amount.</p>
+                </div>
+
+                <div className="space-y-1.5 md:col-span-2">
+                    <label className={labelCls}>Specialty styles</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {SUGGESTED_STYLES.map((s) => {
+                            const checked = styles.includes(s);
+                            return (
+                                <label
+                                    key={s}
+                                    className={`cursor-pointer select-none rounded-xl border px-3 py-2 text-sm ${checked ? "border-white/30 bg-white/10 text-white" : "border-white/10 bg-white/5 text-white/80"
+                                        }`}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        className="mr-2 align-middle accent-white"
+                                        checked={checked}
+                                        onChange={() => toggleStyle(s)}
+                                    />
+                                    {s}
+                                </label>
+                            );
+                        })}
+                    </div>
+                    <div className="mt-3">
+                        <input
+                            name="stylesCSV"
+                            type="text"
+                            placeholder="Add more styles, comma-separated (e.g., Minimalist, Ornamental)"
+                            className={inputCls}
+                            value={styles.join(", ")}
+                            onChange={(e) => setStylesFromCSV(e.target.value)}
+                        />
+                    </div>
+                    <p className={helpCls}>Pick one or more styles and/or type your own. At least one is required.</p>
                 </div>
 
                 <div className="space-y-1.5">
