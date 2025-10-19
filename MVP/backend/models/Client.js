@@ -11,7 +11,7 @@ const ClientSchema = new Schema(
     size: { type: String },
     notes: { type: String },
   },
-  { _id: false } 
+  { timestamps: true }
 );
 
 export default mongoose.models.Client ||

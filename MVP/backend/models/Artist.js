@@ -5,6 +5,7 @@ const { Schema } = mongoose;
 const ArtistSchema = new Schema(
   {
     location: { type: String },
+    shop: { type: String },
     style: [{ type: String }],
     bio: { type: String },
     priceRange: { min: Number, max: Number },
@@ -17,8 +18,20 @@ const ArtistSchema = new Schema(
     discountPercent: { type: Number, default: 0, min: 0, max: 100 },
     freeTattooEligibleUnderUSD: { type: Number, default: 0 },
     lastRewardAt: { type: Date },
+
+    bookingPreference: {
+      type: String,
+      enum: ["open", "waitlist", "closed", "referral", "guest"],
+      default: "open",
+    },
+    travelFrequency: {
+      type: String,
+      enum: ["rare", "sometimes", "often", "touring", "guest_only"],
+      default: "rare",
+    },
+    baseRate: { type: Number, default: 0 }, 
   },
-  { _id: false } 
+  { timestamps: true }
 );
 
 export default mongoose.models.Artist ||

@@ -3,15 +3,19 @@ import "../models/Client.js";
 import "../models/Artist.js";
 import cloudinary from "../lib/cloudinary.js";
 
+const authObj = (req) =>
+  typeof req.auth === "function" ? req.auth() : req.auth;
+const getClerkId = (req) => authObj(req)?.userId || null;
+
 const SAFE_ROLES = new Set(["client", "artist"]);
 
-function slugify(s = "") {
-  return String(s)
+const slugify = (s = "") =>
+  String(s)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "")
     .slice(0, 24);
-}
+
 function randomSuffix(n = 4) {
   const chars = "abcdefghjkmnpqrstuvwxyz23456789";
   let out = "";
@@ -20,25 +24,20 @@ function randomSuffix(n = 4) {
   return out;
 }
 
-export const getMe = async (req, res) => {
-  try {
-    const clerkId = req.auth?.userId;
-    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-    const me = await User.findOne({ clerkId });
-    if (!me) return res.status(404).json({ error: "User not found" });
-    res.json(me);
-  } catch {
-    res.status(500).json({ error: "Failed to fetch profile" });
-  }
-};
+export async function getMe(req, res) {
+  const clerkId = getClerkId(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const me = await User.findOne({ clerkId }).lean();
+  if (!me) return res.status(404).json({ error: "Not found" });
+  res.json(me);
+}
 
-export const getAvatarSignature = async (_req, res) => {
+export async function getAvatarSignature(_req, res) {
   try {
     const timestamp = Math.round(Date.now() / 1000);
     const folder = "inkmity/avatars";
-    const paramsToSign = { timestamp, folder };
     const signature = cloudinary.utils.api_sign_request(
-      paramsToSign,
+      { timestamp, folder },
       process.env.CLOUDINARY_API_SECRET
     );
     res.json({
@@ -49,109 +48,97 @@ export const getAvatarSignature = async (_req, res) => {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
   } catch {
-    res.status(500).json({ error: "Failed to create signature" });
+    res.status(500).json({ error: "signature_failed" });
   }
-};
+}
 
-export const updateMyAvatar = async (req, res) => {
+export async function updateMyAvatar(req, res) {
+  const clerkId = getClerkId(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const { url, publicId, alt, width, height } = req.body || {};
+  if (!url) return res.status(400).json({ error: "url_required" });
+  const user = await User.findOneAndUpdate(
+    { clerkId },
+    { $set: { avatar: { url, publicId, alt, width, height } } },
+    { new: true }
+  ).lean();
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json(user);
+}
+
+export async function deleteMyAvatar(req, res) {
+  const clerkId = getClerkId(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const user = await User.findOne({ clerkId });
+  if (!user) return res.status(404).json({ error: "User not found" });
+  const publicId = user.avatar?.publicId;
+  user.avatar = undefined;
+  await user.save();
+  if (publicId) {
+    try {
+      await cloudinary.uploader.destroy(publicId);
+    } catch {}
+  }
+  res.json({ ok: true });
+}
+
+export async function getReferenceSignature(_req, res) {
   try {
-    const clerkId = req.auth?.userId;
-    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-
-    const { url, publicId, width, height, alt } = req.body || {};
-    if (!url) return res.status(400).json({ error: "url required" });
-
-    const user = await User.findOneAndUpdate(
-      { clerkId },
-      {
-        $set: {
-          avatar: { url, publicId, width, height, alt: alt || "Profile photo" },
-        },
-      },
-      { new: true }
+    const timestamp = Math.round(Date.now() / 1000);
+    const folder = "inkmity/references";
+    const signature = cloudinary.utils.api_sign_request(
+      { timestamp, folder },
+      process.env.CLOUDINARY_API_SECRET
     );
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    res.json(user);
+    res.json({
+      timestamp,
+      folder,
+      signature,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    });
   } catch {
-    res.status(500).json({ error: "Failed to update avatar" });
+    res.status(500).json({ error: "signature_failed" });
   }
-};
+}
 
-export const deleteMyAvatar = async (req, res) => {
+export async function saveMyReferences(req, res) {
   try {
-    const clerkId = req.auth?.userId;
+    const clerkId = getClerkId(req);
     if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-
-    const user = await User.findOneAndUpdate(
-      { clerkId },
-      { $unset: { avatar: 1 } },
-      { new: true }
-    );
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    res.json(user);
-  } catch {
-    res.status(500).json({ error: "Failed to delete avatar" });
-  }
-};
-
-/* ========= REFERENCES (tattoo-specific) ========= */
-export const getReferenceSignature = async (_req, res) => {
-  res.status(200).json({
-    uploadPreset: "unsigned",
-    ts: Date.now(),
-    signature: "dev-signature-placeholder",
-    cloudName: "dev",
-    folder: "references",
-  });
-};
-
-export const saveMyReferences = async (req, res) => {
-  try {
-    const clerkId = req.auth?.userId;
-    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-
     const urls = Array.isArray(req.body?.urls) ? req.body.urls : [];
     const user = await User.findOneAndUpdate(
       { clerkId },
       { $set: { references: urls } },
       { new: true }
     ).lean();
-
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json({ ok: true, references: user.references || [] });
   } catch {
-    res.status(500).json({ error: "Failed to save references" });
+    res.status(500).json({ error: "save_references_failed" });
   }
-};
+}
 
-/* ========= ARTISTS ========= */
-export const getArtists = async (_req, res) => {
-  try {
-    const artists = await User.find({ role: "artist" })
-      .sort({ rating: -1 })
-      .select("_id username location style priceRange rating yearsExperience");
-    res.json(artists);
-  } catch {
-    res.status(500).json({ error: "Failed to fetch artists" });
-  }
-};
+export async function getArtists(_req, res) {
+  const items = await User.find({ role: "artist" })
+    .sort({ rating: -1, createdAt: -1 })
+    .select(
+      "_id username role location shop yearsExperience baseRate bookingPreference travelFrequency rating"
+    )
+    .lean();
+  res.json(items);
+}
 
-export const getArtistById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const artist = await User.findOne({ _id: id, role: "artist" });
-    if (!artist) return res.status(404).json({ error: "Artist not found" });
-    res.json(artist);
-  } catch {
-    res.status(500).json({ error: "Failed to fetch artist" });
-  }
-};
+export async function getArtistById(req, res) {
+  const { id } = req.params;
+  const doc = await User.findOne({ _id: id, role: "artist" }).lean();
+  if (!doc) return res.status(404).json({ error: "not_found" });
+  res.json(doc);
+}
 
-export const syncUser = async (req, res) => {
+export async function syncUser(req, res) {
   try {
-    const authClerkId = req.auth?.userId || null;
+    const authClerkId = getClerkId(req);
     const {
       clerkId: bodyClerkId,
       email,
@@ -160,7 +147,6 @@ export const syncUser = async (req, res) => {
       firstName,
       lastName,
       profile,
-      ...rest
     } = req.body || {};
 
     const clerkId = authClerkId || bodyClerkId;
@@ -179,12 +165,12 @@ export const syncUser = async (req, res) => {
         .json({ error: `User already exists as ${existing.role}` });
     }
 
-    let finalUsername = (username || "").trim();
+    let finalUsername = String(username || "").trim();
     if (!finalUsername) {
       const baseSource =
-        firstName && lastName
-          ? `${firstName}-${lastName}`
-          : email?.split("@")[0] || "user";
+        (firstName && lastName && `${firstName}-${lastName}`) ||
+        email.split("@")[0] ||
+        "user";
       const base = slugify(baseSource) || "user";
       let candidate = base;
       let tries = 0;
@@ -213,7 +199,8 @@ export const syncUser = async (req, res) => {
         : 200;
       if (budgetMax <= budgetMin) budgetMax = Math.max(budgetMin + 1, 200);
       Object.assign(setDoc, {
-        budget: { min: budgetMin, max: budgetMax },
+        budgetMin,
+        budgetMax,
         location: profile?.location ?? "",
         placement: profile?.placement ?? "",
         size: profile?.size ?? "",
@@ -222,33 +209,35 @@ export const syncUser = async (req, res) => {
     } else if (role === "artist") {
       const years = Number(profile?.years ?? 0);
       const baseRate = Number(profile?.baseRate ?? 0);
+      const bookingPreference = profile?.bookingPreference || "open";
+      const travelFrequency = profile?.travelFrequency || "rare";
+      const shop = profile?.shop || "";
+
       Object.assign(setDoc, {
         location: profile?.location ?? "",
+        shop,
         yearsExperience: Number.isFinite(years) ? Math.max(0, years) : 0,
-        priceRange: {
-          min: Number.isFinite(baseRate) ? baseRate : 0,
-          max: Number.isFinite(baseRate) ? baseRate : 0,
-        },
+        baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
+        bookingPreference,
+        travelFrequency,
         style: Array.isArray(profile?.style) ? profile.style : [],
         bio: profile?.bio ?? "",
       });
-      if (rest && typeof rest === "object") Object.assign(setDoc, rest);
     }
 
     const user = await User.findOneAndUpdate(
       { clerkId },
       { $set: setDoc },
-      { new: true, upsert: true, runValidators: true }
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      }
     );
 
     res.status(200).json(user);
   } catch (error) {
-    if (error?.code === 11000 && (req.auth?.userId || req.body?.clerkId)) {
-      const existing = await User.findOne({
-        clerkId: req.auth?.userId || req.body.clerkId,
-      });
-      return res.status(200).json(existing);
-    }
     res.status(500).json({ error: "Failed to sync user" });
   }
-};
+}

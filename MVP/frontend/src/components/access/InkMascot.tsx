@@ -151,8 +151,9 @@ export default function InkMascot({
             transition={{ duration: 0.1 }}
           />
         </g>
-
+        
         <motion.path
+          d={smile}
           animate={{ d: hasError ? frown : smile }}
           transition={{ duration: 0.25, ease: bezier }}
           stroke="white"
