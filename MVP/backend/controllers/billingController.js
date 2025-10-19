@@ -8,7 +8,6 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 const isFreeMode = () =>
   process.env.FREE_MODE === "1" || process.env.NODE_ENV === "test";
-
 const PLATFORM_FEE_CENTS = isFreeMode() ? 0 : 1000;
 
 export async function checkoutPlatformFee(req, res) {
@@ -25,14 +24,14 @@ export async function checkoutPlatformFee(req, res) {
       clientId: booking.clientId,
       type: "platform_fee",
       amountCents: PLATFORM_FEE_CENTS,
+      paidBy: "client",
       status: isFreeMode() ? "paid" : "pending",
-      metadata: { label: label || "Platform Fee" },
+      metadata: { label: label || "Platform Fee", paidBy: "client" },
       paidAt: isFreeMode() ? new Date() : undefined,
     });
 
-    if (isFreeMode()) {
+    if (isFreeMode())
       return res.json({ ok: true, mode: "free", billingId: bill._id });
-    }
 
     if (!stripe)
       return res.status(500).json({ error: "stripe_not_configured" });
@@ -55,13 +54,13 @@ export async function checkoutPlatformFee(req, res) {
         bookingId: String(bookingId),
         billingId: String(bill._id),
         kind: "platform_fee",
+        paidBy: "client",
       },
     });
 
     await Billing.findByIdAndUpdate(bill._id, {
       stripeCheckoutSessionId: session.id,
     });
-
     return res.json({ ok: true, url: session.url, billingId: bill._id });
   } catch {
     return res.status(500).json({ error: "platform_fee_failed" });
@@ -85,8 +84,12 @@ export async function checkoutDeposit(req, res) {
       clientId: booking.clientId,
       type: "deposit",
       amountCents: isFreeMode() ? 0 : amount,
+      paidBy: "client",
       status: isFreeMode() ? "paid" : "pending",
-      metadata: { originalRequiredCents: booking.depositRequiredCents },
+      metadata: {
+        originalRequiredCents: booking.depositRequiredCents,
+        paidBy: "client",
+      },
       paidAt: isFreeMode() ? new Date() : undefined,
     });
 
@@ -118,13 +121,13 @@ export async function checkoutDeposit(req, res) {
         bookingId: String(bookingId),
         billingId: String(bill._id),
         kind: "deposit",
+        paidBy: "client",
       },
     });
 
     await Billing.findByIdAndUpdate(bill._id, {
       stripeCheckoutSessionId: session.id,
     });
-
     return res.json({ ok: true, url: session.url, billingId: bill._id });
   } catch {
     return res.status(500).json({ error: "deposit_failed" });
@@ -160,9 +163,8 @@ export async function refundBilling(req, res) {
           ? sess.payment_intent
           : sess.payment_intent?.id;
     }
-    if (!paymentIntentId) {
+    if (!paymentIntentId)
       return res.status(400).json({ error: "no_payment_intent_to_refund" });
-    }
 
     await stripe.refunds.create({
       payment_intent: paymentIntentId,
