@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
@@ -31,22 +31,37 @@ import Lettering from "@/assets/Lettering.png";
 import Geometric from "@/assets/Geometric.png";
 import Traditional from "@/assets/Traditional.png";
 
-const Shell = ({ icon, title, children }) => (
-  <Card className="mx-auto w-full max-w-2xl min-h-[24rem] md:min-h-[28rem] bg-white/[0.04] border-white/15 backdrop-blur flex flex-col">
-    <CardHeader className="flex flex-col items-center justify-center space-y-3">
+const Shell = ({
+  icon,
+  title,
+  children,
+  compact = true,
+  heightClass,
+  widthClass,
+}) => (
+  <Card
+    className={`mx-auto w-full ${widthClass ?? "max-w-2xl"} ${
+      heightClass
+        ? heightClass
+        : compact
+        ? "min-h-[14rem] sm:min-h-[16rem] md:min-h-[18rem]"
+        : "min-h-[20rem] sm:min-h-[22rem] md:min-h-[28rem]"
+    } bg-white/[0.04] border-white/15 backdrop-blur flex flex-col`}
+  >
+    <CardHeader className="flex flex-col items-center justify-center space-y-2 px-4 pt-4 pb-1 md:space-y-3 md:px-6 md:pt-6">
       {icon
         ? React.createElement(icon, { className: "h-5 w-5 text-white/80" })
         : null}
-      <CardTitle className="text-xl text-center">{title}</CardTitle>
-      <Separator className="bg-white/15 w-24" />
+      <CardTitle className="text-lg md:text-xl text-center">{title}</CardTitle>
+      <Separator className="bg-white/15 w-20 md:w-24" />
     </CardHeader>
-    <CardContent className="flex-1 flex flex-col items-center justify-center text-center">
+    <CardContent className="flex-1 flex flex-col items-center justify-center text-center px-4 pb-4 md:px-6 md:pb-6">
       {children}
     </CardContent>
   </Card>
 );
 
-export function MessagingCard() {
+export function MessagingCard({ compact = true }) {
   const msgs = [
     { me: false, name: "Client", text: "Hey! Can you do fine-line roses?" },
     { me: true, name: "Artist", text: "Absolutely. What size and placement?" },
@@ -54,8 +69,8 @@ export function MessagingCard() {
     { me: true, name: "Artist", text: "Locked. Sending sketch in chat." },
   ];
   return (
-    <Shell icon={MessageSquare} title="Real-time messaging">
-      <div className="w-full max-w-md space-y-3">
+    <Shell icon={MessageSquare} title="Real-time messaging" compact={compact}>
+      <div className="w-full max-w-md space-y-2 md:space-y-3">
         {msgs.map((m, i) => (
           <motion.div
             key={i}
@@ -66,14 +81,14 @@ export function MessagingCard() {
             className={`flex ${m.me ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm leading-snug border ${
+              className={`max-w-[82%] rounded-2xl px-3 py-1.5 text-xs md:text-sm leading-snug border ${
                 m.me
                   ? "bg-white !text-black border-white rounded-br-sm"
                   : "bg-black !text-white border-white/20 rounded-bl-sm"
               }`}
             >
               <div
-                className={`mb-0.5 text-[10px] uppercase tracking-wide ${
+                className={`mb-0.5 text-[9px] md:text-[10px] uppercase tracking-wide ${
                   m.me ? "!text-black/70" : "!text-white/70"
                 }`}
               >
@@ -84,7 +99,7 @@ export function MessagingCard() {
           </motion.div>
         ))}
       </div>
-      <div className="mt-6 flex gap-2 justify-center">
+      <div className="mt-3 md:mt-6 flex gap-2 justify-center">
         <Badge
           variant="outline"
           className="bg-white/5 border-white/15 text-white/80 gap-1"
@@ -102,7 +117,7 @@ export function MessagingCard() {
   );
 }
 
-export function FiltersCard() {
+export function FiltersCard({ compact = true }) {
   const chips = [
     "Style: Fine-line",
     "City: NYC",
@@ -115,8 +130,8 @@ export function FiltersCard() {
   ];
 
   return (
-    <Shell icon={Filter} title="Fast, powerful filters">
-      <div className="w-full flex flex-col items-center justify-center gap-2 text-center">
+    <Shell icon={Filter} title="Fast, powerful filters" compact={compact}>
+      <div className="w-full flex flex-wrap items-center justify-center gap-2 text-center max-w-md">
         {chips.map((c, i) => (
           <motion.div
             key={c}
@@ -124,29 +139,28 @@ export function FiltersCard() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.25, delay: i * 0.06 }}
-            className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs"
+            className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] md:text-xs"
           >
             {c}
           </motion.div>
         ))}
       </div>
 
-      <div className="mt-6 w-full flex items-center justify-center">
+      <div className="mt-3 md:mt-6 w-full flex items-center justify-center">
         <div className="w-full max-w-md">
           <Progress value={82} className="h-2 bg-white/5" />
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-white/60 text-center">
+      <p className="mt-2 text-[11px] md:text-xs text-white/60 text-center">
         82 artists match. Refine in seconds.
       </p>
     </Shell>
   );
 }
 
-export function RewardsCard() {
+export function RewardsCard({ compact = true }) {
   const points = 1240;
-
   const milestones = [
     { level: 1, at: 500, reward: "$5 off" },
     { level: 2, at: 1000, reward: "$10 off" },
@@ -154,7 +168,6 @@ export function RewardsCard() {
     { level: 4, at: 3500, reward: "Flash token" },
     { level: 5, at: 5000, reward: "$50 off" },
   ];
-
   const next =
     milestones.find((m) => m.at > points) ?? milestones[milestones.length - 1];
   const prev = [...milestones].reverse().find((m) => m.at <= points) ?? {
@@ -167,21 +180,27 @@ export function RewardsCard() {
   const pctToNext = Math.round((spanProg / spanTotal) * 100);
 
   return (
-    <Shell icon={Gift} title="Rewards & progression">
-      <div className="w-full max-w-2xl mx-auto flex flex-col items-center text-center gap-6">
+    <Shell
+      icon={Gift}
+      title="Rewards & progression"
+      compact={compact}
+      widthClass="max-w-3xl"
+      heightClass="min-h-[26rem] sm:min-h-[30rem] md:min-h-[34rem]"
+    >
+      <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center gap-4 md:gap-6">
         <div className="flex flex-col items-center">
-          <div className="text-sm text-white/70">Current points</div>
-          <div className="mt-1 text-3xl font-extrabold">
+          <div className="text-xs md:text-sm text-white/70">Current points</div>
+          <div className="mt-1 text-2xl md:text-3xl font-extrabold">
             {points.toLocaleString()}
           </div>
-          <div className="mt-1 text-xs text-white/60">
+          <div className="mt-1 text-[11px] md:text-xs text-white/60">
             Level {prev.level} → {next.level}
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-3 md:gap-4">
           <div
-            className="relative h-24 w-24 rounded-full grid place-items-center"
+            className="relative h-24 w-24 md:h-28 md:w-28 rounded-full grid place-items-center"
             style={{
               background: `conic-gradient(white ${
                 pctToNext * 3.6
@@ -192,15 +211,15 @@ export function RewardsCard() {
             <div className="relative text-sm font-semibold">{pctToNext}%</div>
           </div>
 
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-lg">
             <Progress value={pctToNext} className="h-2 bg-white/5" />
-            <div className="mt-2 flex items-center justify-between text-xs text-white/70">
+            <div className="mt-2 flex items-center justify-between text-[11px] text-white/70">
               <span>{prev.at.toLocaleString()} pts</span>
               <span>{next.at.toLocaleString()} pts</span>
             </div>
           </div>
 
-          <p className="text-xs text-white/80">
+          <p className="text-[11px] md:text-xs text-white/80">
             {next.at - points > 0
               ? `${(next.at - points).toLocaleString()} points to ${
                   next.reward
@@ -209,7 +228,7 @@ export function RewardsCard() {
           </p>
         </div>
 
-        <div className="w-full max-w-xl">
+        <div className="w-full max-w-2xl px-2 md:px-0">
           <div className="flex items-center justify-between">
             {milestones.map((m, i) => {
               const achieved = points >= m.at;
@@ -244,21 +263,17 @@ export function RewardsCard() {
           </div>
         </div>
 
-        <div className="mt-2 grid grid-cols-3 gap-3 w-full max-w-md">
+        <div className="mt-2 grid grid-cols-3 gap-3 w-full max-w-lg px-2 md:px-0">
           {milestones
             .filter((m) => points >= m.at)
             .slice(-3)
-            .map((m, i) => (
-              <motion.div
+            .map((m) => (
+              <div
                 key={`perk-${m.at}`}
-                initial={{ opacity: 0, y: 6 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.25, delay: i * 0.05 }}
-                className="rounded-lg border border-white/15 bg-white/[0.06] px-3 py-3 text-center text-xs"
+                className="rounded-lg border border-white/15 bg-white/[0.06] px-3 py-3 text-center text-[11px] md:text-xs"
               >
                 {m.reward}
-              </motion.div>
+              </div>
             ))}
         </div>
 
@@ -287,96 +302,132 @@ export function RewardsCard() {
   );
 }
 
-export function FlashDealsCard() {
+export function FlashDealsCard({ compact = true }) {
   const deals = [
     {
-      title: "Mini rose",
+      title: "mini rose",
       price: 80,
       artist: "Aiko S.",
       style: "Fine-line",
       city: "NYC",
-      ends: "3h left",
     },
     {
-      title: "Script word",
+      title: "script word",
       price: 120,
       artist: "Marco T.",
       style: "Lettering",
       city: "LA",
-      ends: "Today",
     },
     {
-      title: "Flash sheet pick",
+      title: "flash sheet pick",
       price: 150,
       artist: "Nina K.",
       style: "Traditional",
       city: "Chicago",
-      ends: "6h left",
     },
     {
-      title: "Linework special",
+      title: "linework special",
       price: 99,
       artist: "Evan R.",
       style: "Blackwork",
       city: "SF",
-      ends: "2h left",
-    },
-    {
-      title: "Butterfly micro",
-      price: 140,
-      artist: "Yumi H.",
-      style: "Fine-line",
-      city: "Miami",
-      ends: "Tomorrow",
-    },
-    {
-      title: "Geometric band",
-      price: 180,
-      artist: "Leo V.",
-      style: "Geometric",
-      city: "NYC",
-      ends: "4h left",
     },
   ];
 
+  const toTitle = (s) =>
+    s.replace(
+      /\w\S*/g,
+      (t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+    );
+
+  const randomOffsetMs = () => {
+    const steps = Math.floor(Math.random() * (48 - 1 + 1)) + 1;
+    return steps * 5 * 60 * 1000;
+  };
+
+  const [targets, setTargets] = React.useState(() =>
+    deals.map(() => Date.now() + randomOffsetMs())
+  );
+
+  React.useEffect(() => {
+    const id = setInterval(() => {
+      setTargets((prev) =>
+        prev.map((t) =>
+          t - Date.now() <= 0 ? Date.now() + randomOffsetMs() : t
+        )
+      );
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const fmtCountdown = (ms) => {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(
+      2,
+      "0"
+    )}s`;
+  };
+
   return (
-    <Shell icon={Zap} title="Flash deals & early access">
-      <div className="w-full max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {deals.map((d, i) => (
-          <motion.div
-            key={`${d.artist}-${i}`}
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.25, delay: i * 0.04 }}
-            className="rounded-lg border border-white/15 bg-white/[0.06] p-4 text-left"
-          >
-            <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold">{d.title}</h3>
-              <span className="text-lg font-extrabold">${d.price}</span>
-            </div>
-            <div className="mt-2 text-xs text-white/70">
-              <span className="mr-2">{d.artist}</span>·
-              <span className="mx-2">{d.style}</span>·
-              <span className="ml-2">{d.city}</span>
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-[11px] text-white/60">{d.ends}</span>
-              <button className="rounded-md px-3 py-1.5 text-xs font-semibold bg-white text-black hover:opacity-90">
-                Claim
-              </button>
-            </div>
-          </motion.div>
-        ))}
+    <Shell
+      icon={Zap}
+      title="Flash deals"
+      compact={compact}
+      widthClass="max-w-md"
+      heightClass="min-h-0"
+    >
+      <div className="w-full max-w-md mx-auto flex flex-col gap-6 md:gap-6">
+        {deals.map((d, i) => {
+          const remaining = targets[i] - Date.now();
+          return (
+            <motion.div
+              key={`${d.artist}-${i}`}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.2, delay: i * 0.04 }}
+              className="rounded-lg border border-white/15 bg-white/[0.06] px-4 py-3 flex flex-col gap-2.5 shadow-[0_6px_20px_rgb(255_255_255/0.05)]"
+            >
+              <div className="flex items-start justify-between gap-3 min-w-0">
+                <h3 className="text-sm md:text-base font-semibold leading-tight flex-1 min-w-0 truncate">
+                  {toTitle(d.title)} — {d.artist}
+                </h3>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] md:text-xs">
+                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                  <span className="text-white/60">Style:</span>{" "}
+                  <span className="text-white/90">{d.style}</span>
+                </span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                  <span className="text-white/60">City:</span>{" "}
+                  <span className="text-white/90">{d.city}</span>
+                </span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                  Cost: ${d.price}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs md:text-sm text-white/70 whitespace-nowrap">
+                  Ends in {fmtCountdown(remaining)}
+                </span>
+                <button className="rounded-md px-3 py-1.5 text-xs md:text-sm font-semibold bg-white hover:opacity-90 !text-black">
+                  Claim
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
-      <p className="mt-4 text-xs text-white/60 text-center">
-        Members see drops first. Limited slots.
-      </p>
     </Shell>
   );
 }
 
-export function LoyaltyCard() {
+export function LoyaltyCard({ compact = true }) {
   const tiers = [
     { name: "Ink I", min: 0, max: 999, color: "from-white to-white/40" },
     { name: "Ink II", min: 1000, max: 2499, color: "from-white to-white/40" },
@@ -388,7 +439,6 @@ export function LoyaltyCard() {
       color: "from-white to-white/40",
     },
   ];
-
   const points = 1860;
   const current = [...tiers].reverse().find((t) => points >= t.min) || tiers[0];
   const nextIndex = Math.min(
@@ -400,7 +450,6 @@ export function LoyaltyCard() {
   const prog = Math.min(Math.max(points - current.min, 0), span);
   const pctToNext =
     current.name === "Ink Elite" ? 100 : Math.round((prog / span) * 100);
-
   const perksByTier = {
     "Ink I": ["Standard profile", "Base rewards"],
     "Ink II": [
@@ -413,20 +462,22 @@ export function LoyaltyCard() {
   };
 
   return (
-    <Shell icon={Crown} title="Loyalty tiers">
-      <div className="w-full max-w-2xl mx-auto grid md:grid-cols-[1.2fr_1fr] gap-8 items-stretch">
-        <div className="rounded-2xl border border-white/15 bg-white/[0.06] p-5">
+    <Shell icon={Crown} title="Loyalty tiers" compact={compact}>
+      <div className="w-full max-w-2xl mx-auto grid md:grid-cols-[1.2fr_1fr] gap-5 md:gap-8 items-stretch">
+        <div className="rounded-2xl border border-white/15 bg-white/[0.06] p-4 md:p-5">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs text-white/70">Current tier</div>
-              <div className="text-2xl font-extrabold">{current.name}</div>
+              <div className="text-xl md:text-2xl font-extrabold">
+                {current.name}
+              </div>
               <div className="mt-1 text-xs text-white/60">
                 {points.toLocaleString()} pts
               </div>
             </div>
 
             <div
-              className="relative h-24 w-24 rounded-full grid place-items-center"
+              className="relative h-20 w-20 md:h-24 md:w-24 rounded-full grid place-items-center"
               style={{
                 background: `conic-gradient(white ${
                   pctToNext * 3.6
@@ -438,8 +489,8 @@ export function LoyaltyCard() {
             </div>
           </div>
 
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-xs text-white/70">
+          <div className="mt-4 md:mt-5">
+            <div className="flex items-center justify-between text-[11px] md:text-xs text-white/70">
               <span>{current.min.toLocaleString()} pts</span>
               <span>
                 {current.name === "Ink Elite"
@@ -450,7 +501,7 @@ export function LoyaltyCard() {
             <div className="mt-2">
               <Progress value={pctToNext} className="h-2 bg-white/5" />
             </div>
-            <div className="mt-2 text-xs text-white/80">
+            <div className="mt-2 text-[11px] md:text-xs text-white/80">
               {current.name === "Ink Elite"
                 ? "You’re at the top tier."
                 : `${(next.min - points).toLocaleString()} points to ${
@@ -459,7 +510,7 @@ export function LoyaltyCard() {
             </div>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-4 md:mt-5">
             <div className="text-sm mb-2">Your perks</div>
             <div className="flex flex-wrap gap-2">
               {perksByTier[current.name].map((p) => (
@@ -472,30 +523,9 @@ export function LoyaltyCard() {
               ))}
             </div>
           </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            <Badge
-              variant="outline"
-              className="bg-white/5 border-white/15 text-white/80"
-            >
-              Earn by booking
-            </Badge>
-            <Badge
-              variant="outline"
-              className="bg-white/5 border-white/15 text-white/80"
-            >
-              Bonus on reviews
-            </Badge>
-            <Badge
-              variant="outline"
-              className="bg-white/5 border-white/15 text-white/80"
-            >
-              Streak multipliers
-            </Badge>
-          </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5 md:space-y-3">
           {tiers.map((t) => {
             const active = t.name === current.name;
             const achieved = points >= t.min;
@@ -551,12 +581,16 @@ export function LoyaltyCard() {
   );
 }
 
-export function PreferencesCard() {
+export function PreferencesCard({ compact = true }) {
   return (
-    <Shell icon={SlidersHorizontal} title="Signup preferences">
-      <div className="mx-auto w-full max-w-md space-y-4 text-center">
-        <div className="space-y-2">
-          <p className="text-xs text-white/70">Style</p>
+    <Shell
+      icon={SlidersHorizontal}
+      title="Signup preferences"
+      compact={compact}
+    >
+      <div className="mx-auto w-full max-w-md space-y-3 md:space-y-4 text-center">
+        <div className="space-y-1.5">
+          <p className="text-[11px] md:text-xs text-white/70">Style</p>
           <Select>
             <SelectTrigger className="w-full bg-white/10 border-white/15 text-white">
               <SelectValue placeholder="Choose styles" />
@@ -572,8 +606,8 @@ export function PreferencesCard() {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <p className="text-xs text-white/70">Budget</p>
+        <div className="space-y-1.5">
+          <p className="text-[11px] md:text-xs text-white/70">Budget</p>
           <Select>
             <SelectTrigger className="w-full bg-white/10 border-white/15 text-white">
               <SelectValue placeholder="Select budget" />
@@ -587,8 +621,8 @@ export function PreferencesCard() {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <p className="text-xs text-white/70">City</p>
+        <div className="space-y-1.5">
+          <p className="text-[11px] md:text-xs text-white/70">City</p>
           <Select>
             <SelectTrigger className="w-full bg-white/10 border-white/15 text-white">
               <SelectValue placeholder="Pick a city" />
@@ -604,8 +638,8 @@ export function PreferencesCard() {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <p className="text-xs text-white/70">Availability</p>
+        <div className="space-y-1.5">
+          <p className="text-[11px] md:text-xs text-white/70">Availability</p>
           <Select>
             <SelectTrigger className="w-full bg-white/10 border-white/15 text-white">
               <SelectValue placeholder="When are you free?" />
@@ -621,7 +655,7 @@ export function PreferencesCard() {
         </div>
       </div>
 
-      <div className="mt-6 flex gap-2 justify-center">
+      <div className="mt-4 md:mt-6 flex gap-2 justify-center">
         <Badge
           variant="outline"
           className="bg-white/5 border-white/15 text-white/80"
@@ -639,7 +673,7 @@ export function PreferencesCard() {
   );
 }
 
-export function GalleryCard() {
+export function GalleryCard({ compact = true }) {
   const imgs = [
     { src: Blackwork, label: "Blackwork" },
     { src: FineLine, label: "Fine-line" },
@@ -650,9 +684,9 @@ export function GalleryCard() {
   ];
 
   return (
-    <Shell icon={Images} title="Gallery access">
+    <Shell icon={Images} title="Gallery access" compact={compact}>
       <div className="mx-auto w-full max-w-2xl [perspective:1200px]">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 place-items-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 place-items-center">
           {imgs.map((img, i) => (
             <motion.figure
               key={img.src}
@@ -667,7 +701,7 @@ export function GalleryCard() {
                 scale: 1.04,
                 transition: { type: "spring", stiffness: 220, damping: 18 },
               }}
-              className="group relative aspect-square w-full max-w-[260px] rounded-xl border border-white/15 bg-black overflow-visible"
+              className="group relative w-full max-w-[220px] sm:max-w-[260px] aspect-[2/3] rounded-xl border border-white/15 bg-black overflow-visible"
               style={{ transformStyle: "preserve-3d", willChange: "transform" }}
             >
               <div className="absolute inset-0 rounded-xl overflow-hidden">
@@ -676,7 +710,7 @@ export function GalleryCard() {
                   alt={`${img.label} tattoo`}
                   loading="lazy"
                   decoding="async"
-                  sizes="(max-width: 768px) 50vw, 33vw"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 260px"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/25 to-transparent" />
@@ -694,7 +728,7 @@ export function GalleryCard() {
         </div>
       </div>
 
-      <div className="mt-6 flex gap-2 justify-center">
+      <div className="mt-4 md:mt-6 flex gap-2 justify-center">
         <Badge
           variant="outline"
           className="bg-white/5 border-white/15 text-white/80"
@@ -712,14 +746,13 @@ export function GalleryCard() {
   );
 }
 
-export function AnalyticsCard() {
+export function AnalyticsCard({ compact = true }) {
   const kpis = [
     { label: "Bookings", value: 18 },
     { label: "Revenue", value: "$4,320" },
     { label: "Avg ticket", value: "$240" },
     { label: "Rating", value: "4.8★" },
   ];
-
   const bars = [
     { day: "M", bookings: 2, revenue: 380 },
     { day: "T", bookings: 3, revenue: 520 },
@@ -729,12 +762,10 @@ export function AnalyticsCard() {
     { day: "S", bookings: 1, revenue: 300 },
     { day: "S", bookings: 1, revenue: 420 },
   ];
-
   const utilization = 72;
   const returnRate = 43;
   const noShow = 6;
   const responseMins = 18;
-
   const topStyles = [
     { name: "Fine-line", pct: 38 },
     { name: "Blackwork", pct: 26 },
@@ -742,20 +773,18 @@ export function AnalyticsCard() {
     { name: "Traditional", pct: 10 },
     { name: "Other", pct: 8 },
   ];
-
   const nextOpenings = [
     { when: "Thu 2:30p", len: "1h" },
     { when: "Fri 11:00a", len: "2h" },
     { when: "Mon 4:00p", len: "1.5h" },
   ];
-
   const maxBookings = Math.max(...bars.map((b) => b.bookings)) || 1;
   const maxRevenue = Math.max(...bars.map((b) => b.revenue)) || 1;
 
   return (
-    <Shell icon={BarChart3} title="Artist analytics">
-      <div className="mx-auto w-full max-w-2xl space-y-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+    <Shell icon={BarChart3} title="Artist analytics" compact={compact}>
+      <div className="mx-auto w-full max-w-2xl space-y-6 md:space-y-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3 text-center">
           {kpis.map((k, i) => (
             <motion.div
               key={k.label}
@@ -763,18 +792,20 @@ export function AnalyticsCard() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: i * 0.05 }}
-              className="rounded-lg border border-white/15 bg-white/[0.06] px-3 py-3"
+              className="rounded-lg border border-white/15 bg-white/[0.06] px-3 py-2.5 md:py-3"
             >
               <div className="text-[11px] text-white/70">{k.label}</div>
-              <div className="mt-1 text-lg font-semibold">{k.value}</div>
+              <div className="mt-1 text-base md:text-lg font-semibold">
+                {k.value}
+              </div>
             </motion.div>
           ))}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <h4 className="text-sm text-white/80 mb-2">Bookings (7d)</h4>
-            <div className="flex items-end justify-between gap-2 h-28 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2">
+            <div className="flex items-end justify-between gap-2 h-24 md:h-28 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2">
               {bars.map((b, i) => (
                 <motion.div
                   key={`b-${i}`}
@@ -782,7 +813,7 @@ export function AnalyticsCard() {
                   whileInView={{ scaleY: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.35, delay: i * 0.05 }}
-                  className="w-6 origin-bottom"
+                  className="w-5 md:w-6 origin-bottom"
                   style={{
                     height: `${(b.bookings / maxBookings) * 100}%`,
                     background:
@@ -793,7 +824,7 @@ export function AnalyticsCard() {
                 />
               ))}
             </div>
-            <div className="mt-2 flex justify-between text-[11px] text-white/60 px-1">
+            <div className="mt-1.5 md:mt-2 flex justify-between text-[10px] md:text-[11px] text-white/60 px-1">
               {bars.map((b, i) => (
                 <span key={`bl-${i}`}>{b.day}</span>
               ))}
@@ -802,7 +833,7 @@ export function AnalyticsCard() {
 
           <div>
             <h4 className="text-sm text-white/80 mb-2">Revenue (7d)</h4>
-            <div className="flex items-end justify-between gap-2 h-28 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2">
+            <div className="flex items-end justify-between gap-2 h-24 md:h-28 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2">
               {bars.map((b, i) => (
                 <motion.div
                   key={`r-${i}`}
@@ -810,7 +841,7 @@ export function AnalyticsCard() {
                   whileInView={{ scaleY: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.35, delay: i * 0.05 }}
-                  className="w-6 origin-bottom"
+                  className="w-5 md:w-6 origin-bottom"
                   style={{
                     height: `${(b.revenue / maxRevenue) * 100}%`,
                     background:
@@ -821,7 +852,7 @@ export function AnalyticsCard() {
                 />
               ))}
             </div>
-            <div className="mt-2 flex justify-between text-[11px] text-white/60 px-1">
+            <div className="mt-1.5 md:mt-2 flex justify-between text-[10px] md:text-[11px] text-white/60 px-1">
               {bars.map((b, i) => (
                 <span key={`rl-${i}`}>{b.day}</span>
               ))}
@@ -829,7 +860,7 @@ export function AnalyticsCard() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-3">
             <Metric label="Utilization" value={`${utilization}%`}>
               <Progress value={utilization} className="h-2 bg-white/5" />
@@ -901,7 +932,7 @@ export function AnalyticsCard() {
 
 function Metric({ label, value, children }) {
   return (
-    <div className="rounded-lg border border-white/15 bg-white/[0.06] px-3 py-3">
+    <div className="rounded-lg border border-white/15 bg-white/[0.06] px-3 py-2.5 md:py-3">
       <div className="flex items-center justify-between">
         <div className="text-sm">{label}</div>
         <div className="text-sm font-semibold">{value}</div>
@@ -912,21 +943,80 @@ function Metric({ label, value, children }) {
 }
 
 export default function FeatureShowcase() {
+  const [mobileRole, setMobileRole] = useState("client");
+
   return (
-    <section className="container mx-auto max-w-3xl px-4 pb-16 flex flex-col items-center justify-center text-center">
-      <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#fff,rgba(255,255,255,.6))]">
+    <section className="container mx-auto max-w-6xl px-4 pb-12 md:pb-16">
+      <h2 className="text-center text-2xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#fff,rgba(255,255,255,.6))]">
         Our Features
       </h2>
-      <Separator className="mx-auto mt-4 bg-white/20 w-48" />
-      <div className="mt-8 flex w-full flex-col items-center justify-center gap-8">
-        <MessagingCard />
-        <FiltersCard />
-        <PreferencesCard />
-        <GalleryCard />
-        <AnalyticsCard />
-        <RewardsCard />
-        <FlashDealsCard />
-        <LoyaltyCard />
+      <Separator className="mx-auto mt-3 md:mt-4 bg-white/20 w-40 md:w-48" />
+
+      <div className="mt-6 md:mt-8">
+        <div className="mb-3 md:mb-4 flex justify-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-3.5 py-1.5 text-[11px] md:text-xs uppercase tracking-wide font-semibold">
+            <span className="opacity-80">Shared</span>
+            <span className="h-1 w-1 rounded-full bg-white/50" />
+            <span>Real-time messaging</span>
+          </div>
+        </div>
+        <MessagingCard compact />
+      </div>
+
+      <div className="mt-6 md:hidden">
+        <div className="mx-auto w-full max-w-xs">
+          <div className="flex rounded-full border border-white/15 bg-white/[0.06] p-1">
+            <button
+              onClick={() => setMobileRole("client")}
+              className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-full ${
+                mobileRole === "client" ? "bg-white !text-black" : "text-white"
+              }`}
+            >
+              Client
+            </button>
+            <button
+              onClick={() => setMobileRole("artist")}
+              className={`flex-1 px-3 py-1.5 text-xs font-semibold rounded-full ${
+                mobileRole === "artist" ? "bg-white !text-black" : "text-white"
+              }`}
+            >
+              Artist
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 md:mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
+        <div
+          className={`${
+            mobileRole === "client" ? "flex" : "hidden"
+          } md:flex flex-col items-stretch gap-6 md:gap-8`}
+        >
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-4 py-2 text-sm md:text-base font-extrabold uppercase tracking-wide">
+              Client
+            </div>
+          </div>
+          <FiltersCard compact />
+          <PreferencesCard compact />
+          <GalleryCard compact />
+          <RewardsCard compact />
+        </div>
+
+        <div
+          className={`${
+            mobileRole === "artist" ? "flex" : "hidden"
+          } md:flex flex-col items-stretch gap-6 md:gap-8`}
+        >
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-4 py-2 text-sm md:text-base font-extrabold uppercase tracking-wide">
+              Artist
+            </div>
+          </div>
+          <AnalyticsCard compact />
+          <LoyaltyCard compact />
+          <FlashDealsCard compact />
+        </div>
       </div>
     </section>
   );
