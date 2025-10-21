@@ -2,6 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html,
+  body,
+  #root {
+    background: transparent !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :root {
+    --background: 0 0% 6%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 6%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 75%;
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 98%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 0 0% 6%;
+    --foreground: 0 0% 100%;
+  }
+
+  body {
+    color: #fff !important;
+  }
+  * {
+    color: inherit !important;
+  }
+  a {
+    color: #fff !important;
+  }
+  ::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  svg,
+  svg * {
+    stroke: currentColor;
+    fill: currentColor;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -12,7 +73,19 @@
     transform: translateY(0) scale(1);
   }
 }
-
 .animate-fadeIn {
   animation: fadeIn 0.7s ease-in-out forwards;
+}
+
+:root {
+  --inktext: rgba(255, 255, 255, 0.92);
+}
+
+.ink-input {
+  color: #000 !important;
+}
+
+.ink-input::placeholder {
+  color: rgba(0, 0, 0, 0.6) !important;
+  opacity: 1 !important;
 }
