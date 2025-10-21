@@ -1,0 +1,15 @@
+{
+  "name": "Inkmity",
+  "short_name": "Inkmity",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0F",
+  "theme_color": "#0B0B0F",
+  "icons": [
+    {
+      "src": "/favicon-v3.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
