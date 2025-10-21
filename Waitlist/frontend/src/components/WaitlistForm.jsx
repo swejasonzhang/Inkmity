@@ -165,7 +165,7 @@ export default function WaitlistForm({ onSuccess }) {
     <section className="w-full relative">
       <motion.div
         ref={cardRef}
-        className="relative mx-auto max-w-2xl"
+        className="relative mx-auto max-w-3xl"
         initial={{ opacity: 0, scale: 0.99 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
@@ -251,14 +251,14 @@ export default function WaitlistForm({ onSuccess }) {
                 )}
               </Button>
             </form>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] text-white/65">
-              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5">
+            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-white/65">
+              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
                 No spam
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5">
+              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
                 One update stream
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5">
+              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
                 Launch notice
               </div>
             </div>
