@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
@@ -24,11 +25,16 @@ function randomSuffix(n = 4) {
 }
 
 export async function getMe(req, res) {
-  const clerkId = getClerkId(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const me = await User.findOne({ clerkId }).lean();
-  if (!me) return res.status(404).json({ error: "Not found" });
-  res.json(me);
+  try {
+    const clerkId = getClerkId(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+    const me = await User.findOne({ clerkId }).lean();
+    if (!me) return res.status(404).json({ error: "Not found" });
+    return res.json(me);
+  } catch (err) {
+    console.error("getMe error:", err);
+    return res.status(500).json({ error: "internal" });
+  }
 }
 
 export async function getAvatarSignature(_req, res) {
@@ -39,46 +45,59 @@ export async function getAvatarSignature(_req, res) {
       { timestamp, folder },
       process.env.CLOUDINARY_API_SECRET
     );
-    res.json({
+    return res.json({
       timestamp,
       folder,
       signature,
       apiKey: process.env.CLOUDINARY_API_KEY,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
-  } catch {
-    res.status(500).json({ error: "signature_failed" });
+  } catch (err) {
+    console.error("getAvatarSignature error:", err);
+    return res.status(500).json({ error: "signature_failed" });
   }
 }
 
 export async function updateMyAvatar(req, res) {
-  const clerkId = getClerkId(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const { url, publicId, alt, width, height } = req.body || {};
-  if (!url) return res.status(400).json({ error: "url_required" });
-  const user = await User.findOneAndUpdate(
-    { clerkId },
-    { $set: { avatar: { url, publicId, alt, width, height } } },
-    { new: true }
-  ).lean();
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
+  try {
+    const clerkId = getClerkId(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+    const { url, publicId, alt, width, height } = req.body || {};
+    if (!url) return res.status(400).json({ error: "url_required" });
+    const user = await User.findOneAndUpdate(
+      { clerkId },
+      { $set: { avatar: { url, publicId, alt, width, height } } },
+      { new: true }
+    ).lean();
+    if (!user) return res.status(404).json({ error: "User not found" });
+    return res.json(user);
+  } catch (err) {
+    console.error("updateMyAvatar error:", err);
+    return res.status(500).json({ error: "update_avatar_failed" });
+  }
 }
 
 export async function deleteMyAvatar(req, res) {
-  const clerkId = getClerkId(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await User.findOne({ clerkId });
-  if (!user) return res.status(404).json({ error: "User not found" });
-  const publicId = user.avatar?.publicId;
-  user.avatar = undefined;
-  await user.save();
-  if (publicId) {
-    try {
-      await cloudinary.uploader.destroy(publicId);
-    } catch {}
+  try {
+    const clerkId = getClerkId(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+    const user = await User.findOne({ clerkId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const publicId = user.avatar?.publicId;
+    user.avatar = undefined;
+    await user.save();
+    if (publicId) {
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (err) {
+        console.warn("cloudinary destroy failed:", err?.message || err);
+      }
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("deleteMyAvatar error:", err);
+    return res.status(500).json({ error: "delete_avatar_failed" });
   }
-  res.json({ ok: true });
 }
 
 export async function getReferenceSignature(_req, res) {
@@ -89,15 +108,16 @@ export async function getReferenceSignature(_req, res) {
       { timestamp, folder },
       process.env.CLOUDINARY_API_SECRET
     );
-    res.json({
+    return res.json({
       timestamp,
       folder,
       signature,
       apiKey: process.env.CLOUDINARY_API_KEY,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
-  } catch {
-    res.status(500).json({ error: "signature_failed" });
+  } catch (err) {
+    console.error("getReferenceSignature error:", err);
+    return res.status(500).json({ error: "signature_failed" });
   }
 }
 
@@ -112,27 +132,40 @@ export async function saveMyReferences(req, res) {
       { new: true }
     ).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ ok: true, references: user.references || [] });
-  } catch {
-    res.status(500).json({ error: "save_references_failed" });
+    return res.json({ ok: true, references: user.references || [] });
+  } catch (err) {
+    console.error("saveMyReferences error:", err);
+    return res.status(500).json({ error: "save_references_failed" });
   }
 }
 
 export async function getArtists(_req, res) {
-  const items = await User.find({ role: "artist" })
-    .sort({ rating: -1, createdAt: -1 })
-    .select(
-      "_id username role location shop yearsExperience baseRate bookingPreference travelFrequency rating style"
-    )
-    .lean();
-  res.json(items);
+  try {
+    const Artist = mongoose.model("artist");
+    const items = await Artist.find({})
+      .sort({ rating: -1, createdAt: -1 })
+      .select(
+        "_id username role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount"
+      )
+      .lean();
+    return res.json(items);
+  } catch (err) {
+    console.error("getArtists error:", err);
+    return res.status(500).json({ error: "internal" });
+  }
 }
 
 export async function getArtistById(req, res) {
-  const { id } = req.params;
-  const doc = await User.findOne({ _id: id, role: "artist" }).lean();
-  if (!doc) return res.status(404).json({ error: "not_found" });
-  res.json(doc);
+  try {
+    const { id } = req.params;
+    const Artist = mongoose.model("artist");
+    const doc = await Artist.findById(id).lean();
+    if (!doc) return res.status(404).json({ error: "not_found" });
+    return res.json(doc);
+  } catch (err) {
+    console.error("getArtistById error:", err);
+    return res.status(500).json({ error: "internal" });
+  }
 }
 
 export async function syncUser(req, res) {
@@ -145,13 +178,15 @@ export async function syncUser(req, res) {
       username,
       firstName,
       lastName,
-      profile,
+      profile = {},
     } = req.body || {};
+
     const clerkId = authClerkId || bodyClerkId;
-    if (!clerkId || !email || !rawRole)
+    if (!clerkId || !email || !rawRole) {
       return res
         .status(400)
         .json({ error: "clerkId, email, role are required" });
+    }
 
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
 
@@ -180,14 +215,17 @@ export async function syncUser(req, res) {
         candidate = `${base}-${randomSuffix()}`;
         tries++;
       }
-      finalUsername = candidate;
+      finalUsername = candidate || `user-${randomSuffix(6)}`;
     }
 
     const setDoc = { clerkId, email, username: finalUsername, role };
 
+    let Model;
     if (role === "client") {
-      const min = Number(profile?.budgetMin ?? 100);
-      const max = Number(profile?.budgetMax ?? 200);
+      Model = mongoose.model("client");
+
+      const min = Number(profile.budgetMin ?? 100);
+      const max = Number(profile.budgetMax ?? 200);
       const budgetMin = Number.isFinite(min)
         ? Math.max(0, Math.min(5000, min))
         : 100;
@@ -195,42 +233,46 @@ export async function syncUser(req, res) {
         ? Math.max(0, Math.min(5000, max))
         : 200;
       if (budgetMax <= budgetMin) budgetMax = Math.max(budgetMin + 1, 200);
+
       Object.assign(setDoc, {
         budgetMin,
         budgetMax,
-        location: profile?.location ?? "",
-        placement: profile?.placement ?? "",
-        size: profile?.size ?? "",
-        notes: profile?.notes ?? "",
+        location: profile.location ?? "",
+        placement: profile.placement ?? "",
+        size: profile.size ?? "",
       });
-    } else if (role === "artist") {
-      const years = Number(profile?.years ?? 0);
-      const baseRate = Number(profile?.baseRate ?? 0);
-      const bookingPreference = profile?.bookingPreference || "open";
-      const travelFrequency = profile?.travelFrequency || "rare";
-      const shop = profile?.shop || "";
-      const styles = Array.isArray(profile?.styles)
+    } else {
+      Model = mongoose.model("artist");
+
+      const years = Number(profile.years ?? profile.yearsExperience ?? 0);
+      const baseRate = Number(profile.baseRate ?? 0);
+      const bookingPreference = profile.bookingPreference || "open";
+      const travelFrequency = profile.travelFrequency || "rare";
+      const shop = profile.shop || "";
+
+      const stylesRaw = Array.isArray(profile.styles)
         ? profile.styles
-        : Array.isArray(profile?.style)
+        : Array.isArray(profile.style)
         ? profile.style
         : [];
+      const styles = stylesRaw
+        .filter((s) => typeof s === "string")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
       Object.assign(setDoc, {
-        location: profile?.location ?? "",
+        location: profile.location ?? "",
         shop,
         yearsExperience: Number.isFinite(years) ? Math.max(0, years) : 0,
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
         bookingPreference,
         travelFrequency,
-        style: styles
-          .filter((s) => typeof s === "string")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        bio: profile?.bio ?? "",
+        styles,
+        bio: profile.bio ?? "",
       });
     }
 
-    const user = await User.findOneAndUpdate(
+    const user = await Model.findOneAndUpdate(
       { clerkId },
       { $set: setDoc },
       {
@@ -241,8 +283,14 @@ export async function syncUser(req, res) {
       }
     );
 
-    res.status(200).json(user);
+    return res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ error: "Failed to sync user" });
+    console.error("syncUser error:", error);
+    if (error?.code === 11000) {
+      return res
+        .status(409)
+        .json({ error: "duplicate_key", key: error.keyValue });
+    }
+    return res.status(500).json({ error: String(error?.message || error) });
   }
 }

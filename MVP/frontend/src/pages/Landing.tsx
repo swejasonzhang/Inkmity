@@ -91,7 +91,7 @@ const Landing: React.FC = () => {
                     "h-[100svh]",
                     "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
                     "object-contain md:object-cover",
-                    "pointer-events-none opacity-50 mix-blend-screen",
+                    "pointer-events-none opacity-20 mix-blend-screen",
                 ].join(" ")}
                 aria-hidden
             >

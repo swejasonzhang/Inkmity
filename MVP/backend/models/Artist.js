@@ -1,13 +1,13 @@
-import User from "./UserBase.js";
 import mongoose from "mongoose";
+import User from "./UserBase.js";
 const { Schema } = mongoose;
 
 const ArtistSchema = new Schema(
   {
-    location: { type: String },
-    shop: { type: String },
+    location: String,
+    shop: String,
     styles: [{ type: String, index: true }],
-    bio: { type: String },
+    bio: String,
     priceRange: { min: Number, max: Number },
     rating: { type: Number, default: 0, index: true },
     reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
@@ -29,5 +29,5 @@ const ArtistSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Artist ||
+export default mongoose.models.artist ||
   User.discriminator("artist", ArtistSchema);

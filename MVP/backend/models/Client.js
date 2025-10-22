@@ -1,22 +1,21 @@
-import User from "./UserBase.js";
 import mongoose from "mongoose";
+import User from "./UserBase.js";
 const { Schema } = mongoose;
 
 const ClientSchema = new Schema(
   {
     budgetMin: { type: Number, default: 100 },
     budgetMax: { type: Number, default: 200 },
-    location: { type: String },
-    placement: { type: String },
-    size: { type: String },
-    notes: { type: String },
+    location: String,
+    placement: String,
+    size: String,
     totalFeesPaid: { type: Number, default: 0 },
     rewardsPoints: { type: Number, default: 0, index: true },
     lifetimeDiscountUsd: { type: Number, default: 0 },
-    lastRewardAt: { type: Date },
+    lastRewardAt: Date,
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Client ||
+export default mongoose.models.client ||
   User.discriminator("client", ClientSchema);

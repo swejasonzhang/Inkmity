@@ -66,7 +66,7 @@ export default function InkMascot({
     };
   }, [mounted, isPasswordHidden]);
 
-  const eyesClosed = allowClose ? (isPasswordHidden || blinking) : false;
+  const eyesClosed = allowClose ? isPasswordHidden || blinking : false;
   const eyeRy = eyesClosed ? 2 : 16;
   const eyeFill = eyesClosed ? "#0a0a0a" : "#ffffff";
   const pupilOpacity = eyesClosed ? 0 : 1;
@@ -151,8 +151,9 @@ export default function InkMascot({
             transition={{ duration: 0.1 }}
           />
         </g>
-        
+
         <motion.path
+          initial={{ d: smile }}
           d={smile}
           animate={{ d: hasError ? frown : smile }}
           transition={{ duration: 0.25, ease: bezier }}
