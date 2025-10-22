@@ -1,95 +1,98 @@
 import { useAuth } from "@clerk/clerk-react";
 
-const API_BASE =
-  (import.meta as any).env?.VITE_API_URL?.replace(/\/+$/, "") ||
+export const API_URL: string =
+  (import.meta as any)?.env?.VITE_API_URL ||
+  import.meta.env?.VITE_API_URL ||
   "http://localhost:5005/api";
 
-async function authHeaders(): Promise<Record<string, string>> {
-  try {
-    const token = await (window as any)?.Clerk?.session?.getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  } catch {
-    return {};
+async function withAuthHeaders(init: RequestInit = {}, token?: string) {
+  return {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include" as const,
+  };
+}
+
+export async function apiRequest<T = any>(
+  path: string,
+  init: RequestInit = {},
+  token?: string
+): Promise<T> {
+  const url = path.startsWith("http") ? path : `${API_URL}${path}`;
+  const res = await fetch(url, await withAuthHeaders(init, token));
+  const text = await res.text().catch(() => "");
+  if (!res.ok) {
+    const err = new Error(text || res.statusText);
+    // @ts-expect-error augment
+    err.status = res.status;
+    throw err;
   }
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json")
+    ? (JSON.parse(text) as T)
+    : (text as unknown as T);
 }
 
-export async function apiGet<T>(path: string, qs?: Record<string, string>) {
-  const url = new URL(`${API_BASE}${path}`);
-  if (qs) Object.entries(qs).forEach(([k, v]) => url.searchParams.set(k, v));
-  const headers: HeadersInit = { ...(await authHeaders()) };
-  const res = await fetch(url.toString(), { credentials: "include", headers });
-  if (!res.ok) throw new Error(await res.text());
-  return (await res.json()) as T;
-}
-
-export async function apiPost<T>(path: string, body?: any) {
-  const headers: HeadersInit = {
-    ...(await authHeaders()),
-    "Content-Type": "application/json",
-  };
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return (await res.json()) as T;
-}
-
-export async function apiPut<T>(path: string, body?: any) {
-  const headers: HeadersInit = {
-    ...(await authHeaders()),
-    "Content-Type": "application/json",
-  };
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "PUT",
-    credentials: "include",
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return (await res.json()) as T;
-}
-
-export async function apiDelete<T>(path: string, body?: any) {
-  const headers: HeadersInit = {
-    ...(await authHeaders()),
-    "Content-Type": "application/json",
-  };
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "DELETE",
-    credentials: "include",
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return (await res.json()) as T;
-}
-
-export function useApi(
-  base = import.meta.env.VITE_API_URL?.replace(/\/+$/, "") ||
-    "http://localhost:5005/api"
+export async function apiGet<T = any>(
+  path: string,
+  params?: Record<string, any>,
+  token?: string
 ) {
-  const { getToken } = useAuth();
+  const qs =
+    params && Object.keys(params).length
+      ? `?${new URLSearchParams(
+          Object.fromEntries(
+            Object.entries(params).filter(
+              ([, v]) => v !== undefined && v !== null && v !== ""
+            )
+          )
+        ).toString()}`
+      : "";
+  return apiRequest<T>(`${path}${qs}`, { method: "GET" }, token);
+}
 
-  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const token = await getToken();
-    const res = await fetch(`${base}${path}`, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(init.headers || {}),
-      },
-      credentials: "include",
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`${res.status} ${res.statusText}: ${text}`);
-    }
-    return res.json() as Promise<T>;
+export async function apiPost<T = any>(
+  path: string,
+  body?: any,
+  token?: string
+) {
+  return apiRequest<T>(
+    path,
+    { method: "POST", body: body ? JSON.stringify(body) : undefined },
+    token
+  );
+}
+
+export function useApi() {
+  const { getToken, isSignedIn } = useAuth();
+  async function request(path: string, init: RequestInit = {}) {
+    const raw = isSignedIn ? await getToken() : undefined;
+    const token = raw ?? undefined;
+    return apiRequest(path, init, token);
   }
+  return { request, API_URL };
+}
 
-  return { request };
+export type Availability = {
+  timezone: string;
+  weekly: { [weekday: string]: Array<{ start: string; end: string }> };
+  exceptions?: Array<{
+    date: string;
+    slots: Array<{ start: string; end: string }>;
+  }>;
+};
+
+export async function getAvailability(artistId: string, token?: string) {
+  return apiGet<Availability>("/availability", { artistId }, token);
+}
+
+export async function checkUsername(u: string) {
+  return apiGet<
+    | { ok: true; available: boolean; username: string }
+    | { ok: false; error: string }
+  >("/users/username-availability", { u });
 }

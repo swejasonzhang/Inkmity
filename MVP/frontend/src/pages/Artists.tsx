@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import ArtistCard from "../components/dashboard/artist/ArtistCard";
-import ArtistFilter from "../components/dashboard/artist/ArtistFilter";
+import ArtistCard from "../components/dashboard/client/ArtistCard";
+import ArtistFilter from "../components/dashboard/client/ArtistFilter";
 import { fetchArtists } from "../api/artists";
 
 interface Artist {
@@ -27,6 +27,8 @@ const Artists: React.FC = () => {
   const [styleFilter, setStyleFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [experienceFilter, setExperienceFilter] = useState("all");
+  const [bookingFilter, setBookingFilter] = useState("all");
+  const [travelFilter, setTravelFilter] = useState("all");
   const [sort, setSort] = useState("rating_desc");
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,10 +53,22 @@ const Artists: React.FC = () => {
         styleFilter,
         availabilityFilter,
         experienceFilter,
+        bookingFilter,
+        travelFilter,
         sort,
         debouncedSearch,
       ].join("|"),
-    [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, sort, debouncedSearch]
+    [
+      priceFilter,
+      locationFilter,
+      styleFilter,
+      availabilityFilter,
+      experienceFilter,
+      bookingFilter,
+      travelFilter,
+      sort,
+      debouncedSearch,
+    ]
   );
 
   const loadArtists = async (opts: { page: number; reset: boolean }) => {
@@ -69,6 +83,8 @@ const Artists: React.FC = () => {
         style: styleFilter,
         availability: availabilityFilter,
         experience: experienceFilter,
+        booking: bookingFilter,
+        travel: travelFilter,
         sort,
         page,
         search: debouncedSearch,
@@ -138,6 +154,10 @@ const Artists: React.FC = () => {
             setAvailabilityFilter={setAvailabilityFilter}
             experienceFilter={experienceFilter}
             setExperienceFilter={setExperienceFilter}
+            bookingFilter={bookingFilter}
+            setBookingFilter={setBookingFilter}
+            travelFilter={travelFilter}
+            setTravelFilter={setTravelFilter}
             sort={sort}
             setSort={setSort}
             artists={artists}

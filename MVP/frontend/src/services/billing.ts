@@ -10,5 +10,5 @@ export async function startCheckout(bookingId: string, label?: string) {
 }
 
 export async function refundByBooking(bookingId: string) {
-  return apiPost("/billing/refund", { bookingId });
+  return apiPost<{ ok: boolean }>("/billing/refund", { bookingId });
 }
