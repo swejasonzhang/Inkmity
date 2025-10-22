@@ -1,45 +1,29 @@
 import { useEffect, useState } from "react";
-import { useUser, useAuth } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { apiGet } from "@/lib/api";
 
+function onDashboard() {
+  const p = typeof window !== "undefined" ? window.location.pathname : "";
+  return /^\/dashboard(\/|$)/.test(p);
+}
+
 export function useRole() {
-  const { user, isLoaded: clerkLoaded, isSignedIn } = useUser();
-  const { getToken } = useAuth();
+  const { isLoaded, isSignedIn } = useUser();
   const [role, setRole] = useState<"client" | "artist" | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    async function run() {
-      if (!clerkLoaded) return;
-      if (!isSignedIn) {
-        if (active) {
-          setRole(null);
-          setLoaded(true);
-        }
-        return;
-      }
+    if (!onDashboard()) return;
+    if (!isLoaded || !isSignedIn) return;
+    const run = async () => {
       try {
-        const token = await getToken();
-        const me = await apiGet<any>(
-          "/users/me",
-          undefined,
-          token ?? undefined
-        );
-        if (active) setRole(me?.role === "artist" ? "artist" : "client");
+        const me = await apiGet<{ role: "client" | "artist" }>("/users/me");
+        setRole(me.role);
       } catch {
-        const pm = (user?.publicMetadata || {}) as any;
-        const r = pm.role === "artist" ? "artist" : "client";
-        if (active) setRole(r);
-      } finally {
-        if (active) setLoaded(true);
+        setRole(null);
       }
-    }
-    run();
-    return () => {
-      active = false;
     };
-  }, [clerkLoaded, isSignedIn, getToken, user]);
+    run();
+  }, [isLoaded, isSignedIn]);
 
-  return { role, isLoaded: loaded, isSignedIn };
+  return { role, isLoaded, isSignedIn };
 }
