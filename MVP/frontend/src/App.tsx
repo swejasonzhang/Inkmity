@@ -9,27 +9,58 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
 
+function Protected({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <SignedIn>{children}</SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
+  );
+}
+
+function OnlyWhenSignedOut({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <SignedOut>{children}</SignedOut>
+      <SignedIn>
+        <Navigate to="/dashboard" replace />
+      </SignedIn>
+    </>
+  );
+}
+
 const App: React.FC = () => {
   useSyncOnAuth();
 
   return (
     <Routes>
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/login" element={<Login />} />
+      <Route
+        path="/signup"
+        element={
+          <OnlyWhenSignedOut>
+            <SignUp />
+          </OnlyWhenSignedOut>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <OnlyWhenSignedOut>
+            <Login />
+          </OnlyWhenSignedOut>
+        }
+      />
       <Route path="/sign-in/*" element={<Navigate to="/login" replace />} />
       <Route path="/sign-up/*" element={<Navigate to="/signup" replace />} />
 
       <Route
         path="/dashboard"
         element={
-          <>
-            <SignedIn>
-              <Dashboard />
-            </SignedIn>
-            <SignedOut>
-              <RedirectToSignIn />
-            </SignedOut>
-          </>
+          <Protected>
+            <Dashboard />
+          </Protected>
         }
       />
 

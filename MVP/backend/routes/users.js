@@ -1,3 +1,4 @@
+// backend/routes/users.js
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import {
@@ -10,12 +11,14 @@ import {
   saveMyReferences,
   getArtists,
   getArtistById,
+  checkUsernameAvailability,
 } from "../controllers/userController.js";
 
 const router = Router();
 
 router.get("/me", requireAuth(), getMe);
-router.post("/sync", syncUser);
+router.get("/username-availability", checkUsernameAvailability);
+router.post("/sync", requireAuth(), syncUser);
 
 router.get("/avatar/signature", requireAuth(), getAvatarSignature);
 router.put("/me/avatar", requireAuth(), updateMyAvatar);

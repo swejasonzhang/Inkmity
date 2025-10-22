@@ -23,15 +23,14 @@ export async function createBooking(input: {
   endISO: string;
   note?: string;
 }) {
-  const payload = {
+  return apiPost<Booking>("/bookings", {
     artistId: input.artistId,
     clientId: input.clientId,
     serviceId: input.serviceId,
     startAt: input.startISO,
     endAt: input.endISO,
     note: input.note,
-  };
-  return apiPost<Booking>("/bookings", payload);
+  });
 }
 
 export async function cancelBooking(id: string) {
