@@ -3,7 +3,7 @@ import Header from "@/components/header/Header";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
-import { useAuth, useClerk, useSignUp, useUser } from "@clerk/clerk-react";
+import { useClerk, useSignUp, useUser } from "@clerk/clerk-react";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
@@ -73,7 +73,6 @@ export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isSignedIn } = useUser();
-  const { getToken, userId } = useAuth();
 
   useAlreadySignedInRedirect({ suppress: awaitingCode });
 
@@ -311,62 +310,6 @@ export default function SignUp() {
     }
   };
 
-  const syncUserToBackend = async (r: Role) => {
-    const getJwt = async () => {
-      let attempts = 0;
-      while (attempts < 8) {
-        const t = await getToken().catch(() => null);
-        if (t) return t;
-        await new Promise((res) => setTimeout(res, 150));
-        attempts++;
-      }
-      return null;
-    };
-
-    const token = await getJwt();
-
-    const clientPayload = (() => {
-      if (r !== "client") return undefined;
-      const minNum = Math.max(0, Math.min(5000, Number(client.budgetMin || 100)));
-      const maxNum = Math.max(0, Math.min(5000, Number(client.budgetMax || 200)));
-      const normMin = Number.isFinite(minNum) ? minNum : 100;
-      const normMax = Number.isFinite(maxNum) && maxNum > normMin ? maxNum : 200;
-      return { ...client, budgetMin: String(normMin), budgetMax: String(normMax) };
-    })();
-
-    const artistPayload = (() => {
-      if (r !== "artist") return undefined;
-      const shop = artist.shop === "__skip__" ? "" : artist.shop;
-      return { ...artist, shop, styles: Array.isArray(artist.styles) ? artist.styles : [] };
-    })();
-
-    const payload: any = {
-      clerkId: userId || undefined,
-      email: shared.email,
-      role: r,
-      username: `${shared.firstName} ${shared.lastName}`.trim(),
-      firstName: shared.firstName,
-      lastName: shared.lastName,
-      profile: r === "client" ? clientPayload : artistPayload,
-    };
-
-    const res = await fetch(apiUrl("/users/sync"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(payload),
-      credentials: "include",
-    });
-
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Sync failed ${res.status}: ${t}`);
-    }
-    return res.json();
-  };
-
   const verifyCode = async () => {
     if (!code.trim()) {
       toast.error("Enter the verification code", { position: "top-center", theme: "dark" });
@@ -386,28 +329,20 @@ export default function SignUp() {
     setLoading(true);
     try {
       const result = await signUpAttempt.attemptEmailAddressVerification({ code: code.trim() });
-
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         localStorage.removeItem(LOGOUT_TYPE_KEY);
-        await syncUserToBackend(role);
-        toast.success("Signup successful! Redirecting...", { position: "top-center", theme: "dark" });
         window.location.href = "/dashboard";
         return;
       }
-
       toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
       triggerMascotError();
       try { await signOut(); } catch { }
     } catch (err: any) {
       const msg = err?.errors?.[0]?.message || err?.message || "An unexpected error occurred";
-      if (String(msg).startsWith("Sync failed")) {
-        toast.error("We couldn't finish setting up your account. Please try again.", { position: "top-center", theme: "dark" });
-      } else {
-        toast.error(msg, { position: "top-center", theme: "dark" });
-      }
+      toast.error(msg, { position: "top-center", theme: "dark" });
       triggerMascotError();
       try { await signOut(); } catch { }
     } finally {
