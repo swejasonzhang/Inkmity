@@ -1,3 +1,6 @@
+import React from "react";
+import { Badge } from "@/components/ui/badge";
+
 type Role = "client" | "artist";
 
 type SharedAccount = {
@@ -25,6 +28,7 @@ type ArtistProfileReview = {
     baseRate: string;
     bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
     travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
+    styles?: string[];
 };
 
 const SIZE_LABELS: Record<string, string> = {
@@ -68,98 +72,111 @@ type Props = {
     artist: ArtistProfileReview;
 };
 
+function InlineWrapBadges({ items }: { items?: string[] }) {
+    if (!items || items.length === 0) return <span className="text-white/50">Not set</span>;
+    return (
+        <div className="flex flex-wrap gap-1.5">
+            {items.map((s) => (
+                <Badge key={s} variant="secondary" className="bg-white/15 text-white">
+                    {s}
+                </Badge>
+            ))}
+        </div>
+    );
+}
+
 export default function ReviewStep({ role, shared, client, artist }: Props) {
     const budgetText =
         client.budgetMin && client.budgetMax
             ? `$${Number(client.budgetMin).toLocaleString()} – $${Number(client.budgetMax).toLocaleString()}`
             : "Not set";
 
-    const sizeText = client.size ? (SIZE_LABELS[client.size] ?? client.size) : "Optional";
-    const availText = client.availability ? (AVAIL_LABELS[client.availability] ?? client.availability) : "Optional";
+    const sizeText = client.size ? SIZE_LABELS[client.size] ?? client.size : "Optional";
+    const availText = client.availability ? AVAIL_LABELS[client.availability] ?? client.availability : "Optional";
     const styleText = client.style && client.style !== "all" ? client.style : "Optional";
-
     const shopText = artist.shop?.trim() ? artist.shop : "No shop / Independent";
+
+    const Row = ({
+        label,
+        children,
+    }: {
+        label: string;
+        children: React.ReactNode;
+    }) => (
+        <div className="flex items-start gap-4">
+            <span className="shrink-0 text-sm text-white/60">{label}</span>
+            <div className="min-w-0 grow text-sm text-white/80">{children}</div>
+        </div>
+    );
 
     return (
         <div className="grid gap-6 text-white">
             <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <h3 className="text-lg font-semibold mb-3">Account</h3>
-                <div className="grid gap-2 text-sm text-white/80">
-                    <div>
-                        <span className="text-white/60">Name: </span>
+                <div className="grid gap-2">
+                    <Row label="Name:">
                         <span>
                             {shared.firstName} {shared.lastName}
                         </span>
-                    </div>
-                    <div>
-                        <span className="text-white/60">Email: </span>
+                    </Row>
+                    <Row label="Email:">
                         <span>{shared.email}</span>
-                    </div>
-                    <div>
-                        <span className="text-white/60">Role: </span>
+                    </Row>
+                    <Row label="Role:">
                         <span className="capitalize">{role}</span>
-                    </div>
+                    </Row>
                 </div>
             </section>
 
             {role === "client" ? (
                 <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
                     <h3 className="text-lg font-semibold mb-3">Client Details</h3>
-                    <div className="grid gap-2 text-sm text-white/80">
-                        <div>
-                            <span className="text-white/60">Estimated Budget: </span>
+                    <div className="grid gap-2">
+                        <Row label="Estimated Budget:">
                             <span>{budgetText}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Location: </span>
+                        </Row>
+                        <Row label="Location:">
                             <span>{client.location || "Not set"}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Preferred Style: </span>
+                        </Row>
+                        <Row label="Preferred Style:">
                             <span>{styleText}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Availability: </span>
+                        </Row>
+                        <Row label="Availability:">
                             <span>{availText}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Placement: </span>
+                        </Row>
+                        <Row label="Placement:">
                             <span>{client.placement || "Optional"}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Size: </span>
+                        </Row>
+                        <Row label="Size:">
                             <span>{sizeText}</span>
-                        </div>
+                        </Row>
                     </div>
                 </section>
             ) : (
                 <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
                     <h3 className="text-lg font-semibold mb-3">Artist Details</h3>
-                    <div className="grid gap-2 text-sm text-white/80">
-                        <div>
-                            <span className="text-white/60">Location: </span>
+                    <div className="grid gap-2">
+                        <Row label="Location:">
                             <span>{artist.location || "Not set"}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Shop: </span>
+                        </Row>
+                        <Row label="Shop:">
                             <span>{shopText}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Years Experience: </span>
+                        </Row>
+                        <Row label="Years Experience:">
                             <span>{artist.years || "Not set"}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Base Rate: </span>
+                        </Row>
+                        <Row label="Base Rate:">
                             <span>{artist.baseRate ? `$${Number(artist.baseRate).toLocaleString()}` : "Not set"}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Booking Preference: </span>
+                        </Row>
+                        <Row label="Booking Preference:">
                             <span>{artist.bookingPreference ? BOOKING_LABELS[artist.bookingPreference] : "Not set"}</span>
-                        </div>
-                        <div>
-                            <span className="text-white/60">Travel Frequency: </span>
+                        </Row>
+                        <Row label="Travel Frequency:">
                             <span>{artist.travelFrequency ? TRAVEL_LABELS[artist.travelFrequency] : "Not set"}</span>
-                        </div>
+                        </Row>
+                        <Row label="Styles:">
+                            <InlineWrapBadges items={artist.styles} />
+                        </Row>
                     </div>
                 </section>
             )}

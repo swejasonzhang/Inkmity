@@ -15,7 +15,7 @@ import {
 const router = Router();
 
 router.get("/me", requireAuth(), getMe);
-router.post("/sync", requireAuth(), syncUser);
+router.post("/sync", syncUser);
 
 router.get("/avatar/signature", requireAuth(), getAvatarSignature);
 router.put("/me/avatar", requireAuth(), updateMyAvatar);

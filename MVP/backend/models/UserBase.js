@@ -4,10 +4,10 @@ const { Schema } = mongoose;
 const ImageSchema = new Schema(
   {
     url: { type: String, required: true },
-    publicId: { type: String },
+    publicId: String,
     alt: { type: String, default: "Profile photo" },
-    width: { type: Number },
-    height: { type: Number },
+    width: Number,
+    height: Number,
   },
   { _id: false }
 );
@@ -17,22 +17,17 @@ const UserBaseSchema = new Schema(
     clerkId: { type: String, required: true, unique: true, index: true },
     username: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    avatar: { type: ImageSchema },
-    clerkImageUrl: { type: String },
+    avatar: ImageSchema,
+    clerkImageUrl: String,
     references: { type: [String], default: [] },
   },
-  {
-    timestamps: true,
-    discriminatorKey: "role",
-    collection: "users",
-  }
+  { timestamps: true, discriminatorKey: "role", collection: "users" }
 );
 
 UserBaseSchema.methods.getAvatarUrl = function () {
   if (this.avatar?.url) return this.avatar.url;
   if (this.clerkImageUrl) return this.clerkImageUrl;
-  return "https://stock.adobe.com/search?k=default+profile+picture&asset_id=589932782";
+  return "https://images.placeholders.dev/?width=256&height=256&text=Profile";
 };
 
-const UserBase = mongoose.models.User || mongoose.model("User", UserBaseSchema);
-export default UserBase;
+export default mongoose.models.User || mongoose.model("User", UserBaseSchema);

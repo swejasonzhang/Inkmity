@@ -40,39 +40,34 @@ const Contact: React.FC = () => {
     };
 
     return (
-        <div className="h-dvh bg-app text-app flex flex-col overflow-hidden">
+        <div className="h-dvh bg-app text-white flex flex-col overflow-hidden">
             <Header />
 
             <main className="relative z-10 grid place-items-center h-[100svh] px-4 py-0">
-                <div
-                    className="w-full max-w-3xl mx-auto rounded-3xl border-2 border-app bg-card/90 backdrop-blur p-6 sm:p-10 text-center
-               min-h-[0svh] max-h-[92svh] overflow-y-hidden"
-                >
+                <div className="w-full max-w-3xl mx-auto rounded-3xl border-2 border-app bg-card/90 backdrop-blur p-6 sm:p-10 text-center min-h-[0svh] max-h-[92svh] overflow-y-hidden">
                     <h1 className="text-2xl sm:text-3xl font-bold">Contact</h1>
 
-                    <p className="mt-2 text-subtle text-sm sm:text-base leading-relaxed">
-                        Please enter your feedback or ideas. <span className="font-semibold">Jason</span> personally
+                    <p className="mt-2 text-white text-sm sm:text-base leading-relaxed">
+                        Please enter your feedback or ideas. <span className="font-bold">Jason</span> personally
                         reads every message and uses your input to improve the experience and plan future features.
                     </p>
-                    <p className="mt-2 text-muted">
-                        Have a question, found a bug, or want to partner? Drop us a note.
-                    </p>
+                    <p className="mt-2 text-white">Have a question, found a bug, or want to partner? Drop us a note.</p>
 
                     <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col items-center gap-4 overflow-y-auto">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl mx-auto">
                             <div>
-                                <label className="block text-sm mb-1 text-subtle text-center">Name</label>
+                                <label className="block text-sm mb-1 text-white/80 text-center">Name</label>
                                 <input
-                                    className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
+                                    className="w-full rounded-2xl bg-card border-2 border-app text-white placeholder:text-white/50 px-3 py-2 outline-none focus:bg-elevated"
                                     value={form.name}
                                     onChange={onChange("name")}
                                     placeholder="Your name"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm mb-1 text-subtle text-center">Email</label>
+                                <label className="block text-sm mb-1 text-white/80 text-center">Email</label>
                                 <input
-                                    className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
+                                    className="w-full rounded-2xl bg-card border-2 border-app text-white placeholder:text-white/50 px-3 py-2 outline-none focus:bg-elevated"
                                     value={form.email}
                                     onChange={onChange("email")}
                                     placeholder="you@example.com"
@@ -82,9 +77,9 @@ const Contact: React.FC = () => {
                         </div>
 
                         <div className="w-full max-w-xl mx-auto">
-                            <label className="block text-sm mb-1 text-subtle text-center">Subject (optional)</label>
+                            <label className="block text-sm mb-1 text-white/80 text-center">Subject (optional)</label>
                             <input
-                                className="w-full rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
+                                className="w-full rounded-2xl bg-card border-2 border-app text-white placeholder:text-white/50 px-3 py-2 outline-none focus:bg-elevated"
                                 value={form.subject}
                                 onChange={onChange("subject")}
                                 placeholder="What’s this about?"
@@ -92,9 +87,9 @@ const Contact: React.FC = () => {
                         </div>
 
                         <div className="w-full max-w-xl mx-auto flex flex-col">
-                            <label className="block text-sm mb-1 text-subtle text-center">Message</label>
+                            <label className="block text-sm mb-1 text-white/80 text-center">Message</label>
                             <textarea
-                                className="w-full min-h-[140px] rounded-2xl bg-card border-2 border-app text-app placeholder-[color:var(--muted)] px-3 py-2 outline-none focus:bg-elevated"
+                                className="w-full min-h-[140px] rounded-2xl bg-card border-2 border-app text-white placeholder:text-white/50 px-3 py-2 outline-none focus:bg-elevated"
                                 value={form.message}
                                 onChange={onChange("message")}
                                 placeholder="Share bugs, feature ideas, or anything that would make Inkmity better. Jason reads every message."
@@ -105,16 +100,48 @@ const Contact: React.FC = () => {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full sm:w-auto bg-elevated hover:bg-elevated text-app border-2 border-app"
+                                className="w-full sm:w-auto bg-elevated hover:bg-elevated text-white border-2 border-app"
                             >
                                 {loading ? "Sending..." : "Send message"}
                             </Button>
-                            <p className="text-xs text-muted mt-3">
+                            <p className="text-xs text-white/70 mt-3">
                                 Prefer email?{" "}
                                 <a href="mailto:jason@inkmity.com" className="underline">
                                     jason@inkmity.com
                                 </a>
                             </p>
+
+                            <div className="mt-4 flex items-center gap-4 text-sm">
+                                <a
+                                    href="https://www.linkedin.com/in/swejasonzhang"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline text-white/90 hover:text-white"
+                                    aria-label="LinkedIn"
+                                >
+                                    LinkedIn / swejasonzhang
+                                </a>
+                                <span className="text-white/40">•</span>
+                                <a
+                                    href="https://instagram.com/inkmity"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline text-white/90 hover:text-white"
+                                    aria-label="Instagram"
+                                >
+                                    Instagram / inkmity
+                                </a>
+                                <span className="text-white/40">•</span>
+                                <a
+                                    href="https://www.tiktok.com/@inkmity"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="underline text-white/90 hover:text-white"
+                                    aria-label="TikTok"
+                                >
+                                    TikTok / inkmity
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -132,7 +159,7 @@ const Contact: React.FC = () => {
                     "h-[100svh]",
                     "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
                     "object-contain md:object-cover",
-                    "pointer-events-none opacity-50 mix-blend-screen",
+                    "pointer-events-none opacity-20 mix-blend-screen",
                 ].join(" ")}
                 aria-hidden
             >

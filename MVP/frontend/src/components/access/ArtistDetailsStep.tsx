@@ -1,5 +1,10 @@
 import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Command, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Check, ChevronsUpDown, X, ChevronUp, ChevronDown } from "lucide-react";
 import FormInput from "@/components/dashboard/shared/FormInput";
 
 type ArtistProfile = {
@@ -41,19 +46,6 @@ export default function ArtistDetailsStep({
         } as unknown as React.ChangeEvent<HTMLInputElement>;
         onChange(syntheticEvent);
     };
-    const toggleStyle = (style: string) => {
-        const s = style.trim();
-        const has = styles.includes(s);
-        const next = has ? styles.filter((x) => x !== s) : [...styles, s];
-        setStylesCSV(next);
-    };
-    const setStylesFromCSV = (csv: string) => {
-        const next = csv
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-        setStylesCSV(next);
-    };
 
     const SUGGESTED_STYLES = [
         "Fine Line",
@@ -78,6 +70,149 @@ export default function ArtistDetailsStep({
     const helpCls = "text-xs text-white/50";
     const triggerCls = "h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white";
     const contentCls = "rounded-2xl max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white";
+
+    function MultiSelect({
+        options,
+        value,
+        onChange,
+        placeholder = "Select…",
+    }: {
+        options: string[];
+        value: string[];
+        onChange: (next: string[]) => void;
+        placeholder?: string;
+    }) {
+        const [open, setOpen] = React.useState(false);
+        const listRef = React.useRef<HTMLDivElement | null>(null);
+
+        const toggle = (opt: string) => {
+            const exists = value.includes(opt);
+            onChange(exists ? value.filter((v) => v !== opt) : [...value, opt]);
+        };
+        const clearOne = (opt: string) => onChange(value.filter((v) => v !== opt));
+        const clearAll = () => onChange([]);
+
+        const scrollBy = (delta: number) => {
+            const el = listRef.current;
+            if (!el) return;
+            el.scrollBy({ top: delta, behavior: "smooth" });
+        };
+
+        return (
+            <div>
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full justify-between rounded-xl border-white/10 bg-white/10 text-white"
+                        >
+                            <div className="flex flex-wrap items-center gap-1.5 text-left">
+                                {value.length === 0 ? (
+                                    <span className="text-white/60">{placeholder}</span>
+                                ) : (
+                                    value.map((v) => (
+                                        <Badge
+                                            key={v}
+                                            variant="secondary"
+                                            className="bg-white/15 text-white hover:bg-white/25"
+                                        >
+                                            {v}
+                                            <X
+                                                className="ml-1 h-3 w-3 cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    clearOne(v);
+                                                }}
+                                            />
+                                        </Badge>
+                                    ))
+                                )}
+                            </div>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-70" />
+                        </Button>
+                    </PopoverTrigger>
+
+                    <PopoverContent
+                        className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-white/10 bg-[#0b0b0b] text-white"
+                        align="start"
+                    >
+                        <Command className="bg-transparent">
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => scrollBy(-120)}
+                                    className="absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-md px-2 py-1 text-white/80 hover:bg-white/10"
+                                    aria-label="Scroll up"
+                                >
+                                    <ChevronUp className="h-4 w-4" />
+                                </button>
+
+                                <div
+                                    ref={listRef}
+                                    className="
+                    max-h-64 overflow-y-auto
+                    scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]
+                    [&::-webkit-scrollbar]:hidden
+                    pt-6 pb-6
+                  "
+                                >
+                                    <CommandList className="bg-transparent">
+                                        <CommandEmpty className="py-6 text-white/60 text-center">
+                                            No results
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                            {options.map((opt) => {
+                                                const checked = value.includes(opt);
+                                                return (
+                                                    <CommandItem
+                                                        key={opt}
+                                                        value={opt}
+                                                        onSelect={() => toggle(opt)}
+                                                        className="relative flex w-full items-center justify-center text-center aria-selected:bg-white/5 data-[selected=true]:bg-white/10"
+                                                        data-selected={checked ? "true" : "false"}
+                                                    >
+                                                        <Check
+                                                            className={`absolute left-3 h-4 w-4 ${checked ? "opacity-100" : "opacity-0"}`}
+                                                        />
+                                                        <span className="pointer-events-none">{opt}</span>
+                                                    </CommandItem>
+                                                );
+                                            })}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => scrollBy(120)}
+                                    className="absolute left-1/2 bottom-0 z-10 -translate-x-1/2 rounded-md px-2 py-1 text-white/80 hover:bg-white/10"
+                                    aria-label="Scroll down"
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between border-t border-white/10 p-2">
+                                <span className="text-xs text-white/60">{value.length} selected</span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearAll}
+                                    className="text-white/80 hover:bg-white/10"
+                                >
+                                    Clear
+                                </Button>
+                            </div>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -207,36 +342,12 @@ export default function ArtistDetailsStep({
 
                 <div className="space-y-1.5 md:col-span-2">
                     <label className={labelCls}>Specialty styles</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {SUGGESTED_STYLES.map((s) => {
-                            const checked = styles.includes(s);
-                            return (
-                                <label
-                                    key={s}
-                                    className={`cursor-pointer select-none rounded-xl border px-3 py-2 text-sm ${checked ? "border-white/30 bg-white/10 text-white" : "border-white/10 bg-white/5 text-white/80"
-                                        }`}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        className="mr-2 align-middle accent-white"
-                                        checked={checked}
-                                        onChange={() => toggleStyle(s)}
-                                    />
-                                    {s}
-                                </label>
-                            );
-                        })}
-                    </div>
-                    <div className="mt-3">
-                        <input
-                            name="stylesCSV"
-                            type="text"
-                            placeholder="Add more styles, comma-separated (e.g., Minimalist, Ornamental)"
-                            className={inputCls}
-                            value={styles.join(", ")}
-                            onChange={(e) => setStylesFromCSV(e.target.value)}
-                        />
-                    </div>
+                    <MultiSelect
+                        options={SUGGESTED_STYLES}
+                        value={styles}
+                        onChange={(next) => setStylesCSV(next)}
+                        placeholder="Select one or more styles"
+                    />
                     <p className={helpCls}>Pick one or more styles and/or type your own. At least one is required.</p>
                 </div>
 

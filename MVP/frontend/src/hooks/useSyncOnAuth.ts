@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
+import {
+  buildSyncPayload,
+  mapClientForm,
+  mapArtistForm,
+  Role,
+} from "@/lib/userSync";
 import { useApi } from "@/lib/api";
-import { buildSyncPayload } from "@/lib/userSync";
-
-type Role = "client" | "artist";
 
 export function useSyncOnAuth() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -21,8 +24,10 @@ export function useSyncOnAuth() {
         if (String(e.message).includes("404")) {
           const pm = (user.publicMetadata || {}) as any;
           const role: Role = pm.role === "artist" ? "artist" : "client";
-          const profile = pm.profile || {};
-
+          const profile =
+            role === "artist"
+              ? mapArtistForm(pm.profile || {})
+              : mapClientForm(pm.profile || {});
           const payload = buildSyncPayload({
             clerkId: user.id,
             email: user.primaryEmailAddress?.emailAddress || "",
@@ -32,13 +37,10 @@ export function useSyncOnAuth() {
             username: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim(),
             profile,
           });
-
           await request("/users/sync", {
             method: "POST",
             body: JSON.stringify(payload),
           });
-        } else {
-          console.error("useSyncOnAuth failed:", e);
         }
       } finally {
         syncing.current = false;
