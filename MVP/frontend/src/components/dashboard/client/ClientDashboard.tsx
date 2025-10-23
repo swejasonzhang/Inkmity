@@ -1,69 +1,70 @@
-import { useEffect, useRef, useState, useMemo } from "react";
-import { useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
-import Header from "@/components/header/Header";
-import ChatBot from "@/components/dashboard/shared/ChatBot";
-import ChatWindow from "@/components/dashboard/shared/ChatWindow";
-import ArtistsSection from "@/components/dashboard/client/ArtistsSection";
-import ArtistModal from "@/components/dashboard/client/ArtistModal";
-import { toast } from "react-toastify";
-import { MessageSquare, Bot, X } from "lucide-react";
-import { useDashboardData, ArtistDto } from "@/hooks/useDashboardData";
-import FloatingBar from "@/components/dashboard/shared/FloatingBar";
-import { useTheme } from "@/components/header/useTheme";
-import CircularProgress from "@mui/material/CircularProgress";
-import { displayNameFromUsername } from "@/lib/format";
-import { API_URL } from "@/lib/api";
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useUser } from "@clerk/clerk-react"
+import { useNavigate } from "react-router-dom"
+import Header from "@/components/header/Header"
+import ChatBot from "@/components/dashboard/shared/ChatBot"
+import ChatWindow from "@/components/dashboard/shared/ChatWindow"
+import ArtistsSection from "@/components/dashboard/client/ArtistsSection"
+import ArtistModal from "@/components/dashboard/client/ArtistModal"
+import { toast } from "react-toastify"
+import { MessageSquare, Bot, X } from "lucide-react"
+import { useDashboardData } from "@/hooks"
+import FloatingBar from "@/components/dashboard/shared/FloatingBar"
+import { useTheme } from "@/components/header/useTheme"
+import CircularProgress from "@mui/material/CircularProgress"
+import { displayNameFromUsername } from "@/lib/format"
+import { API_URL } from "@/lib/http"
+import type { Artist as ArtistDto } from "@/api"
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 12
 
-const ClientDashboard: React.FC = () => {
-    const { isSignedIn, isLoaded, user } = useUser();
-    const navigate = useNavigate();
-    const warnedRef = useRef(false);
-    const { theme, toggleTheme, logoSrc, themeClass } = useTheme();
-    const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
+export default function ClientDashboard() {
+    const { isSignedIn, isLoaded, user } = useUser()
+    const navigate = useNavigate()
+    const warnedRef = useRef(false)
+    const { theme, toggleTheme, logoSrc, themeClass } = useTheme()
+    const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null)
 
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isLoaded) return
         if (!isSignedIn && !warnedRef.current) {
-            warnedRef.current = true;
-            toast.error("You aren't logged in. Please log in.", { position: "top-center", theme: "dark" });
-            navigate("/login", { replace: true });
+            warnedRef.current = true
+            toast.error("You aren't logged in. Please log in.", { position: "top-center", theme: "dark" })
+            navigate("/login", { replace: true })
         }
-    }, [isLoaded, isSignedIn, navigate]);
+    }, [isLoaded, isSignedIn, navigate])
 
-    const { artists, loading, initialized } = useDashboardData();
+    const { artists, loading, initialized } = useDashboardData()
 
-    const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
-    const [assistantOpen, setAssistantOpen] = useState(false);
-    const [messagesOpen, setMessagesOpen] = useState(false);
-    const [page, setPage] = useState(1);
-    const [total, setTotal] = useState<number>(0);
+    const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null)
+    const [assistantOpen, setAssistantOpen] = useState(false)
+    const [messagesOpen, setMessagesOpen] = useState(false)
+    const [page, setPage] = useState(1)
+    const [total, setTotal] = useState<number>(0)
 
     useEffect(() => {
-        setTotal(artists.length);
-    }, [artists.length]);
+        setTotal(artists.length)
+    }, [artists.length])
 
-    const totalPages = Math.max(1, Math.ceil((total || 0) / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil((total || 0) / PAGE_SIZE))
 
     const handlePageChange = async (next: number) => {
-        if (next < 1 || next > totalPages) return;
-        setPage(next);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    };
+        if (next < 1 || next > totalPages) return
+        setPage(next)
+        window.scrollTo({ top: 0, behavior: "smooth" })
+    }
 
     const modalArtist = useMemo(() => {
-        if (!selectedArtist) return null;
-        const imgs = (selectedArtist as any).images?.filter(Boolean) || [];
+        if (!selectedArtist) return null
+        const imgs = (selectedArtist as any).images?.filter(Boolean) || []
         const fallback = [
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23E5E7EB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-size='20' font-family='sans-serif'>Mock Image 1</text></svg>`,
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239CA3AF' font-size='20' font-family='sans-serif'>Mock Image 2</text></svg>`,
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`,
-        ];
-        const pool = imgs.length ? imgs : fallback;
-        const pastWorks = pool.filter((_: unknown, i: number) => i % 2 === 0);
-        const sketches = pool.filter((_: unknown, i: number) => i % 2 === 1);
+        ]
+        const pool = imgs.length ? imgs : fallback
+        const pastWorks = pool.filter((_, i) => i % 2 === 0)
+        const sketches = pool.filter((_, i) => i % 2 === 1)
         return {
             _id: selectedArtist._id,
             clerkId: (selectedArtist as any).clerkId,
@@ -71,28 +72,29 @@ const ClientDashboard: React.FC = () => {
             bio: (selectedArtist as any).bio,
             pastWorks,
             sketches,
-        };
-    }, [selectedArtist]);
+        }
+    }, [selectedArtist])
 
     if (!isLoaded || !initialized) {
         return (
             <div className="fixed inset-0 grid place-items-center bg-app text-app">
                 <CircularProgress sx={{ color: "var(--fg)" }} />
             </div>
-        );
+        )
     }
 
-    if (!user)
+    if (!user) {
         return (
             <div className="fixed inset-0 grid place-items-center bg-app text-app">
                 <CircularProgress sx={{ color: "var(--fg)" }} />
             </div>
-        );
+        )
+    }
 
     const bareAuthFetch = async (url: string, options?: RequestInit) => {
-        const full = url.startsWith("http") ? url : `${API_URL}${url}`;
-        return fetch(full, options);
-    };
+        const full = url.startsWith("http") ? url : `${API_URL}${url}`
+        return fetch(full, options)
+    }
 
     return (
         <div className={themeClass}>
@@ -102,7 +104,7 @@ const ClientDashboard: React.FC = () => {
                 <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
                     <div className="flex-1 min-w-0">
                         <ArtistsSection
-                            artists={artists.map((a) => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                            artists={artists.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
                             loading={loading}
                             showArtists
                             onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
@@ -163,30 +165,18 @@ const ClientDashboard: React.FC = () => {
                         artist={modalArtist}
                         onClose={() => setSelectedArtist(null)}
                         onMessage={() => {
-                            setMessagesOpen(true);
+                            setMessagesOpen(true)
                         }}
                     />
                 )}
             </div>
         </div>
-    );
-};
+    )
+}
 
-export default ClientDashboard;
-
-function Pagination({
-    page,
-    totalPages,
-    onChange,
-    disabled,
-}: {
-    page: number;
-    totalPages: number;
-    onChange: (p: number) => void;
-    disabled?: boolean;
-}) {
-    const canPrev = page > 1 && !disabled;
-    const canNext = page < totalPages && !disabled;
+function Pagination({ page, totalPages, onChange, disabled }: { page: number; totalPages: number; onChange: (p: number) => void; disabled?: boolean }) {
+    const canPrev = page > 1 && !disabled
+    const canNext = page < totalPages && !disabled
     return (
         <nav className="pt-2">
             <div className="sm:hidden flex w-full items-center justify-between">
@@ -198,5 +188,5 @@ function Pagination({
                 </button>
             </div>
         </nav>
-    );
+    )
 }

@@ -14,13 +14,11 @@ export function useAlreadySignedInRedirect(opts: Opts = {}) {
 
   useEffect(() => {
     if (!isLoaded || suppress || firedRef.current) return;
-
     const isAuthPage = pathname === "/login" || pathname === "/signup";
     if (!isAuthPage || !isSignedIn) return;
 
     const justAuthed = sessionStorage.getItem("authRedirect") === "1";
     sessionStorage.removeItem("authRedirect");
-
     firedRef.current = true;
 
     if (!silent && !justAuthed) {
@@ -30,7 +28,6 @@ export function useAlreadySignedInRedirect(opts: Opts = {}) {
         closeButton: false,
       });
     }
-
     navigate(redirectTo, { replace: true });
   }, [isLoaded, isSignedIn, pathname, navigate, suppress, redirectTo, silent]);
 }

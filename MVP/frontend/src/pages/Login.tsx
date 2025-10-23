@@ -4,7 +4,7 @@ import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSignIn, useUser } from "@clerk/clerk-react";
-import { validateEmail } from "@/utils/validation";
+import { validateEmail } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { Button } from "@/components/ui/button";

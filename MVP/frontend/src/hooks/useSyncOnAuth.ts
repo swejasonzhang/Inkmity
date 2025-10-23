@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { apiGet, apiPost } from "@/lib/api";
+import { getMe, syncUser } from "@/api";
+
+type Role = "client" | "artist";
 
 export function useSyncOnAuth() {
   const { isSignedIn, user } = useUser();
@@ -16,11 +18,9 @@ export function useSyncOnAuth() {
         const token = await getToken();
 
         try {
-          await apiGet("/users/me", undefined, token || undefined);
+          await getMe(token ?? "");
           return;
-        } catch (e: any) {
-          if (e?.status !== 404) return;
-        }
+        } catch {}
 
         if (!user) return;
 
@@ -29,9 +29,8 @@ export function useSyncOnAuth() {
           user.emailAddresses?.[0]?.emailAddress ||
           "";
 
-        const role =
-          (user.publicMetadata?.role as "client" | "artist" | undefined) ||
-          "client";
+        const role: Role =
+          (user.publicMetadata?.role as Role | undefined) ?? "client";
 
         const fn = user.firstName?.trim() || "";
         const ln = user.lastName?.trim() || "";
@@ -61,25 +60,19 @@ export function useSyncOnAuth() {
               };
 
         try {
-          await apiPost(
-            "/users/sync",
-            {
-              clerkId: user.id,
-              email,
-              role,
-              username,
-              firstName: fn,
-              lastName: ln,
-              profile,
-            },
-            token || undefined
-          );
-        } catch (e: any) {
-          if (e?.status !== 409) return;
-        }
+          await syncUser(token ?? "", {
+            clerkId: user.id,
+            email,
+            role,
+            username,
+            firstName: fn,
+            lastName: ln,
+            profile,
+          });
+        } catch {}
 
         try {
-          await apiGet("/users/me", undefined, token || undefined);
+          await getMe(token ?? "");
         } catch {}
       } catch {}
     })();

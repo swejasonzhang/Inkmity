@@ -139,18 +139,15 @@ function parseExp(q) {
 
 export async function getArtists(req, res) {
   const Artist = mongoose.model("artist");
-
   const page = Math.max(1, Number(req.query.page || 1));
   const pageSize = Math.max(1, Math.min(48, Number(req.query.pageSize || 12)));
   const sortKey = String(req.query.sort || "rating_desc");
-
   const search = String(req.query.search || "").trim();
   const location = String(req.query.location || "").trim();
   const style = String(req.query.style || "").trim();
   const booking = String(req.query.booking || "").trim();
   const travel = String(req.query.travel || "").trim();
   const experience = parseExp(req.query.experience);
-
   const filter = {};
 
   if (search) {
@@ -167,14 +164,16 @@ export async function getArtists(req, res) {
   if (Object.keys(experience).length)
     Object.assign(filter, { yearsExperience: experience });
 
-  const sort = (() => {
-    if (sortKey === "experience_desc")
-      return { yearsExperience: -1, rating: -1 };
-    if (sortKey === "experience_asc") return { yearsExperience: 1, rating: -1 };
-    if (sortKey === "newest") return { createdAt: -1 };
-    if (sortKey === "rating_asc") return { rating: 1, reviewsCount: -1 };
-    return { rating: -1, reviewsCount: -1, createdAt: -1 };
-  })();
+  const sort =
+    sortKey === "experience_desc"
+      ? { yearsExperience: -1, rating: -1 }
+      : sortKey === "experience_asc"
+      ? { yearsExperience: 1, rating: -1 }
+      : sortKey === "newest"
+      ? { createdAt: -1 }
+      : sortKey === "rating_asc"
+      ? { rating: 1, reviewsCount: -1 }
+      : { rating: -1, reviewsCount: -1, createdAt: -1 };
 
   const [total, items] = await Promise.all([
     Artist.countDocuments(filter),
@@ -183,7 +182,7 @@ export async function getArtists(req, res) {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .select(
-        "_id username role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount createdAt"
+        "_id clerkId username role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount createdAt"
       )
       .lean(),
   ]);
@@ -228,6 +227,7 @@ export async function syncUser(req, res) {
         .status(400)
         .json({ error: "clerkId, email, role are required" });
 
+    const SAFE_ROLES = new Set(["client", "artist"]);
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
     const requestedUsername = String(username || "").trim();
@@ -314,9 +314,8 @@ export async function syncUser(req, res) {
         setDefaultsOnInsert: true,
       }
     );
-
     res.status(200).json(user);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to sync user" });
   }
 }

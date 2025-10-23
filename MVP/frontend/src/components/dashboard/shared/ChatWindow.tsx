@@ -41,29 +41,26 @@ const ChatWindow: FC<ChatWindowProps> = ({
   expandedId: externalExpandedId,
   authFetch,
 }) => {
-  const [localConversations, setLocalConversations] = useState<Conversation[]>(conversations);
-  const [messageInput, setMessageInput] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [messageInput, setMessageInput] = useState<Record<string, string>>({});
   const [sendError, setSendError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  useEffect(() => setLocalConversations(conversations), [conversations]);
-
   useEffect(() => {
     if (externalExpandedId !== undefined) setExpandedId(externalExpandedId ?? null);
   }, [externalExpandedId]);
 
   useEffect(() => {
-    if (localConversations.length > 0 && expandedId == null) {
-      const first = localConversations[0].participantId;
+    if (conversations.length > 0 && expandedId == null) {
+      const first = conversations[0].participantId;
       if (collapsedMap[first] === false || collapsedMap[first] === undefined) {
         setExpandedId(first);
       }
     }
-  }, [localConversations, expandedId, collapsedMap]);
+  }, [conversations, expandedId, collapsedMap]);
 
   useEffect(() => {
     if (!confirmOpen) return;
@@ -82,7 +79,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     );
   }
 
-  if (!localConversations || localConversations.length === 0) {
+  if (!conversations || conversations.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -94,27 +91,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
     );
   }
 
-  const handleSend = async (participantId: string, username?: string) => {
+  const handleSend = async (participantId: string) => {
     const text = messageInput[participantId]?.trim();
     if (!text) return;
 
-    const optimistic: Message = {
-      senderId: currentUserId,
-      receiverId: participantId,
-      text,
-      timestamp: Date.now(),
-    };
-
     setSendError(null);
-    setLocalConversations((prev) => {
-      const idx = prev.findIndex((c) => c.participantId === participantId);
-      if (idx === -1) {
-        return [...prev, { participantId, username: username ?? participantId, messages: [optimistic] }];
-      }
-      const next = [...prev];
-      next[idx] = { ...next[idx], messages: [...next[idx].messages, optimistic] };
-      return next;
-    });
     setExpandedId(participantId);
     setMessageInput((prev) => ({ ...prev, [participantId]: "" }));
 
@@ -122,31 +103,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
       const res = await authFetch("http://localhost:5005/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          receiverId: participantId,
-          text,
-        }),
+        body: JSON.stringify({ receiverId: participantId, text }),
       });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
     } catch (err: any) {
       setSendError(err?.message || "Failed to send message.");
-      setLocalConversations((prev) =>
-        prev.map((c) =>
-          c.participantId === participantId
-            ? {
-              ...c,
-              messages: c.messages.filter(
-                (m) =>
-                  !(
-                    m.timestamp === optimistic.timestamp &&
-                    m.text === optimistic.text &&
-                    m.senderId === optimistic.senderId
-                  )
-              ),
-            }
-            : c
-        )
-      );
       setMessageInput((prev) => ({ ...prev, [participantId]: text }));
     }
   };
@@ -155,7 +116,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     const isCurrentlyExpanded = expandedId === participantId;
     setExpandedId(isCurrentlyExpanded ? null : participantId);
     onToggleCollapse(participantId);
-    localConversations.forEach((conv) => {
+    conversations.forEach((conv) => {
       if (conv.participantId !== participantId && !collapsedMap[conv.participantId]) {
         onToggleCollapse(conv.participantId);
       }
@@ -239,7 +200,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     <>
       {sendError && <div className="mb-2 px-3 py-2 rounded-lg bg-red-900/30 border border-red-700 text-red-200 text-sm">{sendError}</div>}
       <div className="flex flex-col gap-4 overflow-y-auto h-full bg-black p-2 rounded-3xl">
-        {localConversations.map((conv) => {
+        {conversations.map((conv) => {
           const isExpanded = expandedId === conv.participantId && !collapsedMap[conv.participantId];
           return (
             <motion.div
@@ -306,10 +267,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       className="flex-1 p-2 bg-gray-800 text-white focus:outline-none border-none"
                       placeholder="Type a message..."
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") handleSend(conv.participantId, conv.username);
+                        if (e.key === "Enter") handleSend(conv.participantId);
                       }}
                     />
-                    <button onClick={() => handleSend(conv.participantId, conv.username)} className="bg-gray-700 px-4 text-white border-none">
+                    <button onClick={() => handleSend(conv.participantId)} className="bg-gray-700 px-4 text-white border-none">
                       Send
                     </button>
                   </div>

@@ -7,10 +7,10 @@ import FullscreenZoom from "./FullscreenZoom";
 
 export type ArtistWithGroups = {
     _id: string;
-    clerkId?: string;
+    clerkId: string;
     username: string;
     bio?: string;
-    pastWorks: string[];
+    pastWorks?: string[];
     sketches?: string[];
     avatarUrl?: string;
 };
@@ -29,17 +29,12 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
     const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
     const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Upcoming Sketches" }>(null);
 
-    const openZoom = (items: string[], index: number, label: "Past Works" | "Upcoming Sketches") =>
-        setZoom({ items, index, label });
+    const openZoom = (items: string[], index: number, label: "Past Works" | "Upcoming Sketches") => setZoom({ items, index, label });
     const closeZoom = () => setZoom(null);
     const goPrev = () => setZoom((z) => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
     const goNext = () => setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
 
-    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({
-        images,
-        imgAltPrefix,
-        label,
-    }) => (
+    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => (
         <div className="w-full hidden sm:flex justify-center">
             <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
                 {images.map((src, i) => (
@@ -63,11 +58,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                             <div
                                 className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                                style={{
-                                    background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
-                                    borderColor: "var(--border)",
-                                    color: "var(--fg)",
-                                }}
+                                style={{ background: "color-mix(in oklab, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
                             >
                                 <Maximize2 className="h-3.5 w-3.5" /> View
                             </div>
@@ -78,11 +69,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         </div>
     );
 
-    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({
-        images,
-        imgAltPrefix,
-        label,
-    }) => {
+    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
         const [index, setIndex] = useState(0);
         const swipeTo = (dir: "prev" | "next") => {
             setIndex((i) => {
@@ -97,14 +84,10 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         };
         if (!images.length) return null;
         const src = images[index];
-
         return (
             <div className="sm:hidden">
                 <div className="w-full">
-                    <div
-                        className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border"
-                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                    >
+                    <div className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
                         <motion.button
                             key={src}
                             drag="x"
@@ -117,23 +100,12 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             className="block w-full"
                         >
                             <div className="w-full aspect-[4/3]">
-                                <img
-                                    src={src}
-                                    alt={`${imgAltPrefix} ${index + 1}`}
-                                    className="h-full w-full object-cover"
-                                    loading="eager"
-                                    decoding="async"
-                                    referrerPolicy="no-referrer"
-                                />
+                                <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="h-full w-full object-cover" loading="eager" decoding="async" referrerPolicy="no-referrer" />
                             </div>
                         </motion.button>
                         <div
                             className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                            style={{
-                                background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
-                                borderColor: "var(--border)",
-                                color: "var(--fg)",
-                            }}
+                            style={{ background: "color-mix(in oklab, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
                         >
                             <Maximize2 className="h-3.5 w-3.5" /> View
                         </div>
@@ -146,9 +118,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                     className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
                                     style={{
                                         background:
-                                            i === index
-                                                ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                                                : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                            i === index ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)",
                                     }}
                                 />
                             ))}
@@ -204,10 +174,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                             aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
                                             className="h-2.5 w-6 rounded-full transition-all"
                                             style={{
-                                                background:
-                                                    i === 0
-                                                        ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                                background: i === 0 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)",
                                             }}
                                         />
                                     ))}
@@ -219,10 +186,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                     animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
                                     transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
                                     className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
-                                    style={{
-                                        background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                                        color: "color-mix(in oklab, var(--fg) 90%, transparent)",
-                                    }}
+                                    style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "color-mix(in oklab, var(--fg) 90%, transparent)" }}
                                 >
                                     <ChevronDown className="h-4 w-4" />
                                     <span>Scroll to explore the portfolio</span>
@@ -233,10 +197,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 <Button
                                     onClick={onNext}
                                     className="rounded-xl px-3 sm:px-4 py-2 text-sm font-medium shadow-sm border-0"
-                                    style={{
-                                        background: "color-mix(in oklab, var(--elevated) 96%, transparent)",
-                                        color: "var(--fg)",
-                                    }}
+                                    style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                                     variant="outline"
                                 >
                                     Next: Booking &amp; Message
@@ -264,11 +225,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             ) : (
                                 <div
                                     className="h-24 w-24 sm:h-28 sm:w-28 rounded-full grid place-items-center border shadow text-2xl sm:text-3xl font-semibold"
-                                    style={{
-                                        borderColor: "var(--border)",
-                                        background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                                        color: "var(--fg)",
-                                    }}
+                                    style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
                                     aria-label={`${artist.username} profile placeholder`}
                                 >
                                     {initials}
@@ -285,12 +242,8 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
                 <section className="w-full -mt-2">
                     <div className="mx-auto max-w-4xl text-center px-4">
-                        <p
-                            className="text-lg sm:text-xl font-bold leading-relaxed"
-                            style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}
-                        >
-                            View the gallery below and click any image to zoom. Press &amp; hold while zoomed for a
-                            powerful “microscope” magnification.
+                        <p className="text-lg sm:text-xl font-bold leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>
+                            View the gallery below and click any image to zoom. Press &amp; hold while zoomed for a powerful “microscope” magnification.
                         </p>
                     </div>
                 </section>
@@ -316,7 +269,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
                 {sketches.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                        <header className="mb-4 sm:mb-5 flex itemsend justify-between">
                             <h3 className="text-base sm:text-lg font-semibold">Upcoming Sketches & Ideas</h3>
                             <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                                 {sketches.length} image{sketches.length === 1 ? "" : "s"}
@@ -324,7 +277,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                         </header>
 
                         <MobileCarousel images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
-
                         <ImageGrid images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
                     </section>
                 )}
