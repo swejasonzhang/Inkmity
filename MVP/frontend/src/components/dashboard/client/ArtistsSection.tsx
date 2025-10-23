@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import ArtistCard from "./ArtistCard"
 import ArtistFilter from "./ArtistFilter"
 import CircularProgress from "@mui/material/CircularProgress"
@@ -93,7 +93,6 @@ export default function ArtistsSection({
     const [searchQuery, setSearchQuery] = useState<string>(typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "")
     const [debouncedSearch, setDebouncedSearch] = useState<string>((typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "").trim().toLowerCase())
     const [currentPage, setCurrentPage] = useState(1)
-    const [filterOpacity] = useState(1)
 
     const usingExternalPaging = typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function"
 
@@ -218,7 +217,6 @@ export default function ArtistsSection({
         return list.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort])
 
-    const clientTotalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
     const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
     const listItems = usingExternalPaging ? filtered : clientPageItems
     const isCenterLoading = loading || !showArtists
@@ -254,7 +252,7 @@ export default function ArtistsSection({
 
     return (
         <section id="middle-content" className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-card" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            <div className="bg-card px-3 py-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300" style={{ opacity: 1 }}>
+            <div className="bg-card px-3 py-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300">
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={v => {

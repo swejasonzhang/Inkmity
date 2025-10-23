@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon } from "lucide-react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme as useThemeHook } from "./useTheme";
 import whiteLogo from "@/assets/WhiteLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "./buildNavItems";
@@ -10,108 +10,24 @@ import { NavMobile } from "./NavMobile";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
-  theme?: "light" | "dark";
-  toggleTheme?: () => void;
   logoSrc?: string;
 };
 
 type TipState = { show: boolean; x: number; y: number };
 
-type ThemeSwitchProps = {
-  theme: "light" | "dark";
-  toggleTheme: () => void;
-  size?: "md" | "sm";
-};
-
-const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
-  const isLight = theme === "light";
-  const dims =
-    size === "md"
-      ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 18 }
-      : { h: "h-8", w: "w-16", knob: "h-6 w-6", icon: 16 };
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-label="Toggle theme"
-      aria-checked={isLight}
-      onClick={toggleTheme}
-      className={["relative inline-flex items-center rounded-full border border-app focus:outline-none focus:ring-2 focus:ring-[color:var(--border)] bg-card", dims.h, dims.w].join(" ")}
-    >
-      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-        <Moon size={dims.icon} className="text-app/80" />
-      </span>
-      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-        <Sun size={dims.icon} className="text-app/80" />
-      </span>
-      <span
-        className={[
-          "absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300",
-          "bg-[color:var(--fg)]",
-          dims.knob,
-          isLight ? "right-1" : "left-1",
-        ].join(" ")}
-      />
-      <span className="sr-only">{isLight ? "Switch to dark theme" : "Switch to light theme"}</span>
-    </button>
-  );
-};
-
-function DevRoleToggleInline({
-  current,
-  onSet,
-}: {
-  current: "client" | "artist";
-  onSet: (v: "client" | "artist" | null) => void;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        className={`px-3 py-1 rounded-lg text-sm ${current === "client" ? "bg-elevated" : "hover:bg-elevated"}`}
-        onClick={() => onSet("client")}
-      >
-        Client
-      </button>
-      <button
-        className={`px-3 py-1 rounded-lg text-sm ${current === "artist" ? "bg-elevated" : "hover:bg-elevated"}`}
-        onClick={() => onSet("artist")}
-      >
-        Artist
-      </button>
-      <button
-        className="px-3 py-1 rounded-lg text-sm hover:bg-elevated"
-        onClick={() => onSet(null)}
-      >
-        Follow Clerk
-      </button>
-    </div>
-  );
-}
-
-const Header: React.FC<HeaderProps> = ({
-  disableDashboardLink = false,
-  theme: themeProp,
-  toggleTheme: toggleThemeProp,
-  logoSrc: logoSrcProp,
-}) => {
+const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: logoSrcProp }) => {
   const { signOut } = useClerk();
   const { user } = useUser();
   const isSignedIn = Boolean(user?.id);
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  const { theme: hookTheme, toggleTheme: hookToggle, logoSrc: hookLogo } = useThemeHook();
-
-  const theme = themeProp ?? hookTheme;
-  const toggleTheme = toggleThemeProp ?? hookToggle;
+  const { logoSrc: hookLogo } = useThemeHook();
 
   const isDashboard = pathname.startsWith("/dashboard");
   const logoSrc = isDashboard ? (logoSrcProp ?? hookLogo) : whiteLogo;
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
-  const showThemeToggle = isDashboard;
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -161,23 +77,6 @@ const Header: React.FC<HeaderProps> = ({
 
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const isDev = import.meta.env.MODE !== "production";
-  const currentOverride = (searchParams.get("as") as "client" | "artist" | null) ??
-    ((localStorage.getItem("roleOverride") as "client" | "artist" | null) ?? null) ??
-    "client";
-
-  const setOverride = (val: "client" | "artist" | null) => {
-    if (val) {
-      localStorage.setItem("roleOverride", val);
-      searchParams.set("as", val);
-      setSearchParams(searchParams, { replace: true });
-    } else {
-      localStorage.removeItem("roleOverride");
-      searchParams.delete("as");
-      setSearchParams(searchParams, { replace: true });
-    }
-  };
-
   return (
     <>
       <header className="hidden md:flex w-full relative items-center z-50 text-app py-[10px]">
@@ -202,15 +101,6 @@ const Header: React.FC<HeaderProps> = ({
             </span>
 
             <div className="flex items-center gap-3">
-              {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />}
-
-              {isDev && isDashboard && (
-                <DevRoleToggleInline
-                  current={currentOverride as "client" | "artist"}
-                  onSet={setOverride}
-                />
-              )}
-
               {isSignedIn && user && (
                 <div
                   className="relative inline-block align-top group text-app [&_*]:text-app [&_*]:border-app"
@@ -226,7 +116,8 @@ const Header: React.FC<HeaderProps> = ({
                   </div>
 
                   <div
-                    className={`absolute left-0 right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
+                    className={`absolute left-0 right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"
+                      }`}
                   >
                     <button
                       onClick={async () => await signOut({ redirectUrl: "/login" })}
@@ -265,15 +156,6 @@ const Header: React.FC<HeaderProps> = ({
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
-          {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />}
-
-          {isDev && isDashboard && (
-            <DevRoleToggleInline
-              current={currentOverride as "client" | "artist"}
-              onSet={setOverride}
-            />
-          )}
-
           <button
             aria-label="Open menu"
             className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
