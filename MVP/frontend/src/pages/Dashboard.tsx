@@ -44,10 +44,6 @@ const Dashboard: React.FC = () => {
     }
   }, [isLoaded, isSignedIn, navigate]);
 
-  useEffect(() => {
-    console.log("[dashboard] role:", role, "override:", override, "roleToUse:", roleToUse);
-  }, [role, override, roleToUse]);
-
   if (!isLoaded || !isSignedIn) return <Loading />;
 
   return (

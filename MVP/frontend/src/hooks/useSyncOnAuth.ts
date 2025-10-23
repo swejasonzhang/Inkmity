@@ -17,13 +17,9 @@ export function useSyncOnAuth() {
 
         try {
           await apiGet("/users/me", undefined, token || undefined);
-          console.log("[sync] user already exists");
           return;
         } catch (e: any) {
-          if (e?.status !== 404) {
-            console.warn("[sync] /users/me failed with non-404:", e?.status);
-            return;
-          }
+          if (e?.status !== 404) return;
         }
 
         if (!user) return;
@@ -65,7 +61,7 @@ export function useSyncOnAuth() {
               };
 
         try {
-          const created = await apiPost(
+          await apiPost(
             "/users/sync",
             {
               clerkId: user.id,
@@ -78,26 +74,14 @@ export function useSyncOnAuth() {
             },
             token || undefined
           );
-          console.log("[sync] created:", created);
         } catch (e: any) {
-          if (e?.status === 409) {
-            console.log(
-              "[sync] conflict (already created under different params), continuing"
-            );
-          } else {
-            console.error("[sync] /users/sync failed:", e);
-          }
+          if (e?.status !== 409) return;
         }
 
         try {
           await apiGet("/users/me", undefined, token || undefined);
-          console.log("[sync] verified /users/me after create");
-        } catch (e) {
-          console.warn("[sync] /users/me still failing after create:", e);
-        }
-      } catch (e) {
-        console.error("[sync] unexpected error:", e);
-      }
+        } catch {}
+      } catch {}
     })();
   }, [isSignedIn, getToken, user]);
 }
