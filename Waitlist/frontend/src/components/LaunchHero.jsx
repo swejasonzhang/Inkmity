@@ -195,7 +195,6 @@ export default function LaunchHero() {
           ))}
         </motion.div>
 
-        {/* Always rendered scroll cue, visibility toggled after everything finishes */}
         <div
           className={[
             "mt-9 flex flex-col items-center gap-2 select-none transition-all duration-500",

@@ -84,13 +84,13 @@ export default function WaitlistPage() {
       <BackgroundVideo />
       <ConfettiBurst fire={fire} key={confettiKey} />
       <div className="relative z-10 w-full">
-        <main className="w-full flex flex-col items-center pt-4 pb-20">
+        <main className="w-full flex flex-col items-center pt-4 pb-5">
           <motion.section
             variants={fade}
             initial="hidden"
             whileInView="show"
             viewport={vp}
-            className="w-full"
+            className="w-full min-h-screen flex items-center justify-center"
           >
             <LaunchHero />
           </motion.section>

@@ -946,7 +946,7 @@ export default function FeatureShowcase() {
   const [mobileRole, setMobileRole] = useState("client");
 
   return (
-    <section className="container mx-auto max-w-6xl px-4 pb-12 md:pb-16">
+    <section className="container mx-auto max-w-6xl px-4 pb-4 md:pb-6">
       <h2 className="text-center text-2xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#fff,rgba(255,255,255,.6))]">
         Our Features
       </h2>
