@@ -160,10 +160,18 @@ export default function FormCard(props: Props) {
                       <OtpStep
                         code={(props as SignupProps).code}
                         setCode={(props as SignupProps).setCode}
-                        onBack={(props as SignupProps).onBack}
                         onVerify={(props as SignupProps).onVerify}
                         loading={(props as SignupProps).loading || !(props as SignupProps).isLoaded}
                       />
+                      <div className="flex items-center gap-3">
+                        <Button
+                          type="button"
+                          onClick={(props as SignupProps).onBack}
+                          className="bg-white/10 hover:bg-white/20 text-white h-11 text-base rounded-xl"
+                        >
+                          Back
+                        </Button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

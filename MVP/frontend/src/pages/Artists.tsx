@@ -1,49 +1,32 @@
-import React, { useEffect, useMemo, useState } from "react";
-import ArtistCard from "../components/dashboard/client/ArtistCard";
-import ArtistFilter from "../components/dashboard/client/ArtistFilter";
-import { fetchArtists } from "../api/artists";
+import React, { useEffect, useMemo, useState } from "react"
+import ArtistCard from "@/components/dashboard/client/ArtistCard"
+import ArtistFilter from "@/components/dashboard/client/ArtistFilter"
+import { fetchArtists, type Artist } from "@/api"
 
-interface Artist {
-  _id: string;
-  username: string;
-  location?: string;
-  style?: string[];
-  rating?: number;
-  reviewsCount?: number;
-  yearsExperience?: number;
-  reviews?: { rating: number; comment?: string }[];
-  images?: string[];
-  priceRange?: { min: number; max: number };
-  bio?: string;
-}
-
-const PAGE_SIZE_FALLBACK = 12;
+const PAGE_SIZE = 12
 
 const Artists: React.FC = () => {
-  const [artists, setArtists] = useState<Artist[]>([]);
-
-  const [priceFilter, setPriceFilter] = useState("all");
-  const [locationFilter, setLocationFilter] = useState("all");
-  const [styleFilter, setStyleFilter] = useState("all");
-  const [availabilityFilter, setAvailabilityFilter] = useState("all");
-  const [experienceFilter, setExperienceFilter] = useState("all");
-  const [bookingFilter, setBookingFilter] = useState("all");
-  const [travelFilter, setTravelFilter] = useState("all");
-  const [sort, setSort] = useState("rating_desc");
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const [loading, setLoading] = useState<boolean>(true);
-  const [loadingMore, setLoadingMore] = useState<boolean>(false);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [artists, setArtists] = useState<Artist[]>([])
+  const [priceFilter, setPriceFilter] = useState("all")
+  const [locationFilter, setLocationFilter] = useState("all")
+  const [styleFilter, setStyleFilter] = useState("all")
+  const [availabilityFilter, setAvailabilityFilter] = useState("all")
+  const [experienceFilter, setExperienceFilter] = useState("all")
+  const [bookingFilter, setBookingFilter] = useState("all")
+  const [travelFilter, setTravelFilter] = useState("all")
+  const [sort, setSort] = useState("rating_desc")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [loadingMore, setLoadingMore] = useState<boolean>(false)
+  const [hasMore, setHasMore] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
+    return () => clearTimeout(t)
+  }, [searchQuery])
 
   const filtersKey = useMemo(
     () =>
@@ -69,67 +52,48 @@ const Artists: React.FC = () => {
       sort,
       debouncedSearch,
     ]
-  );
+  )
 
-  const loadArtists = async (opts: { page: number; reset: boolean }) => {
-    const { page, reset } = opts;
+  async function loadArtists(opts: { page: number; reset: boolean }) {
+    const { page, reset } = opts
     try {
-      reset ? setLoading(true) : setLoadingMore(true);
-      setError(null);
+      reset ? setLoading(true) : setLoadingMore(true)
+      setError(null)
 
-      const data: Artist[] = await fetchArtists({
-        price: priceFilter,
-        location: locationFilter,
-        style: styleFilter,
-        availability: availabilityFilter,
-        experience: experienceFilter,
-        booking: bookingFilter,
-        travel: travelFilter,
-        sort,
+      const res = await fetchArtists({
         page,
+        pageSize: PAGE_SIZE,
+        sort,
         search: debouncedSearch,
-      });
+        location: locationFilter !== "all" ? locationFilter : undefined,
+        style: styleFilter !== "all" ? styleFilter : undefined,
+        experience: experienceFilter !== "all" ? experienceFilter : undefined,
+        booking: bookingFilter !== "all" ? bookingFilter : undefined,
+        travel: travelFilter !== "all" ? travelFilter : undefined,
+      })
 
-      const enriched = data.map((artist) => {
-        const reviews = artist.reviews || [];
-        const backendAvg = typeof artist.rating === "number" ? artist.rating : undefined;
-        const backendCount = typeof artist.reviewsCount === "number" ? artist.reviewsCount : undefined;
-        const derivedCount = reviews.length || undefined;
-        const derivedAvg =
-          reviews.length > 0
-            ? Math.round(
-              (reviews.reduce((s, r) => s + (r?.rating || 0), 0) / reviews.length) * 10
-            ) / 10
-            : undefined;
-
-        return {
-          ...artist,
-          reviewsCount: backendCount ?? derivedCount ?? 0,
-          averageRating: backendAvg ?? derivedAvg,
-        } as Artist & { reviewsCount: number; averageRating?: number };
-      });
-
-      setArtists((prev) => (reset ? enriched : [...prev, ...enriched]));
-      setHasMore(enriched.length > 0);
+      const next = res.items
+      setArtists(prev => (reset ? next : [...prev, ...next]))
+      setHasMore(page * res.pageSize < res.total)
     } catch (e: any) {
-      setError(e?.message || "Failed to load artists");
-      setHasMore(false);
+      setError(e?.message || "Failed to load artists")
+      setHasMore(false)
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      setLoading(false)
+      setLoadingMore(false)
     }
-  };
+  }
 
   useEffect(() => {
-    setCurrentPage(1);
-    loadArtists({ page: 1, reset: true });
-  }, [filtersKey]);
+    setCurrentPage(1)
+    loadArtists({ page: 1, reset: true })
+  }, [filtersKey])
 
   const onLoadMore = () => {
-    const next = currentPage + 1;
-    setCurrentPage(next);
-    loadArtists({ page: next, reset: false });
-  };
+    const next = currentPage + 1
+    setCurrentPage(next)
+    loadArtists({ page: next, reset: false })
+  }
 
   const SkeletonCard = () => (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-3 animate-pulse">
@@ -137,7 +101,7 @@ const Artists: React.FC = () => {
       <div className="h-4 w-2/3 bg-white/10 rounded mb-2" />
       <div className="h-3 w-1/2 bg-white/10 rounded" />
     </div>
-  );
+  )
 
   return (
     <div className="min-h-dvh bg-gray-900 text-white">
@@ -177,12 +141,8 @@ const Artists: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {loading && artists.length === 0
-            ? Array.from({ length: PAGE_SIZE_FALLBACK }).map((_, i) => (
-              <SkeletonCard key={`sk-${i}`} />
-            ))
-            : artists.map((artist) => (
-              <ArtistCard key={artist._id} artist={artist} onClick={() => { }} />
-            ))}
+            ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonCard key={`sk-${i}`} />)
+            : artists.map(artist => <ArtistCard key={artist._id} artist={artist as any} onClick={() => { }} />)}
         </div>
 
         {!loading && artists.length === 0 && !error && (
@@ -205,7 +165,7 @@ const Artists: React.FC = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Artists;
+export default Artists

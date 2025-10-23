@@ -1,20 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useUser, useAuth } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
+import { fetchArtists, type Artist } from "@/api";
 import { toast } from "react-toastify";
-import { apiGet } from "@/lib/api";
-
-export interface ArtistDto {
-  _id: string;
-  username: string;
-  location?: string;
-  styles?: string[];
-  rating?: number;
-  reviewsCount?: number;
-  yearsExperience?: number;
-  bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
-  travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
-  createdAt?: string;
-}
 
 type ArtistFilters = {
   search?: string;
@@ -31,9 +18,8 @@ const PAGE_SIZE = 12;
 
 export function useDashboardData() {
   const { isLoaded, isSignedIn } = useUser();
-  const { getToken } = useAuth();
 
-  const [artists, setArtists] = useState<ArtistDto[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [page, setPage] = useState(1);
@@ -42,7 +28,7 @@ export function useDashboardData() {
   const lastFilters = useRef<ArtistFilters>({});
   const reqRef = useRef<AbortController | null>(null);
 
-  async function queryArtists(filters: ArtistFilters = {}, pageArg = 1) {
+  async function query(filters: ArtistFilters = {}, pageArg = 1) {
     const params: Record<string, string> = {
       page: String(pageArg),
       pageSize: String(PAGE_SIZE),
@@ -61,19 +47,10 @@ export function useDashboardData() {
     if (filters.travel && filters.travel !== "all")
       params.travel = filters.travel;
 
-    const token = isSignedIn ? await getToken() : undefined;
-
     reqRef.current?.abort();
-    const ac = new AbortController();
-    reqRef.current = ac;
+    reqRef.current = new AbortController();
 
-    const res = await apiGet<{
-      items: ArtistDto[];
-      total: number;
-      page: number;
-      pageSize: number;
-    }>("/users/artists", params, token ?? undefined, ac.signal);
-    return res;
+    return fetchArtists(params);
   }
 
   async function loadFirst(filters: ArtistFilters = {}) {
@@ -87,11 +64,11 @@ export function useDashboardData() {
     setLoading(true);
     try {
       lastFilters.current = filters;
-      const res = await queryArtists(filters, 1);
+      const res = await query(filters, 1);
       setArtists(res.items);
       setTotal(res.total);
       setPage(1);
-      setHasMore(res.items.length + 0 < res.total);
+      setHasMore(res.items.length < res.total);
       setInitialized(true);
       toast.dismiss();
     } catch (e: any) {
@@ -108,7 +85,7 @@ export function useDashboardData() {
     setLoading(true);
     try {
       const next = page + 1;
-      const res = await queryArtists(lastFilters.current, next);
+      const res = await query(lastFilters.current, next);
       setArtists((prev) => [...prev, ...res.items]);
       setPage(next);
       const loaded = (next - 1) * PAGE_SIZE + res.items.length;

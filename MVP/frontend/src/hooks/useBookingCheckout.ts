@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
-import { createBooking } from "../services/booking.ts";
-import { startCheckout } from "../services/billing.ts";
+import { createBooking, startCheckout } from "@/api";
 
 type StartParams = {
   artistId: string;

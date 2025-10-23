@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { apiGet } from "@/lib/api";
+import { getMe } from "@/api";
 
 type Role = "client" | "artist";
 
@@ -20,30 +20,21 @@ export function useRole() {
     (async () => {
       try {
         const token = await getToken();
-        const me = await apiGet<{ role?: string }>(
-          "/users/me",
-          undefined,
-          token ?? undefined
-        );
+        const me = await getMe(token ?? "");
         const r =
           me?.role === "artist"
             ? "artist"
             : me?.role === "client"
             ? "client"
             : null;
-        if (r) {
-          setRole(r);
-        } else {
+        if (r) setRole(r);
+        else {
           const md = (user?.publicMetadata?.role as string | undefined) || "";
           setRole(md === "artist" ? "artist" : "client");
         }
-      } catch (e: any) {
-        if (e?.status === 404) {
-          const md = (user?.publicMetadata?.role as string | undefined) || "";
-          setRole(md === "artist" ? "artist" : "client");
-        } else {
-          setRole("client");
-        }
+      } catch {
+        const md = (user?.publicMetadata?.role as string | undefined) || "";
+        setRole(md === "artist" ? "artist" : "client");
       } finally {
         setReady(true);
       }

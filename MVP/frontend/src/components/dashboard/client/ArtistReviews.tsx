@@ -1,45 +1,45 @@
-import React, { useMemo, useState, useEffect, useRef, useTransition, useDeferredValue, useCallback } from "react";
-import type { ArtistWithGroups } from "./ArtistPortfolio";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Star, X, ChevronDown } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
-import { motion, useReducedMotion } from "framer-motion";
-import { displayNameFromUsername } from "@/lib/format";
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react"
+import type { ArtistWithGroups } from "./ArtistPortfolio"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Star, X, ChevronDown } from "lucide-react"
+import { useAuth } from "@clerk/clerk-react"
+import { motion, useReducedMotion } from "framer-motion"
+import { displayNameFromUsername } from "@/lib/format"
 
 export type Review = {
-    _id: string;
-    authorName: string;
-    rating: number;
-    createdAt: string | Date;
-    title?: string;
-    body: string;
-    photos?: string[];
-};
+    _id: string
+    authorName: string
+    rating: number
+    createdAt: string | Date
+    title?: string
+    body: string
+    photos?: string[]
+}
 
 type ReviewsProps = {
-    artist: ArtistWithGroups;
-    reviews?: Review[];
-    averageRating?: number;
-    onGoToStep?: (step: 0 | 1 | 2) => void;
-    onBackToPortfolio?: () => void;
-    onGoToBooking?: () => void;
-    onClose?: () => void;
-};
+    artist: ArtistWithGroups
+    reviews?: Review[]
+    averageRating?: number
+    onGoToStep?: (step: 0 | 1 | 2) => void
+    onBackToPortfolio?: () => void
+    onGoToBooking?: () => void
+    onClose?: () => void
+}
 
 const fmtDate = (d: string | Date) => {
-    const dateObj = typeof d === "string" ? new Date(d) : d;
-    return dateObj.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-};
+    const dateObj = typeof d === "string" ? new Date(d) : d
+    return dateObj.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+}
 
 const Stars: React.FC<{ value: number }> = React.memo(({ value }) => {
-    const full = Math.floor(value);
-    const hasHalf = value - full >= 0.5;
+    const full = Math.floor(value)
+    const hasHalf = value - full >= 0.5
     return (
         <div className="inline-flex items-center gap-0.5">
             {Array.from({ length: 5 }, (_, i) => {
-                const filled = i < full;
-                const half = !filled && i === full && hasHalf;
+                const filled = i < full
+                const half = !filled && i === full && hasHalf
                 return (
                     <Star
                         key={i}
@@ -50,23 +50,23 @@ const Stars: React.FC<{ value: number }> = React.memo(({ value }) => {
                             stroke: "currentColor",
                         }}
                     />
-                );
+                )
             })}
         </div>
-    );
-});
-Stars.displayName = "Stars";
+    )
+})
+Stars.displayName = "Stars"
 
-const ENV_API = (import.meta as any)?.env?.VITE_API_URL || import.meta.env?.VITE_API_URL || "";
-const PRIMARY_BASE = String(ENV_API).replace(/\/$/, "");
-const API_BASES = [PRIMARY_BASE, "/api"].filter(Boolean);
-const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`;
+const ENV_API = (import.meta as any)?.env?.VITE_API_URL || import.meta.env?.VITE_API_URL || ""
+const PRIMARY_BASE = String(ENV_API).replace(/\/$/, "")
+const API_BASES = [PRIMARY_BASE, "/api"].filter(Boolean)
+const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`
 
-const INITIAL_BATCH = 12;
-const BATCH_SIZE = 12;
+const INITIAL_BATCH = 12
+const BATCH_SIZE = 12
 
 const mapReview = (raw: any): Review => {
-    const author = raw?.authorName || raw?.reviewerName || raw?.reviewer?.username || raw?.reviewer?.email || "Client";
+    const author = raw?.authorName || raw?.reviewerName || raw?.reviewer?.username || raw?.reviewer?.email || "Client"
     return {
         _id: String(raw?._id ?? (raw?.createdAt ?? "") + (raw?.rating ?? "") + (raw?.authorName ?? "")),
         authorName: String(author),
@@ -75,8 +75,8 @@ const mapReview = (raw: any): Review => {
         title: raw?.title || undefined,
         body: String(raw?.comment ?? raw?.body ?? ""),
         photos: Array.isArray(raw?.photos) ? raw.photos : undefined,
-    };
-};
+    }
+}
 
 const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React.memo(({ r, onZoom }) => {
     return (
@@ -111,141 +111,129 @@ const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React
                 )}
             </CardContent>
         </Card>
-    );
-});
-ReviewCard.displayName = "ReviewCard";
+    )
+})
+ReviewCard.displayName = "ReviewCard"
 
-const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRating, onGoToStep, onBackToPortfolio, onGoToBooking }) => {
-    const { getToken } = useAuth();
-
-    const [sort, setSort] = useState<"recent" | "high" | "low">("recent");
-    const [zoomSrc, setZoomSrc] = useState<string | null>(null);
-    const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [loadErr, setLoadErr] = useState<string | null>(null);
-    const [visibleCount, setVisibleCount] = useState<number>(INITIAL_BATCH);
-
-    const cacheRef = useRef<Map<string, Review[]>>(new Map());
-    const abortRef = useRef<AbortController | null>(null);
-    const [isSorting, startTransition] = useTransition();
+export default function ArtistReviews({ artist, reviews = [], averageRating, onGoToStep, onBackToPortfolio, onGoToBooking }: ReviewsProps) {
+    const { getToken } = useAuth()
+    const [sort, setSort] = useState<"recent" | "high" | "low">("recent")
+    const [zoomSrc, setZoomSrc] = useState<string | null>(null)
+    const [remoteReviews, setRemoteReviews] = useState<Review[]>([])
+    const [loading, setLoading] = useState<boolean>(false)
+    const [loadErr, setLoadErr] = useState<string | null>(null)
+    const [visibleCount, setVisibleCount] = useState<number>(INITIAL_BATCH)
+    const cacheRef = useRef<Map<string, Review[]>>(new Map())
+    const abortRef = useRef<AbortController | null>(null)
+    const [isSorting, startTransition] = useTransition()
 
     useEffect(() => {
-        const onEsc = (e: KeyboardEvent) => e.key === "Escape" && setZoomSrc(null);
-        window.addEventListener("keydown", onEsc);
-        return () => window.removeEventListener("keydown", onEsc);
-    }, []);
+        const onEsc = (e: KeyboardEvent) => e.key === "Escape" && setZoomSrc(null)
+        window.addEventListener("keydown", onEsc)
+        return () => window.removeEventListener("keydown", onEsc)
+    }, [])
 
     useEffect(() => {
-        let cancelled = false;
-
+        let cancelled = false
         if (reviews.length) {
-            setRemoteReviews([]);
-            setLoadErr(null);
-            return;
+            setRemoteReviews([])
+            setLoadErr(null)
+            return
         }
-
-        const cached = cacheRef.current.get(artist._id);
+        const cached = cacheRef.current.get(artist._id)
         if (cached) {
-            setRemoteReviews(cached);
-            setVisibleCount(INITIAL_BATCH);
-            setLoadErr(null);
-            return;
+            setRemoteReviews(cached)
+            setVisibleCount(INITIAL_BATCH)
+            setLoadErr(null)
+            return
         }
-
-        (async () => {
-            setLoading(true);
-            setLoadErr(null);
-
-            abortRef.current?.abort();
-            const controller = new AbortController();
-            abortRef.current = controller;
-
+        ; (async () => {
+            setLoading(true)
+            setLoadErr(null)
+            abortRef.current?.abort()
+            const controller = new AbortController()
+            abortRef.current = controller
             try {
-                const token = await getToken();
-                let lastErr: any = null;
-
+                const token = await getToken()
+                let lastErr: any = null
                 for (const base of API_BASES) {
                     try {
-                        const url = joinUrl(base, `/users/artists/${artist._id}`);
+                        const url = joinUrl(base, `/users/artists/${artist._id}`)
                         const res = await fetch(url, {
-                            headers: {
-                                "Content-Type": "application/json",
-                                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                            },
+                            headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                             signal: controller.signal,
                             cache: "force-cache",
-                        });
-                        const ctype = res.headers.get("content-type") || "";
+                        })
+                        const ctype = res.headers.get("content-type") || ""
                         if (!res.ok) {
-                            const txt = await res.text().catch(() => "");
-                            throw new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\n${txt.slice(0, 200)}`);
+                            const txt = await res.text().catch(() => "")
+                            throw new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\n${txt.slice(0, 200)}`)
                         }
                         if (!ctype.toLowerCase().includes("application/json")) {
-                            const txt = await res.text().catch(() => "");
-                            throw new Error(`Non-JSON response @ ${url}\n${txt.slice(0, 200)}`);
+                            const txt = await res.text().catch(() => "")
+                            throw new Error(`Non-JSON response @ ${url}\n${txt.slice(0, 200)}`)
                         }
-                        const json = await res.json();
-                        const list: Review[] = Array.isArray(json?.reviews) ? json.reviews.map(mapReview) : [];
+                        const json = await res.json()
+                        const list: Review[] = Array.isArray(json?.reviews) ? json.reviews.map(mapReview) : []
                         if (!cancelled) {
-                            cacheRef.current.set(artist._id, list);
-                            setRemoteReviews(list);
-                            setVisibleCount(INITIAL_BATCH);
+                            cacheRef.current.set(artist._id, list)
+                            setRemoteReviews(list)
+                            setVisibleCount(INITIAL_BATCH)
                         }
-                        lastErr = null;
-                        break;
+                        lastErr = null
+                        break
                     } catch (e: any) {
-                        if (controller.signal.aborted) return;
-                        lastErr = e;
-                        continue;
+                        if (controller.signal.aborted) return
+                        lastErr = e
+                        continue
                     }
                 }
-                if (lastErr) throw lastErr;
+                if (lastErr) throw lastErr
             } catch (e: any) {
-                if (!cancelled) setLoadErr(e?.message || "Failed to load reviews");
+                if (!cancelled) setLoadErr(e?.message || "Failed to load reviews")
             } finally {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) setLoading(false)
             }
-        })();
-
+        })()
         return () => {
-            cancelled = true;
-            abortRef.current?.abort();
-        };
-    }, [artist._id, getToken, reviews]);
+            cancelled = true
+            abortRef.current?.abort()
+        }
+    }, [artist._id, getToken, reviews])
 
-    const effectiveReviews = reviews.length ? reviews : remoteReviews;
+    const effectiveReviews = reviews.length ? reviews : remoteReviews
 
     const computedAvg = useMemo(() => {
-        if (typeof averageRating === "number") return averageRating;
-        if (!effectiveReviews.length) return 0;
-        const sum = effectiveReviews.reduce((acc, r) => acc + (r.rating || 0), 0);
-        return Math.round((sum / effectiveReviews.length) * 10) / 10;
-    }, [effectiveReviews, averageRating]);
+        if (typeof averageRating === "number") return averageRating
+        if (!effectiveReviews.length) return 0
+        const sum = effectiveReviews.reduce((acc, r) => acc + (r.rating || 0), 0)
+        return Math.round((sum / effectiveReviews.length) * 10) / 10
+    }, [effectiveReviews, averageRating])
 
     const sorted = useMemo(() => {
-        const arr = effectiveReviews.slice(0);
+        const arr = effectiveReviews.slice(0)
         switch (sort) {
             case "high":
-                arr.sort((a, b) => b.rating - a.rating);
-                break;
+                arr.sort((a, b) => b.rating - a.rating)
+                break
             case "low":
-                arr.sort((a, b) => a.rating - b.rating);
-                break;
+                arr.sort((a, b) => a.rating - b.rating)
+                break
             case "recent":
             default:
-                arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                break;
+                arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                break
         }
-        return arr;
-    }, [effectiveReviews, sort]);
+        return arr
+    }, [effectiveReviews, sort])
 
-    const deferredSorted = useDeferredValue(sorted);
-    const sliced = useMemo(() => deferredSorted.slice(0, Math.min(deferredSorted.length, visibleCount)), [deferredSorted, visibleCount]);
-    const canShowMore = sliced.length < deferredSorted.length;
+    const deferredSorted = useDeferredValue(sorted)
+    const sliced = useMemo(() => deferredSorted.slice(0, Math.min(deferredSorted.length, visibleCount)), [deferredSorted, visibleCount])
+    const canShowMore = sliced.length < deferredSorted.length
 
     const onChangeSort = useCallback((v: "recent" | "high" | "low") => {
-        startTransition(() => setSort(v));
-    }, []);
+        startTransition(() => setSort(v))
+    }, [])
 
     return (
         <div className="w-full px-6 py-5 sm:py-5 space-y-5 flex flex-col items-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
@@ -255,7 +243,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                         <div className="mx-auto w-full max-w-3xl flex items-center justify-evenly gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
                             <div className="justify-self-end">
                                 <div className="flex items-center gap-3 sm:gap-4">
-                                    {[0, 1, 2].map((i) => (
+                                    {[0, 1, 2].map(i => (
                                         <button
                                             key={i}
                                             onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
@@ -266,7 +254,6 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                                     ))}
                                 </div>
                             </div>
-
                             <div className="justify-self-center">
                                 <motion.div
                                     initial={{ y: 0, opacity: 0.95 }}
@@ -280,7 +267,6 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                                 </motion.div>
                                 <div className="sm:hidden h-6" />
                             </div>
-
                             <div className="justify-self-start">
                                 <div className="inline-flex items-center gap-2 sm:gap-3 flex-nowrap whitespace-nowrap">
                                     <Button
@@ -291,7 +277,6 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                                     >
                                         Back: Booking &amp; Message
                                     </Button>
-
                                     <Button
                                         onClick={onBackToPortfolio ?? (() => onGoToStep?.(0))}
                                         className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm border-0"
@@ -312,9 +297,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                     <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">{displayNameFromUsername(artist.username)} — Reviews</h3>
                     <div className="flex items-center gap-2">
                         <Stars value={computedAvg} />
-                        <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
-                            {computedAvg ? `${computedAvg} / 5` : "No ratings yet"}
-                        </span>
+                        <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>{computedAvg ? `${computedAvg} / 5` : "No ratings yet"}</span>
                         {effectiveReviews.length > 0 && (
                             <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                                 • {effectiveReviews.length} review{effectiveReviews.length === 1 ? "" : "s"}
@@ -325,7 +308,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                         <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Sort:</label>
                         <select
                             value={sort}
-                            onChange={(e) => onChangeSort(e.target.value as typeof sort)}
+                            onChange={e => onChangeSort(e.target.value as typeof sort)}
                             className="text-sm rounded-md px-2 py-1 border"
                             style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}
                         >
@@ -340,40 +323,25 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                 {loadErr && !effectiveReviews.length ? (
                     <div className="w-full max-w-2xl text-sm flex items-center justify-between gap-3">
                         <span style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>{loadErr}</span>
-                        <Button
-                            onClick={() => {
-                                setLoadErr(null);
-                                setRemoteReviews([]);
-                            }}
-                            variant="outline"
-                            className="px-3 py-1"
-                            style={{ borderColor: "var(--border)" }}
-                        >
+                        <Button onClick={() => { setLoadErr(null); setRemoteReviews([]) }} variant="outline" className="px-3 py-1" style={{ borderColor: "var(--border)" }}>
                             Dismiss
                         </Button>
                     </div>
                 ) : null}
 
                 {loading && !effectiveReviews.length ? (
-                    <div className="w-full max-w-2xl text-sm" style={{ color: "var(--fg)" }}>
-                        Loading reviews…
-                    </div>
+                    <div className="w-full max-w-2xl text-sm" style={{ color: "var(--fg)" }}>Loading reviews…</div>
                 ) : sliced.length === 0 ? (
-                    <div className="w-full max-w-2xl text-sm" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>
-                        No reviews yet.
-                    </div>
+                    <div className="w-full max-w-2xl text-sm" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>No reviews yet.</div>
                 ) : (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                            {sliced.map((r) => (
-                                <ReviewCard key={r._id} r={r} onZoom={setZoomSrc} />
-                            ))}
+                            {sliced.map(r => <ReviewCard key={r._id} r={r} onZoom={setZoomSrc} />)}
                         </div>
-
                         {canShowMore && (
                             <div className="pt-2">
                                 <Button
-                                    onClick={() => setVisibleCount((c) => c + BATCH_SIZE)}
+                                    onClick={() => setVisibleCount(c => c + BATCH_SIZE)}
                                     variant="outline"
                                     className="rounded-lg px-4 py-2 text-sm font-medium"
                                     style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
@@ -396,12 +364,10 @@ const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRa
                         alt="Review image"
                         className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl border"
                         style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
                     />
                 </div>
             )}
         </div>
-    );
-};
-
-export default ArtistReviews;
+    )
+}

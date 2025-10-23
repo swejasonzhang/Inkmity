@@ -31,7 +31,7 @@ export default function MessagesPanel({
     }
 
     async function handleArtistMessage(a: ArtistWithGroups, text: string) {
-        if (!a.clerkId) throw new Error("Artist missing clerkId");
+        if (!a.clerkId) throw new Error("Missing artist clerkId");
         const participantId = a.clerkId;
         const msg: Message = {
             senderId: currentUserId,
@@ -40,7 +40,7 @@ export default function MessagesPanel({
             timestamp: Date.now(),
         };
         upsertConversation(participantId, a.username ?? "Unknown", msg);
-        const res = await authFetch("http://localhost:5005/api/messages", {
+        const res = await authFetch("/messages", {
             method: "POST",
             headers: { "Content-Type": "application/json", Accept: "application/json" },
             body: JSON.stringify({ receiverId: participantId, text }),
