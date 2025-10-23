@@ -119,15 +119,76 @@ export async function saveMyReferences(req, res) {
   }
 }
 
-export async function getArtists(_req, res) {
+function parseExp(q) {
+  const s = String(q || "")
+    .trim()
+    .toLowerCase();
+  if (!s || s === "all") return {};
+  if (s.endsWith("+")) {
+    const n = Number(s.slice(0, -1));
+    return Number.isFinite(n) ? { $gte: n } : {};
+  }
+  const m = s.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (m) {
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    if (Number.isFinite(a) && Number.isFinite(b)) return { $gte: a, $lte: b };
+  }
+  return {};
+}
+
+export async function getArtists(req, res) {
   const Artist = mongoose.model("artist");
-  const items = await Artist.find({})
-    .sort({ rating: -1, createdAt: -1 })
-    .select(
-      "_id username role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount"
-    )
-    .lean();
-  res.json({ items, total: items.length });
+
+  const page = Math.max(1, Number(req.query.page || 1));
+  const pageSize = Math.max(1, Math.min(48, Number(req.query.pageSize || 12)));
+  const sortKey = String(req.query.sort || "rating_desc");
+
+  const search = String(req.query.search || "").trim();
+  const location = String(req.query.location || "").trim();
+  const style = String(req.query.style || "").trim();
+  const booking = String(req.query.booking || "").trim();
+  const travel = String(req.query.travel || "").trim();
+  const experience = parseExp(req.query.experience);
+
+  const filter = {};
+
+  if (search) {
+    const rx = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    Object.assign(filter, {
+      $or: [{ username: rx }, { bio: rx }, { location: rx }, { styles: rx }],
+    });
+  }
+  if (location)
+    Object.assign(filter, { location: new RegExp(`^${location}$`, "i") });
+  if (style) Object.assign(filter, { styles: style });
+  if (booking) Object.assign(filter, { bookingPreference: booking });
+  if (travel) Object.assign(filter, { travelFrequency: travel });
+  if (Object.keys(experience).length)
+    Object.assign(filter, { yearsExperience: experience });
+
+  const sort = (() => {
+    if (sortKey === "experience_desc")
+      return { yearsExperience: -1, rating: -1 };
+    if (sortKey === "experience_asc") return { yearsExperience: 1, rating: -1 };
+    if (sortKey === "newest") return { createdAt: -1 };
+    if (sortKey === "rating_asc") return { rating: 1, reviewsCount: -1 };
+    return { rating: -1, reviewsCount: -1, createdAt: -1 };
+  })();
+
+  const [total, items] = await Promise.all([
+    Artist.countDocuments(filter),
+    Artist.find(filter)
+      .sort(sort)
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .select(
+        "_id username role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount createdAt"
+      )
+      .lean(),
+  ]);
+
+  res.json({ items, total, page, pageSize });
 }
 
 export async function getArtistById(req, res) {

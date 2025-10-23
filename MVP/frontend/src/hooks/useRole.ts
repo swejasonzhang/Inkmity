@@ -1,29 +1,54 @@
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { apiGet } from "@/lib/api";
 
-function onDashboard() {
-  const p = typeof window !== "undefined" ? window.location.pathname : "";
-  return /^\/dashboard(\/|$)/.test(p);
-}
+type Role = "client" | "artist";
 
 export function useRole() {
-  const { isLoaded, isSignedIn } = useUser();
-  const [role, setRole] = useState<"client" | "artist" | null>(null);
+  const { user, isSignedIn, isLoaded: clerkLoaded } = useUser();
+  const { getToken } = useAuth();
+  const [role, setRole] = useState<Role>("client");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!onDashboard()) return;
-    if (!isLoaded || !isSignedIn) return;
-    const run = async () => {
+    if (!clerkLoaded) return;
+    if (!isSignedIn) {
+      setRole("client");
+      setReady(true);
+      return;
+    }
+    (async () => {
       try {
-        const me = await apiGet<{ role: "client" | "artist" }>("/users/me");
-        setRole(me.role);
-      } catch {
-        setRole(null);
+        const token = await getToken();
+        const me = await apiGet<{ role?: string }>(
+          "/users/me",
+          undefined,
+          token ?? undefined
+        );
+        const r =
+          me?.role === "artist"
+            ? "artist"
+            : me?.role === "client"
+            ? "client"
+            : null;
+        if (r) {
+          setRole(r);
+        } else {
+          const md = (user?.publicMetadata?.role as string | undefined) || "";
+          setRole(md === "artist" ? "artist" : "client");
+        }
+      } catch (e: any) {
+        if (e?.status === 404) {
+          const md = (user?.publicMetadata?.role as string | undefined) || "";
+          setRole(md === "artist" ? "artist" : "client");
+        } else {
+          setRole("client");
+        }
+      } finally {
+        setReady(true);
       }
-    };
-    run();
-  }, [isLoaded, isSignedIn]);
+    })();
+  }, [clerkLoaded, isSignedIn, user?.id, getToken, user?.publicMetadata?.role]);
 
-  return { role, isLoaded, isSignedIn };
+  return { role, isLoaded: ready, isSignedIn };
 }

@@ -5,6 +5,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { motion } from "framer-motion";
 import Pagination from "../shared/Pagination";
 import type { ArtistDto } from "@/hooks/useDashboardData";
+import { displayNameFromUsername } from "@/lib/format";
 
 type Props = {
     artists: ArtistDto[];
@@ -126,9 +127,9 @@ export default function ArtistsSection({
         const now = new Date();
 
         const inAvailability = (a: ArtistDto) => {
-            const isNow = a.isAvailableNow === true;
-            const nextRaw = a.nextAvailableDate;
-            const waitlist = a.acceptingWaitlist === true || a.isClosed === true;
+            const isNow = (a as any).isAvailableNow === true;
+            const nextRaw = (a as any).nextAvailableDate as string | undefined;
+            const waitlist = (a as any).acceptingWaitlist === true || (a as any).isClosed === true;
             if (availabilityFilter === "waitlist") return waitlist;
             const next = nextRaw ? new Date(nextRaw) : null;
             if (!next && !isNow) {
@@ -146,42 +147,43 @@ export default function ArtistsSection({
         };
 
         const inPriceRange = (a: ArtistDto) => {
-            if (!a.priceRange || priceFilter === "all") return true;
-            if (priceFilter === "5000+") return a.priceRange.max >= 5000;
+            const pr = (a as any).priceRange as { min: number; max: number } | undefined;
+            if (!pr || priceFilter === "all") return true;
+            if (priceFilter === "5000+") return pr.max >= 5000;
             const [min, max] = priceFilter.split("-").map(Number);
             if (!Number.isFinite(min) && !Number.isFinite(max)) return true;
-            const overlaps =
-                (Number.isFinite(min) ? a.priceRange.max >= (min as number) : true) &&
-                (Number.isFinite(max) ? a.priceRange.min <= (max as number) : true);
+            const overlaps = (Number.isFinite(min) ? pr.max >= (min as number) : true) && (Number.isFinite(max) ? pr.min <= (max as number) : true);
             return overlaps;
         };
 
         const matchesKeyword = (a: ArtistDto, q: string) => {
             if (!q) return true;
+            const styles = Array.isArray(a.styles) ? a.styles : [];
+            const bio = (a as any).bio as string | undefined;
             return (
                 a.username?.toLowerCase().includes(q) ||
                 a.location?.toLowerCase().includes(q) ||
-                a.bio?.toLowerCase().includes(q) ||
-                (a.style || []).some((s) => s.toLowerCase().includes(q))
+                (bio ? bio.toLowerCase().includes(q) : false) ||
+                styles.some((s: string) => s.toLowerCase().includes(q))
             );
         };
 
         const matchesBooking = (a: ArtistDto, v: string) => {
             if (!v || v === "all") return true;
-            const booking = ((a as any).bookingPreference ?? (a as any).instagram ?? "").toString();
+            const booking = ((a as any).bookingPreference ?? "").toString();
             return booking === v;
         };
 
         const matchesTravel = (a: ArtistDto, v: string) => {
             if (!v || v === "all") return true;
-            const travel = ((a as any).travelFrequency ?? (a as any).portfolio ?? "").toString();
+            const travel = ((a as any).travelFrequency ?? "").toString();
             return travel === v;
         };
 
         let list = artists.filter((a) => {
             if (!inPriceRange(a)) return false;
             if (!(locationFilter === "all" || a.location === locationFilter)) return false;
-            if (!(styleFilter === "all" || (a.style ?? []).includes(styleFilter))) return false;
+            if (!(styleFilter === "all" || (Array.isArray(a.styles) ? a.styles : []).includes(styleFilter))) return false;
             if (!matchesKeyword(a, debouncedSearch)) return false;
             if (!inAvailability(a)) return false;
             const y = normalizeYears(a.yearsExperience);
@@ -221,7 +223,7 @@ export default function ArtistsSection({
             });
         }
 
-        return list;
+        return list.map(a => ({ ...a, username: displayNameFromUsername(a.username) }));
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]);
 
     const clientTotalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
@@ -325,15 +327,11 @@ export default function ArtistsSection({
                                     <div key={motionKey} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[1fr] gap-6 md:gap-5">
                                         {listItems.map((artist, index) => (
                                             <motion.div
-                                                key={(artist.clerkId ?? artist._id) + ":" + index}
+                                                key={`${(artist as any).clerkId ?? artist._id}:${index}`}
                                                 initial={{ opacity: 0, y: 24 }}
                                                 whileInView={{ opacity: 1, y: 0 }}
                                                 viewport={{ once: true, amount: 0.2 }}
-                                                transition={{
-                                                    duration: 0.45,
-                                                    delay: index * 0.1,
-                                                    ease: [0.16, 1, 0.3, 1] as const,
-                                                }}
+                                                transition={{ duration: 0.45, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] as const }}
                                                 className="w-full h-full"
                                             >
                                                 <div className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]" data-artist-card="true">
@@ -350,7 +348,7 @@ export default function ArtistsSection({
 
                         <div className="py-4 px-3 sm:px-4 md:px-6">
                             {usingExternalPaging ? (
-                                <Pagination currentPage={page!} totalPages={totalPages!} onPrev={() => handleSetCurrentPage((page as number) - 1)} onNext={() => handleSetCurrentPage((page as number) + 1)} />
+                                <Pagination currentPage={page!} totalPages={totalPages!} onPrev={() => handleSetCurrentPage(page as number - 1)} onNext={() => handleSetCurrentPage((page as number) + 1)} />
                             ) : (
                                 <Pagination currentPage={currentPage} totalPages={clientTotalPages} onPrev={() => handleSetCurrentPage(currentPage - 1)} onNext={() => handleSetCurrentPage(currentPage + 1)} />
                             )}

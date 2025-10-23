@@ -17,10 +17,9 @@ const Loading = () => (
 function useDevOverride() {
   const isDev = import.meta.env.MODE !== "production";
   const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  const fromQuery = (search?.get("as") as "client" | "artist" | null) ?? null;
-  const fromStorage = typeof window !== "undefined" ? localStorage.getItem("roleOverride") : null;
-  const normalized = fromQuery ?? ((fromStorage === "client" || fromStorage === "artist") ? (fromStorage as "client" | "artist") : null);
-  return { override: isDev ? normalized : null };
+  const q = (search?.get("as") || "").toLowerCase();
+  const fromQuery = q === "client" || q === "artist" ? (q as "client" | "artist") : null;
+  return { override: isDev ? fromQuery : null };
 }
 
 const Dashboard: React.FC = () => {
@@ -29,6 +28,12 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const warnedRef = useRef(false);
   const { override } = useDevOverride();
+
+  const roleToUse = useMemo<"client" | "artist">(() => {
+    if (override) return override;
+    if (role === "artist" || role === "client") return role;
+    return "client";
+  }, [override, role]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -39,14 +44,11 @@ const Dashboard: React.FC = () => {
     }
   }, [isLoaded, isSignedIn, navigate]);
 
-  const roleToUse = useMemo<"client" | "artist">(() => (override ?? role ?? "client"), [override, role]);
+  useEffect(() => {
+    console.log("[dashboard] role:", role, "override:", override, "roleToUse:", roleToUse);
+  }, [role, override, roleToUse]);
 
   if (!isLoaded || !isSignedIn) return <Loading />;
-
-  if (!role && !override && !warnedRef.current) {
-    warnedRef.current = true;
-    toast.info("No role set — showing client dashboard by default.", { position: "bottom-right" });
-  }
 
   return (
     <Suspense fallback={<Loading />}>
