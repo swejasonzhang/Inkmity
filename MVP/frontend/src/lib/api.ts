@@ -5,7 +5,14 @@ export const API_URL: string =
   import.meta.env?.VITE_API_URL ||
   "http://localhost:5005/api";
 
-async function withAuthHeaders(init: RequestInit = {}, token?: string) {
+function isAbortError(e: unknown): e is DOMException & { name: "AbortError" } {
+  return !!e && typeof e === "object" && (e as any).name === "AbortError";
+}
+
+async function withAuthHeaders(
+  init: RequestInit = {},
+  token?: string
+): Promise<RequestInit> {
   return {
     ...init,
     headers: {
@@ -13,7 +20,7 @@ async function withAuthHeaders(init: RequestInit = {}, token?: string) {
       ...(init.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    credentials: "include" as const,
+    credentials: "include",
   };
 }
 
@@ -23,15 +30,33 @@ export async function apiRequest<T = any>(
   token?: string
 ): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_URL}${path}`;
-  const res = await fetch(url, await withAuthHeaders(init, token));
+  const req = await withAuthHeaders(init, token);
+  console.log("[api] →", req.method || "GET", url, req);
+
+  let res: Response;
+  try {
+    res = await fetch(url, req);
+  } catch (e) {
+    if (isAbortError(e)) {
+      console.debug("[api] aborted:", url);
+      throw e;
+    }
+    console.error("[api] network error:", e);
+    throw e;
+  }
+
   const text = await res.text().catch(() => "");
+  const ct = res.headers.get("content-type") || "";
+  console.log("[api] ←", res.status, res.statusText, url, {
+    bodyPreview: text.slice(0, 300),
+  });
+
   if (!res.ok) {
     const err = new Error(text || res.statusText);
-    // @ts-expect-error augment
-    err.status = res.status;
+    (err as any).status = res.status;
     throw err;
   }
-  const ct = res.headers.get("content-type") || "";
+
   return ct.includes("application/json")
     ? (JSON.parse(text) as T)
     : (text as unknown as T);
@@ -40,7 +65,8 @@ export async function apiRequest<T = any>(
 export async function apiGet<T = any>(
   path: string,
   params?: Record<string, any>,
-  token?: string
+  token?: string,
+  signal?: AbortSignal
 ) {
   const qs =
     params && Object.keys(params).length
@@ -52,17 +78,18 @@ export async function apiGet<T = any>(
           )
         ).toString()}`
       : "";
-  return apiRequest<T>(`${path}${qs}`, { method: "GET" }, token);
+  return apiRequest<T>(`${path}${qs}`, { method: "GET", signal }, token);
 }
 
 export async function apiPost<T = any>(
   path: string,
   body?: any,
-  token?: string
+  token?: string,
+  signal?: AbortSignal
 ) {
   return apiRequest<T>(
     path,
-    { method: "POST", body: body ? JSON.stringify(body) : undefined },
+    { method: "POST", body: body ? JSON.stringify(body) : undefined, signal },
     token
   );
 }
@@ -70,29 +97,10 @@ export async function apiPost<T = any>(
 export function useApi() {
   const { getToken, isSignedIn } = useAuth();
   async function request(path: string, init: RequestInit = {}) {
-    const raw = isSignedIn ? await getToken() : undefined;
-    const token = raw ?? undefined;
-    return apiRequest(path, init, token);
+    const tok = isSignedIn ? (await getToken()) ?? undefined : undefined;
+    return apiRequest(path, init, tok);
   }
   return { request, API_URL };
 }
 
-export type Availability = {
-  timezone: string;
-  weekly: { [weekday: string]: Array<{ start: string; end: string }> };
-  exceptions?: Array<{
-    date: string;
-    slots: Array<{ start: string; end: string }>;
-  }>;
-};
-
-export async function getAvailability(artistId: string, token?: string) {
-  return apiGet<Availability>("/availability", { artistId }, token);
-}
-
-export async function checkUsername(u: string) {
-  return apiGet<
-    | { ok: true; available: boolean; username: string }
-    | { ok: false; error: string }
-  >("/users/username-availability", { u });
-}
+export { isAbortError };

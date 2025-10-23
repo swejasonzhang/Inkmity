@@ -177,28 +177,6 @@ export default function BookingPicker({ }: Props) {
           </div>
         </div>
 
-        <div className="w-full max-w-xl mx-auto">
-          <label
-            className="text-xs sm:text-sm block mb-1"
-            style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}
-          >
-            Note (optional)
-          </label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Describe your idea, placement, size, or any references."
-            rows={5}
-            className="w-full rounded-xl px-3 py-2 placeholder-opacity-70 focus:outline-none focus-visible:ring-2 resize-y"
-            style={{
-              background: "var(--card)",
-              color: "var(--fg)",
-              border: "1px solid var(--border)",
-              minHeight: "7.5rem",
-            }}
-          />
-        </div>
-
         <div className="mt-auto flex flex-col items-center justify-center gap-3 w-full">
           <p
             className="text-[11px] sm:text-xs"

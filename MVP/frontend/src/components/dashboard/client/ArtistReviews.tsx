@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect, useRef, useCallback, useTransition, useDeferredValue } from "react";
+import React, { useMemo, useState, useEffect, useRef, useTransition, useDeferredValue, useCallback } from "react";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Star, X, ChevronDown } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { displayNameFromUsername } from "@/lib/format";
 
 export type Review = {
     _id: string;
@@ -77,10 +78,7 @@ const mapReview = (raw: any): Review => {
     };
 };
 
-const ReviewCard: React.FC<{
-    r: Review;
-    onZoom: (src: string) => void;
-}> = React.memo(({ r, onZoom }) => {
+const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React.memo(({ r, onZoom }) => {
     return (
         <Card className="w-full h-full flex flex-col" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
             <CardHeader className="text-left">
@@ -95,9 +93,7 @@ const ReviewCard: React.FC<{
                 </div>
             </CardHeader>
             <CardContent className="text-left space-y-3">
-                <p className="text-sm leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>
-                    {r.body}
-                </p>
+                <p className="text-sm leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>{r.body}</p>
                 {r.photos && r.photos.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
                         {r.photos.slice(0, 6).map((src, idx) => (
@@ -119,15 +115,7 @@ const ReviewCard: React.FC<{
 });
 ReviewCard.displayName = "ReviewCard";
 
-const ArtistReviews: React.FC<ReviewsProps> = ({
-    artist,
-    reviews = [],
-    averageRating,
-    onGoToStep,
-    onBackToPortfolio,
-    onGoToBooking,
-}) => {
-    const prefersReducedMotion = useReducedMotion();
+const ArtistReviews: React.FC<ReviewsProps> = ({ artist, reviews = [], averageRating, onGoToStep, onBackToPortfolio, onGoToBooking }) => {
     const { getToken } = useAuth();
 
     const [sort, setSort] = useState<"recent" | "high" | "low">("recent");
@@ -178,7 +166,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
 
                 for (const base of API_BASES) {
                     try {
-                        const url = joinUrl(base, `/users/${artist._id}`);
+                        const url = joinUrl(base, `/users/artists/${artist._id}`);
                         const res = await fetch(url, {
                             headers: {
                                 "Content-Type": "application/json",
@@ -259,8 +247,6 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
         startTransition(() => setSort(v));
     }, []);
 
-    const onZoom = useCallback((src: string) => setZoomSrc(src), []);
-
     return (
         <div className="w-full px-6 py-5 sm:py-5 space-y-5 flex flex-col items-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <div className="sticky top-0 z-20 w-full backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -275,9 +261,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                                             onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
                                             aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
                                             className="h-2.5 w-6 rounded-full transition-all"
-                                            style={{
-                                                background: i === 2 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)",
-                                            }}
+                                            style={{ background: i === 2 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
                                         />
                                     ))}
                                 </div>
@@ -286,13 +270,10 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                             <div className="justify-self-center">
                                 <motion.div
                                     initial={{ y: 0, opacity: 0.95 }}
-                                    animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
+                                    animate={useReducedMotion() ? {} : { y: [0, 4, 0] }}
                                     transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
                                     className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
-                                    style={{
-                                        background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                                        color: "color-mix(in oklab, var(--fg) 90%, transparent)",
-                                    }}
+                                    style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "color-mix(in oklab, var(--fg) 90%, transparent)" }}
                                 >
                                     <ChevronDown className="h-4 w-4" />
                                     <span>Scroll to browse reviews or change the sort</span>
@@ -328,7 +309,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
 
             <div className="w-full max-w-7xl flex flex-col items-center gap-4">
                 <div className="w-full flex flex-col items-center gap-2 text-center">
-                    <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">{artist.username} — Reviews</h3>
+                    <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">{displayNameFromUsername(artist.username)} — Reviews</h3>
                     <div className="flex items-center gap-2">
                         <Stars value={computedAvg} />
                         <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
@@ -341,18 +322,12 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                         )}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
-                        <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
-                            Sort:
-                        </label>
+                        <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Sort:</label>
                         <select
                             value={sort}
                             onChange={(e) => onChangeSort(e.target.value as typeof sort)}
                             className="text-sm rounded-md px-2 py-1 border"
-                            style={{
-                                background: "var(--elevated)",
-                                color: "var(--fg)",
-                                borderColor: "var(--border)",
-                            }}
+                            style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}
                         >
                             <option value="recent">Most recent</option>
                             <option value="high">Highest rating</option>
@@ -391,7 +366,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                             {sliced.map((r) => (
-                                <ReviewCard key={r._id} r={r} onZoom={onZoom} />
+                                <ReviewCard key={r._id} r={r} onZoom={setZoomSrc} />
                             ))}
                         </div>
 
@@ -401,11 +376,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
                                     onClick={() => setVisibleCount((c) => c + BATCH_SIZE)}
                                     variant="outline"
                                     className="rounded-lg px-4 py-2 text-sm font-medium"
-                                    style={{
-                                        background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                                        color: "var(--fg)",
-                                        border: `1px solid var(--border)`,
-                                    }}
+                                    style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
                                 >
                                     Show more
                                 </Button>
@@ -416,13 +387,7 @@ const ArtistReviews: React.FC<ReviewsProps> = ({
             </div>
 
             {zoomSrc && (
-                <div
-                    className="fixed inset-0 z-[1300] flex items-center justify-center p-4"
-                    style={{ background: "color-mix(in oklab, var(--bg) 75%, black 25%)" }}
-                    onClick={() => setZoomSrc(null)}
-                    role="dialog"
-                    aria-modal="true"
-                >
+                <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4" style={{ background: "color-mix(in oklab, var(--bg) 75%, black 25%)" }} onClick={() => setZoomSrc(null)} role="dialog" aria-modal="true">
                     <button className="absolute top-4 right-4 rounded-full p-2" onClick={() => setZoomSrc(null)} aria-label="Close image" style={{ color: "var(--fg)" }}>
                         <X className="h-6 w-6" />
                     </button>

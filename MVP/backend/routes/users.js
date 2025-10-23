@@ -1,4 +1,3 @@
-// backend/routes/users.js
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import {
