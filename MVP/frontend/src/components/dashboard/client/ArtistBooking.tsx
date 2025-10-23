@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
@@ -9,7 +9,7 @@ import type { ArtistWithGroups } from "./ArtistPortfolio";
 
 type BookingProps = {
     artist: ArtistWithGroups;
-    onMessage: (artist: ArtistWithGroups, preloadedMessage: string) => void;
+    onMessage: (artist: ArtistWithGroups, preloadedMessage: string) => void | Promise<void>;
     onBack?: () => void;
     onClose?: () => void;
     onGoToStep?: (step: 0 | 1 | 2) => void;
@@ -24,6 +24,10 @@ export default function ArtistBooking({
 }: BookingProps) {
     const prefersReducedMotion = useReducedMotion();
 
+    useEffect(() => {
+        console.log("[booking] artist", artist);
+    }, [artist]);
+
     const preloadedMessage = useMemo(
         () =>
             `Hi ${artist.username}, I've taken a look at your work and I'm interested!
@@ -31,7 +35,8 @@ Would you be open to my ideas?`,
         [artist.username]
     );
 
-    const [sentOnce, setSentOnce] = useState(false);
+    const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+    const [errorMsg, setErrorMsg] = useState<string>("");
     const sentRef = useRef(false);
 
     const startOfToday = useMemo(() => {
@@ -42,12 +47,39 @@ Would you be open to my ideas?`,
     const [date, setDate] = useState<Date | undefined>(startOfToday);
     const [month, setMonth] = useState<Date>(startOfToday);
 
-    const handleSendMessage = () => {
-        if (sentRef.current) return;
-        sentRef.current = true;
-        setSentOnce(true);
-        onMessage(artist, preloadedMessage);
-        onClose?.();
+    const handleSendMessage = async () => {
+        console.log("[booking] send clicked", { artist, preloadedMessage });
+        if (sentRef.current || status === "sending") return;
+        if (!artist?.clerkId || !artist?.username) {
+            setStatus("error");
+            setErrorMsg("Artist is missing required data.");
+            return;
+        }
+        if (!preloadedMessage?.trim()) {
+            setStatus("error");
+            setErrorMsg("Message is empty.");
+            return;
+        }
+        if (typeof onMessage !== "function") {
+            setStatus("error");
+            setErrorMsg("Messaging is unavailable.");
+            return;
+        }
+        setStatus("sending");
+        setErrorMsg("");
+        const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Request timed out. Try again.")), 15000)
+        );
+        try {
+            await Promise.race([Promise.resolve(onMessage(artist, preloadedMessage)), timeout]);
+            sentRef.current = true;
+            setStatus("sent");
+            onClose?.();
+        } catch (err: any) {
+            console.error("[booking] send failed", err);
+            setStatus("error");
+            setErrorMsg(err?.message || "Failed to send message.");
+        }
     };
 
     const handleNext = () => onGoToStep?.(2);
@@ -68,9 +100,7 @@ Would you be open to my ideas?`,
                                             className="h-2.5 w-6 rounded-full transition-all"
                                             style={{
                                                 background:
-                                                    i === 1
-                                                        ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                                                        : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                                    i === 1 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)",
                                             }}
                                         />
                                     ))}
@@ -135,13 +165,28 @@ Would you be open to my ideas?`,
                                 Send a quick intro. You can also ask questions about availability or designs.
                             </p>
 
+                            {status === "error" && (
+                                <div
+                                    role="alert"
+                                    aria-live="assertive"
+                                    className="w-full max-w-[28rem] px-3 py-2 rounded-md text-sm"
+                                    style={{ background: "color-mix(in oklab, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}
+                                >
+                                    {errorMsg}
+                                </div>
+                            )}
+
+                            <span className="sr-only" aria-live="polite">
+                                {status === "sending" ? "Sending message" : status === "sent" ? "Message sent" : ""}
+                            </span>
+
                             <Button
                                 onClick={handleSendMessage}
-                                disabled={sentOnce}
+                                disabled={status === "sending" || status === "sent"}
                                 className="transition w-full sm:w-auto border-0"
                                 style={{ background: "var(--elevated)", color: "var(--fg)" }}
                             >
-                                {sentOnce ? "Message Sent" : "Send Message"}
+                                {status === "sending" ? "Sending..." : status === "sent" ? "Message Sent" : "Send Message"}
                             </Button>
                         </div>
                     </CardContent>
@@ -154,20 +199,10 @@ Would you be open to my ideas?`,
 
                     <CardContent className="p-3 sm:p-5">
                         <div className="grid md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
-                            <CalendarPicker
-                                date={date}
-                                month={month}
-                                onDateChange={setDate}
-                                onMonthChange={setMonth}
-                                startOfToday={startOfToday}
-                            />
-
-                            <div
-                                className="flex items-center justify-center min-h-[480px] rounded-md"
-                                style={{ background: "var(--elevated)" }}
-                            >
+                            <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
+                            <div className="flex items-center justify-center min-h-[480px] rounded-md" style={{ background: "var(--elevated)" }}>
                                 <div className="w-full max-w-[920px] p-3">
-                                    <BookingPicker artistId={artist._id} />
+                                    {artist.clerkId ? <BookingPicker artistId={artist.clerkId} /> : <div className="text-sm text-red-300">Artist ID unavailable.</div>}
                                 </div>
                             </div>
                         </div>

@@ -31,25 +31,19 @@ export async function apiRequest<T = any>(
 ): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_URL}${path}`;
   const req = await withAuthHeaders(init, token);
-  console.log("[api] →", req.method || "GET", url, req);
 
   let res: Response;
   try {
     res = await fetch(url, req);
   } catch (e) {
     if (isAbortError(e)) {
-      console.debug("[api] aborted:", url);
       throw e;
     }
-    console.error("[api] network error:", e);
     throw e;
   }
 
   const text = await res.text().catch(() => "");
   const ct = res.headers.get("content-type") || "";
-  console.log("[api] ←", res.status, res.statusText, url, {
-    bodyPreview: text.slice(0, 300),
-  });
 
   if (!res.ok) {
     const err = new Error(text || res.statusText);
