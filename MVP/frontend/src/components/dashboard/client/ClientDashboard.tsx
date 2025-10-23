@@ -22,7 +22,7 @@ export default function ClientDashboard() {
     const { isSignedIn, isLoaded, user } = useUser()
     const navigate = useNavigate()
     const warnedRef = useRef(false)
-    const { theme, toggleTheme, logoSrc, themeClass } = useTheme()
+    const { themeClass } = useTheme()
     const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null)
 
     useEffect(() => {
@@ -63,8 +63,8 @@ export default function ClientDashboard() {
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`,
         ]
         const pool = imgs.length ? imgs : fallback
-        const pastWorks = pool.filter((_, i) => i % 2 === 0)
-        const sketches = pool.filter((_, i) => i % 2 === 1)
+        const pastWorks = pool.filter((_: unknown, i: number) => i % 2 === 0)
+        const sketches = pool.filter((_: unknown, i: number) => i % 2 === 1)
         return {
             _id: selectedArtist._id,
             clerkId: (selectedArtist as any).clerkId,
@@ -100,7 +100,7 @@ export default function ClientDashboard() {
         <div className={themeClass}>
             <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
                 <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
-                <Header theme={theme} toggleTheme={toggleTheme} logoSrc={logoSrc} />
+                <Header />
                 <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
                     <div className="flex-1 min-w-0">
                         <ArtistsSection

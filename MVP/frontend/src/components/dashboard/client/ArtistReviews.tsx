@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Star, X, ChevronDown } from "lucide-react"
 import { useAuth } from "@clerk/clerk-react"
 import { motion, useReducedMotion } from "framer-motion"
-import { displayNameFromUsername } from "@/lib/format"
+import { displayNameFromUsername } from "@/lib/format";
 
 export type Review = {
     _id: string
