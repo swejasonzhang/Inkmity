@@ -62,44 +62,159 @@ const Shell = ({
 );
 
 export function MessagingCard({ compact = true }) {
-  const msgs = [
-    { me: false, name: "Client", text: "Hey! Can you do fine-line roses?" },
-    { me: true, name: "Artist", text: "Absolutely. What size and placement?" },
-    { me: false, name: "Client", text: "Forearm, ~4in. Budget $300." },
-    { me: true, name: "Artist", text: "Locked. Sending sketch in chat." },
+  const threads = [
+    {
+      header: "Client • Aiko S.",
+      msgs: [
+        {
+          me: false,
+          name: "Liam",
+          text: "Hey! Can you do fine-line roses?",
+          time: "10:12 AM",
+        },
+        {
+          me: true,
+          name: "Aiko",
+          text: "Absolutely. What size and placement?",
+          time: "10:14 AM",
+        },
+        {
+          me: false,
+          name: "Liam",
+          text: "Forearm, ~4in. Budget $300.",
+          time: "10:16 AM",
+        },
+        {
+          me: true,
+          name: "Aiko",
+          text: "Locked. Friday 2pm works?",
+          time: "10:18 AM",
+        },
+      ],
+    },
+    {
+      header: "Client • Marco T.",
+      msgs: [
+        {
+          me: false,
+          name: "Sara",
+          text: "Looking for script 'amor fati'.",
+          time: "Yesterday 6:21 PM",
+        },
+        {
+          me: true,
+          name: "Marco",
+          text: "Nice. 3–4in wrist works best.",
+          time: "Yesterday 6:24 PM",
+        },
+        {
+          me: false,
+          name: "Sara",
+          text: "Cool. Can we do Monday?",
+          time: "Yesterday 6:25 PM",
+        },
+        {
+          me: true,
+          name: "Marco",
+          text: "Booked 11:00 AM. See you then.",
+          time: "Yesterday 6:27 PM",
+        },
+      ],
+    },
+    {
+      header: "Client • Evan R.",
+      msgs: [
+        {
+          me: false,
+          name: "Noah",
+          text: "Do you have healed blackwork examples?",
+          time: "Tue 3:03 PM",
+        },
+        {
+          me: true,
+          name: "Evan",
+          text: "Yes. Sending album link.",
+          time: "Tue 3:05 PM",
+        },
+        {
+          me: false,
+          name: "Noah",
+          text: "Great. What's the deposit?",
+          time: "Tue 3:06 PM",
+        },
+        {
+          me: true,
+          name: "Evan",
+          text: "$50 holds the slot. Refundable if rescheduled 48h+.",
+          time: "Tue 3:08 PM",
+        },
+      ],
+    },
   ];
+
   return (
-    <Shell icon={MessageSquare} title="Real-time messaging" compact={compact}>
-      <div className="w-full max-w-md space-y-2 md:space-y-3">
-        {msgs.map((m, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={{ duration: 0.25, delay: i * 0.06 }}
-            className={`flex ${m.me ? "justify-end" : "justify-start"}`}
+    <Shell
+      icon={MessageSquare}
+      title="Real-time messaging"
+      compact={compact}
+      widthClass="max-w-md md:max-w-6xl"
+      heightClass="min-h-[14rem] sm:min-h-[16rem] md:min-h-[26rem]"
+    >
+      <div className="w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-md md:max-w-5xl">
+        {threads.map((t, ti) => (
+          <div
+            key={t.header}
+            className="rounded-2xl border border-white/15 bg-white/[0.04] p-3 md:p-4"
           >
-            <div
-              className={`max-w-[82%] rounded-2xl px-3 py-1.5 text-xs md:text-sm leading-snug border ${
-                m.me
-                  ? "bg-white !text-black border-white rounded-br-sm"
-                  : "bg-black !text-white border-white/20 rounded-bl-sm"
-              }`}
-            >
-              <div
-                className={`mb-0.5 text-[9px] md:text-[10px] uppercase tracking-wide ${
-                  m.me ? "!text-black/70" : "!text-white/70"
-                }`}
-              >
-                {m.name}
-              </div>
-              <div>{m.text}</div>
+            <div className="mb-2 text-xs md:text-sm font-semibold text-white/90">
+              {t.header}
             </div>
-          </motion.div>
+            <div className="space-y-2 md:space-y-3">
+              {t.msgs.map((m, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.22, delay: i * 0.05 + ti * 0.02 }}
+                  className={`flex ${m.me ? "justify-end" : "justify-start"}`}
+                >
+                  <div className="max-w-[85%]">
+                    <div
+                      className={`rounded-2xl px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] md:text-sm leading-snug border ${
+                        m.me
+                          ? "bg-white !text-black border-white rounded-br-sm"
+                          : "bg-black !text-white border-white/20 rounded-bl-sm"
+                      }`}
+                    >
+                      <div
+                        className={`mb-0.5 text-[9px] md:text-[10px] uppercase tracking-wide ${
+                          m.me ? "!text-black/70" : "!text-white/70"
+                        }`}
+                      >
+                        {m.name}
+                      </div>
+                      <div>{m.text}</div>
+                    </div>
+
+                    <div
+                      className={`mt-1 text-[10px] md:text-[11px] ${
+                        m.me
+                          ? "text-white/60 text-right pr-1"
+                          : "text-white/60 text-left pl-1"
+                      }`}
+                    >
+                      <time className="normal-case">{m.time}</time>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
-      <div className="mt-3 md:mt-6 flex gap-2 justify-center">
+
+      <div className="mt-4 md:mt-6 flex gap-2 justify-center">
         <Badge
           variant="outline"
           className="bg-white/5 border-white/15 text-white/80 gap-1"

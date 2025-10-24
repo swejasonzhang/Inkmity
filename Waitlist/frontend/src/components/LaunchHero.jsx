@@ -48,11 +48,11 @@ export default function LaunchHero() {
   };
 
   const Seg = ({ value, label }) => (
-    <div className="flex items-end gap-1 rounded-xl bg-white/8 backdrop-blur px-3 py-2 border border-white/15">
-      <span className="text-xl md:text-2xl font-extrabold [font-variant-numeric:tabular-nums] tracking-tight">
+    <div className="flex items-end gap-1 rounded-lg bg-white/8 backdrop-blur px-2.5 py-2 border border-white/15 md:rounded-xl md:px-3 md:py-2">
+      <span className="text-lg md:text-2xl font-extrabold [font-variant-numeric:tabular-nums] tracking-tight">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-xs md:text-sm text-white/70">{label}</span>
+      <span className="text-[11px] md:text-sm text-white/70">{label}</span>
     </div>
   );
 
@@ -96,7 +96,7 @@ export default function LaunchHero() {
           variants={fade}
           initial="hidden"
           animate="show"
-          className="mt-6 mx-auto flex items-center justify-center gap-2 sm:gap-3"
+          className="mx-auto w-full max-w-[8rem] sm:max-w-md md:max-w-lg mt-6 flex items-center justify-center gap-1 sm:gap-3"
         >
           <Seg value={countdown.days} label="days" />
           <span className="opacity-60">:</span>
