@@ -8,8 +8,8 @@ import { Separator } from "@/components/ui/separator";
 const BottomCTA: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ textFadeUp, wc }) => {
     return (
         <section className="grid place-items-center md:min-h-[20svh] px-4">
-            <Card className="w-full max-w-7xl bg-card/80 backdrop-blur border border-app ink-card">
-                <CardContent className="p-8 text-center">
+            <Card className="w-full max-w-[76rem] bg-card/80 backdrop-blur border border-app ink-card">
+                <CardContent className="p-2 text-center">
                     <m.h2
                         variants={textFadeUp}
                         initial="hidden"
