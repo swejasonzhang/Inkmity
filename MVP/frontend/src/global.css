@@ -117,22 +117,12 @@ html,
 body {
   margin: 0;
   height: 100%;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: auto;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
   background: var(--bg);
   color: var(--fg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
-}
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
