@@ -1,8 +1,5 @@
 {
   "type": "module",
-  "scripts": {
-    "dev": "vercel dev"
-  },
   "dependencies": {
     "dotenv": "^17.2.1",
     "mongoose": "^8.17.2",
