@@ -70,7 +70,7 @@ export default function WaitlistForm({ onSuccess }) {
         if (res.ok && typeof data.totalSignups === "number")
           setTotalSignups(data.totalSignups);
       } catch (e) {
-        void e;
+        if (import.meta.env && import.meta.env.DEV) console.error(e);
       }
     })();
   }, []);
@@ -106,8 +106,8 @@ export default function WaitlistForm({ onSuccess }) {
 
   const signupCta = useMemo(
     () =>
-      totalSignups && totalSignups >= 100
-        ? "Join 100+ early members"
+      typeof totalSignups === "number"
+        ? `Join ${totalSignups.toLocaleString()}+`
         : "Claim your spot",
     [totalSignups]
   );
@@ -123,6 +123,7 @@ export default function WaitlistForm({ onSuccess }) {
     if (!em) return setErrorMsg("Enter your email.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))
       return setErrorMsg("Use a valid email.");
+
     setSuccess(true);
     if (onSuccess) onSuccess();
     setLoading(true);
@@ -136,26 +137,20 @@ export default function WaitlistForm({ onSuccess }) {
         signal: ac.signal,
       });
       clearTimeout(to);
-      if (res.status === 204) {
+      if (res.status === 204 || res.ok) {
         setFirstName("");
         setLastName("");
         setEmail("");
         setTotalSignups((v) => (typeof v === "number" ? v + 1 : 1));
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      } else {
+        const data = await res.json().catch(() => ({}));
         setSuccess(false);
         setErrorMsg(data.error || "Something went wrong.");
-        return;
       }
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setTotalSignups((v) => (typeof v === "number" ? v + 1 : 1));
-    } catch {
+    } catch (e) {
       setSuccess(false);
       setErrorMsg("Network error. Try again.");
+      if (import.meta.env && import.meta.env.DEV) console.error(e);
     } finally {
       setLoading(false);
     }
@@ -165,7 +160,7 @@ export default function WaitlistForm({ onSuccess }) {
     <section className="w-full relative">
       <motion.div
         ref={cardRef}
-        className="relative mx-auto max-w-3xl"
+        className="relative mx-auto w-full px-4 max-w-[25rem] xs:max-w-[22rem] sm:max-w-[28rem] md:max-w-[36rem] lg:max-w-[56rem]"
         initial={{ opacity: 0, scale: 0.99 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
@@ -178,23 +173,30 @@ export default function WaitlistForm({ onSuccess }) {
         <div className="pointer-events-none absolute -inset-0.5 rounded-3xl bg-[radial-gradient(120px_80px_at_20%_0%,rgba(255,255,255,.12),transparent),radial-gradient(120px_80px_at_80%_100%,rgba(255,255,255,.1),transparent)] blur-md" />
         <Card className="relative overflow-hidden rounded-3xl bg-black/65 backdrop-blur-xl border border-white/12 shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
           <span className="pointer-events-none absolute inset-px rounded-[22px] bg-gradient-to-b from-white/10 to-transparent" />
-          <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0">
-            <div className="flex items-center gap-2">
-              <PenTool className="h-5 w-5 text-white/80" aria-hidden />
-              <CardTitle className="text-white text-base">
+          <CardHeader className="relative z-10 flex flex-col items-center justify-center text-center px-3 pt-2 pb-1 md:px-5 md:pt-3 md:pb-2 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <PenTool className="h-6 w-6 text-white/80" aria-hidden />
+              <CardTitle className="text-white text-2xl md:text-3xl font-extrabold">
                 Early access
               </CardTitle>
             </div>
-            <CardDescription className="text-white/70">
-              {typeof totalSignups === "number"
-                ? `${totalSignups}+ joined`
-                : null}
-            </CardDescription>
+            {typeof totalSignups === "number" && (
+              <div
+                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs md:text-sm text-white/85"
+                aria-live="polite"
+              >
+                <span className="font-semibold">
+                  {totalSignups.toLocaleString()}
+                </span>
+                <span className="opacity-80">signed up</span>
+              </div>
+            )}
           </CardHeader>
+
           <CardContent className="relative z-10">
             <SuccessNote show={success} />
             <ErrorBanner message={errorMsg} />
-            <p className="mb-3 text-sm text-white/85">
+            <p className="mb-3 text-sm md:text-base text-white/90 text-center">
               Sign up for updates. We will email you at launch.
             </p>
             <form onSubmit={handleSubmit} noValidate className="space-y-3">
@@ -205,7 +207,7 @@ export default function WaitlistForm({ onSuccess }) {
                     placeholder="First name"
                     value={firstName}
                     onChange={(ev) => setFirstName(ev.target.value)}
-                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black"
+                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black text-center"
                     autoComplete="off"
                     spellCheck={false}
                   />
@@ -216,7 +218,7 @@ export default function WaitlistForm({ onSuccess }) {
                     placeholder="Last name"
                     value={lastName}
                     onChange={(ev) => setLastName(ev.target.value)}
-                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black"
+                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black text-center"
                     autoComplete="off"
                     spellCheck={false}
                   />
@@ -229,7 +231,7 @@ export default function WaitlistForm({ onSuccess }) {
                   placeholder="you@inkmail.com"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black"
+                  className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black text-center"
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -251,7 +253,7 @@ export default function WaitlistForm({ onSuccess }) {
                 )}
               </Button>
             </form>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-white/65">
+            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-white/70">
               <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
                 No spam
               </div>
