@@ -1,26 +1,18 @@
-import dotenv from "dotenv";
-dotenv.config();
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,         
-    pass: process.env.GMAIL_APP_PASSWORD,  
-  },
-});
-
-export const sendWelcomeEmail = async ({ to, subject, text, html }) => {
-  try {
-    await transporter.sendMail({
-      from: `"Inkmity" <${process.env.GMAIL_USER}>`,
-      to,
-      subject,
-      text,
-      html,
-    });
-    console.log(`✅ Email sent to ${to}`);
-  } catch (error) {
-    console.error("❌ Failed to send email:", error.message);
-  }
-};
+export async function sendWelcomeEmail({ to, subject, text, html }) {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return;
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
+  await transporter.sendMail({
+    from: user,
+    to,
+    subject,
+    text,
+    html,
+  });
+}

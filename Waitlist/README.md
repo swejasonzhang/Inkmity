@@ -1,53 +1,59 @@
-# For The Love Of Tattoos
+# Inkmity
 
-**For The Love Of Tattoos** is a modern web platform connecting tattoo clients with local artists. Join our waitlist today to get early access and be among the first to explore, connect, and book your next tattoo.  
+Inkmity is a modern platform connecting tattoo clients with local artists. Join the waitlist to get early access and be first to explore, connect, and book with clear pricing.
 
----
-
-## Why Join the Waitlist?
-
-- Discover talented tattoo artists near you.  
-- Browse unique tattoo designs and get inspired.  
-- Be first to access AI-powered features like tattoo placement visualization and smart artist recommendations.  
-- Receive exclusive early access before the platform launches publicly.  
+> **Launch date:** October 31, 2025
 
 ---
 
-## Current Features
+## Why join the waitlist
 
-- Waitlist sign-up for early access.  
-- Mobile-friendly, responsive design with Tailwind CSS.  
-- Smooth animations and interactions using Framer Motion.  
-- Notifications with React Toastify.  
-
----
-
-## Future Features
-
-- Full user authentication (signup/login).  
-- Artist and client profiles.  
-- Real-time messaging between clients and artists.  
-- AI-powered tattoo guidance and placement previews.  
-- In-app booking, reviews, and ratings.  
-- Search and filter artists by style, pricing, and location.  
+- Discover talented artists near you
+- Browse styles and get inspired
+- Early access to AI placement previews and smart artist recommendations
+- Priority invite before public launch
 
 ---
 
-## How to Join
+## Current features
 
-1. Visit the website.  
-2. Enter your email to join the waitlist.  
-3. Get notified as soon as early access becomes available!  
+- Waitlist sign-up for early access
+- Mobile-first UI with Tailwind CSS
+- Smooth animations via Framer Motion
+- Notifications with React Toastify
+
+---
+
+## Upcoming features
+
+- Full auth (signup/login)
+- Client and artist profiles
+- Real-time messaging with shared references
+- AI guidance for placement and sizing
+- On-platform booking, deposits, reviews, and ratings
+- Powerful search and filters by style, price, location, and healed results
+- Rewards and progression for loyal clients
+- Artist tools: fast portfolios, analytics, payout management
+
+---
+
+## How to join
+
+1. Visit the site
+2. Enter your email to join the waitlist
+3. Get notified when early access opens
 
 ---
 
 ## Contact
 
-**Jason Zhang**  
-- GitHub: [swejasonzhang](https://github.com/swejasonzhang)  
-- Email: `swejasonzhang@gmail.com`  
-- LinkedIn: [Jason Zhang](https://www.linkedin.com/in/swejasonzhang/)  
+**Inkmity**
+
+- Instagram: [@inkmity](https://instagram.com/inkmity)
+- TikTok: [@inkmity](https://tiktok.com/@inkmity)
+- Email: `jason@inkmity.com`
+- LinkedIn: [Inkmity](https://www.linkedin.com/company/inkmity)
 
 ---
 
-_Pre-register today and be part of the next big tattoo community!_
+_Pre-register today and help shape the next tattoo platform._

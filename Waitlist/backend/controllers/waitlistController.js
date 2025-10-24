@@ -1,56 +1,86 @@
 import Waitlist from "../models/Waitlist.js";
 import { sendWelcomeEmail } from "../config/email.js";
 
-export const joinWaitlist = async (req, res, next) => {
+export const getTotalSignups = async (req, res, next) => {
   try {
-    const { name, email } = req.body;
+    const totalSignups = await Waitlist.countDocuments();
+    res.status(200).json({ totalSignups });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    if (!name || !email) {
+export const joinWaitlist = async (req, res) => {
+  try {
+    const rawName = String(req.body?.name ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const emailNorm = String(req.body?.email ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (!rawName || !emailNorm)
       return res.status(400).json({ error: "Name and email are required" });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm))
+      return res.status(400).json({ error: "Use a valid email" });
+    if (rawName.length > 120)
+      return res.status(400).json({ error: "Name is too long" });
+
+    const firstName = rawName.split(" ")[0];
+
+    const existing = await Waitlist.findOne({ email: emailNorm });
+    if (existing) {
+      if (existing.name !== rawName) {
+        existing.name = rawName;
+        await existing.save();
+      }
+      const totalSignups = await Waitlist.countDocuments();
+      return res.status(200).json({
+        message: "Already on waitlist",
+        data: { id: existing._id, name: existing.name, email: existing.email },
+        meta: { totalSignups },
+      });
     }
 
-    const exists = await Waitlist.findOne({ email });
-    if (exists) {
-      return res.status(400).json({ error: "Email already registered 🖤" });
-    }
+    const preCount = await Waitlist.countDocuments();
+    const entry = await Waitlist.create({ name: rawName, email: emailNorm });
+    const position = preCount + 1;
+    const totalSignups = position;
 
-    const entry = await Waitlist.create({ name, email });
+    const refCode = entry._id.toString().slice(-8);
+    const shareUrl = `https://inkmity.com/?r=${refCode}`;
 
     try {
       await sendWelcomeEmail({
-        to: email,
-        subject: "Welcome to Inkmity!",
-        text: `Hi ${name},
+        to: emailNorm,
+        subject: `${firstName}, you’re on the Inkmity waitlist`,
+        text: `Hi ${firstName},
 
-Welcome to Inkmity! We're thrilled to have you join our community.
+Welcome to Inkmity — you’re #${position} in line.
 
-Discover talented tattoo artists near you, explore unique designs, and bring your tattoo ideas to life with guidance and inspiration.
-
-Your journey into the world of tattoos starts here! 🚀
+We’ll email you at launch. Share your link:
+${shareUrl}
 
 With inked love,
 Inkmity`,
-        html: `<h2>Hi ${name},</h2>
-<p>Welcome to <strong>Inkmity</strong>! We're thrilled to have you join our community.</p>
-<p>With Inkmity, you can:</p>
-<ul>
-  <li>Discover talented tattoo artists near you</li>
-  <li>Explore unique tattoo designs</li>
-  <li>Bring your tattoo ideas to life with guidance and inspiration</li>
-</ul>
-<p>Your journey into the world of tattoos starts here! 🚀</p>
-<p style="margin-top:20px;">With inked love,<br>
-<strong>Inkmity</strong></p>`,
+        html: `<h2>Hi ${firstName},</h2>
+<p>Welcome to <strong>Inkmity</strong> — you’re <strong>#${position}</strong> in line.</p>
+<p>We’ll email you at launch. Share your link:</p>
+<p><a href="${shareUrl}" target="_blank" rel="noopener noreferrer">${shareUrl}</a></p>
+<p style="margin-top:20px;">With inked love,<br><strong>Inkmity</strong></p>`,
       });
+    } catch {}
 
-      console.log("✅ Welcome email sent to", email);
-    } catch (emailErr) {
-      console.error("❌ Failed to send email:", emailErr.message);
-    }
-
-    res.status(201).json({ message: "Added to waitlist", data: entry });
+    return res.status(201).json({
+      message: "Added to waitlist",
+      data: { id: entry._id, name: entry.name, email: entry.email },
+      meta: { position, totalSignups, refCode, shareUrl },
+    });
   } catch (err) {
-    console.error("❌ Join waitlist error:", err.message);
-    res.status(500).json({ error: "Server error, please try again later" });
+    if (err?.code === 11000)
+      return res.status(200).json({ message: "Already on waitlist" });
+    return res
+      .status(500)
+      .json({ error: "Server error, please try again later" });
   }
 };
