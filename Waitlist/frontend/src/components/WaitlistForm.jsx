@@ -1,6 +1,13 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { PenTool, Mail, User, AlertTriangle, CheckCircle } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  PenTool,
+  Mail,
+  User,
+  Users,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Card,
@@ -45,6 +52,41 @@ function SuccessNote({ show }) {
         You’re on the waitlist. We’ll email you at launch.
       </span>
     </motion.div>
+  );
+}
+
+function kfmt(n) {
+  if (n >= 1_000_000)
+    return (n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(n % 1_000 ? 1 : 0) + "k";
+  return String(n);
+}
+
+function SignedUpBadge({ count }) {
+  const colors = ["#0a0a0a", "#262626", "#525252"];
+  return (
+    <div
+      className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 pl-2 pr-2.5 py-0.5"
+      aria-live="polite"
+    >
+      <div className="flex -space-x-2">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-5 w-5 rounded-full ring-1 ring-black/30"
+            style={{ backgroundColor: colors[i] }}
+            aria-hidden
+          />
+        ))}
+        <span className="h-5 w-5 rounded-full grid place-items-center text-[10px] text-black ring-1 ring-black/20 bg-white">
+          <Users className="h-3 w-3" aria-hidden />
+        </span>
+      </div>
+      <span className="text-xs md:text-sm text-white/90">
+        <span className="font-semibold">{kfmt(count)}</span>{" "}
+        <span className="opacity-80">signed up</span>
+      </span>
+    </div>
   );
 }
 
@@ -104,14 +146,6 @@ export default function WaitlistForm({ onSuccess }) {
     return () => clearTimeout(t);
   }, [success]);
 
-  const signupCta = useMemo(
-    () =>
-      typeof totalSignups === "number"
-        ? `Join ${totalSignups.toLocaleString()}+`
-        : "Claim your spot",
-    [totalSignups]
-  );
-
   async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
@@ -123,7 +157,6 @@ export default function WaitlistForm({ onSuccess }) {
     if (!em) return setErrorMsg("Enter your email.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))
       return setErrorMsg("Use a valid email.");
-
     setSuccess(true);
     if (onSuccess) onSuccess();
     setLoading(true);
@@ -181,18 +214,9 @@ export default function WaitlistForm({ onSuccess }) {
               </CardTitle>
             </div>
             {typeof totalSignups === "number" && (
-              <div
-                className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-xs md:text-sm text-white/85"
-                aria-live="polite"
-              >
-                <span className="font-semibold">
-                  {totalSignups.toLocaleString()}
-                </span>
-                <span className="opacity-80">signed up</span>
-              </div>
+              <SignedUpBadge count={totalSignups} />
             )}
           </CardHeader>
-
           <CardContent className="relative z-10">
             <SuccessNote show={success} />
             <ErrorBanner message={errorMsg} />
@@ -207,7 +231,7 @@ export default function WaitlistForm({ onSuccess }) {
                     placeholder="First name"
                     value={firstName}
                     onChange={(ev) => setFirstName(ev.target.value)}
-                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black text-center"
+                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
                     autoComplete="off"
                     spellCheck={false}
                   />
@@ -218,7 +242,7 @@ export default function WaitlistForm({ onSuccess }) {
                     placeholder="Last name"
                     value={lastName}
                     onChange={(ev) => setLastName(ev.target.value)}
-                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black text-center"
+                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
                     autoComplete="off"
                     spellCheck={false}
                   />
@@ -231,7 +255,7 @@ export default function WaitlistForm({ onSuccess }) {
                   placeholder="you@inkmail.com"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-0 focus-visible:!border-black text-center"
+                  className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -245,7 +269,7 @@ export default function WaitlistForm({ onSuccess }) {
                   "Saving…"
                 ) : (
                   <span className="relative z-10 inline-flex items-center justify-center gap-2">
-                    {signupCta.toUpperCase()}
+                    {"CLAIM YOUR SPOT "}
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-[10px] text-white">
                       →
                     </span>
