@@ -143,7 +143,7 @@ const About: React.FC = () => {
                 className={[
                     "fixed top-0 left-1/2 -translate-x-1/2 z-[1]",
                     "w-auto max-w-none",
-                    "h-[100svh]",
+                    "h-[80svh]",                  
                     "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
                     "object-contain md:object-cover",
                     "pointer-events-none video-bg",
