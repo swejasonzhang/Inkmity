@@ -25,7 +25,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const apiBase =
     (import.meta as any)?.env?.VITE_API_URL ||
     import.meta.env?.VITE_API_URL ||
-    "http://localhost:5005/api";
+    "http://localhost:5005";
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -90,7 +90,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const send = useCallback(
     async (receiverId: string, text: string) => {
       const url = `${apiBase}/messages`;
-      const payload = { receiverId, text };
+      const payload = { senderId: currentUserId, receiverId, text };
       const clientId = currentUserId;
       const artistId = receiverId;
       console.log("[booking] send ->", {
@@ -109,11 +109,8 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       try {
-        const saved = (await res.json()) as Message | { message?: Message };
-        const msg = ("senderId" in saved ? saved : saved?.message) as
-          | Message
-          | undefined;
-        if (msg && msg.text) upsertMessage(msg);
+        const saved = (await res.json()) as Message;
+        if (saved && saved.text) upsertMessage(saved);
       } catch {}
       await fetchAll();
     },

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useUser } from "@clerk/clerk-react"
+import { useEffect, useMemo, useRef, useState, useCallback } from "react"
+import { useUser, useAuth } from "@clerk/clerk-react"
 import { useNavigate } from "react-router-dom"
 import Header from "@/components/header/Header"
 import ChatBot from "@/components/dashboard/shared/ChatBot"
@@ -9,21 +9,36 @@ import ArtistModal from "@/components/dashboard/client/ArtistModal"
 import { toast } from "react-toastify"
 import { MessageSquare, Bot, X } from "lucide-react"
 import { useDashboardData } from "@/hooks"
+import { useMessaging } from "@/hooks/useMessaging"
 import FloatingBar from "@/components/dashboard/shared/FloatingBar"
 import { useTheme } from "@/components/header/useTheme"
 import CircularProgress from "@mui/material/CircularProgress"
 import { displayNameFromUsername } from "@/lib/format"
 import { API_URL } from "@/lib/http"
 import type { Artist as ArtistDto } from "@/api"
+import { AnimatePresence, motion } from "framer-motion"
 
 const PAGE_SIZE = 12
 
 export default function ClientDashboard() {
     const { isSignedIn, isLoaded, user } = useUser()
+    const { getToken } = useAuth()
     const navigate = useNavigate()
     const warnedRef = useRef(false)
-    const { themeClass } = useTheme()
+    const rootRef = useRef<HTMLDivElement | null>(null)
+    const { theme, toggleTheme, themeClass } = useTheme(rootRef.current)
     const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null)
+
+    const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+        const full = url.startsWith("http") ? url : `${API_URL}${url}`
+        const token = await getToken()
+        const headers = new Headers(options.headers || {})
+        if (token) headers.set("Authorization", `Bearer ${token}`)
+        if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json")
+        return fetch(full, { ...options, headers, credentials: "include" })
+    }, [getToken])
+
+    const { loading: msgLoading, conversations, collapsedMap, expandedId, toggleCollapse, removeConversation, send } = useMessaging(user?.id ?? "", authFetch)
 
     useEffect(() => {
         if (!isLoaded) return
@@ -42,13 +57,10 @@ export default function ClientDashboard() {
     const [page, setPage] = useState(1)
     const [total, setTotal] = useState<number>(0)
 
-    useEffect(() => {
-        setTotal(artists.length)
-    }, [artists.length])
+    useEffect(() => { setTotal(artists.length) }, [artists.length])
 
     const totalPages = Math.max(1, Math.ceil((total || 0) / PAGE_SIZE))
-
-    const handlePageChange = async (next: number) => {
+    const handlePageChange = (next: number) => {
         if (next < 1 || next > totalPages) return
         setPage(next)
         window.scrollTo({ top: 0, behavior: "smooth" })
@@ -65,14 +77,7 @@ export default function ClientDashboard() {
         const pool = imgs.length ? imgs : fallback
         const pastWorks = pool.filter((_: unknown, i: number) => i % 2 === 0)
         const sketches = pool.filter((_: unknown, i: number) => i % 2 === 1)
-        return {
-            _id: selectedArtist._id,
-            clerkId: (selectedArtist as any).clerkId,
-            username: displayNameFromUsername(selectedArtist.username),
-            bio: (selectedArtist as any).bio,
-            pastWorks,
-            sketches,
-        }
+        return { _id: selectedArtist._id, clerkId: (selectedArtist as any).clerkId, username: displayNameFromUsername(selectedArtist.username), bio: (selectedArtist as any).bio, pastWorks, sketches }
     }, [selectedArtist])
 
     if (!isLoaded || !initialized) {
@@ -82,7 +87,6 @@ export default function ClientDashboard() {
             </div>
         )
     }
-
     if (!user) {
         return (
             <div className="fixed inset-0 grid place-items-center bg-app text-app">
@@ -91,16 +95,13 @@ export default function ClientDashboard() {
         )
     }
 
-    const bareAuthFetch = async (url: string, options?: RequestInit) => {
-        const full = url.startsWith("http") ? url : `${API_URL}${url}`
-        return fetch(full, options)
-    }
+    const panelVariants = { hidden: { opacity: 0, scale: 0.9, translateX: 8, translateY: 8 }, visible: { opacity: 1, scale: 1, translateX: 0, translateY: 0 }, exit: { opacity: 0, scale: 0.9, translateX: 8, translateY: 8 } }
 
     return (
-        <div className={themeClass}>
+        <div ref={rootRef} className={themeClass}>
             <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
-                <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
-                <Header />
+                <style>{`#middle-content::-webkit-scrollbar{display:none}`}</style>
+                <Header theme={theme} toggleTheme={toggleTheme} />
                 <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
                     <div className="flex-1 min-w-0">
                         <ArtistsSection
@@ -115,56 +116,73 @@ export default function ClientDashboard() {
                     </div>
                     <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
                 </main>
+
                 <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
+
                 <FloatingBar onAssistantOpen={() => setAssistantOpen(true)} onMessagesOpen={() => setMessagesOpen(true)} portalTarget={portalEl} />
-                <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-                    <div className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`} onClick={() => setAssistantOpen(false)} aria-hidden />
-                    <div className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}>
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-app">
-                            <div className="flex items-center gap-2 font-semibold">
-                                <Bot size={18} />
+
+                {assistantOpen && <style>{`button[aria-label="Open assistant"]{display:none!important}`}</style>}
+                {messagesOpen && <style>{`button[aria-label="Open messages"]{display:none!important}`}</style>}
+
+                <AnimatePresence>
+                    {assistantOpen && (
+                        <motion.div key="assistant" initial="hidden" animate="visible" exit="exit" variants={panelVariants} transition={{ type: "spring", stiffness: 260, damping: 22 }} className="fixed bottom-4 right-4 z-50" style={{ transformOrigin: "bottom right" }}>
+                            <div className="w-[88vw] max-w-[420px] h-[66vh] max-h-[560px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+                                    <div className="flex items-center gap-2 font-semibold">
+                                        <Bot size={18} />
+                                        <span>Assistant</span>
+                                    </div>
+                                    <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    <ChatBot />
+                                </div>
                             </div>
-                            <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto">
-                            <ChatBot />
-                        </div>
-                    </div>
-                </div>
-                <div className={`fixed inset-0 z-50 transition-all duration-300 ${messagesOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-                    <div className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${messagesOpen ? "opacity-100" : "opacity-0"}`} onClick={() => setMessagesOpen(false)} aria-hidden />
-                    <div className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"}`}>
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-app">
-                            <div className="flex items-center gap-2 font-semibold">
-                                <MessageSquare size={18} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {messagesOpen && (
+                        <motion.div key="messages" initial="hidden" animate="visible" exit="exit" variants={panelVariants} transition={{ type: "spring", stiffness: 260, damping: 22 }} className="fixed bottom-4 right-4 z-50" style={{ transformOrigin: "bottom right" }}>
+                            <div className="w-[92vw] max-w-[520px] h-[68vh] max-h-[600px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+                                    <div className="flex items-center gap-2 font-semibold">
+                                        <MessageSquare size={18} />
+                                        <span>Messages</span>
+                                    </div>
+                                    <button onClick={() => setMessagesOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close messages">
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    <ChatWindow
+                                        conversations={conversations}
+                                        collapsedMap={collapsedMap}
+                                        currentUserId={user.id}
+                                        loading={msgLoading}
+                                        emptyText={"No conversations yet.\nTap an artist to start one!"}
+                                        onToggleCollapse={toggleCollapse}
+                                        onRemoveConversation={removeConversation}
+                                        expandedId={expandedId}
+                                        authFetch={authFetch}
+                                    />
+                                </div>
                             </div>
-                            <button onClick={() => setMessagesOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close messages">
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto">
-                            <ChatWindow
-                                conversations={[]}
-                                collapsedMap={{}}
-                                currentUserId={user.id}
-                                loading={false}
-                                emptyText={"No conversations yet.\nTap an artist to start one!"}
-                                onToggleCollapse={() => { }}
-                                onRemoveConversation={() => { }}
-                                expandedId={undefined}
-                                authFetch={bareAuthFetch}
-                            />
-                        </div>
-                    </div>
-                </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {modalArtist && (
                     <ArtistModal
                         open={Boolean(selectedArtist)}
                         artist={modalArtist}
                         onClose={() => setSelectedArtist(null)}
-                        onMessage={() => {
+                        onMessage={async (a, text) => {
+                            await send(a.clerkId, text)
                             setMessagesOpen(true)
                         }}
                     />
