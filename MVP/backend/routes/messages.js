@@ -8,15 +8,22 @@ import {
   acceptMessageRequest,
   declineMessageRequest,
   getGateStatus,
+  getUnreadState,
+  markConversationRead,
 } from "../controllers/messageController.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.get("/user/:userId", requireAuth(), getAllMessagesForUser);
+router.get("/unread", requireAuth(), getUnreadState);
+router.post("/read", requireAuth(), markConversationRead);
+
 router.post("/", requireAuth(), createMessage);
 router.delete("/conversations", requireAuth(), deleteConversationForUser);
+
 router.get("/gate/:artistId", requireAuth(), getGateStatus);
+
 router.post("/request", requireAuth(), createMessageRequest);
 router.get("/requests", requireAuth(), listIncomingRequests);
 router.post("/requests/:id/accept", requireAuth(), acceptMessageRequest);

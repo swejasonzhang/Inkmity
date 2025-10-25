@@ -37,6 +37,7 @@ export const getAllMessagesForUser = async (req, res) => {
       .lean();
 
     const buckets = new Map();
+    const unreadSet = new Set();
 
     for (const m of chats) {
       const pid = m.senderId === userId ? m.receiverId : m.senderId;
@@ -48,6 +49,7 @@ export const getAllMessagesForUser = async (req, res) => {
         timestamp: new Date(m.createdAt).getTime(),
         meta: m.meta || undefined,
       });
+      if (m.receiverId === userId && !m.seen) unreadSet.add(pid);
     }
 
     const reqs = await Message.aggregate([
@@ -123,7 +125,13 @@ export const getAllMessagesForUser = async (req, res) => {
         participantId: pid,
         username: userMap[pid]?.username || "Unknown",
         messages: buckets.get(pid).messages,
-        meta: { allowed, lastStatus, declines, blocked },
+        meta: {
+          allowed,
+          lastStatus,
+          declines,
+          blocked,
+          unread: unreadSet.has(pid) ? 1 : 0,
+        },
       });
     }
 
@@ -180,6 +188,7 @@ export const createMessage = async (req, res) => {
       receiverId: String(receiverId),
       text,
       type: "message",
+      seen: false,
       meta: {
         budgetCents: Number.isFinite(budgetCents) ? budgetCents : undefined,
         style: style || undefined,
@@ -416,3 +425,67 @@ export const getGateStatus = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch gate status" });
   }
 };
+
+export const getUnreadState = async (req, res) => {
+  try {
+    const userId = String(req.user?.clerkId || req.auth?.userId || "");
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const unread = await Message.find({
+      type: "message",
+      receiverId: userId,
+      seen: false,
+    })
+      .select("senderId")
+      .lean();
+
+    const unreadConversationIds = [...new Set(unread.map((m) => m.senderId))];
+
+    const pending = await Message.find({
+      type: "request",
+      receiverId: userId,
+      requestStatus: "pending",
+    })
+      .select("_id")
+      .lean();
+
+    const pendingRequestIds = pending.map((m) => String(m._id));
+
+    res.json({
+      unreadConversationIds,
+      pendingRequestIds,
+      counts: {
+        unreadConversations: unreadConversationIds.length,
+        pendingRequests: pendingRequestIds.length,
+      },
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch unread state" });
+  }
+};
+
+export const markConversationRead = async (req, res) => {
+  try {
+    const authUserId = String(req.user?.clerkId || req.auth?.userId || "");
+    const { userId, participantId } = req.body || {};
+    if (!authUserId || !userId || !participantId)
+      return res.status(400).json({ error: "missing_fields" });
+    if (authUserId !== String(userId))
+      return res.status(403).json({ error: "Forbidden" });
+
+    const result = await Message.updateMany(
+      {
+        type: "message",
+        receiverId: userId,
+        senderId: String(participantId),
+        seen: false,
+      },
+      { $set: { seen: true } }
+    );
+    res.json({ ok: true, modified: result.modifiedCount || 0 });
+  } catch {
+    res.status(500).json({ error: "Failed to mark read" });
+  }
+};
+
+export { latestRequestBetween, declineCount };

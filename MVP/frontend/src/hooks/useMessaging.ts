@@ -23,9 +23,14 @@ export type Conversation = {
 
 type AuthFetch = (url: string, options?: RequestInit) => Promise<Response>;
 
+export type UnreadState = {
+  unreadMessagesTotal: number;
+  unreadByConversation: Record<string, number>;
+  requestExists: boolean;
+};
+
 const PENDING_LS = "ink_pending_threads_v1";
 const threadKeyOf = (a: string, b: string) => [a, b].sort().join(":");
-const UNREAD_LS = (uid: string) => `ink_unread_map_v1:${uid}`;
 
 function loadPending(): Record<string, { username: string }> {
   try {
@@ -42,27 +47,14 @@ function savePending(v: Record<string, { username: string }>) {
     localStorage.setItem(PENDING_LS, JSON.stringify(v));
   } catch {}
 }
-function loadUnread(uid: string): Record<string, number> {
-  try {
-    return JSON.parse(localStorage.getItem(UNREAD_LS(uid)) || "{}");
-  } catch {
-    return {};
-  }
-}
-function saveUnread(uid: string, v: Record<string, number>) {
-  try {
-    localStorage.setItem(UNREAD_LS(uid), JSON.stringify(v));
-  } catch {}
-}
 
 export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [unreadMap, setUnreadMap] = useState<Record<string, number>>(() =>
-    currentUserId ? loadUnread(currentUserId) : {}
-  );
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
+  const [unreadState, setUnreadState] = useState<UnreadState | null>(null);
   const [messagesOpen, setMessagesOpen] = useState(false);
   const mounted = useRef(false);
 
@@ -94,12 +86,36 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       setConversations((prev) => {
         const map = new Map(prev.map((c) => [c.participantId, c]));
         map.set(pid, apply(map.get(pid)));
-        const out = Array.from(map.values());
-        console.log("useMessaging: conversations updated", out);
-        return out;
+        return Array.from(map.values());
       });
     },
     []
+  );
+
+  const fetchUnread = useCallback(async () => {
+    const res = await authFetch(`${apiBase}/messages/unread`, {
+      method: "GET",
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as UnreadState;
+    setUnreadState(data);
+    setUnreadMap(() => ({ ...data.unreadByConversation }));
+    window.dispatchEvent(new Event("ink:requests-reset"));
+  }, [apiBase, authFetch]);
+
+  const markReadBackend = useCallback(
+    async (participantId: string) => {
+      const res = await authFetch(`${apiBase}/messages/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: participantId }),
+      });
+      if (res.ok)
+        window.dispatchEvent(
+          new CustomEvent("ink:conversation-read", { detail: participantId })
+        );
+    },
+    [apiBase, authFetch]
   );
 
   const fetchAll = useCallback(async () => {
@@ -133,7 +149,6 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       }))
     );
     const metaMap = Object.fromEntries(metas.map((m) => [m.pid, m.meta]));
-
     const cleaned: Record<string, { username: string }> = { ...pending };
     convs.forEach((c) => {
       const m = metaMap[c.participantId];
@@ -145,17 +160,9 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       .filter((c) => !metaMap[c.participantId]?.blocked)
       .map((c) => ({ ...c, meta: metaMap[c.participantId] }));
     setConversations(nextConvs);
-    console.log("useMessaging: fetched conversations", nextConvs);
-
-    setUnreadMap((m) => {
-      const next = { ...m };
-      nextConvs.forEach((c) => {
-        if (next[c.participantId] == null) next[c.participantId] = 0;
-      });
-      return next;
-    });
     setLoading(false);
-  }, [apiBase, authFetch, currentUserId, getGate]);
+    fetchUnread();
+  }, [apiBase, authFetch, currentUserId, getGate, fetchUnread]);
 
   const removeConversation = useCallback((participantId: string) => {
     setConversations((prev) =>
@@ -174,9 +181,15 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     setExpandedId((id) => (id === participantId ? null : participantId));
   }, []);
 
-  const markAsRead = useCallback((participantId: string) => {
-    setUnreadMap((m) => (m[participantId] ? { ...m, [participantId]: 0 } : m));
-  }, []);
+  const markAsRead = useCallback(
+    (participantId: string) => {
+      setUnreadMap((m) =>
+        m[participantId] ? { ...m, [participantId]: 0 } : m
+      );
+      markReadBackend(participantId);
+    },
+    [markReadBackend]
+  );
 
   const send = useCallback(
     async (receiverId: string, text: string) => {
@@ -239,13 +252,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       });
       const isInbound = m.senderId !== currentUserId;
       const isActiveThread = expandedId === pid && messagesOpen;
-      if (isInbound && !isActiveThread) {
-        setUnreadMap((map) => ({
-          ...map,
-          [pid]: Math.max(0, map[pid] || 0) + 1,
-        }));
-      }
-      console.log("useMessaging: new message event", p);
+      if (isInbound && !isActiveThread) fetchUnread();
     };
 
     const onPending = (p: {
@@ -282,7 +289,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
           },
         };
       });
-      console.log("useMessaging: conversation pending", p);
+      fetchUnread();
     };
 
     const onAccepted = (p: {
@@ -312,12 +319,11 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
           },
         };
       });
-      console.log("useMessaging: conversation accepted", p);
+      fetchUnread();
     };
 
     const onRemoved = () => {
       fetchAll();
-      console.log("useMessaging: conversation removed -> refetch");
     };
 
     s.on("connect", onConnect);
@@ -334,7 +340,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       s.off("conversation:accepted", onAccepted);
       s.off("conversation:removed", onRemoved);
     };
-  }, [currentUserId, expandedId, upsert, messagesOpen, fetchAll]);
+  }, [currentUserId, expandedId, upsert, messagesOpen, fetchAll, fetchUnread]);
 
   useEffect(() => {
     const onOpen = () => setMessagesOpen(true);
@@ -348,12 +354,19 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   }, []);
 
   useEffect(() => {
-    if (currentUserId) saveUnread(currentUserId, unreadMap);
-  }, [currentUserId, unreadMap]);
+    if (messagesOpen && expandedId) {
+      window.dispatchEvent(
+        new CustomEvent("ink:conversation-opened", { detail: expandedId })
+      );
+      markAsRead(expandedId);
+      fetchUnread();
+    }
+  }, [messagesOpen, expandedId, markAsRead, fetchUnread]);
 
   useEffect(() => {
-    if (messagesOpen && expandedId) markAsRead(expandedId);
-  }, [messagesOpen, expandedId, markAsRead]);
+    const total = Object.values(unreadMap).reduce((a, b) => a + (b || 0), 0);
+    console.log("unread messages:", total);
+  }, [unreadMap]);
 
   return {
     loading,
@@ -374,10 +387,12 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       removeConversation(participantId);
+      fetchUnread();
     },
     refresh: fetchAll,
     unreadMap,
     markAsRead,
     unreadTotal: Object.values(unreadMap).reduce((a, b) => a + (b || 0), 0),
+    unreadState,
   };
 }

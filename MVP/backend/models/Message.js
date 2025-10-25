@@ -17,6 +17,7 @@ const MessageSchema = new mongoose.Schema(
       default: undefined,
       index: true,
     },
+    seen: { type: Boolean, default: false, index: true },
     meta: {
       budgetCents: { type: Number },
       style: { type: String },
@@ -37,6 +38,10 @@ MessageSchema.pre("save", function (next) {
   next();
 });
 
+MessageSchema.index(
+  { receiverId: 1, type: 1, seen: 1, createdAt: -1 },
+  { name: "unread_idx" }
+);
 MessageSchema.index(
   { senderId: 1, receiverId: 1, type: 1, requestStatus: 1, createdAt: -1 },
   { name: "req_lookup" }

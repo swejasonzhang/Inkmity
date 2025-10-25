@@ -1,57 +1,25 @@
 import type { FC } from "react";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import ChatWindow from "../ChatWindow";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import type { Conversation } from "@/hooks/useMessaging";
 
-type IncomingRequest = {
-    id: string;
-    from: { clerkId: string; username: string };
-    text: string;
-    timestamp: number;
-};
-
 type Props = {
     currentUserId: string;
+    isArtist: boolean;
     expandAllOnMount?: boolean;
-    requests?: IncomingRequest[];
-    isArtist?: boolean;
-    onBadgeCountChange?: (count: number) => void;
 };
 
-const MessagesPanel: FC<Props> = ({
-    currentUserId,
-    expandAllOnMount,
-    requests,
-    isArtist: isArtistProp,
-    onBadgeCountChange,
-}) => {
+const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = false }) => {
     const { getToken } = useAuth();
-    const { user } = useUser();
+
     const [loading, setLoading] = useState(true);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
     const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
-    const [serverRequests, setServerRequests] = useState<IncomingRequest[] | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
-
-    const resolvedIsArtist = useMemo(() => {
-        if (typeof isArtistProp === "boolean") return isArtistProp;
-        const pm: any = user?.publicMetadata ?? {};
-        const um: any = user?.unsafeMetadata ?? {};
-        const roles = new Set<string>(
-            []
-                .concat(pm.role ?? [])
-                .concat(pm.roles ?? [])
-                .concat(um.role ?? [])
-                .concat(um.roles ?? [])
-                .flat()
-                .filter(Boolean)
-        );
-        return roles.has("artist");
-    }, [isArtistProp, user?.publicMetadata, user?.unsafeMetadata]);
 
     const authFetch = useCallback(
         async (path: string, init: RequestInit = {}) => {
@@ -83,11 +51,7 @@ const MessagesPanel: FC<Props> = ({
                     return;
                 }
                 const data = await res.json();
-                const arr: Conversation[] = Array.isArray(data)
-                    ? data
-                    : Array.isArray(data?.conversations)
-                        ? data.conversations
-                        : [];
+                const arr: Conversation[] = Array.isArray(data) ? data : Array.isArray(data?.conversations) ? data.conversations : [];
                 if (mounted) setConversations(arr);
                 if (mounted) {
                     const next: Record<string, number> = {};
@@ -102,31 +66,6 @@ const MessagesPanel: FC<Props> = ({
             mounted = false;
         };
     }, [authFetch, currentUserId]);
-
-    useEffect(() => {
-        if (!resolvedIsArtist) {
-            setServerRequests(null);
-            return;
-        }
-        let mounted = true;
-        (async () => {
-            try {
-                const res = await authFetch(`/messages/requests`, { method: "GET" });
-                if (!res.ok) {
-                    if (mounted) setServerRequests([]);
-                    return;
-                }
-                const data = (await res.json()) as IncomingRequest[] | { requests: IncomingRequest[] };
-                const list = Array.isArray(data) ? data : Array.isArray((data as any)?.requests) ? (data as any).requests : [];
-                if (mounted) setServerRequests(list);
-            } catch {
-                if (mounted) setServerRequests([]);
-            }
-        })();
-        return () => {
-            mounted = false;
-        };
-    }, [authFetch, resolvedIsArtist]);
 
     useEffect(() => {
         if (!expandAllOnMount || !conversations.length) return;
@@ -146,37 +85,19 @@ const MessagesPanel: FC<Props> = ({
     }, []);
 
     const derivedRequests = useMemo(() => {
-        const items = conversations
+        if (!isArtist) return [];
+        return conversations
             .filter((c) => c.meta && c.meta.lastStatus === "pending" && !c.meta.allowed)
             .map((c) => {
-                const firstReqMsg =
-                    [...c.messages].reverse().find((m) => (m as any)?.meta?.kind === "request") || c.messages[0];
+                const firstReqMsg = [...c.messages].reverse().find((m) => (m as any)?.meta?.kind === "request") || c.messages[0];
                 return {
                     id: c.participantId,
                     from: { clerkId: c.participantId, username: c.username },
                     text: (firstReqMsg as any)?.text || "Message request",
                     timestamp: (firstReqMsg as any)?.timestamp || Date.now(),
-                } as IncomingRequest;
+                };
             });
-        return items;
-    }, [conversations]);
-
-    const effectiveRequests: IncomingRequest[] = useMemo(() => {
-        if (!resolvedIsArtist) return [];
-        if (Array.isArray(serverRequests) && serverRequests.length) return serverRequests;
-        if (Array.isArray(requests) && requests.length) return requests;
-        return derivedRequests;
-    }, [resolvedIsArtist, serverRequests, requests, derivedRequests]);
-
-    const badgeCount = useMemo(() => {
-        const unread = Object.values(unreadMap).reduce((acc, n) => acc + (n > 0 ? 1 : 0), 0);
-        const reqs = resolvedIsArtist ? effectiveRequests.length : 0;
-        return unread + reqs;
-    }, [unreadMap, effectiveRequests.length, resolvedIsArtist]);
-
-    useEffect(() => {
-        if (onBadgeCountChange) onBadgeCountChange(badgeCount);
-    }, [badgeCount, onBadgeCountChange]);
+    }, [conversations, isArtist]);
 
     if (loading) {
         return (
@@ -186,7 +107,7 @@ const MessagesPanel: FC<Props> = ({
         );
     }
 
-    const hasRequests = resolvedIsArtist && effectiveRequests.length > 0;
+    const hasRequests = isArtist && derivedRequests.length > 0;
 
     return (
         <div className="h-full min-h-0 w-full flex flex-col gap-3">
@@ -210,31 +131,27 @@ const MessagesPanel: FC<Props> = ({
 
                     <div className="h-full min-h-0 rounded-xl border border-app bg-card p-3 overflow-y-auto">
                         <div className="text-sm font-semibold mb-1 text-app">Message requests</div>
-                        <div className="text-xs text-muted-foreground mb-3">
-                            Review new requests. View to open the thread.
-                        </div>
+                        <div className="text-xs text-muted-foreground mb-3">Review new requests. View to open the thread.</div>
                         <ul className="space-y-2">
-                            {effectiveRequests.map((r) => (
+                            {derivedRequests.map((r) => (
                                 <li
                                     key={`${r.id}-${r.from?.clerkId}`}
                                     className="flex items-center justify-between rounded-lg border border-app px-3 py-2 bg-elevated"
                                 >
                                     <div className="min-w-0">
-                                        <div className="text-sm text-app truncate">
-                                            {r.from?.username || r.from?.clerkId}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground truncate">
-                                            {r.text || "Message request"}
-                                        </div>
+                                        <div className="text-sm text-app truncate">{r.from?.username || r.from?.clerkId}</div>
+                                        <div className="text-xs text-muted-foreground truncate">{r.text || "Message request"}</div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        className="shrink-0 ml-3 text-xs px-2 py-1 rounded-md bg-primary text-primary-foreground"
-                                        onClick={() => setExpandedId(r.from?.clerkId || null)}
-                                        aria-label="View request"
-                                    >
-                                        View
-                                    </button>
+                                    <div className="shrink-0 flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            className="text-xs px-2 py-1 rounded-md bg-primary text-primary-foreground"
+                                            onClick={() => setExpandedId(r.from?.clerkId || null)}
+                                            aria-label="View request"
+                                        >
+                                            View
+                                        </button>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
@@ -252,7 +169,7 @@ const MessagesPanel: FC<Props> = ({
                         authFetch={authFetch}
                         unreadMap={unreadMap}
                         onMarkRead={onMarkRead}
-                        isArtist={resolvedIsArtist}
+                        isArtist={isArtist}
                         expandedId={expandedId}
                     />
                 </div>
@@ -261,5 +178,4 @@ const MessagesPanel: FC<Props> = ({
     );
 };
 
-export type { IncomingRequest };
 export default MessagesPanel;
