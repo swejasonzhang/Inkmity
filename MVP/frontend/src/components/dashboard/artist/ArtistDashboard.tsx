@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useRef, useState, useEffect } from "react";
 import Header from "@/components/header/Header";
 import { useTheme } from "@/components/header/useTheme";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
@@ -6,31 +6,80 @@ import { X, Bot } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import MessagesPanel from "@/components/dashboard/shared/messages/MessagesPanel";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
+import { API_URL } from "@/lib/http";
+import type { IncomingRequest } from "@/components/dashboard/shared/messages/MessagesPanel";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
 const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
 
 export default function ArtistDashboard() {
     const { user } = useUser();
+    const { getToken } = useAuth();
     const rootRef = useRef<HTMLDivElement | null>(null);
     const { theme, toggleTheme, themeClass } = useTheme(rootRef.current);
     const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
     const [assistantOpen, setAssistantOpen] = useState(false);
+    const [requests, setRequests] = useState<IncomingRequest[]>([]);
+
+    const authFetch = useCallback(
+        async (path: string, init: RequestInit = {}) => {
+            const token = await getToken();
+            const base = API_URL.replace(/\/$/, "");
+            const cleaned = path.replace(/^\/api/, "");
+            const url = path.startsWith("http") ? path : `${base}${cleaned.startsWith("/") ? "" : "/"}${cleaned}`;
+            const headers = new Headers(init.headers || {});
+            headers.set("Accept", "application/json");
+            headers.set("Content-Type", "application/json");
+            if (token) headers.set("Authorization", `Bearer ${token}`);
+            return fetch(url, { ...init, headers, credentials: "include" });
+        },
+        [getToken]
+    );
+
+    useEffect(() => {
+        let on = true;
+        (async () => {
+            const res = await authFetch(`/messages/requests`, { method: "GET" });
+            if (on && res.ok) {
+                const data = await res.json();
+                setRequests(Array.isArray(data) ? data : []);
+            }
+        })();
+        return () => {
+            on = false;
+        };
+    }, [authFetch]);
+
+    const acceptRequest = useCallback(
+        async (id: string) => {
+            const res = await authFetch(`/messages/requests/${id}/accept`, { method: "POST" });
+            if (res.ok) setRequests((r) => r.filter((x) => x.id !== id));
+        },
+        [authFetch]
+    );
+
+    const declineRequest = useCallback(
+        async (id: string) => {
+            const res = await authFetch(`/messages/requests/${id}/decline`, { method: "POST" });
+            if (res.ok) setRequests((r) => r.filter((x) => x.id !== id));
+        },
+        [authFetch]
+    );
 
     return (
         <div ref={rootRef} className={themeClass}>
-            <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
+            <div className="min-h-dvh h-dvh bg-app text-app flex flex-col overflow-hidden">
                 <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
                 <Header theme={theme} toggleTheme={toggleTheme} />
 
-                <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
-                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[60vh]">
+                <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
+                    <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
                             <CardHeader className="px-4 py-5 border-b border-app">
                                 <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Bookings Calendar</CardTitle>
                             </CardHeader>
-                            <CardContent className="p-0 flex-1 overflow-y-auto">
+                            <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
                                 <Suspense
                                     fallback={
                                         <div className="p-4 space-y-3">
@@ -49,11 +98,11 @@ export default function ArtistDashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="rounded-2xl bg-card border border-app overflow-hidden min-h-[60vh]">
+                        <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
                             <CardHeader className="px-4 py-5 border-b border-app">
                                 <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Analytics</CardTitle>
                             </CardHeader>
-                            <CardContent className="p-4">
+                            <CardContent className="p-4 flex-1 min-h-0 overflow-y-auto">
                                 <Suspense
                                     fallback={
                                         <div className="space-y-3">
@@ -78,7 +127,14 @@ export default function ArtistDashboard() {
                 <FloatingBar
                     onAssistantOpen={() => setAssistantOpen(true)}
                     portalTarget={portalEl}
-                    messagesContent={<MessagesPanel currentUserId={user?.id ?? ""} />}
+                    messagesContent={
+                        <MessagesPanel
+                            currentUserId={user?.id ?? ""}
+                            requests={requests}
+                            onAcceptRequest={acceptRequest}
+                            onDeclineRequest={declineRequest}
+                        />
+                    }
                 />
 
                 <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
@@ -88,8 +144,7 @@ export default function ArtistDashboard() {
                         aria-hidden
                     />
                     <div
-                        className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"
-                            }`}
+                        className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}
                     >
                         <div className="flex items-center justify-between px-4 py-3 border-b border-app">
                             <div className="flex items-center gap-2 font-semibold">
@@ -100,7 +155,7 @@ export default function ArtistDashboard() {
                                 <X size={18} />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 text-sm opacity-80">Assistant panel</div>
+                        <div className="flex-1 min-h-0 overflow-y-auto p-4 text-sm opacity-80">Assistant panel</div>
                     </div>
                 </div>
             </div>

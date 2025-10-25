@@ -21,13 +21,11 @@ export type Conversation = {
   meta?: ConversationMeta;
 };
 
-type AuthFetch = (
-  url: string,
-  options?: RequestInit
-) => Promise<Response | any>;
+type AuthFetch = (url: string, options?: RequestInit) => Promise<Response>;
 
 const PENDING_LS = "ink_pending_threads_v1";
 const threadKeyOf = (a: string, b: string) => [a, b].sort().join(":");
+const UNREAD_LS = (uid: string) => `ink_unread_map_v1:${uid}`;
 
 function loadPending(): Record<string, { username: string }> {
   try {
@@ -44,33 +42,51 @@ function savePending(v: Record<string, { username: string }>) {
     localStorage.setItem(PENDING_LS, JSON.stringify(v));
   } catch {}
 }
+function loadUnread(uid: string): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(UNREAD_LS(uid)) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveUnread(uid: string, v: Record<string, number>) {
+  try {
+    localStorage.setItem(UNREAD_LS(uid), JSON.stringify(v));
+  } catch {}
+}
 
 export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const [loading, setLoading] = useState(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>(() =>
+    currentUserId ? loadUnread(currentUserId) : {}
+  );
+  const [messagesOpen, setMessagesOpen] = useState(false);
   const mounted = useRef(false);
+
+  const raw =
+    (import.meta as any)?.env?.VITE_API_URL ||
+    import.meta.env?.VITE_API_URL ||
+    "http://localhost:5005/api";
+  const apiBase = String(raw).replace(/\/$/, "");
 
   const getGate = useCallback(
     async (artistId: string) => {
-      const res: any = await authFetch(`/messages/gate/${artistId}`, {
+      const res = await authFetch(`${apiBase}/messages/gate/${artistId}`, {
         method: "GET",
       });
-      if (res && typeof res === "object" && "allowed" in res)
-        return res as ConversationMeta;
-      if (res && typeof res.json === "function") {
-        const j = await res.json().catch(() => null);
-        if (j) return j as ConversationMeta;
-      }
-      return {
-        allowed: false,
-        lastStatus: null,
-        declines: 0,
-        blocked: false,
-      } as ConversationMeta;
+      if (!res.ok)
+        return {
+          allowed: false,
+          lastStatus: null,
+          declines: 0,
+          blocked: false,
+        } as ConversationMeta;
+      return (await res.json()) as ConversationMeta;
     },
-    [authFetch]
+    [apiBase, authFetch]
   );
 
   const upsert = useCallback(
@@ -86,12 +102,14 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const res: any = await authFetch(`/messages/user/${currentUserId}`, {
+    const res = await authFetch(`${apiBase}/messages/user/${currentUserId}`, {
       method: "GET",
     });
-    const data: Conversation[] = Array.isArray(res)
-      ? (res as Conversation[])
-      : await (res as Response).json().catch(() => []);
+    if (!res.ok) {
+      setLoading(false);
+      return;
+    }
+    const data = (await res.json()) as Conversation[];
     const base = new Map<string, Conversation>();
     (data || []).forEach((c: Conversation) => base.set(c.participantId, c));
 
@@ -105,36 +123,46 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         });
     });
 
-    const convs: Conversation[] = Array.from(base.values());
+    const convs = Array.from(base.values());
     const metas = await Promise.all(
-      convs.map(async (c: Conversation) => ({
+      convs.map(async (c) => ({
         pid: c.participantId,
         meta: await getGate(c.participantId),
       }))
     );
-    const metaMap: Record<string, ConversationMeta> = Object.fromEntries(
-      metas.map((m) => [m.pid, m.meta])
-    );
+    const metaMap = Object.fromEntries(metas.map((m) => [m.pid, m.meta]));
 
     const cleaned: Record<string, { username: string }> = { ...pending };
-    convs.forEach((c: Conversation) => {
+    convs.forEach((c) => {
       const m = metaMap[c.participantId];
       if (m?.blocked || m?.allowed) delete cleaned[c.participantId];
     });
     savePending(cleaned);
 
-    setConversations(
-      convs
-        .filter((c: Conversation) => !metaMap[c.participantId]?.blocked)
-        .map((c: Conversation) => ({ ...c, meta: metaMap[c.participantId] }))
-    );
+    const nextConvs = convs
+      .filter((c) => !metaMap[c.participantId]?.blocked)
+      .map((c) => ({ ...c, meta: metaMap[c.participantId] }));
+    setConversations(nextConvs);
+    setUnreadMap((m) => {
+      const next = { ...m };
+      nextConvs.forEach((c) => {
+        if (next[c.participantId] == null) next[c.participantId] = 0;
+      });
+      return next;
+    });
     setLoading(false);
-  }, [authFetch, currentUserId, getGate]);
+  }, [apiBase, authFetch, currentUserId, getGate]);
 
   const removeConversation = useCallback((participantId: string) => {
     setConversations((prev) =>
       prev.filter((c) => c.participantId !== participantId)
     );
+    setUnreadMap((m) => {
+      if (!(participantId in m)) return m;
+      const n = { ...m };
+      delete n[participantId];
+      return n;
+    });
   }, []);
 
   const toggleCollapse = useCallback((participantId: string) => {
@@ -142,9 +170,13 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     setExpandedId((id) => (id === participantId ? null : participantId));
   }, []);
 
+  const markAsRead = useCallback((participantId: string) => {
+    setUnreadMap((m) => (m[participantId] ? { ...m, [participantId]: 0 } : m));
+  }, []);
+
   const send = useCallback(
     async (receiverId: string, text: string) => {
-      const res: any = await authFetch(`/messages`, {
+      const res = await authFetch(`${apiBase}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,14 +184,10 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         },
         body: JSON.stringify({ senderId: currentUserId, receiverId, text }),
       });
-      if (res && typeof res.ok === "boolean" && !res.ok)
-        throw new Error(`HTTP ${res.status || 500}`);
-      if (res && typeof res.json === "function") {
-        const j = await res.json().catch(() => null);
-        if (!j) throw new Error("Failed to send");
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setUnreadMap((m) => (m[receiverId] ? { ...m, [receiverId]: 0 } : m));
     },
-    [authFetch, currentUserId]
+    [apiBase, authFetch, currentUserId]
   );
 
   useEffect(() => {
@@ -200,8 +228,19 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
             x.senderId === m.senderId &&
             x.text === m.text
         );
-        return exists ? base : { ...base, messages: [...base.messages, m] };
+        const next = exists
+          ? base
+          : { ...base, messages: [...base.messages, m] };
+        return next;
       });
+      const isInbound = m.senderId !== currentUserId;
+      const isActiveThread = expandedId === pid && messagesOpen;
+      if (isInbound && !isActiveThread) {
+        setUnreadMap((map) => ({
+          ...map,
+          [pid]: Math.max(0, map[pid] || 0) + 1,
+        }));
+      }
     };
 
     const onPending = (p: {
@@ -269,12 +308,8 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       });
     };
 
-    const onRemoved = (p: { convoId: string }) => {
-      setConversations((prev) =>
-        prev.filter(
-          (c) => threadKeyOf(currentUserId, c.participantId) !== p.convoId
-        )
-      );
+    const onRemoved = () => {
+      fetchAll();
     };
 
     s.on("connect", onConnect);
@@ -291,7 +326,26 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       s.off("conversation:accepted", onAccepted);
       s.off("conversation:removed", onRemoved);
     };
-  }, [currentUserId, expandedId, upsert]);
+  }, [currentUserId, expandedId, upsert, messagesOpen, fetchAll]);
+
+  useEffect(() => {
+    const onOpen = () => setMessagesOpen(true);
+    const onClose = () => setMessagesOpen(false);
+    window.addEventListener("ink:open-messages", onOpen);
+    window.addEventListener("ink:close-messages", onClose);
+    return () => {
+      window.removeEventListener("ink:open-messages", onOpen);
+      window.removeEventListener("ink:close-messages", onClose);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) saveUnread(currentUserId, unreadMap);
+  }, [currentUserId, unreadMap]);
+
+  useEffect(() => {
+    if (messagesOpen && expandedId) markAsRead(expandedId);
+  }, [messagesOpen, expandedId, markAsRead]);
 
   return {
     loading,
@@ -302,7 +356,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     removeConversation,
     send,
     destroy: async (participantId: string) => {
-      const res: any = await authFetch(`/messages/conversations`, {
+      const res = await authFetch(`${apiBase}/messages/conversations`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -310,10 +364,12 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         },
         body: JSON.stringify({ userId: currentUserId, participantId }),
       });
-      if (res && typeof res.ok === "boolean" && !res.ok)
-        throw new Error(`HTTP ${res.status || 500}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       removeConversation(participantId);
     },
     refresh: fetchAll,
+    unreadMap,
+    markAsRead,
+    unreadTotal: Object.values(unreadMap).reduce((a, b) => a + (b || 0), 0),
   };
 }
