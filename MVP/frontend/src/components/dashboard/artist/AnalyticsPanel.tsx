@@ -91,15 +91,10 @@ export default function AnalyticsPanel(props: Props) {
       <div className="w-full max-w-screen-2xl mx-auto flex flex-col gap-6 p-4 sm:p-6">
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
           {kpis.map((k, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-app bg-elevated px-6 py-5 text-center"
-            >
+            <div key={i} className="rounded-2xl border border-app bg-elevated px-6 py-5 text-center">
               <div className="text-sm text-muted-foreground">{k.label}</div>
               <div className="mt-1 text-3xl sm:text-4xl font-bold">{k.value}</div>
-              {k.sublabel && (
-                <div className="mt-1 text-sm text-muted-foreground">{k.sublabel}</div>
-              )}
+              {k.sublabel && <div className="mt-1 text-sm text-muted-foreground">{k.sublabel}</div>}
             </div>
           ))}
         </div>
@@ -110,7 +105,7 @@ export default function AnalyticsPanel(props: Props) {
               <div className="text-base font-semibold">Hours on needle (last 6 weeks)</div>
               <div className="text-sm text-muted-foreground">Max {maxHours}h</div>
             </div>
-            <div className="mt-5 flex items-end gap-4 h-56 justify-center">
+            <div className="mt-5 flex w-full items-end justify-between gap-6 sm:gap-8 px-2 sm:px-6 h-56">
               {weeks.map((w, i) => {
                 const h = Math.max(8, Math.round((w.hoursTattooed / maxHours) * 192));
                 return (
@@ -130,9 +125,7 @@ export default function AnalyticsPanel(props: Props) {
             <div className="mt-6 grid grid-cols-3 gap-3 text-sm">
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
                 <div className="text-muted-foreground">Last week revenue</div>
-                <div className="font-semibold">
-                  ${weeks[weeks.length - 1]?.revenue.toLocaleString()}
-                </div>
+                <div className="font-semibold">${weeks[weeks.length - 1]?.revenue.toLocaleString()}</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
                 <div className="text-muted-foreground">No-show rate</div>
@@ -174,20 +167,8 @@ export default function AnalyticsPanel(props: Props) {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg bg-card border border-app px-3 py-2">
-                <div className="text-muted-foreground text-center">Utilization</div>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1 h-3 rounded-full bg-elevated border border-app overflow-hidden">
-                    <div
-                      className="h-full bg-white/40"
-                      style={{ width: pct(mtd.utilization!) }}
-                    />
-                  </div>
-                  <div className="w-12 text-right font-semibold">{pct(mtd.utilization!)}</div>
-                </div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2">
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="col-span-2 rounded-lg bg-card border border-app px-3 py-2">
                 <div className="text-muted-foreground text-center">Net $/hr</div>
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 max-w-full">
                   <span className="text-[12px] text-muted-foreground whitespace-nowrap">Rev</span>
@@ -201,6 +182,7 @@ export default function AnalyticsPanel(props: Props) {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
 
@@ -213,7 +195,7 @@ export default function AnalyticsPanel(props: Props) {
                   <div className="w-28 text-[12px] text-muted-foreground">{s.style}</div>
                   <div className="flex-1 h-3 rounded-full bg-card border border-app overflow-hidden">
                     <div
-                      className="h-full bg-white/40"
+                      className="h-full bg-black/30 dark:bg-white/40 transition-[width] duration-500"
                       style={{ width: `${(s.share / styleTotal) * 100}%` }}
                       title={pct(s.share)}
                     />
@@ -232,7 +214,7 @@ export default function AnalyticsPanel(props: Props) {
                   <div className="w-28 text-[12px] text-muted-foreground">{s.source}</div>
                   <div className="flex-1 h-3 rounded-full bg-card border border-app overflow-hidden">
                     <div
-                      className="h-full bg-white/40"
+                      className="h-full bg-black/30 dark:bg-white/40 transition-[width] duration-500"
                       style={{ width: `${(s.share / leadTotal) * 100}%` }}
                       title={pct(s.share)}
                     />
@@ -249,21 +231,15 @@ export default function AnalyticsPanel(props: Props) {
           <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div className="rounded-lg bg-card border border-app px-3 py-2">
               <div className="text-muted-foreground">Minimum charge adherence</div>
-              <div className="mt-1 text-[12px] opacity-80">
-                Spot audit last week: 100% (no below-min tickets)
-              </div>
+              <div className="mt-1 text-[12px] opacity-80">Spot audit last week: 100% (no below-min tickets)</div>
             </div>
             <div className="rounded-lg bg-card border border-app px-3 py-2">
               <div className="text-muted-foreground">Healed photo returns</div>
-              <div className="mt-1 text-[12px] opacity-80">
-                Ask at checkout; offer 10% off next for healed pics
-              </div>
+              <div className="mt-1 text-[12px] opacity-80">Ask at checkout; offer 10% off next for healed pics</div>
             </div>
             <div className="rounded-lg bg-card border border-app px-3 py-2">
               <div className="text-muted-foreground">Aftercare sales</div>
-              <div className="mt-1 text-[12px] opacity-80">
-                Add upsell: balm/film bundles near checkout
-              </div>
+              <div className="mt-1 text-[12px] opacity-80">Add upsell: balm/film bundles near checkout</div>
             </div>
           </div>
         </div>
