@@ -7,6 +7,7 @@ type Props = {
   portalTarget?: Element | null;
   assistantLocked?: boolean;
   messagesContent?: React.ReactNode;
+  unreadCount?: number;
 };
 
 export default function FloatingBar({
@@ -14,6 +15,7 @@ export default function FloatingBar({
   portalTarget,
   assistantLocked = true,
   messagesContent,
+  unreadCount = 0,
 }: Props) {
   const [isMdUp, setIsMdUp] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
@@ -39,6 +41,23 @@ export default function FloatingBar({
     };
   }, []);
 
+  useEffect(() => {
+    if (!msgOpen) return;
+    const onDocPointer = (e: Event) => {
+      const root = msgBtnRef.current;
+      if (!root) return;
+      const target = e.target as Node | null;
+      if (target && root.contains(target)) return;
+      setMsgOpen(false);
+    };
+    document.addEventListener("mousedown", onDocPointer, true);
+    document.addEventListener("touchstart", onDocPointer, true);
+    return () => {
+      document.removeEventListener("mousedown", onDocPointer, true);
+      document.removeEventListener("touchstart", onDocPointer, true);
+    };
+  }, [msgOpen]);
+
   const pad = {
     left: isMdUp
       ? "calc(1.85rem + 10px + env(safe-area-inset-left, 0px))"
@@ -51,18 +70,17 @@ export default function FloatingBar({
 
   const btnCommon =
     "bg-app text-card inline-flex items-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
-
   const assistantBtnClass = [btnCommon, "px-3 md:px-4 py-3"].join(" ");
-  
-  const btnW = msgOpen ? (isMdUp ? 720 : 520) : 140;
-  const btnH = msgOpen ? (isMdUp ? 820 : 640) : 48;
+
+  const btnW = msgOpen ? (isMdUp ? 640 : 420) : 160; // wider when closed
+  const btnH = msgOpen ? (isMdUp ? 720 : 600) : 52;
 
   const btnRadius = msgOpen ? 16 : 9999;
   const btnPadding = msgOpen ? "0px" : "0.75rem 1rem";
 
   const bar = (
     <div className="fixed inset-x-0 z-[1000] pointer-events-none" style={{ bottom: pad.bottom }}>
-      <div className="relative w-full" style={{ height: Math.max(btnH, 48) }}>
+      <div className="relative w-full" style={{ height: Math.max(btnH, 52) }}>
         <div className="absolute bottom-0 pointer-events-auto" style={{ left: pad.left }}>
           <button
             type="button"
@@ -84,16 +102,18 @@ export default function FloatingBar({
             ref={msgBtnRef}
             role="button"
             tabIndex={0}
-            onClick={() => setMsgOpen((v) => !v)}
+            onClick={() => {
+              if (!msgOpen) setMsgOpen(true);
+            }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              if (!msgOpen && (e.key === "Enter" || e.key === " ")) {
                 e.preventDefault();
-                setMsgOpen((v) => !v);
+                setMsgOpen(true);
               }
             }}
             className={btnCommon}
-            aria-label={msgOpen ? "Close messages" : "Open messages"}
-            title={msgOpen ? "Close messages" : "Open messages"}
+            aria-label={msgOpen ? "Messages" : "Open messages"}
+            title={msgOpen ? "Messages" : "Open messages"}
             style={{
               willChange: "width,height",
               width: btnW,
@@ -104,12 +124,22 @@ export default function FloatingBar({
                 "width 520ms cubic-bezier(0.22,1,0.36,1), height 520ms cubic-bezier(0.22,1,0.36,1), border-radius 520ms ease, padding 360ms ease",
               overflow: "hidden",
               cursor: "pointer",
+              position: "relative",
             }}
           >
             {!msgOpen ? (
               <div className="flex h-full items-center justify-center gap-2 px-1">
                 <MessageSquare size={18} />
                 <span className="text-sm font-medium hidden md:inline">Messages</span>
+                {unreadCount > 0 && (
+                  <span
+                    className="ml-2 inline-flex items-center justify-center rounded-full text-[11px] font-semibold px-2 min-w-[22px] h-[18px]"
+                    style={{ background: "#ef4444", color: "#fff" }}
+                    aria-label={`${unreadCount} unread`}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </div>
             ) : (
               <div className="flex h-full w-full flex-col">

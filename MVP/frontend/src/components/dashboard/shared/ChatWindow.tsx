@@ -17,6 +17,8 @@ interface ChatWindowProps {
   onRemoveConversation: (participantId: string) => void;
   expandedId?: string | null;
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
+  unreadMap: Record<string, number>;
+  onMarkRead: (participantId: string) => void;
 }
 
 const ChatWindow: FC<ChatWindowProps> = ({
@@ -29,6 +31,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
   onRemoveConversation,
   expandedId: externalExpandedId,
   authFetch,
+  unreadMap,
+  onMarkRead,
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState<Record<string, string>>({});
@@ -65,6 +69,18 @@ const ChatWindow: FC<ChatWindowProps> = ({
     [conversations, expandedId]
   );
 
+  const fmtTime = (ts: number) => {
+    try {
+      const d = new Date(ts);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      if (sameDay) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      return d.toLocaleDateString([], { month: "short", day: "numeric" });
+    } catch {
+      return "";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full bg-[#1f2937] rounded-2xl">
@@ -94,6 +110,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         body: JSON.stringify({ receiverId: participantId, text }),
       });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      onMarkRead(participantId);
     } catch (err: any) {
       setSendError(err?.message || "Failed to send message.");
       setMessageInput((prev) => ({ ...prev, [participantId]: text }));
@@ -203,6 +220,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           <ul className="divide-y divide-white/10">
             {conversations.map((c) => {
               const isActive = c.participantId === activeConv?.participantId;
+              const lastMsg = c.messages[c.messages.length - 1];
               return (
                 <li key={c.participantId}>
                   <div
@@ -211,34 +229,42 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     onClick={() => {
                       if (expandedId !== c.participantId) setExpandedId(c.participantId);
                       if (collapsedMap[c.participantId]) onToggleCollapse(c.participantId);
+                      onMarkRead(c.participantId);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
                         if (expandedId !== c.participantId) setExpandedId(c.participantId);
                         if (collapsedMap[c.participantId]) onToggleCollapse(c.participantId);
+                        onMarkRead(c.participantId);
                       }
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-left outline-none ${isActive ? "bg-white/10" : "hover:bg-white/5"}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-left ${isActive ? "bg-white/10" : "hover:bg-white/5"}`}
                   >
                     {avatarFor(c)}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white truncate">{displayNameFromUsername(c.username)}</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm text-white truncate">{displayNameFromUsername(c.username)}</div>
+                        <div className="text-[10px] text-white/60 shrink-0">
+                          {lastMsg ? fmtTime(lastMsg.timestamp) : ""}
+                        </div>
+                      </div>
                       <div className="text-xs text-subtle truncate">
-                        {c.messages[c.messages.length - 1]?.text || "No messages"}
+                        {lastMsg?.text || "No messages"}
                       </div>
                     </div>
-                    <div className="shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          requestDelete(c.participantId);
-                        }}
-                        className="text-xs text-white/70 hover:text-white"
-                      >
-                        Delete
-                      </button>
+                    {!!unreadMap[c.participantId] && (
+                      <span className="ml-2 shrink-0 rounded-full bg-white text-black text-[10px] px-1.5 py-0.5 font-semibold">
+                        {unreadMap[c.participantId]}
+                      </span>
+                    )}
+                    <div
+                      className="shrink-0 text-xs text-white/70 hover:text-white cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        requestDelete(c.participantId);
+                      }}
+                    >
+                      Delete
                     </div>
                   </div>
                 </li>
@@ -277,10 +303,13 @@ const ChatWindow: FC<ChatWindowProps> = ({
                 return (
                   <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`px-3 py-2 rounded-2xl max-w-[78%] w-fit break-words whitespace-pre-wrap border ${isMe ? "bg-white text-black border-white/80" : "bg-black/40 text-white border-white/15"
+                      className={`px-3 py-2 rounded-2xl max-w-[78%] w-fit break-words whitespace-pre-wrap border ${isMe
+                        ? "bg-white text-black border-white/80"
+                        : "bg-black/40 text-white border-white/15"
                         }`}
                     >
-                      {msg.text}
+                      <div>{msg.text}</div>
+                      <div className={`mt-1 text-[10px] ${isMe ? "text-black/70" : "text-white/60"}`}>{fmtTime(msg.timestamp)}</div>
                     </div>
                   </div>
                 );
