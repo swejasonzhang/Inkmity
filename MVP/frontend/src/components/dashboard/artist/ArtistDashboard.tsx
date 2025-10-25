@@ -9,12 +9,15 @@ import MessagesPanel from "@/components/dashboard/shared/messages/MessagesPanel"
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import type { IncomingRequest } from "@/components/dashboard/shared/messages/MessagesPanel";
+import { useRole } from "@/hooks/useRole";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
 const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
 
 export default function ArtistDashboard() {
     const { user } = useUser();
+    const { role } = useRole();
+    const isArtist = role === "artist";
     const { getToken } = useAuth();
     const rootRef = useRef<HTMLDivElement | null>(null);
     const { theme, toggleTheme, themeClass } = useTheme(rootRef.current);
@@ -66,6 +69,8 @@ export default function ArtistDashboard() {
         },
         [authFetch]
     );
+
+    console.log("ArtistDashboard: isArtist =", isArtist, "requestsLen =", requests.length);
 
     return (
         <div ref={rootRef} className={themeClass}>
@@ -130,9 +135,10 @@ export default function ArtistDashboard() {
                     messagesContent={
                         <MessagesPanel
                             currentUserId={user?.id ?? ""}
-                            requests={requests}
-                            onAcceptRequest={acceptRequest}
-                            onDeclineRequest={declineRequest}
+                            requests={isArtist ? requests : []}
+                            onAcceptRequest={isArtist ? acceptRequest : undefined}
+                            onDeclineRequest={isArtist ? declineRequest : undefined}
+                            isArtist={isArtist}
                         />
                     }
                 />

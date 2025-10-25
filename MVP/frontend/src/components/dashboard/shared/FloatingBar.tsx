@@ -69,19 +69,18 @@ export default function FloatingBar({
   };
 
   const btnCommon =
-    "bg-app text-card inline-flex items-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
-  const assistantBtnClass = [btnCommon, "px-3 md:px-4 py-3"].join(" ");
+    "bg-app text-card inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
+  const collapsedHeight = 44;
+  const assistantBtnClass = [btnCommon, "px-3 md:px-4"].join(" ");
 
-  const btnW = msgOpen ? (isMdUp ? 640 : 420) : 160; // wider when closed
-  const btnH = msgOpen ? (isMdUp ? 720 : 600) : 52;
-
+  const btnW = msgOpen ? (isMdUp ? 600 : 400) : 160;
+  const btnH = msgOpen ? (isMdUp ? 560 : 460) : collapsedHeight;
   const btnRadius = msgOpen ? 16 : 9999;
-  const btnPadding = msgOpen ? "0px" : "0.75rem 1rem";
 
   const bar = (
     <div className="fixed inset-x-0 z-[1000] pointer-events-none" style={{ bottom: pad.bottom }}>
-      <div className="relative w-full" style={{ height: Math.max(btnH, 52) }}>
-        <div className="absolute bottom-0 pointer-events-auto" style={{ left: pad.left }}>
+      <div className="relative w-full" style={{ height: Math.max(btnH, collapsedHeight) }}>
+        <div className="absolute bottom-0 pointer-events-auto flex items-center" style={{ left: pad.left, height: collapsedHeight }}>
           <button
             type="button"
             onClick={assistantLocked ? undefined : onAssistantOpen}
@@ -90,6 +89,7 @@ export default function FloatingBar({
             aria-disabled={assistantLocked}
             disabled={assistantLocked}
             title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
+            style={{ height: collapsedHeight }}
           >
             <Bot size={18} aria-hidden />
             <span className="text-sm font-medium hidden md:inline">Assistant</span>
@@ -97,7 +97,7 @@ export default function FloatingBar({
           </button>
         </div>
 
-        <div className="absolute bottom-0 pointer-events-auto" style={{ right: pad.right }}>
+        <div className="absolute bottom-0 pointer-events-auto flex items-center" style={{ right: pad.right, height: btnH }}>
           <div
             ref={msgBtnRef}
             role="button"
@@ -119,16 +119,18 @@ export default function FloatingBar({
               width: btnW,
               height: btnH,
               borderRadius: btnRadius,
-              padding: btnPadding,
               transition:
-                "width 520ms cubic-bezier(0.22,1,0.36,1), height 520ms cubic-bezier(0.22,1,0.36,1), border-radius 520ms ease, padding 360ms ease",
+                "width 420ms cubic-bezier(0.22,1,0.36,1), height 420ms cubic-bezier(0.22,1,0.36,1), border-radius 420ms ease, padding 300ms ease",
               overflow: "hidden",
               cursor: "pointer",
               position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             {!msgOpen ? (
-              <div className="flex h-full items-center justify-center gap-2 px-1">
+              <div className="flex h-full w-full items-center justify-center gap-2 px-2">
                 <MessageSquare size={18} />
                 <span className="text-sm font-medium hidden md:inline">Messages</span>
                 {unreadCount > 0 && (
