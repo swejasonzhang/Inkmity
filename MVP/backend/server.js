@@ -5,10 +5,8 @@ import { Server } from "socket.io";
 import dotenv from "dotenv";
 import path from "node:path";
 import process from "node:process";
-
 import { connectDB } from "./config/db.js";
 import { initSocket } from "./services/socketService.js";
-
 import userRoutes from "./routes/users.js";
 import reviewRoutes from "./routes/reviews.js";
 import dashboardRoutes from "./routes/dashboard.js";
@@ -18,7 +16,6 @@ import bookingRoutes from "./routes/bookings.js";
 import authRoutes from "./routes/auth.js";
 import artistPolicyRoutes from "./routes/artistPolicy.js";
 import billingRoutes from "./routes/billing.js";
-
 import { requireAuth } from "./middleware/auth.js";
 
 const ENV = process.env.NODE_ENV || "development";
@@ -123,7 +120,6 @@ initSocket(io);
 })();
 
 const shutdown = (sig) => async () => {
-  console.log(`\n${sig} received. Shutting down...`);
   try {
     io.close();
     server.close(() => process.exit(0));
