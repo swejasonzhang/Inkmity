@@ -86,18 +86,30 @@ export default function ClientDashboard() {
         const imgs = (selectedArtist as any).images?.filter(Boolean) || [];
         const fallback = [
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23E5E7EB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-size='20' font-family='sans-serif'>Mock Image 1</text></svg>`,
-            `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' dominant-baseline='middle' fill='%239CA3AF' font-size='20' font-family='sans-serif'>Mock Image 2</text></svg>`,
-            `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`,
+            `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239CA3AF' font-size='20' font-family='sans-serif'>Mock Image 2</text></svg>`,
+            `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`,
         ];
         const pool = imgs.length ? imgs : fallback;
-        const pastWorks = pool.filter((_: unknown, i: number) => i % 2 === 0);
-        const sketches = pool.filter((_: unknown, i: number) => i % 2 === 1);
+
+        const pastWorks = (selectedArtist as any).pastWorks?.length
+            ? (selectedArtist as any).pastWorks
+            : pool.filter((_: unknown, i: number) => i % 2 === 0);
+
+        const healedWorks = (selectedArtist as any).healedWorks?.length
+            ? (selectedArtist as any).healedWorks
+            : pool.filter((_: unknown, i: number) => i % 3 === 2);
+
+        const sketches = (selectedArtist as any).sketches?.length
+            ? (selectedArtist as any).sketches
+            : pool.filter((_: unknown, i: number) => i % 2 === 1);
+
         return {
             _id: selectedArtist._id,
             clerkId: (selectedArtist as any).clerkId,
             username: displayNameFromUsername(selectedArtist.username),
             bio: (selectedArtist as any).bio,
             pastWorks,
+            healedWorks,
             sketches,
         };
     }, [selectedArtist]);
