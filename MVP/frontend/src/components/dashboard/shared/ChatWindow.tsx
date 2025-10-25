@@ -82,6 +82,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     setSendError(null);
     setExpandedId(participantId);
     setMessageInput((prev) => ({ ...prev, [participantId]: "" }));
+    console.log("[Chat] send", { to: participantId, text });
     try {
       const res = await authFetch("/api/messages", {
         method: "POST",
@@ -185,8 +186,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
               key={conv.participantId}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className={`bg-gray-900/95 backdrop-blur rounded-2xl flex flex-col transition-all duration-300 overflow-hidden border border-gray-800 ${isExpanded ? "min-h-[220px]" : "h-12"
-                }`}
+              className={`bg-gray-900/95 backdrop-blur rounded-2xl flex flex-col transition-all duration-300 overflow-hidden border border-gray-800 ${isExpanded ? "min-h-[220px]" : "h-12"}`}
             >
               <div className="flex justify-between items-center px-3 pt-2 cursor-pointer" onClick={() => handleToggle(conv.participantId)}>
                 <span className="text-white font-semibold text-sm inline-flex items-center gap-2">

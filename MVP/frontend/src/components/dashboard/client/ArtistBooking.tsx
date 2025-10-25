@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useApi } from "@/lib/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 
 type BookingProps = {
@@ -13,28 +14,23 @@ type BookingProps = {
   onBack?: () => void;
   onClose?: () => void;
   onGoToStep?: (step: 0 | 1 | 2) => void;
-  authFetch: (url: string, options?: RequestInit) => Promise<Response>;
-  apiBase: string;
 };
 
-export default function ArtistBooking({
-  artist,
-  onBack,
-  onClose,
-  onGoToStep,
-  authFetch,
-  apiBase,
-}: BookingProps) {
+export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: BookingProps) {
   const prefersReducedMotion = useReducedMotion();
+  const { request } = useApi();
+
   const preloadedMessage = useMemo(
-    () =>
-      `Hi ${artist.username}, I've taken a look at your work and I'm interested!
-Would you be open to my ideas?`,
+    () => `Hi ${artist.username}, I've taken a look at your work and I'm interested!\nWould you be open to my ideas?`,
     [artist.username]
   );
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const sentRef = useRef(false);
+
+  useEffect(() => {
+    console.log("[ArtistBooking] artist", artist);
+  }, [artist]);
 
   const startOfToday = useMemo(() => {
     const d = new Date();
@@ -73,15 +69,17 @@ Would you be open to my ideas?`,
     setStatus("sending");
     setErrorMsg("");
     try {
-      const res = await authFetch(`${apiBase}/messages/request`, {
+      const payload = { artistId: artist.clerkId, text: preloadedMessage, meta: {} };
+      console.log("[ArtistBooking] sending request", payload);
+
+      const data: any = await request("/messages/request", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ artistId: artist.clerkId, text: preloadedMessage, meta: {} }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j?.error || `HTTP ${res.status}`);
-      }
+
+      console.log("[ArtistBooking] request sent", { requestId: data?.requestId, artistId: artist.clerkId });
+
       sentRef.current = true;
       setStatus("sent");
       addPending();

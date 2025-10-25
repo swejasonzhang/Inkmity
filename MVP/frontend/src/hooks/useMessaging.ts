@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { socket } from "@/lib/socket";
 
 export type Message = {
   senderId: string;
   receiverId: string;
   text: string;
   timestamp: number;
+  meta?: any;
 };
 export type ConversationMeta = {
   allowed: boolean;
@@ -19,13 +21,20 @@ export type Conversation = {
   meta?: ConversationMeta;
 };
 
-type AuthFetch = (url: string, options?: RequestInit) => Promise<Response>;
+type AuthFetch = (
+  url: string,
+  options?: RequestInit
+) => Promise<Response | any>;
 
 const PENDING_LS = "ink_pending_threads_v1";
+const threadKeyOf = (a: string, b: string) => [a, b].sort().join(":");
 
 function loadPending(): Record<string, { username: string }> {
   try {
-    return JSON.parse(localStorage.getItem(PENDING_LS) || "{}");
+    return JSON.parse(localStorage.getItem(PENDING_LS) || "{}") as Record<
+      string,
+      { username: string }
+    >;
   } catch {
     return {};
   }
@@ -43,81 +52,84 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const mounted = useRef(false);
 
-  const apiBase =
-    (import.meta as any)?.env?.VITE_API_URL ||
-    import.meta.env?.VITE_API_URL ||
-    "http://localhost:5005";
-
   const getGate = useCallback(
     async (artistId: string) => {
-      const res = await authFetch(`${apiBase}/messages/gate/${artistId}`, {
+      const res: any = await authFetch(`/messages/gate/${artistId}`, {
         method: "GET",
       });
-      if (!res.ok)
-        return {
-          allowed: false,
-          lastStatus: null,
-          declines: 0,
-          blocked: false,
-        } as ConversationMeta;
-      return (await res.json()) as ConversationMeta;
+      if (res && typeof res === "object" && "allowed" in res)
+        return res as ConversationMeta;
+      if (res && typeof res.json === "function") {
+        const j = await res.json().catch(() => null);
+        if (j) return j as ConversationMeta;
+      }
+      return {
+        allowed: false,
+        lastStatus: null,
+        declines: 0,
+        blocked: false,
+      } as ConversationMeta;
     },
-    [apiBase, authFetch]
+    [authFetch]
+  );
+
+  const upsert = useCallback(
+    (pid: string, apply: (prev?: Conversation) => Conversation) => {
+      setConversations((prev) => {
+        const map = new Map(prev.map((c) => [c.participantId, c]));
+        map.set(pid, apply(map.get(pid)));
+        return Array.from(map.values());
+      });
+    },
+    []
   );
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const url = `${apiBase}/messages/user/${currentUserId}`;
-    const res = await authFetch(url, { method: "GET" });
-    if (!res.ok) {
-      setLoading(false);
-      return;
-    }
-    const data = (await res.json()) as Conversation[];
+    const res: any = await authFetch(`/messages/user/${currentUserId}`, {
+      method: "GET",
+    });
+    const data: Conversation[] = Array.isArray(res)
+      ? (res as Conversation[])
+      : await (res as Response).json().catch(() => []);
+    const base = new Map<string, Conversation>();
+    (data || []).forEach((c: Conversation) => base.set(c.participantId, c));
 
-    const baseSet = new Map<string, Conversation>();
-    data.forEach((c) => baseSet.set(c.participantId, c));
-
-    const pending = loadPending();
+    const pending: Record<string, { username: string }> = loadPending();
     Object.entries(pending).forEach(([pid, v]) => {
-      if (!baseSet.has(pid)) {
-        baseSet.set(pid, {
+      if (!base.has(pid))
+        base.set(pid, {
           participantId: pid,
           username: v.username || "Conversation",
           messages: [],
         });
-      }
     });
 
-    const convs = Array.from(baseSet.values());
+    const convs: Conversation[] = Array.from(base.values());
     const metas = await Promise.all(
-      convs.map(async (c) => {
-        const meta = await getGate(c.participantId);
-        return { pid: c.participantId, meta };
-      })
+      convs.map(async (c: Conversation) => ({
+        pid: c.participantId,
+        meta: await getGate(c.participantId),
+      }))
     );
-    const metaMap = Object.fromEntries(metas.map((m) => [m.pid, m.meta]));
+    const metaMap: Record<string, ConversationMeta> = Object.fromEntries(
+      metas.map((m) => [m.pid, m.meta])
+    );
 
-    const cleanedPending = { ...pending };
-    convs.forEach((c) => {
-      const meta = metaMap[c.participantId];
-      if (!meta) return;
-      if (meta.blocked || meta.allowed) delete cleanedPending[c.participantId];
+    const cleaned: Record<string, { username: string }> = { ...pending };
+    convs.forEach((c: Conversation) => {
+      const m = metaMap[c.participantId];
+      if (m?.blocked || m?.allowed) delete cleaned[c.participantId];
     });
-    savePending(cleanedPending);
+    savePending(cleaned);
 
     setConversations(
       convs
-        .filter((c) => {
-          const meta = metaMap[c.participantId];
-          if (!meta) return true;
-          if (meta.blocked) return false;
-          return true;
-        })
-        .map((c) => ({ ...c, meta: metaMap[c.participantId] }))
+        .filter((c: Conversation) => !metaMap[c.participantId]?.blocked)
+        .map((c: Conversation) => ({ ...c, meta: metaMap[c.participantId] }))
     );
     setLoading(false);
-  }, [apiBase, authFetch, currentUserId, getGate]);
+  }, [authFetch, currentUserId, getGate]);
 
   const removeConversation = useCallback((participantId: string) => {
     setConversations((prev) =>
@@ -132,7 +144,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
 
   const send = useCallback(
     async (receiverId: string, text: string) => {
-      const res = await authFetch(`${apiBase}/messages`, {
+      const res: any = await authFetch(`/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,27 +152,14 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         },
         body: JSON.stringify({ senderId: currentUserId, receiverId, text }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      await fetchAll();
+      if (res && typeof res.ok === "boolean" && !res.ok)
+        throw new Error(`HTTP ${res.status || 500}`);
+      if (res && typeof res.json === "function") {
+        const j = await res.json().catch(() => null);
+        if (!j) throw new Error("Failed to send");
+      }
     },
-    [apiBase, authFetch, currentUserId, fetchAll]
-  );
-
-  const destroy = useCallback(
-    async (participantId: string) => {
-      const res = await authFetch(`${apiBase}/messages/conversations`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ userId: currentUserId, participantId }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      removeConversation(participantId);
-      await fetchAll();
-    },
-    [apiBase, authFetch, currentUserId, removeConversation, fetchAll]
+    [authFetch, currentUserId]
   );
 
   useEffect(() => {
@@ -170,25 +169,129 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   }, [fetchAll]);
 
   useEffect(() => {
-    const onAddPending = (e: Event) => {
-      const ev = e as CustomEvent<{ artistId: string; username: string }>;
-      const { artistId, username } = ev.detail || ({} as any);
-      if (!artistId) return;
-      const pending = loadPending();
-      pending[artistId] = { username: username || "Conversation" };
-      savePending(pending);
-      fetchAll();
+    if (!currentUserId) return;
+    const s = socket;
+    const onConnect = () => {
+      s.emit("register", currentUserId);
+      if (expandedId)
+        s.emit("thread:join", {
+          threadKey: threadKeyOf(currentUserId, expandedId),
+        });
     };
-    window.addEventListener(
-      "ink:add-pending-conversation",
-      onAddPending as EventListener
-    );
-    return () =>
-      window.removeEventListener(
-        "ink:add-pending-conversation",
-        onAddPending as EventListener
+
+    const onMessageNew = (p: { convoId: string; message: Message }) => {
+      const m = p.message;
+      const pid = m.senderId === currentUserId ? m.receiverId : m.senderId;
+      upsert(pid, (prev) => {
+        const base: Conversation = prev || {
+          participantId: pid,
+          username: "Conversation",
+          messages: [],
+          meta: {
+            allowed: false,
+            lastStatus: null,
+            declines: 0,
+            blocked: false,
+          },
+        };
+        const exists = base.messages.some(
+          (x) =>
+            x.timestamp === m.timestamp &&
+            x.senderId === m.senderId &&
+            x.text === m.text
+        );
+        return exists ? base : { ...base, messages: [...base.messages, m] };
+      });
+    };
+
+    const onPending = (p: {
+      convoId: string;
+      from: string;
+      to: string;
+      message: Message;
+    }) => {
+      const pid = currentUserId === p.to ? p.from : p.to;
+      upsert(pid, (prev) => {
+        const base: Conversation = prev || {
+          participantId: pid,
+          username: "Conversation",
+          messages: [],
+          meta: {
+            allowed: false,
+            lastStatus: "pending",
+            declines: 0,
+            blocked: false,
+          },
+        };
+        const msgExists = base.messages.some(
+          (x) =>
+            x.timestamp === p.message.timestamp && x.meta?.kind === "request"
+        );
+        const msgs = msgExists ? base.messages : [p.message, ...base.messages];
+        return {
+          ...base,
+          messages: msgs,
+          meta: {
+            ...(base.meta || { declines: 0, blocked: false }),
+            lastStatus: "pending",
+            allowed: false,
+          },
+        };
+      });
+    };
+
+    const onAccepted = (p: {
+      convoId: string;
+      clientId: string;
+      artistId: string;
+    }) => {
+      const pid = currentUserId === p.clientId ? p.artistId : p.clientId;
+      upsert(pid, (prev) => {
+        const base: Conversation = prev || {
+          participantId: pid,
+          username: "Conversation",
+          messages: [],
+          meta: {
+            allowed: true,
+            lastStatus: "accepted",
+            declines: 0,
+            blocked: false,
+          },
+        };
+        return {
+          ...base,
+          meta: {
+            ...(base.meta || { declines: 0, blocked: false }),
+            allowed: true,
+            lastStatus: "accepted",
+          },
+        };
+      });
+    };
+
+    const onRemoved = (p: { convoId: string }) => {
+      setConversations((prev) =>
+        prev.filter(
+          (c) => threadKeyOf(currentUserId, c.participantId) !== p.convoId
+        )
       );
-  }, [fetchAll]);
+    };
+
+    s.on("connect", onConnect);
+    s.on("message:new", onMessageNew);
+    s.on("conversation:pending", onPending);
+    s.on("conversation:accepted", onAccepted);
+    s.on("conversation:removed", onRemoved);
+    if (!s.connected) s.connect();
+
+    return () => {
+      s.off("connect", onConnect);
+      s.off("message:new", onMessageNew);
+      s.off("conversation:pending", onPending);
+      s.off("conversation:accepted", onAccepted);
+      s.off("conversation:removed", onRemoved);
+    };
+  }, [currentUserId, expandedId, upsert]);
 
   return {
     loading,
@@ -198,7 +301,19 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     toggleCollapse,
     removeConversation,
     send,
-    destroy,
+    destroy: async (participantId: string) => {
+      const res: any = await authFetch(`/messages/conversations`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ userId: currentUserId, participantId }),
+      });
+      if (res && typeof res.ok === "boolean" && !res.ok)
+        throw new Error(`HTTP ${res.status || 500}`);
+      removeConversation(participantId);
+    },
     refresh: fetchAll,
   };
 }

@@ -17,7 +17,7 @@ export default function FloatingBar({
 }: Props) {
   const [isMdUp, setIsMdUp] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
-  const msgBtnRef = useRef<HTMLButtonElement | null>(null);
+  const msgBtnRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 768px)");
@@ -79,10 +79,17 @@ export default function FloatingBar({
         </div>
 
         <div className="absolute bottom-0 pointer-events-auto" style={{ right: pad.right }}>
-          <button
+          <div
             ref={msgBtnRef}
-            type="button"
+            role="button"
+            tabIndex={0}
             onClick={() => setMsgOpen((v) => !v)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setMsgOpen((v) => !v);
+              }
+            }}
             className={btnCommon}
             aria-label={msgOpen ? "Close messages" : "Open messages"}
             title={msgOpen ? "Close messages" : "Open messages"}
@@ -93,8 +100,9 @@ export default function FloatingBar({
               borderRadius: btnRadius,
               padding: btnPadding,
               transition:
-                "width 300ms cubic-bezier(0.22,1,0.36,1), height 300ms cubic-bezier(0.22,1,0.36,1), border-radius 300ms ease, padding 200ms ease",
+                "width 520ms cubic-bezier(0.22,1,0.36,1), height 520ms cubic-bezier(0.22,1,0.36,1), border-radius 520ms ease, padding 360ms ease",
               overflow: "hidden",
+              cursor: "pointer",
             }}
           >
             {!msgOpen ? (
@@ -126,7 +134,7 @@ export default function FloatingBar({
                 </div>
               </div>
             )}
-          </button>
+          </div>
         </div>
       </div>
     </div>
