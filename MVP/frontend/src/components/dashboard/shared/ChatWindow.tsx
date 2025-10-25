@@ -19,6 +19,9 @@ interface ChatWindowProps {
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
   unreadMap: Record<string, number>;
   onMarkRead: (participantId: string) => void;
+  isArtist?: boolean;
+  onAcceptPending?: (participantId: string) => void | Promise<void>;
+  onDeclinePending?: (participantId: string) => void | Promise<void>;
 }
 
 const ChatWindow: FC<ChatWindowProps> = ({
@@ -33,6 +36,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
   authFetch,
   unreadMap,
   onMarkRead,
+  isArtist = false,
+  onAcceptPending,
+  onDeclinePending,
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState<Record<string, string>>({});
@@ -81,18 +87,73 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   };
 
+  const fetchRequestsAndFindId = async (participantId: string): Promise<string | null> => {
+    try {
+      const res = await authFetch("/api/messages/requests", { method: "GET" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const list: any[] = Array.isArray(data) ? data : Array.isArray(data?.requests) ? data.requests : [];
+      const hit = list.find(
+        (r) => r?.from?.clerkId === participantId || r?.participantId === participantId
+      );
+      return hit?.id || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const acceptViaBackend = async (participantId: string) => {
+    const id = await fetchRequestsAndFindId(participantId);
+    if (!id) throw new Error("Request not found");
+    const res = await authFetch(`/api/messages/requests/${id}/accept`, { method: "POST" });
+    if (!res.ok) throw new Error(`Accept failed ${res.status}`);
+  };
+
+  const declineViaBackend = async (participantId: string) => {
+    const id = await fetchRequestsAndFindId(participantId);
+    if (!id) throw new Error("Request not found");
+    const res = await authFetch(`/api/messages/requests/${id}/decline`, { method: "POST" });
+    if (!res.ok) throw new Error(`Decline failed ${res.status}`);
+  };
+
+  const handleAccept = async (participantId: string) => {
+    let attempted = false;
+    if (onAcceptPending) {
+      try {
+        await onAcceptPending(participantId);
+        attempted = true;
+      } catch {
+        attempted = false;
+      }
+    }
+    if (!attempted) await acceptViaBackend(participantId);
+  };
+
+  const handleDecline = async (participantId: string) => {
+    let attempted = false;
+    if (onDeclinePending) {
+      try {
+        await onDeclinePending(participantId);
+        attempted = true;
+      } catch {
+        attempted = false;
+      }
+    }
+    if (!attempted) await declineViaBackend(participantId);
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#1f2937] rounded-2xl">
-        <CircularProgress sx={{ color: "#ffffff" }} />
+      <div className="flex items-center justify-center h-full bg-card rounded-2xl">
+        <CircularProgress sx={{ color: "var(--fg)" }} />
       </div>
     );
   }
 
   if (!conversations || conversations.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#1f2937] rounded-2xl p-4">
-        <p className="text-subtle text-center whitespace-pre-line">{emptyText}</p>
+      <div className="flex items-center justify-center h-full bg-card rounded-2xl p-4">
+        <p className="text-muted-foreground text-center whitespace-pre-line">{emptyText}</p>
       </div>
     );
   }
@@ -160,7 +221,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       .map((s) => s[0]?.toUpperCase())
       .join("");
     return (
-      <span className="h-7 w-7 rounded-full grid place-items-center bg-black/50 text-white text-[10px] font-semibold border border-white/15">
+      <span className="h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold border border-app">
         {initials || "?"}
       </span>
     );
@@ -177,29 +238,29 @@ const ChatWindow: FC<ChatWindowProps> = ({
           aria-modal="true"
           role="dialog"
         >
-          <div className="absolute inset-0 bg-black/70" onClick={cancelDelete} />
+          <div className="absolute inset-0 bg-black/60" onClick={cancelDelete} />
           <motion.div
-            className="relative bg-[#1f2937] text-white rounded-xl p-6 w-11/12 max-w-md shadow-2xl border border-white/10"
+            className="relative bg-card text-app rounded-xl p-6 w-11/12 max-w-md shadow-2xl border border-app"
             initial={{ scale: 0.94, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.94, opacity: 0 }}
             transition={{ type: "spring", stiffness: 240, damping: 22 }}
           >
             <h3 className="text-base font-semibold mb-2">Delete conversation?</h3>
-            <p className="text-subtle mb-4 text-sm">This removes the conversation for you.</p>
-            {deleteError && <div className="mb-3 text-sm text-red-400">{deleteError}</div>}
+            <p className="text-muted-foreground mb-4 text-sm">This removes the conversation for you.</p>
+            {deleteError && <div className="mb-3 text-sm text-destructive">{deleteError}</div>}
             <div className="flex justify-end gap-3">
               <button
                 onClick={cancelDelete}
                 disabled={deleting}
-                className="px-4 py-2 rounded-md bg-white/5 hover:bg-white/10 text-white text-sm disabled:opacity-60"
+                className="px-4 py-2 rounded-md bg-elevated hover:bg-elevated/80 text-app text-sm disabled:opacity-60"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 disabled={deleting}
-                className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm disabled:opacity-60"
+                className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm disabled:opacity-60"
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
@@ -212,12 +273,13 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const status = activeConv?.meta?.lastStatus || null;
   const canSend = !!activeConv?.meta?.allowed;
+  const pendingForArtist = isArtist && status === "pending" && !canSend;
 
   return (
     <>
-      <div className="h-full w-full grid grid-cols-[200px_minmax(0,1fr)] gap-3 bg-[#1f2937] rounded-2xl p-3">
-        <aside className="h-full overflow-y-auto rounded-xl border border-white/10 bg-[#1f2937]">
-          <ul className="divide-y divide-white/10">
+      <div className="h-full w-full grid grid-cols-[200px_minmax(0,1fr)] gap-3 bg-card rounded-2xl p-3">
+        <aside className="h-full overflow-y-auto rounded-xl border border-app bg-card">
+          <ul className="divide-y divide-app/60">
             {conversations.map((c) => {
               const isActive = c.participantId === activeConv?.participantId;
               const lastMsg = c.messages[c.messages.length - 1];
@@ -238,27 +300,28 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         onMarkRead(c.participantId);
                       }
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-left ${isActive ? "bg-white/10" : "hover:bg-white/5"}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-left ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"
+                      }`}
                   >
                     {avatarFor(c)}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm text-white truncate">{displayNameFromUsername(c.username)}</div>
-                        <div className="text-[10px] text-white/60 shrink-0">
+                        <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
+                        <div className="text-[10px] text-muted-foreground shrink-0">
                           {lastMsg ? fmtTime(lastMsg.timestamp) : ""}
                         </div>
                       </div>
-                      <div className="text-xs text-subtle truncate">
+                      <div className="text-xs text-muted-foreground truncate">
                         {lastMsg?.text || "No messages"}
                       </div>
                     </div>
                     {!!unreadMap[c.participantId] && (
-                      <span className="ml-2 shrink-0 rounded-full bg-white text-black text-[10px] px-1.5 py-0.5 font-semibold">
+                      <span className="ml-2 shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-semibold">
                         {unreadMap[c.participantId]}
                       </span>
                     )}
                     <div
-                      className="shrink-0 text-xs text-white/70 hover:text-white cursor-pointer"
+                      className="shrink-0 text-xs text-muted-foreground hover:text-app cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         requestDelete(c.participantId);
@@ -273,30 +336,43 @@ const ChatWindow: FC<ChatWindowProps> = ({
           </ul>
         </aside>
 
-        <section className="h-full rounded-xl border border-white/10 bg-[#1f2937] flex flex-col">
-          <header className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+        <section className="h-full rounded-xl border border-app bg-card flex flex-col">
+          <header className="px-4 py-3 border-b border-app flex items-center justify-between">
             <div className="flex items-center gap-3">
               {activeConv && avatarFor(activeConv)}
-              <div>
-                <div className="text-sm font-semibold text-white">
-                  {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
-                </div>
-                {status === "pending" && (
-                  <div className="text-xs text-white/70">Request sent. Waiting for acceptance.</div>
-                )}
-                {status === "declined" && (
-                  <div className="text-xs text-white/70">Declined. You cannot message unless a new request is accepted.</div>
-                )}
+              <div className="text-sm font-semibold text-app">
+                {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
               </div>
+              {!pendingForArtist && status === "pending" && (
+                <div className="text-xs text-muted-foreground">Request sent. Waiting for acceptance.</div>
+              )}
+              {status === "declined" && (
+                <div className="text-xs text-muted-foreground">Declined. You cannot message unless a new request is accepted.</div>
+              )}
             </div>
-            <div className="text-xs text-white/60">
-              {activeConv?.messages?.length || 0} message{(activeConv?.messages?.length || 0) === 1 ? "" : "s"}
-            </div>
+            {pendingForArtist && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => activeConv && handleDecline(activeConv.participantId)}
+                  className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
+                >
+                  Decline
+                </button>
+                <button
+                  type="button"
+                  onClick={() => activeConv && handleAccept(activeConv.participantId)}
+                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
+                >
+                  Accept
+                </button>
+              </div>
+            )}
           </header>
 
           <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
             {(!activeConv?.messages || activeConv.messages.length === 0) && (!canSend || status !== "accepted") ? (
-              <div className="text-sm text-subtle">No messages yet. Waiting for acceptance.</div>
+              <div className="text-sm text-muted-foreground">No messages yet. Waiting for acceptance.</div>
             ) : (
               activeConv?.messages.map((msg, idx) => {
                 const isMe = msg.senderId === currentUserId;
@@ -304,12 +380,14 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                     <div
                       className={`px-3 py-2 rounded-2xl max-w-[78%] w-fit break-words whitespace-pre-wrap border ${isMe
-                        ? "bg-white text-black border-white/80"
-                        : "bg-black/40 text-white border-white/15"
+                        ? "bg-primary text-primary-foreground border-primary/80"
+                        : "bg-elevated text-app border-app"
                         }`}
                     >
                       <div>{msg.text}</div>
-                      <div className={`mt-1 text-[10px] ${isMe ? "text-black/70" : "text-white/60"}`}>{fmtTime(msg.timestamp)}</div>
+                      <div className={`mt-1 text-[10px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                        {fmtTime(msg.timestamp)}
+                      </div>
                     </div>
                   </div>
                 );
@@ -317,10 +395,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
             )}
           </div>
 
-          {sendError && <div className="px-4 pb-2 text-sm text-red-400">{sendError}</div>}
+          {sendError && <div className="px-4 pb-2 text-sm text-destructive">{sendError}</div>}
 
-          <footer className="p-3 border-t border-white/10">
-            <div className="flex rounded-xl overflow-hidden border border-white/10 bg-[#1f2937]">
+          <footer className="p-3 border-t border-app">
+            <div className="flex rounded-xl overflow-hidden border border-app bg-card">
               <input
                 type="text"
                 value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
@@ -328,7 +406,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   activeConv &&
                   setMessageInput((prev) => ({ ...prev, [activeConv.participantId]: e.target.value }))
                 }
-                className="flex-1 p-2.5 bg-transparent text-white placeholder-white/50 focus:outline-none"
+                className="flex-1 p-2.5 bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
                 placeholder={canSend ? "Type a message" : "Messaging locked until accepted"}
                 disabled={!canSend}
                 onKeyDown={(e) => {
@@ -340,7 +418,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                 type="button"
                 onClick={() => activeConv && canSend && handleSend(activeConv.participantId)}
                 disabled={!canSend}
-                className="px-4 text-sm font-medium bg-white/10 hover:bg-white/15 text-white disabled:opacity-60"
+                className="px-4 text-sm font-medium bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
               >
                 Send
               </button>
