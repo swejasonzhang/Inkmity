@@ -100,20 +100,8 @@ export default function FloatingBar({
         <div className="absolute bottom-0 pointer-events-auto flex items-center" style={{ right: pad.right, height: btnH }}>
           <div
             ref={msgBtnRef}
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              if (!msgOpen) setMsgOpen(true);
-            }}
-            onKeyDown={(e) => {
-              if (!msgOpen && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                setMsgOpen(true);
-              }
-            }}
             className={btnCommon}
-            aria-label={msgOpen ? "Messages" : "Open messages"}
-            title={msgOpen ? "Messages" : "Open messages"}
+            aria-label={msgOpen ? "Messages" : undefined}
             style={{
               willChange: "width,height",
               width: btnW,
@@ -122,7 +110,6 @@ export default function FloatingBar({
               transition:
                 "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
               overflow: "hidden",
-              cursor: "pointer",
               position: "relative",
               display: "flex",
               alignItems: "center",
@@ -130,7 +117,13 @@ export default function FloatingBar({
             }}
           >
             {!msgOpen ? (
-              <div className="flex h-full w-full items-center justify-center gap-2 px-2">
+              <button
+                type="button"
+                onClick={() => setMsgOpen(true)}
+                className="flex h-full w-full items-center justify-center gap-2 px-2 focus:outline-none"
+                title="Open messages"
+                aria-label="Open messages"
+              >
                 <MessageSquare size={18} />
                 <span className="text-sm font-medium hidden md:inline">Messages</span>
                 {unreadCount > 0 && (
@@ -142,7 +135,7 @@ export default function FloatingBar({
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
-              </div>
+              </button>
             ) : (
               <div className="flex h-full w-full flex-col">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-app">
@@ -152,14 +145,15 @@ export default function FloatingBar({
                   </div>
                   <div className="shrink-0">
                     <span className="sr-only">Close messages</span>
-                    <X
-                      size={18}
-                      className="p-1 rounded-full hover:bg-elevated cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMsgOpen(false);
-                      }}
-                    />
+                    <button
+                      type="button"
+                      className="p-1 rounded-full hover:bg-elevated"
+                      onClick={() => setMsgOpen(false)}
+                      aria-label="Close messages"
+                      title="Close messages"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
                 </div>
                 <div className="flex-1 overflow-hidden">

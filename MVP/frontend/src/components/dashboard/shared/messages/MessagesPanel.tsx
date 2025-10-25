@@ -17,18 +17,16 @@ type Props = {
     currentUserId: string;
     expandAllOnMount?: boolean;
     requests?: IncomingRequest[];
-    onAcceptRequest?: (id: string) => Promise<void> | void;
-    onDeclineRequest?: (id: string) => Promise<void> | void;
     isArtist?: boolean;
+    onBadgeCountChange?: (count: number) => void;
 };
 
 const MessagesPanel: FC<Props> = ({
     currentUserId,
     expandAllOnMount,
     requests,
-    onAcceptRequest,
-    onDeclineRequest,
     isArtist: isArtistProp,
+    onBadgeCountChange,
 }) => {
     const { getToken } = useAuth();
     const { user } = useUser();
@@ -37,6 +35,7 @@ const MessagesPanel: FC<Props> = ({
     const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
     const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
     const [serverRequests, setServerRequests] = useState<IncomingRequest[] | null>(null);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
 
     const resolvedIsArtist = useMemo(() => {
         if (typeof isArtistProp === "boolean") return isArtistProp;
@@ -59,9 +58,7 @@ const MessagesPanel: FC<Props> = ({
             const token = await getToken();
             const base = API_URL.replace(/\/$/, "");
             const cleaned = path.replace(/^\/api/, "");
-            const url = path.startsWith("http")
-                ? path
-                : `${base}${cleaned.startsWith("/") ? "" : "/"}${cleaned}`;
+            const url = path.startsWith("http") ? path : `${base}${cleaned.startsWith("/") ? "" : "/"}${cleaned}`;
             const headers = new Headers(init.headers || {});
             headers.set("Accept", "application/json");
             headers.set("Content-Type", "application/json");
@@ -107,7 +104,10 @@ const MessagesPanel: FC<Props> = ({
     }, [authFetch, currentUserId]);
 
     useEffect(() => {
-        if (!resolvedIsArtist) return;
+        if (!resolvedIsArtist) {
+            setServerRequests(null);
+            return;
+        }
         let mounted = true;
         (async () => {
             try {
@@ -168,74 +168,15 @@ const MessagesPanel: FC<Props> = ({
         return derivedRequests;
     }, [resolvedIsArtist, serverRequests, requests, derivedRequests]);
 
-    const reqIdByPid = useMemo(() => {
-        const map: Record<string, string> = {};
-        for (const r of effectiveRequests) {
-            if (r?.from?.clerkId && r?.id) map[r.from.clerkId] = r.id;
-        }
-        return map;
-    }, [effectiveRequests]);
+    const badgeCount = useMemo(() => {
+        const unread = Object.values(unreadMap).reduce((acc, n) => acc + (n > 0 ? 1 : 0), 0);
+        const reqs = resolvedIsArtist ? effectiveRequests.length : 0;
+        return unread + reqs;
+    }, [unreadMap, effectiveRequests.length, resolvedIsArtist]);
 
-    const patchLocalMeta = (participantId: string, allowed: boolean, lastStatus: "accepted" | "declined") => {
-        setConversations((prev) =>
-            prev.map((c) =>
-                c.participantId !== participantId
-                    ? c
-                    : {
-                        ...c,
-                        meta: {
-                            ...(c.meta || { declines: 0, blocked: false }),
-                            allowed,
-                            lastStatus,
-                        },
-                    }
-            )
-        );
-    };
-
-    const acceptByRequestId = useCallback(
-        async (id: string) => {
-            if (onAcceptRequest) {
-                await onAcceptRequest(id);
-            } else {
-                await authFetch(`/messages/requests/${id}/accept`, { method: "POST" });
-            }
-        },
-        [authFetch, onAcceptRequest]
-    );
-
-    const declineByRequestId = useCallback(
-        async (id: string) => {
-            if (onDeclineRequest) {
-                await onDeclineRequest(id);
-            } else {
-                await authFetch(`/messages/requests/${id}/decline`, { method: "POST" });
-            }
-        },
-        [authFetch, onDeclineRequest]
-    );
-
-    const acceptByPid = useCallback(
-        async (participantId: string) => {
-            const id = reqIdByPid[participantId];
-            if (!id) return;
-            await acceptByRequestId(id);
-            patchLocalMeta(participantId, true, "accepted");
-            setServerRequests((list) => (Array.isArray(list) ? list.filter((r) => r.id !== id) : list));
-        },
-        [reqIdByPid, acceptByRequestId]
-    );
-
-    const declineByPid = useCallback(
-        async (participantId: string) => {
-            const id = reqIdByPid[participantId];
-            if (!id) return;
-            await declineByRequestId(id);
-            patchLocalMeta(participantId, false, "declined");
-            setServerRequests((list) => (Array.isArray(list) ? list.filter((r) => r.id !== id) : list));
-        },
-        [reqIdByPid, declineByRequestId]
-    );
+    useEffect(() => {
+        if (onBadgeCountChange) onBadgeCountChange(badgeCount);
+    }, [badgeCount, onBadgeCountChange]);
 
     if (loading) {
         return (
@@ -263,13 +204,15 @@ const MessagesPanel: FC<Props> = ({
                             unreadMap={unreadMap}
                             onMarkRead={onMarkRead}
                             isArtist
-                            onAcceptPending={acceptByPid}
-                            onDeclinePending={declineByPid}
+                            expandedId={expandedId}
                         />
                     </div>
 
                     <div className="h-full min-h-0 rounded-xl border border-app bg-card p-3 overflow-y-auto">
-                        <div className="text-sm font-semibold mb-2 text-app">Message requests</div>
+                        <div className="text-sm font-semibold mb-1 text-app">Message requests</div>
+                        <div className="text-xs text-muted-foreground mb-3">
+                            Review new requests. View to open the thread.
+                        </div>
                         <ul className="space-y-2">
                             {effectiveRequests.map((r) => (
                                 <li
@@ -284,22 +227,14 @@ const MessagesPanel: FC<Props> = ({
                                             {r.text || "Message request"}
                                         </div>
                                     </div>
-                                    <div className="shrink-0 flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => declineByRequestId(r.id)}
-                                            className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-xs text-app"
-                                        >
-                                            Decline
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => acceptByRequestId(r.id)}
-                                            className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
-                                        >
-                                            Accept
-                                        </button>
-                                    </div>
+                                    <button
+                                        type="button"
+                                        className="shrink-0 ml-3 text-xs px-2 py-1 rounded-md bg-primary text-primary-foreground"
+                                        onClick={() => setExpandedId(r.from?.clerkId || null)}
+                                        aria-label="View request"
+                                    >
+                                        View
+                                    </button>
                                 </li>
                             ))}
                         </ul>
@@ -318,8 +253,7 @@ const MessagesPanel: FC<Props> = ({
                         unreadMap={unreadMap}
                         onMarkRead={onMarkRead}
                         isArtist={resolvedIsArtist}
-                        onAcceptPending={acceptByPid}
-                        onDeclinePending={declineByPid}
+                        expandedId={expandedId}
                     />
                 </div>
             )}

@@ -69,9 +69,7 @@ export default function ArtistDashboard() {
         },
         [authFetch]
     );
-
-    console.log("ArtistDashboard: isArtist =", isArtist, "requestsLen =", requests.length);
-
+    
     return (
         <div ref={rootRef} className={themeClass}>
             <div className="min-h-dvh h-dvh bg-app text-app flex flex-col overflow-hidden">
