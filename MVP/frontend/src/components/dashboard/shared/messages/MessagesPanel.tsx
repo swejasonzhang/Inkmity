@@ -1,4 +1,3 @@
-// src/components/dashboard/shared/messages/MessagesPanel.tsx
 import type { FC } from "react";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -123,7 +122,6 @@ const MessagesPanel: FC<Props> = ({
         setUnreadMap((m) => (m[participantId] ? { ...m, [participantId]: 0 } : m));
     }, []);
 
-    // Derive pending requests from conversations when API list is empty.
     const derivedRequests = useMemo(() => {
         const items = conversations
             .filter((c) => c.meta && c.meta.lastStatus === "pending" && !c.meta.allowed)
@@ -131,7 +129,7 @@ const MessagesPanel: FC<Props> = ({
                 const firstReqMsg =
                     [...c.messages].reverse().find((m) => m.meta?.kind === "request") || c.messages[0];
                 return {
-                    id: c.participantId, // fallback id = participantId
+                    id: c.participantId,
                     from: { clerkId: c.participantId, username: c.username },
                     text: firstReqMsg?.text || "Message request",
                     timestamp: firstReqMsg?.timestamp || Date.now(),
@@ -140,7 +138,6 @@ const MessagesPanel: FC<Props> = ({
         return items;
     }, [conversations]);
 
-    // Prefer server-provided requests. Fallback to derived.
     const effectiveRequests: IncomingRequest[] =
         (resolvedIsArtist && Array.isArray(requests) && requests.length > 0 ? requests : derivedRequests) || [];
 
@@ -176,60 +173,78 @@ const MessagesPanel: FC<Props> = ({
         );
     }
 
+    const hasRequests = resolvedIsArtist && effectiveRequests.length > 0;
+
     return (
-        <div className="h-full w-full flex flex-col gap-3">
-            {!!effectiveRequests.length && resolvedIsArtist && (
-                <div className="rounded-xl border border-white/10 bg-[#1f2937] p-3">
-                    <div className="text-sm font-semibold mb-2">Message requests</div>
-                    <ul className="space-y-2">
-                        {effectiveRequests.map((r) => (
-                            <li
-                                key={`${r.id}-${r.from?.clerkId}`}
-                                className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2"
-                            >
-                                <div className="min-w-0">
-                                    <div className="text-sm text-white truncate">
-                                        {r.from?.username || r.from?.clerkId}
+        <div className="h-full min-h-0 w-full flex flex-col gap-3">
+            {hasRequests ? (
+                <div className="h-full min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div className="lg:col-span-2 h-full min-h-0 flex">
+                        <ChatWindow
+                            conversations={conversations}
+                            collapsedMap={collapsedMap}
+                            currentUserId={currentUserId}
+                            loading={false}
+                            onToggleCollapse={onToggleCollapse}
+                            onRemoveConversation={onRemoveConversation}
+                            authFetch={authFetch}
+                            unreadMap={unreadMap}
+                            onMarkRead={onMarkRead}
+                        />
+                    </div>
+
+                    <div className="h-full min-h-0 rounded-xl border border-white/10 bg-[#1f2937] p-3 overflow-y-auto">
+                        <div className="text-sm font-semibold mb-2">Message requests</div>
+                        <ul className="space-y-2">
+                            {effectiveRequests.map((r) => (
+                                <li
+                                    key={`${r.id}-${r.from?.clerkId}`}
+                                    className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2"
+                                >
+                                    <div className="min-w-0">
+                                        <div className="text-sm text-white truncate">
+                                            {r.from?.username || r.from?.clerkId}
+                                        </div>
+                                        <div className="text-xs text-white/70 truncate">
+                                            {r.text || "Message request"}
+                                        </div>
                                     </div>
-                                    <div className="text-xs text-white/70 truncate">
-                                        {r.text || "Message request"}
+                                    <div className="shrink-0 flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => callDecline(r)}
+                                            className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-xs"
+                                        >
+                                            Decline
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => callAccept(r)}
+                                            className="px-2 py-1 rounded-md bg-white text-black text-xs"
+                                        >
+                                            Accept
+                                        </button>
                                     </div>
-                                </div>
-                                <div className="shrink-0 flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => callDecline(r)}
-                                        className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-xs"
-                                    >
-                                        Decline
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => callAccept(r)}
-                                        className="px-2 py-1 rounded-md bg-white text-black text-xs"
-                                    >
-                                        Accept
-                                    </button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            ) : (
+                <div className="h-full min-h-0 flex-1">
+                    <ChatWindow
+                        conversations={conversations}
+                        collapsedMap={collapsedMap}
+                        currentUserId={currentUserId}
+                        loading={false}
+                        onToggleCollapse={onToggleCollapse}
+                        onRemoveConversation={onRemoveConversation}
+                        authFetch={authFetch}
+                        unreadMap={unreadMap}
+                        onMarkRead={onMarkRead}
+                    />
                 </div>
             )}
-
-            <div className="min-h-0 flex-1">
-                <ChatWindow
-                    conversations={conversations}
-                    collapsedMap={collapsedMap}
-                    currentUserId={currentUserId}
-                    loading={false}
-                    onToggleCollapse={onToggleCollapse}
-                    onRemoveConversation={onRemoveConversation}
-                    authFetch={authFetch}
-                    unreadMap={unreadMap}
-                    onMarkRead={onMarkRead}
-                />
-            </div>
         </div>
     );
 };
