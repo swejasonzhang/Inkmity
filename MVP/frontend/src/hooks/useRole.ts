@@ -15,11 +15,9 @@ export function useRole() {
     if (!isSignedIn) {
       setRole("client");
       setReady(true);
-      console.log("useRole: not signed in. role=client");
       return;
     }
     (async () => {
-      let computed: Role = "client";
       try {
         const token = await getToken();
         const me = await getMe(token ?? "");
@@ -29,21 +27,16 @@ export function useRole() {
             : me?.role === "client"
             ? "client"
             : null;
-        if (r) {
-          computed = r;
-          setRole(r);
-        } else {
+        if (r) setRole(r);
+        else {
           const md = (user?.publicMetadata?.role as string | undefined) || "";
-          computed = md === "artist" ? "artist" : "client";
-          setRole(computed);
+          setRole(md === "artist" ? "artist" : "client");
         }
       } catch {
         const md = (user?.publicMetadata?.role as string | undefined) || "";
-        computed = md === "artist" ? "artist" : "client";
-        setRole(computed);
+        setRole(md === "artist" ? "artist" : "client");
       } finally {
         setReady(true);
-        console.log("useRole: resolved role", computed);
       }
     })();
   }, [clerkLoaded, isSignedIn, user?.id, getToken, user?.publicMetadata?.role]);

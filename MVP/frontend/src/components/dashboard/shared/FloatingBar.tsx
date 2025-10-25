@@ -73,8 +73,8 @@ export default function FloatingBar({
   const collapsedHeight = 44;
   const assistantBtnClass = [btnCommon, "px-3 md:px-4"].join(" ");
 
-  const btnW = msgOpen ? (isMdUp ? 600 : 400) : 160;
-  const btnH = msgOpen ? (isMdUp ? 560 : 460) : collapsedHeight;
+  const btnW = msgOpen ? (isMdUp ? 1200 : 400) : 160;
+  const btnH = msgOpen ? (isMdUp ? 760 : 460) : collapsedHeight;
   const btnRadius = msgOpen ? 16 : 9999;
 
   const bar = (
@@ -120,7 +120,7 @@ export default function FloatingBar({
               height: btnH,
               borderRadius: btnRadius,
               transition:
-                "width 420ms cubic-bezier(0.22,1,0.36,1), height 420ms cubic-bezier(0.22,1,0.36,1), border-radius 420ms ease, padding 300ms ease",
+                "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
               overflow: "hidden",
               cursor: "pointer",
               position: "relative",
