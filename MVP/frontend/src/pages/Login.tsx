@@ -12,6 +12,8 @@ import { container } from "@/components/access/animations";
 
 const TOAST_H = 72;
 const TOAST_GAP = 50;
+const JUST_KEY = "ink.justSignedInAt";
+const JUST_MS = 7 * 24 * 60 * 60 * 1000; 
 
 type TipState = { show: boolean; x: number; y: number };
 
@@ -29,15 +31,32 @@ export default function Login() {
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
+  const wasRecentLogin = () => {
+    try {
+      const ts = Number(localStorage.getItem(JUST_KEY) || 0);
+      return ts && Date.now() - ts < JUST_MS;
+    } catch {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const recent = wasRecentLogin();
+    if (!recent) {
+      toast.info("You are already signed in. Redirecting to dashboard…", { position: "top-center", theme: "dark" });
+    }
+    const t = setTimeout(() => {
+      window.location.replace("/dashboard");
+    }, 900);
+    return () => clearTimeout(t);
+  }, [isSignedIn]);
+
   useEffect(() => {
     const mm = (e: MouseEvent) => {
       const t = e.target as Element | null;
       const anchor = t?.closest('a[href="/dashboard"]');
-      if (anchor) {
-        setTip({ show: true, x: e.clientX, y: e.clientY });
-      } else {
-        setTip((prev) => (prev.show ? { ...prev, show: false } : prev));
-      }
+      setTip(anchor ? { show: true, x: e.clientX, y: e.clientY } : (p) => (p.show ? { ...p, show: false } : p));
     };
     const click = (e: MouseEvent) => {
       const t = e.target as Element | null;
@@ -84,11 +103,11 @@ export default function Login() {
   useEffect(() => {
     const recomputeFocus = () => {
       const ae = document.activeElement as HTMLInputElement | null;
-      setPwdFocused(!!ae && ae.tagName === "INPUT" && ae.name === "password");
+      setPwdFocused(!!(ae && ae.tagName === "INPUT" && ae.name === "password"));
     };
     const recomputeShow = () => {
       const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
-      setShowPassword(!!input && input.type === "text");
+      setShowPassword(!!(input && input.type === "text"));
     };
     const handleFocusIn = () => {
       recomputeFocus();
@@ -114,18 +133,6 @@ export default function Login() {
       document.removeEventListener("input", handleClickOrInput, true);
     };
   }, []);
-
-  const alreadyToastRef = useRef(false);
-  useEffect(() => {
-    if (isSignedIn && !alreadyToastRef.current) {
-      alreadyToastRef.current = true;
-      toast.info("You are already signed in. Redirecting…", { position: "top-center", theme: "dark" });
-      const t = setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1600);
-      return () => clearTimeout(t);
-    }
-  }, [isSignedIn]);
 
   const triggerMascotError = () => {
     setMascotError(true);
@@ -153,7 +160,13 @@ export default function Login() {
       const result = await signIn.create({ identifier: email, password });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        window.location.href = "/dashboard";
+        try {
+          localStorage.setItem(JUST_KEY, String(Date.now()));
+        } catch { }
+        toast.success("Login successful. Redirecting to your dashboard…", { position: "top-center", theme: "dark" });
+        setTimeout(() => {
+          window.location.replace("/dashboard");
+        }, 900);
       } else {
         toast.error("Login failed. Check your credentials and try again.", { position: "top-center", theme: "dark" });
         triggerMascotError();
@@ -220,7 +233,7 @@ export default function Login() {
                               value={password}
                               placeholder="Password"
                               onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                              className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
+                              className="w-full h-11 rounded-xl bg白/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
                               autoComplete="current-password"
                             />
                             <button
@@ -267,7 +280,7 @@ export default function Login() {
           toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
           style={{ top: toastTop !== undefined ? toastTop : 12 }}
         />
-        {(!isSignedIn && tip.show) && (
+        {!isSignedIn && tip.show && (
           <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
             <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
               <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />

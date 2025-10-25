@@ -157,7 +157,13 @@ export default function ClientDashboard() {
                     <FloatingBar
                         onAssistantOpen={() => setAssistantOpen(true)}
                         portalTarget={portalEl}
-                        messagesContent={<MessagesPanel currentUserId={user.id} expandAllOnMount />}
+                        messagesContent={
+                            <MessagesPanel
+                                currentUserId={user.id}
+                                expandAllOnMount
+                                isArtist={false}
+                            />
+                        }
                     />
 
                     <AnimatePresence>

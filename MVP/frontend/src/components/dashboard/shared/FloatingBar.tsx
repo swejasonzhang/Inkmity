@@ -8,6 +8,12 @@ type Props = {
   assistantLocked?: boolean;
   messagesContent?: React.ReactNode;
   unreadCount?: number;
+  unreadMessagesTotal?: number;
+  requestExists?: boolean;
+  unreadConversationsCount?: number;
+  pendingRequestsCount?: number;
+  unreadConversationIds?: string[];
+  pendingRequestIds?: string[];
 };
 
 export default function FloatingBar({
@@ -16,30 +22,75 @@ export default function FloatingBar({
   assistantLocked = true,
   messagesContent,
   unreadCount = 0,
+  unreadMessagesTotal,
+  requestExists,
+  unreadConversationsCount,
+  pendingRequestsCount,
+  unreadConversationIds,
+  pendingRequestIds,
 }: Props) {
   const [isMdUp, setIsMdUp] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
   const msgBtnRef = useRef<HTMLDivElement | null>(null);
 
+  const [clearedConvos, setClearedConvos] = useState<Set<string>>(() => new Set());
+
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const mql = window.matchMedia("(min-width: 768px)");
-    const handler = (e: MediaQueryListEvent | MediaQueryList) =>
-      setIsMdUp("matches" in e ? e.matches : (e as MediaQueryList).matches);
-    handler(mql);
-    mql.addEventListener?.("change", handler as EventListener);
-    return () => mql.removeEventListener?.("change", handler as EventListener);
+    const onChange = (e: MediaQueryListEvent) => setIsMdUp(e.matches);
+    setIsMdUp(mql.matches);
+    if (typeof mql.addEventListener === "function") mql.addEventListener("change", onChange);
+    else mql.addListener(onChange as any);
+    return () => {
+      if (typeof mql.removeEventListener === "function") mql.removeEventListener("change", onChange);
+      else mql.removeListener(onChange as any);
+    };
   }, []);
 
   useEffect(() => {
     const open = () => setMsgOpen(true);
     const close = () => setMsgOpen(false);
-    window.addEventListener("ink:open-messages", open);
-    window.addEventListener("ink:close-messages", close);
+    window.addEventListener("ink:open-messages", open as EventListener);
+    window.addEventListener("ink:close-messages", close as EventListener);
     return () => {
-      window.removeEventListener("ink:open-messages", open);
-      window.removeEventListener("ink:close-messages", close);
+      window.removeEventListener("ink:open-messages", open as EventListener);
+      window.removeEventListener("ink:close-messages", close as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    const onConvoOpened = (e: Event) => {
+      const id = (e as CustomEvent<string | { id: string }>).detail;
+      const convoId = typeof id === "string" ? id : id?.id;
+      if (!convoId) return;
+      setClearedConvos((prev) => {
+        const next = new Set(prev);
+        next.add(convoId);
+        return next;
+      });
+    };
+    const onConvoRead = onConvoOpened;
+
+    window.addEventListener("ink:conversation-opened", onConvoOpened as EventListener);
+    window.addEventListener("ink:conversation-read", onConvoRead as EventListener);
+    return () => {
+      window.removeEventListener("ink:conversation-opened", onConvoOpened as EventListener);
+      window.removeEventListener("ink:conversation-read", onConvoRead as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!unreadConversationIds) return;
+    setClearedConvos((prev) => {
+      const incoming = new Set(unreadConversationIds);
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (incoming.has(id)) next.add(id);
+      });
+      return next;
+    });
+  }, [unreadConversationIds?.join("|")]);
 
   useEffect(() => {
     if (!msgOpen) return;
@@ -50,13 +101,46 @@ export default function FloatingBar({
       if (target && root.contains(target)) return;
       setMsgOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMsgOpen(false);
+    };
     document.addEventListener("mousedown", onDocPointer, true);
     document.addEventListener("touchstart", onDocPointer, true);
+    document.addEventListener("keydown", onKey, true);
     return () => {
       document.removeEventListener("mousedown", onDocPointer, true);
       document.removeEventListener("touchstart", onDocPointer, true);
+      document.removeEventListener("keydown", onKey, true);
     };
   }, [msgOpen]);
+
+  const toInt = (n: unknown) => {
+    const v = typeof n === "number" && Number.isFinite(n) ? Math.trunc(n) : 0;
+    return v < 0 ? 0 : v;
+  };
+
+  const unreadConvoCount = Array.isArray(unreadConversationIds)
+    ? unreadConversationIds.filter((id) => !clearedConvos.has(id)).length
+    : toInt(unreadConversationsCount);
+
+  // 1 if any pending request exists, else 0
+  const requestCount =
+    typeof requestExists === "boolean"
+      ? requestExists ? 1 : 0
+      : Array.isArray(pendingRequestIds)
+      ? (pendingRequestIds.length > 0 ? 1 : 0)
+      : toInt(pendingRequestsCount) > 0
+      ? 1
+      : 0;
+
+  const totalUnreadMessages =
+    typeof unreadMessagesTotal === "number" ? unreadMessagesTotal : toInt(unreadCount);
+
+  const derivedTotal = totalUnreadMessages + requestCount;
+
+  useEffect(() => {
+    console.log("badge -> unreadMsgs:", totalUnreadMessages, "requests(0|1):", requestCount, "derivedTotal:", derivedTotal);
+  }, [totalUnreadMessages, requestCount, derivedTotal]);
 
   const pad = {
     left: isMdUp
@@ -76,6 +160,17 @@ export default function FloatingBar({
   const btnW = msgOpen ? (isMdUp ? 1200 : 400) : 160;
   const btnH = msgOpen ? (isMdUp ? 760 : 460) : collapsedHeight;
   const btnRadius = msgOpen ? 16 : 9999;
+
+  const Badge = ({ value, label }: { value: number; label?: string }) => (
+    <span
+      className="ml-2 inline-flex items-center justify-center rounded-full text-[11px] font-semibold px-2 min-w-[22px] h-[18px]"
+      style={{ background: value > 0 ? "#ef4444" : "#6b7280", color: "#fff" }}
+      aria-label={label ? `${value} ${label}` : `${value}`}
+      title={label ? `${value} ${label}` : `${value}`}
+    >
+      {value > 99 ? "99+" : value}
+    </span>
+  );
 
   const bar = (
     <div className="fixed inset-x-0 z-[1000] pointer-events-none" style={{ bottom: pad.bottom }}>
@@ -101,7 +196,8 @@ export default function FloatingBar({
           <div
             ref={msgBtnRef}
             className={btnCommon}
-            aria-label={msgOpen ? "Messages" : undefined}
+            aria-label={msgOpen ? "Messages" : "Open messages"}
+            aria-expanded={msgOpen}
             style={{
               willChange: "width,height",
               width: btnW,
@@ -126,15 +222,7 @@ export default function FloatingBar({
               >
                 <MessageSquare size={18} />
                 <span className="text-sm font-medium hidden md:inline">Messages</span>
-                {unreadCount > 0 && (
-                  <span
-                    className="ml-2 inline-flex items-center justify-center rounded-full text-[11px] font-semibold px-2 min-w-[22px] h-[18px]"
-                    style={{ background: "#ef4444", color: "#fff" }}
-                    aria-label={`${unreadCount} unread`}
-                  >
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
+                <Badge value={derivedTotal} label="unread + requests" />
               </button>
             ) : (
               <div className="flex h-full w-full flex-col">
@@ -142,6 +230,12 @@ export default function FloatingBar({
                   <div className="flex items-center gap-2 font-semibold">
                     <MessageSquare size={16} />
                     <span>Messages</span>
+                    <span className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
+                      {unreadConvoCount} unread convos
+                    </span>
+                    <span className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
+                      {requestCount} {requestCount === 1 ? "request" : "requests"}
+                    </span>
                   </div>
                   <div className="shrink-0">
                     <span className="sr-only">Close messages</span>
@@ -167,5 +261,6 @@ export default function FloatingBar({
     </div>
   );
 
+  if (typeof document === "undefined") return null;
   return createPortal(bar, portalTarget ?? document.body);
 }

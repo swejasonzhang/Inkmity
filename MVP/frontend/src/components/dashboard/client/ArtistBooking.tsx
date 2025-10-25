@@ -51,9 +51,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           sentRef.current = true;
           setStatus("sent");
         }
-      } catch {
-        /* ignore */
-      }
+      } catch { }
     }
     if (artist?.clerkId) loadGate();
     return () => {
@@ -78,6 +76,16 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         detail: { artistId: artist.clerkId, username: artist.username },
       })
     );
+
+  function mapError(status: number | undefined, body: any): string {
+    const code = typeof body?.error === "string" ? body.error : "";
+    if (status === 409 && /already_pending/i.test(code)) return "You already have a pending request with this artist.";
+    if (status === 409 && /already_accepted/i.test(code)) return "You are already allowed to chat with this artist.";
+    if (status === 403 && /blocked_by_declines/i.test(code)) return "Request limit reached for this artist.";
+    if (status === 403 && /not_allowed/i.test(code)) return "You need an accepted request before you can chat.";
+    if (status === 400 && /missing_fields/i.test(code)) return "Missing fields. Try again.";
+    return body?.message || body?.error || "Failed to send request.";
+  }
 
   const handleSendMessage = async () => {
     if (sentRef.current || status === "sending") return;
@@ -108,7 +116,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       });
 
       const ok = typeof res?.ok === "boolean" ? res.ok : true;
-      if (!ok) throw Object.assign(new Error(res?.error || `HTTP ${res?.status || 500}`), { status: res?.status });
+      if (!ok) throw Object.assign(new Error(res?.error || `HTTP ${res?.status || 500}`), { status: res?.status, body: res });
 
       sentRef.current = true;
       setStatus("sent");
@@ -117,7 +125,14 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       openMessages();
       onClose?.();
     } catch (err: any) {
-      if (err?.status === 409 || /already_pending/i.test(err?.message)) {
+      const statusCode = err?.status ?? err?.response?.status;
+      let body: any = err?.body;
+      try {
+        if (!body && err?.response) body = await err.response.json();
+      } catch { }
+      const msg = mapError(statusCode, body);
+
+      if (statusCode === 409 && /already_pending/i.test(body?.error || "")) {
         sentRef.current = true;
         setStatus("sent");
         setGate((g) => ({ ...(g || { allowed: false, declines: 0, blocked: false, lastStatus: "pending" }), lastStatus: "pending" }));
@@ -126,8 +141,17 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         onClose?.();
         return;
       }
+
+      if (statusCode === 409 && /already_accepted/i.test(body?.error || "")) {
+        setStatus("idle");
+        setGate((g) => ({ ...(g || { allowed: true, declines: 0, blocked: false, lastStatus: "accepted" }) }));
+        openMessages();
+        onClose?.();
+        return;
+      }
+
       setStatus("error");
-      setErrorMsg(err?.message || "Failed to send message.");
+      setErrorMsg(msg);
     }
   };
 
@@ -214,6 +238,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
               >
                 Send a request to message. You will be able to chat once the artist accepts.
               </p>
+
               {status === "error" && (
                 <div
                   role="alert"
@@ -224,9 +249,11 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                   {errorMsg}
                 </div>
               )}
+
               <span className="sr-only" aria-live="polite">
                 {status === "sending" ? "Sending request" : isPending ? "Request pending" : ""}
               </span>
+
               <Button
                 type="button"
                 onClick={handleSendMessage}
