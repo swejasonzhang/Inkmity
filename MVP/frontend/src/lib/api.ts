@@ -29,16 +29,17 @@ export async function apiRequest<T = any>(
   init: RequestInit = {},
   token?: string
 ): Promise<T> {
-  const url = path.startsWith("http") ? path : `${API_URL}${path}`;
+  const base = API_URL.replace(/\/+$/, "");
+  const url = path.startsWith("http")
+    ? path.replace(/\/+$/, "")
+    : `${base}/${path.replace(/^\/+/, "")}`;
   const req = await withAuthHeaders(init, token);
 
   let res: Response;
   try {
     res = await fetch(url, req);
   } catch (e) {
-    if (isAbortError(e)) {
-      throw e;
-    }
+    if (isAbortError(e)) throw e;
     throw e;
   }
 

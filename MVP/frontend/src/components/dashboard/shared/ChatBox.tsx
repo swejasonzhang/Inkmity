@@ -9,10 +9,10 @@ type ChatBoxProps = {
   open: boolean;
   onClose: () => void;
   currentUserId: string;
-  artist?: ArtistWithGroups | null;
+  artist: ArtistWithGroups;
 };
 
-export default function ChatBox({ open, onClose, currentUserId, artist = null }: ChatBoxProps) {
+export default function ChatBox({ open, onClose, currentUserId, artist }: ChatBoxProps) {
   const scopeRef = useRef<HTMLDivElement | null>(null);
   const [scopeH, setScopeH] = useState(0);
 
@@ -59,7 +59,7 @@ export default function ChatBox({ open, onClose, currentUserId, artist = null }:
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto">
-                <MessagesPanel currentUserId={currentUserId} artist={artist ?? undefined} expandAllOnMount />
+                <MessagesPanel currentUserId={currentUserId} artist={artist} expandAllOnMount />
               </div>
             </Card>
           </motion.div>

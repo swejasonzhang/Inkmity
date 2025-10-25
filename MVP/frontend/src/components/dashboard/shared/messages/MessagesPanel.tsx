@@ -1,8 +1,15 @@
 import { useApi } from "@/lib/api";
-import ChatWindow, { type Conversation } from "@/components/dashboard/shared/ChatWindow";
+import ChatWindow from "@/components/dashboard/shared/ChatWindow";
+import type { ArtistWithGroups } from "@/components/dashboard/client/ArtistPortfolio";
 import { useMessaging } from "@/hooks/useMessaging";
 
-export default function MessagesPanel({ currentUserId }: { currentUserId: string }) {
+type Props = {
+    currentUserId: string;
+    artist?: ArtistWithGroups | null;
+    expandAllOnMount?: boolean;
+};
+
+export default function MessagesPanel({ currentUserId, artist = null }: Props) {
     const { request } = useApi();
     const authFetch = (url: string, options?: RequestInit) => request(url, options);
 
@@ -15,13 +22,15 @@ export default function MessagesPanel({ currentUserId }: { currentUserId: string
         removeConversation,
     } = useMessaging(currentUserId, authFetch);
 
+    const initialExpandedId = artist?.clerkId ?? null;
+
     return (
         <ChatWindow
-            conversations={conversations as Conversation[]}
+            conversations={conversations}
             collapsedMap={collapsedMap}
             currentUserId={currentUserId}
             loading={loading}
-            expandedId={expandedId}
+            expandedId={initialExpandedId ?? expandedId}
             onToggleCollapse={toggleCollapse}
             onRemoveConversation={removeConversation}
             authFetch={authFetch}
