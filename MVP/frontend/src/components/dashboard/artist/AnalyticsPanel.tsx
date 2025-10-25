@@ -92,9 +92,9 @@ export default function AnalyticsPanel(props: Props) {
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
           {kpis.map((k, i) => (
             <div key={i} className="rounded-2xl border border-app bg-elevated px-6 py-5 text-center">
-              <div className="text-sm text-muted-foreground">{k.label}</div>
-              <div className="mt-1 text-3xl sm:text-4xl font-bold">{k.value}</div>
-              {k.sublabel && <div className="mt-1 text-sm text-muted-foreground">{k.sublabel}</div>}
+              <div className="text-sm text-muted">{k.label}</div>
+              <div className="mt-1 text-3xl sm:text-4xl font-bold text-app">{k.value}</div>
+              {k.sublabel && <div className="mt-1 text-sm text-muted">{k.sublabel}</div>}
             </div>
           ))}
         </div>
@@ -102,8 +102,8 @@ export default function AnalyticsPanel(props: Props) {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2 rounded-2xl border border-app bg-elevated p-6">
             <div className="flex items-baseline justify-between">
-              <div className="text-base font-semibold">Hours on needle (last 6 weeks)</div>
-              <div className="text-sm text-muted-foreground">Max {maxHours}h</div>
+              <div className="text-base font-semibold text-app">Hours on needle (last 6 weeks)</div>
+              <div className="text-sm text-muted">Max {maxHours}h</div>
             </div>
             <div className="mt-5 flex w-full items-end justify-between gap-6 sm:gap-8 px-2 sm:px-6 h-56">
               {weeks.map((w, i) => {
@@ -111,12 +111,12 @@ export default function AnalyticsPanel(props: Props) {
                 return (
                   <div key={i} className="flex flex-col items-center">
                     <div
-                      className="w-10 rounded-t-lg bg-gradient-to-t from-white/10 to-white/40 border border-white/10"
+                      className="w-10 rounded-t-lg border text-app [background:linear-gradient(to_top,color-mix(in_oklab,currentColor_15%,transparent),color-mix(in_oklab,currentColor_40%,transparent))] [border-color:color-mix(in_oklab,currentColor_10%,transparent)]"
                       style={{ height: `${h}px` }}
                       title={`${w.week}: ${w.hoursTattooed}h, ${w.sessions} sessions`}
                     />
-                    <div className="mt-2 text-[11px] text-muted-foreground">{w.week}</div>
-                    <div className="text-[11px] opacity-80">{w.sessions}x</div>
+                    <div className="mt-2 text-[11px] text-muted">{w.week}</div>
+                    <div className="text-[11px] opacity-80 text-app">{w.sessions}x</div>
                   </div>
                 );
               })}
@@ -124,58 +124,58 @@ export default function AnalyticsPanel(props: Props) {
 
             <div className="mt-6 grid grid-cols-3 gap-3 text-sm">
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Last week revenue</div>
-                <div className="font-semibold">${weeks[weeks.length - 1]?.revenue.toLocaleString()}</div>
+                <div className="text-muted">Last week revenue</div>
+                <div className="font-semibold text-app">${weeks[weeks.length - 1]?.revenue.toLocaleString()}</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">No-show rate</div>
-                <div className="font-semibold">{pct(mtd.noShowRate!)}</div>
+                <div className="text-muted">No-show rate</div>
+                <div className="font-semibold text-app">{pct(mtd.noShowRate!)}</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Deposit capture</div>
-                <div className="font-semibold">{pct(mtd.depositCapture!)}</div>
+                <div className="text-muted">Deposit capture</div>
+                <div className="font-semibold text-app">{pct(mtd.depositCapture!)}</div>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-app bg-elevated p-6">
-            <div className="text-base font-semibold">Shop ops — this month</div>
+            <div className="text-base font-semibold text-app">Shop ops — this month</div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Tip rate</div>
-                <div className="font-semibold">{pct(mtd.tipRate!)}</div>
+                <div className="text-muted">Tip rate</div>
+                <div className="font-semibold text-app">{pct(mtd.tipRate!)}</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Repeat clients</div>
-                <div className="font-semibold">{pct(mtd.repeatClientRate!)}</div>
+                <div className="text-muted">Repeat clients</div>
+                <div className="font-semibold text-app">{pct(mtd.repeatClientRate!)}</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Median lead time</div>
-                <div className="font-semibold">{mtd.bookingLeadDaysMedian} days</div>
+                <div className="text-muted">Median lead time</div>
+                <div className="font-semibold text-app">{mtd.bookingLeadDaysMedian} days</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Avg session length</div>
-                <div className="font-semibold">{mtd.avgSessionLenHrs} h</div>
+                <div className="text-muted">Avg session length</div>
+                <div className="font-semibold text-app">{mtd.avgSessionLenHrs} h</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Touch-up rate</div>
-                <div className="font-semibold">{pct(mtd.touchUpRate!)}</div>
+                <div className="text-muted">Touch-up rate</div>
+                <div className="font-semibold text-app">{pct(mtd.touchUpRate!)}</div>
               </div>
               <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted-foreground">Aftercare issues</div>
-                <div className="font-semibold">{pct(mtd.aftercareIssuesRate!)}</div>
+                <div className="text-muted">Aftercare issues</div>
+                <div className="font-semibold text-app">{pct(mtd.aftercareIssuesRate!)}</div>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div className="col-span-2 rounded-lg bg-card border border-app px-3 py-2">
-                <div className="text-muted-foreground text-center">Net $/hr</div>
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 max-w-full">
-                  <span className="text-[12px] text-muted-foreground whitespace-nowrap">Rev</span>
+                <div className="text-muted text-center">Net $/hr</div>
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 max-w-full text-app">
+                  <span className="text-[12px] text-muted whitespace-nowrap">Rev</span>
                   <span className="font-semibold whitespace-nowrap">${mtd.revenuePerHour}</span>
-                  <span className="text-[12px] text-muted-foreground whitespace-nowrap">– Supplies</span>
+                  <span className="text-[12px] text-muted whitespace-nowrap">– Supplies</span>
                   <span className="font-semibold whitespace-nowrap">${mtd.suppliesCostPerHour}</span>
-                  <span className="text-[12px] text-muted-foreground">=</span>
+                  <span className="text-[12px] text-muted">=</span>
                   <span className="font-bold whitespace-nowrap">
                     ${Math.max(0, (mtd.revenuePerHour ?? 0) - (mtd.suppliesCostPerHour ?? 0)).toFixed(0)}
                   </span>
@@ -188,38 +188,38 @@ export default function AnalyticsPanel(props: Props) {
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div className="rounded-2xl border border-app bg-elevated p-6">
-            <div className="text-base font-semibold">Style mix</div>
+            <div className="text-base font-semibold text-app">Style mix</div>
             <div className="mt-4 space-y-3">
               {styleMix.map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-28 text-[12px] text-muted-foreground">{s.style}</div>
+                  <div className="w-28 text-[12px] text-muted">{s.style}</div>
                   <div className="flex-1 h-3 rounded-full bg-card border border-app overflow-hidden">
                     <div
-                      className="h-full bg-black/30 dark:bg-white/40 transition-[width] duration-500"
+                      className="h-full text-app [background:color-mix(in_oklab,currentColor_35%,transparent)] transition-[width] duration-500"
                       style={{ width: `${(s.share / styleTotal) * 100}%` }}
                       title={pct(s.share)}
                     />
                   </div>
-                  <div className="w-12 text-right text-[12px]">{pct(s.share)}</div>
+                  <div className="w-12 text-right text-[12px] text-app">{pct(s.share)}</div>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="rounded-2xl border border-app bg-elevated p-6">
-            <div className="text-base font-semibold">Lead sources</div>
+            <div className="text-base font-semibold text-app">Lead sources</div>
             <div className="mt-4 space-y-3">
               {leadSources.map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-28 text-[12px] text-muted-foreground">{s.source}</div>
+                  <div className="w-28 text-[12px] text-muted">{s.source}</div>
                   <div className="flex-1 h-3 rounded-full bg-card border border-app overflow-hidden">
                     <div
-                      className="h-full bg-black/30 dark:bg-white/40 transition-[width] duration-500"
+                      className="h-full text-app [background:color-mix(in_oklab,currentColor_35%,transparent)] transition-[width] duration-500"
                       style={{ width: `${(s.share / leadTotal) * 100}%` }}
                       title={pct(s.share)}
                     />
                   </div>
-                  <div className="w-12 text-right text-[12px]">{pct(s.share)}</div>
+                  <div className="w-12 text-right text-[12px] text-app">{pct(s.share)}</div>
                 </div>
               ))}
             </div>
@@ -227,19 +227,19 @@ export default function AnalyticsPanel(props: Props) {
         </div>
 
         <div className="rounded-2xl border border-app bg-elevated p-6">
-          <div className="text-base font-semibold">Notes to watch</div>
+          <div className="text-base font-semibold text-app">Notes to watch</div>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div className="rounded-lg bg-card border border-app px-3 py-2">
-              <div className="text-muted-foreground">Minimum charge adherence</div>
-              <div className="mt-1 text-[12px] opacity-80">Spot audit last week: 100% (no below-min tickets)</div>
+              <div className="text-muted">Minimum charge adherence</div>
+              <div className="mt-1 text-[12px] opacity-80 text-app">Spot audit last week: 100% (no below-min tickets)</div>
             </div>
             <div className="rounded-lg bg-card border border-app px-3 py-2">
-              <div className="text-muted-foreground">Healed photo returns</div>
-              <div className="mt-1 text-[12px] opacity-80">Ask at checkout; offer 10% off next for healed pics</div>
+              <div className="text-muted">Healed photo returns</div>
+              <div className="mt-1 text-[12px] opacity-80 text-app">Ask at checkout; offer 10% off next for healed pics</div>
             </div>
             <div className="rounded-lg bg-card border border-app px-3 py-2">
-              <div className="text-muted-foreground">Aftercare sales</div>
-              <div className="mt-1 text-[12px] opacity-80">Add upsell: balm/film bundles near checkout</div>
+              <div className="text-muted">Aftercare sales</div>
+              <div className="mt-1 text-[12px] opacity-80 text-app">Add upsell: balm/film bundles near checkout</div>
             </div>
           </div>
         </div>

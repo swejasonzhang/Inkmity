@@ -3,7 +3,7 @@ import { useClerk, useUser } from "@clerk/clerk-react";
 import { Lock, Menu, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
-const THEME_MS = 600;
+const THEME_MS = 3000;
 
 type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -29,29 +29,26 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty("--theme-ms", `${THEME_MS}ms`);
-    root.classList.add("theme-smooth");
-    root.setAttribute("data-ink-theme", theme);
-    root.classList.toggle("light", theme === "light");
+    root.classList.toggle("ink-light", theme === "light"); // use existing CSS
     try {
       localStorage.setItem("theme", theme);
     } catch { }
-    const id = window.setTimeout(() => root.classList.remove("theme-smooth"), THEME_MS);
-    return () => window.clearTimeout(id);
   }, [theme]);
 
   function runThemeSwitch(next: "light" | "dark") {
-    const root = document.documentElement;
+    const prefersReduced =
+      window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (!prefersReduced && (document as any).startViewTransition) {
+      (document as any).startViewTransition(() => setTheme(next));
+      return;
+    }
+
     const curtain = document.createElement("div");
     curtain.className = "theme-curtain";
     document.body.appendChild(curtain);
-
-    root.classList.add("theme-smooth");
     requestAnimationFrame(() => setTheme(next));
-
-    window.setTimeout(() => {
-      curtain.remove();
-      root.classList.remove("theme-smooth");
-    }, THEME_MS);
+    window.setTimeout(() => curtain.remove(), THEME_MS);
   }
 
   const toggleTheme = () => runThemeSwitch(theme === "light" ? "dark" : "light");
@@ -278,9 +275,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false }) => {
                       }`}
                   >
                     <button
-                      onClick={async () => {
-                        await handleLogout();
-                      }}
+                      onClick={handleLogout}
                       className="w-full px-3 py-2 text-center hover:bg-elevated rounded-lg text-app"
                     >
                       Logout
