@@ -2,19 +2,21 @@ import { lazy, Suspense, useRef, useState } from "react";
 import Header from "@/components/header/Header";
 import { useTheme } from "@/components/header/useTheme";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
-import { X, Bot, MessageSquare } from "lucide-react";
+import { X, Bot } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import MessagesPanel from "@/components/dashboard/shared/messages/MessagesPanel";
+import { useUser } from "@clerk/clerk-react";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
 const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
 
 export default function ArtistDashboard() {
+    const { user } = useUser();
     const rootRef = useRef<HTMLDivElement | null>(null);
     const { theme, toggleTheme, themeClass } = useTheme(rootRef.current);
     const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
     const [assistantOpen, setAssistantOpen] = useState(false);
-    const [messagesOpen, setMessagesOpen] = useState(false);
 
     return (
         <div ref={rootRef} className={themeClass}>
@@ -73,11 +75,22 @@ export default function ArtistDashboard() {
 
                 <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
 
-                <FloatingBar onAssistantOpen={() => setAssistantOpen(true)} onMessagesOpen={() => setMessagesOpen(true)} portalTarget={portalEl} />
+                <FloatingBar
+                    onAssistantOpen={() => setAssistantOpen(true)}
+                    portalTarget={portalEl}
+                    messagesContent={<MessagesPanel currentUserId={user?.id ?? ""} />}
+                />
 
                 <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-                    <div className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`} onClick={() => setAssistantOpen(false)} aria-hidden />
-                    <div className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}>
+                    <div
+                        className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`}
+                        onClick={() => setAssistantOpen(false)}
+                        aria-hidden
+                    />
+                    <div
+                        className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"
+                            }`}
+                    >
                         <div className="flex items-center justify-between px-4 py-3 border-b border-app">
                             <div className="flex items-center gap-2 font-semibold">
                                 <Bot size={18} />
@@ -88,22 +101,6 @@ export default function ArtistDashboard() {
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 text-sm opacity-80">Assistant panel</div>
-                    </div>
-                </div>
-
-                <div className={`fixed inset-0 z-50 transition-all duration-300 ${messagesOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-                    <div className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${messagesOpen ? "opacity-100" : "opacity-0"}`} onClick={() => setMessagesOpen(false)} aria-hidden />
-                    <div className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${messagesOpen ? "translate-y-0" : "translate-y-full"}`}>
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-app">
-                            <div className="flex items-center gap-2 font-semibold">
-                                <MessageSquare size={18} />
-                                <span>Messages</span>
-                            </div>
-                            <button onClick={() => setMessagesOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close messages">
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 text-sm opacity-80">Messages panel</div>
                     </div>
                 </div>
             </div>

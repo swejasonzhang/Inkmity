@@ -1,24 +1,24 @@
 import { createPortal } from "react-dom";
-import { Bot, MessageSquare, Lock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Bot, MessageSquare, Lock, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   onAssistantOpen: () => void;
-  onMessagesOpen: () => void;
   portalTarget?: Element | null;
   assistantLocked?: boolean;
+  messagesContent?: React.ReactNode;
 };
 
 export default function FloatingBar({
   onAssistantOpen,
-  onMessagesOpen,
   portalTarget,
   assistantLocked = true,
+  messagesContent,
 }: Props) {
-  const [tipX, setTipX] = useState<number | null>(null);
-  const [showTip, setShowTip] = useState(false);
-
   const [isMdUp, setIsMdUp] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
+  const msgBtnRef = useRef<HTMLButtonElement | null>(null);
+
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 768px)");
     const handler = (e: MediaQueryListEvent | MediaQueryList) =>
@@ -26,6 +26,17 @@ export default function FloatingBar({
     handler(mql);
     mql.addEventListener?.("change", handler as EventListener);
     return () => mql.removeEventListener?.("change", handler as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const open = () => setMsgOpen(true);
+    const close = () => setMsgOpen(false);
+    window.addEventListener("ink:open-messages", open);
+    window.addEventListener("ink:close-messages", close);
+    return () => {
+      window.removeEventListener("ink:open-messages", open);
+      window.removeEventListener("ink:close-messages", close);
+    };
   }, []);
 
   const pad = {
@@ -39,36 +50,21 @@ export default function FloatingBar({
   };
 
   const btnCommon =
-    "bg-app text-card inline-flex items-center gap-2 px-3 md:px-4 py-3 rounded-full pointer-events-auto border border-app shadow-md active:scale-[0.98] hover:shadow-lg hover:brightness-[1.05] transition focus:outline-none focus:ring-2 focus:ring-app/40";
+    "bg-app text-card inline-flex items-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
 
-  const assistantBtnClass = [
-    btnCommon,
-    "relative",
-    assistantLocked ? "cursor-not-allowed" : "",
-  ].join(" ");
+  const assistantBtnClass = [btnCommon, "px-3 md:px-4 py-3"].join(" ");
+
+  const btnW = msgOpen ? (isMdUp ? 520 : 360) : 140;
+  const btnH = msgOpen ? (isMdUp ? 520 : 420) : 48;
+  const btnRadius = msgOpen ? 16 : 9999;
+  const btnPadding = msgOpen ? "0px" : "0.75rem 1rem";
 
   const bar = (
     <div className="fixed inset-x-0 z-[1000] pointer-events-none" style={{ bottom: pad.bottom }}>
-      <div
-        className="w-full flex items-center justify-between"
-        style={{ paddingLeft: pad.left, paddingRight: pad.right }}
-      >
-        <div
-          className="relative pointer-events-auto"
-          onMouseEnter={() => setShowTip(true)}
-          onMouseLeave={() => {
-            setShowTip(false);
-            setTipX(null);
-          }}
-          onMouseMove={(e) => {
-            if (!assistantLocked) return;
-            const target = e.currentTarget.querySelector("button") as HTMLButtonElement | null;
-            if (!target) return;
-            const rect = target.getBoundingClientRect();
-            setTipX(e.clientX - rect.left);
-          }}
-        >
+      <div className="relative w-full" style={{ height: Math.max(btnH, 48) }}>
+        <div className="absolute bottom-0 pointer-events-auto" style={{ left: pad.left }}>
           <button
+            type="button"
             onClick={assistantLocked ? undefined : onAssistantOpen}
             className={assistantBtnClass}
             aria-label="Open assistant"
@@ -78,53 +74,60 @@ export default function FloatingBar({
           >
             <Bot size={18} aria-hidden />
             <span className="text-sm font-medium hidden md:inline">Assistant</span>
-
-            {assistantLocked && (
-              <Lock size={14} className="hidden md:inline-block ml-1 opacity-90" aria-hidden />
-            )}
-
-            {assistantLocked && (
-              <span
-                className="
-                  md:hidden
-                  absolute -top-0.5 -right-0.5 translate-x-1/2 -translate-y-1/2
-                  w-5 h-5 rounded-full bg-card
-                  border border-app
-                  flex items-center justify-center
-                  shadow-sm
-                "
-                aria-hidden
-              >
-                <Lock size={11} className="opacity-90" />
-              </span>
-            )}
+            {assistantLocked && <Lock size={14} className="hidden md:inline-block ml-1 opacity-90" aria-hidden />}
           </button>
-
-          {assistantLocked && showTip && tipX !== null && (
-            <div
-              className="absolute bottom-full mb-2 pointer-events-none transition-opacity duration-150"
-              style={{ left: tipX, transform: "translateX(-50%)" }}
-            >
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-card border border-app text-app shadow whitespace-nowrap">
-                Coming soon
-              </span>
-              <div
-                className="mx-auto h-0 w-0 border-x-4 border-x-transparent border-t-4"
-                style={{ borderTopColor: "var(--card)" }}
-              />
-            </div>
-          )}
         </div>
 
-        <button
-          onClick={onMessagesOpen}
-          className={`${btnCommon} pointer-events-auto`}
-          aria-label="Open messages"
-          title="Open messages"
-        >
-          <MessageSquare size={18} />
-          <span className="text-sm font-medium hidden md:inline">Messages</span>
-        </button>
+        <div className="absolute bottom-0 pointer-events-auto" style={{ right: pad.right }}>
+          <button
+            ref={msgBtnRef}
+            type="button"
+            onClick={() => setMsgOpen((v) => !v)}
+            className={btnCommon}
+            aria-label={msgOpen ? "Close messages" : "Open messages"}
+            title={msgOpen ? "Close messages" : "Open messages"}
+            style={{
+              willChange: "width,height",
+              width: btnW,
+              height: btnH,
+              borderRadius: btnRadius,
+              padding: btnPadding,
+              transition:
+                "width 300ms cubic-bezier(0.22,1,0.36,1), height 300ms cubic-bezier(0.22,1,0.36,1), border-radius 300ms ease, padding 200ms ease",
+              overflow: "hidden",
+            }}
+          >
+            {!msgOpen ? (
+              <div className="flex h-full items-center justify-center gap-2 px-1">
+                <MessageSquare size={18} />
+                <span className="text-sm font-medium hidden md:inline">Messages</span>
+              </div>
+            ) : (
+              <div className="flex h-full w-full flex-col">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-app">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <MessageSquare size={16} />
+                    <span>Messages</span>
+                  </div>
+                  <div className="shrink-0">
+                    <span className="sr-only">Close messages</span>
+                    <X
+                      size={18}
+                      className="p-1 rounded-full hover:bg-elevated cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMsgOpen(false);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto">{messagesContent}</div>
+                </div>
+              </div>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

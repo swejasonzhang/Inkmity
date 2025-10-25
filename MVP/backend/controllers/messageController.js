@@ -1,29 +1,98 @@
 import Message from "../models/Message.js";
 import User from "../models/UserBase.js";
+import { getIO, userRoom, threadRoom } from "../services/socketService.js";
+
+const MAX_DECLINES = 3;
+
+async function latestRequestBetween(a, b) {
+  return Message.findOne({
+    type: "request",
+    $or: [
+      { senderId: a, receiverId: b },
+      { senderId: b, receiverId: a },
+    ],
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+async function declineCount(clientId, artistId) {
+  return Message.countDocuments({
+    type: "request",
+    requestStatus: "declined",
+    senderId: clientId,
+    receiverId: artistId,
+  });
+}
 
 export const getAllMessagesForUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const messages = await Message.find({
+    const chats = await Message.find({
+      type: "message",
       $or: [{ senderId: userId }, { receiverId: userId }],
-    }).sort({ createdAt: 1 });
+    })
+      .sort({ createdAt: 1 })
+      .lean();
 
-    const conversationsMap = {};
-    for (const m of messages) {
-      const participantId = m.senderId === userId ? m.receiverId : m.senderId;
-      if (!conversationsMap[participantId])
-        conversationsMap[participantId] = [];
-      conversationsMap[participantId].push({
+    const buckets = new Map();
+
+    for (const m of chats) {
+      const pid = m.senderId === userId ? m.receiverId : m.senderId;
+      if (!buckets.has(pid)) buckets.set(pid, { messages: [] });
+      buckets.get(pid).messages.push({
         senderId: m.senderId,
         receiverId: m.receiverId,
         text: m.text,
-        timestamp: m.createdAt.getTime(),
+        timestamp: new Date(m.createdAt).getTime(),
         meta: m.meta || undefined,
       });
     }
 
-    const participantIds = Object.keys(conversationsMap);
+    const reqs = await Message.aggregate([
+      {
+        $match: {
+          type: "request",
+          $or: [{ senderId: userId }, { receiverId: userId }],
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: { a: "$senderId", b: "$receiverId" },
+          doc: { $first: "$$ROOT" },
+        },
+      },
+    ]);
+
+    for (const r of reqs) {
+      const doc = r.doc;
+      if (doc.requestStatus !== "pending" && doc.requestStatus !== "accepted")
+        continue;
+      const pid = doc.senderId === userId ? doc.receiverId : doc.senderId;
+      if (!buckets.has(pid)) buckets.set(pid, { messages: [] });
+      const arr = buckets.get(pid).messages;
+      const ts = new Date(doc.createdAt).getTime();
+      const exists = arr.some(
+        (m) => m.meta?.kind === "request" && m.timestamp === ts
+      );
+      if (!exists) {
+        arr.unshift({
+          senderId: doc.senderId,
+          receiverId: doc.receiverId,
+          text: doc.text,
+          timestamp: ts,
+          meta: {
+            ...(doc.meta || {}),
+            kind: "request",
+            status: doc.requestStatus,
+          },
+        });
+      }
+    }
+
+    const participantIds = [...buckets.keys()];
     const users = await User.find({ clerkId: { $in: participantIds } }).select(
       "clerkId username"
     );
@@ -31,14 +100,41 @@ export const getAllMessagesForUser = async (req, res) => {
       users.map((u) => [u.clerkId, { username: u.username }])
     );
 
-    const conversations = participantIds.map((pid) => ({
-      participantId: pid,
-      username: userMap[pid]?.username || "Unknown",
-      messages: conversationsMap[pid],
-    }));
+    const convs = [];
+    for (const pid of participantIds) {
+      const lastReq = await latestRequestBetween(userId, pid);
+      let declines = 0;
+      let lastStatus = null;
+      let allowed = false;
+      let blocked = false;
 
-    res.status(200).json(conversations);
-  } catch (err) {
+      if (lastReq) {
+        lastStatus = lastReq.requestStatus || null;
+        const clientId = lastReq.senderId;
+        const artistId = lastReq.receiverId;
+        declines = await declineCount(clientId, artistId);
+        blocked = declines >= MAX_DECLINES;
+        allowed = lastStatus === "accepted";
+      }
+
+      if (blocked) continue;
+
+      convs.push({
+        participantId: pid,
+        username: userMap[pid]?.username || "Unknown",
+        messages: buckets.get(pid).messages,
+        meta: { allowed, lastStatus, declines, blocked },
+      });
+    }
+
+    convs.sort((a, b) => {
+      const at = a.messages[a.messages.length - 1]?.timestamp || 0;
+      const bt = b.messages[b.messages.length - 1]?.timestamp || 0;
+      return at - bt;
+    });
+
+    res.status(200).json(convs);
+  } catch {
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 };
@@ -64,10 +160,26 @@ export const createMessage = async (req, res) => {
     if (bodySenderId && bodySenderId !== authSenderId)
       return res.status(403).json({ error: "Forbidden" });
 
+    const accepted =
+      (await Message.exists({
+        type: "request",
+        requestStatus: "accepted",
+        senderId: authSenderId,
+        receiverId: String(receiverId),
+      })) ||
+      (await Message.exists({
+        type: "request",
+        requestStatus: "accepted",
+        senderId: String(receiverId),
+        receiverId: authSenderId,
+      }));
+    if (!accepted) return res.status(403).json({ error: "not_allowed" });
+
     const msg = await Message.create({
       senderId: authSenderId,
       receiverId: String(receiverId),
       text,
+      type: "message",
       meta: {
         budgetCents: Number.isFinite(budgetCents) ? budgetCents : undefined,
         style: style || undefined,
@@ -76,14 +188,24 @@ export const createMessage = async (req, res) => {
       },
     });
 
-    res.status(201).json({
+    const payload = {
       senderId: msg.senderId,
       receiverId: msg.receiverId,
       text: msg.text,
       timestamp: msg.createdAt.getTime(),
       meta: msg.meta || undefined,
-    });
-  } catch (err) {
+    };
+
+    const io = getIO();
+    if (io) {
+      io.to(userRoom(msg.senderId))
+        .to(userRoom(msg.receiverId))
+        .to(threadRoom(msg.threadKey))
+        .emit("message:new", { convoId: msg.threadKey, message: payload });
+    }
+
+    res.status(201).json(payload);
+  } catch {
     res.status(500).json({ error: "Failed to create message" });
   }
 };
@@ -99,6 +221,7 @@ export const deleteConversationForUser = async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
 
     const { deletedCount } = await Message.deleteMany({
+      type: "message",
       $or: [
         { senderId: userId, receiverId: participantId },
         { senderId: participantId, receiverId: userId },
@@ -106,7 +229,190 @@ export const deleteConversationForUser = async (req, res) => {
     });
 
     res.status(200).json({ ok: true, deletedCount, userId, participantId });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to delete conversation" });
+  }
+};
+
+export const createMessageRequest = async (req, res) => {
+  try {
+    const clientId = String(req.user?.clerkId || req.auth?.userId || "");
+    const { artistId, text, meta = {} } = req.body || {};
+    if (!clientId || !artistId || !text)
+      return res.status(400).json({ error: "missing_fields" });
+
+    const accepted = await Message.exists({
+      type: "request",
+      requestStatus: "accepted",
+      senderId: clientId,
+      receiverId: artistId,
+    });
+    if (accepted) return res.status(409).json({ error: "already_accepted" });
+
+    const declines = await declineCount(clientId, artistId);
+    if (declines >= MAX_DECLINES)
+      return res.status(403).json({ error: "blocked_by_declines" });
+
+    const pending = await Message.exists({
+      type: "request",
+      requestStatus: "pending",
+      senderId: clientId,
+      receiverId: artistId,
+    });
+    if (pending) return res.status(409).json({ error: "already_pending" });
+
+    const reqMsg = await Message.create({
+      senderId: clientId,
+      receiverId: artistId,
+      text,
+      type: "request",
+      requestStatus: "pending",
+      meta,
+    });
+
+    const io = getIO();
+    if (io) {
+      const initialMessage = {
+        senderId: reqMsg.senderId,
+        receiverId: reqMsg.receiverId,
+        text: reqMsg.text,
+        timestamp: reqMsg.createdAt.getTime(),
+        meta: { ...(reqMsg.meta || {}), kind: "request", status: "pending" },
+      };
+      io.to(userRoom(artistId)).emit("conversation:pending", {
+        convoId: reqMsg.threadKey,
+        from: clientId,
+        to: artistId,
+        requestId: String(reqMsg._id),
+        text,
+        createdAt: reqMsg.createdAt.toISOString(),
+        message: initialMessage,
+      });
+      io.to(userRoom(clientId)).emit("message:new", {
+        convoId: reqMsg.threadKey,
+        message: initialMessage,
+      });
+    }
+
+    res.json({ ok: true, requestId: reqMsg._id });
+  } catch {
+    res.status(500).json({ error: "Failed to create request" });
+  }
+};
+
+export const listIncomingRequests = async (req, res) => {
+  try {
+    const artistId = String(req.user?.clerkId || req.auth?.userId || "");
+    const items = await Message.find({
+      type: "request",
+      receiverId: artistId,
+      requestStatus: "pending",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({ requests: items });
+  } catch {
+    res.status(500).json({ error: "Failed to list requests" });
+  }
+};
+
+export const acceptMessageRequest = async (req, res) => {
+  try {
+    const artistId = String(req.user?.clerkId || req.auth?.userId || "");
+    const msg = await Message.findOne({
+      _id: req.params.id,
+      receiverId: artistId,
+      type: "request",
+    });
+    if (!msg) return res.status(404).json({ error: "not_found" });
+
+    msg.requestStatus = "accepted";
+    await msg.save();
+
+    const io = getIO();
+    if (io) {
+      io.to(userRoom(msg.senderId))
+        .to(userRoom(msg.receiverId))
+        .to(threadRoom(msg.threadKey))
+        .emit("conversation:accepted", {
+          convoId: msg.threadKey,
+          clientId: msg.senderId,
+          artistId: msg.receiverId,
+          request: { timestamp: msg.createdAt.getTime(), status: "accepted" },
+        });
+    }
+
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Failed to accept request" });
+  }
+};
+
+export const declineMessageRequest = async (req, res) => {
+  try {
+    const artistId = String(req.user?.clerkId || req.auth?.userId || "");
+    const msg = await Message.findOne({
+      _id: req.params.id,
+      receiverId: artistId,
+      type: "request",
+    });
+    if (!msg) return res.status(404).json({ error: "not_found" });
+
+    msg.requestStatus = "declined";
+    await msg.save();
+
+    const declines = await declineCount(msg.senderId, artistId);
+    const blocked = declines >= MAX_DECLINES;
+
+    const io = getIO();
+    if (io) {
+      io.to(userRoom(msg.senderId)).emit("conversation:declined", {
+        convoId: msg.threadKey,
+        declines,
+        blocked,
+        remainingRequests: Math.max(0, MAX_DECLINES - declines),
+      });
+      io.to(userRoom(msg.senderId))
+        .to(userRoom(artistId))
+        .to(threadRoom(msg.threadKey))
+        .emit("conversation:removed", { convoId: msg.threadKey });
+    }
+
+    res.json({ ok: true, declines, blocked });
+  } catch {
+    res.status(500).json({ error: "Failed to decline request" });
+  }
+};
+
+export const getGateStatus = async (req, res) => {
+  try {
+    const clientId = String(req.user?.clerkId || req.auth?.userId || "");
+    const { artistId } = req.params;
+
+    const accepted = await Message.exists({
+      type: "request",
+      requestStatus: "accepted",
+      senderId: clientId,
+      receiverId: artistId,
+    });
+
+    const lastReq = await Message.findOne({
+      type: "request",
+      senderId: clientId,
+      receiverId: artistId,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const declines = await declineCount(clientId, artistId);
+
+    res.json({
+      allowed: !!accepted,
+      lastStatus: lastReq?.requestStatus || null,
+      declines,
+      blocked: declines >= MAX_DECLINES,
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch gate status" });
   }
 };
