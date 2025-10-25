@@ -53,9 +53,10 @@ export default function FloatingBar({
     "bg-app text-card inline-flex items-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
 
   const assistantBtnClass = [btnCommon, "px-3 md:px-4 py-3"].join(" ");
+  
+  const btnW = msgOpen ? (isMdUp ? 720 : 520) : 140;
+  const btnH = msgOpen ? (isMdUp ? 820 : 640) : 48;
 
-  const btnW = msgOpen ? (isMdUp ? 520 : 360) : 140;
-  const btnH = msgOpen ? (isMdUp ? 520 : 420) : 48;
   const btnRadius = msgOpen ? 16 : 9999;
   const btnPadding = msgOpen ? "0px" : "0.75rem 1rem";
 

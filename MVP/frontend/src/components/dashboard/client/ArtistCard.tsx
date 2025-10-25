@@ -15,6 +15,7 @@ interface Artist {
   coverImage?: string;
   images?: string[];
   pastWorks?: string[];
+  healedWorks?: string[];
   sketches?: string[];
   clerkId?: string;
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
@@ -23,7 +24,7 @@ interface Artist {
 
 interface ArtistCardProps {
   artist: Artist;
-  onClick?: (artistWithGroups: Artist & { pastWorks: string[]; sketches: string[] }) => void;
+  onClick?: (artistWithGroups: Artist & { pastWorks: string[]; healedWorks: string[]; sketches: string[] }) => void;
   onUpdateProfileImage?: (file: File, artist: Artist) => void;
   onUpdateCoverImage?: (file: File, artist: Artist) => void;
   onMessage?: (
@@ -32,6 +33,7 @@ interface ArtistCardProps {
       username: string;
       bio?: string;
       pastWorks: string[];
+      healedWorks?: string[];
       sketches?: string[];
       clerkId?: string;
     },
@@ -75,6 +77,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
 
   const pastWorks = artist.pastWorks?.length ? artist.pastWorks : allImages.filter((_, i) => i % 2 === 0);
   const sketches = artist.sketches?.length ? artist.sketches : allImages.filter((_, i) => i % 2 === 1);
+  const healedWorks = artist.healedWorks?.length ? artist.healedWorks : allImages.filter((_, i) => i % 3 === 2);
   const highlights = allImages.slice(0, 3);
 
   const avatarSrc = avatarOk ? artist.profileImage : undefined;
@@ -153,6 +156,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
     onClick?.({
       ...artist,
       pastWorks,
+      healedWorks,
       sketches,
     });
   };

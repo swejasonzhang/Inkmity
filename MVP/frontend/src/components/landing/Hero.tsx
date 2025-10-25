@@ -54,39 +54,17 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp }) => {
                     confidence.
                 </m.p>
 
-                <m.div
-                    variants={textFadeUp}
-                    className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
-                >
+                <m.div variants={textFadeUp} className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                     <Link
                         to="/signup"
-                        className="
-              inline-flex items-center justify-center
-              rounded-xl px-5 sm:px-6 py-3
-              font-semibold
-              bg-white text-black
-              hover:opacity-95 active:scale-[0.99]
-              border border-app shadow-sm
-              transition
-              focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]
-              dark:bg-white dark:text-black
-            "
+                        className="inline-flex items-center justify-center rounded-xl px-5 sm:px-6 py-3 font-semibold bg-white text-black hover:opacity-95 active:scale-[0.99] border border-app shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[color:var(--border)] dark:bg-white dark:text-black"
                     >
                         Sign Up
                     </Link>
 
                     <Link
                         to="/login"
-                        className="
-              inline-flex items-center justify-center
-              rounded-xl px-5 sm:px-6 py-3
-              font-semibold
-              bg-elevated text-app
-              hover:bg-elevated/90 active:scale-[0.99]
-              border border-app
-              transition
-              focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]
-            "
+                        className="inline-flex items-center justify-center rounded-xl px-5 sm:px-6 py-3 font-semibold text-app hover:opacity-95 active:scale-[0.99] border border-app transition focus:outline-none focus:ring-2 focus:ring-[color:var(--border)] bg-card"
                     >
                         Already have an account?
                     </Link>

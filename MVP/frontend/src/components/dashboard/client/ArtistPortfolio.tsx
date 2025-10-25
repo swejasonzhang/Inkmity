@@ -11,6 +11,7 @@ export type ArtistWithGroups = {
     username: string;
     bio?: string;
     pastWorks?: string[];
+    healedWorks?: string[];
     sketches?: string[];
     avatarUrl?: string;
 };
@@ -25,19 +26,20 @@ export type PortfolioProps = {
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep }) => {
     const prefersReducedMotion = useReducedMotion();
     const past = useMemo(() => artist?.pastWorks ?? [], [artist]);
+    const healed = useMemo(() => artist?.healedWorks ?? [], [artist]);
     const sketches = useMemo(() => artist?.sketches ?? [], [artist]);
     const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
-    const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Upcoming Sketches" }>(null);
+    const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }>(null);
 
-    const openZoom = (items: string[], index: number, label: "Past Works" | "Upcoming Sketches") => setZoom({ items, index, label });
+    const openZoom = (items: string[], index: number, label: "Past Works" | "Healed Works" | "Upcoming Sketches") => setZoom({ items, index, label });
     const closeZoom = () => setZoom(null);
     const goPrev = () => setZoom((z) => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
     const goNext = () => setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
 
-    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => (
+    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => (
         <div className="w-full hidden sm:flex justify-center">
             <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
-                {images.map((src, i) => (
+                {images.slice(0, 6).map((src, i) => (
                     <button
                         key={`${src}-${i}`}
                         onClick={() => openZoom(images, i, label)}
@@ -69,18 +71,13 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
         </div>
     );
 
-    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
+    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
         const [index, setIndex] = useState(0);
-        const swipeTo = (dir: "prev" | "next") => {
-            setIndex((i) => {
-                if (dir === "prev") return (i + images.length - 1) % images.length;
-                return (i + 1) % images.length;
-            });
-        };
+        const swipeTo = (dir: "prev" | "next") => setIndex((i) => (dir === "prev" ? (i + images.length - 1) % images.length : (i + 1) % images.length));
         const onDragEnd = (_: any, info: { offset: { x: number } }) => {
-            const threshold = 50;
-            if (info.offset.x < -threshold) swipeTo("next");
-            else if (info.offset.x > threshold) swipeTo("prev");
+            const t = 50;
+            if (info.offset.x < -t) swipeTo("next");
+            else if (info.offset.x > t) swipeTo("prev");
         };
         if (!images.length) return null;
         const src = images[index];
@@ -117,8 +114,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                     aria-label={`Go to ${label} ${i + 1}`}
                                     className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
                                     style={{
-                                        background:
-                                            i === index ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                        background: i === index ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)",
                                     }}
                                 />
                             ))}
@@ -173,9 +169,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                             onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
                                             aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
                                             className="h-2.5 w-6 rounded-full transition-all"
-                                            style={{
-                                                background: i === 0 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)",
-                                            }}
+                                            style={{ background: i === 0 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
                                         />
                                     ))}
                                 </div>
@@ -243,7 +237,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                 <section className="w-full -mt-2">
                     <div className="mx-auto max-w-4xl text-center px-4">
                         <p className="text-lg sm:text-xl font-bold leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>
-                            View the gallery below and click any image to zoom. Press &amp; hold while zoomed for a powerful “microscope” magnification.
+                            View the gallery below and click any image to zoom. Press and hold while zoomed for magnification.
                         </p>
                     </div>
                 </section>
@@ -255,9 +249,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                             {past.length ? `${past.length} image${past.length === 1 ? "" : "s"}` : "—"}
                         </span>
                     </header>
-
                     <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
-
                     {past.length ? (
                         <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
                     ) : (
@@ -267,15 +259,27 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                     )}
                 </section>
 
+                {healed.length > 0 && (
+                    <section className="w-full">
+                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                            <h3 className="text-base sm:text-lg font-semibold">Healed Works</h3>
+                            <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                                {healed.length} image{healed.length === 1 ? "" : "s"}
+                            </span>
+                        </header>
+                        <MobileCarousel images={healed} imgAltPrefix="Healed work" label="Healed Works" />
+                        <ImageGrid images={healed} imgAltPrefix="Healed work" label="Healed Works" />
+                    </section>
+                )}
+
                 {sketches.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex itemsend justify-between">
+                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
                             <h3 className="text-base sm:text-lg font-semibold">Upcoming Sketches & Ideas</h3>
                             <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                                 {sketches.length} image{sketches.length === 1 ? "" : "s"}
                             </span>
                         </header>
-
                         <MobileCarousel images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
                         <ImageGrid images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
                     </section>

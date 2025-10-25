@@ -16,21 +16,52 @@ type BookingProps = {
   onGoToStep?: (step: 0 | 1 | 2) => void;
 };
 
+type Gate = {
+  allowed: boolean;
+  lastStatus: "pending" | "accepted" | "declined" | null;
+  declines: number;
+  blocked: boolean;
+};
+
 export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: BookingProps) {
   const prefersReducedMotion = useReducedMotion();
   const { request } = useApi();
+  const apiOrigin =
+    (import.meta as any)?.env?.VITE_API_URL ||
+    import.meta.env?.VITE_API_URL ||
+    "http://localhost:5005";
 
   const preloadedMessage = useMemo(
     () => `Hi ${artist.username}, I've taken a look at your work and I'm interested!\nWould you be open to my ideas?`,
     [artist.username]
   );
+
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [gate, setGate] = useState<Gate | null>(null);
   const sentRef = useRef(false);
 
   useEffect(() => {
-    console.log("[ArtistBooking] artist", artist);
-  }, [artist]);
+    let alive = true;
+    async function loadGate() {
+      try {
+        const g = await request(`${apiOrigin}/messages/gate/${artist.clerkId}`, { method: "GET" });
+        if (alive) setGate(g as Gate);
+        if ((g as Gate)?.lastStatus === "pending" && !(g as Gate)?.allowed) {
+          sentRef.current = true;
+          setStatus("sent");
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (artist?.clerkId) loadGate();
+    return () => {
+      alive = false;
+    };
+  }, [artist?.clerkId, apiOrigin, request]);
+
+  const isPending = (gate?.lastStatus === "pending" && !gate?.allowed) || status === "sent";
 
   const startOfToday = useMemo(() => {
     const d = new Date();
@@ -70,22 +101,31 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     setErrorMsg("");
     try {
       const payload = { artistId: artist.clerkId, text: preloadedMessage, meta: {} };
-      console.log("[ArtistBooking] sending request", payload);
-
-      const data: any = await request("/messages/request", {
+      const res: any = await request(`${apiOrigin}/messages/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload),
       });
 
-      console.log("[ArtistBooking] request sent", { requestId: data?.requestId, artistId: artist.clerkId });
+      const ok = typeof res?.ok === "boolean" ? res.ok : true;
+      if (!ok) throw Object.assign(new Error(res?.error || `HTTP ${res?.status || 500}`), { status: res?.status });
 
       sentRef.current = true;
       setStatus("sent");
+      setGate((g) => ({ ...(g || { allowed: false, declines: 0, blocked: false, lastStatus: "pending" }), lastStatus: "pending" }));
       addPending();
       openMessages();
       onClose?.();
     } catch (err: any) {
+      if (err?.status === 409 || /already_pending/i.test(err?.message)) {
+        sentRef.current = true;
+        setStatus("sent");
+        setGate((g) => ({ ...(g || { allowed: false, declines: 0, blocked: false, lastStatus: "pending" }), lastStatus: "pending" }));
+        addPending();
+        openMessages();
+        onClose?.();
+        return;
+      }
       setStatus("error");
       setErrorMsg(err?.message || "Failed to send message.");
     }
@@ -185,16 +225,16 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                 </div>
               )}
               <span className="sr-only" aria-live="polite">
-                {status === "sending" ? "Sending request" : status === "sent" ? "Request sent" : ""}
+                {status === "sending" ? "Sending request" : isPending ? "Request pending" : ""}
               </span>
               <Button
                 type="button"
                 onClick={handleSendMessage}
-                disabled={status === "sending" || status === "sent"}
+                disabled={status === "sending" || isPending}
                 className="transition w-full sm:w-auto border-0"
                 style={{ background: "var(--elevated)", color: "var(--fg)" }}
               >
-                {status === "sending" ? "Sending..." : status === "sent" ? "Request Sent" : "Send Request"}
+                {status === "sending" ? "Sending..." : isPending ? "Request Pending" : "Send Request"}
               </Button>
             </div>
           </CardContent>
