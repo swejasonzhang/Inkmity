@@ -94,7 +94,9 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       setConversations((prev) => {
         const map = new Map(prev.map((c) => [c.participantId, c]));
         map.set(pid, apply(map.get(pid)));
-        return Array.from(map.values());
+        const out = Array.from(map.values());
+        console.log("useMessaging: conversations updated", out);
+        return out;
       });
     },
     []
@@ -143,6 +145,8 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       .filter((c) => !metaMap[c.participantId]?.blocked)
       .map((c) => ({ ...c, meta: metaMap[c.participantId] }));
     setConversations(nextConvs);
+    console.log("useMessaging: fetched conversations", nextConvs);
+
     setUnreadMap((m) => {
       const next = { ...m };
       nextConvs.forEach((c) => {
@@ -241,6 +245,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
           [pid]: Math.max(0, map[pid] || 0) + 1,
         }));
       }
+      console.log("useMessaging: new message event", p);
     };
 
     const onPending = (p: {
@@ -277,6 +282,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
           },
         };
       });
+      console.log("useMessaging: conversation pending", p);
     };
 
     const onAccepted = (p: {
@@ -306,10 +312,12 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
           },
         };
       });
+      console.log("useMessaging: conversation accepted", p);
     };
 
     const onRemoved = () => {
       fetchAll();
+      console.log("useMessaging: conversation removed -> refetch");
     };
 
     s.on("connect", onConnect);
