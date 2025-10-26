@@ -42,6 +42,18 @@ function apiUrl(path: string, qs?: Record<string, string>) {
 
 type TipState = { show: boolean; x: number; y: number };
 
+function makeUsername(first: string, last: string) {
+  const norm = (s: string) =>
+    s
+      .trim()
+      .split(/\s+/)
+      .map((w) => w.toLowerCase().replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/-([a-z])/g, (_, c) => "-" + c.toUpperCase()))
+      .join(" ");
+  const f = norm(first);
+  const l = norm(last);
+  return [f, l].filter(Boolean).join(" ").trim();
+}
+
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
@@ -59,6 +71,8 @@ export default function SignUp() {
     portfolio: "",
     styles: [],
   });
+  const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
+  const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", ""]);
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
   const [loading, setLoading] = useState(false);
@@ -82,11 +96,8 @@ export default function SignUp() {
     const mm = (e: MouseEvent) => {
       const t = e.target as Element | null;
       const anchor = t?.closest('a[href="/dashboard"]');
-      if (anchor) {
-        setTip({ show: true, x: e.clientX, y: e.clientY });
-      } else {
-        setTip((prev) => (prev.show ? { ...prev, show: false } : prev));
-      }
+      if (anchor) setTip({ show: true, x: e.clientX, y: e.clientY });
+      else setTip((prev) => (prev.show ? { ...prev, show: false } : prev));
     };
     const click = (e: MouseEvent) => {
       const t = e.target as Element | null;
@@ -185,10 +196,7 @@ export default function SignUp() {
   const handleArtist = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === "stylesCSV") {
-      const arr = value
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const arr = value.split(",").map((s) => s.trim()).filter(Boolean);
       setArtist((prev) => ({ ...prev, styles: arr }));
     } else {
       setArtist((prev) => ({ ...prev, [name]: value }));
@@ -211,19 +219,22 @@ export default function SignUp() {
     Array.isArray(artist.styles) &&
     artist.styles.length >= 1;
 
-  const slides = useMemo(() => {
-    if (role === "client") {
-      return [
-        { key: "role", valid: allSharedValid },
-        { key: "client-1", valid: allClientValid },
-        { key: "review", valid: allSharedValid && allClientValid },
-      ] as const;
-    }
-    return [
-      { key: "role", valid: allSharedValid },
-      { key: "artist-1", valid: allArtistValid },
-      { key: "review", valid: allSharedValid && allArtistValid },
-    ] as const;
+  const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
+    const core =
+      role === "client"
+        ? [
+          { key: "role", valid: allSharedValid },
+          { key: "client-1", valid: allClientValid },
+          { key: "upload", valid: true },
+          { key: "review", valid: allSharedValid && allClientValid },
+        ]
+        : [
+          { key: "role", valid: allSharedValid },
+          { key: "artist-1", valid: allArtistValid },
+          { key: "upload", valid: true },
+          { key: "review", valid: allSharedValid && allArtistValid },
+        ];
+    return core;
   }, [role, allSharedValid, allClientValid, allArtistValid]);
 
   const isLastFormSlide = step === slides.length - 1;
@@ -234,12 +245,7 @@ export default function SignUp() {
   };
 
   const toastAndRedirectToLogin = () => {
-    toast.error(
-      <span>
-        This email is already registered. Redirecting to <a className="underline" href="/login">Login</a>…
-      </span>,
-      { position: "top-center", theme: "dark" }
-    );
+    toast.error(<span>This email is already registered. Redirecting to <a className="underline" href="/login">Login</a>…</span>, { position: "top-center", theme: "dark" });
     const loginUrl = "/login";
     setTimeout(() => {
       window.location.href = loginUrl;
@@ -284,10 +290,15 @@ export default function SignUp() {
       if (isSignedIn) {
         await signOut();
       }
+      const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
+      const username = makeUsername(shared.firstName, shared.lastName);
       const attempt = await signUp.create({
         emailAddress: shared.email,
         password: shared.password,
-        publicMetadata: { role, firstName: shared.firstName, lastName: shared.lastName, profile: role === "client" ? client : artist },
+        username,
+        firstName: username.split(" ")[0] || "",
+        lastName: username.split(" ").slice(1).join(" ") || "",
+        publicMetadata: { role, username, firstName: shared.firstName, lastName: shared.lastName, profile },
       } as any);
       setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
       setAwaitingCode(true);
@@ -325,7 +336,6 @@ export default function SignUp() {
       toast.error("Account session is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
       return;
     }
-
     setLoading(true);
     try {
       const result = await signUpAttempt.attemptEmailAddressVerification({ code: code.trim() });
@@ -339,12 +349,16 @@ export default function SignUp() {
       }
       toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
       triggerMascotError();
-      try { await signOut(); } catch { }
+      try {
+        await signOut();
+      } catch { }
     } catch (err: any) {
       const msg = err?.errors?.[0]?.message || err?.message || "An unexpected error occurred";
       toast.error(msg, { position: "top-center", theme: "dark" });
       triggerMascotError();
-      try { await signOut(); } catch { }
+      try {
+        await signOut();
+      } catch { }
     } finally {
       setLoading(false);
     }
@@ -430,6 +444,10 @@ export default function SignUp() {
                   onEmailBlur={onEmailBlur}
                   emailTaken={emailTaken}
                   className=""
+                  clientRefs={clientRefs}
+                  setClientRefs={setClientRefs}
+                  artistPortfolioImgs={artistPortfolioImgs}
+                  setArtistPortfolioImgs={setArtistPortfolioImgs}
                 />
               </motion.div>
             </div>
@@ -448,7 +466,7 @@ export default function SignUp() {
         toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
         style={{ top: toastTop !== undefined ? toastTop : 12 }}
       />
-      {(!isSignedIn && tip.show) && (
+      {!isSignedIn && tip.show && (
         <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
           <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
             <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />

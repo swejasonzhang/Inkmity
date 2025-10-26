@@ -9,6 +9,7 @@ import ClientDetailsStep from "@/components/access/ClientDetailsStep";
 import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
 import ReviewStep from "@/components/access/ReviewStep";
 import OtpStep from "@/components/access/OtpStep";
+import SignupUpload from "@/components/upload/SignupUpload";
 
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
@@ -49,6 +50,10 @@ type SignupProps = BaseProps & {
   onVerify: () => void;
   onEmailBlur?: () => void;
   emailTaken?: boolean;
+  clientRefs: string[];
+  setClientRefs: (v: string[]) => void;
+  artistPortfolioImgs: string[];
+  setArtistPortfolioImgs: (v: string[]) => void;
 };
 
 type LoginProps = BaseProps & { mode: "login" };
@@ -63,6 +68,8 @@ export default function FormCard(props: Props) {
     (isSignup ? "A few quick steps to personalize your experience." : "Login to continue exploring artists, styles, and your tattoo journey.");
   const isRoleSlide = isSignup && (props as SignupProps).slides[(props as SignupProps).step].key === "role";
   const disableNextForEmail = isRoleSlide && (props as SignupProps).emailTaken;
+  const totalSteps = isSignup ? (props as SignupProps).slides.length + 1 : 0;
+  const currentIndex = isSignup ? ((props as SignupProps).awaitingCode ? (props as SignupProps).slides.length : (props as SignupProps).step) : 0;
 
   return (
     <div className={`relative md:-ml-px max-w-5xl h-full min-h-0 ${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} ${className ?? ""}`}>
@@ -84,7 +91,7 @@ export default function FormCard(props: Props) {
           {isSignup ? (
             <>
               <div className="mb-5 sm:mb-6">
-                <ProgressDots total={(props as SignupProps).slides.length} current={(props as SignupProps).step} showVerify={(props as SignupProps).awaitingCode} />
+                <ProgressDots total={totalSteps} current={currentIndex} showVerify={(props as SignupProps).awaitingCode} />
               </div>
 
               <motion.div variants={shake} animate={hasError ? "error" : "idle"} className="relative h-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain">
@@ -117,6 +124,24 @@ export default function FormCard(props: Props) {
                           <ArtistDetailsStep artist={(props as SignupProps).artist} onChange={(props as SignupProps).onArtistChange} />
                         )}
 
+                        {(props as SignupProps).slides[(props as SignupProps).step].key === "upload" && (
+                          (props as SignupProps).role === "client" ? (
+                            <SignupUpload
+                              label="Reference images (up to 3)"
+                              kind="client_ref"
+                              value={(props as SignupProps).clientRefs}
+                              onChange={(props as SignupProps).setClientRefs}
+                            />
+                          ) : (
+                            <SignupUpload
+                              label="Portfolio highlights (up to 3)"
+                              kind="artist_portfolio"
+                              value={(props as SignupProps).artistPortfolioImgs}
+                              onChange={(props as SignupProps).setArtistPortfolioImgs}
+                            />
+                          )
+                        )}
+
                         {(props as SignupProps).slides[(props as SignupProps).step].key === "review" && (
                           <ReviewStep role={(props as SignupProps).role} shared={(props as SignupProps).shared} client={(props as SignupProps).client} artist={(props as SignupProps).artist} />
                         )}
@@ -137,7 +162,7 @@ export default function FormCard(props: Props) {
                             type="button"
                             onClick={(props as SignupProps).onNext}
                             disabled={!!disableNextForEmail || (props as SignupProps).loading}
-                            className={`h-11 text-base rounded-xl sm:flex-1 ${disableNextForEmail ? "bg-white/10 text-white/40 cursor-not-allowed" : "bg-white/15 hover:bg-white/25 text-white"}`}
+                            className={`${disableNextForEmail ? "bg-white/10 text-white/40 cursor-not-allowed" : "bg-white/15 hover:bg-white/25 text-white"} h-11 text-base rounded-xl sm:flex-1`}
                           >
                             Next
                           </Button>
