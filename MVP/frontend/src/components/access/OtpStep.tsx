@@ -14,8 +14,9 @@ type Props = {
     code: string;
     setCode: (v: string) => void;
     onVerify: () => void;
+    onBack: () => void;
     loading: boolean;
-    initialExpirySec?: number;   
+    initialExpirySec?: number;
     initialCooldownSec?: number;
 };
 
@@ -23,6 +24,7 @@ export default function OtpStep({
     code,
     setCode,
     onVerify,
+    onBack,
     loading,
     initialExpirySec = 300,
     initialCooldownSec = 30,
@@ -46,9 +48,9 @@ export default function OtpStep({
     }, []);
 
     const handleResend = async () => {
-        if (!isLoaded || !signUp) return;
+        if (!isLoaded || !signUp || resending || cooldownLeft > 0) return;
+        setResending(true);
         try {
-            setResending(true);
             await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
             setSecsLeft(initialExpirySec);
             setCooldownLeft(initialCooldownSec);
@@ -77,13 +79,21 @@ export default function OtpStep({
                 <button
                     type="button"
                     onClick={handleResend}
-                    className="rounded-lg px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white"
+                    className="rounded-lg px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white disabled:opacity-50"
+                    disabled={resending || cooldownLeft > 0}
                 >
                     {resending ? "Sending…" : `Resend code${cooldownLeft > 0 ? ` (wait ${cooldownLeft}s)` : ""}`}
                 </button>
             </div>
 
             <div className="flex items-center gap-3 mt-2">
+                <button
+                    type="button"
+                    onClick={onBack}
+                    className="bg-white/10 hover:bg-white/20 text-white rounded-xl px-3 py-2 disabled:opacity-60"
+                >
+                    Back
+                </button>
                 <button
                     type="button"
                     onClick={onVerify}

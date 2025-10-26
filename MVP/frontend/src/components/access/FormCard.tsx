@@ -54,6 +54,7 @@ type SignupProps = BaseProps & {
   setClientRefs: (v: string[]) => void;
   artistPortfolioImgs: string[];
   setArtistPortfolioImgs: (v: string[]) => void;
+  onCancelVerification: () => void;
 };
 
 type LoginProps = BaseProps & { mode: "login" };
@@ -143,7 +144,14 @@ export default function FormCard(props: Props) {
                         )}
 
                         {(props as SignupProps).slides[(props as SignupProps).step].key === "review" && (
-                          <ReviewStep role={(props as SignupProps).role} shared={(props as SignupProps).shared} client={(props as SignupProps).client} artist={(props as SignupProps).artist} />
+                          <ReviewStep
+                            role={(props as SignupProps).role}
+                            shared={(props as SignupProps).shared}
+                            client={(props as SignupProps).client}
+                            artist={(props as SignupProps).artist}
+                            clientImages={(props as SignupProps).clientRefs}
+                            artistImages={(props as SignupProps).artistPortfolioImgs}
+                          />
                         )}
                       </div>
 
@@ -181,22 +189,23 @@ export default function FormCard(props: Props) {
                       </div>
                     </motion.div>
                   ) : (
-                    <motion.div key="otp" initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -40, opacity: 0 }} className="grid gap-6 min-w-0 break-words hyphens-auto">
+                    <motion.div
+                      key="otp"
+                      initial={{ x: 40, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -40, opacity: 0 }}
+                      className="grid gap-6 min-w-0 break-words hyphens-auto"
+                    >
                       <OtpStep
                         code={(props as SignupProps).code}
                         setCode={(props as SignupProps).setCode}
                         onVerify={(props as SignupProps).onVerify}
+                        onBack={() => {
+                          (props as SignupProps).setStep((props as SignupProps).slides.length - 1);
+                          (props as SignupProps).onCancelVerification();
+                        }}
                         loading={(props as SignupProps).loading || !(props as SignupProps).isLoaded}
                       />
-                      <div className="flex items-center gap-3">
-                        <Button
-                          type="button"
-                          onClick={(props as SignupProps).onBack}
-                          className="bg-white/10 hover:bg-white/20 text-white h-11 text-base rounded-xl"
-                        >
-                          Back
-                        </Button>
-                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
