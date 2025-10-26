@@ -4,6 +4,7 @@ import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
 import { useClerk, useSignUp, useUser } from "@clerk/clerk-react";
+import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
@@ -24,7 +25,6 @@ type ArtistProfile = {
   portfolio: string;
   styles: string[];
 };
-type SignUpAttempt = { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> } | null;
 type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
@@ -42,16 +42,24 @@ function apiUrl(path: string, qs?: Record<string, string>) {
 
 type TipState = { show: boolean; x: number; y: number };
 
-function makeUsername(first: string, last: string) {
-  const norm = (s: string) =>
-    s
-      .trim()
-      .split(/\s+/)
-      .map((w) => w.toLowerCase().replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/-([a-z])/g, (_, c) => "-" + c.toUpperCase()))
-      .join(" ");
-  const f = norm(first);
-  const l = norm(last);
-  return [f, l].filter(Boolean).join(" ").trim();
+function friendlyClerkMessage(code?: string, message?: string) {
+  if (!code && message) return message;
+  switch (code) {
+    case "too_many_requests":
+      return "Too many attempts. Try again shortly.";
+    case "identifier_already_exists":
+      return "This email is already registered.";
+    case "form_param_unknown":
+      return "One of the fields is not allowed. Please try again.";
+    case "invalid_password":
+      return "Password does not meet the requirements.";
+    case "form_code_incorrect":
+      return "Incorrect code. Check your email and try again.";
+    case "form_code_expired":
+      return "Code expired. Request a new one.";
+    default:
+      return message || "Something went wrong. Please try again.";
+  }
 }
 
 export default function SignUp() {
@@ -74,7 +82,7 @@ export default function SignUp() {
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
   const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", ""]);
   const [awaitingCode, setAwaitingCode] = useState(false);
-  const [signUpAttempt, setSignUpAttempt] = useState<SignUpAttempt>(null);
+  const [signUpAttempt, setSignUpAttempt] = useState<SignUpResource | null>(null);
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
   const [showInfo, setShowInfo] = useState(false);
@@ -275,6 +283,7 @@ export default function SignUp() {
   const handleBack = () => setStep((s) => Math.max(0, s - 1));
 
   const startVerification = async () => {
+    if (loading) return;
     if (blockIfEmailTaken()) return;
     if (!allSharedValid) {
       toast.error("Please complete account details", { position: "top-center", theme: "dark" });
@@ -282,31 +291,36 @@ export default function SignUp() {
       return;
     }
     if (!isLoaded || !signUp) {
-      toast.error("Sign up is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
+      toast.error("Sign up is still loading. Try again.", { position: "top-center", theme: "dark" });
       return;
     }
     setLoading(true);
     try {
-      if (isSignedIn) {
-        await signOut();
-      }
+      if (isSignedIn) await signOut();
       const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
-      const username = makeUsername(shared.firstName, shared.lastName);
-      const attempt = await signUp.create({
-        emailAddress: shared.email,
-        password: shared.password,
-        username,
-        firstName: username.split(" ")[0] || "",
-        lastName: username.split(" ").slice(1).join(" ") || "",
-        publicMetadata: { role, username, firstName: shared.firstName, lastName: shared.lastName, profile },
-      } as any);
-      setSignUpAttempt(attempt as unknown as { attemptEmailAddressVerification: (args: { code: string }) => Promise<any> });
+      const fullFirst = shared.firstName.trim().replace(/\s+/g, " ");
+      const fullLast = shared.lastName.trim().replace(/\s+/g, " ");
+      const attempt =
+        signUpAttempt ??
+        (await signUp.create({
+          emailAddress: shared.email.trim().toLowerCase(),
+          password: shared.password,
+          publicMetadata: {
+            role,
+            displayName: `${fullFirst} ${fullLast}`.trim(),
+            profile,
+            nameParts: { first: fullFirst, last: fullLast },
+          },
+        } as any));
+      setSignUpAttempt(attempt as SignUpResource);
       setAwaitingCode(true);
       await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
-      toast.info("Verification code sent to your email!", { position: "top-center", theme: "dark" });
+      toast.info("Verification code sent.", { position: "top-center", theme: "dark" });
     } catch (err: any) {
       setAwaitingCode(false);
-      const code = err?.errors?.[0]?.code;
+      const e = Array.isArray(err?.errors) && err.errors.length ? err.errors[0] : null;
+      const code = e?.code || err?.code;
+      const msg = e?.message || err?.message;
       if (code === "identifier_already_exists") {
         setEmailTaken(true);
         triggerMascotError();
@@ -314,7 +328,7 @@ export default function SignUp() {
         setLoading(false);
         return;
       }
-      toast.error(err.errors?.[0]?.message || err.message || "An unexpected error occurred", { position: "top-center", theme: "dark" });
+      toast.error(friendlyClerkMessage(code, msg), { position: "top-center", theme: "dark" });
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -353,8 +367,10 @@ export default function SignUp() {
         await signOut();
       } catch { }
     } catch (err: any) {
-      const msg = err?.errors?.[0]?.message || err?.message || "An unexpected error occurred";
-      toast.error(msg, { position: "top-center", theme: "dark" });
+      const e = Array.isArray(err?.errors) && err.errors.length ? err.errors[0] : null;
+      const code = e?.code || err?.code;
+      const msg = e?.message || err?.message;
+      toast.error(friendlyClerkMessage(code, msg), { position: "top-center", theme: "dark" });
       triggerMascotError();
       try {
         await signOut();
@@ -448,6 +464,7 @@ export default function SignUp() {
                   setClientRefs={setClientRefs}
                   artistPortfolioImgs={artistPortfolioImgs}
                   setArtistPortfolioImgs={setArtistPortfolioImgs}
+                  onCancelVerification={() => setAwaitingCode(false)}
                 />
               </motion.div>
             </div>
