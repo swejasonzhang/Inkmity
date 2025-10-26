@@ -52,7 +52,7 @@ export default function ClientDashboard() {
         [getToken]
     );
 
-    useMessaging(user?.id ?? "", authFetch);
+    const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(user?.id ?? "", authFetch);
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -87,22 +87,12 @@ export default function ClientDashboard() {
         const fallback = [
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23E5E7EB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-size='20' font-family='sans-serif'>Mock Image 1</text></svg>`,
             `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239CA3AF' font-size='20' font-family='sans-serif'>Mock Image 2</text></svg>`,
-            `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`,
+            `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='320'><rect width='100%' height='100%' fill='%23D1D5DB'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23565C68' font-size='20' font-family='sans-serif'>Mock Image 3</text></svg>`
         ];
         const pool = imgs.length ? imgs : fallback;
-
-        const pastWorks = (selectedArtist as any).pastWorks?.length
-            ? (selectedArtist as any).pastWorks
-            : pool.filter((_: unknown, i: number) => i % 2 === 0);
-
-        const healedWorks = (selectedArtist as any).healedWorks?.length
-            ? (selectedArtist as any).healedWorks
-            : pool.filter((_: unknown, i: number) => i % 3 === 2);
-
-        const sketches = (selectedArtist as any).sketches?.length
-            ? (selectedArtist as any).sketches
-            : pool.filter((_: unknown, i: number) => i % 2 === 1);
-
+        const pastWorks = (selectedArtist as any).pastWorks?.length ? (selectedArtist as any).pastWorks : pool.filter((_: unknown, i: number) => i % 2 === 0);
+        const healedWorks = (selectedArtist as any).healedWorks?.length ? (selectedArtist as any).healedWorks : pool.filter((_: unknown, i: number) => i % 3 === 2);
+        const sketches = (selectedArtist as any).sketches?.length ? (selectedArtist as any).sketches : pool.filter((_: unknown, i: number) => i % 2 === 1);
         return {
             _id: selectedArtist._id,
             clerkId: (selectedArtist as any).clerkId,
@@ -110,7 +100,7 @@ export default function ClientDashboard() {
             bio: (selectedArtist as any).bio,
             pastWorks,
             healedWorks,
-            sketches,
+            sketches
         };
     }, [selectedArtist]);
 
@@ -157,13 +147,11 @@ export default function ClientDashboard() {
                     <FloatingBar
                         onAssistantOpen={() => setAssistantOpen(true)}
                         portalTarget={portalEl}
-                        messagesContent={
-                            <MessagesPanel
-                                currentUserId={user.id}
-                                expandAllOnMount
-                                isArtist={false}
-                            />
-                        }
+                        messagesContent={<MessagesPanel currentUserId={user.id} expandAllOnMount isArtist={false} />}
+                        unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
+                        unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
+                        pendingRequestIds={pendingRequestIds}
+                        pendingRequestsCount={pendingRequestsCount}
                     />
 
                     <AnimatePresence>

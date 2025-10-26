@@ -1,6 +1,8 @@
 import { createPortal } from "react-dom";
 import { Bot, MessageSquare, Lock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 type Props = {
   onAssistantOpen: () => void;
@@ -32,7 +34,6 @@ export default function FloatingBar({
   const [isMdUp, setIsMdUp] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
   const msgBtnRef = useRef<HTMLDivElement | null>(null);
-
   const [clearedConvos, setClearedConvos] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
@@ -123,24 +124,19 @@ export default function FloatingBar({
     ? unreadConversationIds.filter((id) => !clearedConvos.has(id)).length
     : toInt(unreadConversationsCount);
 
-  // 1 if any pending request exists, else 0
   const requestCount =
     typeof requestExists === "boolean"
       ? requestExists ? 1 : 0
       : Array.isArray(pendingRequestIds)
-      ? (pendingRequestIds.length > 0 ? 1 : 0)
-      : toInt(pendingRequestsCount) > 0
-      ? 1
-      : 0;
+        ? (pendingRequestIds.length > 0 ? 1 : 0)
+        : toInt(pendingRequestsCount) > 0
+          ? 1
+          : 0;
 
   const totalUnreadMessages =
     typeof unreadMessagesTotal === "number" ? unreadMessagesTotal : toInt(unreadCount);
 
   const derivedTotal = totalUnreadMessages + requestCount;
-
-  useEffect(() => {
-    console.log("badge -> unreadMsgs:", totalUnreadMessages, "requests(0|1):", requestCount, "derivedTotal:", derivedTotal);
-  }, [totalUnreadMessages, requestCount, derivedTotal]);
 
   const pad = {
     left: isMdUp
@@ -161,22 +157,29 @@ export default function FloatingBar({
   const btnH = msgOpen ? (isMdUp ? 760 : 460) : collapsedHeight;
   const btnRadius = msgOpen ? 16 : 9999;
 
-  const Badge = ({ value, label }: { value: number; label?: string }) => (
-    <span
-      className="ml-2 inline-flex items-center justify-center rounded-full text-[11px] font-semibold px-2 min-w-[22px] h-[18px]"
-      style={{ background: value > 0 ? "#ef4444" : "#6b7280", color: "#fff" }}
+  const CountBadge = ({ value, label }: { value: number; label?: string }) => (
+    <Badge
+      className="ml-2 inline-flex items-center justify-center rounded-full text-[11px] font-semibold px-2 min-w-[22px] h-[18px] border"
+      style={{
+        background:
+          value > 0
+            ? "var(--fg)"
+            : "color-mix(in oklab, var(--fg), transparent 80%)",
+        color: value > 0 ? "var(--bg)" : "var(--fg)",
+        borderColor: "color-mix(in oklab, var(--border), transparent 60%)",
+      }}
       aria-label={label ? `${value} ${label}` : `${value}`}
       title={label ? `${value} ${label}` : `${value}`}
     >
       {value > 99 ? "99+" : value}
-    </span>
+    </Badge>
   );
 
   const bar = (
     <div className="fixed inset-x-0 z-[1000] pointer-events-none" style={{ bottom: pad.bottom }}>
       <div className="relative w-full" style={{ height: Math.max(btnH, collapsedHeight) }}>
         <div className="absolute bottom-0 pointer-events-auto flex items-center" style={{ left: pad.left, height: collapsedHeight }}>
-          <button
+          <Button
             type="button"
             onClick={assistantLocked ? undefined : onAssistantOpen}
             className={assistantBtnClass}
@@ -185,11 +188,12 @@ export default function FloatingBar({
             disabled={assistantLocked}
             title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
             style={{ height: collapsedHeight }}
+            variant="outline"
           >
             <Bot size={18} aria-hidden />
             <span className="text-sm font-medium hidden md:inline">Assistant</span>
             {assistantLocked && <Lock size={14} className="hidden md:inline-block ml-1 opacity-90" aria-hidden />}
-          </button>
+          </Button>
         </div>
 
         <div className="absolute bottom-0 pointer-events-auto flex items-center" style={{ right: pad.right, height: btnH }}>
@@ -213,41 +217,44 @@ export default function FloatingBar({
             }}
           >
             {!msgOpen ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => setMsgOpen(true)}
                 className="flex h-full w-full items-center justify-center gap-2 px-2 focus:outline-none"
                 title="Open messages"
                 aria-label="Open messages"
+                variant="ghost"
               >
                 <MessageSquare size={18} />
                 <span className="text-sm font-medium hidden md:inline">Messages</span>
-                <Badge value={derivedTotal} label="unread + requests" />
-              </button>
+                <CountBadge value={derivedTotal} label="unread + requests" />
+              </Button>
             ) : (
               <div className="flex h-full w-full flex-col">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-app">
                   <div className="flex items-center gap-2 font-semibold">
                     <MessageSquare size={16} />
                     <span>Messages</span>
-                    <span className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
+                    <Badge className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
                       {unreadConvoCount} unread convos
-                    </span>
-                    <span className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
+                    </Badge>
+                    <Badge className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
                       {requestCount} {requestCount === 1 ? "request" : "requests"}
-                    </span>
+                    </Badge>
                   </div>
                   <div className="shrink-0">
                     <span className="sr-only">Close messages</span>
-                    <button
+                    <Button
                       type="button"
                       className="p-1 rounded-full hover:bg-elevated"
                       onClick={() => setMsgOpen(false)}
                       aria-label="Close messages"
                       title="Close messages"
+                      size="icon"
+                      variant="ghost"
                     >
                       <X size={18} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="flex-1 overflow-hidden">

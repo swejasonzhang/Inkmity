@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState, useCallback } from "react";
 import Header from "@/components/header/Header";
 import { useTheme } from "@/components/header/useTheme";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
@@ -6,20 +6,37 @@ import { X, Bot } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import MessagesPanel from "@/components/dashboard/shared/messages/MessagesPanel";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
+import { API_URL } from "@/lib/http";
+import { useMessaging } from "@/hooks/useMessaging";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
 const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
 
 export default function ArtistDashboard() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { role } = useRole();
   const isArtist = role === "artist";
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { theme, toggleTheme, themeClass } = useTheme(rootRef.current);
   const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
+
+  const authFetch = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      const full = url.startsWith("http") ? url : `${API_URL}${url}`;
+      const token = await getToken();
+      const headers = new Headers(options.headers || {});
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+      return fetch(full, { ...options, headers, credentials: "include" });
+    },
+    [getToken]
+  );
+
+  const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(user?.id ?? "", authFetch);
 
   return (
     <div ref={rootRef} className={themeClass}>
@@ -81,6 +98,10 @@ export default function ArtistDashboard() {
           onAssistantOpen={() => setAssistantOpen(true)}
           portalTarget={portalEl}
           messagesContent={<MessagesPanel currentUserId={user?.id ?? ""} isArtist={isArtist} />}
+          unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
+          unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
+          pendingRequestIds={pendingRequestIds}
+          pendingRequestsCount={pendingRequestsCount}
         />
 
         <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>

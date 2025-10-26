@@ -7,27 +7,27 @@
 @property --bg {
   syntax: "<color>";
   inherits: true;
-  initial-value: #111827;
+  initial-value: #0b0b0b;
 }
 @property --fg {
   syntax: "<color>";
   inherits: true;
-  initial-value: #ffffff;
+  initial-value: #f5f5f5;
 }
 @property --muted {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.56);
+  initial-value: rgba(245, 245, 245, 0.56);
 }
 @property --subtle {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.72);
+  initial-value: rgba(245, 245, 245, 0.72);
 }
 @property --card {
   syntax: "<color>";
   inherits: true;
-  initial-value: #1f2937;
+  initial-value: #111111;
 }
 @property --overlay {
   syntax: "<color>";
@@ -37,12 +37,12 @@
 @property --border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.72);
+  initial-value: rgba(245, 245, 245, 0.2);
 }
 @property --elevated {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.05);
+  initial-value: rgba(255, 255, 255, 0.06);
 }
 
 :root {
@@ -52,14 +52,36 @@
     Roboto, Helvetica, Arial;
   --tw-font-sans: var(--font-body);
 
-  --bg: #1f2937;
-  --fg: #ffffff;
-  --muted: rgba(255, 255, 255, 0.56);
-  --subtle: rgba(255, 255, 255, 0.72);
-  --card: #1f2937;
+  --bg: #0b0b0b;
+  --fg: #f5f5f5;
+  --muted: rgba(245, 245, 245, 0.56);
+  --subtle: rgba(245, 245, 245, 0.72);
+  --card: #111111;
   --overlay: rgba(0, 0, 0, 0.6);
-  --border: rgba(255, 255, 255, 1);
-  --elevated: rgba(255, 255, 255, 0.05);
+  --border: rgba(245, 245, 245, 0.2);
+  --elevated: rgba(255, 255, 255, 0.06);
+  --accent: #7dd3fc;
+
+  --background: 0 0% 4%;
+  --foreground: 0 0% 96%;
+  --card-h: 0 0% 7%;
+  --card-foreground: var(--foreground);
+  --popover: var(--card-h);
+  --popover-foreground: var(--foreground);
+  --primary: 197 95% 80%;
+  --primary-foreground: 0 0% 5%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: var(--foreground);
+  --muted2: 0 0% 60%;
+  --muted-foreground: 0 0% 76%;
+  --accent-h: var(--primary);
+  --accent-foreground: var(--primary-foreground);
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border-h: 0 0% 76% / 0.2;
+  --input: var(--border-h);
+  --ring: var(--primary);
+  --radius: 12px;
 
   --theme-ms: 500ms;
   --video-blend: normal;
@@ -77,13 +99,35 @@
 
 .ink-light {
   --bg: #ffffff;
-  --fg: #111827;
-  --muted: rgba(17, 24, 39, 0.56);
-  --subtle: rgba(17, 24, 39, 0.72);
+  --fg: #111111;
+  --muted: rgba(17, 17, 17, 0.56);
+  --subtle: rgba(17, 17, 17, 0.72);
   --card: #ffffff;
   --overlay: rgba(0, 0, 0, 0.45);
-  --border: #000000;
+  --border: rgba(17, 17, 17, 0.16);
   --elevated: rgba(0, 0, 0, 0.06);
+
+  --background: 0 0% 100%;
+  --foreground: 0 0% 7%;
+  --card-h: 0 0% 98%;
+  --card-foreground: var(--foreground);
+  --popover: var(--card-h);
+  --popover-foreground: var(--foreground);
+  --primary: 197 95% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 7%;
+  --muted2: 0 0% 45%;
+  --muted-foreground: 0 0% 30%;
+  --accent-h: 197 95% 50%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 46%;
+  --destructive-foreground: 0 0% 98%;
+  --border-h: 0 0% 12% / 0.16;
+  --input: var(--border-h);
+  --ring: var(--primary);
+  --radius: 12px;
+
   --video-blend: normal;
   --video-opacity: 0.65;
 }
@@ -287,28 +331,28 @@ h3 {
 .ink-card {
   position: relative;
   border-radius: 1.5rem;
+  overflow: hidden;
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--card), transparent 0%) 0%,
     color-mix(in oklab, var(--card), black 6%) 100%
   );
   border: 1px solid color-mix(in oklab, var(--border), transparent 40%);
-  overflow: hidden;
 }
 .ink-card::before {
   content: "";
   position: absolute;
   inset: -1px;
   border-radius: inherit;
+  padding: 1px;
+  opacity: 0.35;
+  pointer-events: none;
   background: linear-gradient(
     90deg,
     transparent,
     color-mix(in oklab, var(--border), transparent 80%),
     transparent
   );
-  padding: 1px;
-  opacity: 0.35;
-  pointer-events: none;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
 }
@@ -356,14 +400,15 @@ h3 {
   display: grid;
   place-items: center;
   text-align: center;
-  border: 1px solid var(--border);
-  background: var(--card);
-  border-radius: 1rem;
-  padding: 0.75rem;
   outline: none;
   white-space: pre-wrap;
   word-break: break-word;
   min-height: 12rem;
+  padding: 0.75rem;
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
   transition: box-shadow 200ms ease, border-color 200ms ease,
     background 200ms ease;
 }
