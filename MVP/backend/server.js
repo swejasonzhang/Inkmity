@@ -16,6 +16,7 @@ import bookingRoutes from "./routes/bookings.js";
 import authRoutes from "./routes/auth.js";
 import artistPolicyRoutes from "./routes/artistPolicy.js";
 import billingRoutes from "./routes/billing.js";
+import uploadRoutes from "./routes/uploads.js";
 import { requireAuth } from "./middleware/auth.js";
 
 const ENV = process.env.NODE_ENV || "development";
@@ -36,7 +37,12 @@ if (
   );
 }
 
-const REQUIRED = ["MONGO_URI"];
+const REQUIRED = [
+  "MONGO_URI",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+];
 for (const k of REQUIRED) {
   if (!process.env[k]) {
     console.error(`Missing required env var: ${k}`);
@@ -68,8 +74,8 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.get("/health", (_req, res) =>
   res.json({
@@ -89,6 +95,7 @@ app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
 app.use("/api/artist-policy", artistPolicyRoutes);
 app.use("/api/billing", billingRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found", path: req.originalUrl });

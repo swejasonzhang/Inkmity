@@ -15,8 +15,8 @@ type Props = {
     setCode: (v: string) => void;
     onVerify: () => void;
     loading: boolean;
-    initialExpirySec?: number;   // default 300s
-    initialCooldownSec?: number; // default 30s
+    initialExpirySec?: number;   
+    initialCooldownSec?: number;
 };
 
 export default function OtpStep({
