@@ -253,7 +253,16 @@ const ArtistFilter: React.FC<Props> = ({
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder="Search artists or tattoos (e.g., dragon, koi, portrait)"
               aria-label="Search artists or tattoo subjects"
-              className={clsx("pl-9 pr-9 h-9 w-full bg-elevated border-app text-app rounded-lg", "text-sm", "placeholder:text-muted-foreground")}
+              className={clsx(
+                "pl-9 pr-9 h-9 w-full bg-elevated border-app text-app rounded-lg",
+                "text-sm",
+                "placeholder:text-muted-foreground",
+                "appearance-none outline-none focus:outline-none focus-visible:outline-none",
+                "ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app/80",
+                "selection:bg-elevated selection:text-app",
+                "caret-[var(--fg)]"
+              )}
+              style={{ WebkitTapHighlightColor: "transparent" }}
             />
           </div>
 

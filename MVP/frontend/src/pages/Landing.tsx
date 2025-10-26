@@ -8,7 +8,6 @@ import {
     useReducedMotion,
     m,
 } from "framer-motion";
-
 import { useTheme } from "@/components/header/useTheme";
 import Hero from "@/components/landing/Hero";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
@@ -19,7 +18,6 @@ import Divider from "@/components/landing/Divider";
 const Landing: React.FC = () => {
     const prefersReduced = useReducedMotion();
     const wc = prefersReduced ? undefined : ({ willChange: "transform,opacity" } as React.CSSProperties);
-
     const { theme, logoSrc } = useTheme();
     const noop = () => { };
 
@@ -28,9 +26,7 @@ const Landing: React.FC = () => {
         visible: {
             opacity: 1,
             y: 0,
-            transition: prefersReduced
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 220, damping: 26, mass: 0.7, velocity: 0.2 },
+            transition: prefersReduced ? { duration: 0 } : { type: "spring", stiffness: 220, damping: 26, mass: 0.7, velocity: 0.2 },
         },
     };
 
@@ -45,8 +41,11 @@ const Landing: React.FC = () => {
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
                     <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
-                        <Header theme={theme} toggleTheme={noop} logoSrc={logoSrc} />
+                        <div className="sticky top-0 z-50 bg-app/80 backdrop-blur border-b border-app">
+                            <Header theme={theme} toggleTheme={noop} logoSrc={logoSrc} />
+                        </div>
 
+                        {/* page scrolls; footer is NOT sticky */}
                         <main className="flex-1">
                             <section className="relative">
                                 <div className="mx-auto max-w-7xl px-4">
@@ -70,7 +69,7 @@ const Landing: React.FC = () => {
                             <Divider />
                         </main>
 
-                        <footer className="px-4 pb-6">
+                        <footer className="p-6">
                             <div className="mx-auto max-w-7xl text-center text-sm text-subtle">
                                 © {new Date().getFullYear()} Inkmity. All rights reserved.
                             </div>
