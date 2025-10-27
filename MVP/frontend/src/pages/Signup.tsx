@@ -12,7 +12,7 @@ import { container } from "@/components/access/animations";
 import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
 type Role = "client" | "artist";
-type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
+type SharedAccount = { firstName: string; lastName: string; email: string; confirmEmail: string; password: string };
 type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
 type ArtistProfile = {
   location: string;
@@ -66,7 +66,7 @@ export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
-  const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", password: "" });
+  const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", confirmEmail: "", password: "" });
   const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "", placement: "", size: "", notes: "" });
   const [artist, setArtist] = useState<ArtistProfile>({
     location: "",
@@ -215,7 +215,8 @@ export default function SignUp() {
   const minVal = Math.max(0, Math.min(5000, num(client.budgetMin)));
   const maxVal = Math.max(0, Math.min(5000, num(client.budgetMax)));
 
-  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
+  const emailMatch = shared.confirmEmail.length > 0 && shared.confirmEmail.trim().toLowerCase() === shared.email.trim().toLowerCase();
+  const allSharedValid = validateEmail(shared.email) && emailMatch && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
   const allClientValid = !!client.location && maxVal > minVal;
   const allArtistValid =
     !!artist.location &&
