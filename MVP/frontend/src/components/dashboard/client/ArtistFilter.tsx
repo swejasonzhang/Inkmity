@@ -12,7 +12,7 @@ interface Artist {
   username?: string;
   bio?: string;
   location?: string;
-  style?: string[];
+  styles?: string[];
   priceRange?: { min: number; max: number };
   yearsExperience?: number | string;
   rating?: number | string;
@@ -156,7 +156,7 @@ const ArtistFilter: React.FC<Props> = ({
 
   const uniqueStyles = useMemo(() => {
     const set = new Set<string>();
-    for (const a of artists) (a.style ?? []).forEach((s) => set.add(s));
+    for (const a of artists) (a.styles ?? []).forEach((s) => set.add(s));
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [artists]);
 
@@ -393,7 +393,7 @@ const ArtistFilter: React.FC<Props> = ({
       {isDirty && (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            {!!localSearch.trim() && (
+            {!!(localSearch || "").trim() && (
               <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px]">
                 Search: “{localSearch.trim()}”
                 <button className="ml-2 inline-flex" onClick={() => setLocalSearch("")} aria-label="Clear search">

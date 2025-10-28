@@ -47,9 +47,11 @@ const Dashboard: React.FC = () => {
   if (!isLoaded || !isSignedIn) return <Loading />;
 
   return (
-    <Suspense fallback={<Loading />}>
-      {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}
-    </Suspense>
+    <div className="dashboard-theme">
+      <Suspense fallback={<Loading />}>
+        {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}
+      </Suspense>
+    </div>
   );
 };
 
