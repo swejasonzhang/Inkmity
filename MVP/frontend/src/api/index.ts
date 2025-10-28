@@ -190,7 +190,6 @@ export type Me = {
 
 export async function getMe(token?: string) {
   const me = await http<Me>("/users/me", { method: "GET" }, token);
-  console.log("[client] currentUser =", me);
   return me;
 }
 
@@ -211,6 +210,5 @@ export async function syncUser(
     { method: "POST", body: JSON.stringify(payload) },
     token
   );
-  console.log("[client] syncUser result =", res);
   return res;
 }

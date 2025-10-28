@@ -10,10 +10,11 @@ import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { container } from "@/components/access/animations";
 import { useNavigate } from "react-router-dom";
+import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string; bio?: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; bio?: string };
 type ArtistProfile = {
   location: string;
   shop: string;
@@ -29,12 +30,12 @@ type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
-const JUST_SIGNED_UP_KEY = "ink.justSignedUpAt";
-const SUPPRESS_MS = 120000;
 const TOAST_H = 72;
 const TOAST_GAP = 50;
 
-const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:5005/api";
+const RAW_API_BASE =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) ||
+  "http://localhost:5005/api";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 function apiUrl(path: string, qs?: Record<string, string>) {
   const url = new URL(path.replace(/^\/+/, ""), API_BASE + "/");
@@ -62,12 +63,78 @@ function friendlyClerkMessage(code?: string, message?: string) {
   }
 }
 
+function collectIssues({
+  role,
+  step,
+  shared,
+  client,
+  artist,
+}: {
+  role: Role;
+  step: number;
+  shared: SharedAccount;
+  client: ClientProfile;
+  artist: ArtistProfile;
+}) {
+  const tips: string[] = [];
+  const emailOk = validateEmail(shared.email);
+  const pwdOk = validatePassword(shared.password);
+  const usernameOk = !!shared.username.trim();
+
+  if (step === 0) {
+    if (!usernameOk) tips.push("Username is required — enter a display name.");
+    if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
+    if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
+    return tips;
+  }
+
+  if (role === "client") {
+    if (step === 1) {
+      if (!client.location) tips.push("City is required — choose your city from the list.");
+      const min = Number(client.budgetMin);
+      const max = Number(client.budgetMax);
+      if (!Number.isFinite(min)) tips.push("Budget min must be a number — enter a value like 100.");
+      if (!Number.isFinite(max)) tips.push("Budget max must be a number — enter a value like 500.");
+      if (Number.isFinite(min) && Number.isFinite(max) && max <= min) tips.push("Budget range invalid — set max greater than min by at least 1.");
+    }
+    if (step === 3) {
+      if (!usernameOk) tips.push("Username is required — enter a display name.");
+      if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
+      if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
+      if (!client.location) tips.push("City is required — choose your city from the list.");
+      const min = Number(client.budgetMin);
+      const max = Number(client.budgetMax);
+      if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) tips.push("Budget range invalid — ensure both numbers and max > min.");
+    }
+  } else {
+    if (step === 1) {
+      if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
+      if (!artist.years || artist.years === "__unset__") tips.push("Years of experience is required — enter a number.");
+      if (!artist.baseRate || artist.baseRate === "__unset__") tips.push("Base rate is required — enter an hourly or day rate number.");
+      if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
+    }
+    if (step === 3) {
+      if (!usernameOk) tips.push("Username is required — enter a display name.");
+      if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
+      if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
+      if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
+      if (!artist.years || artist.years === "__unset__") tips.push("Years of experience is required — enter a number.");
+      if (!artist.baseRate || artist.baseRate === "__unset__") tips.push("Base rate is required — enter an hourly or day rate number.");
+      if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
+    }
+  }
+
+  return tips;
+}
+
 export default function SignUp() {
+  useAlreadySignedInRedirect();
+
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
-  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "", placement: "", size: "", notes: "", bio: "" });
+  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "", placement: "", size: "", bio: "" });
   const [artist, setArtist] = useState<ArtistProfile>({
     location: "",
     shop: "",
@@ -91,21 +158,8 @@ export default function SignUp() {
   const [mascotError, setMascotError] = useState(false);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
-  const { isLoaded: authLoaded, userId, getToken } = useAuth();
+  const { userId, getToken } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!authLoaded) return;
-    if (userId) {
-      const just = Number(localStorage.getItem(JUST_SIGNED_UP_KEY) || 0);
-      const suppress = just && Date.now() - just < SUPPRESS_MS;
-      if (!suppress) {
-        toast.info("You are already loggedin. Redirecting you to Dashboard now.", { position: "top-center", theme: "dark" });
-        const t = setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
-        return () => clearTimeout(t);
-      }
-    }
-  }, [authLoaded, userId, navigate]);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
@@ -176,7 +230,8 @@ export default function SignUp() {
   const minVal = Math.max(0, Math.min(5000, num(client.budgetMin)));
   const maxVal = Math.max(0, Math.min(5000, num(client.budgetMax)));
 
-  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
+  const allSharedValid =
+    validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
   const allClientValid = !!client.location && maxVal > minVal;
   const allArtistValid =
     !!artist.location &&
@@ -214,7 +269,11 @@ export default function SignUp() {
   const handleNext = () => {
     const currentValid = slides[step].valid;
     if (!currentValid) {
-      toast.error("Please complete the required fields", { position: "top-center", theme: "dark" });
+      const tips = collectIssues({ role, step, shared, client, artist });
+      toast.error(tips.length ? tips.join("\n") : "Please complete the required fields", {
+        position: "top-center",
+        theme: "dark",
+      });
       triggerMascotError();
       return;
     }
@@ -225,8 +284,9 @@ export default function SignUp() {
 
   const startVerification = async () => {
     if (loading) return;
-    if (!allSharedValid) {
-      toast.error("Please complete account details", { position: "top-center", theme: "dark" });
+    const tips = collectIssues({ role, step: 3, shared, client, artist });
+    if (tips.length) {
+      toast.error(tips.join("\n"), { position: "top-center", theme: "dark" });
       triggerMascotError();
       return;
     }
@@ -276,12 +336,18 @@ export default function SignUp() {
       return;
     }
     if (!signUpAttempt) {
-      toast.error("Verification isn't ready yet. Please request a new code.", { position: "top-center", theme: "dark" });
+      toast.error("Verification isn't ready yet. Please request a new code.", {
+        position: "top-center",
+        theme: "dark",
+      });
       triggerMascotError();
       return;
     }
     if (!isLoaded || !setActive) {
-      toast.error("Account session is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
+      toast.error("Account session is still loading. Please try again in a moment.", {
+        position: "top-center",
+        theme: "dark",
+      });
       return;
     }
     setLoading(true);
@@ -342,26 +408,37 @@ export default function SignUp() {
           }
 
           try {
-            localStorage.setItem(JUST_SIGNED_UP_KEY, String(Date.now()));
+            sessionStorage.setItem("signupJustCompleted", "1");
+          } catch { }
+          try {
+            localStorage.setItem("trustedDevice", shared.email);
+            localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
+            localStorage.removeItem(LOGOUT_TYPE_KEY);
           } catch { }
 
-          toast.success("Sign up successful, redirecting to Dashboard.", { position: "top-center", theme: "dark" });
+          toast.success("Sign up successful, redirecting to Dashboard.", {
+            position: "top-center",
+            theme: "dark",
+          });
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
           }, 1000);
-          localStorage.setItem("trustedDevice", shared.email);
-          localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
-          localStorage.removeItem(LOGOUT_TYPE_KEY);
           return;
         } catch {
-          toast.error("Failed to save your account. Please try again.", { position: "top-center", theme: "dark" });
+          toast.error("Failed to save your account. Please try again.", {
+            position: "top-center",
+            theme: "dark",
+          });
           try {
             await signOut();
           } catch { }
           return;
         }
       }
-      toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
+      toast.error("Verification failed. Check your code and try again.", {
+        position: "top-center",
+        theme: "dark",
+      });
       triggerMascotError();
       try {
         await signOut();
@@ -391,20 +468,44 @@ export default function SignUp() {
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
-      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0"
+        aria-hidden
+      >
         <source src="/Background.mp4" type="video/mp4" />
       </video>
       <Header />
       <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
         <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
-            <div className={`relative grid w-full p-2 gap-0 md:p-0 md:gap-0 ${showInfo ? "md:grid-cols-2 md:place-items-stretch" : "grid-cols-1 place-items-center"}`}>
+            <div
+              className={`relative grid w-full p-2 gap-0 md:p-0 md:gap-0 ${showInfo ? "md:grid-cols-2 md:place-items-stretch" : "grid-cols-1 place-items-center"
+                }`}
+            >
               {showInfo && (
-                <motion.div layout className="flex w-full max-w-xl p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100">
-                  <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
+                <motion.div
+                  layout
+                  className="flex w-full max-w-xl p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
+                >
+                  <InfoPanel
+                    show={showInfo}
+                    prefersReduced={prefersReduced}
+                    hasError={mascotError}
+                    isPasswordHidden={mascotEyesClosed}
+                    mode="signup"
+                  />
                 </motion.div>
               )}
-              <motion.div ref={cardRef} layout className="w-full max-w-xl justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100">
+              <motion.div
+                ref={cardRef}
+                layout
+                className="w-full max-w-xl justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
+              >
                 <FormCard
                   mode="signup"
                   showInfo={showInfo}

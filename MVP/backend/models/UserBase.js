@@ -18,6 +18,7 @@ const UserBaseSchema = new Schema(
     email: { type: String, required: true, unique: true, index: true },
     username: { type: String, required: true, default: "user" },
     handle: { type: String, required: true, unique: true, index: true },
+    styles: [{ type: String, index: true }],
     avatar: ImageSchema,
     role: {
       type: String,

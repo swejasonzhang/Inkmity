@@ -8,7 +8,6 @@ type ClientProfile = {
     location: string;
     placement: string;
     size: string;
-    notes: string;
     style?: string;
     availability?: string;
 };

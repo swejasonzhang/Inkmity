@@ -258,11 +258,10 @@ export async function syncUser(req, res) {
       bio: bodyBio,
     } = req.body || {};
     const clerkId = authClerkId || bodyClerkId;
-    if (!clerkId || !email || !rawRole) {
+    if (!clerkId || !email || !rawRole)
       return res
         .status(400)
         .json({ error: "clerkId, email, role are required" });
-    }
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
     const finalUsername =
@@ -280,6 +279,14 @@ export async function syncUser(req, res) {
       targetHandle = withAt(ensuredBase);
     }
     const bio = cleanBio(bodyBio ?? profile.bio) || "";
+    const normalizedStyles = Array.isArray(profile.styles)
+      ? profile.styles
+      : typeof profile.style === "string" && profile.style.trim()
+      ? [profile.style.trim()]
+      : [];
+    const styles = normalizedStyles
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
     const setDoc = {
       clerkId,
       email,
@@ -287,6 +294,7 @@ export async function syncUser(req, res) {
       handle: targetHandle,
       role,
       bio,
+      ...(styles.length ? { styles } : {}),
     };
     if (role === "client") {
       const min = Number(profile.budgetMin ?? 100);
@@ -318,9 +326,6 @@ export async function syncUser(req, res) {
       const bookingPreference = profile.bookingPreference || "open";
       const travelFrequency = profile.travelFrequency || "rare";
       const shop = profile.shop || "";
-      const styles = (Array.isArray(profile.styles) ? profile.styles : [])
-        .map((s) => String(s || "").trim())
-        .filter(Boolean);
       const portfolio = (
         Array.isArray(profile.portfolioImages) ? profile.portfolioImages : []
       )
@@ -334,7 +339,6 @@ export async function syncUser(req, res) {
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
         bookingPreference,
         travelFrequency,
-        styles,
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
       });
     }
