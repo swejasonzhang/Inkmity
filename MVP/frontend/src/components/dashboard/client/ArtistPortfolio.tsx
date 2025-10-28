@@ -25,9 +25,9 @@ export type PortfolioProps = {
 
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep }) => {
     const prefersReducedMotion = useReducedMotion();
-    const past = useMemo(() => artist?.pastWorks ?? [], [artist]);
-    const healed = useMemo(() => artist?.healedWorks ?? [], [artist]);
-    const sketches = useMemo(() => artist?.sketches ?? [], [artist]);
+    const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
+    const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
+    const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
     const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
     const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }>(null);
 
@@ -36,42 +36,55 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
     const goPrev = () => setZoom((z) => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
     const goNext = () => setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
 
-    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => (
-        <div className="w-full hidden sm:flex justify-center">
-            <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
-                {images.slice(0, 6).map((src, i) => (
-                    <button
-                        key={`${src}-${i}`}
-                        onClick={() => openZoom(images, i, label)}
-                        className="group relative w-full max-w-[360px] aspect-[4/3] rounded-3xl border shadow-sm overflow-hidden flex items-center justify-center ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                        aria-label={`Open ${imgAltPrefix} ${i + 1}`}
-                    >
-                        <img
-                            src={src}
-                            alt={`${imgAltPrefix} ${i + 1}`}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                            loading={i < 4 ? "eager" : "lazy"}
-                            fetchPriority={i < 4 ? "high" : undefined}
-                            decoding="async"
-                            referrerPolicy="no-referrer"
-                        />
-                        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                            <div
-                                className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                                style={{ background: "color-mix(in oklab, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
-                            >
-                                <Maximize2 className="h-3.5 w-3.5" /> View
+    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({
+        images,
+        imgAltPrefix,
+        label,
+    }) =>
+        images.length ? (
+            <div className="w-full hidden sm:flex justify-center">
+                <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
+                    {images.map((src, i) => (
+                        <button
+                            key={`${src}-${i}`}
+                            onClick={() => openZoom(images, i, label)}
+                            className="group relative w-full max-w-[360px] aspect-[4/3] rounded-3xl border shadow-sm overflow-hidden flex items-center justify-center ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                            aria-label={`Open ${imgAltPrefix} ${i + 1}`}
+                        >
+                            <img
+                                src={src}
+                                alt={`${imgAltPrefix} ${i + 1}`}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                                loading={i < 4 ? "eager" : "lazy"}
+                                fetchPriority={i < 4 ? "high" : undefined}
+                                decoding="async"
+                                referrerPolicy="no-referrer"
+                            />
+                            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                                <div
+                                    className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
+                                    style={{ background: "color-mix(in oklab, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
+                                >
+                                    <Maximize2 className="h-3.5 w-3.5" /> View
+                                </div>
                             </div>
-                        </div>
-                    </button>
-                ))}
+                        </button>
+                    ))}
+                </div>
             </div>
-        </div>
-    );
+        ) : (
+            <p className="hidden sm:block text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                No items to show yet.
+            </p>
+        );
 
-    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
+    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({
+        images,
+        imgAltPrefix,
+        label,
+    }) => {
         const [index, setIndex] = useState(0);
         const swipeTo = (dir: "prev" | "next") => setIndex((i) => (dir === "prev" ? (i + images.length - 1) % images.length : (i + 1) % images.length));
         const onDragEnd = (_: any, info: { offset: { x: number } }) => {
@@ -121,20 +134,10 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                         </div>
                     </div>
                     <div className="sm:hidden grid grid-cols-2 gap-3 mt-6">
-                        <Button
-                            variant="outline"
-                            onClick={() => swipeTo("prev")}
-                            className="rounded-xl"
-                            style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
-                        >
+                        <Button variant="outline" onClick={() => swipeTo("prev")} className="rounded-xl" style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
                             Prev
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => swipeTo("next")}
-                            className="rounded-xl"
-                            style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
-                        >
+                        <Button variant="outline" onClick={() => swipeTo("next")} className="rounded-xl" style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
                             Next
                         </Button>
                     </div>
@@ -142,6 +145,10 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
             </div>
         );
     };
+
+    const bioText =
+        (artist.bio || "").trim() ||
+        `Nice to meet you, I'm ${artist.username || "this artist"}, let's talk about your next tattoo.`;
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -188,12 +195,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                                 <div className="sm:hidden block h-6" />
                             </div>
                             <div className="flex items-center justify-end h-full">
-                                <Button
-                                    onClick={onNext}
-                                    className="rounded-xl px-3 sm:px-4 py-2 text-sm font-medium shadow-sm border-0"
-                                    style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
-                                    variant="outline"
-                                >
+                                <Button onClick={onNext} className="rounded-xl px-3 sm:px-4 py-2 text-sm font-medium shadow-sm border-0" style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }} variant="outline">
                                     Next: Booking &amp; Message
                                 </Button>
                             </div>
@@ -229,7 +231,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                         </div>
                         <Separator className="my-4 sm:my-5 opacity-60" />
                         <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
-                            {artist.bio || "No bio available."}
+                            {bioText}
                         </p>
                     </div>
                 </section>
@@ -250,13 +252,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
                         </span>
                     </header>
                     <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
-                    {past.length ? (
-                        <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
-                    ) : (
-                        <p className="hidden sm:block text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                            No past works to show yet.
-                        </p>
-                    )}
+                    <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
                 </section>
 
                 {healed.length > 0 && (
@@ -287,13 +283,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
             </div>
 
             {zoom && (
-                <FullscreenZoom
-                    src={zoom.items[zoom.index]}
-                    count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`}
-                    onPrev={goPrev}
-                    onNext={goNext}
-                    onClose={closeZoom}
-                />
+                <FullscreenZoom src={zoom.items[zoom.index]} count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`} onPrev={goPrev} onNext={goNext} onClose={closeZoom} />
             )}
         </div>
     );
