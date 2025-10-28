@@ -16,7 +16,15 @@ const UserBaseSchema = new Schema(
   {
     clerkId: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    username: { type: String, required: true },
+    username: {
+      type: String,
+      required: true,
+      default: function () {
+        const f = this.nameParts?.first?.trim?.() || "";
+        const l = this.nameParts?.last?.trim?.() || "";
+        return `${f} ${l}`.trim() || "user";
+      },
+    },
     handle: { type: String, required: true, unique: true, index: true },
     displayName: { type: String, default: "" },
     nameParts: {
@@ -24,9 +32,6 @@ const UserBaseSchema = new Schema(
       last: { type: String, default: "" },
     },
     avatar: ImageSchema,
-    clerkImageUrl: String,
-    references: { type: [String], default: [] },
-    portfolioImages: { type: [String], default: [] },
     role: {
       type: String,
       required: true,
@@ -38,9 +43,23 @@ const UserBaseSchema = new Schema(
   { timestamps: true, discriminatorKey: "role", collection: "users" }
 );
 
+UserBaseSchema.pre("validate", function (next) {
+  const f = this.nameParts?.first?.trim?.() || "";
+  const l = this.nameParts?.last?.trim?.() || "";
+  const combined = `${f} ${l}`.trim();
+  if (
+    !this.username ||
+    this.username === "user" ||
+    this.isModified("nameParts")
+  ) {
+    this.username = combined || this.username || "user";
+  }
+  this.displayName = combined || this.displayName || "";
+  next();
+});
+
 UserBaseSchema.methods.getAvatarUrl = function () {
   if (this.avatar?.url) return this.avatar.url;
-  if (this.clerkImageUrl) return this.clerkImageUrl;
   return "https://images.placeholders.dev/?width=256&height=256&text=Profile";
 };
 

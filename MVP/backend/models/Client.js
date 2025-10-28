@@ -9,6 +9,7 @@ const ClientSchema = new Schema(
     location: String,
     placement: String,
     size: String,
+    references: { type: [String], default: [] },
     totalFeesPaid: { type: Number, default: 0 },
     rewardsPoints: { type: Number, default: 0, index: true },
     lifetimeDiscountUsd: { type: Number, default: 0 },
