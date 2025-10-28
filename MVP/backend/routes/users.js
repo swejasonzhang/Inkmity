@@ -10,13 +10,16 @@ import {
   saveMyReferences,
   getArtists,
   getArtistById,
-  checkUsernameAvailability,
+  checkHandleAvailability,
+  updateMyHandle,
 } from "../controllers/userController.js";
 
 const router = Router();
 
 router.get("/me", requireAuth(), getMe);
-router.get("/username-availability", checkUsernameAvailability);
+router.get("/handle-availability", checkHandleAvailability);
+router.put("/me/handle", requireAuth(), updateMyHandle);
+
 router.post("/sync", requireAuth(), syncUser);
 
 router.get("/avatar/signature", requireAuth(), getAvatarSignature);

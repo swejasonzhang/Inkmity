@@ -5,7 +5,7 @@ const ImageSchema = new Schema(
   {
     url: { type: String, required: true },
     publicId: String,
-    alt: { type: String, default: "Profile photo" },
+    alt: String,
     width: Number,
     height: Number,
   },
@@ -15,11 +15,25 @@ const ImageSchema = new Schema(
 const UserBaseSchema = new Schema(
   {
     clerkId: { type: String, required: true, unique: true, index: true },
-    username: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
+    username: { type: String, required: true },
+    handle: { type: String, required: true, unique: true, index: true },
+    displayName: { type: String, default: "" },
+    nameParts: {
+      first: { type: String, default: "" },
+      last: { type: String, default: "" },
+    },
     avatar: ImageSchema,
     clerkImageUrl: String,
     references: { type: [String], default: [] },
+    portfolioImages: { type: [String], default: [] },
+    role: {
+      type: String,
+      required: true,
+      enum: ["client", "artist"],
+      index: true,
+    },
+    location: { type: String, default: "" },
   },
   { timestamps: true, discriminatorKey: "role", collection: "users" }
 );

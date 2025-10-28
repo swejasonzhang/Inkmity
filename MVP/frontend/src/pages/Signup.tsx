@@ -29,6 +29,8 @@ type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
+const JUST_SIGNED_UP_KEY = "ink.justSignedUpAt";
+const SUPPRESS_MS = 120000;
 const TOAST_H = 72;
 const TOAST_GAP = 50;
 
@@ -98,9 +100,13 @@ export default function SignUp() {
   useEffect(() => {
     if (!authLoaded) return;
     if (userId) {
-      toast.info("You are already loggedin. Redirecting you to Dashboard now.", { position: "top-center", theme: "dark" });
-      const t = setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
-      return () => clearTimeout(t);
+      const just = Number(localStorage.getItem(JUST_SIGNED_UP_KEY) || 0);
+      const suppress = just && Date.now() - just < SUPPRESS_MS;
+      if (!suppress) {
+        toast.info("You are already loggedin. Redirecting you to Dashboard now.", { position: "top-center", theme: "dark" });
+        const t = setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
+        return () => clearTimeout(t);
+      }
     }
   }, [authLoaded, userId, navigate]);
 
@@ -354,10 +360,16 @@ export default function SignUp() {
             }
           }
         } catch { }
+        try {
+          localStorage.setItem(JUST_SIGNED_UP_KEY, String(Date.now()));
+        } catch { }
+        toast.success("Signup successful. Redirecting to your dashboard…", { position: "top-center", theme: "dark" });
+        setTimeout(() => {
+          navigate("/dashboard", { replace: true });
+        }, 1000);
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         localStorage.removeItem(LOGOUT_TYPE_KEY);
-        window.location.href = "/dashboard";
         return;
       }
       toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
