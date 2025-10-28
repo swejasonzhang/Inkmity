@@ -9,6 +9,14 @@ const authObj = (req) =>
 const getClerkId = (req) => authObj(req)?.userId || null;
 const SAFE_ROLES = new Set(["client", "artist"]);
 
+const cap = (s = "") =>
+  s
+    .trim()
+    .toLowerCase()
+    .replace(/^./, (c) => c.toUpperCase());
+const buildUsername = (first = "", last = "") =>
+  `${cap(first)} ${cap(last)}`.trim();
+
 const slugify = (s = "") =>
   String(s)
     .toLowerCase()
@@ -149,7 +157,6 @@ export async function getArtists(req, res) {
   const travel = String(req.query.travel || "").trim();
   const experience = parseExp(req.query.experience);
   const filter = {};
-
   if (search) {
     const rx = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     Object.assign(filter, {
@@ -163,7 +170,6 @@ export async function getArtists(req, res) {
   if (travel) Object.assign(filter, { travelFrequency: travel });
   if (Object.keys(experience).length)
     Object.assign(filter, { yearsExperience: experience });
-
   const sort =
     sortKey === "experience_desc"
       ? { yearsExperience: -1, rating: -1 }
@@ -174,7 +180,6 @@ export async function getArtists(req, res) {
       : sortKey === "rating_asc"
       ? { rating: 1, reviewsCount: -1 }
       : { rating: -1, reviewsCount: -1, createdAt: -1 };
-
   const [total, items] = await Promise.all([
     Artist.countDocuments(filter),
     Artist.find(filter)
@@ -186,7 +191,6 @@ export async function getArtists(req, res) {
       )
       .lean(),
   ]);
-
   res.json({ items, total, page, pageSize });
 }
 
@@ -199,12 +203,12 @@ export async function getArtistById(req, res) {
 }
 
 export async function checkUsernameAvailability(req, res) {
+  const first = String(req.query.first || "").trim();
+  const last = String(req.query.last || "").trim();
   const raw = String(req.query.u || "").trim();
-  if (!raw)
-    return res.status(400).json({ ok: false, error: "username_required" });
-  const candidate = slugify(raw);
+  const candidate = raw || buildUsername(first, last);
   if (!candidate)
-    return res.status(400).json({ ok: false, error: "invalid_username" });
+    return res.status(400).json({ ok: false, error: "username_required" });
   const hit = await User.findOne({ username: candidate }, { _id: 1 }).lean();
   return res.json({ ok: true, available: !hit, username: candidate });
 }
@@ -216,7 +220,6 @@ export async function syncUser(req, res) {
       clerkId: bodyClerkId,
       email,
       role: rawRole,
-      username,
       firstName,
       lastName,
       profile = {},
@@ -226,20 +229,13 @@ export async function syncUser(req, res) {
       return res
         .status(400)
         .json({ error: "clerkId, email, role are required" });
-
-    const SAFE_ROLES = new Set(["client", "artist"]);
+    if (!firstName || !lastName)
+      return res
+        .status(400)
+        .json({ error: "firstName and lastName are required" });
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
-    const requestedUsername = String(username || "").trim();
-    if (!existing && !requestedUsername)
-      return res.status(400).json({ error: "username_required" });
-
-    let finalUsername = requestedUsername
-      ? slugify(requestedUsername)
-      : existing?.username;
-    if (!finalUsername)
-      return res.status(400).json({ error: "invalid_username" });
-
+    const finalUsername = buildUsername(firstName, lastName);
     const nameOwner = await User.findOne(
       { username: finalUsername },
       { clerkId: 1 }
@@ -249,15 +245,14 @@ export async function syncUser(req, res) {
         .status(409)
         .json({ error: "username_taken", username: finalUsername });
     }
-
-    if (existing && existing.role && existing.role !== role) {
-      return res
-        .status(409)
-        .json({ error: `User already exists as ${existing.role}` });
-    }
-
-    const setDoc = { clerkId, email, username: finalUsername, role };
-
+    const setDoc = {
+      clerkId,
+      email,
+      username: finalUsername,
+      role,
+      firstName,
+      lastName,
+    };
     if (role === "client") {
       const min = Number(profile.budgetMin ?? 100);
       const max = Number(profile.budgetMax ?? 200);
@@ -301,7 +296,6 @@ export async function syncUser(req, res) {
         bio: profile.bio ?? "",
       });
     }
-
     const Model =
       role === "client" ? mongoose.model("client") : mongoose.model("artist");
     const user = await Model.findOneAndUpdate(
