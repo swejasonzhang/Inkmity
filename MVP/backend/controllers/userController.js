@@ -207,11 +207,17 @@ export async function getArtists(req, res) {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .select(
-        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount createdAt bio"
+        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages"
       )
       .lean(),
   ]);
-  res.json({ items, total, page, pageSize });
+  res.json({
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  });
 }
 
 export async function getArtistById(req, res) {
@@ -239,23 +245,6 @@ export async function checkHandleAvailability(req, res) {
   res.json({ ok: true, available, handle: publicHandle });
 }
 
-export async function updateMyHandle(req, res) {
-  const clerkId = getClerkId(req);
-  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const desired = String(req.body?.handle || "").trim();
-  const base = stripToHandleBase(desired);
-  if (!base) return res.status(400).json({ error: "handle_required" });
-  const candidate = await ensureUniqueHandle(mongoose.connection.db, base);
-  const nextHandle = withAt(candidate);
-  const user = await User.findOneAndUpdate(
-    { clerkId },
-    { $set: { handle: nextHandle } },
-    { new: true }
-  ).lean();
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json({ ok: true, handle: user.handle });
-}
-
 export async function syncUser(req, res) {
   try {
     const authClerkId = getClerkId(req);
@@ -268,20 +257,16 @@ export async function syncUser(req, res) {
       profile = {},
       bio: bodyBio,
     } = req.body || {};
-
     const clerkId = authClerkId || bodyClerkId;
     if (!clerkId || !email || !rawRole) {
       return res
         .status(400)
         .json({ error: "clerkId, email, role are required" });
     }
-
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
-
     const finalUsername =
       String(bodyUsername || "").trim() || existing?.username || "user";
-
     let targetHandle = existing?.handle;
     if (!targetHandle) {
       const baseForHandle =
@@ -294,9 +279,7 @@ export async function syncUser(req, res) {
       );
       targetHandle = withAt(ensuredBase);
     }
-
     const bio = cleanBio(bodyBio ?? profile.bio) || "";
-
     const setDoc = {
       clerkId,
       email,
@@ -305,7 +288,6 @@ export async function syncUser(req, res) {
       role,
       bio,
     };
-
     if (role === "client") {
       const min = Number(profile.budgetMin ?? 100);
       const max = Number(profile.budgetMax ?? 200);
@@ -356,7 +338,6 @@ export async function syncUser(req, res) {
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
       });
     }
-
     const Model =
       role === "client" ? mongoose.model("client") : mongoose.model("artist");
     const user = await Model.findOneAndUpdate(
@@ -369,7 +350,6 @@ export async function syncUser(req, res) {
         setDefaultsOnInsert: true,
       }
     ).lean();
-
     res.status(200).json(user);
   } catch (e) {
     console.error("[syncUser] failed:", e);

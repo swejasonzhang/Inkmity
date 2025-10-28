@@ -12,7 +12,6 @@ import {
   getArtists,
   getArtistById,
   checkHandleAvailability,
-  updateMyHandle,
   updateMyBio,
   getMyDefaultBio,
 } from "../controllers/userController.js";
@@ -21,7 +20,6 @@ const router = Router();
 
 router.get("/me", requireAuth(), getMe);
 router.get("/handle-availability", checkHandleAvailability);
-router.put("/me/handle", requireAuth(), updateMyHandle);
 router.put("/me/bio", requireAuth(), updateMyBio);
 router.get("/me/bio/default", requireAuth(), getMyDefaultBio);
 router.post("/sync", requireAuth(), syncUser);

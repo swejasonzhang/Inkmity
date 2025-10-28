@@ -5,7 +5,6 @@ import CircularProgress from "@mui/material/CircularProgress"
 import { motion } from "framer-motion"
 import Pagination from "../shared/Pagination"
 import type { Artist } from "@/api"
-import { displayNameFromUsername } from "@/lib/format"
 
 type Props = {
     artists: Artist[]
@@ -97,6 +96,10 @@ export default function ArtistsSection({
     const usingExternalPaging = typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function"
 
     useEffect(() => {
+        console.log("[ArtistsSection] all artists:", { count: Array.isArray(artists) ? artists.length : 0, items: artists })
+    }, [artists])
+
+    useEffect(() => {
         if (typeof window === "undefined") return
         const payload = {
             priceFilter,
@@ -149,11 +152,11 @@ export default function ArtistsSection({
 
         const matchesKeyword = (a: Artist, q: string) => {
             if (!q) return true
-            const styles = Array.isArray(a.styles) ? a.styles : []
+            const styles = Array.isArray((a as any).styles) ? (a as any).styles : []
             const bio = (a as any).bio as string | undefined
             return (
                 a.username?.toLowerCase().includes(q) ||
-                a.location?.toLowerCase().includes(q) ||
+                (a as any).location?.toLowerCase().includes(q) ||
                 (bio ? bio.toLowerCase().includes(q) : false) ||
                 styles.some((s: string) => s.toLowerCase().includes(q))
             )
@@ -173,11 +176,12 @@ export default function ArtistsSection({
 
         let list = artists.filter(a => {
             if (!inPriceRange(a)) return false
-            if (!(locationFilter === "all" || a.location === locationFilter)) return false
-            if (!(styleFilter === "all" || (Array.isArray(a.styles) ? a.styles : []).includes(styleFilter))) return false
+            if (!(locationFilter === "all" || (a as any).location === locationFilter)) return false
+            const styles = Array.isArray((a as any).styles) ? (a as any).styles : []
+            if (!(styleFilter === "all" || styles.includes(styleFilter))) return false
             if (!matchesKeyword(a, debouncedSearch)) return false
             if (!inAvailability(a)) return false
-            const y = normalizeYears(a.yearsExperience)
+            const y = normalizeYears((a as any).yearsExperience)
             if (!matchesExperience(y, experienceFilter)) return false
             if (!matchesBooking(a, bookingFilter)) return false
             if (!matchesTravel(a, travelFilter)) return false
@@ -186,35 +190,37 @@ export default function ArtistsSection({
 
         if (sort === "experience_desc" || sort === "experience_asc") {
             list = list.slice().sort((a, b) => {
-                const ay = normalizeYears(a.yearsExperience)
-                const by = normalizeYears(b.yearsExperience)
+                const ay = normalizeYears((a as any).yearsExperience)
+                const by = normalizeYears((b as any).yearsExperience)
                 const av = ay ?? (sort === "experience_desc" ? -Infinity : Infinity)
                 const bv = by ?? (sort === "experience_desc" ? -Infinity : Infinity)
                 return sort === "experience_desc" ? bv - av : av - bv
             })
         } else if (sort === "newest") {
-            list = list.slice().sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
+            list = list.slice().sort(
+                (a, b) => new Date((b as any).createdAt ?? 0).getTime() - new Date((a as any).createdAt ?? 0).getTime()
+            )
         } else if (sort === "highest_rated") {
             list = list.slice().sort((a, b) => {
-                const ar = toNumber(a.rating, 0)
-                const br = toNumber(b.rating, 0)
+                const ar = toNumber((a as any).rating, 0)
+                const br = toNumber((b as any).rating, 0)
                 if (br !== ar) return br - ar
-                const arv = toNumber(a.reviewsCount, 0)
-                const brv = toNumber(b.reviewsCount, 0)
+                const arv = toNumber((a as any).reviewsCount, 0)
+                const brv = toNumber((b as any).reviewsCount, 0)
                 return brv - arv
             })
         } else if (sort === "most_reviews") {
             list = list.slice().sort((a, b) => {
-                const arv = toNumber(a.reviewsCount, 0)
-                const brv = toNumber(b.reviewsCount, 0)
+                const arv = toNumber((a as any).reviewsCount, 0)
+                const brv = toNumber((b as any).reviewsCount, 0)
                 if (brv !== arv) return brv - arv
-                const ar = toNumber(a.rating, 0)
-                const br = toNumber(b.rating, 0)
+                const ar = toNumber((a as any).rating, 0)
+                const br = toNumber((b as any).rating, 0)
                 return br - ar
             })
         }
 
-        return list.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))
+        return list
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort])
 
     const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
@@ -235,6 +241,14 @@ export default function ArtistsSection({
         listItems.length,
     ].join("|")
 
+    useEffect(() => {
+        console.log("[ArtistsSection] visible page items:", {
+            page: usingExternalPaging ? page : currentPage,
+            count: listItems.length,
+            items: listItems,
+        })
+    }, [listItems, currentPage, page, usingExternalPaging])
+
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return
         const target = e.target as HTMLElement
@@ -251,7 +265,11 @@ export default function ArtistsSection({
     }
 
     return (
-        <section id="middle-content" className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-card" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <section
+            id="middle-content"
+            className="flex-[2.6] flex flex-col max-w-full w-full overflow-y-auto rounded-2xl bg-card"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
             <div className="bg-card px-3 py-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300">
                 <ArtistFilter
                     priceFilter={priceFilter}
@@ -313,18 +331,24 @@ export default function ArtistsSection({
                         <div className="w-full flex-1 px-0 pt-3 pb-2">
                             {listItems.length > 0 ? (
                                 !isCenterLoading && (
-                                    <div key={motionKey} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[1fr] gap-6 md:gap-5">
+                                    <div
+                                        key={motionKey}
+                                        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[1fr] gap-6 md:gap-5"
+                                    >
                                         {listItems.map((artist, index) => (
                                             <motion.div
-                                                key={`${(artist as any).clerkId ?? artist._id}:${index}`}
+                                                key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
                                                 initial={{ opacity: 0, y: 24 }}
                                                 whileInView={{ opacity: 1, y: 0 }}
                                                 viewport={{ once: true, amount: 0.2 }}
                                                 transition={{ duration: 0.45, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] as const }}
                                                 className="w-full h-full"
                                             >
-                                                <div className="h-full min-h-[520px] sm:minh-[540px] md:min-h-[560px]" data-artist-card="true">
-                                                    <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} />
+                                                <div className="h-full min-h-[520px] sm:min-h-[540px] md:min-h-[560px]" data-artist-card="true">
+                                                    <ArtistCard
+                                                        artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any}
+                                                        onClick={() => onSelectArtist(artist)}
+                                                    />
                                                 </div>
                                             </motion.div>
                                         ))}
@@ -337,9 +361,19 @@ export default function ArtistsSection({
 
                         <div className="py-4 px-3 sm:px-4 md:px-6">
                             {usingExternalPaging ? (
-                                <Pagination currentPage={page!} totalPages={totalPages!} onPrev={() => handleSetCurrentPage(page as number - 1)} onNext={() => handleSetCurrentPage((page as number) + 1)} />
+                                <Pagination
+                                    currentPage={page!}
+                                    totalPages={totalPages!}
+                                    onPrev={() => handleSetCurrentPage((page as number) - 1)}
+                                    onNext={() => handleSetCurrentPage((page as number) + 1)}
+                                />
                             ) : (
-                                <Pagination currentPage={currentPage} totalPages={Math.ceil(filtered.length / ITEMS_PER_PAGE)} onPrev={() => handleSetCurrentPage(currentPage - 1)} onNext={() => handleSetCurrentPage(currentPage + 1)} />
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={Math.ceil(filtered.length / ITEMS_PER_PAGE)}
+                                    onPrev={() => handleSetCurrentPage(currentPage - 1)}
+                                    onNext={() => handleSetCurrentPage(currentPage + 1)}
+                                />
                             )}
                         </div>
                     </div>
