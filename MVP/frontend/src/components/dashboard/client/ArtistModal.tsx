@@ -28,7 +28,10 @@ type BookingProps = {
   onClose?: () => void;
   onGoToStep?: (step: 0 | 1 | 2) => void;
 };
+
 const ArtistBooking = ArtistBookingComponent as React.ComponentType<BookingProps>;
+
+const THEME_CLASSES = ["dashboard-theme", "ink-light"];
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
   const [step, setStep] = useState<0 | 1 | 2>(0);
@@ -70,6 +73,16 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
     if (!portalRef.current) {
       const el = document.createElement("div");
       el.id = "inkmity-modal-root";
+      el.style.position = "fixed";
+      el.style.inset = "0";
+      el.style.zIndex = "1200";
+      el.style.isolation = "isolate";
+      const themedAncestor = document.querySelector(".dashboard-theme");
+      if (themedAncestor) {
+        THEME_CLASSES.forEach((c) => {
+          if (themedAncestor.classList.contains(c)) el.classList.add(c);
+        });
+      }
       portalRef.current = el;
       document.body.appendChild(el);
     }
@@ -154,7 +167,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage }) => {
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.96, opacity: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="fixed inset-0 z-[1200] flex items-center justify-center"
+      className="fixed inset-0 flex items-center justify-center"
       style={{ background: "color-mix(in oklab, var(--bg) 30%, transparent)", overscrollBehavior: "contain" } as React.CSSProperties}
       aria-modal="true"
       role="dialog"
