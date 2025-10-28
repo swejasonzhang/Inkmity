@@ -3,6 +3,11 @@ import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
 import cloudinary from "../lib/cloudinary.js";
+import {
+  ensureUniqueHandle,
+  isValidHandle,
+  slugifyBase,
+} from "../lib/handle.js";
 
 const authObj = (req) =>
   typeof req.auth === "function" ? req.auth() : req.auth;
@@ -16,19 +21,28 @@ const slugify = (s = "") =>
     .replace(/(^-|-$)+/g, "")
     .slice(0, 24);
 
-function randomSuffix(n = 4) {
-  const chars = "abcdefghjkmnpqrstuvwxyz23456789";
-  let out = "";
-  for (let i = 0; i < n; i++)
-    out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
+function parseExp(q) {
+  const s = String(q || "")
+    .trim()
+    .toLowerCase();
+  if (!s || s === "all") return {};
+  if (s.endsWith("+")) {
+    const n = Number(s.slice(0, -1));
+    return Number.isFinite(n) ? { $gte: n } : {};
+  }
+  const m = s.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (m) {
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    if (Number.isFinite(a) && Number.isFinite(b)) return { $gte: a, $lte: b };
+  }
+  return {};
 }
 
 export async function getMe(req, res) {
   const clerkId = getClerkId(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const me = await User.findOne({ clerkId }).lean();
-  console.log("[users/getMe] currentUser =", me);
   if (!me) return res.status(404).json({ error: "Not found" });
   res.json(me);
 }
@@ -107,36 +121,20 @@ export async function saveMyReferences(req, res) {
   try {
     const clerkId = getClerkId(req);
     if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-    const urls = Array.isArray(req.body?.urls) ? req.body.urls : [];
+    const urls = (Array.isArray(req.body?.urls) ? req.body.urls : [])
+      .map((u) => String(u || "").trim())
+      .filter(Boolean)
+      .slice(0, 3);
     const user = await User.findOneAndUpdate(
       { clerkId },
       { $set: { references: urls } },
       { new: true }
     ).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
-    console.log("[users/references] saved references =", user.references || []);
     res.json({ ok: true, references: user.references || [] });
   } catch {
     res.status(500).json({ error: "save_references_failed" });
   }
-}
-
-function parseExp(q) {
-  const s = String(q || "")
-    .trim()
-    .toLowerCase();
-  if (!s || s === "all") return {};
-  if (s.endsWith("+")) {
-    const n = Number(s.slice(0, -1));
-    return Number.isFinite(n) ? { $gte: n } : {};
-  }
-  const m = s.match(/^(\d+)\s*-\s*(\d+)$/);
-  if (m) {
-    const a = Number(m[1]);
-    const b = Number(m[2]);
-    if (Number.isFinite(a) && Number.isFinite(b)) return { $gte: a, $lte: b };
-  }
-  return {};
 }
 
 export async function getArtists(req, res) {
@@ -181,7 +179,7 @@ export async function getArtists(req, res) {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .select(
-        "_id clerkId username role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount createdAt"
+        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount createdAt"
       )
       .lean(),
   ]);
@@ -196,15 +194,30 @@ export async function getArtistById(req, res) {
   res.json(doc);
 }
 
-export async function checkUsernameAvailability(req, res) {
-  const raw = String(req.query.u || "").trim();
+export async function checkHandleAvailability(req, res) {
+  const raw = String(req.query.h || "").trim();
   if (!raw)
-    return res.status(400).json({ ok: false, error: "username_required" });
-  const candidate = slugify(raw);
-  if (!candidate)
-    return res.status(400).json({ ok: false, error: "invalid_username" });
-  const hit = await User.findOne({ username: candidate }, { _id: 1 }).lean();
-  return res.json({ ok: true, available: !hit, username: candidate });
+    return res.status(400).json({ ok: false, error: "handle_required" });
+  const base = slugifyBase(raw);
+  if (!isValidHandle(base))
+    return res.status(200).json({ ok: true, available: false, handle: base });
+  const available = !(await User.findOne({ handle: base }, { _id: 1 }).lean());
+  res.json({ ok: true, available, handle: base });
+}
+
+export async function updateMyHandle(req, res) {
+  const clerkId = getClerkId(req);
+  if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  const desired = String(req.body?.handle || "").trim();
+  if (!desired) return res.status(400).json({ error: "handle_required" });
+  const candidate = await ensureUniqueHandle(mongoose.connection.db, desired);
+  const user = await User.findOneAndUpdate(
+    { clerkId },
+    { $set: { handle: candidate } },
+    { new: true }
+  ).lean();
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json({ ok: true, handle: user.handle });
 }
 
 export async function syncUser(req, res) {
@@ -215,6 +228,7 @@ export async function syncUser(req, res) {
       email,
       role: rawRole,
       username,
+      handle,
       firstName,
       lastName,
       profile = {},
@@ -228,39 +242,40 @@ export async function syncUser(req, res) {
 
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
+
     const requestedUsername = String(username || "").trim();
-    if (!existing && !requestedUsername)
-      return res.status(400).json({ error: "username_required" });
-
-    let finalUsername = requestedUsername
+    const finalUsername = requestedUsername
       ? slugify(requestedUsername)
-      : existing?.username;
-    if (!finalUsername)
-      return res.status(400).json({ error: "invalid_username" });
+      : existing?.username || "user";
 
-    const nameOwner = await User.findOne(
-      { username: finalUsername },
-      { clerkId: 1 }
-    ).lean();
-    if (nameOwner && String(nameOwner.clerkId) !== String(clerkId)) {
-      return res
-        .status(409)
-        .json({ error: "username_taken", username: finalUsername });
-    }
-
-    if (existing && existing.role && existing.role !== role) {
-      return res
-        .status(409)
-        .json({ error: `User already exists as ${existing.role}` });
+    let targetHandle = String(handle || "").trim();
+    if (!targetHandle) {
+      const baseParts =
+        [firstName, lastName].filter(Boolean).join(".") || finalUsername;
+      targetHandle = await ensureUniqueHandle(
+        mongoose.connection.db,
+        baseParts
+      );
+    } else {
+      targetHandle = await ensureUniqueHandle(
+        mongoose.connection.db,
+        targetHandle
+      );
     }
 
     const setDoc = {
       clerkId,
       email,
       username: finalUsername,
+      handle: targetHandle,
       role,
-      firstName: (firstName || "").trim(),
-      lastName: (lastName || "").trim(),
+      displayName: `${(firstName || "").trim()} ${(
+        lastName || ""
+      ).trim()}`.trim(),
+      nameParts: {
+        first: (firstName || "").trim(),
+        last: (lastName || "").trim(),
+      },
     };
 
     if (role === "client") {
@@ -273,23 +288,19 @@ export async function syncUser(req, res) {
         ? Math.max(0, Math.min(5000, max))
         : 200;
       if (budgetMax <= budgetMin) budgetMax = Math.max(budgetMin + 1, 200);
-
-      const refsRaw = Array.isArray(profile.referenceImages)
-        ? profile.referenceImages
-        : [];
-      const references = refsRaw
-        .filter((u) => typeof u === "string")
-        .map((u) => u.trim())
+      const refs = (
+        Array.isArray(profile.referenceImages) ? profile.referenceImages : []
+      )
+        .map((u) => String(u || "").trim())
         .filter(Boolean)
         .slice(0, 3);
-
       Object.assign(setDoc, {
         budgetMin,
         budgetMax,
         location: profile.location ?? "",
         placement: profile.placement ?? "",
         size: profile.size ?? "",
-        ...(references.length ? { references } : {}),
+        ...(refs.length ? { references: refs } : {}),
       });
     } else {
       const years = Number(profile.years ?? profile.yearsExperience ?? 0);
@@ -297,21 +308,15 @@ export async function syncUser(req, res) {
       const bookingPreference = profile.bookingPreference || "open";
       const travelFrequency = profile.travelFrequency || "rare";
       const shop = profile.shop || "";
-      const stylesRaw = Array.isArray(profile.styles) ? profile.styles : [];
-      const styles = stylesRaw
-        .filter((s) => typeof s === "string")
-        .map((s) => s.trim())
+      const styles = (Array.isArray(profile.styles) ? profile.styles : [])
+        .map((s) => String(s || "").trim())
         .filter(Boolean);
-
-      const portfolioRaw = Array.isArray(profile.portfolioImages)
-        ? profile.portfolioImages
-        : [];
-      const portfolioImages = portfolioRaw
-        .filter((u) => typeof u === "string")
-        .map((u) => u.trim())
+      const portfolio = (
+        Array.isArray(profile.portfolioImages) ? profile.portfolioImages : []
+      )
+        .map((u) => String(u || "").trim())
         .filter(Boolean)
         .slice(0, 3);
-
       Object.assign(setDoc, {
         location: profile.location ?? "",
         shop,
@@ -321,7 +326,7 @@ export async function syncUser(req, res) {
         travelFrequency,
         styles,
         bio: profile.bio ?? "",
-        ...(portfolioImages.length ? { portfolioImages } : {}),
+        ...(portfolio.length ? { portfolioImages: portfolio } : {}),
       });
     }
 

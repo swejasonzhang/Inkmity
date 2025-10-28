@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +19,12 @@ type Props = {
     maxSizeMB?: number;
 };
 
+const RAW_API_BASE =
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) ||
+    "http://localhost:5005/api";
+const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
+const apiUrl = (p: string) => `${API_BASE}${p.startsWith("/") ? "" : "/"}${p}`;
+
 export default function SignupUpload({
     label,
     kind,
@@ -30,6 +37,7 @@ export default function SignupUpload({
     const [slots, setSlots] = useState<Slot[]>(() => Array.from({ length: 3 }, (_, i) => ({ url: value[i] || "" })));
     const inputRef = useRef<HTMLInputElement | null>(null);
     const id = useId();
+    const { getToken } = useAuth();
 
     useEffect(() => {
         if (value.length > 3) console.warn(`[SignupUpload] Truncating value to 3 entries for kind=${kind}`);
@@ -47,17 +55,42 @@ export default function SignupUpload({
             return s;
         });
 
+    const persist = async (urls: string[]) => {
+        try {
+            const token = await getToken();
+            if (!token) return;
+            const path = kind === "client_ref" ? "/users/me/references" : "/users/me/portfolio";
+            await fetch(apiUrl(path), {
+                method: "PUT",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ urls: urls.filter(Boolean).slice(0, 3) }),
+            });
+        } catch (e) {
+            console.error("[SignupUpload] Persist failed:", e);
+        }
+    };
+
+    const applyAndPersist = (next: string[]) => {
+        const trimmed = next.slice(0, 3);
+        onChange(trimmed);
+        void persist(trimmed);
+    };
+
     const pushValue = (i: number, url: string) => {
         const next = [...value];
         next[i] = url;
-        onChange(next.slice(0, 3));
+        applyAndPersist(next);
     };
 
     const removeAt = (i: number) => {
         setAt(i, { file: undefined, url: "", error: "", uploading: false, publicId: undefined });
         const next = [...value];
         next[i] = "";
-        onChange(next.slice(0, 3));
+        applyAndPersist(next);
     };
 
     const handleFiles = useCallback(
@@ -172,9 +205,7 @@ export default function SignupUpload({
                     </Button>
                 </div>
 
-                <p className="text-[11px] text-subtle mt-1 text-center">
-                    Previews are small here. Images will appear larger on your dashboard.
-                </p>
+                <p className="text-[11px] text-subtle mt-1 text-center">Previews are small here. Images will appear larger on your dashboard.</p>
             </div>
         </div>
     );
