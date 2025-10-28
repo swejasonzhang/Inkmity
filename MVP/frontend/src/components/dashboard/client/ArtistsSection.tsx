@@ -96,10 +96,6 @@ export default function ArtistsSection({
     const usingExternalPaging = typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function"
 
     useEffect(() => {
-        console.log("[ArtistsSection] all artists:", { count: Array.isArray(artists) ? artists.length : 0, items: artists })
-    }, [artists])
-
-    useEffect(() => {
         if (typeof window === "undefined") return
         const payload = {
             priceFilter,
@@ -240,14 +236,6 @@ export default function ArtistsSection({
         debouncedSearch,
         listItems.length,
     ].join("|")
-
-    useEffect(() => {
-        console.log("[ArtistsSection] visible page items:", {
-            page: usingExternalPaging ? page : currentPage,
-            count: listItems.length,
-            items: listItems,
-        })
-    }, [listItems, currentPage, page, usingExternalPaging])
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return

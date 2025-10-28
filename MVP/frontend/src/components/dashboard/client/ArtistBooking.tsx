@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
@@ -24,40 +23,64 @@ type Gate = {
 };
 
 export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: BookingProps) {
-  const prefersReducedMotion = useReducedMotion();
   const { request } = useApi();
   const apiOrigin =
     (import.meta as any)?.env?.VITE_API_URL ||
     import.meta.env?.VITE_API_URL ||
     "http://localhost:5005";
 
-  const preloadedMessage = useMemo(
-    () => `Hi ${artist.username}, I've taken a look at your work and I'm interested!\nWould you be open to my ideas?`,
-    [artist.username]
-  );
-
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [gate, setGate] = useState<Gate | null>(null);
   const sentRef = useRef(false);
 
+  const [profileRefs, setProfileRefs] = useState<string[]>([]);
+  const [desiredStyle, setDesiredStyle] = useState<string | undefined>(undefined);
+  const [budgetRange, setBudgetRange] = useState<{ min?: number; max?: number }>({});
+  const [placement, setPlacement] = useState<string | undefined>(undefined);
+  const [size, setSize] = useState<string | undefined>(undefined);
+
+  const didInit = useRef(false);
+
   useEffect(() => {
-    let alive = true;
-    async function loadGate() {
+    if (didInit.current) return;
+    didInit.current = true;
+
+    const ac = new AbortController();
+
+    (async () => {
       try {
-        const g = await request(`${apiOrigin}/messages/gate/${artist.clerkId}`, { method: "GET" });
-        if (alive) setGate(g as Gate);
-        if ((g as Gate)?.lastStatus === "pending" && !(g as Gate)?.allowed) {
-          sentRef.current = true;
-          setStatus("sent");
+        if (artist?.clerkId) {
+          const g = await request(`${apiOrigin}/messages/gate/${artist.clerkId}`, {
+            method: "GET",
+            signal: ac.signal as any,
+          });
+          setGate(g as Gate);
+          if ((g as Gate)?.lastStatus === "pending" && !(g as Gate)?.allowed) {
+            sentRef.current = true;
+            setStatus("sent");
+          }
         }
       } catch { }
-    }
-    if (artist?.clerkId) loadGate();
-    return () => {
-      alive = false;
-    };
-  }, [artist?.clerkId, apiOrigin, request]);
+
+      try {
+        const me: any = await request(`${apiOrigin}/users/me`, {
+          method: "GET",
+          signal: ac.signal as any,
+        });
+        const refs: string[] = me?.references?.map((r: any) => r.url || r) || me?.referenceUrls || [];
+        setProfileRefs((refs || []).filter(Boolean));
+        setDesiredStyle(me?.preferredStyle || me?.style || me?.styles?.[0] || undefined);
+        const min = me?.budgetMin ?? me?.budget?.min;
+        const max = me?.budgetMax ?? me?.budget?.max;
+        setBudgetRange({ min, max });
+        setPlacement(me?.placement || undefined);
+        setSize(me?.size || undefined);
+      } catch { }
+    })();
+
+    return () => ac.abort();
+  }, [apiOrigin, artist?.clerkId, request]);
 
   const isPending = (gate?.lastStatus === "pending" && !gate?.allowed) || status === "sent";
 
@@ -76,6 +99,28 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         detail: { artistId: artist.clerkId, username: artist.username },
       })
     );
+
+  const preloadedMessage = useMemo(() => {
+    const parts: string[] = [];
+    parts.push(`Hi ${artist.username}, I've taken a look at your work and I'm interested!`);
+    const sizeTxt = size ? `size ${size}` : "a tattoo";
+    const placeTxt = placement ? ` near the area ${placement}` : "";
+    const styleTxt = desiredStyle ? ` in ${desiredStyle}` : "";
+    parts.push(`I want to get a tattoo with ${sizeTxt}${placeTxt}${styleTxt}.`);
+    if (profileRefs.length) {
+      parts.push("Here are some reference images:");
+      for (const u of profileRefs.slice(0, 10)) parts.push(`- ${u}`);
+      if (profileRefs.length > 10) parts.push(`- +${profileRefs.length - 10} more`);
+    }
+    if (budgetRange.min != null || budgetRange.max != null) {
+      const min = budgetRange.min != null ? `$${budgetRange.min}` : "";
+      const max = budgetRange.max != null ? `$${budgetRange.max}` : "";
+      const dash = budgetRange.min != null && budgetRange.max != null ? "–" : "";
+      parts.push(`Budget: ${min}${dash}${max}`.trim());
+    }
+    parts.push("Would you be open to working together?");
+    return parts.join("\n");
+  }, [artist.username, size, placement, desiredStyle, profileRefs, budgetRange.min, budgetRange.max, date]);
 
   function mapError(status: number | undefined, body: any): string {
     const code = typeof body?.error === "string" ? body.error : "";
@@ -108,7 +153,20 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     setStatus("sending");
     setErrorMsg("");
     try {
-      const payload = { artistId: artist.clerkId, text: preloadedMessage, meta: {} };
+      const payload = {
+        artistId: artist.clerkId,
+        text: preloadedMessage,
+        meta: {
+          style: desiredStyle || null,
+          size: size || null,
+          placement: placement || null,
+          budgetMin: budgetRange.min ?? null,
+          budgetMax: budgetRange.max ?? null,
+          targetDate: date ? date.toISOString() : null,
+          referenceUrls: profileRefs,
+          stylesSnapshot: desiredStyle ? [desiredStyle] : [],
+        },
+      };
       const res: any = await request(`${apiOrigin}/messages/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -184,10 +242,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
               </div>
 
               <div className="justify-self-center">
-                <motion.div
-                  initial={{ y: 0, opacity: 0.95 }}
-                  animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                <div
                   className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
                   style={{
                     background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
@@ -196,7 +251,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                 >
                   <ChevronDown className="h-4 w-4" />
                   <span>Scroll to explore the message the artist and book an appointment</span>
-                </motion.div>
+                </div>
                 <div className="sm:hidden h-6" />
               </div>
 
@@ -232,20 +287,12 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </CardHeader>
           <CardContent className="flex items-center justify-center">
             <div className="w-full mx-auto flex flex-col items-center justify-center gap-4 sm:gap-6 px-4">
-              <p
-                className="px-4 py-2 rounded-md text-center w-full max-w-[28rem] text-[13px] sm:text-sm leading-5 sm:leading-6"
-                style={{ background: "var(--elevated)", color: "var(--fg)" }}
-              >
+              <p className="px-4 py-2 rounded-md text-center w-full max-w-[28rem] text-[13px] sm:text-sm leading-5 sm:leading-6" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
                 Send a request to message. You will be able to chat once the artist accepts.
               </p>
 
               {status === "error" && (
-                <div
-                  role="alert"
-                  aria-live="assertive"
-                  className="w-full max-w-[28rem] px-3 py-2 rounded-md text-sm"
-                  style={{ background: "color-mix(in oklab, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}
-                >
+                <div role="alert" aria-live="assertive" className="w-full max-w-[28rem] px-3 py-2 rounded-md text-sm" style={{ background: "color-mix(in oklab, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}>
                   {errorMsg}
                 </div>
               )}

@@ -13,7 +13,7 @@ import SignupUpload from "@/components/upload/SignupUpload";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string };
 type ArtistProfile = {
   location: string;
   shop: string;

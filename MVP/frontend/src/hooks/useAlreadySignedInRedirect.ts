@@ -14,9 +14,8 @@ export function useAlreadySignedInRedirect(opts: Opts = {}) {
 
   useEffect(() => {
     if (!isLoaded || suppress || firedRef.current) return;
-
-    const isAuthPage = pathname === "/login" || pathname === "/signup";
-    if (!isAuthPage || !isSignedIn) return;
+    const onAuthPage = pathname === "/login" || pathname === "/signup";
+    if (!onAuthPage || !isSignedIn) return;
 
     const justSignedUp = sessionStorage.getItem("signupJustCompleted") === "1";
     if (justSignedUp) {

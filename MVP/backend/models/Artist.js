@@ -6,7 +6,6 @@ const { Schema } = mongoose;
 const ArtistSchema = new Schema(
   {
     shop: String,
-    styles: [{ type: String, index: true }],
     rating: { type: Number, default: 0, index: true },
     reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
     reviewsCount: { type: Number, default: 0, index: true },
