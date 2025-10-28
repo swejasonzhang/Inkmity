@@ -12,34 +12,26 @@ export function useSyncOnAuth() {
   useEffect(() => {
     if (!isSignedIn || ranRef.current) return;
     ranRef.current = true;
-
     (async () => {
       try {
         const token = await getToken();
-
         try {
           await getMe(token ?? "");
           return;
         } catch {}
-
         if (!user) return;
-
         const email =
           user.primaryEmailAddress?.emailAddress ||
           user.emailAddresses?.[0]?.emailAddress ||
           "";
-
         const role: Role =
           (user.publicMetadata?.role as Role | undefined) ?? "client";
-
         const fn = user.firstName?.trim() || "";
         const ln = user.lastName?.trim() || "";
-
         const username =
           `${fn} ${ln}`.trim() ||
           email.split("@")[0] ||
           `user-${user.id.slice(-6)}`;
-
         const profile =
           role === "artist"
             ? {
@@ -50,6 +42,7 @@ export function useSyncOnAuth() {
                 bookingPreference: "open",
                 travelFrequency: "rare",
                 styles: [],
+                bio: "",
               }
             : {
                 budgetMin: 100,
@@ -57,8 +50,8 @@ export function useSyncOnAuth() {
                 location: "",
                 placement: "",
                 size: "",
+                bio: "",
               };
-
         try {
           await syncUser(token ?? "", {
             clerkId: user.id,
@@ -70,7 +63,6 @@ export function useSyncOnAuth() {
             profile,
           });
         } catch {}
-
         try {
           await getMe(token ?? "");
         } catch {}

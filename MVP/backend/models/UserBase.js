@@ -16,21 +16,8 @@ const UserBaseSchema = new Schema(
   {
     clerkId: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    username: {
-      type: String,
-      required: true,
-      default: function () {
-        const f = this.nameParts?.first?.trim?.() || "";
-        const l = this.nameParts?.last?.trim?.() || "";
-        return `${f} ${l}`.trim() || "user";
-      },
-    },
+    username: { type: String, required: true, default: "user" },
     handle: { type: String, required: true, unique: true, index: true },
-    displayName: { type: String, default: "" },
-    nameParts: {
-      first: { type: String, default: "" },
-      last: { type: String, default: "" },
-    },
     avatar: ImageSchema,
     role: {
       type: String,
@@ -39,22 +26,13 @@ const UserBaseSchema = new Schema(
       index: true,
     },
     location: { type: String, default: "" },
+    bio: { type: String, default: "", maxlength: 600, required: false },
   },
   { timestamps: true, discriminatorKey: "role", collection: "users" }
 );
 
 UserBaseSchema.pre("validate", function (next) {
-  const f = this.nameParts?.first?.trim?.() || "";
-  const l = this.nameParts?.last?.trim?.() || "";
-  const combined = `${f} ${l}`.trim();
-  if (
-    !this.username ||
-    this.username === "user" ||
-    this.isModified("nameParts")
-  ) {
-    this.username = combined || this.username || "user";
-  }
-  this.displayName = combined || this.displayName || "";
+  if (!this.username || !this.username.trim()) this.username = "user";
   next();
 });
 

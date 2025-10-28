@@ -12,9 +12,20 @@ import OtpStep from "@/components/access/OtpStep";
 import SignupUpload from "@/components/upload/SignupUpload";
 
 type Role = "client" | "artist";
-type SharedAccount = { firstName: string; lastName: string; email: string; confirmEmail: string; password: string };
+type SharedAccount = { username: string; email: string; password: string };
 type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
-type ArtistProfile = { location: string; shop: string; years: string; baseRate: string; instagram: string; portfolio: string };
+type ArtistProfile = {
+  location: string;
+  shop: string;
+  years: string;
+  baseRate: string;
+  bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+  travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
+  portfolio: string;
+  styles: string[];
+  bio?: string;
+};
+
 
 type BaseProps = {
   showInfo: boolean;
@@ -55,6 +66,8 @@ type SignupProps = BaseProps & {
   artistPortfolioImgs: string[];
   setArtistPortfolioImgs: (v: string[]) => void;
   onCancelVerification: () => void;
+  bio: string;
+  onBioChange: React.ChangeEventHandler<HTMLTextAreaElement>;
 };
 
 type LoginProps = BaseProps & { mode: "login" };
@@ -68,11 +81,7 @@ export default function FormCard(props: Props) {
     subtitleOverride ??
     (isSignup ? "A few quick steps to personalize your experience." : "Login to continue exploring artists, styles, and your tattoo journey.");
   const isRoleSlide = isSignup && (props as SignupProps).slides[(props as SignupProps).step].key === "role";
-  const emailMismatch =
-    isSignup &&
-    (props as SignupProps).shared.confirmEmail.length > 0 &&
-    (props as SignupProps).shared.confirmEmail !== (props as SignupProps).shared.email;
-  const disableNextForEmail = isRoleSlide && ((props as SignupProps).emailTaken || emailMismatch);
+  const disableNextForEmail = isRoleSlide && (props as SignupProps).emailTaken;
   const totalSteps = isSignup ? (props as SignupProps).slides.length + 1 : 0;
   const currentIndex = isSignup ? ((props as SignupProps).awaitingCode ? (props as SignupProps).slides.length : (props as SignupProps).step) : 0;
 
@@ -118,6 +127,8 @@ export default function FormCard(props: Props) {
                             onChange={(props as SignupProps).onSharedChange}
                             onPasswordVisibilityChange={props.onPasswordVisibilityChange}
                             onEmailBlur={(props as SignupProps).onEmailBlur}
+                            bio={(props as SignupProps).bio}
+                            onBioChange={(props as SignupProps).onBioChange}
                           />
                         )}
 
@@ -184,7 +195,7 @@ export default function FormCard(props: Props) {
                           <Button
                             type="button"
                             onClick={(props as SignupProps).onStartVerification}
-                            disabled={(props as SignupProps).loading || !(props as SignupProps).isLoaded || !!(props as SignupProps).emailTaken || !!emailMismatch}
+                            disabled={(props as SignupProps).loading || !(props as SignupProps).isLoaded || !!(props as SignupProps).emailTaken}
                             className="bg-white/15 hover:bg-white/25 text-white h-11 text-base rounded-xl sm:flex-1"
                           >
                             Send Verification Code

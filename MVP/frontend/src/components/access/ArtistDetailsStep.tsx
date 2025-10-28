@@ -14,7 +14,8 @@ type ArtistProfile = {
     baseRate: string;
     bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
     travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
-    styles?: string[];
+    styles: string[];
+    bio?: string;
 };
 
 export default function ArtistDetailsStep({

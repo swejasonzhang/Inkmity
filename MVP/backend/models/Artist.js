@@ -1,14 +1,12 @@
 import mongoose from "mongoose";
 import User from "./UserBase.js";
+
 const { Schema } = mongoose;
 
 const ArtistSchema = new Schema(
   {
-    location: String,
     shop: String,
     styles: [{ type: String, index: true }],
-    bio: String,
-    priceRange: { min: Number, max: Number },
     rating: { type: Number, default: 0, index: true },
     reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
     reviewsCount: { type: Number, default: 0, index: true },

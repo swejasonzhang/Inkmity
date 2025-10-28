@@ -3,23 +3,33 @@ import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
 import cloudinary from "../lib/cloudinary.js";
-import {
-  ensureUniqueHandle,
-  isValidHandle,
-  slugifyBase,
-} from "../lib/handle.js";
-
-const authObj = (req) =>
-  typeof req.auth === "function" ? req.auth() : req.auth;
+import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
 
 const SAFE_ROLES = new Set(["client", "artist"]);
 
-const slugify = (s = "") =>
-  String(s)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "")
-    .slice(0, 24);
+const authObj = (req) =>
+  typeof req.auth === "function" ? req.auth() : req.auth;
+function getClerkId(req) {
+  try {
+    const a = authObj(req);
+    return (
+      a?.userId ||
+      req.user?.clerkId ||
+      req.headers["x-clerk-user-id"] ||
+      req.body?.clerkId ||
+      req.query?.clerkId ||
+      null
+    );
+  } catch {
+    return (
+      req.user?.clerkId ||
+      req.headers["x-clerk-user-id"] ||
+      req.body?.clerkId ||
+      req.query?.clerkId ||
+      null
+    );
+  }
+}
 
 function parseExp(q) {
   const s = String(q || "")
@@ -253,48 +263,49 @@ export async function syncUser(req, res) {
       clerkId: bodyClerkId,
       email,
       role: rawRole,
-      username,
       handle,
-      firstName,
-      lastName,
+      username: bodyUsername,
       profile = {},
+      bio: bodyBio,
     } = req.body || {};
+
     const clerkId = authClerkId || bodyClerkId;
-    if (!clerkId || !email || !rawRole)
+    if (!clerkId || !email || !rawRole) {
       return res
         .status(400)
         .json({ error: "clerkId, email, role are required" });
+    }
+
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
-    const display = `${(firstName || "").trim()} ${(
-      lastName || ""
-    ).trim()}`.trim();
-    const requestedUsername = String(username || "").trim();
+
     const finalUsername =
-      display || requestedUsername || existing?.username || "user";
-    let baseForHandle;
-    if (handle) baseForHandle = stripToHandleBase(handle);
-    else
-      baseForHandle =
-        stripToHandleBase(display || finalUsername) ||
+      String(bodyUsername || "").trim() || existing?.username || "user";
+
+    let targetHandle = existing?.handle;
+    if (!targetHandle) {
+      const baseForHandle =
+        stripToHandleBase(handle) ||
+        stripToHandleBase(finalUsername) ||
         stripToHandleBase(email.split("@")[0] || "user");
-    const ensuredBase = await ensureUniqueHandle(
-      mongoose.connection.db,
-      baseForHandle
-    );
-    const targetHandle = withAt(ensuredBase);
+      const ensuredBase = await ensureUniqueHandle(
+        mongoose.connection.db,
+        baseForHandle
+      );
+      targetHandle = withAt(ensuredBase);
+    }
+
+    const bio = cleanBio(bodyBio ?? profile.bio) || "";
+
     const setDoc = {
       clerkId,
       email,
       username: finalUsername,
       handle: targetHandle,
       role,
-      displayName: display,
-      nameParts: {
-        first: (firstName || "").trim(),
-        last: (lastName || "").trim(),
-      },
+      bio,
     };
+
     if (role === "client") {
       const min = Number(profile.budgetMin ?? 100);
       const max = Number(profile.budgetMax ?? 200);
@@ -334,7 +345,6 @@ export async function syncUser(req, res) {
         .map((u) => String(u || "").trim())
         .filter(Boolean)
         .slice(0, 3);
-      const bio = cleanBio(profile.bio) || "";
       Object.assign(setDoc, {
         location: profile.location ?? "",
         shop,
@@ -343,10 +353,10 @@ export async function syncUser(req, res) {
         bookingPreference,
         travelFrequency,
         styles,
-        bio,
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
       });
     }
+
     const Model =
       role === "client" ? mongoose.model("client") : mongoose.model("artist");
     const user = await Model.findOneAndUpdate(
@@ -359,9 +369,13 @@ export async function syncUser(req, res) {
         setDefaultsOnInsert: true,
       }
     ).lean();
+
     res.status(200).json(user);
-  } catch {
-    res.status(500).json({ error: "Failed to sync user" });
+  } catch (e) {
+    console.error("[syncUser] failed:", e);
+    res
+      .status(500)
+      .json({ error: "SYNC_FAILED", message: e?.message || String(e) });
   }
 }
 
@@ -384,4 +398,25 @@ export async function getMyDefaultBio(req, res) {
   const user = await User.findOne({ clerkId }).select("username bio").lean();
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ text: bioText(user.username, user.bio) });
+}
+
+export async function saveMyPortfolio(req, res) {
+  try {
+    const clerkId = getClerkId(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+    const urls = (Array.isArray(req.body?.urls) ? req.body.urls : [])
+      .map((u) => String(u || "").trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    const Artist = mongoose.model("artist");
+    const user = await Artist.findOneAndUpdate(
+      { clerkId },
+      { $set: { portfolioImages: urls } },
+      { new: true }
+    ).lean();
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ ok: true, portfolioImages: user.portfolioImages || [] });
+  } catch {
+    res.status(500).json({ error: "save_portfolio_failed" });
+  }
 }

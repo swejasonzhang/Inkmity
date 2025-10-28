@@ -8,7 +8,7 @@ cloudinary.config({
 });
 
 const kindToFolder = (k) =>
-  k === "artist_portfolio" ? "inkmity/portfolio" : "inkmity/reference";
+  k === "artist_portfolio" ? "inkmity/portfolio" : "inkmity/references";
 const kindToEnum = (k) =>
   k === "artist_portfolio" ? "portfolio" : "reference";
 
@@ -64,7 +64,7 @@ export const saveImages = async (req, res) => {
   try {
     const created = await Image.insertMany(docs, { ordered: false });
     return res.json({ ok: true, count: created.length });
-  } catch (e) {
+  } catch {
     return res.json({ ok: true, count: 0 });
   }
 };
@@ -94,5 +94,3 @@ export const deleteImage = async (req, res) => {
   await Image.deleteOne({ _id: id });
   res.json({ ok: true });
 };
-
-export default { signUpload, saveImages, listImages, deleteImage };
