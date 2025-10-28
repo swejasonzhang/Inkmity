@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 type Role = "client" | "artist";
-type SharedAccount = { firstName: string; lastName: string; email: string; confirmEmail: string; password: string };
+type SharedAccount = { username: string; email: string; password: string };
 
 type Props = {
     role: Role;
@@ -14,7 +14,8 @@ type Props = {
     onChange: React.ChangeEventHandler<HTMLInputElement>;
     onPasswordVisibilityChange?: (hidden: boolean) => void;
     onEmailBlur?: () => void;
-    onConfirmEmailBlur?: () => void;
+    bio: string;
+    onBioChange: React.ChangeEventHandler<HTMLTextAreaElement>;
 };
 
 export default function SharedAccountStep({
@@ -24,7 +25,8 @@ export default function SharedAccountStep({
     onChange,
     onPasswordVisibilityChange,
     onEmailBlur,
-    onConfirmEmailBlur,
+    bio,
+    onBioChange,
 }: Props) {
     const [showPassword, setShowPassword] = useState(false);
     const pwdRef = useRef<HTMLInputElement>(null);
@@ -41,38 +43,26 @@ export default function SharedAccountStep({
         pwdRef.current?.focus({ preventScroll: true });
     };
 
-    const emailMismatch = shared.confirmEmail.length > 0 && shared.confirmEmail !== shared.email;
-
     return (
-        <div className="grid gap-5 w-full max-w-full md:max-w-md mx-auto p-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="text-left">
-                    <Label className="block text-sm text-white/70 mb-1" htmlFor="firstName">First name</Label>
-                    <Input
-                        id="firstName"
-                        type="text"
-                        name="firstName"
-                        value={shared.firstName}
-                        placeholder="First name"
-                        onChange={onChange}
-                        className="h-11 rounded-xl bg-white/10 border-0 text-white placeholder:text-white/40 px-4 focus-visible:ring-white/30"
-                    />
-                </div>
-                <div className="text-left">
-                    <Label className="block text-sm text-white/70 mb-1" htmlFor="lastName">Last name</Label>
-                    <Input
-                        id="lastName"
-                        type="text"
-                        name="lastName"
-                        value={shared.lastName}
-                        placeholder="Last name"
-                        onChange={onChange}
-                        className="h-11 rounded-xl bg-white/10 border-0 text-white placeholder:text-white/40 px-4 focus-visible:ring-white/30"
-                    />
-                </div>
+        <div className="grid gap-5 w-full max-w-full md:max-w-md mx-auto p-1 place-items-center text-center">
+            <div className="w-full">
+                <Label className="block text-sm text-white/70 mb-1" htmlFor="username">Username</Label>
+                <Input
+                    id="username"
+                    type="text"
+                    name="username"
+                    value={shared.username}
+                    placeholder="Username"
+                    onChange={onChange}
+                    className="h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 px-4 focus-visible:ring-white/30"
+                    aria-describedby="username-help"
+                />
+                <p id="username-help" className="mt-1 text-xs text-white/50">
+                    You can change your username later. Your handle, created from this, cannot be changed.
+                </p>
             </div>
 
-            <div className="text-left">
+            <div className="w-full">
                 <Label className="block text-sm text-white/70 mb-1" htmlFor="email">Email</Label>
                 <Input
                     id="email"
@@ -82,30 +72,13 @@ export default function SharedAccountStep({
                     placeholder="Email"
                     onChange={onChange}
                     onBlur={onEmailBlur}
-                    className="h-11 rounded-xl bg-white/10 border-0 text-white placeholder:text-white/40 px-4 focus-visible:ring-white/30"
+                    className="h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 px-4 focus-visible:ring-white/30"
                     aria-describedby="email-help"
                 />
                 <p id="email-help" className="mt-1 text-xs text-white/50">We’ll send confirmations here.</p>
             </div>
 
-            <div className="text-left">
-                <Label className="block text-sm text-white/70 mb-1" htmlFor="confirmEmail">Confirm email</Label>
-                <Input
-                    id="confirmEmail"
-                    type="email"
-                    name="confirmEmail"
-                    value={shared.confirmEmail}
-                    placeholder="Re-enter email"
-                    onChange={onChange}
-                    onBlur={onConfirmEmailBlur}
-                    className={`h-11 rounded-xl bg-white/10 border-0 text-white placeholder:text-white/40 px-4 focus-visible:ring-2 ${emailMismatch ? "focus-visible:ring-red-400/50" : "focus-visible:ring-white/30"}`}
-                    aria-invalid={emailMismatch || undefined}
-                    aria-describedby={emailMismatch ? "confirm-email-error" : undefined}
-                />
-                {emailMismatch ? <p id="confirm-email-error" className="mt-1 text-xs text-red-300">Emails do not match.</p> : null}
-            </div>
-
-            <div className="text-left">
+            <div className="w-full">
                 <Label className="block text-sm text-white/70 mb-1" htmlFor="password">Password</Label>
                 <div className="relative">
                     <Input
@@ -116,7 +89,7 @@ export default function SharedAccountStep({
                         value={shared.password}
                         placeholder="Password"
                         onChange={onChange}
-                        className="h-11 rounded-xl bg-white/10 border-0 text-white placeholder:text-white/40 pl-4 pr-12 focus-visible:ring-white/30"
+                        className="h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 pl-4 pr-12 focus-visible:ring-white/30"
                         onFocus={() => onPasswordVisibilityChange?.(!showPassword ? true : false)}
                         onBlur={() => onPasswordVisibilityChange?.(false)}
                     />
@@ -138,7 +111,20 @@ export default function SharedAccountStep({
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center md:justify-center">
+            <div className="w-full">
+                <Label className="block text-sm text-white/70 mb-1" htmlFor="bio">Bio (optional)</Label>
+                <textarea
+                    id="bio"
+                    name="bio"
+                    value={bio}
+                    onChange={onBioChange}
+                    rows={4}
+                    placeholder={role === "client" ? "Tell artists what you’re looking for, interests, constraints." : "Describe your style, experience, and booking notes."}
+                    className="w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                />
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-2 items-center justify-center w-full">
                 <Button
                     type="button"
                     onClick={() => setRole("client")}

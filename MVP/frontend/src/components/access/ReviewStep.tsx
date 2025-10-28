@@ -2,14 +2,57 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 
 type Role = "client" | "artist";
-type SharedAccount = { firstName: string; lastName: string; email: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string; style?: string; availability?: string };
-type ArtistProfileReview = { location: string; shop: string; years: string; baseRate: string; bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest"; travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only"; styles?: string[] };
+type SharedAccount = { username: string; email: string; password?: string };
+type ClientProfile = {
+    budgetMin: string;
+    budgetMax: string;
+    location: string;
+    placement: string;
+    size: string;
+    notes: string;
+    style?: string;
+    availability?: string;
+};
+type ArtistProfileReview = {
+    location: string;
+    shop: string;
+    years: string;
+    baseRate: string;
+    bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
+    travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
+    styles?: string[];
+};
 
-const SIZE_LABELS: Record<string, string> = { tiny: "Tiny (≤ 2 in)", small: "Small (2–4 in)", medium: "Medium (4–6 in)", large: "Large (6–10 in)", xl: "XL (10–14 in)", xxl: "XXL (≥ 14 in)" };
-const AVAIL_LABELS: Record<string, string> = { all: "No preference", "7d": "Next week", lt1m: "Under 1 month", "1to3m": "1–3 months", lte6m: "Up to 6 months", waitlist: "Waitlist / Closed" };
-const BOOKING_LABELS = { open: "Open to new clients", waitlist: "Waitlist", closed: "Books closed", referral: "Referral only", guest: "Guest spots only" } as const;
-const TRAVEL_LABELS = { rare: "Rarely", sometimes: "Sometimes", often: "Often", touring: "Touring", guest_only: "Guest only" } as const;
+const SIZE_LABELS: Record<string, string> = {
+    tiny: "Tiny (≤ 2 in)",
+    small: "Small (2–4 in)",
+    medium: "Medium (4–6 in)",
+    large: "Large (6–10 in)",
+    xl: "XL (10–14 in)",
+    xxl: "XXL (≥ 14 in)",
+};
+const AVAIL_LABELS: Record<string, string> = {
+    all: "No preference",
+    "7d": "Next week",
+    lt1m: "Under 1 month",
+    "1to3m": "1–3 months",
+    lte6m: "Up to 6 months",
+    waitlist: "Waitlist / Closed",
+};
+const BOOKING_LABELS = {
+    open: "Open to new clients",
+    waitlist: "Waitlist",
+    closed: "Books closed",
+    referral: "Referral only",
+    guest: "Guest spots only",
+} as const;
+const TRAVEL_LABELS = {
+    rare: "Rarely",
+    sometimes: "Sometimes",
+    often: "Often",
+    touring: "Touring",
+    guest_only: "Guest only",
+} as const;
 
 type Props = {
     role: Role;
@@ -34,7 +77,10 @@ function InlineWrapBadges({ items }: { items?: string[] }) {
 }
 
 export default function ReviewStep({ role, shared, client, artist, clientImages = [], artistImages = [] }: Props) {
-    const budgetText = client.budgetMin && client.budgetMax ? `$${Number(client.budgetMin).toLocaleString()} – $${Number(client.budgetMax).toLocaleString()}` : "Not set";
+    const budgetText =
+        client.budgetMin && client.budgetMax
+            ? `$${Number(client.budgetMin).toLocaleString()} – $${Number(client.budgetMax).toLocaleString()}`
+            : "Not set";
     const sizeText = client.size ? SIZE_LABELS[client.size] ?? client.size : "Optional";
     const availText = client.availability ? AVAIL_LABELS[client.availability] ?? client.availability : "Optional";
     const styleText = client.style && client.style !== "all" ? client.style : "Optional";
@@ -60,8 +106,8 @@ export default function ReviewStep({ role, shared, client, artist, clientImages 
         <div className="grid gap-3 text-white place-items-center">
             <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
                 <Card title="Account">
-                    <Row label="Name:">
-                        <span className="text-sm">{shared.firstName} {shared.lastName}</span>
+                    <Row label="Username:">
+                        <span className="text-sm">{shared.username}</span>
                     </Row>
                     <Row label="Email:">
                         <span className="text-sm">{shared.email}</span>
@@ -74,25 +120,51 @@ export default function ReviewStep({ role, shared, client, artist, clientImages 
                 {role === "client" ? (
                     <Card title="Client Details">
                         <div className="grid grid-cols-2 gap-2">
-                            <Row label="Budget:"><span>{budgetText}</span></Row>
-                            <Row label="Location:"><span>{client.location || "Not set"}</span></Row>
-                            <Row label="Style:"><span>{styleText}</span></Row>
-                            <Row label="Availability:"><span>{availText}</span></Row>
-                            <Row label="Placement:"><span>{client.placement || "Optional"}</span></Row>
-                            <Row label="Size:"><span>{sizeText}</span></Row>
+                            <Row label="Budget:">
+                                <span>{budgetText}</span>
+                            </Row>
+                            <Row label="Location:">
+                                <span>{client.location || "Not set"}</span>
+                            </Row>
+                            <Row label="Style:">
+                                <span>{styleText}</span>
+                            </Row>
+                            <Row label="Availability:">
+                                <span>{availText}</span>
+                            </Row>
+                            <Row label="Placement:">
+                                <span>{client.placement || "Optional"}</span>
+                            </Row>
+                            <Row label="Size:">
+                                <span>{sizeText}</span>
+                            </Row>
                         </div>
                     </Card>
                 ) : (
                     <Card title="Artist Details">
                         <div className="grid grid-cols-2 gap-2">
-                            <Row label="Location:"><span>{artist.location || "Not set"}</span></Row>
-                            <Row label="Shop:"><span>{shopText}</span></Row>
-                            <Row label="Years:"><span>{artist.years || "Not set"}</span></Row>
-                            <Row label="Base Rate:"><span>{artist.baseRate ? `$${Number(artist.baseRate).toLocaleString()}` : "Not set"}</span></Row>
-                            <Row label="Booking:"><span>{artist.bookingPreference ? BOOKING_LABELS[artist.bookingPreference] : "Not set"}</span></Row>
-                            <Row label="Travel:"><span>{artist.travelFrequency ? TRAVEL_LABELS[artist.travelFrequency] : "Not set"}</span></Row>
+                            <Row label="Location:">
+                                <span>{artist.location || "Not set"}</span>
+                            </Row>
+                            <Row label="Shop:">
+                                <span>{shopText}</span>
+                            </Row>
+                            <Row label="Years:">
+                                <span>{artist.years || "Not set"}</span>
+                            </Row>
+                            <Row label="Base Rate:">
+                                <span>{artist.baseRate ? `$${Number(artist.baseRate).toLocaleString()}` : "Not set"}</span>
+                            </Row>
+                            <Row label="Booking:">
+                                <span>{artist.bookingPreference ? BOOKING_LABELS[artist.bookingPreference] : "Not set"}</span>
+                            </Row>
+                            <Row label="Travel:">
+                                <span>{artist.travelFrequency ? TRAVEL_LABELS[artist.travelFrequency] : "Not set"}</span>
+                            </Row>
                             <div className="col-span-2">
-                                <Row label="Styles:"><InlineWrapBadges items={artist.styles} /></Row>
+                                <Row label="Styles:">
+                                    <InlineWrapBadges items={artist.styles} />
+                                </Row>
                             </div>
                         </div>
                     </Card>
@@ -100,13 +172,19 @@ export default function ReviewStep({ role, shared, client, artist, clientImages 
             </div>
 
             <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                <h3 className="text-sm font-semibold mb-2">{role === "client" ? "Reference Images" : "Portfolio Highlights"}</h3>
+                <h3 className="text-sm font-semibold mb-2">
+                    {role === "client" ? "Reference Images" : "Portfolio Highlights"}
+                </h3>
                 <div className="grid grid-cols-3 gap-1.5">
                     {tiles.map((i) => {
                         const u = imgs[i];
                         return (
                             <div key={i} className="aspect-square w-full rounded-md overflow-hidden border border-white/10 bg-white/5">
-                                {u ? <img src={u} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full grid place-items-center text-[10px] text-white/40">Empty</div>}
+                                {u ? (
+                                    <img src={u} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="h-full w-full grid place-items-center text-[10px] text-white/40">Empty</div>
+                                )}
                             </div>
                         );
                     })}

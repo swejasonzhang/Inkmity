@@ -12,8 +12,8 @@ import { container } from "@/components/access/animations";
 import { useNavigate } from "react-router-dom";
 
 type Role = "client" | "artist";
-type SharedAccount = { firstName: string; lastName: string; email: string; confirmEmail: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string };
+type SharedAccount = { username: string; email: string; password: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; notes: string; bio?: string };
 type ArtistProfile = {
   location: string;
   shop: string;
@@ -21,9 +21,9 @@ type ArtistProfile = {
   baseRate: string;
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
-  instagram: string;
   portfolio: string;
   styles: string[];
+  bio?: string;
 };
 type InputLike = { target: { name: string; value: string } };
 
@@ -66,8 +66,8 @@ export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
-  const [shared, setShared] = useState<SharedAccount>({ firstName: "", lastName: "", email: "", confirmEmail: "", password: "" });
-  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "", placement: "", size: "", notes: "" });
+  const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
+  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "", placement: "", size: "", notes: "", bio: "" });
   const [artist, setArtist] = useState<ArtistProfile>({
     location: "",
     shop: "",
@@ -75,9 +75,9 @@ export default function SignUp() {
     baseRate: "",
     bookingPreference: "open",
     travelFrequency: "rare",
-    instagram: "",
     portfolio: "",
     styles: [],
+    bio: "",
   });
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
   const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", ""]);
@@ -89,9 +89,6 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
   const [mascotError, setMascotError] = useState(false);
-  const [emailTaken, setEmailTaken] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isLoaded: authLoaded, userId, getToken } = useAuth();
@@ -158,16 +155,6 @@ export default function SignUp() {
     };
   }, []);
 
-  useEffect(() => {
-    setEmailTaken(false);
-    if (abortRef.current) abortRef.current.abort();
-    const email = shared.email.trim().toLowerCase();
-    if (!validateEmail(email)) return;
-    return () => {
-      if (abortRef.current) abortRef.current.abort();
-    };
-  }, [shared.email]);
-
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
     const name = (e as InputLike).target?.name;
     const value = (e as InputLike).target?.value;
@@ -175,8 +162,8 @@ export default function SignUp() {
     setClient((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleArtist = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleArtist = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target as HTMLInputElement;
     if (name === "stylesCSV") {
       const arr = value.split(",").map((s) => s.trim()).filter(Boolean);
       setArtist((prev) => ({ ...prev, styles: arr }));
@@ -189,8 +176,7 @@ export default function SignUp() {
   const minVal = Math.max(0, Math.min(5000, num(client.budgetMin)));
   const maxVal = Math.max(0, Math.min(5000, num(client.budgetMax)));
 
-  const emailMatch = shared.confirmEmail.length > 0 && shared.confirmEmail.trim().toLowerCase() === shared.email.trim().toLowerCase();
-  const allSharedValid = validateEmail(shared.email) && emailMatch && validatePassword(shared.password) && !!shared.firstName.trim() && !!shared.lastName.trim();
+  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
   const allClientValid = !!client.location && maxVal > minVal;
   const allArtistValid =
     !!artist.location &&
@@ -225,25 +211,7 @@ export default function SignUp() {
     window.setTimeout(() => setMascotError(false), 900);
   };
 
-  const toastAndRedirectToLogin = () => {
-    toast.error(<span>This email is already registered. Redirecting to <a className="underline" href="/login">Login</a>…</span>, { position: "top-center", theme: "dark" });
-    const loginUrl = "/login";
-    setTimeout(() => {
-      window.location.href = loginUrl;
-    }, 1400);
-  };
-
-  const blockIfEmailTaken = () => {
-    if (emailTaken) {
-      triggerMascotError();
-      toastAndRedirectToLogin();
-      return true;
-    }
-    return false;
-  };
-
   const handleNext = () => {
-    if (blockIfEmailTaken()) return;
     const currentValid = slides[step].valid;
     if (!currentValid) {
       toast.error("Please complete the required fields", { position: "top-center", theme: "dark" });
@@ -257,7 +225,6 @@ export default function SignUp() {
 
   const startVerification = async () => {
     if (loading) return;
-    if (blockIfEmailTaken()) return;
     if (!allSharedValid) {
       toast.error("Please complete account details", { position: "top-center", theme: "dark" });
       triggerMascotError();
@@ -270,9 +237,11 @@ export default function SignUp() {
     setLoading(true);
     try {
       if (userId) await signOut();
-      const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
-      const fullFirst = shared.firstName.trim().replace(/\s+/g, " ");
-      const fullLast = shared.lastName.trim().replace(/\s+/g, " ");
+      const profile =
+        role === "client"
+          ? { ...client, referenceImages: clientRefs.filter(Boolean) }
+          : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
+
       const attempt =
         signUpAttempt ??
         (await signUp.create({
@@ -280,9 +249,8 @@ export default function SignUp() {
           password: shared.password,
           publicMetadata: {
             role,
-            displayName: `${fullFirst} ${fullLast}`.trim(),
+            displayName: shared.username.trim(),
             profile,
-            nameParts: { first: fullFirst, last: fullLast },
           },
         } as any));
       setSignUpAttempt(attempt as SignUpResource);
@@ -294,13 +262,6 @@ export default function SignUp() {
       const e = Array.isArray(err?.errors) && err.errors.length ? err.errors[0] : null;
       const code = e?.code || err?.code;
       const msg = e?.message || err?.message;
-      if (code === "identifier_already_exists") {
-        setEmailTaken(true);
-        triggerMascotError();
-        toastAndRedirectToLogin();
-        setLoading(false);
-        return;
-      }
       toast.error(friendlyClerkMessage(code, msg), { position: "top-center", theme: "dark" });
       triggerMascotError();
     } finally {
@@ -332,22 +293,42 @@ export default function SignUp() {
           const token = await getToken();
           const headers: Record<string, string> = { "Content-Type": "application/json" };
           if (token) headers.Authorization = `Bearer ${token}`;
-          const payload = {
+
+          const basePayload = {
             email: shared.email.trim().toLowerCase(),
             role,
-            firstName: shared.firstName.trim(),
-            lastName: shared.lastName.trim(),
-            profile:
-              role === "client"
-                ? { ...client, referenceImages: clientRefs.filter(Boolean) }
-                : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) },
+            username: shared.username.trim(),
+            bio: (role === "client" ? client.bio : artist.bio) || "",
           };
-          await fetch(apiUrl("/users/sync"), {
+
+          const payload =
+            role === "client"
+              ? {
+                ...basePayload,
+                profile: { ...client, referenceImages: clientRefs.filter(Boolean) },
+              }
+              : {
+                ...basePayload,
+                profile: { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) },
+              };
+
+          const syncRes = await fetch(apiUrl("/users/sync"), {
             method: "POST",
             credentials: "include",
             headers,
             body: JSON.stringify(payload),
           });
+          if (!syncRes.ok) throw new Error("sync_failed");
+
+          const meRes = await fetch(apiUrl("/users/me"), {
+            method: "GET",
+            credentials: "include",
+            headers,
+          });
+          if (!meRes.ok) throw new Error("me_not_found");
+          const me = await meRes.json();
+          if (!me?._id) throw new Error("me_missing_id");
+
           if (role === "client") {
             const urls = clientRefs.filter(Boolean).slice(0, 3);
             if (urls.length) {
@@ -359,18 +340,26 @@ export default function SignUp() {
               });
             }
           }
-        } catch { }
-        try {
-          localStorage.setItem(JUST_SIGNED_UP_KEY, String(Date.now()));
-        } catch { }
-        toast.success("Signup successful. Redirecting to your dashboard…", { position: "top-center", theme: "dark" });
-        setTimeout(() => {
-          navigate("/dashboard", { replace: true });
-        }, 1000);
-        localStorage.setItem("trustedDevice", shared.email);
-        localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
-        localStorage.removeItem(LOGOUT_TYPE_KEY);
-        return;
+
+          try {
+            localStorage.setItem(JUST_SIGNED_UP_KEY, String(Date.now()));
+          } catch { }
+
+          toast.success("Sign up successful, redirecting to Dashboard.", { position: "top-center", theme: "dark" });
+          setTimeout(() => {
+            navigate("/dashboard", { replace: true });
+          }, 1000);
+          localStorage.setItem("trustedDevice", shared.email);
+          localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
+          localStorage.removeItem(LOGOUT_TYPE_KEY);
+          return;
+        } catch {
+          toast.error("Failed to save your account. Please try again.", { position: "top-center", theme: "dark" });
+          try {
+            await signOut();
+          } catch { }
+          return;
+        }
       }
       toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
       triggerMascotError();
@@ -394,38 +383,11 @@ export default function SignUp() {
   const mascotEyesClosed = showPassword && pwdFocused;
   const handlePasswordVisibilityChange = (hidden: boolean) => setShowPassword(!hidden);
 
-  const checkEmailExists = async (emailParam?: string, showToast = true) => {
-    const email = (emailParam ?? shared.email).trim().toLowerCase();
-    if (!validateEmail(email)) {
-      setEmailTaken(false);
-      return;
-    }
-    try {
-      setCheckingEmail(true);
-      if (abortRef.current) abortRef.current.abort();
-      const ac = new AbortController();
-      abortRef.current = ac;
-      const endpoint = apiUrl("/auth/check-email", { email });
-      const res = await fetch(endpoint, { signal: ac.signal, credentials: "include" });
-      if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as { exists?: boolean };
-      if (data.exists) {
-        setEmailTaken(true);
-        if (showToast) {
-          triggerMascotError();
-          toastAndRedirectToLogin();
-        }
-      } else {
-        setEmailTaken(false);
-      }
-    } catch {
-      setEmailTaken(false);
-    } finally {
-      setCheckingEmail(false);
-    }
+  const bio = role === "client" ? client.bio || "" : artist.bio || "";
+  const setBio = (v: string) => {
+    if (role === "client") setClient((prev) => ({ ...prev, bio: v }));
+    else setArtist((prev) => ({ ...prev, bio: v }));
   };
-
-  const onEmailBlur = () => checkEmailExists(shared.email, true);
 
   return (
     <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
@@ -461,21 +423,22 @@ export default function SignUp() {
                   awaitingCode={awaitingCode}
                   code={code}
                   setCode={setCode}
-                  loading={loading || checkingEmail}
+                  loading={loading}
                   isLoaded={isLoaded}
                   onNext={handleNext}
                   onBack={handleBack}
                   onStartVerification={startVerification}
                   onVerify={verifyCode}
                   onPasswordVisibilityChange={handlePasswordVisibilityChange}
-                  onEmailBlur={onEmailBlur}
-                  emailTaken={emailTaken}
+                  emailTaken={false}
                   className=""
                   clientRefs={clientRefs}
                   setClientRefs={setClientRefs}
                   artistPortfolioImgs={artistPortfolioImgs}
                   setArtistPortfolioImgs={setArtistPortfolioImgs}
                   onCancelVerification={() => setAwaitingCode(false)}
+                  bio={bio}
+                  onBioChange={(e) => setBio(e.target.value)}
                 />
               </motion.div>
             </div>

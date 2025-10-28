@@ -16,7 +16,7 @@ import bookingRoutes from "./routes/bookings.js";
 import authRoutes from "./routes/auth.js";
 import artistPolicyRoutes from "./routes/artistPolicy.js";
 import billingRoutes from "./routes/billing.js";
-import uploadRoutes from "./routes/uploads.js";
+import imagesRoutes from "./routes/images.js"
 import { requireAuth } from "./middleware/auth.js";
 
 const ENV = process.env.NODE_ENV || "development";
@@ -95,7 +95,7 @@ app.use("/api/dashboard", requireAuth(), dashboardRoutes);
 app.use("/api/messages", requireAuth(), messageRoutes);
 app.use("/api/artist-policy", artistPolicyRoutes);
 app.use("/api/billing", billingRoutes);
-app.use("/api/uploads", uploadRoutes);
+app.use("/api/images", imagesRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found", path: req.originalUrl });

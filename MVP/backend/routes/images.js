@@ -15,4 +15,3 @@ router.get("/images", listImages);
 router.delete("/images/:id", deleteImage);
 
 export default router;
-export { router };
