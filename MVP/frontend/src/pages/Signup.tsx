@@ -3,13 +3,13 @@ import Header from "@/components/header/Header";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
-import { useClerk, useSignUp, useUser, useAuth } from "@clerk/clerk-react";
+import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { container } from "@/components/access/animations";
-import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
+import { useNavigate } from "react-router-dom";
 
 type Role = "client" | "artist";
 type SharedAccount = { firstName: string; lastName: string; email: string; confirmEmail: string; password: string };
@@ -39,8 +39,6 @@ function apiUrl(path: string, qs?: Record<string, string>) {
   if (qs) Object.entries(qs).forEach(([k, v]) => url.searchParams.set(k, v));
   return url.toString();
 }
-
-type TipState = { show: boolean; x: number; y: number };
 
 function friendlyClerkMessage(code?: string, message?: string) {
   if (!code && message) return message;
@@ -94,35 +92,17 @@ export default function SignUp() {
   const abortRef = useRef<AbortController | null>(null);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
-  const { isSignedIn } = useUser();
-  const { getToken } = useAuth();
-
-  useAlreadySignedInRedirect({ suppress: awaitingCode });
-
-  const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
+  const { isLoaded: authLoaded, userId, getToken } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const mm = (e: MouseEvent) => {
-      const t = e.target as Element | null;
-      const anchor = t?.closest('a[href="/dashboard"]');
-      if (anchor) setTip({ show: true, x: e.clientX, y: e.clientY });
-      else setTip((prev) => (prev.show ? { ...prev, show: false } : prev));
-    };
-    const click = (e: MouseEvent) => {
-      const t = e.target as Element | null;
-      const anchor = t?.closest('a[href="/dashboard"]');
-      if (anchor) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    document.addEventListener("mousemove", mm, true);
-    document.addEventListener("click", click, true);
-    return () => {
-      document.removeEventListener("mousemove", mm, true);
-      document.removeEventListener("click", click, true);
-    };
-  }, []);
+    if (!authLoaded) return;
+    if (userId) {
+      toast.info("You are already loggedin. Redirecting you to Dashboard now.", { position: "top-center", theme: "dark" });
+      const t = setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [authLoaded, userId, navigate]);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
@@ -152,36 +132,23 @@ export default function SignUp() {
   }, []);
 
   useEffect(() => {
-    const recomputeFocus = () => {
+    const onFocus = () => {
       const ae = document.activeElement as HTMLInputElement | null;
-      setPwdFocused(!!ae && ae.tagName === "INPUT" && ae.name === "password");
+      setPwdFocused(!!(ae && ae.tagName === "INPUT" && ae.name === "password"));
     };
-    const recomputeShow = () => {
+    const onClickOrInput = () => {
       const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
-      setShowPassword(!!input && input.type === "text");
+      setShowPassword(!!(input && input.type === "text"));
     };
-    const handleFocusIn = () => {
-      recomputeFocus();
-      recomputeShow();
-    };
-    const handleFocusOut = () => {
-      setTimeout(() => {
-        recomputeFocus();
-        recomputeShow();
-      }, 0);
-    };
-    const handleClickOrInput = () => {
-      recomputeShow();
-    };
-    document.addEventListener("focusin", handleFocusIn, true);
-    document.addEventListener("focusout", handleFocusOut, true);
-    document.addEventListener("click", handleClickOrInput, true);
-    document.addEventListener("input", handleClickOrInput, true);
+    document.addEventListener("focusin", onFocus, true);
+    document.addEventListener("focusout", () => setTimeout(onFocus, 0), true);
+    document.addEventListener("click", onClickOrInput, true);
+    document.addEventListener("input", onClickOrInput, true);
     return () => {
-      document.removeEventListener("focusin", handleFocusIn, true);
-      document.removeEventListener("focusout", handleFocusOut, true);
-      document.removeEventListener("click", handleClickOrInput, true);
-      document.removeEventListener("input", handleClickOrInput, true);
+      document.removeEventListener("focusin", onFocus, true);
+      document.removeEventListener("focusout", () => setTimeout(onFocus, 0), true);
+      document.removeEventListener("click", onClickOrInput, true);
+      document.removeEventListener("input", onClickOrInput, true);
     };
   }, []);
 
@@ -230,21 +197,19 @@ export default function SignUp() {
     artist.styles.length >= 1;
 
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
-    const core =
-      role === "client"
-        ? [
-          { key: "role", valid: allSharedValid },
-          { key: "client-1", valid: allClientValid },
-          { key: "upload", valid: true },
-          { key: "review", valid: allSharedValid && allClientValid },
-        ]
-        : [
-          { key: "role", valid: allSharedValid },
-          { key: "artist-1", valid: allArtistValid },
-          { key: "upload", valid: true },
-          { key: "review", valid: allSharedValid && allArtistValid },
-        ];
-    return core;
+    return role === "client"
+      ? [
+        { key: "role", valid: allSharedValid },
+        { key: "client-1", valid: allClientValid },
+        { key: "upload", valid: true },
+        { key: "review", valid: allSharedValid && allClientValid },
+      ]
+      : [
+        { key: "role", valid: allSharedValid },
+        { key: "artist-1", valid: allArtistValid },
+        { key: "upload", valid: true },
+        { key: "review", valid: allSharedValid && allArtistValid },
+      ];
   }, [role, allSharedValid, allClientValid, allArtistValid]);
 
   const isLastFormSlide = step === slides.length - 1;
@@ -298,7 +263,7 @@ export default function SignUp() {
     }
     setLoading(true);
     try {
-      if (isSignedIn) await signOut();
+      if (userId) await signOut();
       const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
       const fullFirst = shared.firstName.trim().replace(/\s+/g, " ");
       const fullLast = shared.lastName.trim().replace(/\s+/g, " ");
@@ -358,6 +323,9 @@ export default function SignUp() {
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         try {
+          const token = await getToken();
+          const headers: Record<string, string> = { "Content-Type": "application/json" };
+          if (token) headers.Authorization = `Bearer ${token}`;
           const payload = {
             email: shared.email.trim().toLowerCase(),
             role,
@@ -368,16 +336,23 @@ export default function SignUp() {
                 ? { ...client, referenceImages: clientRefs.filter(Boolean) }
                 : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) },
           };
-          const token = await getToken();
           await fetch(apiUrl("/users/sync"), {
             method: "POST",
             credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
+            headers,
             body: JSON.stringify(payload),
           });
+          if (role === "client") {
+            const urls = clientRefs.filter(Boolean).slice(0, 3);
+            if (urls.length) {
+              await fetch(apiUrl("/users/me/references"), {
+                method: "PUT",
+                credentials: "include",
+                headers,
+                body: JSON.stringify({ urls }),
+              });
+            }
+          }
         } catch { }
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
@@ -507,14 +482,6 @@ export default function SignUp() {
         toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
         style={{ top: toastTop !== undefined ? toastTop : 12 }}
       />
-      {!isSignedIn && tip.show && (
-        <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
-          <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
-            <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
-            <span className="text-xs text-app whitespace-nowrap">Login to access your dashboard</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

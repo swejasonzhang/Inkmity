@@ -3,17 +3,16 @@ import Header from "@/components/header/Header";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
-import { useSignIn, useUser } from "@clerk/clerk-react";
+import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { validateEmail } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { Button } from "@/components/ui/button";
 import { container } from "@/components/access/animations";
+import { useNavigate } from "react-router-dom";
 
 const TOAST_H = 72;
 const TOAST_GAP = 50;
-const JUST_KEY = "ink.justSignedInAt";
-const JUST_MS = 7 * 24 * 60 * 60 * 1000; 
 
 type TipState = { show: boolean; x: number; y: number };
 
@@ -27,30 +26,18 @@ export default function Login() {
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive } = useSignIn();
-  const { isSignedIn } = useUser();
-
+  const { isLoaded, userId } = useAuth();
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
-
-  const wasRecentLogin = () => {
-    try {
-      const ts = Number(localStorage.getItem(JUST_KEY) || 0);
-      return ts && Date.now() - ts < JUST_MS;
-    } catch {
-      return false;
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isSignedIn) return;
-    const recent = wasRecentLogin();
-    if (!recent) {
-      toast.info("You are already signed in. Redirecting to dashboard…", { position: "top-center", theme: "dark" });
+    if (!isLoaded) return;
+    if (userId) {
+      toast.info("You are already loggedin. Redirecting you to Dashboard now.", { position: "top-center", theme: "dark" });
+      const t = setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
+      return () => clearTimeout(t);
     }
-    const t = setTimeout(() => {
-      window.location.replace("/dashboard");
-    }, 900);
-    return () => clearTimeout(t);
-  }, [isSignedIn]);
+  }, [isLoaded, userId, navigate]);
 
   useEffect(() => {
     const mm = (e: MouseEvent) => {
@@ -160,9 +147,6 @@ export default function Login() {
       const result = await signIn.create({ identifier: email, password });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        try {
-          localStorage.setItem(JUST_KEY, String(Date.now()));
-        } catch { }
         toast.success("Login successful. Redirecting to your dashboard…", { position: "top-center", theme: "dark" });
         setTimeout(() => {
           window.location.replace("/dashboard");
@@ -233,7 +217,7 @@ export default function Login() {
                               value={password}
                               placeholder="Password"
                               onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                              className="w-full h-11 rounded-xl bg白/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
+                              className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
                               autoComplete="current-password"
                             />
                             <button
@@ -280,7 +264,7 @@ export default function Login() {
           toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
           style={{ top: toastTop !== undefined ? toastTop : 12 }}
         />
-        {!isSignedIn && tip.show && (
+        {!userId && tip.show && (
           <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
             <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
               <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
