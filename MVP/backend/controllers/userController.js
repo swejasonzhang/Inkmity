@@ -9,14 +9,6 @@ const authObj = (req) =>
 const getClerkId = (req) => authObj(req)?.userId || null;
 const SAFE_ROLES = new Set(["client", "artist"]);
 
-const cap = (s = "") =>
-  s
-    .trim()
-    .toLowerCase()
-    .replace(/^./, (c) => c.toUpperCase());
-const buildUsername = (first = "", last = "") =>
-  `${cap(first)} ${cap(last)}`.trim();
-
 const slugify = (s = "") =>
   String(s)
     .toLowerCase()
@@ -36,6 +28,7 @@ export async function getMe(req, res) {
   const clerkId = getClerkId(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   const me = await User.findOne({ clerkId }).lean();
+  console.log("[users/getMe] currentUser =", me);
   if (!me) return res.status(404).json({ error: "Not found" });
   res.json(me);
 }
@@ -121,6 +114,7 @@ export async function saveMyReferences(req, res) {
       { new: true }
     ).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
+    console.log("[users/references] saved references =", user.references || []);
     res.json({ ok: true, references: user.references || [] });
   } catch {
     res.status(500).json({ error: "save_references_failed" });
@@ -203,12 +197,12 @@ export async function getArtistById(req, res) {
 }
 
 export async function checkUsernameAvailability(req, res) {
-  const first = String(req.query.first || "").trim();
-  const last = String(req.query.last || "").trim();
   const raw = String(req.query.u || "").trim();
-  const candidate = raw || buildUsername(first, last);
-  if (!candidate)
+  if (!raw)
     return res.status(400).json({ ok: false, error: "username_required" });
+  const candidate = slugify(raw);
+  if (!candidate)
+    return res.status(400).json({ ok: false, error: "invalid_username" });
   const hit = await User.findOne({ username: candidate }, { _id: 1 }).lean();
   return res.json({ ok: true, available: !hit, username: candidate });
 }
@@ -220,22 +214,30 @@ export async function syncUser(req, res) {
       clerkId: bodyClerkId,
       email,
       role: rawRole,
+      username,
       firstName,
       lastName,
       profile = {},
     } = req.body || {};
+
     const clerkId = authClerkId || bodyClerkId;
     if (!clerkId || !email || !rawRole)
       return res
         .status(400)
         .json({ error: "clerkId, email, role are required" });
-    if (!firstName || !lastName)
-      return res
-        .status(400)
-        .json({ error: "firstName and lastName are required" });
+
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
-    const finalUsername = buildUsername(firstName, lastName);
+    const requestedUsername = String(username || "").trim();
+    if (!existing && !requestedUsername)
+      return res.status(400).json({ error: "username_required" });
+
+    let finalUsername = requestedUsername
+      ? slugify(requestedUsername)
+      : existing?.username;
+    if (!finalUsername)
+      return res.status(400).json({ error: "invalid_username" });
+
     const nameOwner = await User.findOne(
       { username: finalUsername },
       { clerkId: 1 }
@@ -245,14 +247,22 @@ export async function syncUser(req, res) {
         .status(409)
         .json({ error: "username_taken", username: finalUsername });
     }
+
+    if (existing && existing.role && existing.role !== role) {
+      return res
+        .status(409)
+        .json({ error: `User already exists as ${existing.role}` });
+    }
+
     const setDoc = {
       clerkId,
       email,
       username: finalUsername,
       role,
-      firstName,
-      lastName,
+      firstName: (firstName || "").trim(),
+      lastName: (lastName || "").trim(),
     };
+
     if (role === "client") {
       const min = Number(profile.budgetMin ?? 100);
       const max = Number(profile.budgetMax ?? 200);
@@ -263,12 +273,23 @@ export async function syncUser(req, res) {
         ? Math.max(0, Math.min(5000, max))
         : 200;
       if (budgetMax <= budgetMin) budgetMax = Math.max(budgetMin + 1, 200);
+
+      const refsRaw = Array.isArray(profile.referenceImages)
+        ? profile.referenceImages
+        : [];
+      const references = refsRaw
+        .filter((u) => typeof u === "string")
+        .map((u) => u.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+
       Object.assign(setDoc, {
         budgetMin,
         budgetMax,
         location: profile.location ?? "",
         placement: profile.placement ?? "",
         size: profile.size ?? "",
+        ...(references.length ? { references } : {}),
       });
     } else {
       const years = Number(profile.years ?? profile.yearsExperience ?? 0);
@@ -276,15 +297,21 @@ export async function syncUser(req, res) {
       const bookingPreference = profile.bookingPreference || "open";
       const travelFrequency = profile.travelFrequency || "rare";
       const shop = profile.shop || "";
-      const stylesRaw = Array.isArray(profile.styles)
-        ? profile.styles
-        : Array.isArray(profile.style)
-        ? profile.style
-        : [];
+      const stylesRaw = Array.isArray(profile.styles) ? profile.styles : [];
       const styles = stylesRaw
         .filter((s) => typeof s === "string")
         .map((s) => s.trim())
         .filter(Boolean);
+
+      const portfolioRaw = Array.isArray(profile.portfolioImages)
+        ? profile.portfolioImages
+        : [];
+      const portfolioImages = portfolioRaw
+        .filter((u) => typeof u === "string")
+        .map((u) => u.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+
       Object.assign(setDoc, {
         location: profile.location ?? "",
         shop,
@@ -294,8 +321,10 @@ export async function syncUser(req, res) {
         travelFrequency,
         styles,
         bio: profile.bio ?? "",
+        ...(portfolioImages.length ? { portfolioImages } : {}),
       });
     }
+
     const Model =
       role === "client" ? mongoose.model("client") : mongoose.model("artist");
     const user = await Model.findOneAndUpdate(
@@ -307,7 +336,8 @@ export async function syncUser(req, res) {
         runValidators: true,
         setDefaultsOnInsert: true,
       }
-    );
+    ).lean();
+
     res.status(200).json(user);
   } catch {
     res.status(500).json({ error: "Failed to sync user" });

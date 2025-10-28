@@ -188,8 +188,10 @@ export type Me = {
   username: string;
 };
 
-export async function getMe(token: string) {
-  return http<Me>("/users/me", { method: "GET" }, token);
+export async function getMe(token?: string) {
+  const me = await http<Me>("/users/me", { method: "GET" }, token);
+  console.log("[client] currentUser =", me);
+  return me;
 }
 
 export async function syncUser(
@@ -204,9 +206,11 @@ export async function syncUser(
     profile: Record<string, any>;
   }
 ) {
-  return http(
+  const res = await http(
     "/users/sync",
     { method: "POST", body: JSON.stringify(payload) },
     token
   );
+  console.log("[client] syncUser result =", res);
+  return res;
 }

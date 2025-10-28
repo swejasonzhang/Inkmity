@@ -1,5 +1,4 @@
 import React from "react";
-import Header from "@/components/header/Header";
 import {
     LazyMotion,
     domAnimation,
@@ -9,6 +8,7 @@ import {
     m,
 } from "framer-motion";
 import { useTheme } from "@/components/header/useTheme";
+import Header from "@/components/header/Header";
 import Hero from "@/components/landing/Hero";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import Differentiators from "@/components/landing/Differentiators";
@@ -44,8 +44,6 @@ const Landing: React.FC = () => {
                         <div className="sticky top-0 z-50 bg-app/80 backdrop-blur border-b border-app">
                             <Header theme={theme} toggleTheme={noop} logoSrc={logoSrc} />
                         </div>
-
-                        {/* page scrolls; footer is NOT sticky */}
                         <main className="flex-1">
                             <section className="relative">
                                 <div className="mx-auto max-w-7xl px-4">
@@ -60,7 +58,6 @@ const Landing: React.FC = () => {
                                     </m.div>
                                 </div>
                             </section>
-
                             <Divider className="my-10" />
                             <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
                             <Divider className="my-10" />
@@ -68,7 +65,6 @@ const Landing: React.FC = () => {
                             <BottomCTA textFadeUp={textFadeUp} wc={wc} />
                             <Divider />
                         </main>
-
                         <footer className="p-6">
                             <div className="mx-auto max-w-7xl text-center text-sm text-subtle">
                                 © {new Date().getFullYear()} Inkmity. All rights reserved.
