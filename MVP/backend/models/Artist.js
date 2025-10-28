@@ -25,6 +25,7 @@ const ArtistSchema = new Schema(
       default: "rare",
     },
     baseRate: { type: Number, default: 0 },
+    portfolioImages: { type: [String], default: [] },
   },
   { timestamps: true }
 );
