@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,10 +27,18 @@ export default function SharedAccountStep({
     onConfirmEmailBlur,
 }: Props) {
     const [showPassword, setShowPassword] = useState(false);
+    const pwdRef = useRef<HTMLInputElement>(null);
+
     const togglePassword = () => {
         const next = !showPassword;
         setShowPassword(next);
         onPasswordVisibilityChange?.(!next);
+        queueMicrotask(() => pwdRef.current?.focus({ preventScroll: true }));
+    };
+
+    const keepFocus = (e: React.MouseEvent | React.PointerEvent) => {
+        e.preventDefault();
+        pwdRef.current?.focus({ preventScroll: true });
     };
 
     const emailMismatch = shared.confirmEmail.length > 0 && shared.confirmEmail !== shared.email;
@@ -102,6 +110,7 @@ export default function SharedAccountStep({
                 <div className="relative">
                     <Input
                         id="password"
+                        ref={pwdRef}
                         type={showPassword ? "text" : "password"}
                         name="password"
                         value={shared.password}
@@ -113,11 +122,15 @@ export default function SharedAccountStep({
                     />
                     <Button
                         type="button"
+                        tabIndex={-1}
+                        onMouseDown={keepFocus}
+                        onPointerDown={keepFocus}
                         onClick={togglePassword}
                         className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 md:h-8 md:w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20"
                         size="icon"
                         variant="ghost"
                         aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPassword}
                     >
                         {showPassword ? <EyeOff className="h-5 w-5 md:h-4 md:w-4" /> : <Eye className="h-5 w-5 md:h-4 md:w-4" />}
                         <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>

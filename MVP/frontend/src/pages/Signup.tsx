@@ -3,7 +3,7 @@ import Header from "@/components/header/Header";
 import { ToastContainer, toast, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
-import { useClerk, useSignUp, useUser } from "@clerk/clerk-react";
+import { useClerk, useSignUp, useUser, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
@@ -95,6 +95,7 @@ export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
 
   useAlreadySignedInRedirect({ suppress: awaitingCode });
 
@@ -356,6 +357,28 @@ export default function SignUp() {
       const result = await signUpAttempt.attemptEmailAddressVerification({ code: code.trim() });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
+        try {
+          const payload = {
+            email: shared.email.trim().toLowerCase(),
+            role,
+            firstName: shared.firstName.trim(),
+            lastName: shared.lastName.trim(),
+            profile:
+              role === "client"
+                ? { ...client, referenceImages: clientRefs.filter(Boolean) }
+                : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) },
+          };
+          const token = await getToken();
+          await fetch(apiUrl("/users/sync"), {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(payload),
+          });
+        } catch { }
         localStorage.setItem("trustedDevice", shared.email);
         localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
         localStorage.removeItem(LOGOUT_TYPE_KEY);
@@ -381,7 +404,7 @@ export default function SignUp() {
     }
   };
 
-  const mascotEyesClosed = showPassword || pwdFocused;
+  const mascotEyesClosed = showPassword && pwdFocused;
   const handlePasswordVisibilityChange = (hidden: boolean) => setShowPassword(!hidden);
 
   const checkEmailExists = async (emailParam?: string, showToast = true) => {
