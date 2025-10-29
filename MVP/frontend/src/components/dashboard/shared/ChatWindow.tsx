@@ -4,7 +4,15 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { displayNameFromUsername } from "@/lib/format";
-import type { Conversation } from "@/hooks/useMessaging";
+
+export type Message = { senderId: string; receiverId: string; text: string; timestamp: number };
+export type Conversation = {
+  participantId: string;
+  username: string;
+  avatarUrl?: string;
+  messages: Message[];
+  meta?: { lastStatus?: "pending" | "accepted" | "declined"; allowed?: boolean };
+};
 
 type GateStatus = "pending" | "accepted" | "declined";
 
@@ -19,8 +27,8 @@ interface ChatWindowProps {
   onRemoveConversation: (participantId: string) => void;
   expandedId?: string | null;
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
-  unreadMap: Record<string, number>;
-  onMarkRead: (participantId: string) => void;
+  unreadMap?: Record<string, number>;
+  onMarkRead?: (participantId: string) => void;
   isArtist?: boolean;
   onAcceptPending?: (participantId: string) => void | Promise<void>;
   onDeclinePending?: (participantId: string) => void | Promise<void>;
@@ -35,8 +43,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
   onRemoveConversation,
   expandedId: externalExpandedId,
   authFetch,
-  unreadMap,
-  onMarkRead,
+  unreadMap = {},
+  onMarkRead = () => { },
   isArtist = false,
   onToggleCollapse,
   onAcceptPending,
@@ -73,11 +81,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
   }, [confirmOpen]);
 
-  const activeConv =
-    useMemo(() => conversations.find((c) => c.participantId === expandedId) || conversations[0], [
-      conversations,
-      expandedId,
-    ]);
+  const activeConv = useMemo(
+    () => conversations.find((c) => c.participantId === expandedId) || conversations[0],
+    [conversations, expandedId]
+  );
 
   const fmtTime = (ts: number) => {
     try {
@@ -225,19 +232,14 @@ const ChatWindow: FC<ChatWindowProps> = ({
     <AnimatePresence>
       {confirmOpen && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          className="fixed inset-0 z-[99999] flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           aria-modal="true"
           role="dialog"
         >
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/60"
-            onClick={cancelDelete}
-            aria-label="Close dialog"
-          />
+          <button type="button" className="absolute inset-0 bg-black/60" onClick={cancelDelete} aria-label="Close dialog" />
           <motion.div
             className="relative bg-card text-app rounded-xl p-6 w-11/12 max-w-md shadow-2xl border border-app"
             initial={{ scale: 0.94, opacity: 0 }}
@@ -249,18 +251,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
             <p className="text-muted-foreground mb-4 text-sm">This removes the conversation for you.</p>
             {deleteError && <div className="mb-3 text-sm text-destructive">{deleteError}</div>}
             <div className="flex justify-end gap-3">
-              <button
-                onClick={cancelDelete}
-                disabled={deleting}
-                className="px-4 py-2 rounded-md bg-elevated hover:bg-elevated/80 text-app text-sm disabled:opacity-60"
-              >
+              <button onClick={cancelDelete} disabled={deleting} className="px-4 py-2 rounded-md bg-elevated hover:bg-elevated/80 text-app text-sm disabled:opacity-60">
                 Cancel
               </button>
-              <button
-                onClick={confirmDelete}
-                disabled={deleting}
-                className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm disabled:opacity-60"
-              >
+              <button onClick={confirmDelete} disabled={deleting} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm disabled:opacity-60">
                 {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
@@ -311,13 +305,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
-                        <div className="text-[10px] text-muted-foreground shrink-0">
-                          {lastMsg ? fmtTime(lastMsg.timestamp) : ""}
-                        </div>
+                        <div className="text-[10px] text-muted-foreground shrink-0">{lastMsg ? fmtTime(lastMsg.timestamp) : ""}</div>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {lastMsg?.text || "No messages"}
-                      </div>
+                      <div className="text-xs text-muted-foreground truncate">{lastMsg?.text || "No messages"}</div>
                     </div>
                     {!!unreadMap[c.participantId] && (
                       <span className="ml-2 shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-semibold">
@@ -345,35 +335,17 @@ const ChatWindow: FC<ChatWindowProps> = ({
           <header className="px-4 py-3 border-b border-app flex items-center justify-between relative z-10">
             <div className="flex items-center gap-3 pointer-events-auto">
               {activeConv && avatarFor(activeConv)}
-              <div className="text-sm font-semibold text-app">
-                {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
-              </div>
-              {needsApproval && !isArtist && (
-                <div className="text-xs text-muted-foreground">Waiting for artist to approve your request.</div>
-              )}
-              {!needsApproval && status === "declined" && (
-                <div className="text-xs text-muted-foreground">Declined. Messaging locked unless a new request is accepted.</div>
-              )}
+              <div className="text-sm font-semibold text-app">{activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}</div>
+              {needsApproval && !isArtist && <div className="text-xs text-muted-foreground">Waiting for artist to approve your request.</div>}
+              {!needsApproval && status === "declined" && <div className="text-xs text-muted-foreground">Declined. Messaging locked unless a new request is accepted.</div>}
             </div>
 
             {isArtist && needsApproval && activeConv && (
-              <div
-                className="flex items-center gap-2 pointer-events-auto"
-                onClick={(e) => e.stopPropagation()}
-                onPointerDownCapture={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={() => handleDecline(activeConv.participantId)}
-                  className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
-                >
+              <div className="flex items-center gap-2 pointer-events-auto" onClick={(e) => e.stopPropagation()} onPointerDownCapture={(e) => e.stopPropagation()}>
+                <button type="button" onClick={() => handleDecline(activeConv.participantId)} className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs">
                   Decline
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleAccept(activeConv.participantId)}
-                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
-                >
+                <button type="button" onClick={() => handleAccept(activeConv.participantId)} className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs">
                   Accept
                 </button>
               </div>
@@ -389,15 +361,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
                 return (
                   <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`px-3 py-2 rounded-2xl max-w-[78%] w-fit break-words whitespace-pre-wrap border ${isMe
-                        ? "bg-primary text-primary-foreground border-primary/80"
-                        : "bg-elevated text-app border-app"
+                      className={`px-3 py-2 rounded-2xl max-w-[78%] w-fit break-words whitespace-pre-wrap border ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"
                         }`}
                     >
                       <div>{msg.text}</div>
-                      <div className={`mt-1 text-[10px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                        {fmtTime(msg.timestamp)}
-                      </div>
+                      <div className={`mt-1 text-[10px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{fmtTime(msg.timestamp)}</div>
                     </div>
                   </div>
                 );
@@ -412,19 +380,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
               <input
                 type="text"
                 value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
-                onChange={(e) =>
-                  activeConv &&
-                  setMessageInput((prev) => ({ ...prev, [activeConv.participantId]: e.target.value }))
-                }
+                onChange={(e) => activeConv && setMessageInput((prev) => ({ ...prev, [activeConv.participantId]: e.target.value }))}
                 className="flex-1 p-2.5 bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
                 placeholder={
-                  needsApproval
-                    ? isArtist
-                      ? "Approve to enable messaging"
-                      : "Waiting for approval"
-                    : status === "declined"
-                      ? "Messaging locked"
-                      : "Type a message"
+                  needsApproval ? (isArtist ? "Approve to enable messaging" : "Waiting for approval") : status === "declined" ? "Messaging locked" : "Type a message"
                 }
                 disabled={needsApproval || status === "declined"}
                 onKeyDown={(e) => {
@@ -434,9 +393,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
               />
               <button
                 type="button"
-                onClick={() =>
-                  activeConv && !needsApproval && status !== "declined" && handleSend(activeConv.participantId)
-                }
+                onClick={() => activeConv && !needsApproval && status !== "declined" && handleSend(activeConv.participantId)}
                 disabled={needsApproval || status === "declined"}
                 className="px-4 text-sm font-medium bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
               >

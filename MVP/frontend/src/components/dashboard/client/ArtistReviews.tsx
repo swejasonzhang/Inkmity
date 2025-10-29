@@ -95,12 +95,12 @@ const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React
             <CardContent className="text-left space-y-3">
                 <p className="text-sm leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>{r.body}</p>
                 {r.photos && r.photos.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {r.photos.slice(0, 6).map((src, idx) => (
                             <button
                                 key={`${r._id}-photo-${idx}`}
                                 onClick={() => onZoom(src)}
-                                className="aspect-square rounded-md overflow-hidden border"
+                                className="aspect-square rounded-md overflow-hidden border touch-manipulation"
                                 style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                 aria-label={`Open review photo ${idx + 1}`}
                             >
@@ -132,6 +132,13 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
         window.addEventListener("keydown", onEsc)
         return () => window.removeEventListener("keydown", onEsc)
     }, [])
+
+    useEffect(() => {
+        if (!zoomSrc) return
+        const prev = document.body.style.overflow
+        document.body.style.overflow = "hidden"
+        return () => { document.body.style.overflow = prev }
+    }, [zoomSrc])
 
     useEffect(() => {
         let cancelled = false
@@ -236,54 +243,57 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
     }, [])
 
     return (
-        <div className="w-full px-6 py-5 sm:py-5 space-y-5 flex flex-col items-center" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="sticky top-0 z-20 w-full backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="w-full px-4 sm:px-6 py-5 sm:py-5 space-y-5 flex flex-col items-center overflow-x-hidden" style={{ background: "var(--card)", color: "var(--fg)" }}>
+            <div className="sticky top-0 z-20 w-full backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-                    <div className="py-3 sm:py-4">
-                        <div className="mx-auto w-full max-w-3xl flex items-center justify-evenly gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
-                            <div className="justify-self-end">
-                                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="py-2 sm:py-4">
+                        <div className="mx-auto w-full max-w-3xl flex items-center justify-between gap-1 sm:gap-6 py-2 sm:py-3 px-1 sm:px-3 flex-nowrap min-w-0">
+                            <div className="justify-self-end shrink-0">
+                                <div className="flex items-center gap-2 sm:gap-4">
                                     {[0, 1, 2].map(i => (
                                         <button
                                             key={i}
                                             onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
                                             aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                                            className="h-2.5 w-6 rounded-full transition-all"
+                                            className="h-3 w-8 sm:h-2.5 sm:w-6 rounded-full transition-all"
                                             style={{ background: i === 2 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
                                         />
                                     ))}
                                 </div>
                             </div>
-                            <div className="justify-self-center">
+                            <div className="flex-1 min-w-[80px] hidden sm:flex justify-center">
                                 <motion.div
                                     initial={{ y: 0, opacity: 0.95 }}
                                     animate={useReducedMotion() ? {} : { y: [0, 4, 0] }}
                                     transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                                    className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
+                                    className="items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
                                     style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "color-mix(in oklab, var(--fg) 90%, transparent)" }}
                                 >
-                                    <ChevronDown className="h-4 w-4" />
-                                    <span>Scroll to browse reviews or change the sort</span>
+                                    <div className="inline-flex items-center gap-2">
+                                        <ChevronDown className="h-4 w-4" />
+                                        <span>Scroll to browse reviews or change the sort</span>
+                                    </div>
                                 </motion.div>
-                                <div className="sm:hidden h-6" />
                             </div>
-                            <div className="justify-self-start">
-                                <div className="inline-flex items-center gap-2 sm:gap-3 flex-nowrap whitespace-nowrap">
+                            <div className="justify-self-start shrink-0 min-w-0">
+                                <div className="inline-flex items-center gap-1.5 sm:gap-3 flex-nowrap whitespace-nowrap">
                                     <Button
                                         onClick={onGoToBooking ?? (() => onGoToStep?.(1))}
-                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm border-0"
+                                        className="rounded-xl px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium shadow-sm border-0 w-auto"
                                         style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                                         variant="outline"
                                     >
-                                        Back: Booking &amp; Message
+                                        <span className="sm:hidden">Back</span>
+                                        <span className="hidden sm:inline">Back: Booking &amp; Message</span>
                                     </Button>
                                     <Button
                                         onClick={onBackToPortfolio ?? (() => onGoToStep?.(0))}
-                                        className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm border-0"
+                                        className="rounded-xl px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium shadow-sm border-0 w-auto"
                                         style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                                         variant="outline"
                                     >
-                                        Next: Portfolio
+                                        <span className="sm:hidden">Next</span>
+                                        <span className="hidden sm:inline">Next: Portfolio</span>
                                     </Button>
                                 </div>
                             </div>
@@ -293,9 +303,9 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
             </div>
 
             <div className="w-full max-w-7xl flex flex-col items-center gap-4">
-                <div className="w-full flex flex-col items-center gap-2 text-center">
-                    <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">{displayNameFromUsername(artist.username)} — Reviews</h3>
-                    <div className="flex items-center gap-2">
+                <div className="w-full flex flex-col items-center gap-2 text-center px-1">
+                    <h3 className="text-xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">{displayNameFromUsername(artist.username)} — Reviews</h3>
+                    <div className="flex items-center gap-2 flex-wrap justify-center">
                         <Stars value={computedAvg} />
                         <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>{computedAvg ? `${computedAvg} / 5` : "No ratings yet"}</span>
                         {effectiveReviews.length > 0 && (
@@ -304,12 +314,12 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2 w-full justify-center">
                         <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Sort:</label>
                         <select
                             value={sort}
                             onChange={e => onChangeSort(e.target.value as typeof sort)}
-                            className="text-sm rounded-md px-2 py-1 border"
+                            className="text-sm rounded-md px-3 py-2 border w-auto sm:w-[180px]"
                             style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}
                         >
                             <option value="recent">Most recent</option>
@@ -335,15 +345,15 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
                     <div className="w-full max-w-2xl text-sm" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>No reviews yet.</div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                             {sliced.map(r => <ReviewCard key={r._id} r={r} onZoom={setZoomSrc} />)}
                         </div>
                         {canShowMore && (
-                            <div className="pt-2">
+                            <div className="pt-2 w-full flex justify-center">
                                 <Button
                                     onClick={() => setVisibleCount(c => c + BATCH_SIZE)}
                                     variant="outline"
-                                    className="rounded-lg px-4 py-2 text-sm font-medium"
+                                    className="rounded-lg px-4 py-2 text-sm font-medium w-auto"
                                     style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
                                 >
                                     Show more
@@ -355,14 +365,25 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
             </div>
 
             {zoomSrc && (
-                <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4" style={{ background: "color-mix(in oklab, var(--bg) 75%, black 25%)" }} onClick={() => setZoomSrc(null)} role="dialog" aria-modal="true">
-                    <button className="absolute top-4 right-4 rounded-full p-2" onClick={() => setZoomSrc(null)} aria-label="Close image" style={{ color: "var(--fg)" }}>
+                <div
+                    className="fixed inset-0 z-[1300] flex items-center justify-center p-2 sm:p-4"
+                    style={{ background: "color-mix(in oklab, var(--bg) 75%, black 25%)" }}
+                    onClick={() => setZoomSrc(null)}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <button
+                        className="absolute top-2 right-2 sm:top-4 sm:right-4 rounded-full p-2"
+                        onClick={() => setZoomSrc(null)}
+                        aria-label="Close image"
+                        style={{ color: "var(--fg)" }}
+                    >
                         <X className="h-6 w-6" />
                     </button>
                     <img
                         src={zoomSrc}
                         alt="Review image"
-                        className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl border"
+                        className="max-h-[90vh] max-w-[96vw] sm:max-w-[90vw] object-contain rounded-xl border"
                         style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                         onClick={e => e.stopPropagation()}
                     />
