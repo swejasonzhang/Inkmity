@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import whiteLogo from "@/assets/WhiteLogo.png";
 import blackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "./buildNavItems";
 import { NavDesktop } from "./NavDesktop";
 import { NavMobile } from "./NavMobile";
 import { useTheme as useThemeHook } from "./useTheme";
+import { Button } from "@/components/ui/button";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -83,7 +85,10 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
     }
   };
 
-  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(dashboardDisabled, onDashboardGate), [dashboardDisabled, onDashboardGate]);
+  const NAV_ITEMS: BuildNavItem[] = useMemo(
+    () => buildNavItems(dashboardDisabled, onDashboardGate),
+    [dashboardDisabled, onDashboardGate]
+  );
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -108,6 +113,26 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
   const onDashLeave = () => setTip((t) => ({ ...t, show: false }));
 
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const mobileSheet = mobileMenuOpen
+    ? createPortal(
+      <div className="md:hidden fixed inset-0 z-[2147483647]">
+        <div className="absolute inset-0 bg-overlay" onClick={() => setMobileMenuOpen(false)} aria-hidden />
+        <div className="absolute inset-0 bg-app flex flex-col text-app [&_*]:text-app [&_*]:border-app">
+          <div className="flex items-center justify-between px-[10px] py-[10px] border-b border-app">
+            <div className="flex items-center gap-2">
+              <img src={logoSrc} alt="Inkmity Logo" className="h-8 w-auto object-contain" />
+            </div>
+            <Button aria-label="Close menu" variant="ghost" className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
+              <X size={20} />
+            </Button>
+          </div>
+          <NavMobile items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+        </div>
+      </div>,
+      document.body
+    )
+    : null;
 
   return (
     <>
@@ -167,29 +192,13 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
 
         <div className="ml-auto flex items-center gap-2">
           {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />}
-          <button aria-label="Open menu" className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(true)}>
+          <Button aria-label="Open menu" variant="ghost" className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(true)}>
             <Menu size={22} />
-          </button>
+          </Button>
         </div>
       </header>
 
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-overlay" onClick={() => setMobileMenuOpen(false)} aria-hidden />
-          <div className="absolute inset-0 bg-app flex flex-col text-app [&_*]:text-app [&_*]:border-app">
-            <div className="flex items-center justify-between px-[10px] py-[10px] border-b border-app">
-              <div className="flex items-center gap-2">
-                <img src={logoSrc} alt="Inkmity Logo" className="h-8 w-auto object-contain" />
-              </div>
-              <button aria-label="Close menu" className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <NavMobile items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
-          </div>
-        </div>
-      )}
+      {mobileSheet}
     </>
   );
 };

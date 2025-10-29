@@ -27,12 +27,29 @@ export function NavMobile({
                 const isDisabled = item.to === "#" || item.disabled;
 
                 if (isDisabled) {
+                    const isGate = typeof item.onClick === "function";
+                    if (isGate) {
+                        return (
+                            <button
+                                key={item.label}
+                                type="button"
+                                onClick={(e) => {
+                                    item.onClick?.(e);
+                                    setMobileMenuOpen(false);
+                                }}
+                                className={base}
+                                aria-disabled="true"
+                            >
+                                <InkAccentMobile active={active} />
+                                <span>{item.label}</span>
+                            </button>
+                        );
+                    }
                     return (
                         <button
                             key={item.label}
                             type="button"
                             disabled
-                            onClick={item.onClick}
                             className={base}
                             aria-disabled="true"
                             title="In Development"

@@ -35,6 +35,7 @@ export default function FloatingBar({
   const [msgOpen, setMsgOpen] = useState(false);
   const msgBtnRef = useRef<HTMLDivElement | null>(null);
   const [clearedConvos, setClearedConvos] = useState<Set<string>>(() => new Set());
+  const [vp, setVp] = useState({ w: 375, h: 667 });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -46,6 +47,17 @@ export default function FloatingBar({
     return () => {
       if (typeof mql.removeEventListener === "function") mql.removeEventListener("change", onChange);
       else mql.removeListener(onChange as any);
+    };
+  }, []);
+
+  useEffect(() => {
+    const update = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
     };
   }, []);
 
@@ -153,18 +165,19 @@ export default function FloatingBar({
   const collapsedHeight = 44;
   const assistantBtnClass = [btnCommon, "px-3 md:px-4"].join(" ");
 
-  const btnW = msgOpen ? (isMdUp ? 1200 : 400) : 160;
-  const btnH = msgOpen ? (isMdUp ? 760 : 460) : collapsedHeight;
+  const MOBILE_CLOSED_W = 150;
+  const MOBILE_OPEN_W = Math.max(260, Math.min(420, vp.w - 32));
+  const MOBILE_OPEN_H = Math.max(360, Math.min(560, vp.h - 140));
+
+  const btnW = isMdUp ? (msgOpen ? 1200 : 160) : (msgOpen ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
+  const btnH = isMdUp ? (msgOpen ? 760 : collapsedHeight) : (msgOpen ? MOBILE_OPEN_H : collapsedHeight);
   const btnRadius = msgOpen ? 16 : 9999;
 
   const CountBadge = ({ value, label }: { value: number; label?: string }) => (
     <Badge
       className="ml-2 inline-flex items-center justify-center rounded-full text-[11px] font-semibold px-2 min-w-[22px] h-[18px] border"
       style={{
-        background:
-          value > 0
-            ? "var(--fg)"
-            : "color-mix(in oklab, var(--fg), transparent 80%)",
+        background: value > 0 ? "var(--fg)" : "color-mix(in oklab, var(--fg), transparent 80%)",
         color: value > 0 ? "var(--bg)" : "var(--fg)",
         borderColor: "color-mix(in oklab, var(--border), transparent 60%)",
       }}
@@ -204,11 +217,10 @@ export default function FloatingBar({
             aria-expanded={msgOpen}
             style={{
               willChange: "width,height",
-              width: btnW,
+              width: isMdUp ? btnW : Math.max(0, btnW - 50),
               height: btnH,
               borderRadius: btnRadius,
-              transition:
-                "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
+              transition: "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
               overflow: "hidden",
               position: "relative",
               display: "flex",

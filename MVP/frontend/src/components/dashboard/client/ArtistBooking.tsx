@@ -216,19 +216,22 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
   const handleNext = () => onGoToStep?.(2);
 
   return (
-    <div className="w-full mt-5 pb-10" style={{ background: "var(--card)", color: "var(--fg)" }}>
-      <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-          <div className="py-3 sm:py-4">
-            <div className="mx-auto w-full max-w-3xl flex items-center justify-evenly gap-4 sm:gap-6 py-2 sm:py-3 px-2 sm:px-3">
-              <div className="justify-self-end">
-                <div className="flex items-center gap-3 sm:gap-4">
+    <div className="w-full pt-9 pb-24 sm:pb-10" style={{ background: "var(--card)", color: "var(--fg)" }}>
+      <div
+        className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70 pt-7"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-6">
+          <div className="py-2 sm:py-4">
+            <div className="mx-auto w-full max-w-3xl grid grid-cols-3 items-center gap-2 sm:gap-6 px-1 sm:px-3">
+              <div className="col-span-1 flex justify-start">
+                <div className="flex items-center gap-2 sm:gap-4">
                   {[0, 1, 2].map((i) => (
                     <button
                       key={i}
                       onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
                       aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                      className="h-2.5 w-6 rounded-full transition-all"
+                      className="h-3 w-7 sm:h-2.5 sm:w-6 rounded-full transition-all"
                       style={{
                         background:
                           i === 1
@@ -241,25 +244,24 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                 </div>
               </div>
 
-              <div className="justify-self-center">
+              <div className="col-span-1 flex justify-center">
                 <div
-                  className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
+                  className="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm"
                   style={{
                     background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
                     color: "color-mix(in oklab, var(--fg) 90%, transparent)",
                   }}
                 >
                   <ChevronDown className="h-4 w-4" />
-                  <span>Scroll to explore the message the artist and book an appointment</span>
+                  <span>Scroll to message and book</span>
                 </div>
-                <div className="sm:hidden h-6" />
               </div>
 
-              <div className="justify-self-start">
-                <div className="inline-flex items-center gap-2 sm:gap-3 flex-nowrap whitespace-nowrap">
+              <div className="col-span-1 flex justify-end">
+                <div className="inline-flex items-center gap-2 sm:gap-3">
                   <Button
                     onClick={onBack}
-                    className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm border-0"
+                    className="rounded-xl px-3 py-2 text-sm font-medium shadow-sm border-0 sm:px-4"
                     style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                     variant="outline"
                   >
@@ -267,7 +269,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                   </Button>
                   <Button
                     onClick={handleNext}
-                    className="rounded-xl px-4 py-2 text-sm font-medium shadow-sm border-0"
+                    className="rounded-xl px-3 py-2 text-sm font-medium shadow-sm border-0 sm:px-4"
                     style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                     variant="outline"
                   >
@@ -280,19 +282,27 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         </div>
       </div>
 
-      <section className="w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-0 grid grid-cols-1 gap-6 lg:gap-8 pb-8">
+      <section className="w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-0 grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 pb-4 sm:pb-8">
         <Card className="w-full shadow-none" style={{ border: "1px solid var(--border)" }}>
-          <CardHeader className="text-center space-y-1">
-            <CardTitle>Message {artist.username}</CardTitle>
+          <CardHeader className="text-center space-y-1 px-3 sm:px-6">
+            <CardTitle className="text-base sm:text-lg break-words">Message {artist.username}</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-center justify-center">
-            <div className="w-full mx-auto flex flex-col items-center justify-center gap-4 sm:gap-6 px-4">
-              <p className="px-4 py-2 rounded-md text-center w-full max-w-[28rem] text-[13px] sm:text-sm leading-5 sm:leading-6" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
+          <CardContent className="flex items-center justify-center px-2 sm:px-6">
+            <div className="w-full mx-auto flex flex-col items-center justify-center gap-3 sm:gap-4 px-1 sm:px-4">
+              <p
+                className="px-3 py-2 rounded-md text-center w-full max-w-[36rem] text-[13px] sm:text-sm leading-5 sm:leading-6"
+                style={{ background: "var(--elevated)", color: "var(--fg)" }}
+              >
                 Send a request to message. You will be able to chat once the artist accepts.
               </p>
 
               {status === "error" && (
-                <div role="alert" aria-live="assertive" className="w-full max-w-[28rem] px-3 py-2 rounded-md text-sm" style={{ background: "color-mix(in oklab, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}>
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="w-full max-w-[36rem] px-3 py-2 rounded-md text-sm"
+                  style={{ background: "color-mix(in oklab, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}
+                >
                   {errorMsg}
                 </div>
               )}
@@ -305,7 +315,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                 type="button"
                 onClick={handleSendMessage}
                 disabled={status === "sending" || isPending}
-                className="transition w-full sm:w-auto border-0"
+                className="transition w-full sm:w-auto min-h-[44px] text-base sm:text-sm border-0"
                 style={{ background: "var(--elevated)", color: "var(--fg)" }}
               >
                 {status === "sending" ? "Sending..." : isPending ? "Request Pending" : "Send Request"}
@@ -315,14 +325,25 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         </Card>
 
         <Card className="w-full shadow-none" style={{ border: "1px solid var(--border)" }}>
-          <CardHeader className="text-center space-y-1">
-            <CardTitle>Book an appointment</CardTitle>
+          <CardHeader className="text-center space-y-1 px-3 sm:px-6">
+            <CardTitle className="text-base sm:text-lg">Book an appointment</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 sm:p-5">
-            <div className="grid md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
-              <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
-              <div className="flex items-center justify-center min-h-[480px] rounded-md" style={{ background: "var(--elevated)" }}>
-                <div className="w-full max-w-[920px] p-3">
+          <CardContent className="p-2 sm:p-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 items-stretch">
+              <div className="min-h-[360px] sm:min-h-[420px]">
+                <CalendarPicker
+                  date={date}
+                  month={month}
+                  onDateChange={setDate}
+                  onMonthChange={setMonth}
+                  startOfToday={startOfToday}
+                />
+              </div>
+              <div
+                className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2"
+                style={{ background: "var(--elevated)" }}
+              >
+                <div className="w-full max-w-[920px] p-2 sm:p-3">
                   <BookingPicker artistId={artist.clerkId} />
                 </div>
               </div>
@@ -330,6 +351,36 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </CardContent>
         </Card>
       </section>
+
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t"
+        style={{
+          background: "color-mix(in oklab, var(--card) 96%, transparent)",
+          borderColor: "var(--border)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        <div className="mx-auto max-w-screen-md px-3 py-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              onClick={onBack}
+              className="col-span-1 min-h-[44px] w-full text-sm border-0"
+              style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
+              variant="outline"
+            >
+              Back
+            </Button>
+            <Button
+              onClick={handleSendMessage}
+              disabled={status === "sending" || isPending}
+              className="col-span-2 min-h-[44px] w-full text-sm"
+              style={{ background: "var(--elevated)", color: "var(--fg)" }}
+            >
+              {status === "sending" ? "Sending..." : isPending ? "Pending" : "Send Request"}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
