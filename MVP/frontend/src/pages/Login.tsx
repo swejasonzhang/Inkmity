@@ -9,7 +9,7 @@ import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { Button } from "@/components/ui/button";
 import { container } from "@/lib/animations";
-import { useNavigate } from "react-router-dom";
+import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
 const TOAST_H = 72;
 const TOAST_GAP = 50;
@@ -17,6 +17,7 @@ const TOAST_GAP = 50;
 type TipState = { show: boolean; x: number; y: number };
 
 export default function Login() {
+  useAlreadySignedInRedirect();
   const prefersReduced = !!useReducedMotion();
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
@@ -26,18 +27,8 @@ export default function Login() {
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive } = useSignIn();
-  const { isLoaded, userId } = useAuth();
+  const { userId } = useAuth();
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (userId) {
-      toast.info("You are already loggedin. Redirecting you to Dashboard now.", { position: "top-center", theme: "dark" });
-      const t = setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
-      return () => clearTimeout(t);
-    }
-  }, [isLoaded, userId, navigate]);
 
   useEffect(() => {
     const mm = (e: MouseEvent) => {
@@ -147,10 +138,10 @@ export default function Login() {
       const result = await signIn.create({ identifier: email, password });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
+        try {
+          sessionStorage.setItem("authRedirect", "1");
+        } catch { }
         toast.success("Login successful. Redirecting to your dashboard…", { position: "top-center", theme: "dark" });
-        setTimeout(() => {
-          window.location.replace("/dashboard");
-        }, 900);
       } else {
         toast.error("Login failed. Check your credentials and try again.", { position: "top-center", theme: "dark" });
         triggerMascotError();

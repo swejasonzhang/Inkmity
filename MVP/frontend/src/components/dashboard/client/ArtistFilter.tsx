@@ -163,6 +163,10 @@ const ArtistFilter: React.FC<Props> = ({
   const [localSearch, setLocalSearch] = useState(searchQuery ?? "");
   const debounceRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (!sort) setSort("highest_rated");
+  }, [sort, setSort]);
+
   useEffect(() => setLocalSearch(searchQuery ?? ""), [searchQuery]);
 
   useEffect(() => {
@@ -202,13 +206,18 @@ const ArtistFilter: React.FC<Props> = ({
         if (p.bookingFilter) setBookingFilter(p.bookingFilter);
         if (p.travelFilter) setTravelFilter(p.travelFilter);
         if (p.sort) setSort(p.sort);
+        else setSort("highest_rated");
         if (typeof p.searchQuery === "string") {
           setLocalSearch(p.searchQuery);
           setSearchQuery(p.searchQuery);
         }
         setCurrentPage(1);
+      } else {
+        setSort("highest_rated");
       }
-    } catch { }
+    } catch {
+      setSort("highest_rated");
+    }
     hydratedRef.current = true;
   }, [setAvailabilityFilter, setCurrentPage, setExperienceFilter, setLocationFilter, setPriceFilter, setSearchQuery, setSort, setStyleFilter, setBookingFilter, setTravelFilter]);
 
