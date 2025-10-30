@@ -12,7 +12,7 @@ type Props = {
     expandAllOnMount?: boolean;
 };
 
-const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = false }) => {
+const RequestPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = false }) => {
     const { getToken } = useAuth();
 
     const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
                 if (mounted) {
                     const next: Record<string, number> = {};
                     for (const c of arr) next[c.participantId] = next[c.participantId] ?? 0;
-                    setUnreadMap((m) => ({ ...next, ...m }));
+                    setUnreadMap(m => ({ ...next, ...m }));
                 }
             } finally {
                 if (mounted) setLoading(false);
@@ -74,27 +74,60 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
         setCollapsedMap(map);
     }, [expandAllOnMount, conversations]);
 
-    const onToggleCollapse = (participantId: string) =>
-        setCollapsedMap((m) => ({ ...m, [participantId]: !m[participantId] }));
+    const onToggleCollapse = (participantId: string) => setCollapsedMap(m => ({ ...m, [participantId]: !m[participantId] }));
 
-    const onRemoveConversation = (participantId: string) =>
-        setConversations((list) => list.filter((c) => c.participantId !== participantId));
+    const onRemoveConversation = (participantId: string) => setConversations(list => list.filter(c => c.participantId !== participantId));
 
     const onMarkRead = useCallback((participantId: string) => {
-        setUnreadMap((m) => (m[participantId] ? { ...m, [participantId]: 0 } : m));
+        setUnreadMap(m => (m[participantId] ? { ...m, [participantId]: 0 } : m));
+    }, []);
+
+    const onAcceptPending = useCallback((participantId: string) => {
+        setConversations(list =>
+            list.map(c => {
+                if (c.participantId !== participantId) return c;
+                const metaAny: any = c.meta || {};
+                const newMeta: any = {
+                    ...metaAny,
+                    lastStatus: "accepted",
+                    allowed: true,
+                    declines: typeof metaAny.declines === "number" ? metaAny.declines : 0,
+                    blocked: typeof metaAny.blocked === "boolean" ? metaAny.blocked : false
+                };
+                return { ...c, meta: newMeta } as Conversation;
+            })
+        );
+    }, []);
+
+    const onDeclinePending = useCallback((participantId: string) => {
+        setConversations(list =>
+            list.map(c => {
+                if (c.participantId !== participantId) return c;
+                const metaAny: any = c.meta || {};
+                const newMeta: any = {
+                    ...metaAny,
+                    lastStatus: "declined",
+                    allowed: false,
+                    declines: typeof metaAny.declines === "number" ? metaAny.declines : 0,
+                    blocked: typeof metaAny.blocked === "boolean" ? metaAny.blocked : false
+                };
+                return { ...c, meta: newMeta } as Conversation;
+            })
+        );
     }, []);
 
     const derivedRequests = useMemo(() => {
         if (!isArtist) return [];
         return conversations
-            .filter((c) => c.meta && c.meta.lastStatus === "pending" && !c.meta.allowed)
-            .map((c) => {
-                const firstReqMsg = [...c.messages].reverse().find((m) => (m as any)?.meta?.kind === "request") || c.messages[0];
+            .filter((c: any) => c.meta && c.meta.lastStatus === "pending" && !c.meta.allowed)
+            .map((c: any) => {
+                const firstReqMsg =
+                    [...c.messages].reverse().find((m: any) => (m as any)?.meta?.kind === "request") || c.messages[0];
                 return {
                     id: c.participantId,
                     from: { clerkId: c.participantId, username: c.username },
                     text: (firstReqMsg as any)?.text || "Message request",
-                    timestamp: (firstReqMsg as any)?.timestamp || Date.now(),
+                    timestamp: (firstReqMsg as any)?.timestamp || Date.now()
                 };
             });
     }, [conversations, isArtist]);
@@ -115,7 +148,7 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
                 <div className="h-full min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-3">
                     <div className="lg:col-span-2 h-full min-h-0 flex">
                         <ChatWindow
-                            conversations={conversations}
+                            conversations={conversations as unknown as any}
                             collapsedMap={collapsedMap}
                             currentUserId={currentUserId}
                             loading={false}
@@ -126,6 +159,8 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
                             onMarkRead={onMarkRead}
                             isArtist
                             expandedId={expandedId}
+                            onAcceptPending={onAcceptPending}
+                            onDeclinePending={onDeclinePending}
                         />
                     </div>
 
@@ -133,7 +168,7 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
                         <div className="text-sm font-semibold mb-1 text-app">Message requests</div>
                         <div className="text-xs text-muted-foreground mb-3">Review new requests. View to open the thread.</div>
                         <ul className="space-y-2">
-                            {derivedRequests.map((r) => (
+                            {derivedRequests.map((r: any) => (
                                 <li
                                     key={`${r.id}-${r.from?.clerkId}`}
                                     className="flex items-center justify-between rounded-lg border border-app px-3 py-2 bg-elevated"
@@ -160,7 +195,7 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
             ) : (
                 <div className="h-full min-h-0 flex-1">
                     <ChatWindow
-                        conversations={conversations}
+                        conversations={conversations as unknown as any}
                         collapsedMap={collapsedMap}
                         currentUserId={currentUserId}
                         loading={false}
@@ -171,6 +206,8 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
                         onMarkRead={onMarkRead}
                         isArtist={isArtist}
                         expandedId={expandedId}
+                        onAcceptPending={onAcceptPending}
+                        onDeclinePending={onDeclinePending}
                     />
                 </div>
             )}
@@ -178,4 +215,4 @@ const MessagesPanel: FC<Props> = ({ currentUserId, isArtist, expandAllOnMount = 
     );
 };
 
-export default MessagesPanel;
+export default RequestPanel;

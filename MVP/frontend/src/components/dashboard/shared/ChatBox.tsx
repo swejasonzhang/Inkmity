@@ -1,15 +1,16 @@
 import { X, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import MessagesPanel from "@/components/dashboard/shared/messages/MessagesPanel";
+import RequestPanel from "@/components/dashboard/shared/messages/requestPanel";
 
 type ChatBoxProps = {
   open: boolean;
   onClose: () => void;
   currentUserId: string;
+  isArtist?: boolean;
 };
 
-export default function ChatBox({ open, onClose, currentUserId }: ChatBoxProps) {
+export default function ChatBox({ open, onClose, currentUserId, isArtist = false }: ChatBoxProps) {
   const panelVariants = {
     hidden: { height: 0, opacity: 0 },
     visible: { height: 680, opacity: 1 },
@@ -41,7 +42,7 @@ export default function ChatBox({ open, onClose, currentUserId }: ChatBoxProps) 
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto">
-                <MessagesPanel currentUserId={currentUserId} expandAllOnMount />
+                <RequestPanel currentUserId={currentUserId} isArtist={isArtist} expandAllOnMount />
               </div>
             </Card>
           </motion.div>

@@ -134,11 +134,20 @@ export default function SignUp() {
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
-  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "", placement: "", size: "", bio: "" });
+
+  const [client, setClient] = useState<ClientProfile>({
+    budgetMin: "100",
+    budgetMax: "200",
+    location: "New York, New York",
+    placement: "",
+    size: "",
+    bio: "",
+  });
+
   const [artist, setArtist] = useState<ArtistProfile>({
-    location: "",
-    shop: "",
-    years: "",
+    location: "New York, New York",
+    shop: "independent",
+    years: "1",
     baseRate: "",
     bookingPreference: "open",
     travelFrequency: "rare",
@@ -146,6 +155,7 @@ export default function SignUp() {
     styles: [],
     bio: "",
   });
+
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
   const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", ""]);
   const [awaitingCode, setAwaitingCode] = useState(false);
@@ -458,7 +468,22 @@ export default function SignUp() {
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
-  const handlePasswordVisibilityChange = (hidden: boolean) => setShowPassword(!hidden);
+
+  const handlePasswordVisibilityChange = (hidden: boolean) => {
+    setShowPassword(!hidden);
+    const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
+    if (!input) return;
+    const start = input.selectionStart ?? null;
+    const end = input.selectionEnd ?? null;
+    requestAnimationFrame(() => {
+      input.focus({ preventScroll: true });
+      if (start !== null && end !== null) {
+        try {
+          input.setSelectionRange(start, end);
+        } catch { }
+      }
+    });
+  };
 
   const bio = role === "client" ? client.bio || "" : artist.bio || "";
   const setBio = (v: string) => {
@@ -488,7 +513,7 @@ export default function SignUp() {
         <div className="mx-auto w-full max-w-7xl flex items-center justify-center px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
             <div
-              className={`relative grid w-full p-1 gap-0 md:p-0 md:gap-0 min-h-[50svh] md:min-h-[60svh] ${showInfo
+              className={`relative grid w-full p-1 gap-0 md:p-0 md:gap-0 min-h-[50svh] md:minh-[60svh] ${showInfo
                 ? "md:grid-cols-2 md:items-stretch md:justify-items-center md:content-stretch"
                 : "grid-cols-1 place-items-center"
                 }`}

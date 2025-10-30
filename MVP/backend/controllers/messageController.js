@@ -2,7 +2,22 @@ import Message from "../models/Message.js";
 import User from "../models/UserBase.js";
 import { getIO, userRoom, threadRoom } from "../services/socketService.js";
 
-const MAX_DECLINES = 3;
+const MAX_DECLINES = 99;
+
+function toUrlList(arr) {
+  return (Array.isArray(arr) ? arr : [])
+    .map((r) => (typeof r === "string" ? r : r?.url))
+    .filter((u) => typeof u === "string" && u.trim().length > 0)
+    .map((u) => u.trim());
+}
+
+function extractUrlsFromText(text) {
+  if (typeof text !== "string") return [];
+  const rx = /\bhttps?:\/\/[^\s)]+/gi;
+  return Array.from(
+    new Set((text.match(rx) || []).map((u) => u.replace(/[),.]+$/, "")))
+  );
+}
 
 async function latestRequestBetween(a, b) {
   return Message.findOne({
@@ -48,6 +63,8 @@ export const getAllMessagesForUser = async (req, res) => {
         text: m.text,
         timestamp: new Date(m.createdAt).getTime(),
         meta: m.meta || undefined,
+        delivered: !!m.delivered,
+        seen: !!m.seen,
       });
       if (m.receiverId === userId && !m.seen) unreadSet.add(pid);
     }
@@ -90,6 +107,8 @@ export const getAllMessagesForUser = async (req, res) => {
             kind: "request",
             status: doc.requestStatus,
           },
+          delivered: !!doc.delivered,
+          seen: !!doc.seen,
         });
       }
     }
@@ -183,17 +202,23 @@ export const createMessage = async (req, res) => {
       }));
     if (!accepted) return res.status(403).json({ error: "not_allowed" });
 
+    const urlsFromText = extractUrlsFromText(text);
     const msg = await Message.create({
       senderId: authSenderId,
       receiverId: String(receiverId),
       text,
       type: "message",
       seen: false,
+      delivered: false,
       meta: {
         budgetCents: Number.isFinite(budgetCents) ? budgetCents : undefined,
         style: style || undefined,
         targetDateISO: targetDateISO || undefined,
-        referenceUrls: Array.isArray(referenceUrls) ? referenceUrls : undefined,
+        referenceUrls: Array.isArray(referenceUrls)
+          ? referenceUrls
+          : urlsFromText.length
+          ? urlsFromText
+          : undefined,
       },
     });
 
@@ -203,6 +228,8 @@ export const createMessage = async (req, res) => {
       text: msg.text,
       timestamp: msg.createdAt.getTime(),
       meta: msg.meta || undefined,
+      delivered: !!msg.delivered,
+      seen: !!msg.seen,
     };
 
     const io = getIO();
@@ -246,7 +273,13 @@ export const deleteConversationForUser = async (req, res) => {
 export const createMessageRequest = async (req, res) => {
   try {
     const clientId = String(req.user?.clerkId || req.auth?.userId || "");
-    const { artistId, text, meta = {} } = req.body || {};
+    const {
+      artistId,
+      text,
+      referenceUrls,
+      workRefs,
+      meta = {},
+    } = req.body || {};
     if (!clientId || !artistId || !text)
       return res.status(400).json({ error: "missing_fields" });
 
@@ -270,13 +303,36 @@ export const createMessageRequest = async (req, res) => {
     });
     if (pending) return res.status(409).json({ error: "already_pending" });
 
+    const me = await User.findOne({ clerkId: clientId }).lean();
+    const refsFromProfile = toUrlList(me?.references);
+    const refsFromBody = toUrlList(referenceUrls);
+    const refsFromMeta = toUrlList(meta?.referenceUrls);
+    const refsFromText = extractUrlsFromText(text);
+    const mergedRefs = Array.from(
+      new Set([
+        ...refsFromBody,
+        ...refsFromMeta,
+        ...refsFromProfile,
+        ...refsFromText,
+      ])
+    );
+    const works = toUrlList(workRefs);
+    const metaPayload = {
+      ...meta,
+      referenceUrls: mergedRefs,
+      workRefs: works.length ? works : mergedRefs,
+    };
+
     const reqMsg = await Message.create({
       senderId: clientId,
       receiverId: artistId,
       text,
       type: "request",
       requestStatus: "pending",
-      meta,
+      meta: metaPayload,
+      delivered: true,
+      deliveredAt: new Date(),
+      seen: false,
     });
 
     const io = getIO();
@@ -287,6 +343,8 @@ export const createMessageRequest = async (req, res) => {
         text: reqMsg.text,
         timestamp: reqMsg.createdAt.getTime(),
         meta: { ...(reqMsg.meta || {}), kind: "request", status: "pending" },
+        delivered: true,
+        seen: false,
       };
       io.to(userRoom(artistId)).emit("conversation:pending", {
         convoId: reqMsg.threadKey,
@@ -334,10 +392,8 @@ export const acceptMessageRequest = async (req, res) => {
       type: "request",
     });
     if (!msg) return res.status(404).json({ error: "not_found" });
-
     msg.requestStatus = "accepted";
     await msg.save();
-
     const io = getIO();
     if (io) {
       io.to(userRoom(msg.senderId))
@@ -350,7 +406,6 @@ export const acceptMessageRequest = async (req, res) => {
           request: { timestamp: msg.createdAt.getTime(), status: "accepted" },
         });
     }
-
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Failed to accept request" });
@@ -366,13 +421,10 @@ export const declineMessageRequest = async (req, res) => {
       type: "request",
     });
     if (!msg) return res.status(404).json({ error: "not_found" });
-
     msg.requestStatus = "declined";
     await msg.save();
-
     const declines = await declineCount(msg.senderId, artistId);
     const blocked = declines >= MAX_DECLINES;
-
     const io = getIO();
     if (io) {
       io.to(userRoom(msg.senderId)).emit("conversation:declined", {
@@ -386,7 +438,6 @@ export const declineMessageRequest = async (req, res) => {
         .to(threadRoom(msg.threadKey))
         .emit("conversation:removed", { convoId: msg.threadKey });
     }
-
     res.json({ ok: true, declines, blocked });
   } catch {
     res.status(500).json({ error: "Failed to decline request" });
@@ -397,14 +448,12 @@ export const getGateStatus = async (req, res) => {
   try {
     const clientId = String(req.user?.clerkId || req.auth?.userId || "");
     const { artistId } = req.params;
-
     const accepted = await Message.exists({
       type: "request",
       requestStatus: "accepted",
       senderId: clientId,
       receiverId: artistId,
     });
-
     const lastReq = await Message.findOne({
       type: "request",
       senderId: clientId,
@@ -412,9 +461,7 @@ export const getGateStatus = async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .lean();
-
     const declines = await declineCount(clientId, artistId);
-
     res.json({
       allowed: !!accepted,
       lastStatus: lastReq?.requestStatus || null,
@@ -430,7 +477,6 @@ export const getUnreadState = async (req, res) => {
   try {
     const userId = String(req.user?.clerkId || req.auth?.userId || "");
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
     const unread = await Message.find({
       type: "message",
       receiverId: userId,
@@ -438,9 +484,7 @@ export const getUnreadState = async (req, res) => {
     })
       .select("senderId")
       .lean();
-
     const unreadConversationIds = [...new Set(unread.map((m) => m.senderId))];
-
     const pending = await Message.find({
       type: "request",
       receiverId: userId,
@@ -448,9 +492,7 @@ export const getUnreadState = async (req, res) => {
     })
       .select("_id")
       .lean();
-
     const pendingRequestIds = pending.map((m) => String(m._id));
-
     res.json({
       unreadConversationIds,
       pendingRequestIds,
@@ -467,22 +509,27 @@ export const getUnreadState = async (req, res) => {
 export const markConversationRead = async (req, res) => {
   try {
     const authUserId = String(req.user?.clerkId || req.auth?.userId || "");
-    const { userId, participantId } = req.body || {};
-    if (!authUserId || !userId || !participantId)
+    const { userId, participantId, conversationId } = req.body || {};
+    const viewerId = authUserId || String(userId || "");
+    const otherId = String(participantId || conversationId || "");
+    if (!viewerId || !otherId)
       return res.status(400).json({ error: "missing_fields" });
-    if (authUserId !== String(userId))
+    if (authUserId && userId && authUserId !== String(userId))
       return res.status(403).json({ error: "Forbidden" });
-
-    const result = await Message.updateMany(
-      {
-        type: "message",
-        receiverId: userId,
-        senderId: String(participantId),
-        seen: false,
-      },
-      { $set: { seen: true } }
-    );
-    res.json({ ok: true, modified: result.modifiedCount || 0 });
+    await Message.ackForPair(viewerId, otherId);
+    const io = getIO();
+    if (io) {
+      io.to(userRoom(viewerId))
+        .to(threadRoom([viewerId, otherId].sort().join(":")))
+        .emit("conversation:ack", {
+          convoId: [viewerId, otherId].sort().join(":"),
+          viewerId,
+          participantId: otherId,
+          delivered: true,
+          seen: true,
+        });
+    }
+    res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Failed to mark read" });
   }

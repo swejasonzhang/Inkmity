@@ -1,21 +1,24 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/header/Header";
-import ChatBot from "@/components/dashboard/shared/ChatBot";
-import ArtistsSection from "@/components/dashboard/client/ArtistsSection";
-import ArtistModal from "@/components/dashboard/client/ArtistModal";
-import { toast } from "react-toastify";
-import { X, Bot } from "lucide-react";
-import { useDashboardData } from "@/hooks";
-import { useMessaging } from "@/hooks/useMessaging";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
+import { X, Bot } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import MessagesPanel from "@/components/dashboard/shared/messages/requestPanel";
+import ChatBot from "@/components/dashboard/shared/ChatBot";
+import { toast } from "react-toastify";
 import CircularProgress from "@mui/material/CircularProgress";
 import { displayNameFromUsername } from "@/lib/format";
 import { API_URL } from "@/lib/http";
+import { useDashboardData } from "@/hooks";
+import { useMessaging } from "@/hooks/useMessaging";
 import type { Artist as ArtistDto } from "@/api";
 import { AnimatePresence, motion } from "framer-motion";
-import MessagesPanel from "@/components/dashboard/shared/messages/MessagesPanel";
+
+const ArtistsSection = lazy(() => import("@/components/dashboard/client/ArtistsSection"));
+const ArtistModal = lazy(() => import("@/components/dashboard/client/ArtistModal"));
 
 const PAGE_SIZE = 12;
 
@@ -114,25 +117,47 @@ export default function ClientDashboard() {
 
     return (
         <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
-            <style>{`#middle-content::-webkit-scrollbar{display:none}`}</style>
             <Header />
             <div ref={scopeRef} className="flex-1 min-h-0 flex flex-col">
                 <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
-                    <div className="flex-1 min-w-0">
-                        <ArtistsSection
-                            artists={artists.map((a) => ({ ...a, username: displayNameFromUsername(a.username) }))}
-                            loading={loading}
-                            showArtists
-                            onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
-                            page={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
-                    </div>
+                    <Card className="flex-1 min-h-0 rounded-2xl bg-card border border-app overflow-hidden">
+                        <CardContent className="p-0">
+                            <div className="flex-1 min-w-0 p-4">
+                                <Suspense
+                                    fallback={
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                                {Array.from({ length: 8 }).map((_, i) => (
+                                                    <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                                                ))}
+                                            </div>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Skeleton className="h-8 w-20 rounded" />
+                                                <Skeleton className="h-8 w-20 rounded" />
+                                            </div>
+                                        </div>
+                                    }
+                                >
+                                    <ArtistsSection
+                                        artists={artists.map((a) => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                                        loading={loading}
+                                        showArtists
+                                        onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+                                        page={page}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                    />
+                                </Suspense>
+                            </div>
+                        </CardContent>
+                    </Card>
                     <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
                 </main>
+
                 <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
+
                 <FloatingBar
+                    role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
                     portalTarget={portalEl}
                     messagesContent={<MessagesPanel currentUserId={user.id} expandAllOnMount isArtist={false} />}
@@ -141,6 +166,7 @@ export default function ClientDashboard() {
                     pendingRequestIds={pendingRequestIds}
                     pendingRequestsCount={pendingRequestsCount}
                 />
+
                 <AnimatePresence>
                     {assistantOpen && (
                         <motion.div
@@ -153,14 +179,17 @@ export default function ClientDashboard() {
                             className="fixed bottom-4 right-4 z-50"
                             style={{ transformOrigin: "bottom right" }}
                         >
-                            <div className="w-[88vw] max-w-[420px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden" style={{ height: Math.max(320, Math.min(scopeH, 560)) }}>
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+                            <div
+                                className="w-[88vw] max-w-[400px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden"
+                                style={{ height: Math.max(280, Math.min(scopeH, 420)) }}
+                            >
+                                <div className="flex items-center justify-between px-3 py-2 border-b border-app">
                                     <div className="flex items-center gap-2 font-semibold">
-                                        <Bot size={18} />
-                                        <span>Assistant</span>
+                                        <Bot size={16} />
+                                        <span className="text-sm">Assistant</span>
                                     </div>
-                                    <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
-                                        <X size={18} />
+                                    <button onClick={() => setAssistantOpen(false)} className="p-1.5 rounded-full hover:bg-elevated" aria-label="Close assistant">
+                                        <X size={16} />
                                     </button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto">
@@ -170,16 +199,19 @@ export default function ClientDashboard() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-                {modalArtist && (
-                    <ArtistModal
-                        open={Boolean(selectedArtist)}
-                        artist={modalArtist}
-                        onClose={() => setSelectedArtist(null)}
-                        onMessage={async (a) => {
-                            window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
-                        }}
-                    />
-                )}
+
+                <Suspense fallback={null}>
+                    {modalArtist && (
+                        <ArtistModal
+                            open={Boolean(selectedArtist)}
+                            artist={modalArtist}
+                            onClose={() => setSelectedArtist(null)}
+                            onMessage={async (a) => {
+                                window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
+                            }}
+                        />
+                    )}
+                </Suspense>
             </div>
         </div>
     );

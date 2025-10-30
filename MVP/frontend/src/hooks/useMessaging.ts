@@ -7,6 +7,8 @@ export type Message = {
   text: string;
   timestamp: number;
   meta?: any;
+  delivered?: boolean;
+  seen?: boolean;
 };
 export type ConversationMeta = {
   allowed: boolean;
@@ -47,6 +49,12 @@ function savePending(v: Record<string, { username: string }>) {
     localStorage.setItem(PENDING_LS, JSON.stringify(v));
   } catch {}
 }
+
+const urlRegex = /\bhttps?:\/\/[^\s)]+/gi;
+const extractUrls = (text: string) =>
+  Array.from(
+    new Set((text.match(urlRegex) || []).map((u) => u.replace(/[),.]+$/, "")))
+  );
 
 export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const [loading, setLoading] = useState(true);
@@ -253,13 +261,19 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
 
   const send = useCallback(
     async (receiverId: string, text: string) => {
+      const referenceUrls = extractUrls(text);
       const res = await authFetch(`${apiBase}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ senderId: currentUserId, receiverId, text }),
+        body: JSON.stringify({
+          senderId: currentUserId,
+          receiverId,
+          text,
+          ...(referenceUrls.length ? { meta: { referenceUrls } } : {}),
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setUnreadMap((m) => (m[receiverId] ? { ...m, [receiverId]: 0 } : m));
@@ -285,8 +299,24 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         });
     };
 
+    const normalizeRefs = (raw: any): Message => {
+      const mergedRefs = Array.from(
+        new Set([
+          ...(raw?.meta?.referenceUrls || []),
+          ...(raw?.meta?.workRefs || []),
+          ...(raw?.referenceUrls || []),
+          ...(raw?.workRefs || []),
+          ...(raw?.meta?.refs || []),
+        ])
+      );
+      return {
+        ...raw,
+        meta: { ...(raw.meta || {}), referenceUrls: mergedRefs },
+      };
+    };
+
     const onMessageNew = (p: { convoId: string; message: Message }) => {
-      const m = p.message;
+      const m = normalizeRefs(p.message);
       const pid = m.senderId === currentUserId ? m.receiverId : m.senderId;
       upsert(pid, (prev?: Conversation) => {
         const base: Conversation = prev || {
@@ -325,6 +355,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       message: Message;
     }) => {
       const pid = currentUserId === p.to ? p.from : p.to;
+      const normalized = normalizeRefs(p.message);
       upsert(pid, (prev?: Conversation) => {
         const base: Conversation = prev || {
           participantId: pid,
@@ -339,9 +370,9 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         };
         const msgExists = base.messages.some(
           (x) =>
-            x.timestamp === p.message.timestamp && x.meta?.kind === "request"
+            x.timestamp === normalized.timestamp && x.meta?.kind === "request"
         );
-        const msgs = msgExists ? base.messages : [p.message, ...base.messages];
+        const msgs = msgExists ? base.messages : [normalized, ...base.messages];
         return {
           ...base,
           messages: msgs,
@@ -387,6 +418,31 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       fetchIncomingRequests();
     };
 
+    const onAck = (p: {
+      convoId: string;
+      viewerId: string;
+      participantId: string;
+      delivered?: boolean;
+      seen?: boolean;
+    }) => {
+      const pid = p.participantId;
+      if (p.viewerId !== currentUserId) return;
+      upsert(pid, (prev?: Conversation) => {
+        if (!prev) return prev as any;
+        const msgs = [...prev.messages];
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i].senderId === currentUserId) {
+            const next = { ...msgs[i] };
+            if (p.seen) next.seen = true;
+            if (p.delivered) next.delivered = true;
+            msgs[i] = next;
+            break;
+          }
+        }
+        return { ...prev, messages: msgs };
+      });
+    };
+
     const onRemoved = () => {
       fetchAll();
       fetchIncomingRequests();
@@ -396,6 +452,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     s.on("message:new", onMessageNew);
     s.on("conversation:pending", onPending);
     s.on("conversation:accepted", onAccepted);
+    s.on("conversation:ack", onAck);
     s.on("conversation:removed", onRemoved);
     if (!s.connected) s.connect();
 
@@ -404,6 +461,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       s.off("message:new", onMessageNew);
       s.off("conversation:pending", onPending);
       s.off("conversation:accepted", onAccepted);
+      s.off("conversation:ack", onAck);
       s.off("conversation:removed", onRemoved);
     };
   }, [

@@ -27,19 +27,15 @@ function useDashboardScope(scopeEl: HTMLElement | null) {
     if (!scopeEl) return;
     scopeEl.classList.add("ink-scope", "ink-no-anim");
     const KEY = "dashboard-theme";
-
     const apply = () => {
       let isLight = false;
       try { isLight = localStorage.getItem(KEY) === "light"; } catch { }
       scopeEl.classList.toggle("ink-light", isLight);
     };
-
     apply();
-
     requestAnimationFrame(() => {
       scopeEl.classList.remove("ink-no-anim");
     });
-
     const onStorage = (e: StorageEvent) => {
       if (e.key && e.key !== KEY) return;
       apply();
