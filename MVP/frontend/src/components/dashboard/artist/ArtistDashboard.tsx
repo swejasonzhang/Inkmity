@@ -4,7 +4,7 @@ import FloatingBar from "@/components/dashboard/shared/FloatingBar";
 import { X, Bot } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import MessagesPanel from "@/components/dashboard/shared/messages/MessagesPanel";
+import MessagesPanel from "@/components/dashboard/shared/messages/requestPanel";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { API_URL } from "@/lib/http";
@@ -89,6 +89,7 @@ export default function ArtistDashboard() {
         </main>
         <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
         <FloatingBar
+          role="Artist"
           onAssistantOpen={() => setAssistantOpen(true)}
           portalTarget={portalEl}
           messagesContent={<MessagesPanel currentUserId={user?.id ?? ""} isArtist={isArtist} />}

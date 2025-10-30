@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import Image from "../models/Image.js";
+import User from "../models/UserBase.js";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -21,7 +22,6 @@ export const signUpload = (req, res) => {
   const tags =
     (req.method === "GET" ? req.query.tags : req.body.tags) ||
     (kind === "artist_portfolio" ? ["portfolio"] : ["reference"]);
-
   const timestamp = Math.floor(Date.now() / 1000);
   const paramsToSign = {
     timestamp,
@@ -32,7 +32,6 @@ export const signUpload = (req, res) => {
     paramsToSign,
     process.env.CLOUDINARY_API_SECRET
   );
-
   res.json({
     timestamp,
     signature,
@@ -63,6 +62,16 @@ export const saveImages = async (req, res) => {
 
   try {
     const created = await Image.insertMany(docs, { ordered: false });
+    if (kindToEnum(kind) === "reference" && role === "client") {
+      const urls = created.map((d) => d.url).filter(Boolean);
+      if (urls.length) {
+        await User.updateOne(
+          { clerkId: userId },
+          { $addToSet: { references: { $each: urls } } },
+          { upsert: false }
+        );
+      }
+    }
     return res.json({ ok: true, count: created.length });
   } catch {
     return res.json({ ok: true, count: 0 });
@@ -92,5 +101,16 @@ export const deleteImage = async (req, res) => {
     });
   } catch {}
   await Image.deleteOne({ _id: id });
+  if (
+    doc.kind === "reference" &&
+    doc.role === "client" &&
+    doc.userId &&
+    doc.url
+  ) {
+    await User.updateOne(
+      { clerkId: doc.userId },
+      { $pull: { references: doc.url } }
+    );
+  }
   res.json({ ok: true });
 };

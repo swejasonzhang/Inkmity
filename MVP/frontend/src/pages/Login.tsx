@@ -53,7 +53,9 @@ export default function Login() {
   }, []);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const pwdRef = useRef<HTMLInputElement | null>(null);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
+
   useEffect(() => {
     const updateTop = () => {
       const el = cardRef.current;
@@ -154,8 +156,25 @@ export default function Login() {
     }
   };
 
-  const mascotEyesClosed = showPassword || pwdFocused;
+  const mascotEyesClosed = showPassword && pwdFocused;
   const CARD_H = "h-[520px] sm:h-[560px] md:h-[580px]";
+
+  const togglePwd = () => {
+    const el = pwdRef.current;
+    const start = el?.selectionStart ?? null;
+    const end = el?.selectionEnd ?? null;
+    setShowPassword((v) => !v);
+    requestAnimationFrame(() => {
+      const input = pwdRef.current;
+      if (!input) return;
+      input.focus({ preventScroll: true });
+      if (start !== null && end !== null) {
+        try {
+          input.setSelectionRange(start, end);
+        } catch { }
+      }
+    });
+  };
 
   return (
     <>
@@ -202,6 +221,7 @@ export default function Login() {
                           <label className="block text-sm text-white/70 mb-1" htmlFor="password">Password</label>
                           <div className="relative">
                             <input
+                              ref={pwdRef}
                               id="password"
                               type={showPassword ? "text" : "password"}
                               name="password"
@@ -213,7 +233,8 @@ export default function Login() {
                             />
                             <button
                               type="button"
-                              onClick={() => setShowPassword((v) => !v)}
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={togglePwd}
                               className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
                               aria-label={showPassword ? "Hide password" : "Show password"}
                             >

@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+type Role = "Client" | "Artist";
+
 type Props = {
+  role: Role;
   onAssistantOpen: () => void;
   portalTarget?: Element | null;
   assistantLocked?: boolean;
@@ -19,6 +22,7 @@ type Props = {
 };
 
 export default function FloatingBar({
+  role,
   onAssistantOpen,
   portalTarget,
   assistantLocked = true,
@@ -29,13 +33,15 @@ export default function FloatingBar({
   unreadConversationsCount,
   pendingRequestsCount,
   unreadConversationIds,
-  pendingRequestIds,
+  pendingRequestIds
 }: Props) {
   const [isMdUp, setIsMdUp] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
   const msgBtnRef = useRef<HTMLDivElement | null>(null);
   const [clearedConvos, setClearedConvos] = useState<Set<string>>(() => new Set());
   const [vp, setVp] = useState({ w: 375, h: 667 });
+
+  const showRequests = role === "Artist";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -77,7 +83,7 @@ export default function FloatingBar({
       const id = (e as CustomEvent<string | { id: string }>).detail;
       const convoId = typeof id === "string" ? id : id?.id;
       if (!convoId) return;
-      setClearedConvos((prev) => {
+      setClearedConvos(prev => {
         const next = new Set(prev);
         next.add(convoId);
         return next;
@@ -95,10 +101,10 @@ export default function FloatingBar({
 
   useEffect(() => {
     if (!unreadConversationIds) return;
-    setClearedConvos((prev) => {
+    setClearedConvos(prev => {
       const incoming = new Set(unreadConversationIds);
       const next = new Set<string>();
-      prev.forEach((id) => {
+      prev.forEach(id => {
         if (incoming.has(id)) next.add(id);
       });
       return next;
@@ -107,7 +113,9 @@ export default function FloatingBar({
 
   useEffect(() => {
     if (!msgOpen) return;
+    const modalOpen = () => !!document.querySelector('[role="dialog"], [data-ink-modal]');
     const onDocPointer = (e: Event) => {
+      if (modalOpen()) return;
       const root = msgBtnRef.current;
       if (!root) return;
       const target = e.target as Node | null;
@@ -115,7 +123,7 @@ export default function FloatingBar({
       setMsgOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMsgOpen(false);
+      if (e.key === "Escape" && !modalOpen()) setMsgOpen(false);
     };
     document.addEventListener("mousedown", onDocPointer, true);
     document.addEventListener("touchstart", onDocPointer, true);
@@ -133,31 +141,32 @@ export default function FloatingBar({
   };
 
   const unreadConvoCount = Array.isArray(unreadConversationIds)
-    ? unreadConversationIds.filter((id) => !clearedConvos.has(id)).length
+    ? unreadConversationIds.filter(id => !clearedConvos.has(id)).length
     : toInt(unreadConversationsCount);
 
-  const requestCount =
-    typeof requestExists === "boolean"
-      ? requestExists ? 1 : 0
+  const requestCount = showRequests
+    ? (typeof requestExists === "boolean"
+      ? requestExists
+        ? 1
+        : 0
       : Array.isArray(pendingRequestIds)
-        ? (pendingRequestIds.length > 0 ? 1 : 0)
+        ? pendingRequestIds.length > 0
+          ? 1
+          : 0
         : toInt(pendingRequestsCount) > 0
           ? 1
-          : 0;
+          : 0)
+    : 0;
 
   const totalUnreadMessages =
     typeof unreadMessagesTotal === "number" ? unreadMessagesTotal : toInt(unreadCount);
 
-  const derivedTotal = totalUnreadMessages + requestCount;
+  const derivedTotal = totalUnreadMessages + (showRequests ? requestCount : 0);
 
   const pad = {
-    left: isMdUp
-      ? "calc(1.85rem + 10px + env(safe-area-inset-left, 0px))"
-      : "calc(0.9rem + 8px + env(safe-area-inset-left, 0px))",
-    right: isMdUp
-      ? "calc(1.85rem + 10px + env(safe-area-inset-right, 0px))"
-      : "calc(0.9rem + 8px + env(safe-area-inset-right, 0px))",
-    bottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
+    left: isMdUp ? "calc(1.85rem + 10px + env(safe-area-inset-left, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-left, 0px))",
+    right: isMdUp ? "calc(1.85rem + 10px + env(safe-area-inset-right, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-right, 0px))",
+    bottom: "calc(10px + env(safe-area-inset-bottom, 0px))"
   };
 
   const btnCommon =
@@ -169,8 +178,8 @@ export default function FloatingBar({
   const MOBILE_OPEN_W = Math.max(260, Math.min(420, vp.w - 32));
   const MOBILE_OPEN_H = Math.max(360, Math.min(560, vp.h - 140));
 
-  const btnW = isMdUp ? (msgOpen ? 1200 : 160) : (msgOpen ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
-  const btnH = isMdUp ? (msgOpen ? 760 : collapsedHeight) : (msgOpen ? MOBILE_OPEN_H : collapsedHeight);
+  const btnW = isMdUp ? (msgOpen ? 1200 : 160) : msgOpen ? MOBILE_OPEN_W : MOBILE_CLOSED_W;
+  const btnH = isMdUp ? (msgOpen ? 760 : collapsedHeight) : msgOpen ? MOBILE_OPEN_H : collapsedHeight;
   const btnRadius = msgOpen ? 16 : 9999;
 
   const CountBadge = ({ value, label }: { value: number; label?: string }) => (
@@ -179,7 +188,7 @@ export default function FloatingBar({
       style={{
         background: value > 0 ? "var(--fg)" : "color-mix(in oklab, var(--fg), transparent 80%)",
         color: value > 0 ? "var(--bg)" : "var(--fg)",
-        borderColor: "color-mix(in oklab, var(--border), transparent 60%)",
+        borderColor: "color-mix(in oklab, var(--border), transparent 60%)"
       }}
       aria-label={label ? `${value} ${label}` : `${value}`}
       title={label ? `${value} ${label}` : `${value}`}
@@ -225,7 +234,7 @@ export default function FloatingBar({
               position: "relative",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "center"
             }}
           >
             {!msgOpen ? (
@@ -239,7 +248,7 @@ export default function FloatingBar({
               >
                 <MessageSquare size={18} />
                 <span className="text-sm font-medium hidden md:inline">Messages</span>
-                <CountBadge value={derivedTotal} label="unread + requests" />
+                <CountBadge value={derivedTotal} label={showRequests ? "unread + requests" : "unread"} />
               </Button>
             ) : (
               <div className="flex h-full w-full flex-col">
@@ -250,9 +259,11 @@ export default function FloatingBar({
                     <Badge className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
                       {unreadConvoCount} unread convos
                     </Badge>
-                    <Badge className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
-                      {requestCount} {requestCount === 1 ? "request" : "requests"}
-                    </Badge>
+                    {showRequests && (
+                      <Badge className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full" style={{ background: "#111827", color: "#fff" }}>
+                        {requestCount} {requestCount === 1 ? "request" : "requests"}
+                      </Badge>
+                    )}
                   </div>
                   <div className="shrink-0">
                     <span className="sr-only">Close messages</span>

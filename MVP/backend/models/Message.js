@@ -18,6 +18,8 @@ const MessageSchema = new mongoose.Schema(
       index: true,
     },
     seen: { type: Boolean, default: false, index: true },
+    delivered: { type: Boolean, default: false, index: true },
+    deliveredAt: { type: Date },
     meta: {
       budgetCents: { type: Number },
       style: { type: String },
@@ -25,6 +27,8 @@ const MessageSchema = new mongoose.Schema(
       referenceUrls: { type: [String], default: [] },
       placement: { type: String },
       workRefs: { type: [String], default: [] },
+      kind: { type: String },
+      status: { type: String },
     },
     threadKey: { type: String, index: true },
   },
@@ -46,6 +50,21 @@ MessageSchema.index(
   { senderId: 1, receiverId: 1, type: 1, requestStatus: 1, createdAt: -1 },
   { name: "req_lookup" }
 );
+
+MessageSchema.statics.ackForPair = function (viewerId, participantId) {
+  const threadKey = [viewerId, participantId].sort().join(":");
+  const now = new Date();
+  return Promise.all([
+    this.updateMany(
+      { threadKey, receiverId: viewerId, delivered: { $ne: true } },
+      { $set: { delivered: true, deliveredAt: now } }
+    ),
+    this.updateMany(
+      { threadKey, receiverId: viewerId, seen: false },
+      { $set: { seen: true } }
+    ),
+  ]);
+};
 
 export default mongoose.models.Message ||
   mongoose.model("Message", MessageSchema);

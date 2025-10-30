@@ -2,15 +2,18 @@ import Message from "../models/Message.js";
 
 let io;
 const onlineUsers = new Map();
-const MAX_DECLINES = 3;
+const MAX_DECLINES = 99;
 
 export const initSocket = (ioInstance) => {
   io = ioInstance;
 
   io.on("connection", (socket) => {
+    socket.data = socket.data || {};
+
     socket.on("register", (clerkId) => {
       if (typeof clerkId !== "string" || !clerkId) return;
       onlineUsers.set(clerkId, socket.id);
+      socket.data.userId = clerkId;
       socket.join(userRoom(clerkId));
     });
 
@@ -22,11 +25,31 @@ export const initSocket = (ioInstance) => {
           break;
         }
       }
+      socket.data.userId = undefined;
     });
 
-    socket.on("thread:join", ({ threadKey }) => {
+    socket.on("thread:join", async ({ threadKey }) => {
       if (!threadKey) return;
       socket.join(threadRoom(threadKey));
+
+      const viewerId = socket.data.userId;
+      if (viewerId) {
+        const [a, b] = String(threadKey).split(":");
+        const ids = [a, b].filter(Boolean);
+        if (ids.length === 2 && ids.includes(viewerId)) {
+          const otherId = ids[0] === viewerId ? ids[1] : ids[0];
+          try {
+            await Message.ackForPair(viewerId, otherId);
+            io.to(threadRoom(threadKey)).emit("conversation:ack", {
+              convoId: threadKey,
+              viewerId,
+              participantId: otherId,
+              delivered: true,
+              seen: true,
+            });
+          } catch {}
+        }
+      }
     });
 
     socket.on("send_message", async (data, ack) => {
@@ -44,6 +67,8 @@ export const initSocket = (ioInstance) => {
           text: String(text),
           type: "message",
           meta: meta && typeof meta === "object" ? meta : undefined,
+          delivered: false,
+          seen: false,
         });
 
         const payload = {
@@ -52,6 +77,8 @@ export const initSocket = (ioInstance) => {
           text: message.text,
           timestamp: message.createdAt.getTime(),
           meta: message.meta || undefined,
+          delivered: !!message.delivered,
+          seen: !!message.seen,
         };
 
         io.to(userRoom(message.senderId))

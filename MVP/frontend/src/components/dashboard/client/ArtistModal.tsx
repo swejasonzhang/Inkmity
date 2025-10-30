@@ -19,6 +19,7 @@ type Props = {
   onClose: () => void;
   artist: ArtistWithGroups;
   onMessage: (artist: ArtistWithGroups, preloadedMessage: string) => void;
+  initialStep?: 0 | 1 | 2;
 };
 
 type BookingProps = {
@@ -30,54 +31,19 @@ type BookingProps = {
 };
 
 const ArtistBooking = ArtistBookingComponent as React.ComponentType<BookingProps>;
+const THEME_CLASSES = ["dashboard-theme", "ink-light"];
 
-const THEME_CLASS_CANDIDATES = [
-  ".dashboard-theme",
-  ".ink-light",
-  ".ink-dark",
-  ".ink-theme",
-  ".dark",
-  "[data-theme]",
-  "body",
-  "html",
-];
-
-function findThemeRoot(): HTMLElement {
-  for (const sel of THEME_CLASS_CANDIDATES) {
-    const el = document.querySelector(sel) as HTMLElement | null;
-    if (el) return el;
-  }
-  return document.documentElement;
-}
-
-function extractThemeClasses(el: HTMLElement): string[] {
-  const classes = Array.from(el.classList || []);
-  const keep = ["dashboard-theme", "ink-light", "ink-dark", "ink-theme", "dark"];
-  return classes.filter((c) => keep.includes(c));
-}
-
-function copyCSSVariables(fromEl: HTMLElement, toEl: HTMLElement) {
-  const style = getComputedStyle(fromEl);
-  const vars: Record<string, string> = {};
-  for (let i = 0; i < style.length; i++) {
-    const prop = style.item(i);
-    if (prop.startsWith("--")) {
-      vars[prop] = style.getPropertyValue(prop);
-    }
-  }
-  for (const [k, v] of Object.entries(vars)) {
-    toEl.style.setProperty(k, v);
-  }
-}
-
-export default function ArtistModal({ open, onClose, artist, onMessage }: Props) {
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
+  const [step, setStep] = useState<0 | 1 | 2>(initialStep);
   const portalRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const scrollYRef = useRef<number>(0);
-  const observerRef = useRef<MutationObserver | null>(null);
+
+  useEffect(() => {
+    setStep(initialStep);
+  }, [initialStep, open]);
 
   const swallowGestureTail = () => {
     const handler = (e: Event) => {
@@ -107,17 +73,6 @@ export default function ArtistModal({ open, onClose, artist, onMessage }: Props)
     onClose();
   };
 
-  function syncThemeToPortal() {
-    if (!portalRef.current) return;
-    const root = findThemeRoot();
-    portalRef.current.className = "";
-    const themeClasses = extractThemeClasses(root);
-    if (themeClasses.length) portalRef.current.classList.add(...themeClasses);
-    const dataTheme = root.getAttribute("data-theme");
-    if (dataTheme) portalRef.current.setAttribute("data-theme", dataTheme);
-    copyCSSVariables(root as HTMLElement, portalRef.current);
-  }
-
   useEffect(() => {
     if (!portalRef.current) {
       const el = document.createElement("div");
@@ -126,23 +81,17 @@ export default function ArtistModal({ open, onClose, artist, onMessage }: Props)
       el.style.inset = "0";
       el.style.zIndex = "1200";
       el.style.isolation = "isolate";
+      const themedAncestor = document.querySelector(".dashboard-theme");
+      if (themedAncestor) {
+        THEME_CLASSES.forEach((c) => {
+          if (themedAncestor.classList.contains(c)) el.classList.add(c);
+        });
+      }
       portalRef.current = el;
       document.body.appendChild(el);
     }
-    syncThemeToPortal();
-
-    const root = findThemeRoot();
-    observerRef.current = new MutationObserver(() => syncThemeToPortal());
-    observerRef.current.observe(root, {
-      attributes: true,
-      attributeFilter: ["class", "data-theme", "style"],
-      subtree: false,
-    });
-
     setMounted(true);
     return () => {
-      observerRef.current?.disconnect();
-      observerRef.current = null;
       if (portalRef.current) {
         document.body.removeChild(portalRef.current);
         portalRef.current = null;
@@ -170,7 +119,7 @@ export default function ArtistModal({ open, onClose, artist, onMessage }: Props)
       document.body.style.overscrollBehavior = "";
       return;
     }
-    setStep(0);
+    setStep(initialStep);
     scrollYRef.current = window.scrollY || window.pageYOffset || 0;
     (document.documentElement as HTMLElement).style.overscrollBehavior = "none";
     document.body.style.overscrollBehavior = "none";
@@ -194,7 +143,7 @@ export default function ArtistModal({ open, onClose, artist, onMessage }: Props)
       document.body.style.overscrollBehavior = "";
       window.scrollTo(0, scrollYRef.current || 0);
     };
-  }, [open]);
+  }, [open, initialStep]);
 
   if (!open || !mounted || !portalRef.current) return null;
 
@@ -279,4 +228,6 @@ export default function ArtistModal({ open, onClose, artist, onMessage }: Props)
   );
 
   return ReactDOM.createPortal(modalUI, portalRef.current);
-}
+};
+
+export default ArtistModal;
