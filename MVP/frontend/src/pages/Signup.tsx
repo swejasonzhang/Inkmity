@@ -30,8 +30,8 @@ type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
-const TOAST_H = 72;
-const TOAST_GAP = 50;
+const TOAST_H = 64;
+const TOAST_GAP = 36;
 
 const RAW_API_BASE =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) ||
@@ -174,7 +174,7 @@ export default function SignUp() {
       const el = cardRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const top = Math.max(12, Math.floor(rect.top) - TOAST_H - TOAST_GAP);
+      const top = Math.max(8, Math.floor(rect.top) - TOAST_H - TOAST_GAP);
       setToastTop(top);
     };
     updateTop();
@@ -422,7 +422,7 @@ export default function SignUp() {
           });
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
-          }, 1000);
+          }, 1800);
           return;
         } catch {
           toast.error("Failed to save your account. Please try again.", {
@@ -467,7 +467,7 @@ export default function SignUp() {
   };
 
   return (
-    <div className="relative min-h-dvh text-app flex flex-col overflow-hidden">
+    <div className="relative text-app">
       <video
         autoPlay
         loop
@@ -479,18 +479,24 @@ export default function SignUp() {
       >
         <source src="/Background.mp4" type="video/mp4" />
       </video>
-      <Header />
-      <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
-        <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
+
+      <div className="absolute inset-x-0 top-0 z-30">
+        <Header />
+      </div>
+
+      <main className="fixed inset-0 z-10 grid place-items-center px-2 py-1 md:px-0 md:py-0">
+        <div className="mx-auto w-full max-w-7xl flex items-center justify-center px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
             <div
-              className={`relative grid w-full p-2 gap-0 md:p-0 md:gap-0 ${showInfo ? "md:grid-cols-2 md:place-items-stretch" : "grid-cols-1 place-items-center"
+              className={`relative grid w-full p-1 gap-0 md:p-0 md:gap-0 min-h-[50svh] md:min-h-[60svh] ${showInfo
+                ? "md:grid-cols-2 md:items-stretch md:justify-items-center md:content-stretch"
+                : "grid-cols-1 place-items-center"
                 }`}
             >
               {showInfo && (
                 <motion.div
                   layout
-                  className="flex w-full max-w-xl p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
+                  className="flex w-full max-w-2xl p-1 mx-0 md:p-0 md:mx-0 place-self-center h-full"
                 >
                   <InfoPanel
                     show={showInfo}
@@ -504,7 +510,7 @@ export default function SignUp() {
               <motion.div
                 ref={cardRef}
                 layout
-                className="w-full max-w-xl justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100"
+                className="w-full max-w-2xl p-1 mx-0 md:p-0 md:mx-0 place-self-center translate-y-10 h-full"
               >
                 <FormCard
                   mode="signup"
@@ -546,17 +552,18 @@ export default function SignUp() {
           </motion.div>
         </div>
       </main>
+
       <ToastContainer
         position="top-center"
-        autoClose={1800}
+        autoClose={1600}
         hideProgressBar
         closeOnClick
         pauseOnHover={false}
         draggable={false}
         limit={1}
         transition={Slide}
-        toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
-        style={{ top: toastTop !== undefined ? toastTop : 12 }}
+        toastClassName="bg-black/80 text-white text-base font-semibold rounded-lg shadow-lg text-center px-4 py-2.5 min-w-[240px] flex items-center justify-center border border-white/10"
+        style={{ top: toastTop !== undefined ? toastTop : 10 }}
       />
     </div>
   );

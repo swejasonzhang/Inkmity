@@ -26,7 +26,6 @@ type ArtistProfile = {
   bio?: string;
 };
 
-
 type BaseProps = {
   showInfo: boolean;
   onPasswordVisibilityChange?: (hidden: boolean) => void;
@@ -79,15 +78,27 @@ export default function FormCard(props: Props) {
   const title = titleOverride ?? (isSignup ? "Sign up" : "Welcome Back!");
   const subtitle =
     subtitleOverride ??
-    (isSignup ? "A few quick steps to personalize your experience." : "Login to continue exploring artists, styles, and your tattoo journey.");
+    (isSignup
+      ? "A few quick steps to personalize your experience."
+      : "Login to continue exploring artists, styles, and your tattoo journey.");
   const isRoleSlide = isSignup && (props as SignupProps).slides[(props as SignupProps).step].key === "role";
   const disableNextForEmail = isRoleSlide && (props as SignupProps).emailTaken;
   const totalSteps = isSignup ? (props as SignupProps).slides.length + 1 : 0;
-  const currentIndex = isSignup ? ((props as SignupProps).awaitingCode ? (props as SignupProps).slides.length : (props as SignupProps).step) : 0;
+  const currentIndex = isSignup
+    ? (props as SignupProps).awaitingCode
+      ? (props as SignupProps).slides.length
+      : (props as SignupProps).step
+    : 0;
 
   return (
-    <div className={`relative md:-ml-px max-w-5xl h-full min-h-0 ${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} ${className ?? ""}`}>
-      <div className={`bg-[#0b0b0b]/80 border border-white/10 px-5 py-6 sm:px-6 sm:py-8 md:p-10 md:py-12 ${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} h-full flex flex-col`}>
+    <div
+      className={`relative md:-ml-px max-w-5xl h-full min-h-0 ${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"
+        } ${className ?? ""}`}
+    >
+      <div
+        className={`bg-[#0b0b0b]/80 border border-white/10 px-5 py-6 sm:px-6 sm:py-8 md:p-10 md:py-12 ${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"
+          } h-full flex flex-col`}
+      >
         <div className="mb-5 sm:mb-6">
           <div className="flex items-center justify-center gap-2 text-white/80">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm">
@@ -105,10 +116,18 @@ export default function FormCard(props: Props) {
           {isSignup ? (
             <>
               <div className="mb-5 sm:mb-6">
-                <ProgressDots total={totalSteps} current={currentIndex} showVerify={(props as SignupProps).awaitingCode} />
+                <ProgressDots
+                  total={totalSteps}
+                  current={currentIndex}
+                  showVerify={(props as SignupProps).awaitingCode}
+                />
               </div>
 
-              <motion.div variants={shake} animate={hasError ? "error" : "idle"} className="relative h-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain">
+              <motion.div
+                variants={shake}
+                animate={hasError ? "error" : "idle"}
+                className="relative h-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain"
+              >
                 <AnimatePresence initial={false} mode="wait">
                   {!(props as SignupProps).awaitingCode ? (
                     <motion.div
@@ -116,32 +135,41 @@ export default function FormCard(props: Props) {
                       initial={{ x: 40, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: -40, opacity: 0 }}
-                      className="grid gap-6 min-w-0 break-words hyphens-auto"
+                      className={`min-w-0 break-words hyphens-auto ${isRoleSlide ? "w-full" : "grid gap-6"
+                        }`}
                     >
-                      <div>
-                        {(props as SignupProps).slides[(props as SignupProps).step].key === "role" && (
-                          <SharedAccountStep
-                            role={(props as SignupProps).role}
-                            setRole={(props as SignupProps).setRole}
-                            shared={(props as SignupProps).shared}
-                            onChange={(props as SignupProps).onSharedChange}
-                            onPasswordVisibilityChange={props.onPasswordVisibilityChange}
-                            onEmailBlur={(props as SignupProps).onEmailBlur}
-                            bio={(props as SignupProps).bio}
-                            onBioChange={(props as SignupProps).onBioChange}
-                          />
+                      <div className={`${isRoleSlide ? "w-full" : ""}`}>
+                        {isRoleSlide && (
+                          <div className="w-full max-w-none [&_*]:max-w-none">
+                            <SharedAccountStep
+                              role={(props as SignupProps).role}
+                              setRole={(props as SignupProps).setRole}
+                              shared={(props as SignupProps).shared}
+                              onChange={(props as SignupProps).onSharedChange}
+                              onPasswordVisibilityChange={props.onPasswordVisibilityChange}
+                              onEmailBlur={(props as SignupProps).onEmailBlur}
+                              bio={(props as SignupProps).bio}
+                              onBioChange={(props as SignupProps).onBioChange}
+                            />
+                          </div>
                         )}
 
                         {(props as SignupProps).slides[(props as SignupProps).step].key === "client-1" && (
-                          <ClientDetailsStep client={(props as SignupProps).client} onChange={(props as SignupProps).onClientChange} />
+                          <ClientDetailsStep
+                            client={(props as SignupProps).client}
+                            onChange={(props as SignupProps).onClientChange}
+                          />
                         )}
 
                         {(props as SignupProps).slides[(props as SignupProps).step].key === "artist-1" && (
-                          <ArtistDetailsStep artist={(props as SignupProps).artist} onChange={(props as SignupProps).onArtistChange} />
+                          <ArtistDetailsStep
+                            artist={(props as SignupProps).artist}
+                            onChange={(props as SignupProps).onArtistChange}
+                          />
                         )}
 
-                        {(props as SignupProps).slides[(props as SignupProps).step].key === "upload" && (
-                          (props as SignupProps).role === "client" ? (
+                        {(props as SignupProps).slides[(props as SignupProps).step].key === "upload" &&
+                          ((props as SignupProps).role === "client" ? (
                             <SignupUpload
                               label="Reference images (up to 3)"
                               kind="client_ref"
@@ -155,8 +183,7 @@ export default function FormCard(props: Props) {
                               value={(props as SignupProps).artistPortfolioImgs}
                               onChange={(props as SignupProps).setArtistPortfolioImgs}
                             />
-                          )
-                        )}
+                          ))}
 
                         {(props as SignupProps).slides[(props as SignupProps).step].key === "review" && (
                           <ReviewStep
@@ -185,7 +212,10 @@ export default function FormCard(props: Props) {
                             type="button"
                             onClick={(props as SignupProps).onNext}
                             disabled={!!disableNextForEmail || (props as SignupProps).loading}
-                            className={`${disableNextForEmail ? "bg-white/10 text-white/40 cursor-not-allowed" : "bg-white/15 hover:bg-white/25 text-white"} h-11 text-base rounded-xl sm:flex-1`}
+                            className={`${disableNextForEmail
+                              ? "bg-white/10 text-white/40 cursor-not-allowed"
+                              : "bg-white/15 hover:bg-white/25 text-white"
+                              } h-11 text-base rounded-xl sm:flex-1`}
                           >
                             Next
                           </Button>
@@ -195,7 +225,11 @@ export default function FormCard(props: Props) {
                           <Button
                             type="button"
                             onClick={(props as SignupProps).onStartVerification}
-                            disabled={(props as SignupProps).loading || !(props as SignupProps).isLoaded || !!(props as SignupProps).emailTaken}
+                            disabled={
+                              (props as SignupProps).loading ||
+                              !(props as SignupProps).isLoaded ||
+                              !!(props as SignupProps).emailTaken
+                            }
                             className="bg-white/15 hover:bg-white/25 text-white h-11 text-base rounded-xl sm:flex-1"
                           >
                             Send Verification Code
@@ -227,16 +261,26 @@ export default function FormCard(props: Props) {
               </motion.div>
 
               <p className="text-white text-center text-xs sm:text-sm mt-5 sm:mt-6">
-                Already have an account? <a href="/login" className="underline hover:opacity-80">Login</a>
+                Already have an account?{" "}
+                <a href="/login" className="underline hover:opacity-80">
+                  Login
+                </a>
               </p>
             </>
           ) : (
             <>
-              <motion.div variants={shake} animate={hasError ? "error" : "idle"} className="relative min-w-0 break-words hyphens-auto">
+              <motion.div
+                variants={shake}
+                animate={hasError ? "error" : "idle"}
+                className="relative min-w-0 break-words hyphens-auto"
+              >
                 {children}
               </motion.div>
               <p className="text-white/60 text-center text-xs sm:text-sm mt-5 sm:mt-6">
-                Don&apos;t have an account? <a href="/signup" className="underline hover:opacity-80">Sign Up</a>
+                Don&apos;t have an account?{" "}
+                <a href="/signup" className="underline hover:opacity-80">
+                  Sign Up
+                </a>
               </p>
             </>
           )}
