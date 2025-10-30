@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import InkMascot from "./InkMascot";
-import { slide } from "./animations";
+import { slide } from "../../lib/animations";
 
 type Props = {
     show: boolean;

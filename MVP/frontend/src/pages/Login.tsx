@@ -8,7 +8,7 @@ import { validateEmail } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
 import { Button } from "@/components/ui/button";
-import { container } from "@/components/access/animations";
+import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 
 const TOAST_H = 72;

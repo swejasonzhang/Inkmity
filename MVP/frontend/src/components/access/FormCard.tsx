@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { shake } from "./animations";
+import { shake } from "../../lib/animations";
 import ProgressDots from "./ProgressDots";
 import SharedAccountStep from "@/components/access/SharedAccountStep";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
