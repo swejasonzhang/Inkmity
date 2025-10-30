@@ -13,46 +13,38 @@ function getInitialTheme(): Theme {
   } catch {}
   if (
     typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-color-scheme: light)").matches
+    window.matchMedia?.("(prefers-color-scheme: dark)").matches
   ) {
-    return "light";
+    return "dark";
   }
-  return "dark";
+  return "light";
 }
 
-function applyClass(theme: Theme, el: Element) {
-  const c = el.classList;
-  if (theme === "light") {
-    c.add("ink-light");
-    c.remove("dark");
-  } else {
-    c.add("dark");
-    c.remove("ink-light");
-  }
+function setMeta(theme: Theme) {
+  document
+    .querySelector('meta[name="color-scheme"]')
+    ?.setAttribute("content", theme === "dark" ? "dark light" : "light dark");
 }
 
-export function useTheme(scopeEl?: Element | null) {
+export function useTheme(_scopeEl?: Element | null) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
-  const target =
-    scopeEl ??
-    (typeof document !== "undefined" ? document.documentElement : null);
-
   useEffect(() => {
-    if (!target) return;
-    applyClass(theme, target);
+    const html = document.documentElement;
+    if (theme === "dark") html.classList.add("dark");
+    else html.classList.remove("dark");
+    setMeta(theme);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}
-  }, [theme, target]);
+  }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
-
   const logoSrc = useMemo(
     () => (theme === "light" ? blackLogo : whiteLogo),
     [theme]
   );
-  const themeClass = theme === "light" ? "ink-light" : "dark";
+  const themeClass = ""; 
 
   return { theme, toggleTheme, logoSrc, themeClass };
 }

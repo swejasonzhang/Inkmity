@@ -67,14 +67,12 @@ export async function createBooking(req, res) {
       return res
         .status(400)
         .json({ error: "artistId, clientId, startISO, endISO required" });
-
     const startAt = new Date(startISO);
     const endAt = new Date(endISO);
     if (isNaN(startAt) || isNaN(endAt))
       return res.status(400).json({ error: "Invalid dates" });
     if (endAt <= startAt)
       return res.status(400).json({ error: "end must be after start" });
-
     const conflict = await Booking.findOne({
       artistId,
       startAt: { $lt: endAt },
@@ -82,10 +80,8 @@ export async function createBooking(req, res) {
       status: { $in: ["booked", "matched", "completed"] },
     });
     if (conflict) return res.status(409).json({ error: "Slot already booked" });
-
     const policy = (await ArtistPolicy.findOne({ artistId })) || undefined;
     const depositRequiredCents = computeDepositCents(policy, priceCents);
-
     const created = await Booking.create({
       artistId,
       clientId,
@@ -106,7 +102,6 @@ export async function createBooking(req, res) {
       matchedAt: null,
       completedAt: null,
     });
-
     res.status(201).json(created);
   } catch {
     res.status(500).json({ error: "Failed to create booking" });
@@ -120,7 +115,6 @@ export async function startVerification(req, res) {
     if (!booking) return res.status(404).json({ error: "not_found" });
     if (booking.status === "cancelled")
       return res.status(400).json({ error: "booking_cancelled" });
-
     booking.clientCode = genCode();
     booking.artistCode = genCode();
     booking.codeIssuedAt = new Date();
@@ -129,7 +123,6 @@ export async function startVerification(req, res) {
     booking.artistVerifiedAt = null;
     booking.matchedAt = null;
     await booking.save();
-
     try {
       await Message.create({
         senderId: String(booking.artistId),
@@ -152,7 +145,6 @@ export async function startVerification(req, res) {
         },
       });
     } catch {}
-
     res.json({
       ok: true,
       expiresAt: booking.codeExpiresAt,
@@ -169,10 +161,8 @@ export async function cancelBooking(req, res) {
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ error: "not_found" });
     if (booking.status === "cancelled") return res.json(booking);
-
     booking.status = "cancelled";
     await booking.save();
-
     try {
       if (isRefundEligible(booking.startAt.toISOString())) {
         const mockRes = {
@@ -191,7 +181,6 @@ export async function cancelBooking(req, res) {
         await refundBilling(req, mockRes);
       }
     } catch {}
-
     res.json(booking);
   } catch {
     res.status(500).json({ error: "cancel_failed" });
@@ -218,15 +207,12 @@ export async function verifyBookingCode(req, res) {
     const { role, code } = req.body || {};
     if (!role || !code)
       return res.status(400).json({ error: "role and code required" });
-
     const doc = await Booking.findById(id);
     if (!doc) return res.status(404).json({ error: "not_found" });
     if (doc.status === "cancelled")
       return res.status(400).json({ error: "booking_cancelled" });
-
     if (!doc.codeExpiresAt || new Date() > new Date(doc.codeExpiresAt))
       return res.status(400).json({ error: "code_expired" });
-
     if (role === "client") {
       if (doc.clientVerifiedAt) return res.json(doc);
       if (
@@ -246,13 +232,11 @@ export async function verifyBookingCode(req, res) {
     } else {
       return res.status(400).json({ error: "bad_role" });
     }
-
     if (doc.clientVerifiedAt && doc.artistVerifiedAt) {
       doc.matchedAt = new Date();
       doc.status = "completed";
       doc.completedAt = new Date();
     }
-
     await doc.save();
     res.json(doc);
   } catch {

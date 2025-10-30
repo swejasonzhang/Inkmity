@@ -1,5 +1,5 @@
 import React from "react";
-import { THEME_MS } from "./useTheme";
+import { THEME_MS } from "../../hooks/useTheme";
 
 export const InkBar: React.FC<{ active: boolean }> = ({ active }) => (
     <span className="pointer-events-none absolute -bottom-2 left-0 right-0">

@@ -7,7 +7,7 @@ import {
     useReducedMotion,
     m,
 } from "framer-motion";
-import { useTheme } from "@/components/header/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import Header from "@/components/header/Header";
 import Hero from "@/components/landing/Hero";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";

@@ -1,22 +1,35 @@
 import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-    const [isLight, setIsLight] = useState(false);
+    const [isDark, setIsDark] = useState(false);
 
     useEffect(() => {
         const saved = localStorage.getItem("theme");
         const root = document.documentElement;
-        const light = saved === "light";
-        setIsLight(light);
-        root.classList.toggle("light", light);
+        const dark = saved ? saved === "dark" : root.classList.contains("dark");
+        setIsDark(dark);
+        if (dark) {
+            root.classList.add("dark");
+            document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", "dark light");
+        } else {
+            root.classList.remove("dark");
+            document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", "light dark");
+        }
     }, []);
 
     const toggle = () => {
         const root = document.documentElement;
-        const next = !isLight;
-        setIsLight(next);
-        root.classList.toggle("light", next);
-        localStorage.setItem("theme", next ? "light" : "dark");
+        const nextDark = !isDark;
+        setIsDark(nextDark);
+        if (nextDark) {
+            root.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+            document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", "dark light");
+        } else {
+            root.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+            document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", "light dark");
+        }
     };
 
     return (
@@ -26,7 +39,7 @@ export default function ThemeToggle() {
             aria-label="Toggle theme"
             title="Toggle theme"
         >
-            {isLight ? "Light" : "Dark"}
+            {isDark ? "Dark" : "Light"}
         </button>
     );
 }

@@ -10,7 +10,7 @@ import { X, Bot } from "lucide-react";
 import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
-import { useTheme } from "@/components/header/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import CircularProgress from "@mui/material/CircularProgress";
 import { displayNameFromUsername } from "@/lib/format";
 import { API_URL } from "@/lib/http";

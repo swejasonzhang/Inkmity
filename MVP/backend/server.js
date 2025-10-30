@@ -1,23 +1,6 @@
-import express from "express";
-import cors from "cors";
-import http from "http";
-import { Server } from "socket.io";
 import dotenv from "dotenv";
 import path from "node:path";
 import process from "node:process";
-import { connectDB } from "./config/db.js";
-import { initSocket } from "./services/socketService.js";
-import userRoutes from "./routes/users.js";
-import reviewRoutes from "./routes/reviews.js";
-import dashboardRoutes from "./routes/dashboard.js";
-import messageRoutes from "./routes/messages.js";
-import availabilityRoutes from "./routes/availability.js";
-import bookingRoutes from "./routes/bookings.js";
-import authRoutes from "./routes/auth.js";
-import artistPolicyRoutes from "./routes/artistPolicy.js";
-import billingRoutes from "./routes/billing.js";
-import imagesRoutes from "./routes/images.js"
-import { requireAuth } from "./middleware/auth.js";
 
 const ENV = process.env.NODE_ENV || "development";
 const tryEnv = (p) => {
@@ -42,6 +25,7 @@ const REQUIRED = [
   "CLOUDINARY_CLOUD_NAME",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
+  "STRIPE_SECRET_KEY",
 ];
 for (const k of REQUIRED) {
   if (!process.env[k]) {
@@ -49,6 +33,29 @@ for (const k of REQUIRED) {
     process.exit(1);
   }
 }
+
+const { default: express } = await import("express");
+const { default: cors } = await import("cors");
+const { default: http } = await import("http");
+const { Server } = await import("socket.io");
+const { connectDB } = await import("./config/db.js");
+const { initSocket } = await import("./services/socketService.js");
+const { default: userRoutes } = await import("./routes/users.js");
+const { default: reviewRoutes } = await import("./routes/reviews.js");
+const { default: dashboardRoutes } = await import("./routes/dashboard.js");
+const { default: messageRoutes } = await import("./routes/messages.js");
+const { default: availabilityRoutes } = await import(
+  "./routes/availability.js"
+);
+const { default: bookingRoutes } = await import("./routes/bookings.js");
+const { default: authRoutes } = await import("./routes/auth.js");
+const { default: artistPolicyRoutes } = await import(
+  "./routes/artistPolicy.js"
+);
+const { default: billingRoutes } = await import("./routes/billing.js");
+const { default: imagesRoutes } = await import("./routes/images.js");
+const { requireAuth } = await import("./middleware/auth.js");
+const { stripeWebhook } = await import("./controllers/billingController.js");
 
 const app = express();
 const server = http.createServer(app);
@@ -74,6 +81,13 @@ app.use(
     credentials: true,
   })
 );
+
+app.post(
+  "/api/billing/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhook
+);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 

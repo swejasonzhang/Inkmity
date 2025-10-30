@@ -1,6 +1,6 @@
 import { lazy, Suspense, useRef, useState, useCallback } from "react";
 import Header from "@/components/header/Header";
-import { useTheme } from "@/components/header/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
 import { X, Bot } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
