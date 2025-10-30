@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { apiPost } from "../../lib/api";
 
 export type Weekday = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 
@@ -17,7 +16,19 @@ export interface Availability {
 }
 
 async function saveAvailability(data: Availability) {
-  return apiPost("/availability", data);
+  const res = await fetch(`/availability/${data.artistId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      timezone: data.timezone,
+      slotMinutes: data.slotMinutes,
+      weekly: data.weekly,
+      exceptions: data.exceptions,
+    }),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Save failed");
+  return res.json();
 }
 
 const WEEKDAYS: { key: Weekday; label: string }[] = [
@@ -36,8 +47,21 @@ type Props = {
 };
 
 export default function AvailabilityEditor({ artistId, initial }: Props) {
+  const browserTz = useMemo(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York"; } catch { return "America/New_York"; }
+  }, []);
+  const allTimezones = useMemo(() => {
+    try {
+      const list = (Intl as any).supportedValuesOf?.("timeZone") as string[] | undefined;
+      if (list && list.length) return list;
+    } catch { }
+    return [
+      "UTC", "Etc/UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Phoenix", "America/Toronto", "America/Vancouver", "America/Mexico_City", "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Madrid", "Europe/Rome", "Europe/Amsterdam", "Europe/Stockholm", "Europe/Zurich", "Europe/Athens", "Europe/Helsinki", "Africa/Johannesburg", "Asia/Dubai", "Asia/Jerusalem", "Asia/Istanbul", "Asia/Kolkata", "Asia/Bangkok", "Asia/Singapore", "Asia/Shanghai", "Asia/Tokyo", "Asia/Seoul", "Australia/Sydney", "Australia/Melbourne", "Pacific/Auckland"
+    ];
+  }, []);
+
   const [slotMinutes, setSlotMinutes] = useState<number>(initial?.slotMinutes ?? 60);
-  const [timezone, setTimezone] = useState<string>(initial?.timezone ?? "America/New_York");
+  const [timezone, setTimezone] = useState<string>(initial?.timezone || browserTz);
   const [weekly, setWeekly] = useState<Record<Weekday, TimeRange[]>>(
     initial?.weekly ?? { sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: [] }
   );
@@ -98,10 +122,18 @@ export default function AvailabilityEditor({ artistId, initial }: Props) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-white/80">Timezone</span>
               <input
-                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-white/30"
+                list="tz-list"
+                className="bg-gray-900 border border-white/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-white/30 w-64"
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
+                onBlur={(e) => setTimezone(e.target.value.trim())}
+                placeholder="Start typing a timezone…"
               />
+              <datalist id="tz-list">
+                {allTimezones.map((tz) => (
+                  <option key={tz} value={tz} />
+                ))}
+              </datalist>
             </div>
           </div>
         </div>
@@ -111,8 +143,7 @@ export default function AvailabilityEditor({ artistId, initial }: Props) {
             <button
               key={d.key}
               onClick={() => setActiveDay(d.key)}
-              className={`px-3 py-1.5 rounded-lg border ${activeDay === d.key ? "bg-white text-black border-white" : "bg-gray-900 text-white border-white/15 hover:bg-gray-800"
-                }`}
+              className={`px-3 py-1.5 rounded-lg border ${activeDay === d.key ? "bg-white text-black border-white" : "bg-gray-900 text-white border-white/15 hover:bg-gray-800"}`}
             >
               {d.label}
             </button>

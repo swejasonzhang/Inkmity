@@ -10,7 +10,7 @@ const TimeRange = new mongoose.Schema(
 
 const AvailabilitySchema = new mongoose.Schema(
   {
-    artistId: { type: mongoose.Types.ObjectId, required: true, index: true },
+    artistId: { type: String, required: true, index: true },
     timezone: { type: String, default: "America/New_York" },
     slotMinutes: { type: Number, default: 60, min: 5, max: 480 },
     weekly: {

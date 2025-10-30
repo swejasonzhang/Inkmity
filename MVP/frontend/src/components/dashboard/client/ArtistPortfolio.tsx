@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { ChevronDown, Maximize2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
+import StepBarRow from "@/components/dashboard/client/StepBarRow";
 
 export type ArtistWithGroups = {
     _id: string;
@@ -24,7 +26,6 @@ export type PortfolioProps = {
 };
 
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep }) => {
-    const prefersReducedMotion = useReducedMotion();
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
     const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
@@ -151,42 +152,18 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
     }, [zoom]);
 
     return (
-        <div className="w-full mt-6" style={{ backgroundColor: "var(--card)", color: "var(--fg)" }}>
+        <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-                    <div className="py-3 sm:py-4">
-                        <div className="mx-auto w-full max-w-3xl grid grid-cols-3 items-stretch gap-3 sm:gap-6 h-12 sm:h-14 px-2 sm:px-3">
-                            <div className="flex items-center h-full">
-                                <div className="flex items-center gap-2 sm:gap-4">
-                                    {[0, 1, 2].map((i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
-                                            aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                                            className="h-2.5 w-6 rounded-full transition-all"
-                                            style={{ backgroundColor: i === 0 ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-center h-full">
-                                <motion.div
-                                    initial={{ y: 0, opacity: 0.95 }}
-                                    animate={prefersReducedMotion ? {} : { y: [0, 4, 0] }}
-                                    transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                                    className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm"
-                                    style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "color-mix(in oklab, var(--fg) 90%, transparent)" }}
-                                >
-                                    <ChevronDown className="h-4 w-4" />
-                                    <span>Scroll to explore the portfolio</span>
-                                </motion.div>
-                                <div className="sm:hidden block h-6" />
-                            </div>
-                            <div className="flex items-center justify-end h-full">
-                                <Button onClick={onNext} className="rounded-xl px-3 sm:px-4 py-2 text-sm font-medium shadow-sm border-0" style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }} variant="outline">
-                                    Next: Booking &amp; Message
-                                </Button>
-                            </div>
+                    <div className="py-2 sm:py-3">
+                        <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
+                            <StepBarRow
+                                active={0}
+                                onGoToStep={onGoToStep}
+                                rightLabel="Next: Booking & Message"
+                                onRightClick={onNext}
+                                centerHint="Scroll to explore the portfolio"
+                            />
                         </div>
                     </div>
                 </div>
@@ -194,30 +171,38 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
             <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
                 <section className="w-full mt-1">
-                    <div className="mx-auto max-w-4xl rounded-2xl border shadow-sm p-5 sm:p-9 text-center" style={{ borderColor: "var(--border)" }}>
-                        <div className="flex flex-col items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
-                            {artist.avatarUrl ? (
-                                <img
-                                    src={artist.avatarUrl}
-                                    alt={`${artist.username} profile picture`}
-                                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover border shadow"
-                                    style={{ borderColor: "var(--border)" }}
-                                    loading="eager"
-                                    decoding="async"
-                                    referrerPolicy="no-referrer"
-                                />
-                            ) : (
-                                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full grid place-items-center border shadow text-2xl sm:text-3xl font-semibold" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }} aria-label={`${artist.username} profile placeholder`}>
-                                    {initials}
-                                </div>
-                            )}
-                            <h3 className="text-lg sm:text-xl font-semibold tracking-tight">About {artist.username}</h3>
-                        </div>
-                        <Separator className="my-4 sm:my-5 opacity-60" />
-                        <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
-                            {bioText}
-                        </p>
-                    </div>
+                    <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                        <CardHeader className="text-center space-y-1 px-3 sm:px-6">
+                            <CardTitle className="text-base sm:text-lg break-words">About {artist.username}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-5 sm:px-9">
+                            <div className="flex flex-col items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
+                                {artist.avatarUrl ? (
+                                    <img
+                                        src={artist.avatarUrl}
+                                        alt={`${artist.username} profile picture`}
+                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover border shadow"
+                                        style={{ borderColor: "var(--border)" }}
+                                        loading="eager"
+                                        decoding="async"
+                                        referrerPolicy="no-referrer"
+                                    />
+                                ) : (
+                                    <div
+                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-full grid place-items-center border shadow text-2xl sm:text-3xl font-semibold"
+                                        style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
+                                        aria-label={`${artist.username} profile placeholder`}
+                                    >
+                                        {initials}
+                                    </div>
+                                )}
+                            </div>
+                            <Separator className="my-4 sm:my-5 opacity-60" />
+                            <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7 text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                {bioText}
+                            </p>
+                        </CardContent>
+                    </Card>
                 </section>
 
                 <section className="w-full -mt-2">
