@@ -5,10 +5,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import whiteLogo from "@/assets/WhiteLogo.png";
 import blackLogo from "@/assets/BlackLogo.png";
-import { buildNavItems, NavItem as BuildNavItem } from "./buildNavItems";
-import { NavDesktop } from "./NavDesktop";
-import { NavMobile } from "./NavMobile";
-import { useTheme as useThemeHook } from "../../hooks/useTheme";
+import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems";
+import { NavDesktop } from "../header//NavDesktop";
+import { NavMobile } from "../header//NavMobile";
 import { Button } from "@/components/ui/button";
 
 export type HeaderProps = {
@@ -38,17 +37,47 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
       onClick={toggleTheme}
       className={["relative inline-flex items-center rounded-full border border-app focus:outline-none focus:ring-2 focus:ring-[color:var(--border)] bg-card", dims.h, dims.w].join(" ")}
     >
-      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-        <Moon size={dims.icon} className="text-app/80" />
-      </span>
-      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-        <Sun size={dims.icon} className="text-app/80" />
-      </span>
+      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2"><Moon size={dims.icon} className="text-app/80" /></span>
+      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2"><Sun size={dims.icon} className="text-app/80" /></span>
       <span className={["absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300 bg-[color:var(--fg)]", dims.knob, isLight ? "right-1" : "left-1"].join(" ")} />
       <span className="sr-only">{isLight ? "Switch to dark theme" : "Switch to light theme"}</span>
     </button>
   );
 };
+
+function toggleDashboardThemePersistent(nextTheme: "light" | "dark") {
+  const KEY = "dashboard-theme";
+  try { localStorage.setItem(KEY, nextTheme); } catch { }
+
+  const scope =
+    (document.getElementById("dashboard-scope") as HTMLElement | null) ||
+    (document.querySelector(".ink-scope") as HTMLElement | null);
+
+  if (!scope) {
+    window.dispatchEvent(new CustomEvent("ink:theme-change", { detail: { key: KEY, value: nextTheme } }));
+    return;
+  }
+
+  const cs = getComputedStyle(scope);
+  const prevBg = cs.getPropertyValue("--bg").trim() || "#0b0b0b";
+  scope.style.setProperty("--veil-color", prevBg);
+
+  scope.classList.add("ink-theming", "ink-smoothing");
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      scope.classList.toggle("ink-light", nextTheme === "light");
+      window.dispatchEvent(new CustomEvent("ink:theme-change", { detail: { key: KEY, value: nextTheme } }));
+    });
+  });
+
+  const veilMsRaw = getComputedStyle(document.documentElement).getPropertyValue("--veil-ms");
+  const veilMs = parseFloat(veilMsRaw) || 780;
+  window.setTimeout(() => {
+    scope.classList.remove("ink-theming", "ink-smoothing");
+    scope.style.removeProperty("--veil-color");
+  }, veilMs + 40);
+}
 
 const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: themeProp, toggleTheme: toggleThemeProp, logoSrc: logoSrcProp }) => {
   const { signOut } = useClerk();
@@ -57,16 +86,43 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
-  const { theme: hookTheme, toggleTheme: hookToggle } = useThemeHook();
-  const theme = themeProp ?? hookTheme;
-  const toggleTheme = toggleThemeProp ?? hookToggle;
+  const KEY = "dashboard-theme";
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    try { return localStorage.getItem(KEY) === "light" ? "light" : "dark"; } catch { return "dark"; }
+  });
+
+  useEffect(() => {
+    toggleDashboardThemePersistent(theme);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key && e.key !== KEY) return;
+      try { setTheme(localStorage.getItem(KEY) === "light" ? "light" : "dark"); } catch { setTheme("dark"); }
+    };
+    const onBus = (e: Event) => {
+      if ((e as CustomEvent).detail?.key !== KEY) return;
+      setTheme((e as CustomEvent).detail?.value === "light" ? "light" : "dark");
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("ink:theme-change", onBus);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("ink:theme-change", onBus);
+    };
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    toggleDashboardThemePersistent(next);
+  };
+
+  const effectiveTheme = themeProp ?? theme;
+  const effectiveToggle = toggleThemeProp ?? toggleTheme;
 
   const isDashboard = pathname.startsWith("/dashboard");
-  const computedLogo = theme === "light" ? blackLogo : whiteLogo;
+  const computedLogo = effectiveTheme === "light" ? blackLogo : whiteLogo;
   const logoSrc = isDashboard ? (logoSrcProp ?? computedLogo) : whiteLogo;
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
-  const showThemeToggle = isDashboard;
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -85,10 +141,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
     }
   };
 
-  const NAV_ITEMS: BuildNavItem[] = useMemo(
-    () => buildNavItems(dashboardDisabled, onDashboardGate),
-    [dashboardDisabled, onDashboardGate]
-  );
+  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(dashboardDisabled, onDashboardGate), [dashboardDisabled, onDashboardGate]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -114,6 +167,11 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
 
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const portalTarget =
+    document.getElementById("dashboard-portal-root") ??
+    document.getElementById("dashboard-scope") ??
+    document.body;
+
   const mobileSheet = mobileMenuOpen
     ? createPortal(
       <div className="md:hidden fixed inset-0 z-[2147483647]">
@@ -130,7 +188,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
           <NavMobile items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
         </div>
       </div>,
-      document.body
+      portalTarget
     )
     : null;
 
@@ -144,15 +202,12 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
               <span className="sr-only">Inkmity</span>
             </Link>
           </div>
-
           <div className="flex items-center gap-6">
             <span className="[&_*]:text-app [&_*]:border-app">
               <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app" />
             </span>
-
             <div className="flex items-center gap-3">
-              {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />}
-
+              {isDashboard && <ThemeSwitch theme={effectiveTheme} toggleTheme={effectiveToggle} size="md" />}
               {isSignedIn && user && (
                 <div className="relative inline-block align-top group text-app [&_*]:text-app [&_*]:border-app" onMouseEnter={() => setShowDropdown(true)} onMouseLeave={() => setShowDropdown(false)}>
                   <div className={dropdownBtnClasses}>
@@ -162,7 +217,6 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
                       <span className="font-bold text-sm max-w-[12rem] truncate leading-none">{userLabel}</span>
                     </span>
                   </div>
-
                   <div className={`absolute left-0 right-0 mt-2 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}>
                     <button onClick={async () => await signOut({ redirectUrl: "/login" })} className="w-full px-3 py-2 text-center hover:bg-elevated rounded-lg text-app">
                       Logout
@@ -173,7 +227,6 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
             </div>
           </div>
         </div>
-
         {dashboardDisabled && tip.show && (
           <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
             <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
@@ -189,9 +242,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, theme: th
           <img src={logoSrc} alt="Inkmity Logo" className="h-10 w-auto object-contain" draggable={false} />
           <span className="sr-only">Inkmity</span>
         </Link>
-
         <div className="ml-auto flex items-center gap-2">
-          {showThemeToggle && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />}
+          {isDashboard && <ThemeSwitch theme={effectiveTheme} toggleTheme={effectiveToggle} size="sm" />}
           <Button aria-label="Open menu" variant="ghost" className="p-2 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(true)}>
             <Menu size={22} />
           </Button>
