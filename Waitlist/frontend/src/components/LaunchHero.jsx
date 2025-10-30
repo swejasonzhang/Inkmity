@@ -10,8 +10,19 @@ export default function LaunchHero() {
   });
   const [cueVisible, setCueVisible] = useState(false);
 
+  const nextHalloweenEnd = () => {
+    const now = new Date();
+    let year = now.getFullYear();
+    let target = new Date(year, 9, 31, 23, 59, 59, 999);
+    if (now > target) {
+      year += 1;
+      target = new Date(year, 9, 31, 23, 59, 59, 999);
+    }
+    return target.getTime();
+  };
+
   useEffect(() => {
-    const target = new Date("2025-10-31T00:00:00-04:00").getTime();
+    const target = nextHalloweenEnd();
     const tick = () => {
       const now = Date.now();
       const diff = Math.max(0, target - now);
@@ -87,8 +98,7 @@ export default function LaunchHero() {
           animate="show"
           className="mt-4 text-sm md:text-base text-white/75 tracking-tight"
         >
-          Launching{" "}
-          <span className="font-semibold text-white">October 31, 2025</span>
+          Launching <span className="font-semibold text-white">October 31</span>
         </motion.p>
 
         <motion.div
