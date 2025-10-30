@@ -10,24 +10,18 @@
       (function () {
         try {
           var t = localStorage.getItem("theme");
-          var el = document.documentElement;
-          if (t === "light") {
-            el.classList.add("ink-light");
-            el.classList.remove("dark");
-          } else if (t === "dark") {
-            el.classList.add("dark");
-            el.classList.remove("ink-light");
+          var html = document.documentElement;
+          var meta = document.querySelector('meta[name="color-scheme"]');
+          var preferDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var isDark = t ? t === "dark" : preferDark;
+          if (isDark) {
+            html.classList.add("dark");
+            meta && meta.setAttribute("content", "dark light");
           } else {
-            var prefersLight =
-              window.matchMedia &&
-              window.matchMedia("(prefers-color-scheme: light)").matches;
-            if (prefersLight) {
-              el.classList.add("ink-light");
-              el.classList.remove("dark");
-            } else {
-              el.classList.add("dark");
-              el.classList.remove("ink-light");
-            }
+            html.classList.remove("dark");
+            meta && meta.setAttribute("content", "light dark");
           }
         } catch {
           document.documentElement.classList.add("dark");

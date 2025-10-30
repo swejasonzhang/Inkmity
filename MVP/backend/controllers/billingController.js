@@ -1,208 +1,214 @@
-import Stripe from "stripe";
 import Billing from "../models/Billing.js";
 import Booking from "../models/Booking.js";
+import { stripe } from "../lib/stripe.js";
 
-const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY)
-  : null;
+const PLATFORM_FEE_CENTS = 1000;
+const CURRENCY = "usd";
 
-const isFreeMode = () =>
-  process.env.FREE_MODE === "1" || process.env.NODE_ENV === "test";
-const PLATFORM_FEE_CENTS = isFreeMode() ? 0 : 1000;
+function requireBooking(booking) {
+  if (!booking) {
+    const e = new Error("booking_not_found");
+    e.status = 404;
+    throw e;
+  }
+}
 
 export async function checkoutPlatformFee(req, res) {
-  try {
-    const { bookingId, label } = req.body || {};
-    if (!bookingId) return res.status(400).json({ error: "missing_bookingId" });
+  const { bookingId } = req.body || {};
+  if (!bookingId) return res.status(400).json({ error: "bookingId required" });
 
-    const booking = await Booking.findById(bookingId);
-    if (!booking) return res.status(404).json({ error: "booking_not_found" });
+  const booking = await Booking.findById(bookingId);
+  requireBooking(booking);
 
-    const bill = await Billing.create({
-      bookingId,
-      artistId: booking.artistId,
-      clientId: booking.clientId,
-      type: "platform_fee",
-      amountCents: PLATFORM_FEE_CENTS,
-      paidBy: "client",
-      status: isFreeMode() ? "paid" : "pending",
-      metadata: { label: label || "Platform Fee", paidBy: "client" },
-      paidAt: isFreeMode() ? new Date() : undefined,
-    });
+  const customer = await stripe.customers.create({
+    metadata: { clientId: String(booking.clientId) },
+  });
 
-    if (isFreeMode())
-      return res.json({ ok: true, mode: "free", billingId: bill._id });
+  const bill = await Billing.create({
+    bookingId,
+    artistId: booking.artistId,
+    clientId: booking.clientId,
+    type: "platform_fee",
+    amountCents: PLATFORM_FEE_CENTS,
+    currency: CURRENCY,
+    stripeCustomerId: customer.id,
+    status: "pending",
+    metadata: {},
+  });
 
-    if (!stripe)
-      return res.status(500).json({ error: "stripe_not_configured" });
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: { name: label || "Platform Fee" },
-            unit_amount: PLATFORM_FEE_CENTS,
-          },
-          quantity: 1,
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    customer: customer.id,
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: CURRENCY,
+          product_data: { name: "Booking platform fee" },
+          unit_amount: PLATFORM_FEE_CENTS,
         },
-      ],
-      success_url: `${process.env.APP_URL}/checkout/success?booking=${bookingId}`,
-      cancel_url: `${process.env.APP_URL}/checkout/cancel?booking=${bookingId}`,
-      metadata: {
-        bookingId: String(bookingId),
-        billingId: String(bill._id),
-        kind: "platform_fee",
-        paidBy: "client",
+        quantity: 1,
       },
-    });
+    ],
+    metadata: {
+      billingId: String(bill._id),
+      bookingId: String(booking._id),
+      type: "platform_fee",
+    },
+    success_url: `${process.env.APP_URL}/booking/${bookingId}?paid=platform_fee`,
+    cancel_url: `${process.env.APP_URL}/booking/${bookingId}?cancelled=platform_fee`,
+  });
 
-    await Billing.findByIdAndUpdate(bill._id, {
-      stripeCheckoutSessionId: session.id,
-    });
-    return res.json({ ok: true, url: session.url, billingId: bill._id });
-  } catch {
-    return res.status(500).json({ error: "platform_fee_failed" });
-  }
+  bill.stripeCheckoutSessionId = session.id;
+  await bill.save();
+
+  res.json({ url: session.url, id: session.id });
 }
 
 export async function checkoutDeposit(req, res) {
-  try {
-    const { bookingId, overrideAmountCents } = req.body || {};
-    if (!bookingId) return res.status(400).json({ error: "missing_bookingId" });
+  const { bookingId } = req.body || {};
+  if (!bookingId) return res.status(400).json({ error: "bookingId required" });
 
-    const booking = await Booking.findById(bookingId);
-    if (!booking) return res.status(404).json({ error: "booking_not_found" });
+  const booking = await Booking.findById(bookingId);
+  requireBooking(booking);
 
-    const rawAmount = overrideAmountCents ?? booking.depositRequiredCents ?? 0;
-    const amount = Math.max(0, Number(rawAmount));
+  const amount = Number(booking.depositRequiredCents || 0);
+  if (amount <= 0)
+    return res.status(400).json({ error: "no_deposit_required" });
 
-    const bill = await Billing.create({
-      bookingId,
-      artistId: booking.artistId,
-      clientId: booking.clientId,
-      type: "deposit",
-      amountCents: isFreeMode() ? 0 : amount,
-      paidBy: "client",
-      status: isFreeMode() ? "paid" : "pending",
-      metadata: {
-        originalRequiredCents: booking.depositRequiredCents,
-        paidBy: "client",
-      },
-      paidAt: isFreeMode() ? new Date() : undefined,
-    });
+  const customer = await stripe.customers.create({
+    metadata: { clientId: String(booking.clientId) },
+  });
 
-    if (isFreeMode()) {
-      booking.depositPaidCents = amount;
-      booking.depositPaidAt = new Date();
-      await booking.save();
-      return res.json({ ok: true, mode: "free", billingId: bill._id });
-    }
+  const bill = await Billing.create({
+    bookingId,
+    artistId: booking.artistId,
+    clientId: booking.clientId,
+    type: "deposit",
+    amountCents: amount,
+    currency: CURRENCY,
+    stripeCustomerId: customer.id,
+    status: "pending",
+    metadata: {},
+  });
 
-    if (!stripe)
-      return res.status(500).json({ error: "stripe_not_configured" });
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: { name: "Deposit" },
-            unit_amount: amount,
-          },
-          quantity: 1,
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    customer: customer.id,
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: CURRENCY,
+          product_data: { name: "Tattoo appointment deposit" },
+          unit_amount: amount,
         },
-      ],
-      success_url: `${process.env.APP_URL}/checkout/success?booking=${bookingId}`,
-      cancel_url: `${process.env.APP_URL}/checkout/cancel?booking=${bookingId}`,
-      metadata: {
-        bookingId: String(bookingId),
-        billingId: String(bill._id),
-        kind: "deposit",
-        paidBy: "client",
+        quantity: 1,
       },
-    });
+    ],
+    metadata: {
+      billingId: String(bill._id),
+      bookingId: String(booking._id),
+      type: "deposit",
+    },
+    success_url: `${process.env.APP_URL}/booking/${bookingId}?paid=deposit`,
+    cancel_url: `${process.env.APP_URL}/booking/${bookingId}?cancelled=deposit`,
+  });
 
-    await Billing.findByIdAndUpdate(bill._id, {
-      stripeCheckoutSessionId: session.id,
-    });
-    return res.json({ ok: true, url: session.url, billingId: bill._id });
-  } catch {
-    return res.status(500).json({ error: "deposit_failed" });
-  }
+  bill.stripeCheckoutSessionId = session.id;
+  await bill.save();
+
+  res.json({ url: session.url, id: session.id });
 }
 
 export async function refundBilling(req, res) {
-  try {
-    const { billingId, bookingId } = req.body || {};
-    const bill = billingId
-      ? await Billing.findById(billingId)
-      : await Billing.findOne({ bookingId }).sort({ createdAt: -1 });
-    if (!bill) return res.status(404).json({ error: "billing_not_found" });
-    if (bill.status === "refunded") return res.json(bill);
+  const { billingId, bookingId } = req.body || {};
+  const byId = billingId ? await Billing.findById(billingId) : null;
+  const list = byId
+    ? [byId]
+    : await Billing.find({ bookingId, type: "platform_fee", status: "paid" });
 
-    if (isFreeMode()) {
-      bill.status = "refunded";
-      bill.refundedAt = new Date();
-      await bill.save();
-      return res.json(bill);
-    }
-
-    if (!stripe)
-      return res.status(500).json({ error: "stripe_not_configured" });
-
-    let paymentIntentId = bill.stripePaymentIntentId;
-    if (!paymentIntentId && bill.stripeCheckoutSessionId) {
-      const sess = await stripe.checkout.sessions.retrieve(
-        bill.stripeCheckoutSessionId
-      );
-      paymentIntentId =
-        typeof sess.payment_intent === "string"
-          ? sess.payment_intent
-          : sess.payment_intent?.id;
-    }
-    if (!paymentIntentId)
-      return res.status(400).json({ error: "no_payment_intent_to_refund" });
-
-    await stripe.refunds.create({
-      payment_intent: paymentIntentId,
-      amount: bill.amountCents,
-    });
-
-    bill.status = "refunded";
-    bill.refundedAt = new Date();
-    await bill.save();
-    return res.json(bill);
-  } catch {
-    return res.status(500).json({ error: "refund_failed" });
+  const refunds = [];
+  for (const b of list) {
+    if (b.type !== "platform_fee") continue; // deposit never refunded
+    const pi = b.stripePaymentIntentId;
+    if (!pi) continue;
+    const rr = await stripe.refunds.create({ payment_intent: pi });
+    b.status = "refunded";
+    b.stripeRefundIds.push(rr.id);
+    b.refundedAt = new Date();
+    await b.save();
+    refunds.push({ billingId: String(b._id), refundId: rr.id });
   }
-}
-
-export async function createCheckoutSession(req, res) {
-  return checkoutPlatformFee(req, res);
+  res.json({ ok: true, refunds });
 }
 
 export async function createPortalSession(req, res) {
-  try {
-    if (!stripe)
-      return res.status(500).json({ error: "stripe_not_configured" });
-    const { stripeCustomerId } = req.body || {};
-    if (!stripeCustomerId)
-      return res.status(400).json({ error: "missing_stripeCustomerId" });
-
-    const portal = await stripe.billingPortal.sessions.create({
-      customer: stripeCustomerId,
-      return_url: process.env.APP_URL || "http://localhost:5173",
-    });
-
-    return res.json({ ok: true, url: portal.url });
-  } catch {
-    return res.status(500).json({ error: "portal_failed" });
-  }
+  const { customerId } = req.body || {};
+  if (!customerId)
+    return res.status(400).json({ error: "customerId required" });
+  const session = await stripe.billingPortal.sessions.create({
+    customer: customerId,
+    return_url: process.env.APP_URL,
+  });
+  res.json({ url: session.url });
 }
 
 export async function scheduleCancel(_req, res) {
-  return res.status(501).json({ error: "not_implemented" });
+  res.json({ ok: true });
+}
+
+export async function stripeWebhook(req, res) {
+  const sig = req.headers["stripe-signature"];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.rawBody,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const s = event.data.object;
+        const { billingId, bookingId, type } = s.metadata || {};
+        const paymentIntent = s.payment_intent;
+
+        if (billingId) {
+          const bill = await (
+            await import("../models/Billing.js")
+          ).default.findById(billingId);
+          if (bill) {
+            bill.status = "paid";
+            bill.stripePaymentIntentId =
+              typeof paymentIntent === "string"
+                ? paymentIntent
+                : paymentIntent?.id;
+            bill.paidAt = new Date();
+            bill.receiptUrl = s.invoice || bill.receiptUrl || "";
+            await bill.save();
+          }
+        }
+        if (type === "deposit" && bookingId) {
+          const book = await (
+            await import("../models/Booking.js")
+          ).default.findById(bookingId);
+          if (book) {
+            book.depositPaidCents = book.depositRequiredCents;
+            await book.save();
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+    res.json({ received: true });
+  } catch {
+    res.status(500).json({ error: "webhook_handler_failed" });
+  }
 }

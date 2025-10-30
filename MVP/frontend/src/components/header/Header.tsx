@@ -8,7 +8,7 @@ import blackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "./buildNavItems";
 import { NavDesktop } from "./NavDesktop";
 import { NavMobile } from "./NavMobile";
-import { useTheme as useThemeHook } from "./useTheme";
+import { useTheme as useThemeHook } from "../../hooks/useTheme";
 import { Button } from "@/components/ui/button";
 
 export type HeaderProps = {

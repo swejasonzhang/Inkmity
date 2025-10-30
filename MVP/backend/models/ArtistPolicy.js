@@ -1,27 +1,20 @@
 import mongoose from "mongoose";
 
-const DepositPolicySchema = new mongoose.Schema(
-  {
-    mode: { type: String, enum: ["flat", "percent"], default: "percent" },
-    amountCents: { type: Number, default: 5000 },
-    percent: { type: Number, default: 0.2 },
-    minCents: { type: Number, default: 5000 },
-    maxCents: { type: Number, default: 30000 },
-    nonRefundable: { type: Boolean, default: true },
-    cutoffHours: { type: Number, default: 48 },
-  },
-  { _id: false }
-);
-
 const ArtistPolicySchema = new mongoose.Schema(
   {
     artistId: {
       type: mongoose.Types.ObjectId,
+      required: true,
       index: true,
       unique: true,
-      required: true,
     },
-    deposit: { type: DepositPolicySchema, default: () => ({}) },
+    deposit: {
+      mode: { type: String, enum: ["percent", "flat"], default: "percent" },
+      percent: { type: Number, default: 0.2, min: 0, max: 1 },
+      amountCents: { type: Number, default: 0, min: 0 },
+      minCents: { type: Number, default: 0, min: 0 },
+      maxCents: { type: Number, default: 1000000, min: 0 },
+    },
   },
   { timestamps: true }
 );

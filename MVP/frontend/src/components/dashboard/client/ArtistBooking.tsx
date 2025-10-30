@@ -344,7 +344,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                 style={{ background: "var(--elevated)" }}
               >
                 <div className="w-full max-w-[920px] p-2 sm:p-3">
-                  <BookingPicker artistId={artist.clerkId} />
+                  <BookingPicker artistId={artist.clerkId} date={date} />
                 </div>
               </div>
             </div>
