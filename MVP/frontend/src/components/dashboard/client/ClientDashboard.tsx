@@ -10,7 +10,6 @@ import { X, Bot } from "lucide-react";
 import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
-import { useTheme } from "@/hooks/useTheme";
 import CircularProgress from "@mui/material/CircularProgress";
 import { displayNameFromUsername } from "@/lib/format";
 import { API_URL } from "@/lib/http";
@@ -25,9 +24,7 @@ export default function ClientDashboard() {
     const { getToken } = useAuth();
     const navigate = useNavigate();
     const warnedRef = useRef(false);
-    const rootRef = useRef<HTMLDivElement | null>(null);
     const scopeRef = useRef<HTMLDivElement | null>(null);
-    const { themeClass } = useTheme(rootRef.current);
     const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
     const [scopeH, setScopeH] = useState(0);
 
@@ -116,79 +113,73 @@ export default function ClientDashboard() {
     const panelVariants = { hidden: { opacity: 0, scale: 0.98, y: 8 }, visible: { opacity: 1, scale: 1, y: 0 }, exit: { opacity: 0, scale: 0.98, y: 8 } };
 
     return (
-        <div ref={rootRef} className={themeClass}>
-            <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
-                <style>{`#middle-content::-webkit-scrollbar{display:none}`}</style>
-                <Header />
-                <div ref={scopeRef} className="flex-1 min-h-0 flex flex-col">
-                    <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
-                        <div className="flex-1 min-w-0">
-                            <ArtistsSection
-                                artists={artists.map((a) => ({ ...a, username: displayNameFromUsername(a.username) }))}
-                                loading={loading}
-                                showArtists
-                                onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
-                                page={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </div>
-                        <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
-                    </main>
-
-                    <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
-
-                    <FloatingBar
-                        onAssistantOpen={() => setAssistantOpen(true)}
-                        portalTarget={portalEl}
-                        messagesContent={<MessagesPanel currentUserId={user.id} expandAllOnMount isArtist={false} />}
-                        unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
-                        unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
-                        pendingRequestIds={pendingRequestIds}
-                        pendingRequestsCount={pendingRequestsCount}
-                    />
-
-                    <AnimatePresence>
-                        {assistantOpen && (
-                            <motion.div
-                                key="assistant"
-                                initial="hidden"
-                                animate="visible"
-                                exit="exit"
-                                variants={panelVariants}
-                                transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                                className="fixed bottom-4 right-4 z-50"
-                                style={{ transformOrigin: "bottom right" }}
-                            >
-                                <div className="w-[88vw] max-w-[420px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden" style={{ height: Math.max(320, Math.min(scopeH, 560)) }}>
-                                    <div className="flex items-center justify-between px-4 py-3 border-b border-app">
-                                        <div className="flex items-center gap-2 font-semibold">
-                                            <Bot size={18} />
-                                            <span>Assistant</span>
-                                        </div>
-                                        <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
-                                            <X size={18} />
-                                        </button>
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto">
-                                        <ChatBot />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {modalArtist && (
-                        <ArtistModal
-                            open={Boolean(selectedArtist)}
-                            artist={modalArtist}
-                            onClose={() => setSelectedArtist(null)}
-                            onMessage={async (a) => {
-                                window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
-                            }}
+        <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
+            <style>{`#middle-content::-webkit-scrollbar{display:none}`}</style>
+            <Header />
+            <div ref={scopeRef} className="flex-1 min-h-0 flex flex-col">
+                <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
+                    <div className="flex-1 min-w-0">
+                        <ArtistsSection
+                            artists={artists.map((a) => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                            loading={loading}
+                            showArtists
+                            onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+                            page={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
                         />
+                    </div>
+                    <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
+                </main>
+                <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
+                <FloatingBar
+                    onAssistantOpen={() => setAssistantOpen(true)}
+                    portalTarget={portalEl}
+                    messagesContent={<MessagesPanel currentUserId={user.id} expandAllOnMount isArtist={false} />}
+                    unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
+                    unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
+                    pendingRequestIds={pendingRequestIds}
+                    pendingRequestsCount={pendingRequestsCount}
+                />
+                <AnimatePresence>
+                    {assistantOpen && (
+                        <motion.div
+                            key="assistant"
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            variants={panelVariants}
+                            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                            className="fixed bottom-4 right-4 z-50"
+                            style={{ transformOrigin: "bottom right" }}
+                        >
+                            <div className="w-[88vw] max-w-[420px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden" style={{ height: Math.max(320, Math.min(scopeH, 560)) }}>
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+                                    <div className="flex items-center gap-2 font-semibold">
+                                        <Bot size={18} />
+                                        <span>Assistant</span>
+                                    </div>
+                                    <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    <ChatBot />
+                                </div>
+                            </div>
+                        </motion.div>
                     )}
-                </div>
+                </AnimatePresence>
+                {modalArtist && (
+                    <ArtistModal
+                        open={Boolean(selectedArtist)}
+                        artist={modalArtist}
+                        onClose={() => setSelectedArtist(null)}
+                        onMessage={async (a) => {
+                            window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

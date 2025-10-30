@@ -1,33 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
     <title>Inkmity</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <script>
-      (function () {
-        try {
-          var t = localStorage.getItem("theme");
-          var html = document.documentElement;
-          var meta = document.querySelector('meta[name="color-scheme"]');
-          var preferDark =
-            window.matchMedia &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var isDark = t ? t === "dark" : preferDark;
-          if (isDark) {
-            html.classList.add("dark");
-            meta && meta.setAttribute("content", "dark light");
-          } else {
-            html.classList.remove("dark");
-            meta && meta.setAttribute("content", "light dark");
-          }
-        } catch {
-          document.documentElement.classList.add("dark");
-        }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

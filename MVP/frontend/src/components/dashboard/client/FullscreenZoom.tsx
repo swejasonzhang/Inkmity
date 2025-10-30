@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import useResponsiveLensSize from "./useResponsiveLensSize.ts";
+import useResponsiveLensSize from "../../../hooks/useResponsiveLensSize.ts";
 
 type Props = {
     src: string;

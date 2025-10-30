@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -22,11 +22,46 @@ function useDevOverride() {
   return { override: isDev ? fromQuery : null };
 }
 
+function useDashboardScope(scopeEl: HTMLElement | null) {
+  useEffect(() => {
+    if (!scopeEl) return;
+    scopeEl.classList.add("ink-scope", "ink-no-anim");
+    const KEY = "dashboard-theme";
+
+    const apply = () => {
+      let isLight = false;
+      try { isLight = localStorage.getItem(KEY) === "light"; } catch { }
+      scopeEl.classList.toggle("ink-light", isLight);
+    };
+
+    apply();
+
+    requestAnimationFrame(() => {
+      scopeEl.classList.remove("ink-no-anim");
+    });
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key && e.key !== KEY) return;
+      apply();
+    };
+    const onBus = (e: Event) => {
+      if ((e as CustomEvent).detail?.key !== KEY) return;
+      apply();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("ink:theme-change", onBus);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("ink:theme-change", onBus);
+    };
+  }, [scopeEl]);
+}
+
 const Dashboard: React.FC = () => {
   useSyncOnAuth();
   const { role, isLoaded, isSignedIn } = useRole();
   const navigate = useNavigate();
-  const warnedRef = useRef(false);
+  const warnedRef = useRef(false as boolean);
   const { override } = useDevOverride();
 
   const roleToUse = useMemo<"client" | "artist">(() => {
@@ -44,10 +79,13 @@ const Dashboard: React.FC = () => {
     }
   }, [isLoaded, isSignedIn, navigate]);
 
+  const scopeRef = useRef<HTMLDivElement | null>(null);
+  useDashboardScope(scopeRef.current);
+
   if (!isLoaded || !isSignedIn) return <Loading />;
 
   return (
-    <div className="dashboard-theme">
+    <div ref={scopeRef} id="dashboard-scope" className="ink-scope">
       <Suspense fallback={<Loading />}>
         {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}
       </Suspense>
