@@ -8,7 +8,7 @@ import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import FormCard from "@/components/access/FormCard";
-import { container } from "@/components/access/animations";
+import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
