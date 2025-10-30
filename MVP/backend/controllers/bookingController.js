@@ -52,21 +52,14 @@ export async function getBooking(req, res) {
 
 export async function createBooking(req, res) {
   try {
-    const userId = req.user?._id;
-    const {
-      artistId,
-      clientId,
-      startISO,
-      endISO,
-      note,
-      serviceId,
-      priceCents,
-    } = req.body || {};
+    const userId = req.user?._id || req.user?.id;
+    const { artistId, startISO, endISO, note, serviceId, priceCents } =
+      req.body || {};
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    if (!artistId || !clientId || !startISO || !endISO)
+    if (!artistId || !startISO || !endISO)
       return res
         .status(400)
-        .json({ error: "artistId, clientId, startISO, endISO required" });
+        .json({ error: "artistId, startISO, endISO required" });
     const startAt = new Date(startISO);
     const endAt = new Date(endISO);
     if (isNaN(startAt) || isNaN(endAt))
@@ -84,7 +77,7 @@ export async function createBooking(req, res) {
     const depositRequiredCents = computeDepositCents(policy, priceCents);
     const created = await Booking.create({
       artistId,
-      clientId,
+      clientId: String(userId),
       serviceId,
       startAt,
       endAt,

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useApi } from "@/lib/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
+import StepBarRow from "./StepBarRow";
 
 type BookingProps = {
   artist: ArtistWithGroups;
@@ -144,7 +144,8 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       setErrorMsg("Artist username missing.");
       return;
     }
-    if (!preloadedMessage.trim()) {
+    const preMsg = preloadedMessage.trim();
+    if (!preMsg) {
       setStatus("error");
       setErrorMsg("Message is empty.");
       return;
@@ -155,7 +156,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     try {
       const payload = {
         artistId: artist.clerkId,
-        text: preloadedMessage,
+        text: preMsg,
         meta: {
           style: desiredStyle || null,
           size: size || null,
@@ -216,74 +217,25 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
   const handleNext = () => onGoToStep?.(2);
 
   return (
-    <div className="w-full pt-9 pb-24 sm:pb-10" style={{ background: "var(--card)", color: "var(--fg)" }}>
-      <div
-        className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70 pt-7"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        <div className="mx-auto max-w-screen-2xl px-3 sm:px-6">
-          <div className="py-2 sm:py-4">
-            <div className="mx-auto w-full max-w-3xl grid grid-cols-3 items-center gap-2 sm:gap-6 px-1 sm:px-3">
-              <div className="col-span-1 flex justify-start">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  {[0, 1, 2].map((i) => (
-                    <button
-                      key={i}
-                      onClick={() => onGoToStep?.(i as 0 | 1 | 2)}
-                      aria-label={i === 0 ? "Portfolio" : i === 1 ? "Booking & Message" : "Reviews"}
-                      className="h-3 w-7 sm:h-2.5 sm:w-6 rounded-full transition-all"
-                      style={{
-                        background:
-                          i === 1
-                            ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                            : "color-mix(in oklab, var(--fg) 40%, transparent)",
-                      }}
-                      type="button"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="col-span-1 flex justify-center">
-                <div
-                  className="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm"
-                  style={{
-                    background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                    color: "color-mix(in oklab, var(--fg) 90%, transparent)",
-                  }}
-                >
-                  <ChevronDown className="h-4 w-4" />
-                  <span>Scroll to message and book</span>
-                </div>
-              </div>
-
-              <div className="col-span-1 flex justify-end">
-                <div className="inline-flex items-center gap-2 sm:gap-3">
-                  <Button
-                    onClick={onBack}
-                    className="rounded-xl px-3 py-2 text-sm font-medium shadow-sm border-0 sm:px-4"
-                    style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
-                    variant="outline"
-                  >
-                    Back: Portfolio
-                  </Button>
-                  <Button
-                    onClick={handleNext}
-                    className="rounded-xl px-3 py-2 text-sm font-medium shadow-sm border-0 sm:px-4"
-                    style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
-                    variant="outline"
-                  >
-                    Next: Reviews
-                  </Button>
-                </div>
-              </div>
+    <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
+      <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
+          <div className="py-2 sm:py-3">
+            <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
+              <StepBarRow
+                active={1}
+                onGoToStep={onGoToStep}
+                rightLabel="Next: Reviews"
+                onRightClick={handleNext}
+                centerHint="Scroll to message and book"
+              />
             </div>
           </div>
         </div>
       </div>
 
-      <section className="w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-0 grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 pb-4 sm:pb-8">
-        <Card className="w-full shadow-none" style={{ border: "1px solid var(--border)" }}>
+      <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
+        <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
             <CardTitle className="text-base sm:text-lg break-words">Message {artist.username}</CardTitle>
           </CardHeader>
@@ -315,7 +267,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                 type="button"
                 onClick={handleSendMessage}
                 disabled={status === "sending" || isPending}
-                className="transition w-full sm:w-auto min-h-[44px] text-base sm:text-sm border-0"
+                className="transition w-full sm:w-auto text-base sm:text-sm border-0 min-h-[48px] sm:min-h-[56px]"
                 style={{ background: "var(--elevated)", color: "var(--fg)" }}
               >
                 {status === "sending" ? "Sending..." : isPending ? "Request Pending" : "Send Request"}
@@ -324,7 +276,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </CardContent>
         </Card>
 
-        <Card className="w-full shadow-none" style={{ border: "1px solid var(--border)" }}>
+        <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
             <CardTitle className="text-base sm:text-lg">Book an appointment</CardTitle>
           </CardHeader>
@@ -350,7 +302,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
             </div>
           </CardContent>
         </Card>
-      </section>
+      </div>
 
       <div
         className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t"
@@ -364,7 +316,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           <div className="grid grid-cols-3 gap-2">
             <Button
               onClick={onBack}
-              className="col-span-1 min-h-[44px] w-full text-sm border-0"
+              className="col-span-1 w-full text-sm border-0 min-h-[48px]"
               style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
               variant="outline"
             >
@@ -373,7 +325,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
             <Button
               onClick={handleSendMessage}
               disabled={status === "sending" || isPending}
-              className="col-span-2 min-h-[44px] w-full text-sm"
+              className="col-span-2 w-full text-sm min-h-[48px]"
               style={{ background: "var(--elevated)", color: "var(--fg)" }}
             >
               {status === "sending" ? "Sending..." : isPending ? "Pending" : "Send Request"}

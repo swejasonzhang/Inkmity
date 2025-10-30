@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const BookingSchema = new mongoose.Schema(
   {
-    artistId: { type: mongoose.Types.ObjectId, required: true, index: true },
-    clientId: { type: mongoose.Types.ObjectId, required: true, index: true },
+    artistId: { type: String, required: true, index: true },
+    clientId: { type: String, required: true, index: true },
     serviceId: { type: mongoose.Types.ObjectId },
     startAt: { type: Date, required: true, index: true },
     endAt: { type: Date, required: true },
