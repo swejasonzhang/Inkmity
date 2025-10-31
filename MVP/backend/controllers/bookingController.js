@@ -92,14 +92,12 @@ export async function createBooking(req, res) {
     const note = body.note ?? "";
     const serviceId = body.serviceId ?? null;
     const priceCents = Math.max(0, Number(body.priceCents || 0));
-    if (!artistId || !startISO) {
+    if (!artistId || !startISO)
       return res.status(400).json({ error: "artistId and startISO required" });
-    }
     const startAt = new Date(startISO);
     let endAt = endISO ? new Date(endISO) : null;
-    if (Number.isNaN(startAt.getTime())) {
+    if (Number.isNaN(startAt.getTime()))
       return res.status(400).json({ error: "Invalid dates" });
-    }
     if (!endAt) {
       const av = (await Availability.findOne({ artistId })) || {
         slotMinutes: DEFAULT_SLOT_MINUTES,
@@ -114,9 +112,8 @@ export async function createBooking(req, res) {
         DateTime.fromJSDate(startAt, { zone: tz }).plus({ minutes }).toISO()
       );
     }
-    if (Number.isNaN(endAt.getTime()) || endAt <= startAt) {
+    if (Number.isNaN(endAt.getTime()) || endAt <= startAt)
       return res.status(400).json({ error: "end must be after start" });
-    }
     const conflict = await Booking.findOne({
       artistId,
       startAt: { $lt: endAt },
@@ -124,13 +121,16 @@ export async function createBooking(req, res) {
       status: { $in: ["booked", "matched", "completed"] },
     });
     if (conflict) return res.status(409).json({ error: "Slot already booked" });
-    let depositRequiredCents = 0;
+    let policy = null;
     try {
-      const policy = await ArtistPolicy.findOne({ artistId });
-      depositRequiredCents = computeDepositCents(policy, priceCents);
+      policy =
+        typeof ArtistPolicy?.findOne === "function"
+          ? await ArtistPolicy.findOne({ artistId })
+          : null;
     } catch {
-      return res.status(400).json({ error: "Invalid artist policy" });
+      policy = null;
     }
+    const depositRequiredCents = computeDepositCents(policy, priceCents);
     let created;
     try {
       created = await Booking.create({

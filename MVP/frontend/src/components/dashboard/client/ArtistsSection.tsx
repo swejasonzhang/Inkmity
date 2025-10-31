@@ -261,7 +261,7 @@ export default function ArtistsSection({
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full w-full">
-            <div className="sticky top-0 z-10 w-full bg-card px-3">
+            <div className="sticky top-0 z-10 w-full bg-card px-3 pb-3">
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={v => { setPriceFilter(v); setCurrentPage(1); }}

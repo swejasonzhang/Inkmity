@@ -16,13 +16,13 @@ type Props = {
 function LegendTile({
     label,
     number,
-    variant,
+    variant
 }: {
     label: string;
     number: string;
     variant: "available" | "unavailable" | "selected";
 }) {
-    const base = "aspect-square h-9 w-9 rounded-md font-normal leading-none flex items-center justify-center";
+    const base = "aspect-square h-9 w-9 rounded-md leading-none flex items-center justify-center";
     const ring = variant === "selected" ? "ring-2 ring-[color:var(--fg)]" : "";
     const style =
         variant === "unavailable"
@@ -31,11 +31,11 @@ function LegendTile({
     return (
         <div className="inline-flex items-center gap-2">
             <div className={`${base} ${ring}`} style={{ background: "transparent" }}>
-                <span className="text-[10px]" style={style}>
+                <span className="text-[12px] font-semibold" style={style}>
                     {number}
                 </span>
             </div>
-            <span className="text-[11px]" style={{ color: "var(--fg)" }}>
+            <span className="text-[13px] font-semibold" style={{ color: "var(--fg)" }}>
                 {label}
             </span>
         </div>
@@ -73,10 +73,10 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
         >
             <div className="w-full mx-auto flex flex-col items-stretch gap-3 max-w-[18rem] xs:max-w-[19rem] sm:max-w-[34rem] lg:max-w-[44rem]">
                 <div className="flex flex-col items-center text-center gap-0.5 px-1">
-                    <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+                    <h3 className="text-base sm:text-lg font-bold" style={{ color: "var(--fg)" }}>
                         Choose a date
                     </h3>
-                    <p className="text-[10px] opacity-80" style={{ color: "var(--fg)" }}>
+                    <p className="text-[12px] sm:text-sm font-medium opacity-80" style={{ color: "var(--fg)" }}>
                         Only dates from today onward are available.
                     </p>
                 </div>
@@ -84,7 +84,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                 <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:justify-center sm:gap-2">
                     <Select value={String(month.getMonth())} onValueChange={handleMonthSelect}>
                         <SelectTrigger
-                            className="h-10 w-full sm:w-32 border-0 rounded-xl px-2.5 text-sm shadow-sm"
+                            className="h-10 w-full sm:w-36 border-0 rounded-xl px-3 text-base sm:text-lg font-semibold shadow-sm"
                             style={{ background: "var(--card)", color: "var(--fg)" }}
                             aria-label="Month"
                         >
@@ -101,7 +101,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                             {MONTHS.map((m, i) => {
                                 const disable = month.getFullYear() === currentYear && i < currentMonth;
                                 return (
-                                    <SelectItem key={m} value={String(i)} disabled={disable} className="cursor-pointer">
+                                    <SelectItem key={m} value={String(i)} disabled={disable} className="cursor-pointer text-base font-semibold">
                                         {m}
                                     </SelectItem>
                                 );
@@ -111,7 +111,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
 
                     <Select value={String(month.getFullYear())} onValueChange={handleYearSelect}>
                         <SelectTrigger
-                            className="h-10 w-full sm:w-24 border-0 rounded-xl px-2.5 text-sm shadow-sm"
+                            className="h-10 w-full sm:w-28 border-0 rounded-xl px-3 text-base sm:text-lg font-semibold shadow-sm"
                             style={{ background: "var(--card)", color: "var(--fg)" }}
                             aria-label="Year"
                         >
@@ -126,7 +126,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                             style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
                         >
                             {years.map((y) => (
-                                <SelectItem key={y} value={String(y)} disabled={y < currentYear} className="cursor-pointer">
+                                <SelectItem key={y} value={String(y)} disabled={y < currentYear} className="cursor-pointer text-base font-semibold">
                                     {y}
                                 </SelectItem>
                             ))}
@@ -135,7 +135,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                 </div>
 
                 <div className="w-full text-center px-1">
-                    <span className="text-[13px] sm:text-base font-semibold leading-7" style={{ color: "var(--fg)" }}>
+                    <span className="text-base sm:text-lg font-bold leading-7" style={{ color: "var(--fg)" }}>
                         {date
                             ? date.toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" })
                             : "Select a date"}
@@ -173,28 +173,28 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                             borderColor: "var(--border)",
                             ["--cell-size" as any]: "clamp(2rem, 6vw, 3.25rem)",
                             ["--cell-gap-x" as any]: "clamp(0.2rem, 0.8vw, 0.4rem)",
-                            ["--cell-gap-y" as any]: "clamp(0.2rem, 0.8vw, 0.4rem)",
+                            ["--cell-gap-y" as any]: "clamp(0.2rem, 0.8vw, 0.4rem)"
                         }}
                         classNames={{
                             table: "w-full sm:border-separate sm:[border-spacing:0_10px]",
                             day:
-                                "h-[var(--cell-size)] w-[var(--cell-size)] mx-[var(--cell-gap-x)] my-[var(--cell-gap-y)] p-0 font-normal rounded-md outline-none focus:outline-none",
-                            head_cell: "text-[10px] sm:text-xs font-medium px-2",
-                            caption_label: "text-sm font-medium leading-7",
+                                "h-[var(--cell-size)] w-[var(--cell-size)] mx-[var(--cell-gap-x)] my-[var(--cell-gap-y)] p-0 font-semibold rounded-md outline-none focus:outline-none text-base",
+                            head_cell: "text-[12px] sm:text-sm font-semibold px-2",
+                            caption_label: "text-base sm:text-lg font-bold leading-7"
                         }}
                         modifiersClassNames={{
-                            selected: "ring-2 ring-[color:var(--fg)]",
+                            selected: "ring-2 ring-[color:var(--fg)]"
                         }}
                     />
                 </div>
 
                 <div className="w-full flex items-center justify-between pt-1 gap-1.5">
-                    <div className="text-[10px] opacity-70 truncate" style={{ color: "var(--fg)" }}>
+                    <div className="text-[12px] sm:text-sm font-medium opacity-70 truncate" style={{ color: "var(--fg)" }}>
                         Times shown in your local timezone.
                     </div>
                     <Button
                         variant="ghost"
-                        className="h-9 rounded-lg px-3 text-sm"
+                        className="h-9 rounded-lg px-3 text-base font-semibold"
                         style={{ color: "var(--fg)" }}
                         onClick={() => onDateChange(undefined)}
                         disabled={!date}

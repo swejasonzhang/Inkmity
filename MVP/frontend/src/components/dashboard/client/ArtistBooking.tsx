@@ -3,8 +3,7 @@ import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useApi } from "@/lib/api";
-import { getMe } from "@/api/index";
+import { useApi, isAbortError, getMe } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import StepBarRow from "./StepBarRow";
 
@@ -48,14 +47,8 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
   const [placement, setPlacement] = useState<string | undefined>(undefined);
   const [size, setSize] = useState<string | undefined>(undefined);
 
-  const didInit = useRef(false);
-
   useEffect(() => {
-    if (didInit.current) return;
-    didInit.current = true;
-
     const ac = new AbortController();
-
     (async () => {
       try {
         if (artist?.clerkId) {
@@ -70,14 +63,10 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           }
         }
       } catch (e) {
-        console.error("[ArtistBooking] gate fetch failed", { artistId: artist?.clerkId, error: e });
+        if (!isAbortError(e)) console.error("[ArtistBooking] gate fetch failed", { artistId: artist?.clerkId, error: e });
       }
-
       try {
-        const me: any = await request(`${apiOrigin}/users/me`, {
-          method: "GET",
-          signal: ac.signal as any
-        });
+        const me: any = await getMe({ signal: ac.signal });
         setProfile(me);
         const refs: string[] = me?.references?.map((r: any) => r.url || r) || me?.referenceUrls || [];
         setProfileRefs((refs || []).filter(Boolean));
@@ -88,28 +77,11 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         setPlacement(me?.placement || undefined);
         setSize(me?.size || undefined);
       } catch (e) {
-        console.error("[ArtistBooking] /users/me fetch failed", e);
+        if (!isAbortError(e)) console.error("[ArtistBooking] /users/me fetch failed", e);
       }
     })();
-
     return () => ac.abort();
   }, [apiOrigin, artist?.clerkId, request]);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const me = await getMe();
-        if (!mounted) return;
-        console.log("[ArtistBooking] getMe()", me);
-      } catch (e) {
-        console.error("[ArtistBooking] getMe() failed", e);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     const handler = (e: CustomEvent<{ artistId: string; username: string }>) => {
@@ -142,36 +114,27 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     const me = profile || {};
     const refs: string[] =
       (Array.isArray(me.references) ? me.references : [])?.map((r: any) => r?.url || r)?.filter(Boolean) || profileRefs;
-
     const styleList: string[] = (Array.isArray(me.styles) ? me.styles : [])
       .map((s: string) => String(s || "").trim())
       .filter(Boolean);
-
     const pickedStyle = (desiredStyle || "").trim() || styleList.find(s => s.toLowerCase() !== "all") || "";
-
     const sizeVal = String(me.size || size || "").trim();
     const placeVal = String(me.placement || placement || "").trim();
-
     let sizePlacementSentence = "";
     if (sizeVal && placeVal) sizePlacementSentence = `I'm thinking size ${sizeVal} near ${placeVal}.`;
     else if (sizeVal) sizePlacementSentence = `I'm thinking size ${sizeVal}. I'm flexible on placement.`;
     else if (placeVal) sizePlacementSentence = `I'm thinking a piece near ${placeVal}. I'm flexible on size.`;
     else sizePlacementSentence = "I'm flexible on size and placement.";
-
     const min = me.budgetMin ?? budgetRange.min;
     const max = me.budgetMax ?? budgetRange.max;
     const budgetSentence =
       min != null || max != null
         ? `Budget: ${min != null ? `$${min}` : ""}${min != null && max != null ? "–" : ""}${max != null ? `$${max}` : ""}.`
         : "";
-
     const styleSentence = pickedStyle ? `Style: ${pickedStyle}.` : "I'm flexible on style.";
-
     const refsSentence = refs && refs.length ? `Refs: ${refs.slice(0, 10).join(", ")}${refs.length > 10 ? `, +${refs.length - 10} more` : ""}.` : "";
-
     const signer = (profile?.username || profile?.handle || "").toString().trim();
     const signerSentence = signer ? `- ${signer}${profile?.handle && profile?.username ? ` (${profile?.handle})` : ""}` : "";
-
     const parts = [
       `Hi ${artist.username}, I've looked through your work and I'm interested.`,
       sizePlacementSentence,
@@ -183,7 +146,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     ]
       .filter(Boolean)
       .join(" ");
-
     return parts.replace(/\s+/g, " ").trim();
   }, [artist.username, profile, profileRefs, desiredStyle, budgetRange.min, budgetRange.max, placement, size]);
 
@@ -218,7 +180,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       console.error("[ArtistBooking] Preloaded message empty");
       return;
     }
-
     setStatus("sending");
     setErrorMsg("");
     try {
@@ -226,7 +187,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       const refsFromField = toUrlList(profile?.referenceUrls);
       const refsFromState = toUrlList(profileRefs);
       const allRefs = Array.from(new Set([...refsFromProfile, ...refsFromField, ...refsFromState]));
-
       const payload = {
         artistId: artist.clerkId,
         text: preMsg,
@@ -247,18 +207,13 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           stylesSnapshot: desiredStyle ? [desiredStyle] : []
         }
       };
-
-      console.log("[ArtistBooking] Sending request payload", payload);
       const res: any = await request(`${apiOrigin}/messages/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload)
       });
-      console.log("[ArtistBooking] Request response", res);
-
       const ok = typeof res?.ok === "boolean" ? res.ok : true;
       if (!ok) throw Object.assign(new Error(res?.error || `HTTP ${res?.status || 500}`), { status: res?.status, body: res });
-
       sentRef.current = true;
       setStatus("sent");
       setGate(g => ({ ...(g || { allowed: false, declines: 0, blocked: false, lastStatus: "pending" }), lastStatus: "pending" }));
@@ -271,13 +226,8 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       try {
         if (!body && err?.response) body = await err.response.json();
       } catch { }
-
-      console.error("[ArtistBooking] Send request failed", { statusCode, body, error: err });
-
       const msg = mapError(statusCode, body);
-
       if (statusCode === 409 && /already_pending/i.test(body?.error || "")) {
-        console.log("[ArtistBooking] already_pending, treating as sent");
         sentRef.current = true;
         setStatus("sent");
         setGate(g => ({ ...(g || { allowed: false, declines: 0, blocked: false, lastStatus: "pending" }), lastStatus: "pending" }));
@@ -286,16 +236,13 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         onClose?.();
         return;
       }
-
       if (statusCode === 409 && /already_accepted/i.test(body?.error || "")) {
-        console.log("[ArtistBooking] already_accepted, opening messages");
         setStatus("idle");
         setGate(g => ({ ...(g || { allowed: true, declines: 0, blocked: false, lastStatus: "accepted" }) }));
         openMessages();
         onClose?.();
         return;
       }
-
       setStatus("error");
       setErrorMsg(msg);
     }
@@ -314,7 +261,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </div>
         </div>
       </div>
-
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
         <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
@@ -325,17 +271,14 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
               <p className="px-3 py-2 rounded-md text-center w-full max-w-[36rem] text-[13px] sm:text-sm leading-5 sm:leading-6" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
                 {hasExistingChat ? "You already have an open conversation with this artist. Please resume your chat below." : "Send a request to message. You will be able to chat once the artist accepts."}
               </p>
-
               {status === "error" && (
                 <div role="alert" aria-live="assertive" className="w-full max-w-[36rem] px-3 py-2 rounded-md text-sm" style={{ background: "color-mix(in oklab, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}>
                   {errorMsg}
                 </div>
               )}
-
               <span className="sr-only" aria-live="polite">
                 {status === "sending" ? "Sending request" : isPending ? "Request pending" : hasExistingChat ? "Conversation already exists" : ""}
               </span>
-
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
@@ -346,7 +289,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                 >
                   {status === "sending" ? "Sending..." : isPending ? "Request Pending" : hasExistingChat ? "Already Chatting" : "Send Request"}
                 </Button>
-
                 {hasExistingChat && (
                   <Button
                     type="button"
@@ -363,7 +305,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
             </div>
           </CardContent>
         </Card>
-
         {profile && (
           <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
             <CardHeader className="text-center space-y-1 px-3 sm:px-6">
@@ -399,7 +340,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
             </CardContent>
           </Card>
         )}
-
         <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
             <CardTitle className="text-base sm:text-lg">Book an appointment</CardTitle>
@@ -418,7 +358,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </CardContent>
         </Card>
       </div>
-
       <div className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t" style={{ background: "color-mix(in oklab, var(--card) 96%, transparent)", borderColor: "var(--border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="mx-auto max-w-screen-md px-3 py-2">
           <div className="grid grid-cols-3 gap-2">

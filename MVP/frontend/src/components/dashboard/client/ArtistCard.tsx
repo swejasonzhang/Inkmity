@@ -105,7 +105,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
     >
       <div className="relative w-full overflow-hidden">
         <div
-          className="relative w-full h-[226px] sm:h-[290px] md:h-[354px] lg:h-[418px]"
+          className="relative w-full h-[226px] sm:h-[290px] md:h-[354px] lg:h-[408px]"
           style={{ background: "var(--elevated)" }}
         >
           {bgOk && artist.coverImage ? (
