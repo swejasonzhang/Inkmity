@@ -56,7 +56,7 @@ export default function ArtistsSection({
     onRequestCloseModal,
     page,
     totalPages,
-    onPageChange,
+    onPageChange
 }: Props) {
     const initialPreset: Partial<{
         priceFilter: string;
@@ -88,11 +88,16 @@ export default function ArtistsSection({
     const [bookingFilter, setBookingFilter] = useState<string>(initialPreset.bookingFilter ?? "all");
     const [travelFilter, setTravelFilter] = useState<string>(initialPreset.travelFilter ?? "all");
     const [sort, setSort] = useState<string>(initialPreset.sort || "experience_desc");
-    const [searchQuery, setSearchQuery] = useState<string>(typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "");
-    const [debouncedSearch, setDebouncedSearch] = useState<string>((typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "").trim().toLowerCase());
+    const [searchQuery, setSearchQuery] = useState<string>(
+        typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : ""
+    );
+    const [debouncedSearch, setDebouncedSearch] = useState<string>(
+        (typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "").trim().toLowerCase()
+    );
     const [currentPage, setCurrentPage] = useState(1);
 
-    const usingExternalPaging = typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
+    const usingExternalPaging =
+        typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -105,12 +110,22 @@ export default function ArtistsSection({
             bookingFilter,
             travelFilter,
             sort,
-            searchQuery,
+            searchQuery
         };
         try {
             localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
         } catch { }
-    }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
+    }, [
+        priceFilter,
+        locationFilter,
+        styleFilter,
+        availabilityFilter,
+        experienceFilter,
+        bookingFilter,
+        travelFilter,
+        sort,
+        searchQuery
+    ]);
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
@@ -192,7 +207,10 @@ export default function ArtistsSection({
                 return sort === "experience_desc" ? bv - av : av - bv;
             });
         } else if (sort === "newest") {
-            list = list.slice().sort((a, b) => new Date((b as any).createdAt ?? 0).getTime() - new Date((a as any).createdAt ?? 0).getTime());
+            list = list.slice().sort(
+                (a, b) =>
+                    new Date((b as any).createdAt ?? 0).getTime() - new Date((a as any).createdAt ?? 0).getTime()
+            );
         } else if (sort === "highest_rated") {
             list = list.slice().sort((a, b) => {
                 const ar = toNumber((a as any).rating, 0);
@@ -214,25 +232,22 @@ export default function ArtistsSection({
         }
 
         return list;
-    }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]);
-
-    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-    const listItems = usingExternalPaging ? filtered : clientPageItems;
-    const isCenterLoading = loading || !showArtists;
-
-    const motionKey = [
-        usingExternalPaging ? page : currentPage,
+    }, [
+        artists,
         priceFilter,
         locationFilter,
         styleFilter,
+        debouncedSearch,
         availabilityFilter,
         experienceFilter,
         bookingFilter,
         travelFilter,
-        sort,
-        debouncedSearch,
-        listItems.length,
-    ].join("|");
+        sort
+    ]);
+
+    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const listItems = usingExternalPaging ? filtered : clientPageItems;
+    const isCenterLoading = loading || !showArtists;
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
@@ -249,21 +264,45 @@ export default function ArtistsSection({
             <div className="bg-card px-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300">
                 <ArtistFilter
                     priceFilter={priceFilter}
-                    setPriceFilter={v => { setPriceFilter(v); setCurrentPage(1); }}
+                    setPriceFilter={v => {
+                        setPriceFilter(v);
+                        setCurrentPage(1);
+                    }}
                     locationFilter={locationFilter}
-                    setLocationFilter={v => { setLocationFilter(v); setCurrentPage(1); }}
+                    setLocationFilter={v => {
+                        setLocationFilter(v);
+                        setCurrentPage(1);
+                    }}
                     styleFilter={styleFilter}
-                    setStyleFilter={v => { setStyleFilter(v); setCurrentPage(1); }}
+                    setStyleFilter={v => {
+                        setStyleFilter(v);
+                        setCurrentPage(1);
+                    }}
                     availabilityFilter={availabilityFilter}
-                    setAvailabilityFilter={v => { setAvailabilityFilter(v); setCurrentPage(1); }}
+                    setAvailabilityFilter={v => {
+                        setAvailabilityFilter(v);
+                        setCurrentPage(1);
+                    }}
                     experienceFilter={experienceFilter}
-                    setExperienceFilter={v => { setExperienceFilter(v); setCurrentPage(1); }}
+                    setExperienceFilter={v => {
+                        setExperienceFilter(v);
+                        setCurrentPage(1);
+                    }}
                     bookingFilter={bookingFilter}
-                    setBookingFilter={v => { setBookingFilter(v); setCurrentPage(1); }}
+                    setBookingFilter={v => {
+                        setBookingFilter(v);
+                        setCurrentPage(1);
+                    }}
                     travelFilter={travelFilter}
-                    setTravelFilter={v => { setTravelFilter(v); setCurrentPage(1); }}
+                    setTravelFilter={v => {
+                        setTravelFilter(v);
+                        setCurrentPage(1);
+                    }}
                     sort={sort}
-                    setSort={v => { setSort(v); setCurrentPage(1); }}
+                    setSort={v => {
+                        setSort(v);
+                        setCurrentPage(1);
+                    }}
                     artists={artists}
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
@@ -271,47 +310,36 @@ export default function ArtistsSection({
                 />
             </div>
 
-            <div className="relative flex-1 min-h-0 h-full flex flex-col overflow-auto justify-center">
+            <div className="relative flex-1 min-h-0 h-full flex flex-col justify-center">
                 {isCenterLoading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center">
                         <CircularProgress sx={{ color: "var(--fg)" }} />
                     </div>
                 )}
 
-                <div
-                    className={`${isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"} flex-1 min-h-0 h-full flex`}
-                >
-                    <div
-                        className="flex-1 min-h-0 h-full flex flex-col justify-center"
-                        onPointerDownCapture={handleGridPointerDown}
-                    >
+                <div className={`${isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"} flex-1 min-h-0 h-full flex`}>
+                    <div className="flex-1 min-h-0 h-full flex flex-col justify-center" onPointerDownCapture={handleGridPointerDown}>
                         <div className="w-full flex-1 h-full px-0 pt-3 pb-2 min-h-0 flex items-center">
                             <div className="w-full">
                                 {listItems.length > 0 ? (
-                                    !isCenterLoading && (
-                                        <div
-                                            key={motionKey}
-                                            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[minmax(0,1fr)] gap-6 md:gap-5"
-                                        >
-                                            {listItems.map((artist, index) => (
-                                                <motion.div
-                                                    key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                                    initial={{ opacity: 0, y: 24 }}
-                                                    whileInView={{ opacity: 1, y: 0 }}
-                                                    viewport={{ once: true, amount: 0.2 }}
-                                                    transition={{ duration: 0.45, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] as const }}
-                                                    className="h-full flex"
-                                                >
-                                                    <div className="h-full w-full flex" data-artist-card="true">
-                                                        <ArtistCard
-                                                            artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any}
-                                                            onClick={() => onSelectArtist(artist)}
-                                                        />
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
-                                    )
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[minmax(0,1fr)] gap-6 md:gap-5">
+                                        {listItems.map((artist, index) => (
+                                            <motion.div
+                                                key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="h-full flex"
+                                            >
+                                                <div className="h-full w-full flex" data-artist-card="true">
+                                                    <ArtistCard
+                                                        artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any}
+                                                        onClick={() => onSelectArtist(artist)}
+                                                    />
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
                                 ) : (
                                     <div className="min-h-[240px] grid place-items-center py-8">
                                         <p className="text-muted text-center">No artists match your filters.</p>

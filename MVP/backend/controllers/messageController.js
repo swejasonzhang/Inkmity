@@ -161,7 +161,8 @@ export const getAllMessagesForUser = async (req, res) => {
     });
 
     res.status(200).json(convs);
-  } catch {
+  } catch (e) {
+    console.error("[getAllMessagesForUser] failed", e);
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 };
@@ -241,7 +242,8 @@ export const createMessage = async (req, res) => {
     }
 
     res.status(201).json(payload);
-  } catch {
+  } catch (e) {
+    console.error("[createMessage] failed", e);
     res.status(500).json({ error: "Failed to create message" });
   }
 };
@@ -265,7 +267,8 @@ export const deleteConversationForUser = async (req, res) => {
     });
 
     res.status(200).json({ ok: true, deletedCount, userId, participantId });
-  } catch {
+  } catch (e) {
+    console.error("[deleteConversationForUser] failed", e);
     res.status(500).json({ error: "Failed to delete conversation" });
   }
 };
@@ -362,7 +365,8 @@ export const createMessageRequest = async (req, res) => {
     }
 
     res.json({ ok: true, requestId: reqMsg._id });
-  } catch {
+  } catch (e) {
+    console.error("[createMessageRequest] failed", e);
     res.status(500).json({ error: "Failed to create request" });
   }
 };
@@ -378,7 +382,8 @@ export const listIncomingRequests = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
     res.json({ requests: items });
-  } catch {
+  } catch (e) {
+    console.error("[listIncomingRequests] failed", e);
     res.status(500).json({ error: "Failed to list requests" });
   }
 };
@@ -407,7 +412,8 @@ export const acceptMessageRequest = async (req, res) => {
         });
     }
     res.json({ ok: true });
-  } catch {
+  } catch (e) {
+    console.error("[acceptMessageRequest] failed", e);
     res.status(500).json({ error: "Failed to accept request" });
   }
 };
@@ -439,7 +445,8 @@ export const declineMessageRequest = async (req, res) => {
         .emit("conversation:removed", { convoId: msg.threadKey });
     }
     res.json({ ok: true, declines, blocked });
-  } catch {
+  } catch (e) {
+    console.error("[declineMessageRequest] failed", e);
     res.status(500).json({ error: "Failed to decline request" });
   }
 };
@@ -468,7 +475,8 @@ export const getGateStatus = async (req, res) => {
       declines,
       blocked: declines >= MAX_DECLINES,
     });
-  } catch {
+  } catch (e) {
+    console.error("[getGateStatus] failed", e);
     res.status(500).json({ error: "Failed to fetch gate status" });
   }
 };
@@ -501,7 +509,8 @@ export const getUnreadState = async (req, res) => {
         pendingRequests: pendingRequestIds.length,
       },
     });
-  } catch {
+  } catch (e) {
+    console.error("[getUnreadState] failed", e);
     res.status(500).json({ error: "Failed to fetch unread state" });
   }
 };
@@ -530,7 +539,8 @@ export const markConversationRead = async (req, res) => {
         });
     }
     res.json({ ok: true });
-  } catch {
+  } catch (e) {
+    console.error("[markConversationRead] failed", e);
     res.status(500).json({ error: "Failed to mark read" });
   }
 };
