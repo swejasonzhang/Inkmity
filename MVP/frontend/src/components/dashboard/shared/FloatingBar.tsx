@@ -190,9 +190,9 @@ export default function FloatingBar({
   const derivedTotal = totalUnreadMessages + (role === "Artist" ? requestCount : 0);
 
   const pad = {
-    left: isMdUp ? "calc(1.85rem + 10px + env(safe-area-inset-left, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-left, 0px))",
-    right: isMdUp ? "calc(1.85rem + 10px + env(safe-area-inset-right, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-right, 0px))",
-    bottom: `calc(max(${vvBottom}px, 50px) + env(safe-area-inset-bottom, 0px))`,
+    left: isMdUp ? "calc(1.85rem + 1px + env(safe-area-inset-left, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-left, 0px))",
+    right: isMdUp ? "calc(1.85rem + 1px + env(safe-area-inset-right, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-right, 0px))",
+    bottom: `calc(max(${vvBottom}px, 20px) + env(safe-area-inset-bottom, 0px))`,
   };
 
   const btnCommon =
@@ -200,9 +200,9 @@ export default function FloatingBar({
   const collapsedHeight = 44;
   const assistantBtnClass = [btnCommon, "px-3 md:px-4"].join(" ");
 
-  const MOBILE_CLOSED_W = 150;
-  const MOBILE_OPEN_W = Math.min(Math.max(260, vp.w - 32), 420);
-  const MOBILE_OPEN_H = Math.min(Math.max(360, vp.h - 140), 560);
+  const MOBILE_CLOSED_W = 135;
+  const MOBILE_OPEN_W = Math.min(Math.max(240, vp.w - 48), 360);
+  const MOBILE_OPEN_H = Math.min(Math.max(300, vp.h - 180), 480);
 
   const PANEL_W = 320;
   const DESKTOP_OPEN_W = 1200;
@@ -294,19 +294,19 @@ export default function FloatingBar({
                 </Button>
               ) : (
                 <div className="flex-1 h-full w-full flex-col">
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-app">
+                  <div className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-2 py-1"} border-b border-app`}>
                     <div className="flex items-center gap-2 font-semibold">
                       <MessageSquare size={16} />
-                      <span>Messages</span>
+                      <span className={isMdUp ? "" : "text-sm"}>Messages</span>
                       <Badge
-                        className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full"
+                        className={`ml-2 ${isMdUp ? "text-[11px] px-2 h-[18px]" : "text-[10px] px-1.5 h-[16px]"} inline-flex items-center rounded-full`}
                         style={{ background: "var(--fg)", color: "var(--bg)" }}
                       >
                         {unreadConvoCount} unread convos
                       </Badge>
                       {role === "Artist" && (
                         <Badge
-                          className="ml-2 text-[11px] px-2 h-[18px] inline-flex items-center rounded-full"
+                          className={`ml-2 ${isMdUp ? "text-[11px] px-2 h-[18px]" : "text-[10px] px-1.5 h-[16px]"} inline-flex items-center rounded-full`}
                           style={{ background: "var(--fg)", color: "var(--bg)" }}
                         >
                           {requestCount} {requestCount === 1 ? "request" : "requests"}
@@ -317,7 +317,7 @@ export default function FloatingBar({
                       <span className="sr-only">Close messages</span>
                       <Button
                         type="button"
-                        className="p-1 rounded-full hover:bg-elevated"
+                        className={`p-1 rounded-full hover:bg-elevated ${isMdUp ? "" : "h-7 w-7"}`}
                         onClick={() => setMsgOpen(false)}
                         aria-label="Close messages"
                         title="Close messages"
@@ -328,8 +328,8 @@ export default function FloatingBar({
                       </Button>
                     </div>
                   </div>
-                  <div className="flex-1 ">
-                    <div className="h-full ">{messagesContent}</div>
+                  <div className="flex-1">
+                    <div className="h-full">{messagesContent}</div>
                   </div>
                 </div>
               )}

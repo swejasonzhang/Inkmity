@@ -3,8 +3,7 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/header/Header";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
-import { X, Bot, ChevronDown } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Bot, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChatWindow from "@/components/dashboard/shared/ChatWindow";
 import ChatBot from "@/components/dashboard/shared/ChatBot";
@@ -28,17 +27,9 @@ export default function ClientDashboard() {
     const { getToken } = useAuth();
     const navigate = useNavigate();
     const warnedRef = useRef(false);
-    const scopeRef = useRef<HTMLDivElement | null>(null);
-    const [scopeH, setScopeH] = useState(0);
 
-    useEffect(() => {
-        if (!scopeRef.current) return;
-        const el = scopeRef.current;
-        const ro = new ResizeObserver(() => setScopeH(el.clientHeight));
-        setScopeH(el.clientHeight);
-        ro.observe(el);
-        return () => ro.disconnect();
-    }, []);
+    const [assistantOpen, setAssistantOpen] = useState(false);
+    const [page, setPage] = useState(1);
 
     const authFetch = useCallback(
         async (url: string, options: RequestInit = {}) => {
@@ -53,6 +44,7 @@ export default function ClientDashboard() {
     );
 
     const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(user?.id ?? "", authFetch);
+    const { artists, loading, initialized } = useDashboardData();
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -63,18 +55,8 @@ export default function ClientDashboard() {
         }
     }, [isLoaded, isSignedIn, navigate]);
 
-    const { artists, loading, initialized } = useDashboardData();
-
     const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
-    const [assistantOpen, setAssistantOpen] = useState(false);
-    const [page, setPage] = useState(1);
-    const [total, setTotal] = useState<number>(0);
-
-    useEffect(() => {
-        setTotal(artists.length);
-    }, [artists.length]);
-
-    const totalPages = Math.max(1, Math.ceil((total || 0) / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil((artists.length || 0) / PAGE_SIZE));
 
     const handlePageChange = (next: number) => {
         if (next < 1 || next > totalPages) return;
@@ -119,124 +101,103 @@ export default function ClientDashboard() {
     return (
         <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
             <Header />
-            <div ref={scopeRef} className="flex-1 min-h-0 flex flex-col">
-                <main className="min-h-0 flex flex-col h-[calc(100%-80px)] gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[var(--fb-safe,0px)]">
-                    <Card className="flex-1 min-h-0 flex flex-col rounded-2xl bg-card border border-app overflow-hidden">
-                        <CardContent className="p-0 min-h-0 flex flex-col flex-1">
-                            <div className="flex-1 min-h-0 p-4 flex flex-col">
-                                <div className="flex-1 min-h-0 flex flex-col">
-                                    <Suspense
-                                        fallback={
-                                            <div className="flex-1 min-h-0 flex flex-col overflow-auto space-y-4">
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                                    {Array.from({ length: 8 }).map((_, i) => (
-                                                        <Skeleton key={i} className="h-48 w-full rounded-xl" />
-                                                    ))}
-                                                </div>
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Skeleton className="h-8 w-20 rounded" />
-                                                    <Skeleton className="h-8 w-20 rounded" />
-                                                </div>
-                                            </div>
-                                        }
-                                    >
-                                        <div className="flex-1 min-h-0 h-full flex flex-col justify-center">
-                                            <div className="flex-1 min-h-0 h-full flex">
-                                                <ArtistsSection
-                                                    artists={artists.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
-                                                    loading={loading}
-                                                    showArtists
-                                                    onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
-                                                    page={page}
-                                                    totalPages={totalPages}
-                                                    onPageChange={handlePageChange}
-                                                />
-                                            </div>
-                                        </div>
-
-                                    </Suspense>
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <div className="flex-1 min-h-0 flex">
+                    <div className="w-full my-auto px-3">
+                        <Suspense
+                            fallback={
+                                <div className="p-4 space-y-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {Array.from({ length: 8 }).map((_, i) => (
+                                            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Skeleton className="h-8 w-20 rounded" />
+                                        <Skeleton className="h-8 w-20 rounded" />
+                                    </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <div className="sm:hidden flex items-center justify-center gap-2 py-3 opacity-80">
-                        <ChevronDown size={18} />
-                        <span className="text-sm">Scroll to view more artists</span>
+                            }
+                        >
+                            <ArtistsSection
+                                artists={artists.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                                loading={loading}
+                                showArtists
+                                onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+                                page={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                        </Suspense>
                     </div>
+                </div>
 
+                <div className="shrink-0 mb-20 px-3">
                     <Pagination
                         currentPage={page}
                         totalPages={totalPages}
                         onPrev={() => handlePageChange(page - 1)}
                         onNext={() => handlePageChange(page + 1)}
                     />
-                </main>
+                </div>
+            </main>
 
-                <FloatingBar
-                    role="Client"
-                    onAssistantOpen={() => setAssistantOpen(true)}
-                    messagesContent={
-                        <div style={{ height: 800 }}>
-                            <ChatWindow currentUserId={user.id} role="client" />
-                        </div>
-                    }
-                    unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
-                    unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
-                    pendingRequestIds={pendingRequestIds}
-                    pendingRequestsCount={pendingRequestsCount}
-                />
+            <FloatingBar
+                role="Client"
+                onAssistantOpen={() => setAssistantOpen(true)}
+                messagesContent={
+                    <div style={{ height: 800 }}>
+                        <ChatWindow currentUserId={user.id} role="client" />
+                    </div>
+                }
+                unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
+                unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
+                pendingRequestIds={pendingRequestIds}
+                pendingRequestsCount={pendingRequestsCount}
+            />
 
-                <AnimatePresence>
-                    {assistantOpen && (
-                        <motion.div
-                            key="assistant"
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            variants={panelVariants}
-                            transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                            className="fixed bottom-4 right-4 z-50"
-                            style={{ transformOrigin: "bottom right" }}
-                        >
-                            <div
-                                className="w-[88vw] max-w-[400px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden"
-                                style={{ height: Math.max(280, Math.min(scopeH, 420)) }}
-                            >
-                                <div className="flex items-center justify-between px-3 py-2 border-b border-app">
-                                    <div className="flex items-center gap-2 font-semibold">
-                                        <Bot size={16} />
-                                        <span className="text-sm">Assistant</span>
-                                    </div>
-                                    <button
-                                        onClick={() => setAssistantOpen(false)}
-                                        className="p-1.5 rounded-full hover:bg-elevated"
-                                        aria-label="Close assistant"
-                                    >
-                                        <X size={16} />
-                                    </button>
+            <AnimatePresence>
+                {assistantOpen && (
+                    <motion.div
+                        key="assistant"
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        variants={panelVariants}
+                        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                        className="fixed bottom-4 right-4 z-50"
+                        style={{ transformOrigin: "bottom right" }}
+                    >
+                        <div className="w-[88vw] max-w-[400px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden" style={{ height: 360 }}>
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-app">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <Bot size={16} />
+                                    <span className="text-sm">Assistant</span>
                                 </div>
-                                <div className="flex-1 overflow-y-auto">
-                                    <ChatBot />
-                                </div>
+                                <button onClick={() => setAssistantOpen(false)} className="p-1.5 rounded-full hover:bg-elevated" aria-label="Close assistant">
+                                    <X size={16} />
+                                </button>
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            <div className="flex-1 overflow-y-auto">
+                                <ChatBot />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                <Suspense fallback={null}>
-                    {modalArtist && (
-                        <ArtistModal
-                            open={Boolean(selectedArtist)}
-                            artist={modalArtist}
-                            onClose={() => setSelectedArtist(null)}
-                            onMessage={async a => {
-                                window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
-                            }}
-                        />
-                    )}
-                </Suspense>
-            </div>
+            <Suspense fallback={null}>
+                {modalArtist && (
+                    <ArtistModal
+                        open={Boolean(selectedArtist)}
+                        artist={modalArtist}
+                        onClose={() => setSelectedArtist(null)}
+                        onMessage={async a => {
+                            window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
+                        }}
+                    />
+                )}
+            </Suspense>
         </div>
     );
 }
