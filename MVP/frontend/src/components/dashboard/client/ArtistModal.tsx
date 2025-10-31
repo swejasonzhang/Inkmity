@@ -188,6 +188,7 @@ const ArtistModal: React.FC<Props> = ({
             </button>
             <Separator className="mt-4 w-full" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
           </div>
+
           <div className="w-full max-w-[1200px] mx-auto">
             {step === 0 && (
               <ArtistPortfolio
@@ -197,42 +198,17 @@ const ArtistModal: React.FC<Props> = ({
                 onClose={closeNow}
               />
             )}
+
             {step === 1 && (
-              <div className="px-6 py-4">
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    onClick={() => setStep(0)}
-                    className="text-sm underline underline-offset-2"
-                    style={{ color: "var(--fg)" }}
-                  >
-                    Back
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onMessage(artist, "")}
-                      className="text-sm underline underline-offset-2"
-                      style={{ color: "var(--fg)" }}
-                    >
-                      Message
-                    </button>
-                    <button
-                      onClick={onClose}
-                      className="text-sm underline underline-offset-2"
-                      style={{ color: "var(--fg)" }}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-                <ArtistBooking
-                  artist={artist}
-                  onBack={() => setStep(0)}
-                  onClose={onClose}
-                  onGoToStep={(s) => setStep(s)}
-                  onMessage={onMessage}
-                />
-              </div>
+              <ArtistBooking
+                artist={artist}
+                onBack={() => setStep(0)}
+                onClose={onClose}
+                onGoToStep={(s) => setStep(s)}
+                onMessage={onMessage}
+              />
             )}
+
             {step === 2 && (
               <ArtistReviews
                 artist={artist}
