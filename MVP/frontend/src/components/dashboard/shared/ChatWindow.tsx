@@ -1,10 +1,14 @@
 import type { FC } from "react";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { displayNameFromUsername } from "@/lib/format";
 import QuickBooking from "../client/QuickBooking";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import RequestPanel from "./messages/requestPanel";
+import { useAuth } from "@clerk/clerk-react";
+import { API_URL } from "@/lib/http";
 
 declare global {
   interface Window {
@@ -44,52 +48,49 @@ type GateStatus = "pending" | "accepted" | "declined";
 type Role = "client" | "artist";
 
 interface ChatWindowProps {
-  className?: string;
-  conversations: Conversation[];
-  collapsedMap: Record<string, boolean>;
   currentUserId: string;
-  loading: boolean;
-  emptyText?: string;
-  onToggleCollapse?: (participantId: string) => void;
-  onRemoveConversation: (participantId: string) => void;
-  expandedId?: string | null;
-  authFetch: (url: string, options?: RequestInit) => Promise<Response>;
-  unreadMap?: Record<string, number>;
-  onMarkRead?: (participantId: string) => void;
   isArtist?: boolean;
-  onAcceptPending?: (participantId: string) => void | Promise<void>;
-  onDeclinePending?: (participantId: string) => void | Promise<void>;
-  budgetMin?: number | null;
-  budgetMax?: number | null;
   role?: Role;
+  onRemoveConversation?: (participantId: string) => void;
 }
 
 const urlRegex = /\bhttps?:\/\/[^\s)]+/gi;
-const getUrlsFromText = (text: string) => Array.from(new Set((text.match(urlRegex) || [])?.map(u => u.replace(/[),.]+$/, ""))));
+const getUrlsFromText = (text: string) =>
+  Array.from(new Set((text.match(urlRegex) || [])?.map(u => u.replace(/[),.]+$/, ""))));
+
+const PANEL_W = 320;
 
 const ChatWindow: FC<ChatWindowProps> = ({
-  conversations,
-  collapsedMap,
   currentUserId,
-  loading,
-  emptyText = "No conversations currently.\nPlease click an artist to start one!",
-  onRemoveConversation,
-  expandedId: externalExpandedId,
-  authFetch,
-  unreadMap = {},
-  onMarkRead = () => { },
   isArtist = false,
-  onToggleCollapse,
-  onAcceptPending,
-  onDeclinePending,
-  budgetMin = null,
-  budgetMax = null,
-  role: propRole
+  role: propRole,
+  onRemoveConversation
 }) => {
   const role: Role = propRole ?? (isArtist ? "artist" : "client");
   const isClient = role === "client";
 
+  const { getToken } = useAuth();
+  const authFetch = useCallback(
+    async (path: string, init: RequestInit = {}) => {
+      const token = await getToken();
+      const base = API_URL.replace(/\/$/, "");
+      const cleaned = path.replace(/^\/api/, "");
+      const url = path.startsWith("http") ? path : `${base}${cleaned.startsWith("/") ? "" : "/"}${cleaned}`;
+      const headers = new Headers(init.headers || {});
+      headers.set("Accept", "application/json");
+      headers.set("Content-Type", "application/json");
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      return fetch(url, { ...init, headers, credentials: "include" });
+    },
+    [getToken]
+  );
+
+  const [loading, setLoading] = useState(true);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
   const [messageInput, setMessageInput] = useState<Record<string, string>>({});
   const [sendError, setSendError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -102,12 +103,29 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [qbOpen, setQbOpen] = useState(false);
   const [qbArtist, setQbArtist] = useState<{ username: string; clerkId: string } | null>(null);
 
-  const openViewer = (url: string) => setViewerUrl(url);
-  const closeViewer = () => setViewerUrl(null);
-
   useEffect(() => {
-    if (externalExpandedId !== undefined) setExpandedId(externalExpandedId ?? null);
-  }, [externalExpandedId]);
+    if (!currentUserId) return;
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await authFetch(`/messages/user/${currentUserId}`, { method: "GET" });
+        const data = res.ok ? await res.json() : null;
+        const arr: Conversation[] = Array.isArray(data) ? data : Array.isArray(data?.conversations) ? data.conversations : [];
+        if (mounted) setConversations(arr);
+        if (mounted) {
+          const next: Record<string, number> = {};
+          for (const c of arr) next[c.participantId] = next[c.participantId] ?? 0;
+          setUnreadMap(m => ({ ...next, ...m }));
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [authFetch, currentUserId]);
 
   useEffect(() => {
     if (conversations.length > 0 && expandedId == null) {
@@ -117,6 +135,16 @@ const ChatWindow: FC<ChatWindowProps> = ({
       }
     }
   }, [conversations, expandedId, collapsedMap]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<string | { id?: string; clerkId?: string }>).detail;
+      const id = typeof detail === "string" ? detail : detail?.id || detail?.clerkId || null;
+      if (id) setExpandedId(id);
+    };
+    window.addEventListener("ink:set-expanded-conversation", handler as EventListener);
+    return () => window.removeEventListener("ink:set-expanded-conversation", handler as EventListener);
+  }, []);
 
   useEffect(() => {
     if (!confirmOpen) return;
@@ -136,7 +164,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
   }, [viewerUrl]);
 
-  const activeConv = useMemo(() => conversations.find(c => c.participantId === expandedId) || conversations[0], [conversations, expandedId]);
+  const activeConv = useMemo(
+    () => conversations.find(c => c.participantId === expandedId) || conversations[0],
+    [conversations, expandedId]
+  );
 
   const fmtTime = (ts: number) => {
     try {
@@ -150,14 +181,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   };
 
+  const onToggleCollapse = (participantId: string) =>
+    setCollapsedMap(m => ({ ...m, [participantId]: !m[participantId] }));
+
+  const onMarkRead = useCallback((participantId: string) => {
+    setUnreadMap(m => (m[participantId] ? { ...m, [participantId]: 0 } : m));
+  }, []);
+
   const fetchRequestsAndFindId = async (participantId: string): Promise<string | null> => {
     if (isClient) return null;
     try {
       const res = await authFetch("/api/messages/requests", { method: "GET" });
-      if (!res.ok) return null;
-      const data = await res.json();
+      const data = res.ok ? await res.json() : null;
       const list: any[] = Array.isArray(data?.requests) ? data.requests : Array.isArray(data) ? data : [];
-      const hit = list.find(r => r?.senderId === participantId);
+      const hit = list.find((r: any) => r?.senderId === participantId);
       return hit?._id ? String(hit._id) : hit?.id ? String(hit.id) : null;
     } catch {
       return null;
@@ -175,7 +212,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
       const res = await authFetch(`/api/messages/requests/${id}/accept`, { method: "POST" });
       if (!res.ok) throw new Error(`Accept failed ${res.status}`);
       setGateOverride(m => ({ ...m, [participantId]: "accepted" }));
-      await onAcceptPending?.(participantId);
+      setConversations(list =>
+        list.map(c =>
+          c.participantId === participantId ? { ...c, meta: { ...(c.meta || {}), lastStatus: "accepted", allowed: true } } : c
+        )
+      );
     } catch (e: any) {
       setSendError(e?.message || "Failed to accept request.");
     }
@@ -192,11 +233,47 @@ const ChatWindow: FC<ChatWindowProps> = ({
       const res = await authFetch(`/api/messages/requests/${id}/decline`, { method: "POST" });
       if (!res.ok) throw new Error(`Decline failed ${res.status}`);
       setGateOverride(m => ({ ...m, [participantId]: "declined" }));
-      await onDeclinePending?.(participantId);
+      setConversations(list =>
+        list.map(c =>
+          c.participantId === participantId ? { ...c, meta: { ...(c.meta || {}), lastStatus: "declined", allowed: false } } : c
+        )
+      );
     } catch (e: any) {
       setSendError(e?.message || "Failed to decline request.");
     }
   };
+
+  const removeConversation = useCallback((participantId: string) => {
+    setConversations(list => list.filter(c => c.participantId !== participantId));
+    onRemoveConversation?.(participantId);
+  }, [onRemoveConversation]);
+
+  const rawStatus = activeConv?.meta?.lastStatus ?? null;
+  const override = gateOverride[activeConv?.participantId || ""];
+  const computedStatus: GateStatus | null = useMemo(() => {
+    const v = override ?? rawStatus;
+    return v === "pending" || v === "accepted" || v === "declined" ? v : null;
+  }, [override, rawStatus]);
+
+  const status: GateStatus | null = isClient ? null : computedStatus;
+  const canSend = isClient ? true : status === "accepted" && (override === "accepted" || !!activeConv?.meta?.allowed);
+  const needsApproval = isClient ? false : status === "pending" && !canSend;
+
+  const lastOutgoingIndex = useMemo(() => {
+    if (!activeConv?.messages?.length) return -1;
+    for (let i = activeConv.messages.length - 1; i >= 0; i--) {
+      if (activeConv.messages[i].senderId === currentUserId) return i;
+    }
+    return -1;
+  }, [activeConv?.messages, currentUserId]);
+
+  if (!currentUserId) {
+    return (
+      <div className="flex items-center justify-center h-full bg-card rounded-2xl">
+        <CircularProgress sx={{ color: "var(--fg)" }} />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -209,7 +286,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
   if (!conversations || conversations.length === 0) {
     return (
       <div className="flex items-center justify-center h-full bg-card rounded-2xl p-4">
-        <p className="text-muted-foreground text-center whitespace-pre-line">{emptyText}</p>
+        <p className="text-muted-foreground text-center whitespace-pre-line">
+          No conversations currently.
+          {"\n"}Please click an artist to start one.
+        </p>
       </div>
     );
   }
@@ -222,8 +302,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
     setMessageInput(prev => ({ ...prev, [participantId]: "" }));
     try {
       const meta: Record<string, any> = {};
-      if (budgetMin != null) meta.budgetMin = budgetMin;
-      if (budgetMax != null) meta.budgetMax = budgetMax;
       const res = await authFetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -255,7 +333,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         body: JSON.stringify({ userId: currentUserId, participantId: pendingDeleteId })
       });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      onRemoveConversation(pendingDeleteId);
+      removeConversation(pendingDeleteId);
       setConfirmOpen(false);
       if (expandedId === pendingDeleteId) setExpandedId(null);
       setPendingDeleteId(null);
@@ -275,7 +353,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const avatarFor = (c: Conversation) => {
     const name = displayNameFromUsername(c.username || "");
-    const initials = name.split(" ").filter(Boolean).slice(0, 2).map(ch => ch[0]?.toUpperCase()).join("");
+    const initials = name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(ch => ch[0]?.toUpperCase())
+      .join("");
     return (
       <span className="h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold border border-app">
         {initials || "?"}
@@ -339,33 +422,30 @@ const ChatWindow: FC<ChatWindowProps> = ({
     <AnimatePresence>
       {viewerUrl && (
         <motion.div
-          className="fixed inset-0 z-[99998] flex items-center justify-center"
+          className="fixed inset-0 z-[99998] flex items-center justify-center overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           aria-modal="true"
           role="dialog"
-          tabIndex={-1}
         >
-          <button type="button" className="absolute inset-0 bg-black/80" aria-label="Close image" onClick={closeViewer} />
+          <button type="button" className="absolute inset-0 bg-black/80" aria-label="Close image" onClick={() => setViewerUrl(null)} />
           <button
             type="button"
-            onClick={closeViewer}
+            onClick={() => setViewerUrl(null)}
             aria-label="Close"
             className="fixed top-6 right-6 h-10 w-10 rounded-full grid place-items-center border border-app bg-elevated text-app hover:bg-elevated/80"
-            title="Close"
           >
             <span className="text-xl leading-none">×</span>
           </button>
-          <div className="relative">
+          <div className="relative pointer-events-none">
             <img
-              key={viewerUrl}
-              src={viewerUrl}
+              key={viewerUrl || ""}
+              src={viewerUrl || ""}
               alt="preview"
-              width={1000}
-              height={1000}
-              className="object-cover"
-              style={{ width: "1000px", height: "1000px" }}
+              className="block object-contain"
+              style={{ width: "100%", height: "100%" }}
+              referrerPolicy="no-referrer"
             />
           </div>
         </motion.div>
@@ -373,38 +453,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
     </AnimatePresence>
   );
 
-  const rawStatus = activeConv?.meta?.lastStatus ?? null;
-  const override = gateOverride[activeConv?.participantId || ""];
-  const computedStatus: GateStatus | null = useMemo(() => {
-    const v = override ?? rawStatus;
-    return v === "pending" || v === "accepted" || v === "declined" ? v : null;
-  }, [override, rawStatus]);
-
-  const status: GateStatus | null = isClient ? null : computedStatus;
-  const canSend = isClient ? true : status === "accepted" && (override === "accepted" || !!activeConv?.meta?.allowed);
-  const needsApproval = isClient ? false : status === "pending" && !canSend;
-
-  const lastOutgoingIndex = useMemo(() => {
-    if (!activeConv?.messages?.length) return -1;
-    for (let i = activeConv.messages.length - 1; i >= 0; i--) {
-      if (activeConv.messages[i].senderId === currentUserId) return i;
-    }
-    return -1;
-  }, [activeConv?.messages, currentUserId]);
-
-  const statusLabelFor = (m?: Message): string | null => {
-    if (!m) return null;
-    if (m.seen) return "Seen";
-    if (m.delivered) return "Delivered";
-    return null;
-  };
-
   const openUpload = () => {
     if (!activeConv) return;
-    if (!window.cloudinary || !CLOUD_NAME || !UPLOAD_PRESET) {
-      console.error("Cloudinary widget not available or envs missing");
-      return;
-    }
+    if (!window.cloudinary || !CLOUD_NAME || !UPLOAD_PRESET) return;
     const widget = window.cloudinary.createUploadWidget(
       {
         cloudName: CLOUD_NAME,
@@ -438,219 +489,274 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   return (
     <>
-      <div className="h-full w-full grid grid-cols-[200px_minmax(0,1fr)] gap-3 bg-card rounded-2xl p-3">
-        <aside className="h-full overflow-y-auto rounded-xl border border-app bg-card">
-          <ul className="divide-y divide-app/60">
-            {conversations.map(c => {
-              const isActive = c.participantId === activeConv?.participantId;
-              const lastMsg = c.messages[c.messages.length - 1];
-              return (
-                <li key={c.participantId}>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      if (expandedId !== c.participantId) setExpandedId(c.participantId);
-                      if (onToggleCollapse && collapsedMap[c.participantId]) onToggleCollapse(c.participantId);
-                      onMarkRead(c.participantId);
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        if (expandedId !== c.participantId) setExpandedId(c.participantId);
-                        if (onToggleCollapse && collapsedMap[c.participantId]) onToggleCollapse(c.participantId);
-                        onMarkRead(c.participantId);
-                      }
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-left ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
-                  >
-                    {avatarFor(c)}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
-                        <div className="text-[13px] shrink-0">{lastMsg ? fmtTime(lastMsg.timestamp) : ""}</div>
+      <div className="w-full h-full min-h-0 bg-card rounded-2xl p-3 flex gap-3">
+        {isArtist && (
+          <aside
+            className="hidden md:flex flex-col border border-app bg-card h-full shrink-0 rounded-xl min-h-0"
+            style={{ width: PANEL_W }}
+          >
+            <div className="px-3 py-3 border-b border-app">
+              <div className="text-sm font-semibold">Message requests</div>
+              <div className="text-xs text-muted-foreground">Review new requests</div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <RequestPanel
+                authFetch={authFetch}
+                onOpenConversation={(clerkId) => {
+                  setExpandedId(clerkId);
+                  try {
+                    window.dispatchEvent(new CustomEvent("ink:set-expanded-conversation", { detail: clerkId }));
+                  } catch { }
+                }}
+              />
+            </div>
+          </aside>
+        )}
+        <div className="flex-1 min-w-0 flex min-h-0">
+          <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] h-full min-h-0 flex-1">
+            <aside className="hidden md:block h-full rounded-xl border border-app bg-card min-h-0 overflow-y-auto">
+              <ul className="divide-y divide-app/60">
+                {conversations.map(c => {
+                  const isActive = c.participantId === activeConv?.participantId;
+                  const lastMsg = c.messages[c.messages.length - 1];
+                  return (
+                    <li key={c.participantId}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          if (expandedId !== c.participantId) setExpandedId(c.participantId);
+                          if (collapsedMap[c.participantId]) onToggleCollapse(c.participantId);
+                          onMarkRead(c.participantId);
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            if (expandedId !== c.participantId) setExpandedId(c.participantId);
+                            if (collapsedMap[c.participantId]) onToggleCollapse(c.participantId);
+                            onMarkRead(c.participantId);
+                          }
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 text-left ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
+                      >
+                        {avatarFor(c)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
+                            <div className="text-[13px] shrink-0">{lastMsg ? fmtTime(lastMsg.timestamp) : ""}</div>
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">{lastMsg?.text || "No messages"}</div>
+                        </div>
+                        {!!unreadMap[c.participantId] && (
+                          <span className="ml-2 shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-semibold">
+                            {unreadMap[c.participantId]}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="shrink-0 text-xs text-muted-foreground hover:text-app"
+                          onClick={e => {
+                            e.stopPropagation();
+                            requestDelete(c.participantId);
+                          }}
+                        >
+                          Delete
+                        </button>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">{lastMsg?.text || "No messages"}</div>
-                    </div>
-                    {!!unreadMap[c.participantId] && (
-                      <span className="ml-2 shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-semibold">
-                        {unreadMap[c.participantId]}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      className="shrink-0 text-xs text-muted-foreground hover:text-app"
-                      onClick={e => {
-                        e.stopPropagation();
-                        requestDelete(c.participantId);
+                    </li>
+                  );
+                })}
+              </ul>
+            </aside>
+            <section className="h-full rounded-xl border border-app bg-card flex flex-col min-h-0">
+              <header className="px-3 md:px-4 py-3 border-b border-app flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                  <div className="md:hidden min-w-[200px] max-w-[60vw]">
+                    <Select
+                      value={activeConv?.participantId}
+                      onValueChange={(val) => {
+                        setExpandedId(val);
+                        onMarkRead(val);
                       }}
                     >
-                      Delete
-                    </button>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select conversation" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[50vh]">
+                        {conversations.map(c => (
+                          <SelectItem key={c.participantId} value={c.participantId}>
+                            {displayNameFromUsername(c.username)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-        </aside>
-
-        <section className="h-full rounded-xl border border-app bg-card flex flex-col">
-          <header className="px-4 py-3 border-b border-app flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-3 pointer-events-auto">
-              {activeConv && avatarFor(activeConv)}
-              <div className="text-sm font-semibold text-app">
-                {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
-              </div>
-              {budgetMin != null || budgetMax != null ? (
-                <div className="ml-2 text-xs px-2 py-0.5 rounded-full border border-app bg-elevated text-app">
-                  Budget: {budgetMin != null ? `$${budgetMin}` : "—"}{budgetMax != null ? `–$${budgetMax}` : ""}
-                </div>
-              ) : null}
-              {needsApproval && !isClient && !isArtist && (
-                <div className="text-xs text-muted-foreground">Waiting for artist to approve your request.</div>
-              )}
-              {!needsApproval && status === "declined" && !isClient && (
-                <div className="text-xs text-muted-foreground">Declined. Messaging locked unless a new request is accepted.</div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 pointer-events-auto">
-              <button
-                type="button"
-                onClick={openBooking}
-                title="Open booking"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-primary/90 bg-primary text-primary-foreground font-semibold text-xs shadow-sm hover:shadow transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-              >
-                Ready to Book?
-              </button>
-
-              {role === "artist" && needsApproval && activeConv && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => handleDecline(activeConv.participantId)}
-                    className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
-                  >
-                    Decline
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAccept(activeConv.participantId)}
-                    className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
-                  >
-                    Accept
-                  </button>
-                </>
-              )}
-            </div>
-          </header>
-
-          <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
-            {(!activeConv?.messages || activeConv.messages.length === 0) && needsApproval ? (
-              <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
-            ) : (
-              activeConv?.messages.map((msg, idx) => {
-                const isMe = msg.senderId === currentUserId;
-                const fromMetaRef = ([] as string[])
-                  .concat(msg.meta?.referenceUrls ?? [])
-                  .concat(msg.meta?.workRefs ?? [])
-                  .concat(msg.meta?.refs ?? []);
-                const fromText = getUrlsFromText(msg.text);
-                const merged = Array.from(new Set([...fromMetaRef, ...fromText])).slice(0, 3);
-                const isLastOutgoing = isMe && idx === lastOutgoingIndex;
-                const readableStatus = isLastOutgoing ? statusLabelFor(msg) : null;
-                const cols = merged.length >= 3 ? "grid-cols-3" : merged.length === 2 ? "grid-cols-2" : "grid-cols-1";
-                const bMin = (msg.meta?.budgetMin as number | undefined) ?? (msg.meta?.budget?.min as number | undefined);
-                const bMax = (msg.meta?.budgetMax as number | undefined) ?? (msg.meta?.budget?.max as number | undefined);
-
-                return (
-                  <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`px-3 py-2 rounded-2xl max-w-[78%] w-fit break-words whitespace-pre-wrap border ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
-                    >
-                      <div>{msg.text}</div>
-                      {bMin != null || bMax != null ? (
-                        <div className={`mt-1 text-[11px] ${isMe ? "text-primary-foreground/90" : "text-app/80"}`}>
-                          Budget: {bMin != null ? `$${bMin}` : "—"}{bMax != null ? `–$${bMax}` : ""}
-                        </div>
-                      ) : null}
-                      {!!merged.length && (
-                        <div className={`mt-2 grid ${cols} gap-2`}>
-                          {merged.map(u => (
-                            <button
-                              key={u}
-                              type="button"
-                              onClick={() => openViewer(u)}
-                              className="w-full rounded-lg border border-app/60 overflow-hidden"
-                              title="Open"
-                            >
-                              <img
-                                src={u}
-                                alt="reference"
-                                className="w-full h-56 object-cover bg-black/5"
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                              />
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <div className={`mt-1 text-[13px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                        {readableStatus ? `${fmtTime(msg.timestamp)} · ${readableStatus}` : fmtTime(msg.timestamp)}
-                      </div>
+                  <div className="hidden md:flex items-center gap-3">
+                    {activeConv && avatarFor(activeConv)}
+                    <div className="text-sm font-semibold text-app truncate">
+                      {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
                     </div>
                   </div>
-                );
-              })
-            )}
-          </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {isClient && (
+                    <button
+                      type="button"
+                      onClick={openBooking}
+                      title="Open booking"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-primary/90 bg-primary text-primary-foreground font-semibold text-xs shadow-sm hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    >
+                      Ready to Book?
+                    </button>
+                  )}
+                  {role === "artist" && activeConv && (() => {
+                    const raw = activeConv?.meta?.lastStatus ?? null;
+                    const ov = gateOverride[activeConv?.participantId || ""];
+                    const v = (ov ?? raw) as GateStatus | null;
+                    const needs = v === "pending" && !(ov === "accepted" || !!activeConv?.meta?.allowed);
+                    if (!needs) return null;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDecline(activeConv.participantId)}
+                          className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
+                        >
+                          Decline
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAccept(activeConv.participantId)}
+                          className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
+                        >
+                          Accept
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </header>
+              <div className="flex-1 overflow-y-auto px-3 md:px-4 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
+                {(!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
+                  <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
+                ) : (
+                  activeConv?.messages.map((msg, idx) => {
+                    const isMe = msg.senderId === currentUserId;
+                    const fromMetaRef = ([] as string[])
+                      .concat(msg.meta?.referenceUrls ?? [])
+                      .concat(msg.meta?.workRefs ?? [])
+                      .concat(msg.meta?.refs ?? []);
+                    const fromText = getUrlsFromText(msg.text);
+                    const merged = Array.from(new Set([...fromMetaRef, ...fromText])).slice(0, 3);
+                    const isLastOutgoing = isMe && idx === lastOutgoingIndex;
+                    const readableStatus = isLastOutgoing ? (msg.seen ? "Seen" : msg.delivered ? "Delivered" : null) : null;
 
-          {sendError && <div className="px-4 pb-2 text-sm text-destructive">{sendError}</div>}
-
-          <footer className="p-3 border-t border-app">
-            <div className="flex items-stretch gap-2">
-              <button
-                type="button"
-                onClick={openUpload}
-                className="px-3 rounded-xl border border-app bg-elevated hover:bg-elevated/80 text-app text-sm"
-                aria-label="Add images"
-                title="Add images"
-                disabled={needsApproval && !isClient}
-              >
-                + Image
-              </button>
-              <div className="flex-1 flex rounded-xl overflow-hidden border border-app bg-card">
-                <input
-                  type="text"
-                  value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
-                  onChange={e => activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))}
-                  className="flex-1 p-2.5 bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
-                  placeholder={
-                    needsApproval && !isClient
-                      ? isArtist
-                        ? "Approve to enable messaging"
-                        : "Waiting for approval"
-                      : status === "declined" && !isClient
-                        ? "Messaging locked"
-                        : "Type a message"
-                  }
-                  disabled={needsApproval && !isClient}
-                  onKeyDown={e => {
-                    if (needsApproval && !isClient) return;
-                    if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => activeConv && (!needsApproval || isClient) && handleSend(activeConv.participantId)}
-                  disabled={needsApproval && !isClient}
-                  className="px-4 text-sm font-medium bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
-                >
-                  Send
-                </button>
+                    return (
+                      <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`px-3 py-4 rounded-2xl max-w-[80%] sm:max-w-[66%] md:max-w-[50%] w-fit break-words whitespace-pre-wrap border leading-loose text-[15px] ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                        >
+                          <div>{msg.text}</div>
+                          {!!merged.length && (
+                            <div className="mt-2 grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                              {merged.map(u => (
+                                <button
+                                  key={u}
+                                  type="button"
+                                  onClick={() => setViewerUrl(u)}
+                                  className="w-full rounded-lg border border-app/60 overflow-hidden"
+                                  title="Open"
+                                >
+                                  <img
+                                    src={u}
+                                    alt="reference"
+                                    className="w-full aspect-[4/3] object-cover bg-black/5"
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className={`mt-1 text-[13px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                            {readableStatus ? `${fmtTime(msg.timestamp)} · ${readableStatus}` : fmtTime(msg.timestamp)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
-            </div>
-          </footer>
-        </section>
+              {sendError && <div className="px-4 pb-2 text-sm text-destructive">{sendError}</div>}
+              <footer className="p-2.5 md:p-3 border-t border-app">
+                <div className="flex items-stretch gap-2">
+                  <button
+                    type="button"
+                    onClick={openUpload}
+                    className="px-3 h-15 md:h-17 rounded-xl border border-app bg-elevated hover:bg-elevated/80 text-app text-sm"
+                    aria-label="Add images"
+                    title="Add images"
+                    disabled={needsApproval && !isClient}
+                  >
+                    + Image
+                  </button>
+                  <div className="flex-1 flex rounded-xl overflow-hidden border border-app bg-card">
+                    <input
+                      type="text"
+                      value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
+                      onChange={e =>
+                        activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
+                      }
+                      className="flex-1 p-3 md:p-3 bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
+                      placeholder={
+                        needsApproval && !isClient
+                          ? isArtist
+                            ? "Approve to enable messaging"
+                            : "Waiting for approval"
+                          : status === "declined" && !isClient
+                            ? "Messaging locked"
+                            : "Type a message"
+                      }
+                      disabled={needsApproval && !isClient}
+                      onKeyDown={e => {
+                        if (needsApproval && !isClient) return;
+                        if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => activeConv && (!needsApproval || isClient) && handleSend(activeConv.participantId)}
+                      disabled={needsApproval && !isClient}
+                      className="px-4 h-10 md:h-10 text-sm font-medium bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </footer>
+            </section>
+            <aside className="md:hidden rounded-xl border border-app bg-card overflow-x-auto">
+              <ul className="flex gap-2 p-2">
+                {conversations.map(c => {
+                  const isActive = c.participantId === activeConv?.participantId;
+                  return (
+                    <li key={c.participantId}>
+                      <button
+                        onClick={() => {
+                          if (expandedId !== c.participantId) setExpandedId(c.participantId);
+                          onMarkRead(c.participantId);
+                        }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"} border-app`}
+                      >
+                        {avatarFor(c)}
+                        <span className="text-xs">{displayNameFromUsername(c.username)}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </aside>
+          </div>
+        </div>
       </div>
       {typeof window !== "undefined" ? createPortal(modal, document.body) : null}
       {typeof window !== "undefined" ? createPortal(imageViewer, document.body) : null}

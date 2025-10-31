@@ -3,10 +3,10 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/header/Header";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
-import { X, Bot } from "lucide-react";
+import { X, Bot, ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import MessagesPanel from "@/components/dashboard/shared/messages/requestPanel";
+import ChatWindow from "@/components/dashboard/shared/ChatWindow";
 import ChatBot from "@/components/dashboard/shared/ChatBot";
 import { toast } from "react-toastify";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -16,6 +16,7 @@ import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
 import type { Artist as ArtistDto } from "@/api";
 import { AnimatePresence, motion } from "framer-motion";
+import Pagination from "@/components/dashboard/shared/Pagination";
 
 const ArtistsSection = lazy(() => import("@/components/dashboard/client/ArtistsSection"));
 const ArtistModal = lazy(() => import("@/components/dashboard/client/ArtistModal"));
@@ -28,7 +29,6 @@ export default function ClientDashboard() {
     const navigate = useNavigate();
     const warnedRef = useRef(false);
     const scopeRef = useRef<HTMLDivElement | null>(null);
-    const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
     const [scopeH, setScopeH] = useState(0);
 
     useEffect(() => {
@@ -75,6 +75,7 @@ export default function ClientDashboard() {
     }, [artists.length]);
 
     const totalPages = Math.max(1, Math.ceil((total || 0) / PAGE_SIZE));
+
     const handlePageChange = (next: number) => {
         if (next < 1 || next > totalPages) return;
         setPage(next);
@@ -94,7 +95,7 @@ export default function ClientDashboard() {
             bio: (selectedArtist as any).bio,
             pastWorks,
             healedWorks,
-            sketches
+            sketches,
         };
     }, [selectedArtist]);
 
@@ -119,48 +120,67 @@ export default function ClientDashboard() {
         <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
             <Header />
             <div ref={scopeRef} className="flex-1 min-h-0 flex flex-col">
-                <main className="flex-1 min-h-0 flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[max(env(safe-area-inset-bottom),1rem)]">
-                    <Card className="flex-1 min-h-0 rounded-2xl bg-card border border-app overflow-hidden">
-                        <CardContent className="p-0">
-                            <div className="flex-1 min-w-0 p-4">
-                                <Suspense
-                                    fallback={
-                                        <div className="space-y-4">
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                                {Array.from({ length: 8 }).map((_, i) => (
-                                                    <Skeleton key={i} className="h-48 w-full rounded-xl" />
-                                                ))}
+                <main className="min-h-0 flex flex-col h-[calc(100%-80px)] gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-[var(--fb-safe,0px)]">
+                    <Card className="flex-1 min-h-0 flex flex-col rounded-2xl bg-card border border-app overflow-hidden">
+                        <CardContent className="p-0 min-h-0 flex flex-col flex-1">
+                            <div className="flex-1 min-h-0 p-4 flex flex-col">
+                                <div className="flex-1 min-h-0 flex flex-col">
+                                    <Suspense
+                                        fallback={
+                                            <div className="flex-1 min-h-0 flex flex-col overflow-auto space-y-4">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                                    {Array.from({ length: 8 }).map((_, i) => (
+                                                        <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                                                    ))}
+                                                </div>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Skeleton className="h-8 w-20 rounded" />
+                                                    <Skeleton className="h-8 w-20 rounded" />
+                                                </div>
                                             </div>
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Skeleton className="h-8 w-20 rounded" />
-                                                <Skeleton className="h-8 w-20 rounded" />
+                                        }
+                                    >
+                                        <div className="flex-1 min-h-0 h-full flex flex-col justify-center">
+                                            <div className="flex-1 min-h-0 h-full flex">
+                                                <ArtistsSection
+                                                    artists={artists.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                                                    loading={loading}
+                                                    showArtists
+                                                    onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+                                                    page={page}
+                                                    totalPages={totalPages}
+                                                    onPageChange={handlePageChange}
+                                                />
                                             </div>
                                         </div>
-                                    }
-                                >
-                                    <ArtistsSection
-                                        artists={artists.map((a) => ({ ...a, username: displayNameFromUsername(a.username) }))}
-                                        loading={loading}
-                                        showArtists
-                                        onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
-                                        page={page}
-                                        totalPages={totalPages}
-                                        onPageChange={handlePageChange}
-                                    />
-                                </Suspense>
+
+                                    </Suspense>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
-                </main>
 
-                <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
+                    <div className="sm:hidden flex items-center justify-center gap-2 py-3 opacity-80">
+                        <ChevronDown size={18} />
+                        <span className="text-sm">Scroll to view more artists</span>
+                    </div>
+
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPrev={() => handlePageChange(page - 1)}
+                        onNext={() => handlePageChange(page + 1)}
+                    />
+                </main>
 
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
-                    portalTarget={portalEl}
-                    messagesContent={<MessagesPanel currentUserId={user.id} expandAllOnMount isArtist={false} />}
+                    messagesContent={
+                        <div style={{ height: 800 }}>
+                            <ChatWindow currentUserId={user.id} role="client" />
+                        </div>
+                    }
                     unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
                     unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
                     pendingRequestIds={pendingRequestIds}
@@ -188,7 +208,11 @@ export default function ClientDashboard() {
                                         <Bot size={16} />
                                         <span className="text-sm">Assistant</span>
                                     </div>
-                                    <button onClick={() => setAssistantOpen(false)} className="p-1.5 rounded-full hover:bg-elevated" aria-label="Close assistant">
+                                    <button
+                                        onClick={() => setAssistantOpen(false)}
+                                        className="p-1.5 rounded-full hover:bg-elevated"
+                                        aria-label="Close assistant"
+                                    >
                                         <X size={16} />
                                     </button>
                                 </div>
@@ -206,7 +230,7 @@ export default function ClientDashboard() {
                             open={Boolean(selectedArtist)}
                             artist={modalArtist}
                             onClose={() => setSelectedArtist(null)}
-                            onMessage={async (a) => {
+                            onMessage={async a => {
                                 window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
                             }}
                         />
@@ -214,22 +238,5 @@ export default function ClientDashboard() {
                 </Suspense>
             </div>
         </div>
-    );
-}
-
-function Pagination({ page, totalPages, onChange, disabled }: { page: number; totalPages: number; onChange: (p: number) => void; disabled?: boolean }) {
-    const canPrev = page > 1 && !disabled;
-    const canNext = page < totalPages && !disabled;
-    return (
-        <nav className="pt-2">
-            <div className="sm:hidden flex w-full items-center justify-between">
-                <button className="px-3 py-1 rounded border disabled:opacity-50" disabled={!canPrev} onClick={() => onChange(page - 1)} aria-label="Previous page">
-                    Prev
-                </button>
-                <button className="px-3 py-1 rounded border disabled:opacity-50" disabled={!canNext} onClick={() => onChange(page + 1)} aria-label="Next page">
-                    Next
-                </button>
-            </div>
-        </nav>
     );
 }

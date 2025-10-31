@@ -56,7 +56,6 @@ const Pagination: React.FC<Props> = ({
                 <span className="font-semibold">{totalPages}</span>
             </span>
 
-
             <button
                 type="button"
                 onClick={onNext}

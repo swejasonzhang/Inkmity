@@ -27,18 +27,16 @@ export function useTheme(scopeEl?: Element | null) {
 
   const applyToScope = (t: Theme) => {
     const el = resolveScope(scopeEl);
-    if (el) {
-      el.classList.add("ink-scope");
-      el.classList.add("ink-theming");
-      el.classList.toggle("ink-light", t === "light");
-      if (timer.current) window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(
-        () => el.classList.remove("ink-theming"),
-        THEME_MS
-      );
-      return true;
-    }
-    return false;
+    if (!el) return false;
+    el.classList.add("ink-scope");
+    el.classList.add("ink-theming");
+    el.classList.toggle("ink-light", t === "light");
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(
+      () => el.classList.remove("ink-theming"),
+      THEME_MS
+    );
+    return true;
   };
 
   useEffect(() => {
@@ -66,7 +64,7 @@ export function useTheme(scopeEl?: Element | null) {
         timer.current = null;
       }
     };
-  }, [theme]);
+  }, [theme, scopeEl]);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -92,7 +90,11 @@ export function useTheme(scopeEl?: Element | null) {
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
 
-  const themeClass = useMemo(() => "", []);
+  const themeClass = useMemo(
+    () => (theme === "light" ? "ink-scope ink-light" : "ink-scope"),
+    [theme]
+  );
+
   const logoSrc = useMemo(
     () =>
       theme === "light" ? "/assets/BlackLogo.png" : "/assets/WhiteLogo.png",

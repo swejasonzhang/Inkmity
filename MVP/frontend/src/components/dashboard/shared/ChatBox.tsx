@@ -1,7 +1,9 @@
+import { useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useTheme } from "@/hooks/useTheme";
 import { X, MessageSquare } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import RequestPanel from "@/components/dashboard/shared/messages/requestPanel";
+import ChatWindow from "./ChatWindow";
 
 type ChatBoxProps = {
   open: boolean;
@@ -11,14 +13,21 @@ type ChatBoxProps = {
 };
 
 export default function ChatBox({ open, onClose, currentUserId, isArtist = false }: ChatBoxProps) {
+  const PANEL_W = 320;
+  const CHAT_W = 720;
+  const HEIGHT = 1080;
+  const { themeClass } = useTheme();
+  const dims = useMemo(() => {
+    const width = isArtist ? CHAT_W + PANEL_W : CHAT_W;
+    return { width, height: HEIGHT };
+  }, [isArtist]);
   const panelVariants = {
     hidden: { height: 0, opacity: 0 },
-    visible: { height: 680, opacity: 1 },
-    exit: { height: 0, opacity: 0 },
+    visible: { height: "auto", opacity: 1 },
+    exit: { height: 0, opacity: 0 }
   };
-
   return (
-    <div className="fixed inset-0 pointer-events-none z-50">
+    <div className={`fixed inset-0 pointer-events-none z-50 ${themeClass}`}>
       <AnimatePresence>
         {open && (
           <motion.div
@@ -28,26 +37,31 @@ export default function ChatBox({ open, onClose, currentUserId, isArtist = false
             exit="exit"
             variants={panelVariants}
             transition={{ type: "spring", stiffness: 220, damping: 24 }}
-            className="pointer-events-auto fixed right-4 bottom-4 overflow-hidden"
-            style={{ width: "min(96vw, 720px)" }}
+            className="pointer-events-auto fixed right-2 md:right-4 bottom-2 md:bottom-4"
+            style={{ width: `${dims.width}px` }}
           >
-            <Card className="h-full bg-card border border-app shadow-2xl rounded-2xl flex flex-col">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-app">
-                <div className="flex items-center gap-2 font-semibold">
-                  <MessageSquare size={18} />
-                  <span>Messages</span>
+            <Card
+              className="bg-background text-app border border-app shadow-2xl rounded-2xl flex"
+              style={{ width: `${dims.width}px`, height: `${dims.height}px` }}
+            >
+              <div className="flex-1 min-w-0 flex flex-col">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <MessageSquare size={18} />
+                    <span>Messages</span>
+                  </div>
+                  <button onClick={onClose} className="p-2 rounded-full hover:bg-elevated" aria-label="Close messages">
+                    <X size={18} />
+                  </button>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-elevated" aria-label="Close messages">
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <RequestPanel currentUserId={currentUserId} isArtist={isArtist} expandAllOnMount />
+                <div className="flex-1 overflow-hidden bg-card">
+                  <ChatWindow currentUserId={currentUserId} isArtist={isArtist} />
+                </div>
               </div>
             </Card>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 }
