@@ -78,7 +78,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
   const loc = artist.location?.trim() || "";
 
   return (
-    <div className="group w-full h-full min-h-[620px] overflow-hidden rounded-3xl border bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75 shadow-xl transition hover:-translate-y-0.5 hover:shadow-2xl focus-within:ring-1 focus-within:ring-[color:var(--fg)]/20" style={{ borderColor: "var(--border)" }}>
+    <div className="group w-full h-1200 flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition hover:-translate-y-0.5 hover:shadow-1xl" style={{ borderColor: "var(--border)" }}>
       <div className="relative w-full overflow-hidden">
         <div className="relative w-full h-52 sm:h-64 md:h-72" style={{ background: "var(--elevated)" }}>
           {bgOk && artist.coverImage ? (

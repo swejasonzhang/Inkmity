@@ -31,7 +31,6 @@ type BookingProps = {
 };
 
 const ArtistBooking = ArtistBookingComponent as React.ComponentType<BookingProps>;
-const THEME_CLASSES = ["dashboard-theme", "ink-light"];
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
@@ -81,12 +80,10 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       el.style.inset = "0";
       el.style.zIndex = "1200";
       el.style.isolation = "isolate";
-      const themedAncestor = document.querySelector(".dashboard-theme");
-      if (themedAncestor) {
-        THEME_CLASSES.forEach((c) => {
-          if (themedAncestor.classList.contains(c)) el.classList.add(c);
-        });
-      }
+      el.classList.add("ink-scope");
+      const themedAncestor = document.querySelector(".ink-scope");
+      const isLight = themedAncestor?.classList.contains("ink-light");
+      if (isLight) el.classList.add("ink-light");
       portalRef.current = el;
       document.body.appendChild(el);
     }
@@ -195,7 +192,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             </button>
             <Separator className="mt-4 w-full" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
           </div>
-
           <div className="w-full max-w-[1200px] mx-auto">
             {step === 0 && (
               <ArtistPortfolio
