@@ -260,94 +260,65 @@ export default function ArtistsSection({
     };
 
     return (
-        <div className="flex flex-col grow basis-0 min-h-0 h-full w-full">
-            <div className="bg-card px-3 rounded-lg sticky top-0 z-10 w-full transition-opacity duration-300">
+        <div className="flex flex-col flex-1 min-h-0 h-full w-full">
+            <div className="sticky top-0 z-10 w-full bg-card px-3">
                 <ArtistFilter
                     priceFilter={priceFilter}
-                    setPriceFilter={v => {
-                        setPriceFilter(v);
-                        setCurrentPage(1);
-                    }}
+                    setPriceFilter={v => { setPriceFilter(v); setCurrentPage(1); }}
                     locationFilter={locationFilter}
-                    setLocationFilter={v => {
-                        setLocationFilter(v);
-                        setCurrentPage(1);
-                    }}
+                    setLocationFilter={v => { setLocationFilter(v); setCurrentPage(1); }}
                     styleFilter={styleFilter}
-                    setStyleFilter={v => {
-                        setStyleFilter(v);
-                        setCurrentPage(1);
-                    }}
+                    setStyleFilter={v => { setStyleFilter(v); setCurrentPage(1); }}
                     availabilityFilter={availabilityFilter}
-                    setAvailabilityFilter={v => {
-                        setAvailabilityFilter(v);
-                        setCurrentPage(1);
-                    }}
+                    setAvailabilityFilter={v => { setAvailabilityFilter(v); setCurrentPage(1); }}
                     experienceFilter={experienceFilter}
-                    setExperienceFilter={v => {
-                        setExperienceFilter(v);
-                        setCurrentPage(1);
-                    }}
+                    setExperienceFilter={v => { setExperienceFilter(v); setCurrentPage(1); }}
                     bookingFilter={bookingFilter}
-                    setBookingFilter={v => {
-                        setBookingFilter(v);
-                        setCurrentPage(1);
-                    }}
+                    setBookingFilter={v => { setBookingFilter(v); setCurrentPage(1); }}
                     travelFilter={travelFilter}
-                    setTravelFilter={v => {
-                        setTravelFilter(v);
-                        setCurrentPage(1);
-                    }}
+                    setTravelFilter={v => { setTravelFilter(v); setCurrentPage(1); }}
                     sort={sort}
-                    setSort={v => {
-                        setSort(v);
-                        setCurrentPage(1);
-                    }}
+                    setSort={v => { setSort(v); setCurrentPage(1); }}
                     artists={artists}
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
+                    className="shrink-0"
                 />
             </div>
 
-            <div className="relative flex-1 min-h-0 h-full flex flex-col justify-center">
+            <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
                 {isCenterLoading && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center">
+                    <div className="absolute inset-0 z-10 grid place-items-center">
                         <CircularProgress sx={{ color: "var(--fg)" }} />
                     </div>
                 )}
 
-                <div className={`${isCenterLoading ? "opacity-0 pointer-events-none" : "opacity-100"} flex-1 min-h-0 h-full flex`}>
-                    <div className="flex-1 min-h-0 h-full flex flex-col justify-center" onPointerDownCapture={handleGridPointerDown}>
-                        <div className="w-full flex-1 h-full px-0 pt-3 pb-2 min-h-0 flex items-center">
-                            <div className="w-full">
-                                {listItems.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-stretch auto-rows-[minmax(0,1fr)] gap-6 md:gap-5">
-                                        {listItems.map((artist, index) => (
-                                            <motion.div
-                                                key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="h-full flex"
-                                            >
-                                                <div className="h-full w-full flex" data-artist-card="true">
-                                                    <ArtistCard
-                                                        artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any}
-                                                        onClick={() => onSelectArtist(artist)}
-                                                    />
-                                                </div>
-                                            </motion.div>
-                                        ))}
+                <div className={`min-h-full ${isCenterLoading ? "opacity-0 pointer-events-none" : ""}`}>
+                    {listItems.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-5 p-3">
+                            {listItems.map((artist, index) => (
+                                <motion.div
+                                    key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="h-full flex"
+                                >
+                                    <div className="h-full w-full flex" data-artist-card="true">
+                                        <ArtistCard
+                                            artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any}
+                                            onClick={() => onSelectArtist(artist)}
+                                        />
                                     </div>
-                                ) : (
-                                    <div className="min-h-[240px] grid place-items-center py-8">
-                                        <p className="text-muted text-center">No artists match your filters.</p>
-                                    </div>
-                                )}
-                            </div>
+                                </motion.div>
+                            ))}
                         </div>
-                    </div>
+                    ) : (
+                        <div className="min-h-[240px] grid place-items-center p-6">
+                            <p className="text-muted text-center">No artists match your filters.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

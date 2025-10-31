@@ -60,9 +60,12 @@ export async function apiRequest<T = any>(
 
   if (!res.ok) {
     const body = parsed ?? (text ? { message: text } : undefined);
-    const err = new Error(
-      (body as any)?.message || res.statusText || "Request failed"
-    );
+    const message =
+      (body as any)?.message ||
+      (body as any)?.error ||
+      res.statusText ||
+      "Request failed";
+    const err = new Error(message);
     (err as any).status = res.status;
     (err as any).body = body;
     (err as any).url = url;

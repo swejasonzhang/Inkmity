@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import ArtistPortfolio, { ArtistWithGroups } from "./ArtistPortfolio";
-import ArtistBookingComponent from "./ArtistBooking";
+import ArtistBooking from "./ArtistBooking";
 import ArtistReviews from "./ArtistReviews";
 
 declare global {
@@ -22,17 +22,13 @@ type Props = {
   initialStep?: 0 | 1 | 2;
 };
 
-type BookingProps = {
-  artist: ArtistWithGroups;
-  onMessage: (artist: ArtistWithGroups, preloadedMessage: string) => void;
-  onBack?: () => void;
-  onClose?: () => void;
-  onGoToStep?: (step: 0 | 1 | 2) => void;
-};
-
-const ArtistBooking = ArtistBookingComponent as React.ComponentType<BookingProps>;
-
-const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
+const ArtistModal: React.FC<Props> = ({
+  open,
+  onClose,
+  artist,
+  onMessage,
+  initialStep = 0,
+}) => {
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
   const portalRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -197,23 +193,50 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
               <ArtistPortfolio
                 artist={artist}
                 onNext={() => setStep(1)}
-                onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
+                onGoToStep={(s: 0 | 1 | 2) => setStep(s)}
                 onClose={closeNow}
               />
             )}
             {step === 1 && (
-              <ArtistBooking
-                artist={artist}
-                onMessage={onMessage}
-                onBack={() => setStep(0)}
-                onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
-                onClose={closeNow}
-              />
+              <div className="px-6 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    onClick={() => setStep(0)}
+                    className="text-sm underline underline-offset-2"
+                    style={{ color: "var(--fg)" }}
+                  >
+                    Back
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onMessage(artist, "")}
+                      className="text-sm underline underline-offset-2"
+                      style={{ color: "var(--fg)" }}
+                    >
+                      Message
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="text-sm underline underline-offset-2"
+                      style={{ color: "var(--fg)" }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+                <ArtistBooking
+                  artist={artist}
+                  onBack={() => setStep(0)}
+                  onClose={onClose}
+                  onGoToStep={(s) => setStep(s)}
+                  onMessage={onMessage}
+                />
+              </div>
             )}
             {step === 2 && (
               <ArtistReviews
                 artist={artist}
-                onGoToStep={(s) => setStep(s as 0 | 1 | 2)}
+                onGoToStep={(s: 0 | 1 | 2) => setStep(s)}
                 onClose={closeNow}
               />
             )}

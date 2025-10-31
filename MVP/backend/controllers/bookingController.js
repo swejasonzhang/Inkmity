@@ -1,8 +1,21 @@
 import Booking from "../models/Booking.js";
 import ArtistPolicy from "../models/ArtistPolicy.js";
 import Message from "../models/Message.js";
+import Availability from "../models/Availability.js";
 import { dayBoundsUTC } from "../utils/date.js";
 import { refundBilling } from "./billingController.js";
+import { DateTime, Interval } from "luxon";
+
+const DEFAULT_TIMEZONE = "America/New_York";
+const DEFAULT_SLOT_MINUTES = 60;
+const DEFAULT_OPEN_RANGES = [{ start: "10:00", end: "22:00" }];
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function getActorId(req) {
+  return String(
+    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
+  ).trim();
+}
 
 function genCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -30,6 +43,24 @@ function isRefundEligible(startAtISO, now = new Date()) {
   return diffHours >= 0 && diffHours < 72;
 }
 
+function parseHmToMinutes(hm) {
+  const [h, m] = String(hm).split(":").map(Number);
+  return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+}
+
+function buildDayIntervals({ dateISO, tz, ranges }) {
+  const day = DateTime.fromISO(dateISO, { zone: tz }).startOf("day");
+  const out = [];
+  for (const r of ranges) {
+    const startMin = parseHmToMinutes(r.start);
+    const endMin = parseHmToMinutes(r.end);
+    const start = day.plus({ minutes: startMin });
+    const end = day.plus({ minutes: endMin });
+    if (end > start) out.push(Interval.fromDateTimes(start, end));
+  }
+  return out;
+}
+
 export async function getBookingsForDay(req, res) {
   const { artistId, date } = req.query;
   if (!artistId || !date)
@@ -52,20 +83,40 @@ export async function getBooking(req, res) {
 
 export async function createBooking(req, res) {
   try {
-    const userId = req.user?._id || req.user?.id;
-    const { artistId, startISO, endISO, note, serviceId, priceCents } =
-      req.body || {};
+    const userId = getActorId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    if (!artistId || !startISO || !endISO)
-      return res
-        .status(400)
-        .json({ error: "artistId, startISO, endISO required" });
+    const body = req.body || {};
+    const artistId = String(body.artistId || "").trim();
+    const startISO = String(body.startISO || "").trim();
+    const endISO = body.endISO ? String(body.endISO).trim() : "";
+    const note = body.note ?? "";
+    const serviceId = body.serviceId ?? null;
+    const priceCents = Math.max(0, Number(body.priceCents || 0));
+    if (!artistId || !startISO) {
+      return res.status(400).json({ error: "artistId and startISO required" });
+    }
     const startAt = new Date(startISO);
-    const endAt = new Date(endISO);
-    if (isNaN(startAt) || isNaN(endAt))
+    let endAt = endISO ? new Date(endISO) : null;
+    if (Number.isNaN(startAt.getTime())) {
       return res.status(400).json({ error: "Invalid dates" });
-    if (endAt <= startAt)
+    }
+    if (!endAt) {
+      const av = (await Availability.findOne({ artistId })) || {
+        slotMinutes: DEFAULT_SLOT_MINUTES,
+        timezone: DEFAULT_TIMEZONE,
+      };
+      const minutes = Math.max(
+        5,
+        Math.min(480, Number(av.slotMinutes || DEFAULT_SLOT_MINUTES))
+      );
+      const tz = av.timezone || DEFAULT_TIMEZONE;
+      endAt = new Date(
+        DateTime.fromJSDate(startAt, { zone: tz }).plus({ minutes }).toISO()
+      );
+    }
+    if (Number.isNaN(endAt.getTime()) || endAt <= startAt) {
       return res.status(400).json({ error: "end must be after start" });
+    }
     const conflict = await Booking.findOne({
       artistId,
       startAt: { $lt: endAt },
@@ -73,31 +124,55 @@ export async function createBooking(req, res) {
       status: { $in: ["booked", "matched", "completed"] },
     });
     if (conflict) return res.status(409).json({ error: "Slot already booked" });
-    const policy = (await ArtistPolicy.findOne({ artistId })) || undefined;
-    const depositRequiredCents = computeDepositCents(policy, priceCents);
-    const created = await Booking.create({
-      artistId,
-      clientId: String(userId),
-      serviceId,
-      startAt,
-      endAt,
-      note,
-      status: "booked",
-      priceCents: Math.max(0, Number(priceCents || 0)),
-      depositRequiredCents,
-      depositPaidCents: 0,
-      clientCode: genCode(),
-      artistCode: genCode(),
-      codeIssuedAt: null,
-      codeExpiresAt: null,
-      clientVerifiedAt: null,
-      artistVerifiedAt: null,
-      matchedAt: null,
-      completedAt: null,
-    });
-    res.status(201).json(created);
+    let depositRequiredCents = 0;
+    try {
+      const policy = await ArtistPolicy.findOne({ artistId });
+      depositRequiredCents = computeDepositCents(policy, priceCents);
+    } catch {
+      return res.status(400).json({ error: "Invalid artist policy" });
+    }
+    let created;
+    try {
+      created = await Booking.create({
+        artistId,
+        clientId: String(userId),
+        serviceId,
+        startAt,
+        endAt,
+        note,
+        status: "booked",
+        priceCents,
+        depositRequiredCents,
+        depositPaidCents: 0,
+        clientCode: genCode(),
+        artistCode: genCode(),
+        codeIssuedAt: null,
+        codeExpiresAt: null,
+        clientVerifiedAt: null,
+        artistVerifiedAt: null,
+        matchedAt: null,
+        completedAt: null,
+      });
+    } catch (e) {
+      if (e?.name === "ValidationError") {
+        return res.status(400).json({
+          error: "validation_error",
+          details: Object.fromEntries(
+            Object.entries(e.errors || {}).map(([k, v]) => [
+              k,
+              v?.message || "invalid",
+            ])
+          ),
+        });
+      }
+      return res.status(400).json({
+        error: "create_failed",
+        message: e?.message || "Invalid payload",
+      });
+    }
+    return res.status(201).json(created);
   } catch {
-    res.status(500).json({ error: "Failed to create booking" });
+    return res.status(500).json({ error: "Failed to create booking" });
   }
 }
 
@@ -234,5 +309,83 @@ export async function verifyBookingCode(req, res) {
     res.json(doc);
   } catch {
     res.status(500).json({ error: "verify_failed" });
+  }
+}
+
+export async function updateBookingTime(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+    const { id } = req.params;
+    const { startISO, endISO } = req.body || {};
+    if (!startISO || !endISO)
+      return res.status(400).json({ error: "startISO and endISO required" });
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+    if (String(booking.artistId) !== actorId)
+      return res.status(403).json({ error: "Only the artist can adjust time" });
+    if (booking.status === "cancelled")
+      return res.status(400).json({ error: "booking_cancelled" });
+    const av = (await Availability.findOne({ artistId: booking.artistId })) || {
+      timezone: DEFAULT_TIMEZONE,
+      weekly: {
+        sun: DEFAULT_OPEN_RANGES,
+        mon: DEFAULT_OPEN_RANGES,
+        tue: DEFAULT_OPEN_RANGES,
+        wed: DEFAULT_OPEN_RANGES,
+        thu: DEFAULT_OPEN_RANGES,
+        fri: DEFAULT_OPEN_RANGES,
+        sat: DEFAULT_OPEN_RANGES,
+      },
+      exceptions: {},
+    };
+    const tz = av.timezone || DEFAULT_TIMEZONE;
+    const startAt = new Date(startISO);
+    const endAt = new Date(endISO);
+    if (
+      Number.isNaN(startAt.getTime()) ||
+      Number.isNaN(endAt.getTime()) ||
+      endAt <= startAt
+    )
+      return res.status(400).json({ error: "Invalid dates" });
+    const dayStr = DateTime.fromJSDate(startAt, { zone: tz }).toISODate();
+    const weekdayKey =
+      WEEKDAY_KEYS[DateTime.fromISO(dayStr, { zone: tz }).weekday % 7];
+    const ranges =
+      (av.exceptions?.[dayStr]?.length
+        ? av.exceptions[dayStr]
+        : av.weekly?.[weekdayKey]) || DEFAULT_OPEN_RANGES;
+    const dayIntervals = buildDayIntervals({ dateISO: dayStr, tz, ranges });
+    const proposed = Interval.fromDateTimes(
+      DateTime.fromJSDate(startAt, { zone: tz }),
+      DateTime.fromJSDate(endAt, { zone: tz })
+    );
+    const withinAvail = dayIntervals.some(
+      (iv) => proposed.start >= iv.start && proposed.end <= iv.end
+    );
+    if (!withinAvail)
+      return res.status(409).json({ error: "outside_availability" });
+    const conflict = await Booking.findOne({
+      _id: { $ne: booking._id },
+      artistId: booking.artistId,
+      startAt: { $lt: endAt },
+      endAt: { $gt: startAt },
+      status: { $in: ["booked", "matched", "completed"] },
+    });
+    if (conflict) return res.status(409).json({ error: "conflict" });
+    booking.startAt = startAt;
+    booking.endAt = endAt;
+    await booking.save();
+    try {
+      await Message.create({
+        senderId: String(booking.artistId),
+        receiverId: String(booking.clientId),
+        text: "Booking time updated",
+        meta: { kind: "booking_time_updated", bookingId: String(booking._id) },
+      });
+    } catch {}
+    return res.json(booking);
+  } catch {
+    return res.status(500).json({ error: "update_time_failed" });
   }
 }
