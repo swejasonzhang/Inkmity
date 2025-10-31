@@ -60,7 +60,7 @@ export default function ArtistDashboard() {
                   {isArtist ? "Bookings Calendar" : "Read-only Calendar"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
+              <CardContent className="p-0 flex-1 min-h-0">
                 <Suspense
                   fallback={
                     <div className="p-4 space-y-3">
@@ -83,7 +83,7 @@ export default function ArtistDashboard() {
               <CardHeader className="px-4 py-5 border-b border-app">
                 <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Analytics</CardTitle>
               </CardHeader>
-              <CardContent className="p-4 flex-1 min-h-0 overflow-y-auto">
+              <CardContent className="p-4 flex-1 min-h-0">
                 <Suspense
                   fallback={
                     <div className="space-y-3">
@@ -139,7 +139,7 @@ export default function ArtistDashboard() {
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 text-sm opacity-80">Assistant panel</div>
+            <div className="flex-1 min-h-0 p-4 text-sm opacity-80">Assistant panel</div>
           </div>
         </div>
       </div>

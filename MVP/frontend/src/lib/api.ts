@@ -24,6 +24,14 @@ async function withAuthHeaders(
   };
 }
 
+function safeParse(s: string) {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return undefined;
+  }
+}
+
 export async function apiRequest<T = any>(
   path: string,
   init: RequestInit = {},
@@ -40,21 +48,38 @@ export async function apiRequest<T = any>(
     res = await fetch(url, req);
   } catch (e) {
     if (isAbortError(e)) throw e;
+    console.error("[apiRequest] fetch failed", { url, init: req, error: e });
     throw e;
   }
 
   const text = await res.text().catch(() => "");
   const ct = res.headers.get("content-type") || "";
+  const requestId = res.headers.get("x-request-id") || undefined;
+  const headersObj = Object.fromEntries([...res.headers.entries()]);
+  const parsed = ct.includes("application/json") ? safeParse(text) : undefined;
 
   if (!res.ok) {
-    const err = new Error(text || res.statusText);
+    const body = parsed ?? (text ? { message: text } : undefined);
+    const err = new Error(
+      (body as any)?.message || res.statusText || "Request failed"
+    );
     (err as any).status = res.status;
+    (err as any).body = body;
+    (err as any).url = url;
+    (err as any).headers = headersObj;
+    (err as any).requestId = requestId;
+    console.error("[apiRequest] http error", {
+      url,
+      status: res.status,
+      body,
+      headers: headersObj,
+      requestId,
+    });
     throw err;
   }
 
-  return ct.includes("application/json")
-    ? (JSON.parse(text) as T)
-    : (text as unknown as T);
+  if (parsed !== undefined) return parsed as T;
+  return text as unknown as T;
 }
 
 export async function apiGet<T = any>(

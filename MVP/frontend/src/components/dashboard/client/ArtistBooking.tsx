@@ -69,7 +69,9 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
             setStatus("sent");
           }
         }
-      } catch { }
+      } catch (e) {
+        console.error("[ArtistBooking] gate fetch failed", { artistId: artist?.clerkId, error: e });
+      }
 
       try {
         const me: any = await request(`${apiOrigin}/users/me`, {
@@ -85,7 +87,9 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         setBudgetRange({ min, max });
         setPlacement(me?.placement || undefined);
         setSize(me?.size || undefined);
-      } catch { }
+      } catch (e) {
+        console.error("[ArtistBooking] /users/me fetch failed", e);
+      }
     })();
 
     return () => ac.abort();
@@ -97,8 +101,10 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       try {
         const me = await getMe();
         if (!mounted) return;
-        console.log(me)
-      } catch { }
+        console.log("[ArtistBooking] getMe()", me);
+      } catch (e) {
+        console.error("[ArtistBooking] getMe() failed", e);
+      }
     })();
     return () => {
       mounted = false;
@@ -107,7 +113,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
 
   useEffect(() => {
     const handler = (e: CustomEvent<{ artistId: string; username: string }>) => {
-     console.log(e.detail.artistId)
+      console.log("[ArtistBooking] ink:open-booking", e.detail.artistId);
     };
     window.addEventListener("ink:open-booking", handler as EventListener);
     return () => window.removeEventListener("ink:open-booking", handler as EventListener);
@@ -196,17 +202,20 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     if (!artist.clerkId) {
       setStatus("error");
       setErrorMsg("Artist clerkId missing.");
+      console.error("[ArtistBooking] Missing artist.clerkId");
       return;
     }
     if (!artist.username) {
       setStatus("error");
       setErrorMsg("Artist username missing.");
+      console.error("[ArtistBooking] Missing artist.username");
       return;
     }
     const preMsg = preloadedMessage.trim();
     if (!preMsg) {
       setStatus("error");
       setErrorMsg("Message is empty.");
+      console.error("[ArtistBooking] Preloaded message empty");
       return;
     }
 
@@ -239,11 +248,13 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         }
       };
 
+      console.log("[ArtistBooking] Sending request payload", payload);
       const res: any = await request(`${apiOrigin}/messages/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload)
       });
+      console.log("[ArtistBooking] Request response", res);
 
       const ok = typeof res?.ok === "boolean" ? res.ok : true;
       if (!ok) throw Object.assign(new Error(res?.error || `HTTP ${res?.status || 500}`), { status: res?.status, body: res });
@@ -260,9 +271,13 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       try {
         if (!body && err?.response) body = await err.response.json();
       } catch { }
+
+      console.error("[ArtistBooking] Send request failed", { statusCode, body, error: err });
+
       const msg = mapError(statusCode, body);
 
       if (statusCode === 409 && /already_pending/i.test(body?.error || "")) {
+        console.log("[ArtistBooking] already_pending, treating as sent");
         sentRef.current = true;
         setStatus("sent");
         setGate(g => ({ ...(g || { allowed: false, declines: 0, blocked: false, lastStatus: "pending" }), lastStatus: "pending" }));
@@ -273,6 +288,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
       }
 
       if (statusCode === 409 && /already_accepted/i.test(body?.error || "")) {
+        console.log("[ArtistBooking] already_accepted, opening messages");
         setStatus("idle");
         setGate(g => ({ ...(g || { allowed: true, declines: 0, blocked: false, lastStatus: "accepted" }) }));
         openMessages();

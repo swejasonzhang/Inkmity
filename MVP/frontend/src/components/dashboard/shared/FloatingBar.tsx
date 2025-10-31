@@ -192,7 +192,7 @@ export default function FloatingBar({
   const pad = {
     left: isMdUp ? "calc(1.85rem + 10px + env(safe-area-inset-left, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-left, 0px))",
     right: isMdUp ? "calc(1.85rem + 10px + env(safe-area-inset-right, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-right, 0px))",
-    bottom: `calc(max(${vvBottom}px, 10px) + env(safe-area-inset-bottom, 0px))`,
+    bottom: `calc(max(${vvBottom}px, 50px) + env(safe-area-inset-bottom, 0px))`,
   };
 
   const btnCommon =
