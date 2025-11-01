@@ -1,9 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Brush, CircleDollarSign, CalendarDays, X } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Brush,
+  CircleDollarSign,
+  CalendarDays,
+} from "lucide-react";
 import clsx from "clsx";
 
 interface Artist {
@@ -104,12 +114,24 @@ const SORT_OPTIONS = [
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
 
-const getExperienceCategory = (value: string | undefined): "all" | "amateur" | "experienced" | "professional" | "veteran" | undefined => {
+const getExperienceCategory = (
+  value: string | undefined
+):
+  | "all"
+  | "amateur"
+  | "experienced"
+  | "professional"
+  | "veteran"
+  | undefined => {
   if (!value) return undefined;
   const raw = value.toString().trim().toLowerCase();
   if (raw === "all") return "all";
-  if (["amateur", "experienced", "professional", "veteran"].includes(raw)) return raw as any;
-  const cleaned = raw.replace(/\s+/g, "").replace(/years?|yrs?|yoe|exp/g, "").replace(/\u2013|\u2014/g, "-");
+  if (["amateur", "experienced", "professional", "veteran"].includes(raw))
+    return raw as any;
+  const cleaned = raw
+    .replace(/\s+/g, "")
+    .replace(/years?|yrs?|yoe|exp/g, "")
+    .replace(/\u2013|\u2014/g, "-");
   if (/amateur/.test(raw)) return "amateur";
   if (/experienced/.test(raw)) return "experienced";
   if (/professional/.test(raw)) return "professional";
@@ -201,7 +223,8 @@ const ArtistFilter: React.FC<Props> = ({
         if (p.locationFilter) setLocationFilter(p.locationFilter);
         if (p.styleFilter) setStyleFilter(p.styleFilter);
         if (p.availabilityFilter) setAvailabilityFilter(p.availabilityFilter);
-        if (p.experienceFilter) setExperienceFilter(getExperienceCategory(p.experienceFilter) ?? "all");
+        if (p.experienceFilter)
+          setExperienceFilter(getExperienceCategory(p.experienceFilter) ?? "all");
         if (p.bookingFilter) setBookingFilter(p.bookingFilter);
         if (p.travelFilter) setTravelFilter(p.travelFilter);
         if (p.sort) setSort(p.sort);
@@ -218,36 +241,116 @@ const ArtistFilter: React.FC<Props> = ({
       setSort("highest_rated");
     }
     hydratedRef.current = true;
-  }, [setAvailabilityFilter, setCurrentPage, setExperienceFilter, setLocationFilter, setPriceFilter, setSearchQuery, setSort, setStyleFilter, setBookingFilter, setTravelFilter]);
+  }, [
+    setAvailabilityFilter,
+    setCurrentPage,
+    setExperienceFilter,
+    setLocationFilter,
+    setPriceFilter,
+    setSearchQuery,
+    setSort,
+    setStyleFilter,
+    setBookingFilter,
+    setTravelFilter,
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const payload = { priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery };
+    const payload = {
+      priceFilter,
+      locationFilter,
+      styleFilter,
+      availabilityFilter,
+      experienceFilter,
+      bookingFilter,
+      travelFilter,
+      sort,
+      searchQuery,
+    };
     try {
       localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
     } catch { }
-  }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
+  }, [
+    priceFilter,
+    locationFilter,
+    styleFilter,
+    availabilityFilter,
+    experienceFilter,
+    bookingFilter,
+    travelFilter,
+    sort,
+    searchQuery,
+  ]);
 
-  const isDirty = useMemo(
-    () =>
-      !!(
-        localSearch.trim() ||
-        (priceFilter && priceFilter !== "all") ||
-        (locationFilter && locationFilter !== "all") ||
-        (styleFilter && styleFilter !== "all") ||
-        (availabilityFilter && availabilityFilter !== "all") ||
-        (experienceFilter && experienceFilter !== "all") ||
-        (bookingFilter && bookingFilter !== "all") ||
-        (travelFilter && travelFilter !== "all") ||
-        (sort && sort !== "highest_rated")
-      ),
-    [localSearch, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]
-  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const scope =
+      (document.getElementById("ink-root") ||
+        document.querySelector<HTMLElement>(".ink-scope")) ??
+      document.documentElement;
+    const root = document.documentElement;
+
+    const vars = [
+      "--background",
+      "--foreground",
+      "--card",
+      "--card-h",
+      "--card-foreground",
+      "--popover",
+      "--popover-foreground",
+      "--primary",
+      "--primary-foreground",
+      "--secondary",
+      "--secondary-foreground",
+      "--muted",
+      "--muted2",
+      "--muted-foreground",
+      "--accent",
+      "--accent-h",
+      "--accent-foreground",
+      "--border",
+      "--border-h",
+      "--input",
+      "--ring",
+      "--bg",
+      "--fg",
+      "--subtle",
+      "--elevated",
+    ];
+
+    const apply = () => {
+      const cs = getComputedStyle(scope);
+      vars.forEach((v) => {
+        const val = cs.getPropertyValue(v);
+        if (val) root.style.setProperty(v, val);
+      });
+      root.setAttribute("data-ink-theme-ts", String(Date.now()));
+    };
+
+    apply();
+
+    const mo = new MutationObserver(apply);
+    mo.observe(scope, { attributes: true, attributeFilter: ["class", "style"] });
+
+    const mql = window.matchMedia?.("(prefers-color-scheme: dark)");
+    const onScheme = () => apply();
+    mql?.addEventListener?.("change", onScheme);
+
+    window.addEventListener("storage", apply);
+
+    return () => {
+      mo.disconnect();
+      mql?.removeEventListener?.("change", onScheme);
+      window.removeEventListener("storage", apply);
+    };
+  }, []);
 
   const triggerBase =
     "h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
-  const contentBase = "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none";
-  const itemCentered = "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
+  const contentBase =
+    "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
+  const itemCentered =
+    "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
   const FILTER_W = "w-full sm:w-[260px] sm:shrink-0";
   const SEARCH_W = "w-full sm:flex-1 sm:min-w-[320px]";
 
@@ -261,18 +364,27 @@ const ArtistFilter: React.FC<Props> = ({
       role="region"
       aria-label="Artist filters"
     >
-      <div className="w-full mx-auto flex items-center">
-        <div className="w-full overflow-x-auto p-2 sm:p-3">
-          <div className="flex w-full flex-col sm:flex-row sm:flex-nowrap items-center justify-center gap-1 sm:gap-3">
-            <div className={clsx("relative", SEARCH_W, "sm:mr-2")}>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 sm:size-5 text-muted-foreground" aria-hidden />
+      <div className="w-full mx-auto">
+        <div className="p-2 sm:p-3">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3 w-full">
+            <div
+              className={clsx(
+                "relative col-span-3 sm:col-span-1",
+                SEARCH_W,
+                "sm:mr-2"
+              )}
+            >
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 size-4 sm:size-5 text-muted-foreground"
+                aria-hidden
+              />
               <Input
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
-                placeholder="Search artists or tattoos (e.g., dragon, koi, portrait)"
+                placeholder="Search"
                 aria-label="Search artists or tattoo subjects"
                 className={clsx(
-                  "pl-8 pr-8 sm:pl-10 sm:pr-10",
+                  "pl-10 pr-10 sm:pl-12 sm:pr-12",
                   "h-[34px] sm:h-[39px] w-full bg-elevated border-app text-app rounded-lg",
                   "text-xs sm:text-sm placeholder:text-muted-foreground",
                   "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app/80",
@@ -283,16 +395,107 @@ const ArtistFilter: React.FC<Props> = ({
               />
             </div>
 
-            <div className={clsx("relative", FILTER_W)}>
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                <CircleDollarSign className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+                <CircleDollarSign
+                  className="size-4 sm:size-5 text-muted-foreground"
+                  aria-hidden
+                />
               </div>
-              <Select value={priceFilter} onValueChange={(value) => { setPriceFilter(value); setCurrentPage(1); }}>
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-8 sm:pl-10")}>
+              <Select
+                value={priceFilter}
+                onValueChange={(value) => {
+                  setPriceFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
                   <SelectValue placeholder="All Prices" />
                 </SelectTrigger>
-                <SelectContent className={contentBase}>
+                <SelectContent className={contentBase} position="popper" align="start">
                   {PRICE_OPTIONS.map((opt) => (
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      className={itemCentered}
+                    >
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+                <MapPin className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
+              </div>
+              <Select
+                value={locationFilter}
+                onValueChange={(value) => {
+                  setLocationFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
+                  <SelectValue placeholder="All Locations" />
+                </SelectTrigger>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
+                  <SelectItem value="all" className={itemCentered}>
+                    All Locations
+                  </SelectItem>
+                  {uniqueLocations.map((loc) => (
+                    <SelectItem key={loc} value={loc} className={itemCentered}>
+                      {loc}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+                <Brush className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
+              </div>
+              <Select
+                value={styleFilter}
+                onValueChange={(value) => {
+                  setStyleFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
+                  <SelectValue placeholder="All Styles" />
+                </SelectTrigger>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
+                  <SelectItem value="all" className={itemCentered}>
+                    All Styles
+                  </SelectItem>
+                  {uniqueStyles.map((style) => (
+                    <SelectItem key={style} value={style} className={itemCentered}>
+                      {style}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+                <CalendarDays className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
+              </div>
+              <Select
+                value={availabilityFilter}
+                onValueChange={(v) => {
+                  setAvailabilityFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
+                  <SelectValue placeholder="Availability" />
+                </SelectTrigger>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
+                  {AVAILABILITY_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
                       {opt.label}
                     </SelectItem>
@@ -301,103 +504,85 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative", FILTER_W)}>
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                <MapPin className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
-              </div>
-              <Select value={locationFilter} onValueChange={(value) => { setLocationFilter(value); setCurrentPage(1); }}>
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-8 sm:pl-10")}>
-                  <SelectValue placeholder="All Locations" />
-                </SelectTrigger>
-                <SelectContent className={clsx(contentBase, "max-h-64 overflow-y-auto")}>
-                  <SelectItem value="all" className={itemCentered}>All Locations</SelectItem>
-                  {uniqueLocations.map((loc) => (
-                    <SelectItem key={loc} value={loc} className={itemCentered}>{loc}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={clsx("relative", FILTER_W)}>
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                <Brush className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
-              </div>
-              <Select value={styleFilter} onValueChange={(value) => { setStyleFilter(value); setCurrentPage(1); }}>
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-8 sm:pl-10")}>
-                  <SelectValue placeholder="All Styles" />
-                </SelectTrigger>
-                <SelectContent className={clsx(contentBase, "max-h-64 overflow-y-auto")}>
-                  <SelectItem value="all" className={itemCentered}>All Styles</SelectItem>
-                  {uniqueStyles.map((style) => (
-                    <SelectItem key={style} value={style} className={itemCentered}>{style}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={clsx("relative", FILTER_W)}>
-              <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                <CalendarDays className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
-              </div>
-              <Select value={availabilityFilter} onValueChange={(v) => { setAvailabilityFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-8 sm:pl-10")}>
-                  <SelectValue placeholder="Availability" />
-                </SelectTrigger>
-                <SelectContent className={contentBase}>
-                  {AVAILABILITY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={clsx("relative", FILTER_W)}>
-              <Select value={experienceFilter} onValueChange={(v) => { setExperienceFilter(v); setCurrentPage(1); }}>
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <Select
+                value={experienceFilter}
+                onValueChange={(v) => {
+                  setExperienceFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className={clsx(triggerBase, "w-full")}>
                   <SelectValue placeholder="Experience" />
                 </SelectTrigger>
-                <SelectContent className={contentBase}>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
                   {EXPERIENCE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className={clsx("relative", FILTER_W)}>
-              <Select value={bookingFilter} onValueChange={(v) => { setBookingFilter(v); setCurrentPage(1); }}>
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <Select
+                value={bookingFilter}
+                onValueChange={(v) => {
+                  setBookingFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className={clsx(triggerBase, "w-full")}>
                   <SelectValue placeholder="Booking" />
                 </SelectTrigger>
-                <SelectContent className={contentBase}>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
                   {BOOKING_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className={clsx("relative", FILTER_W)}>
-              <Select value={travelFilter} onValueChange={(v) => { setTravelFilter(v); setCurrentPage(1); }}>
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <Select
+                value={travelFilter}
+                onValueChange={(v) => {
+                  setTravelFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className={clsx(triggerBase, "w-full")}>
                   <SelectValue placeholder="Travel" />
                 </SelectTrigger>
-                <SelectContent className={contentBase}>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
                   {TRAVEL_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className={clsx("relative", FILTER_W)}>
-              <Select value={sort} onValueChange={(v) => { setSort(v); setCurrentPage(1); }}>
+            <div className={clsx("relative col-span-1", FILTER_W)}>
+              <Select
+                value={sort}
+                onValueChange={(v) => {
+                  setSort(v);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className={clsx(triggerBase, "w-full")}>
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent className={contentBase}>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
                   {SORT_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -405,113 +590,6 @@ const ArtistFilter: React.FC<Props> = ({
           </div>
         </div>
       </div>
-
-      {isDirty && (
-        <div className="mt-3 md:mt-4 w-full flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {!!(localSearch || "").trim() && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                Search: “{localSearch.trim()}”
-                <button className="ml-2 inline-flex" onClick={() => setLocalSearch("")} aria-label="Clear search">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {locationFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {locationFilter}
-                <button className="ml-2 inline-flex" onClick={() => setLocationFilter("all")} aria-label="Clear location filter">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {styleFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {styleFilter}
-                <button className="ml-2 inline-flex" onClick={() => setStyleFilter("all")} aria-label="Clear style filter">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {availabilityFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {AVAILABILITY_OPTIONS.find((o) => o.value === availabilityFilter)?.label ?? "Availability"}
-                <button className="ml-2 inline-flex" onClick={() => setAvailabilityFilter("all")} aria-label="Clear availability filter">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {priceFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {PRICE_OPTIONS.find((p) => p.value === priceFilter)?.label ?? priceFilter}
-                <button className="ml-2 inline-flex" onClick={() => setPriceFilter("all")} aria-label="Clear price filter">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {experienceFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {EXPERIENCE_OPTIONS.find((e) => e.value === experienceFilter)?.label ?? experienceFilter}
-                <button className="ml-2 inline-flex" onClick={() => setExperienceFilter("all")} aria-label="Clear experience filter">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {bookingFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {BOOKING_OPTIONS.find((b) => b.value === bookingFilter)?.label ?? "Booking"}
-                <button className="ml-2 inline-flex" onClick={() => setBookingFilter("all")} aria-label="Clear booking filter">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {travelFilter !== "all" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {TRAVEL_OPTIONS.find((t) => t.value === travelFilter)?.label ?? "Travel"}
-                <button className="ml-2 inline-flex" onClick={() => setTravelFilter("all")} aria-label="Clear travel filter">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-            {sort !== "highest_rated" && (
-              <Badge variant="secondary" className="rounded-full px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px]">
-                {SORT_OPTIONS.find((s) => s.value === sort)?.label ?? "Sort"}
-                <button className="ml-2 inline-flex" onClick={() => setSort("highest_rated")} aria-label="Reset sort">
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )}
-          </div>
-
-          <div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-8 sm:h-10 rounded-lg px-2 text-muted-foreground hover:text-foreground text-xs sm:text-sm"
-              onClick={() => {
-                setLocalSearch("");
-                setSearchQuery("");
-                setPriceFilter("all");
-                setLocationFilter("all");
-                setStyleFilter("all");
-                setAvailabilityFilter("all");
-                setExperienceFilter("all");
-                setBookingFilter("all");
-                setTravelFilter("all");
-                setSort("highest_rated");
-                setCurrentPage(1);
-                if (typeof window !== "undefined") {
-                  localStorage.removeItem(PRESET_STORAGE_KEY);
-                }
-              }}
-              aria-label="Clear all filters"
-            >
-              <X className="size-4" />
-              <span className="ml-1 hidden sm:inline">Clear all</span>
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
