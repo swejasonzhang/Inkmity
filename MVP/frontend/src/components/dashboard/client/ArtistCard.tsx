@@ -100,12 +100,13 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
 
   return (
     <div
-      className="group w-full h-full min-h-[680px] sm:min-h-[740px] md:min-h-[820px] flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition hover:-translate-y-0.5 hover:shadow-1xl"
+      className="group w-full h-full min-h-[680px] sm:min-h-[740px] md:min-h-[820px] flex flex-col overflow-y-hidden rounded-3xl border bg-card/90 transition hover:-translate-y-0.5 hover:shadow-1xl"
       style={{ borderColor: "var(--border)" }}
+      data-artist-card="true"
     >
-      <div className="relative w-full overflow-hidden">
+      <div className="relative w-full">
         <div
-          className="relative w-full h-[226px] sm:h-[290px] md:h-[354px] lg:h-[408px]"
+          className="relative w-full h-[386px] sm:h-[230px] md:h-[354px] lg:h-[408px] overflow-hidden"
           style={{ background: "var(--elevated)" }}
         >
           {bgOk && artist.coverImage ? (

@@ -96,14 +96,19 @@ export default function ClientDashboard() {
         );
     }
 
-    const panelVariants = { hidden: { opacity: 0, scale: 0.98, y: 8 }, visible: { opacity: 1, scale: 1, y: 0 }, exit: { opacity: 0, scale: 0.98, y: 8 } };
+    const panelVariants = {
+        hidden: { opacity: 0, scale: 0.98, y: 8 },
+        visible: { opacity: 1, scale: 1, y: 0 },
+        exit: { opacity: 0, scale: 0.98, y: 8 }
+    };
 
     return (
-        <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden">
+        <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden md:overflow-y-hidden">
             <Header />
-            <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+
+            <main className="flex-1 min-h-0 flex flex-col overflow-y-hidden md:overflow-hidden pt-2 pb-4 md:pt-0 md:pb-0">
                 <div className="flex-1 min-h-0 flex">
-                    <div className="w-full my-auto px-3">
+                    <div className="w-full md:my-auto my-0 px-3">
                         <Suspense
                             fallback={
                                 <div className="p-4 space-y-4">
@@ -131,30 +136,27 @@ export default function ClientDashboard() {
                         </Suspense>
                     </div>
                 </div>
-
-                <div className="shrink-0 mb-20 px-3">
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPrev={() => handlePageChange(page - 1)}
-                        onNext={() => handlePageChange(page + 1)}
-                    />
-                </div>
             </main>
 
-            <FloatingBar
-                role="Client"
-                onAssistantOpen={() => setAssistantOpen(true)}
-                messagesContent={
-                    <div style={{ height: 800 }}>
-                        <ChatWindow currentUserId={user.id} role="client" />
-                    </div>
-                }
-                unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
-                unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
-                pendingRequestIds={pendingRequestIds}
-                pendingRequestsCount={pendingRequestsCount}
-            />
+            <div className="shrink-0 mb-20 px-3">
+                <FloatingBar
+                    role="Client"
+                    onAssistantOpen={() => setAssistantOpen(true)}
+                    messagesContent={<div style={{ height: 800 }}><ChatWindow currentUserId={user.id} role="client" /></div>}
+                    unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
+                    unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
+                    pendingRequestIds={pendingRequestIds}
+                    pendingRequestsCount={pendingRequestsCount}
+                    rightContent={
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPrev={() => handlePageChange(page - 1)}
+                            onNext={() => handlePageChange(page + 1)}
+                        />
+                    }
+                />
+            </div>
 
             <AnimatePresence>
                 {assistantOpen && (

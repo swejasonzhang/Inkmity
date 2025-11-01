@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
 type Props = {
     currentPage: number;
@@ -7,6 +7,7 @@ type Props = {
     onPrev: () => void;
     onNext: () => void;
     className?: string;
+    desktopEnabled?: boolean;
 };
 
 const Pagination: React.FC<Props> = ({
@@ -15,61 +16,90 @@ const Pagination: React.FC<Props> = ({
     onPrev,
     onNext,
     className,
+    desktopEnabled = true,
 }) => {
-    if (totalPages <= 1) return null;
-
     const atStart = currentPage === 1;
     const atEnd = currentPage === totalPages;
 
     return (
-        <div
-            className={`flex justify-center items-center gap-3 sm:gap-4 mt-2 sm:mt-3 text-app ${className || ""}`}
-            role="navigation"
-            aria-label="Pagination"
-        >
-            <button
-                type="button"
-                onClick={onPrev}
-                disabled={atStart}
-                aria-label="Previous page"
-                className={[
-                    "h-10 w-10 sm:h-11 sm:w-11 grid place-items-center rounded-full",
-                    "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
-                    "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                ].join(" ")}
+        <div className={className || ""}>
+            <div
+                className="hidden md:flex justify-center items-center gap-4 mt-3 text-app"
+                role="navigation"
+                aria-label="Pagination"
+                aria-disabled={!desktopEnabled}
+                style={{ opacity: desktopEnabled ? 1 : 0.5, pointerEvents: desktopEnabled ? "auto" : "none" }}
             >
-                <ChevronLeft size={18} aria-hidden />
-            </button>
+                <button
+                    type="button"
+                    onClick={onPrev}
+                    disabled={atStart}
+                    aria-label="Previous page"
+                    className={[
+                        "h-11 w-11 grid place-items-center rounded-full",
+                        "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
+                        "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                    ].join(" ")}
+                >
+                    <ChevronLeft size={18} aria-hidden />
+                </button>
 
-            <span
-                className={[
-                    "inline-flex items-center justify-center",
-                    "h-11 sm:h-12 min-w-[10rem] px-5 sm:px-6",
-                    "rounded-full border border-app bg-card/70 backdrop-blur",
-                    "text-base sm:text-lg leading-none",
-                ].join(" ")}
-                aria-live="polite"
-            >
-                Page <span className="ml-2 font-semibold">{currentPage}</span>{" "}
-                <span className="mx-2 text-subtle">of</span>
-                <span className="font-semibold">{totalPages}</span>
-            </span>
+                <span
+                    className={[
+                        "inline-flex items-center justify-center",
+                        "h-12 min-w-[10rem] px-6",
+                        "rounded-full border border-app bg-card/70 backdrop-blur",
+                        "text-lg leading-none",
+                    ].join(" ")}
+                    aria-live="polite"
+                >
+                    Page <span className="ml-2 font-semibold">{currentPage}</span>
+                    <span className="mx-2 text-subtle">of</span>
+                    <span className="font-semibold">{Math.max(1, totalPages)}</span>
+                </span>
 
-            <button
-                type="button"
-                onClick={onNext}
-                disabled={atEnd}
-                aria-label="Next page"
-                className={[
-                    "h-10 w-10 sm:h-11 sm:w-11 grid place-items-center rounded-full",
-                    "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
-                    "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                ].join(" ")}
-            >
-                <ChevronRight size={18} aria-hidden />
-            </button>
+                <button
+                    type="button"
+                    onClick={onNext}
+                    disabled={atEnd}
+                    aria-label="Next page"
+                    className={[
+                        "h-11 w-11 grid place-items-center rounded-full",
+                        "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
+                        "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                    ].join(" ")}
+                >
+                    <ChevronRight size={18} aria-hidden />
+                </button>
+            </div>
+
+            <div className="md:hidden mt-2">
+                <div
+                    className="grid place-items-center w-full"
+                    role="navigation"
+                    aria-label="Pagination (mobile)"
+                    style={{ minHeight: 72 }}
+                >
+                    <div className="flex flex-col items-center justify-center gap-2 text-app">
+                        <button
+                            type="button"
+                            onClick={onNext}
+                            disabled={atEnd}
+                            aria-label="Next page"
+                            className={[
+                                "h-12 w-12 grid place-items-center rounded-full",
+                                "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
+                                "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
+                                "disabled:opacity-50 disabled:cursor-not-allowed",
+                            ].join(" ")}
+                        >
+                            <ChevronDown size={22} aria-hidden />
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
