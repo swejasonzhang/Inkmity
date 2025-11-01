@@ -1,26 +1,34 @@
 import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 export const THEME_MS = 900;
 type Theme = "dark" | "light";
 const STORAGE_KEY = "dashboard-theme";
+
+function resolveScope(scopeEl?: Element | null): HTMLElement | null {
+  if (scopeEl instanceof HTMLElement) return scopeEl;
+  return (
+    (document.getElementById("dashboard-scope") as HTMLElement | null) ||
+    (document.querySelector(".ink-scope") as HTMLElement | null) ||
+    document.documentElement
+  );
+}
 
 function getInitialTheme(): Theme {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "light" || saved === "dark") return saved as Theme;
   } catch {}
-  return "dark";
-}
-
-function resolveScope(scopeEl?: Element | null) {
-  if (scopeEl instanceof HTMLElement) return scopeEl as HTMLElement;
-  return (
-    (document.getElementById("dashboard-scope") as HTMLElement | null) ||
-    (document.querySelector(".ink-scope") as HTMLElement | null)
-  );
+  const prefersDark = window.matchMedia?.(
+    "(prefers-color-scheme: dark)"
+  ).matches;
+  return prefersDark ? "dark" : "dark";
 }
 
 export function useTheme(scopeEl?: Element | null) {
+  const { pathname } = useLocation();
+  const isDashboard = pathname.startsWith("/dashboard");
+
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const lastApplied = useRef<Theme | null>(null);
   const timer = useRef<number | null>(null);
@@ -30,44 +38,41 @@ export function useTheme(scopeEl?: Element | null) {
     if (!el) return false;
 
     el.classList.add("ink-scope");
-    el.classList.toggle("ink-light", t === "light");
 
-    if (animate) {
-      el.classList.add("ink-theming");
+    const shouldLight = isDashboard && t === "light";
+    el.classList.toggle("ink-light", shouldLight);
+
+    if (animate && isDashboard) {
+      el.classList.add("ink-theming", "ink-smoothing");
       if (timer.current) window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => {
-        el.classList.remove("ink-theming");
-      }, THEME_MS);
+        el.classList.remove("ink-theming", "ink-smoothing");
+      }, THEME_MS + 40);
     } else {
-      el.classList.remove("ink-theming");
+      el.classList.remove("ink-theming", "ink-smoothing");
     }
 
     lastApplied.current = t;
     return true;
   };
 
-  // First paint: apply WITHOUT animation to avoid any veil/flash.
   useLayoutEffect(() => {
     applyToScope(theme, false);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}
-    // no dispatch on initial mount (prevents listeners from re-applying)
     return () => {
       if (timer.current) {
         window.clearTimeout(timer.current);
         timer.current = null;
       }
     };
-    // we intentionally run once; theme changes are handled below
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); 
 
-  // Subsequent theme changes: animate (veil) only when theme actually changes.
   useEffect(() => {
-    if (lastApplied.current === null) return; // initial handled by layout effect above
-    if (lastApplied.current === theme) return;
-
+    if (lastApplied.current === null) {
+      return;
+    }
     applyToScope(theme, true);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
@@ -85,9 +90,8 @@ export function useTheme(scopeEl?: Element | null) {
         timer.current = null;
       }
     };
-  }, [theme, scopeEl]);
+  }, [theme, isDashboard, scopeEl]);
 
-  // Cross-tab and in-app bus sync
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key && e.key !== STORAGE_KEY) return;
@@ -113,14 +117,17 @@ export function useTheme(scopeEl?: Element | null) {
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
 
   const themeClass = useMemo(
-    () => (theme === "light" ? "ink-scope ink-light" : "ink-scope"),
-    [theme]
+    () =>
+      theme === "light" && isDashboard ? "ink-scope ink-light" : "ink-scope",
+    [theme, isDashboard]
   );
 
   const logoSrc = useMemo(
     () =>
-      theme === "light" ? "/assets/BlackLogo.png" : "/assets/WhiteLogo.png",
-    [theme]
+      theme === "light" && isDashboard
+        ? "/assets/BlackLogo.png"
+        : "/assets/WhiteLogo.png",
+    [theme, isDashboard]
   );
 
   return { theme, toggleTheme, logoSrc, themeClass };

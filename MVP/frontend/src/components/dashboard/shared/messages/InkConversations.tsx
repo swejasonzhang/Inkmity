@@ -39,7 +39,8 @@ export const InkConversations: React.FC<Props> = ({
                 width,
                 height,
                 borderRadius: open ? 16 : 9999,
-                transition: "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
+                transition:
+                    "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
                 overflow: "hidden",
                 position: "relative",
                 display: "flex",

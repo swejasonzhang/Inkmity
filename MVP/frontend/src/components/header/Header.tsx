@@ -4,16 +4,14 @@ import { Menu, X, Sun, Moon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import whiteLogo from "@/assets/WhiteLogo.png";
-import blackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems";
 import { NavDesktop } from "../header//NavDesktop";
 import { NavMobile } from "../header//NavMobile";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/hooks/useTheme";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
-  theme?: "light" | "dark";
-  toggleTheme?: () => void;
   logoSrc?: string;
 };
 
@@ -58,46 +56,8 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
   );
 };
 
-function toggleDashboardThemePersistent(nextTheme: "light" | "dark") {
-  const KEY = "dashboard-theme";
-  try {
-    localStorage.setItem(KEY, nextTheme);
-  } catch { }
-
-  const scope =
-    (document.getElementById("dashboard-scope") as HTMLElement | null) ||
-    (document.querySelector(".ink-scope") as HTMLElement | null);
-
-  if (!scope) {
-    window.dispatchEvent(new CustomEvent("ink:theme-change", { detail: { key: KEY, value: nextTheme } }));
-    return;
-  }
-
-  const cs = getComputedStyle(scope);
-  const prevBg = cs.getPropertyValue("--bg").trim() || "#0b0b0b";
-  scope.style.setProperty("--veil-color", prevBg);
-
-  scope.classList.add("ink-theming", "ink-smoothing");
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      scope.classList.toggle("ink-light", nextTheme === "light");
-      window.dispatchEvent(new CustomEvent("ink:theme-change", { detail: { key: KEY, value: nextTheme } }));
-    });
-  });
-
-  const veilMsRaw = getComputedStyle(document.documentElement).getPropertyValue("--veil-ms");
-  const veilMs = parseFloat(veilMsRaw) || 780;
-  window.setTimeout(() => {
-    scope.classList.remove("ink-theming", "ink-smoothing");
-    scope.style.removeProperty("--veil-color");
-  }, veilMs + 40);
-}
-
 const Header: React.FC<HeaderProps> = ({
   disableDashboardLink = false,
-  theme: themeProp,
-  toggleTheme: toggleThemeProp,
   logoSrc: logoSrcProp,
 }) => {
   const { signOut } = useClerk();
@@ -106,50 +66,9 @@ const Header: React.FC<HeaderProps> = ({
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
-  const KEY = "dashboard-theme";
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    try {
-      return localStorage.getItem(KEY) === "light" ? "light" : "dark";
-    } catch {
-      return "dark";
-    }
-  });
-
-  useEffect(() => {
-    toggleDashboardThemePersistent(theme);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key && e.key !== KEY) return;
-      try {
-        setTheme(localStorage.getItem(KEY) === "light" ? "light" : "dark");
-      } catch {
-        setTheme("dark");
-      }
-    };
-    const onBus = (e: Event) => {
-      if ((e as CustomEvent).detail?.key !== KEY) return;
-      setTheme((e as CustomEvent).detail?.value === "light" ? "light" : "dark");
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("ink:theme-change", onBus);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("ink:theme-change", onBus);
-    };
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    toggleDashboardThemePersistent(next);
-  };
-
-  const effectiveTheme = themeProp ?? theme;
-  const effectiveToggle = toggleThemeProp ?? toggleTheme;
+  const { theme, toggleTheme, logoSrc: themeLogo } = useTheme();
 
   const isDashboard = pathname.startsWith("/dashboard");
-  const computedLogo = effectiveTheme === "light" ? blackLogo : whiteLogo;
-  const logoSrc = isDashboard ? (logoSrcProp ?? computedLogo) : whiteLogo;
-
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   const handleLogout = async () => {
@@ -207,6 +126,8 @@ const Header: React.FC<HeaderProps> = ({
   const MOBILE_LOGO_H = "h-20";
   const MOBILE_ICON_SIZE = 200;
   const MOBILE_ICON_STROKE = 3;
+
+  const logoSrc = isDashboard ? (logoSrcProp ?? themeLogo) : whiteLogo;
 
   const mobileSheet = mobileMenuOpen
     ? createPortal(
@@ -267,7 +188,7 @@ const Header: React.FC<HeaderProps> = ({
             </span>
             <div className="flex items-center gap-3">
               {pathname.startsWith("/dashboard") && (
-                <ThemeSwitch theme={effectiveTheme} toggleTheme={effectiveToggle} size="md" />
+                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />
               )}
               {isSignedIn && user && (
                 <div
@@ -328,7 +249,7 @@ const Header: React.FC<HeaderProps> = ({
         </Link>
         <div className="ml-auto flex items-center gap-3">
           {pathname.startsWith("/dashboard") && (
-            <ThemeSwitch theme={effectiveTheme} toggleTheme={effectiveToggle} size="md" />
+            <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />
           )}
           <Button
             aria-label="Open menu"

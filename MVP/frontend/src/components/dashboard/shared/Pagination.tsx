@@ -22,9 +22,20 @@ const Pagination: React.FC<Props> = ({
     const atEnd = currentPage === totalPages;
 
     return (
-        <div className={className || ""}>
+        <div
+            className={[
+                "fixed z-[1001] pointer-events-none",
+                "left-1/2 -translate-x-1/2",
+                "w-auto max-w-[calc(100vw-24px)]",
+                className || "",
+            ].join(" ")}
+            style={{
+                bottom: `calc(env(safe-area-inset-bottom, 0px) + 20px)`,
+            }}
+        >
+            {/* Desktop */}
             <div
-                className="hidden md:flex justify-center items-center gap-4 mt-3 text-app"
+                className="hidden md:flex justify-center items-center gap-4 text-app pointer-events-auto"
                 role="navigation"
                 aria-label="Pagination"
                 aria-disabled={!desktopEnabled}
@@ -75,7 +86,8 @@ const Pagination: React.FC<Props> = ({
                 </button>
             </div>
 
-            <div className="md:hidden mt-2">
+            {/* Mobile */}
+            <div className="md:hidden pointer-events-auto mt-2">
                 <div
                     className="grid place-items-center w-full"
                     role="navigation"

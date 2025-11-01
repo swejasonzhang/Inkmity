@@ -117,7 +117,6 @@ export default function FloatingBar({
 
   const centerRef = useRef<HTMLDivElement | null>(null);
   const [centerH, setCenterH] = useState(0);
-
   const measureCenter = () => {
     const el = centerRef.current;
     if (!el) return;
