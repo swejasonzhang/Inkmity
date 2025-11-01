@@ -6,6 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useApi, isAbortError, getMe } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import StepBarRow from "./StepBarRow";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type BookingProps = {
   artist: ArtistWithGroups;
@@ -125,8 +127,8 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     else if (sizeVal) sizePlacementSentence = `I'm thinking size ${sizeVal}. I'm flexible on placement.`;
     else if (placeVal) sizePlacementSentence = `I'm thinking a piece near ${placeVal}. I'm flexible on size.`;
     else sizePlacementSentence = "I'm flexible on size and placement.";
-    const min = me.budgetMin ?? budgetRange.min;
-    const max = me.budgetMax ?? budgetRange.max;
+    const min = me?.budgetMin ?? budgetRange.min;
+    const max = me?.budgetMax ?? budgetRange.max;
     const budgetSentence =
       min != null || max != null
         ? `Budget: ${min != null ? `$${min}` : ""}${min != null && max != null ? "–" : ""}${max != null ? `$${max}` : ""}.`
@@ -251,7 +253,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
   const handleNext = () => onGoToStep?.(2);
 
   return (
-    <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
+    <div className="w-full ink-scope" style={{ background: "var(--card)", color: "var(--fg)" }}>
       <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
           <div className="py-2 sm:py-3">
@@ -261,6 +263,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </div>
         </div>
       </div>
+
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
         <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
@@ -305,6 +308,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
             </div>
           </CardContent>
         </Card>
+
         {profile && (
           <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
             <CardHeader className="text-center space-y-1 px-3 sm:px-6">
@@ -334,12 +338,13 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
                   </ul>
                 </div>
               </div>
-              <pre className="mt-4 p-3 rounded text-xs overflow-auto" style={{ background: "var(--elevated)" }}>
+              <pre className="mt-4 p-3 rounded text-xs overflow-auto" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
                 {JSON.stringify(profile, null, 2)}
               </pre>
             </CardContent>
           </Card>
         )}
+
         <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
             <CardTitle className="text-base sm:text-lg">Book an appointment</CardTitle>
@@ -349,7 +354,7 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
               <div className="min-h-[360px] sm:min-h-[420px]">
                 <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
               </div>
-              <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2" style={{ background: "var(--elevated)" }}>
+              <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
                 <div className="w-full max-w-[920px] p-2 sm:p-3">
                   <BookingPicker artistId={artist.clerkId} date={date} />
                 </div>
@@ -358,7 +363,8 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </CardContent>
         </Card>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t" style={{ background: "color-mix(in oklab, var(--card) 96%, transparent)", borderColor: "var(--border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+
+      <div className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t" style={{ background: "color-mix(in oklab, var(--card) 96%, transparent)", borderColor: "var(--border)", color: "var(--fg)", paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="mx-auto max-w-screen-md px-3 py-2">
           <div className="grid grid-cols-3 gap-2">
             <Button onClick={onBack} className="col-span-1 w-full text-sm border-0 min-h-[48px]" style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }} variant="outline">
@@ -375,6 +381,23 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
           </div>
         </div>
       </div>
+
+      <div id="inkmity-modal-root" className="ink-scope" />
+      <ToastContainer
+        position="bottom-center"
+        newestOnTop
+        closeOnClick
+        draggable
+        pauseOnHover
+        toastStyle={{
+          background: "var(--card)",
+          color: "var(--fg)",
+          border: "1px solid var(--border)",
+          boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+        }}
+        className="text-sm"
+        style={{ zIndex: 2147483647 }}
+      />
     </div>
   );
 }

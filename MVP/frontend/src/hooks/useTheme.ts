@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 
 export const THEME_MS = 900;
 type Theme = "dark" | "light";
@@ -22,43 +22,64 @@ function resolveScope(scopeEl?: Element | null) {
 
 export function useTheme(scopeEl?: Element | null) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const rafHandle = useRef<number | null>(null);
+  const lastApplied = useRef<Theme | null>(null);
   const timer = useRef<number | null>(null);
 
-  const applyToScope = (t: Theme) => {
+  const applyToScope = (t: Theme, animate: boolean) => {
     const el = resolveScope(scopeEl);
     if (!el) return false;
+
     el.classList.add("ink-scope");
-    el.classList.add("ink-theming");
     el.classList.toggle("ink-light", t === "light");
-    if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(
-      () => el.classList.remove("ink-theming"),
-      THEME_MS
-    );
+
+    if (animate) {
+      el.classList.add("ink-theming");
+      if (timer.current) window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => {
+        el.classList.remove("ink-theming");
+      }, THEME_MS);
+    } else {
+      el.classList.remove("ink-theming");
+    }
+
+    lastApplied.current = t;
     return true;
   };
 
-  useEffect(() => {
-    const applied = applyToScope(theme);
+  // First paint: apply WITHOUT animation to avoid any veil/flash.
+  useLayoutEffect(() => {
+    applyToScope(theme, false);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}
-    if (!applied) {
-      rafHandle.current = window.requestAnimationFrame(() => {
-        applyToScope(theme);
-      });
-    }
+    // no dispatch on initial mount (prevents listeners from re-applying)
+    return () => {
+      if (timer.current) {
+        window.clearTimeout(timer.current);
+        timer.current = null;
+      }
+    };
+    // we intentionally run once; theme changes are handled below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Subsequent theme changes: animate (veil) only when theme actually changes.
+  useEffect(() => {
+    if (lastApplied.current === null) return; // initial handled by layout effect above
+    if (lastApplied.current === theme) return;
+
+    applyToScope(theme, true);
+    try {
+      localStorage.setItem(STORAGE_KEY, theme);
+    } catch {}
+
     window.dispatchEvent(
       new CustomEvent("ink:theme-change", {
         detail: { key: STORAGE_KEY, value: theme },
       })
     );
+
     return () => {
-      if (rafHandle.current) {
-        cancelAnimationFrame(rafHandle.current);
-        rafHandle.current = null;
-      }
       if (timer.current) {
         window.clearTimeout(timer.current);
         timer.current = null;
@@ -66,6 +87,7 @@ export function useTheme(scopeEl?: Element | null) {
     };
   }, [theme, scopeEl]);
 
+  // Cross-tab and in-app bus sync
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key && e.key !== STORAGE_KEY) return;

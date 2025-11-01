@@ -7,7 +7,7 @@ import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
 
 const DEFAULT_TIMEZONE = "America/New_York";
-const DEFAULT_SLOT_MINUTES = 60;
+const DEFAULT_SLOT_MINUTES = 30;
 const DEFAULT_OPEN_RANGES = [{ start: "10:00", end: "22:00" }];
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
