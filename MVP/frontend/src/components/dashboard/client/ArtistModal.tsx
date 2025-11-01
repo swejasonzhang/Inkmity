@@ -22,13 +22,7 @@ type Props = {
   initialStep?: 0 | 1 | 2;
 };
 
-const ArtistModal: React.FC<Props> = ({
-  open,
-  onClose,
-  artist,
-  onMessage,
-  initialStep = 0,
-}) => {
+const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
   const portalRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -93,12 +87,21 @@ const ArtistModal: React.FC<Props> = ({
     };
   }, []);
 
+  const isNestedDialogOpen = () =>
+    !!document.querySelector('[data-radix-dialog-content][data-state="open"]');
+
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeNow();
+      if (e.key !== "Escape") return;
+      if (isNestedDialogOpen()) {
+        e.stopPropagation();
+        e.preventDefault();
+        return;
+      }
+      closeNow();
     };
-    if (open) window.addEventListener("keydown", onEsc);
-    return () => window.removeEventListener("keydown", onEsc);
+    if (open) window.addEventListener("keydown", onEsc, true);
+    return () => window.removeEventListener("keydown", onEsc, true);
   }, [open]);
 
   useEffect(() => {
@@ -141,6 +144,11 @@ const ArtistModal: React.FC<Props> = ({
   if (!open || !mounted || !portalRef.current) return null;
 
   const handleOverlayPointerDown: React.PointerEventHandler<HTMLDivElement> = (e) => {
+    if (isNestedDialogOpen()) {
+      e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
     const panel = panelRef.current;
     if (!panel || panel.contains(e.target as Node)) return;
     (e as any).nativeEvent?.stopImmediatePropagation?.();
@@ -188,7 +196,6 @@ const ArtistModal: React.FC<Props> = ({
             </button>
             <Separator className="mt-4 w-full" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
           </div>
-
           <div className="w-full max-w-[1200px] mx-auto">
             {step === 0 && (
               <ArtistPortfolio
@@ -198,7 +205,6 @@ const ArtistModal: React.FC<Props> = ({
                 onClose={closeNow}
               />
             )}
-
             {step === 1 && (
               <ArtistBooking
                 artist={artist}
@@ -208,7 +214,6 @@ const ArtistModal: React.FC<Props> = ({
                 onMessage={onMessage}
               />
             )}
-
             {step === 2 && (
               <ArtistReviews
                 artist={artist}
