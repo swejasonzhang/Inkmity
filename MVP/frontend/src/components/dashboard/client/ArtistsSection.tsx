@@ -184,7 +184,7 @@ export default function ArtistsSection({
             return travel === v;
         };
 
-        let list = artists.filter(a => {
+        let list = artists.filter((a) => {
             if (!inPriceRange(a)) return false;
             if (!(locationFilter === "all" || (a as any).location === locationFilter)) return false;
             const styles = Array.isArray((a as any).styles) ? (a as any).styles : [];
@@ -207,10 +207,12 @@ export default function ArtistsSection({
                 return sort === "experience_desc" ? bv - av : av - bv;
             });
         } else if (sort === "newest") {
-            list = list.slice().sort(
-                (a, b) =>
-                    new Date((b as any).createdAt ?? 0).getTime() - new Date((a as any).createdAt ?? 0).getTime()
-            );
+            list = list
+                .slice()
+                .sort(
+                    (a, b) =>
+                        new Date((b as any).createdAt ?? 0).getTime() - new Date((a as any).createdAt ?? 0).getTime()
+                );
         } else if (sort === "highest_rated") {
             list = list.slice().sort((a, b) => {
                 const ar = toNumber((a as any).rating, 0);
@@ -245,14 +247,19 @@ export default function ArtistsSection({
         sort
     ]);
 
-    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const clientPageItems = filtered.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
     const listItems = usingExternalPaging ? filtered : clientPageItems;
     const isCenterLoading = loading || !showArtists;
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
+        const interactive = target.closest(
+            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
+        );
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
@@ -260,25 +267,50 @@ export default function ArtistsSection({
     };
 
     return (
-        <div className="flex flex-col flex-1 min-h-0 h-full w-full">
-            <div className="sticky top-0 z-10 w-full bg-card px-3 pb-3">
+        <div className="flex flex-col flex-1 min-h-0 w-full">
+            {/* Added pb to create space between filter and cards */}
+            <div className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4">
                 <ArtistFilter
                     priceFilter={priceFilter}
-                    setPriceFilter={v => { setPriceFilter(v); setCurrentPage(1); }}
+                    setPriceFilter={(v) => {
+                        setPriceFilter(v);
+                        setCurrentPage(1);
+                    }}
                     locationFilter={locationFilter}
-                    setLocationFilter={v => { setLocationFilter(v); setCurrentPage(1); }}
+                    setLocationFilter={(v) => {
+                        setLocationFilter(v);
+                        setCurrentPage(1);
+                    }}
                     styleFilter={styleFilter}
-                    setStyleFilter={v => { setStyleFilter(v); setCurrentPage(1); }}
+                    setStyleFilter={(v) => {
+                        setStyleFilter(v);
+                        setCurrentPage(1);
+                    }}
                     availabilityFilter={availabilityFilter}
-                    setAvailabilityFilter={v => { setAvailabilityFilter(v); setCurrentPage(1); }}
+                    setAvailabilityFilter={(v) => {
+                        setAvailabilityFilter(v);
+                        setCurrentPage(1);
+                    }}
                     experienceFilter={experienceFilter}
-                    setExperienceFilter={v => { setExperienceFilter(v); setCurrentPage(1); }}
+                    setExperienceFilter={(v) => {
+                        setExperienceFilter(v);
+                        setCurrentPage(1);
+                    }}
                     bookingFilter={bookingFilter}
-                    setBookingFilter={v => { setBookingFilter(v); setCurrentPage(1); }}
+                    setBookingFilter={(v) => {
+                        setBookingFilter(v);
+                        setCurrentPage(1);
+                    }}
                     travelFilter={travelFilter}
-                    setTravelFilter={v => { setTravelFilter(v); setCurrentPage(1); }}
+                    setTravelFilter={(v) => {
+                        setTravelFilter(v);
+                        setCurrentPage(1);
+                    }}
                     sort={sort}
-                    setSort={v => { setSort(v); setCurrentPage(1); }}
+                    setSort={(v) => {
+                        setSort(v);
+                        setCurrentPage(1);
+                    }}
                     artists={artists}
                     setCurrentPage={setCurrentPage}
                     searchQuery={searchQuery}
@@ -287,7 +319,10 @@ export default function ArtistsSection({
                 />
             </div>
 
-            <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
+            <div
+                className="relative flex-1 min-h-0"
+                onPointerDownCapture={handleGridPointerDown}
+            >
                 {isCenterLoading && (
                     <div className="absolute inset-0 z-10 grid place-items-center">
                         <CircularProgress sx={{ color: "var(--fg)" }} />
@@ -296,7 +331,7 @@ export default function ArtistsSection({
 
                 <div className={`min-h-full ${isCenterLoading ? "opacity-0 pointer-events-none" : ""}`}>
                     {listItems.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-5 p-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3">
                             {listItems.map((artist, index) => (
                                 <motion.div
                                     key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
@@ -307,7 +342,10 @@ export default function ArtistsSection({
                                 >
                                     <div className="h-full w-full flex" data-artist-card="true">
                                         <ArtistCard
-                                            artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any}
+                                            artist={{
+                                                ...(artist as any),
+                                                images: (artist as any).portfolioImages || []
+                                            } as any}
                                             onClick={() => onSelectArtist(artist)}
                                         />
                                     </div>
@@ -315,7 +353,7 @@ export default function ArtistsSection({
                             ))}
                         </div>
                     ) : (
-                        <div className="min-h-[240px] grid place-items-center p-6">
+                        <div className="min-h-[240px] grid place-items-center p-0 md:p-6">
                             <p className="text-muted text-center">No artists match your filters.</p>
                         </div>
                     )}

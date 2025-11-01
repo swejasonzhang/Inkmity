@@ -19,11 +19,11 @@ export function NavMobile({
     handleLogout: () => void;
 }) {
     return (
-        <nav className="flex-1 overflow-y-auto flex flex-col items-center gap-3 py-3">
+        <nav className="flex-1 overflow-y-auto flex flex-col items-center justify-center gap-4 py-6">
             {items.map((item) => {
                 const active = isActive(item.to);
                 const base =
-                    "relative inline-flex items-center justify-center gap-3 px-7 py-4 text-center text-app text-[20px] md:text-[22px] font-extrabold uppercase tracking-wide";
+                    "relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide";
                 const isDisabled = item.to === "#" || item.disabled;
 
                 if (isDisabled) {
@@ -40,7 +40,9 @@ export function NavMobile({
                                 className={base}
                                 aria-disabled="true"
                             >
-                                <InkAccentMobile active={active} />
+                                <span className="inline-flex items-center justify-center scale-125">
+                                    <InkAccentMobile active={active} />
+                                </span>
                                 <span>{item.label}</span>
                             </button>
                         );
@@ -54,7 +56,9 @@ export function NavMobile({
                             aria-disabled="true"
                             title="In Development"
                         >
-                            <InkAccentMobile active={active} />
+                            <span className="inline-flex items-center justify-center scale-125">
+                                <InkAccentMobile active={active} />
+                            </span>
                             <Lock size={18} className="opacity-80" />
                             <span>{item.label}</span>
                             <span className="rounded-md px-2 py-0.5 text-[12px] font-black uppercase tracking-wider bg-elevated border border-app text-app">
@@ -71,7 +75,9 @@ export function NavMobile({
                         onClick={() => setMobileMenuOpen(false)}
                         className={base}
                     >
-                        <InkAccentMobile active={active} />
+                        <span className="inline-flex items-center justify-center scale-125">
+                            <InkAccentMobile active={active} />
+                        </span>
                         <span>{item.label}</span>
                     </Link>
                 );
@@ -84,9 +90,11 @@ export function NavMobile({
                         setMobileMenuOpen(false);
                         handleLogout();
                     }}
-                    className="relative inline-flex items-center justify-center gap-3 px-7 py-4 text-center text-app text-[20px] md:text-[22px] font-extrabold uppercase tracking-wide"
+                    className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide"
                 >
-                    <InkAccentMobile active={false} />
+                    <span className="inline-flex items-center justify-center scale-125">
+                        <InkAccentMobile active={false} />
+                    </span>
                     <span>Logout</span>
                 </button>
             )}

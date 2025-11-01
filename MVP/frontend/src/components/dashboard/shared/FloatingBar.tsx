@@ -1,11 +1,11 @@
 import { createPortal } from "react-dom";
-import { Bot, MessageSquare, Lock, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Bot, Lock } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/hooks/useTheme";
-
-type Role = "Client" | "Artist";
+import { useInkConversations } from "@/hooks/useInkConversations";
+import { InkConversations } from "./messages/InkConversations";
+import type { Role } from "@/hooks/useInkConversations";
 
 type Props = {
   role: Role;
@@ -20,6 +20,7 @@ type Props = {
   pendingRequestsCount?: number;
   unreadConversationIds?: string[];
   pendingRequestIds?: string[];
+  rightContent?: React.ReactNode;
 };
 
 export default function FloatingBar({
@@ -28,18 +29,16 @@ export default function FloatingBar({
   portalTarget,
   assistantLocked = true,
   messagesContent,
-  unreadCount = 0,
+  unreadCount,
   unreadMessagesTotal,
   requestExists,
   unreadConversationsCount,
   pendingRequestsCount,
   unreadConversationIds,
   pendingRequestIds,
+  rightContent,
 }: Props) {
   const [isMdUp, setIsMdUp] = useState(false);
-  const [msgOpen, setMsgOpen] = useState(false);
-  const msgBtnRef = useRef<HTMLDivElement | null>(null);
-  const [clearedConvos, setClearedConvos] = useState<Set<string>>(() => new Set());
   const [vp, setVp] = useState({ w: 375, h: 667 });
   const [vvBottom, setVvBottom] = useState(0);
   const { themeClass } = useTheme(portalTarget ?? undefined);
@@ -69,73 +68,6 @@ export default function FloatingBar({
   }, []);
 
   useEffect(() => {
-    const open = () => setMsgOpen(true);
-    const close = () => setMsgOpen(false);
-    window.addEventListener("ink:open-messages", open as EventListener);
-    window.addEventListener("ink:close-messages", close as EventListener);
-    return () => {
-      window.removeEventListener("ink:open-messages", open as EventListener);
-      window.removeEventListener("ink:close-messages", close as EventListener);
-    };
-  }, []);
-
-  useEffect(() => {
-    const onConvoOpened = (e: Event) => {
-      const id = (e as CustomEvent<string | { id: string }>).detail;
-      const convoId = typeof id === "string" ? id : id?.id;
-      if (!convoId) return;
-      setClearedConvos(prev => {
-        const next = new Set(prev);
-        next.add(convoId);
-        return next;
-      });
-    };
-    const onConvoRead = onConvoOpened;
-    window.addEventListener("ink:conversation-opened", onConvoOpened as EventListener);
-    window.addEventListener("ink:conversation-read", onConvoRead as EventListener);
-    return () => {
-      window.removeEventListener("ink:conversation-opened", onConvoOpened as EventListener);
-      window.removeEventListener("ink:conversation-read", onConvoRead as EventListener);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!unreadConversationIds) return;
-    setClearedConvos(prev => {
-      const incoming = new Set(unreadConversationIds);
-      const next = new Set<string>();
-      prev.forEach(id => {
-        if (incoming.has(id)) next.add(id);
-      });
-      return next;
-    });
-  }, [unreadConversationIds?.join("|")]);
-
-  useEffect(() => {
-    if (!msgOpen) return;
-    const modalOpen = () => !!document.querySelector('[role="dialog"], [data-ink-modal]');
-    const onDocPointer = (e: Event) => {
-      if (modalOpen()) return;
-      const root = msgBtnRef.current;
-      if (!root) return;
-      const target = e.target as Node | null;
-      if (target && root.contains(target)) return;
-      setMsgOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !modalOpen()) setMsgOpen(false);
-    };
-    document.addEventListener("mousedown", onDocPointer, true);
-    document.addEventListener("touchstart", onDocPointer, true);
-    document.addEventListener("keydown", onKey, true);
-    return () => {
-      document.removeEventListener("mousedown", onDocPointer, true);
-      document.removeEventListener("touchstart", onDocPointer, true);
-      document.removeEventListener("keydown", onKey, true);
-    };
-  }, [msgOpen]);
-
-  useEffect(() => {
     if (!window.visualViewport) return;
     const onVV = () => setVvBottom(Math.max(0, (window.visualViewport?.height ?? vp.h) - window.innerHeight));
     window.visualViewport.addEventListener("resize", onVV);
@@ -147,47 +79,16 @@ export default function FloatingBar({
     };
   }, [vp.h]);
 
-  useEffect(() => {
-    const body = document.body;
-    if (!msgOpen) return;
-    const scrollY = window.scrollY;
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
-    return () => {
-      const y = Math.abs(parseInt(body.style.top || "0", 10)) || 0;
-      body.style.position = "";
-      body.style.top = "";
-      body.style.left = "";
-      body.style.right = "";
-      body.style.width = "";
-      window.scrollTo(0, y);
-    };
-  }, [msgOpen]);
-
-  const toInt = (n: unknown) => {
-    const v = typeof n === "number" && Number.isFinite(n) ? Math.trunc(n) : 0;
-    return v < 0 ? 0 : v;
-  };
-
-  const unreadConvoCount = Array.isArray(unreadConversationIds)
-    ? unreadConversationIds.filter(id => !clearedConvos.has(id)).length
-    : toInt(unreadConversationsCount);
-
-  const requestCount = role === "Artist"
-    ? (typeof requestExists === "boolean"
-      ? (requestExists ? 1 : 0)
-      : Array.isArray(pendingRequestIds)
-        ? (pendingRequestIds.length > 0 ? 1 : 0)
-        : (toInt(pendingRequestsCount) > 0 ? 1 : 0))
-    : 0;
-
-  const totalUnreadMessages =
-    typeof unreadMessagesTotal === "number" ? unreadMessagesTotal : toInt(unreadCount);
-
-  const derivedTotal = totalUnreadMessages + (role === "Artist" ? requestCount : 0);
+  const { btnRef, open, setOpen, unreadConvoCount, requestCount, derivedTotal } = useInkConversations({
+    role,
+    unreadCount,
+    unreadMessagesTotal,
+    requestExists,
+    unreadConversationsCount,
+    pendingRequestsCount,
+    unreadConversationIds,
+    pendingRequestIds,
+  });
 
   const pad = {
     left: isMdUp ? "calc(1.85rem + 1px + env(safe-area-inset-left, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-left, 0px))",
@@ -200,7 +101,7 @@ export default function FloatingBar({
   const collapsedHeight = 44;
   const assistantBtnClass = [btnCommon, "px-3 md:px-4"].join(" ");
 
-  const MOBILE_CLOSED_W = 135;
+  const MOBILE_CLOSED_W = 112;
   const MOBILE_OPEN_W = Math.min(Math.max(240, vp.w - 48), 360);
   const MOBILE_OPEN_H = Math.min(Math.max(300, vp.h - 180), 480);
 
@@ -208,39 +109,52 @@ export default function FloatingBar({
   const DESKTOP_OPEN_W = 1200;
   const DESKTOP_CLOSED_W = 160;
 
-  const btnW = isMdUp
-    ? (msgOpen ? DESKTOP_OPEN_W + (role === "Artist" ? PANEL_W : 0) : DESKTOP_CLOSED_W)
-    : (msgOpen ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
+  const convW = isMdUp
+    ? (open ? DESKTOP_OPEN_W + (role === "Artist" ? PANEL_W : 0) : DESKTOP_CLOSED_W)
+    : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
 
-  const btnH = isMdUp ? (msgOpen ? 860 : collapsedHeight) : (msgOpen ? MOBILE_OPEN_H : collapsedHeight);
+  const convH = isMdUp ? (open ? 860 : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
+
+  const centerRef = useRef<HTMLDivElement | null>(null);
+  const [centerH, setCenterH] = useState(0);
+
+  const measureCenter = () => {
+    const el = centerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setCenterH(Math.ceil(rect.height));
+  };
+
+  useLayoutEffect(() => {
+    measureCenter();
+  }, [rightContent, isMdUp]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--fb-safe", `${btnH + 8}px`);
+    const ro = new ResizeObserver(() => measureCenter());
+    if (centerRef.current) ro.observe(centerRef.current);
+    const onWin = () => measureCenter();
+    window.addEventListener("resize", onWin);
+    window.addEventListener("orientationchange", onWin);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onWin);
+      window.removeEventListener("orientationchange", onWin);
+    };
+  }, []);
+
+  const wrapperH = Math.max(convH, collapsedHeight, centerH || 0);
+
+  useEffect(() => {
+    const EXTRA_SAFE_GAP = 12;
+    document.documentElement.style.setProperty("--fb-safe", `${wrapperH + EXTRA_SAFE_GAP}px`);
     return () => {
       document.documentElement.style.removeProperty("--fb-safe");
     };
-  }, [btnH]);
-
-  const btnRadius = msgOpen ? 16 : 9999;
-
-  const CountBadge = ({ value, label }: { value: number; label?: string }) => (
-    <Badge
-      className="ml-2 inline-flex items-center justify-center rounded-full text-[11px] font-semibold px-2 min-w-[22px] h-[18px] border"
-      style={{
-        background: value > 0 ? "var(--fg)" : "color-mix(in oklab, var(--fg), transparent 80%)",
-        color: value > 0 ? "var(--bg)" : "var(--fg)",
-        borderColor: "color-mix(in oklab, var(--border), transparent 60%)",
-      }}
-      aria-label={label ? `${value} ${label}` : `${value}`}
-      title={label ? `${value} ${label}` : `${value}`}
-    >
-      {value > 99 ? "99+" : value}
-    </Badge>
-  );
+  }, [wrapperH]);
 
   const bar = (
     <div className={`fixed inset-x-0 z-[1000] pointer-events-none ${themeClass}`} style={{ bottom: pad.bottom }}>
-      <div className="relative w-full" style={{ height: Math.max(btnH, collapsedHeight) }}>
+      <div className="relative w-full" style={{ height: Math.max(wrapperH, collapsedHeight) }}>
         <div className={`grid ${isMdUp ? "items-end" : "items-center"}`} style={{ gridTemplateColumns: "auto 1fr auto" }}>
           <div className="pointer-events-auto" style={{ paddingLeft: isMdUp ? pad.left : 12, height: collapsedHeight }}>
             <Button
@@ -256,83 +170,28 @@ export default function FloatingBar({
             >
               <Bot size={18} aria-hidden />
               <span className="text-sm font-medium hidden md:inline">Assistant</span>
-              {assistantLocked && <Lock size={14} className="hidden md:inline-block ml-1 opacity-90" aria-hidden />}
+              {assistantLocked && <span className="hidden md:inline-block ml-1 opacity-90"><Lock size={14} /></span>}
             </Button>
           </div>
-          <div />
-          <div className="pointer-events-auto flex items-center justify-end" style={{ paddingRight: isMdUp ? pad.right : 12, height: btnH }}>
-            <div
-              ref={msgBtnRef}
-              className={btnCommon}
-              aria-label={msgOpen ? "Messages" : "Open messages"}
-              aria-expanded={msgOpen}
-              style={{
-                willChange: "width,height",
-                width: isMdUp ? btnW : Math.max(0, btnW - 50),
-                height: btnH,
-                borderRadius: btnRadius,
-                transition: "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
-                overflow: "hidden",
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {!msgOpen ? (
-                <Button
-                  type="button"
-                  onClick={() => setMsgOpen(true)}
-                  className="flex h-full w-full items-center justify-center gap-2 px-2 focus:outline-none"
-                  title="Open messages"
-                  aria-label="Open messages"
-                  variant="ghost"
-                >
-                  <MessageSquare size={18} />
-                  <span className="text-sm font-medium hidden md:inline">Messages</span>
-                  <CountBadge value={derivedTotal} label={role === "Artist" ? "unread + requests" : "unread"} />
-                </Button>
-              ) : (
-                <div className="flex-1 h-full w-full flex-col">
-                  <div className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-2 py-1"} border-b border-app`}>
-                    <div className="flex items-center gap-2 font-semibold">
-                      <MessageSquare size={16} />
-                      <span className={isMdUp ? "" : "text-sm"}>Messages</span>
-                      <Badge
-                        className={`ml-2 ${isMdUp ? "text-[11px] px-2 h-[18px]" : "text-[10px] px-1.5 h-[16px]"} inline-flex items-center rounded-full`}
-                        style={{ background: "var(--fg)", color: "var(--bg)" }}
-                      >
-                        {unreadConvoCount} unread convos
-                      </Badge>
-                      {role === "Artist" && (
-                        <Badge
-                          className={`ml-2 ${isMdUp ? "text-[11px] px-2 h-[18px]" : "text-[10px] px-1.5 h-[16px]"} inline-flex items-center rounded-full`}
-                          style={{ background: "var(--fg)", color: "var(--bg)" }}
-                        >
-                          {requestCount} {requestCount === 1 ? "request" : "requests"}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="shrink-0">
-                      <span className="sr-only">Close messages</span>
-                      <Button
-                        type="button"
-                        className={`p-1 rounded-full hover:bg-elevated ${isMdUp ? "" : "h-7 w-7"}`}
-                        onClick={() => setMsgOpen(false)}
-                        aria-label="Close messages"
-                        title="Close messages"
-                        size="icon"
-                        variant="ghost"
-                      >
-                        <X size={18} />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="h-full">{messagesContent}</div>
-                  </div>
-                </div>
-              )}
+
+          <div ref={centerRef} className="pointer-events-auto flex items-center justify-center" style={{ paddingInline: 8 }}>
+            {rightContent}
+          </div>
+
+          <div className="pointer-events-auto flex items-center justify-end" style={{ paddingRight: isMdUp ? pad.right : 12, height: convH }}>
+            <div ref={btnRef}>
+              <InkConversations
+                role={role}
+                isMdUp={isMdUp}
+                width={isMdUp ? convW : Math.max(0, convW - 50)}
+                height={convH}
+                open={open}
+                setOpen={setOpen}
+                unreadConvoCount={unreadConvoCount}
+                requestCount={requestCount}
+                derivedTotal={derivedTotal}
+                messagesContent={messagesContent}
+              />
             </div>
           </div>
         </div>
