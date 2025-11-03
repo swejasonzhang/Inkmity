@@ -85,7 +85,6 @@ const Dashboard: React.FC = () => {
       ref={scopeRef}
       id="dashboard-scope"
       className="ink-scope min-h-dvh overflow-y-hidden flex flex-col"
-      style={{ paddingInline: 10 }}
     >
       <div className="flex-1 min-h-0 w-full">
         <Suspense fallback={<Loading />}>

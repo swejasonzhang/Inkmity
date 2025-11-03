@@ -10,12 +10,14 @@ export type Message = {
   delivered?: boolean;
   seen?: boolean;
 };
+
 export type ConversationMeta = {
   allowed: boolean;
   lastStatus: "pending" | "accepted" | "declined" | null;
   declines: number;
   blocked: boolean;
 };
+
 export type Conversation = {
   participantId: string;
   username: string;
@@ -44,6 +46,7 @@ function loadPending(): Record<string, { username: string }> {
     return {};
   }
 }
+
 function savePending(v: Record<string, { username: string }>) {
   try {
     localStorage.setItem(PENDING_LS, JSON.stringify(v));
@@ -67,24 +70,25 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const [pendingRequestIds, setPendingRequestIds] = useState<string[]>([]);
   const mounted = useRef(false);
 
-  const raw =
-    (import.meta as any)?.env?.VITE_API_URL ||
-    import.meta.env?.VITE_API_URL ||
-    "http:
-  const apiBase = String(raw).replace(/\/$/, "");
+  const apiBase = String(
+    (import.meta as any)?.env?.VITE_API_URL ??
+      import.meta.env?.VITE_API_URL ??
+      "http://localhost:5005/api"
+  ).replace(/\/$/, "");
 
   const getGate = useCallback(
     async (artistId: string): Promise<ConversationMeta> => {
       const res = await authFetch(`${apiBase}/messages/gate/${artistId}`, {
         method: "GET",
       });
-      if (!res.ok)
+      if (!res.ok) {
         return {
           allowed: false,
           lastStatus: null,
           declines: 0,
           blocked: false,
         };
+      }
       return (await res.json()) as ConversationMeta;
     },
     [apiBase, authFetch]
@@ -144,7 +148,6 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         (raw.counts && Number(raw.counts.unreadConversations)) ||
         ids.length ||
         0;
-
       const pendingLen =
         (raw.counts && Number(raw.counts.pendingRequests)) ||
         (Array.isArray(raw.pendingRequestIds)
@@ -170,10 +173,11 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: participantId }),
       });
-      if (res.ok)
+      if (res.ok) {
         window.dispatchEvent(
           new CustomEvent("ink:conversation-read", { detail: participantId })
         );
+      }
     },
     [apiBase, authFetch]
   );
@@ -191,14 +195,15 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     const base = new Map<string, Conversation>();
     (data || []).forEach((c) => base.set(c.participantId, c));
 
-    const pending: Record<string, { username: string }> = loadPending();
+    const pending = loadPending();
     Object.entries(pending).forEach(([pid, v]) => {
-      if (!base.has(pid))
+      if (!base.has(pid)) {
         base.set(pid, {
           participantId: pid,
           username: v.username || "Conversation",
           messages: [],
         });
+      }
     });
 
     const convs = Array.from(base.values());
@@ -209,7 +214,8 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       }))
     );
     const metaMap = Object.fromEntries(metas.map((m) => [m.pid, m.meta]));
-    const cleaned: Record<string, { username: string }> = { ...pending };
+
+    const cleaned = { ...pending };
     convs.forEach((c) => {
       const m = metaMap[c.participantId];
       if (m?.blocked || m?.allowed) delete cleaned[c.participantId];
@@ -293,10 +299,11 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
 
     const onConnect = () => {
       s.emit("register", currentUserId);
-      if (expandedId)
+      if (expandedId) {
         s.emit("thread:join", {
           threadKey: threadKeyOf(currentUserId, expandedId),
         });
+      }
     };
 
     const normalizeRefs = (raw: any): Message => {
@@ -529,3 +536,5 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     pendingRequestsCount: pendingRequestIds.length,
   };
 }
+
+export default useMessaging;

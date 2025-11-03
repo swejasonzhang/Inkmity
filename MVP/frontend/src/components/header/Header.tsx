@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useClerk, useUser } from "@clerk/clerk-react";
+import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
@@ -26,7 +26,10 @@ type ThemeSwitchProps = {
 
 const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
   const isLight = theme === "light";
-  const dims = size === "md" ? { h: "h-12", w: "w-24", knob: "h-10 w-10", icon: 22 } : { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 18 };
+  const dims =
+    size === "md"
+      ? { h: "h-12", w: "w-24", knob: "h-10 w-10", icon: 22 }
+      : { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 18 };
   const iconColorClass = isLight ? "text-black" : "text-white";
   return (
     <button
@@ -43,7 +46,13 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
       <span className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${iconColorClass}`}>
         <Sun size={dims.icon} />
       </span>
-      <span className={["absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300 bg-[color:var(--fg)]", dims.knob, isLight ? "right-1.5" : "left-1.5"].join(" ")} />
+      <span
+        className={[
+          "absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300 bg-[color:var(--fg)]",
+          dims.knob,
+          isLight ? "right-1.5" : "left-1.5",
+        ].join(" ")}
+      />
       <span className="sr-only">{isLight ? "Switch to dark theme" : "Switch to light theme"}</span>
     </button>
   );
@@ -51,13 +60,47 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
 
 const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: logoSrcProp }) => {
   const { signOut } = useClerk();
-  const { user } = useUser();
-  const isSignedIn = Boolean(user?.id);
+  const { user, isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
   const isDashboard = pathname.startsWith("/dashboard");
+
+  const [userLabel, setUserLabel] = useState<string>("User");
+  const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!isSignedIn || !API_BASE) {
+        if (!cancelled) setUserLabel("User");
+        return;
+      }
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE}/users/me`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const data = await res.json();
+        const name =
+          (data?.username && String(data.username).trim()) ||
+          (data?.handle && String(data.handle).replace(/^@/, "")) ||
+          "User";
+        if (!cancelled) setUserLabel(name);
+      } catch {
+        if (!cancelled) setUserLabel("User");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, getToken, API_BASE]);
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -66,7 +109,6 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
-  const userLabel = user?.firstName || user?.emailAddresses?.[0]?.emailAddress || "User";
   const dashboardDisabled = disableDashboardLink && !isSignedIn;
 
   const onDashboardGate: React.MouseEventHandler = (e) => {
@@ -92,7 +134,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
     };
   }, [mobileMenuOpen]);
 
-  const dropdownBtnClasses = "inline-flex h-12 items-center justify-center px-4 rounded-lg cursor-pointer transition border border-app bg-elevated text-app hover:bg-elevated text-lg whitespace-nowrap";
+  const dropdownBtnClasses =
+    "inline-flex h-12 items-center justify-center px-4 rounded-lg cursor-pointer transition border border-app bg-elevated text-app hover:bg-elevated text-lg whitespace-nowrap";
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
@@ -103,14 +146,20 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
 
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const portalTarget = document.getElementById("dashboard-portal-root") ?? document.getElementById("dashboard-scope") ?? document.body;
+  const portalTarget =
+    document.getElementById("dashboard-portal-root") ??
+    document.getElementById("dashboard-scope") ??
+    document.body;
 
   const MOBILE_HEADER_H = "h-24";
   const MOBILE_LOGO_H = "h-16";
   const MOBILE_ICON_SIZE = 28;
   const MOBILE_ICON_STROKE = 2.25;
 
-  const resolvedLogo = logoSrcProp ?? (theme === "light" ? BlackLogo : WhiteLogo);
+  // Always white logo outside dashboard; inside dashboard, respect theme
+  const resolvedLogo =
+    logoSrcProp ??
+    (!isDashboard ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
 
   const mobileSheet = mobileMenuOpen
     ? createPortal(
@@ -121,11 +170,22 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
             <div className="flex items-center gap-4">
               <img src={resolvedLogo} alt="Inkmity Logo" className={`${MOBILE_LOGO_H} w-auto object-contain`} />
             </div>
-            <Button aria-label="Close menu" variant="ghost" className="p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
+            <Button
+              aria-label="Close menu"
+              variant="ghost"
+              className="p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               <X size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
           </div>
-          <NavMobile items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+          <NavMobile
+            items={NAV_ITEMS}
+            isActive={isActive}
+            isSignedIn={!!isSignedIn}
+            setMobileMenuOpen={setMobileMenuOpen}
+            handleLogout={handleLogout}
+          />
         </div>
       </div>,
       portalTarget
@@ -134,33 +194,38 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
 
   return (
     <>
-      <header className="flex w-full relative items-center z-50 px-6 md:px-12 py-5 text-app bg-app">
-        <div className="w-full grid grid-cols-[auto,1fr,auto] items-center">
-          <div className="-ml-2">
+      {/* Transparent background at all times */}
+      <header className="flex w-full relative items-center z-50 px-6 md:px-11 py-5 text-app bg-transparent">
+        <div className="w-full grid grid-cols-[1fr_auto_1fr] items-center">
+          {/* Left: logo pulled toward edge */}
+          <div className="justify-self-start -ml-3 md:-ml-4">
             <Link to={homeHref} className="flex items-center gap-4">
-              <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 md:h-20 lg:h-24 w-auto object-contain" draggable={false} />
+              <img
+                src={resolvedLogo}
+                alt="Inkmity Logo"
+                className="h-16 md:h-20 lg:h-24 w-auto object-contain"
+                draggable={false}
+              />
               <span className="sr-only">Inkmity</span>
             </Link>
           </div>
 
-          <div className="hidden md:flex justify-center">
-            <span
-              className="inline-block text-lg [&_*]:text-app [&_*]:border-app"
-              style={{ marginLeft: !isDashboard ? 10 : 0 }}
-            >
-              <NavDesktop
-                items={NAV_ITEMS}
-                isActive={isActive}
-                isSignedIn={!!isSignedIn}
-                onDisabledDashboardHover={onDashMouseMove}
-                onDisabledDashboardLeave={onDashLeave}
-                className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-lg"
-              />
-            </span>
+          {/* Center: nav perfectly centered */}
+          <div className="hidden md:block justify-self-center">
+            <NavDesktop
+              items={NAV_ITEMS}
+              isActive={isActive}
+              isSignedIn={!!isSignedIn}
+              onDisabledDashboardHover={onDashMouseMove}
+              onDisabledDashboardLeave={onDashLeave}
+              className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-lg"
+            />
           </div>
 
-          <div className="flex items-center justify-end gap-4">
-            {pathname.startsWith("/dashboard") && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />}
+          {/* Right: username/theme pulled toward edge */}
+          <div className="justify-self-end flex items-center gap-4 -mr-3 md:-mr-4">
+            {isDashboard && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />}
+
             <Button
               aria-label="Open menu"
               variant="ghost"
@@ -169,6 +234,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
             >
               <Menu size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
+
             {isSignedIn && user && (
               <div
                 className="relative hidden md:inline-block align-top group text-app [&_*]:text-app [&_*]:border-app"
@@ -197,11 +263,17 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
             )}
           </div>
         </div>
+
         {dashboardDisabled && tip.show && (
-          <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
+          <div
+            className="fixed z-[70] pointer-events-none"
+            style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}
+          >
             <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-3 py-2 shadow-lg">
               <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
-              <span className="text-sm text-app whitespace-nowrap">Not authorized. <span className="text-app">Sign up first.</span></span>
+              <span className="text-sm text-app whitespace-nowrap">
+                Not authorized. <span className="text-app">Sign up first.</span>
+              </span>
             </div>
           </div>
         )}
