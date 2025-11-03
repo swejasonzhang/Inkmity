@@ -142,7 +142,7 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                                         </m.div>
                                     </div>
 
-                                    {/* RIGHT: Media column */}
+                                    {}
                                     <div className="w-full flex items-stretch justify-center">
                                         <m.div
                                             variants={media}

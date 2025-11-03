@@ -70,7 +70,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const raw =
     (import.meta as any)?.env?.VITE_API_URL ||
     import.meta.env?.VITE_API_URL ||
-    "http://localhost:5005/api";
+    "http:
   const apiBase = String(raw).replace(/\/$/, "");
 
   const getGate = useCallback(

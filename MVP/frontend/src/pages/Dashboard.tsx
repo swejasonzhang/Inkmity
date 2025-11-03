@@ -81,10 +81,17 @@ const Dashboard: React.FC = () => {
   if (!isLoaded || !isSignedIn) return <Loading />;
 
   return (
-    <div ref={scopeRef} id="dashboard-scope" className="ink-scope min-h-dvh overflow-y-hidden">
-      <Suspense fallback={<Loading />}>
-        {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}
-      </Suspense>
+    <div
+      ref={scopeRef}
+      id="dashboard-scope"
+      className="ink-scope min-h-dvh overflow-y-hidden flex flex-col"
+      style={{ paddingInline: 10 }}
+    >
+      <div className="flex-1 min-h-0 w-full">
+        <Suspense fallback={<Loading />}>
+          {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}
+        </Suspense>
+      </div>
     </div>
   );
 };

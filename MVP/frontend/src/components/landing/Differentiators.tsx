@@ -28,7 +28,7 @@ const Differentiators: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> =
                     verified reviews, transparent pricing, and tools that keep conversations and context in one place.
                 </m.p>
 
-                {/* Equal-height cards */}
+                {}
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr place-items-stretch text-center">
                     <div className="rounded-xl border border-app bg-elevated/70 p-5 h-full flex flex-col">
                         <h3 className="font-semibold text-lg">UX-first from day one</h3>

@@ -7,13 +7,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  MapPin,
-  Brush,
-  CircleDollarSign,
-  CalendarDays,
-} from "lucide-react";
 import clsx from "clsx";
 
 interface Artist {
@@ -367,24 +360,14 @@ const ArtistFilter: React.FC<Props> = ({
       <div className="w-full mx-auto">
         <div className="p-2 sm:p-3">
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3 w-full">
-            <div
-              className={clsx(
-                "relative col-span-3 sm:col-span-1",
-                SEARCH_W,
-                "sm:mr-2"
-              )}
-            >
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 size-4 sm:size-5 text-muted-foreground"
-                aria-hidden
-              />
+            <div className={clsx("relative col-span-3 sm:col-span-1", SEARCH_W, "sm:mr-2")}>
               <Input
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
                 placeholder="Search"
                 aria-label="Search artists or tattoo subjects"
                 className={clsx(
-                  "pl-10 pr-10 sm:pl-12 sm:pr-12",
+                  "px-3 sm:px-4",
                   "h-[34px] sm:h-[39px] w-full bg-elevated border-app text-app rounded-lg",
                   "text-xs sm:text-sm placeholder:text-muted-foreground",
                   "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app/80",
@@ -396,12 +379,6 @@ const ArtistFilter: React.FC<Props> = ({
             </div>
 
             <div className={clsx("relative col-span-1", FILTER_W)}>
-              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-                <CircleDollarSign
-                  className="size-4 sm:size-5 text-muted-foreground"
-                  aria-hidden
-                />
-              </div>
               <Select
                 value={priceFilter}
                 onValueChange={(value) => {
@@ -409,16 +386,12 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="All Prices" />
                 </SelectTrigger>
                 <SelectContent className={contentBase} position="popper" align="start">
                   {PRICE_OPTIONS.map((opt) => (
-                    <SelectItem
-                      key={opt.value}
-                      value={opt.value}
-                      className={itemCentered}
-                    >
+                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
                       {opt.label}
                     </SelectItem>
                   ))}
@@ -427,9 +400,6 @@ const ArtistFilter: React.FC<Props> = ({
             </div>
 
             <div className={clsx("relative col-span-1", FILTER_W)}>
-              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-                <MapPin className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
-              </div>
               <Select
                 value={locationFilter}
                 onValueChange={(value) => {
@@ -437,7 +407,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -454,9 +424,6 @@ const ArtistFilter: React.FC<Props> = ({
             </div>
 
             <div className={clsx("relative col-span-1", FILTER_W)}>
-              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-                <Brush className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
-              </div>
               <Select
                 value={styleFilter}
                 onValueChange={(value) => {
@@ -464,7 +431,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="All Styles" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -481,9 +448,6 @@ const ArtistFilter: React.FC<Props> = ({
             </div>
 
             <div className={clsx("relative col-span-1", FILTER_W)}>
-              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-                <CalendarDays className="size-4 sm:size-5 text-muted-foreground" aria-hidden />
-              </div>
               <Select
                 value={availabilityFilter}
                 onValueChange={(v) => {
@@ -491,7 +455,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full pl-12 sm:pl-14")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="Availability" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -512,7 +476,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="Experience" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -533,7 +497,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="Booking" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -554,7 +518,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="Travel" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -575,7 +539,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full")}>
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">

@@ -103,12 +103,12 @@ export default function ClientDashboard() {
     };
 
     return (
-        <div className="min-h-dvh bg-app text-app flex flex-col overflow-y-hidden md:overflow-y-hidden">
+        <div className="min-h-dvh bg-app text-app flex flex-col overflow-hidden" style={{ paddingBottom: "var(--fb-safe, 0px)" }}>
             <Header />
 
-            <main className="flex-1 min-h-0 flex flex-col overflow-y-hidden md:overflow-hidden pt-2 pb-4 md:pt-0 md:pb-0">
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 flex">
-                    <div className="w-full md:my-auto my-0 px-3">
+                    <div className="w-full md:my-auto my-0 px-0 md:px-3">
                         <Suspense
                             fallback={
                                 <div className="p-4 space-y-4">
@@ -138,7 +138,7 @@ export default function ClientDashboard() {
                 </div>
             </main>
 
-            <div className="shrink-0 mb-20 px-3">
+            <div className="shrink-0 px-3">
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}

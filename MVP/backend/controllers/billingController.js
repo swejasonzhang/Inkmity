@@ -130,7 +130,7 @@ export async function refundBilling(req, res) {
 
   const refunds = [];
   for (const b of list) {
-    if (b.type !== "platform_fee") continue; // deposit never refunded
+    if (b.type !== "platform_fee") continue; 
     const pi = b.stripePaymentIntentId;
     if (!pi) continue;
     const rr = await stripe.refunds.create({ payment_intent: pi });
