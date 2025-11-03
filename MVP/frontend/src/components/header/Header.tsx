@@ -21,15 +21,17 @@ type TipState = { show: boolean; x: number; y: number };
 type ThemeSwitchProps = {
   theme: "light" | "dark";
   toggleTheme: () => void;
-  size?: "md" | "sm";
+  size?: "lg" | "md" | "sm";
 };
 
 const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
   const isLight = theme === "light";
   const dims =
-    size === "md"
-      ? { h: "h-12", w: "w-24", knob: "h-10 w-10", icon: 22 }
-      : { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 18 };
+    size === "lg"
+      ? { h: "h-[45px]", w: "w-24", knob: "h-[35px] w-[35px]", icon: 22 }
+      : size === "md"
+        ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 20 }
+        : { h: "h-9", w: "w-16", knob: "h-7 w-7", icon: 18 };
   const iconColorClass = isLight ? "text-black" : "text-white";
   return (
     <button
@@ -81,9 +83,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
       try {
         const token = await getToken();
         const res = await fetch(`${API_BASE}/users/me`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           credentials: "include",
         });
         if (!res.ok) throw new Error(`status ${res.status}`);
@@ -134,8 +134,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
     };
   }, [mobileMenuOpen]);
 
-  const dropdownBtnClasses =
-    "inline-flex h-12 items-center justify-center px-4 rounded-lg cursor-pointer transition border border-app bg-elevated text-app hover:bg-elevated text-lg whitespace-nowrap";
+  const dropdownBtnClasses = "inline-flex h-11 md:h-12 items-center justify-center px-4 rounded-lg cursor-pointer transition border border-app bg-elevated text-app hover:bg-elevated text-[17px] whitespace-nowrap";
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
@@ -152,11 +151,10 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
     document.body;
 
   const MOBILE_HEADER_H = "h-24";
-  const MOBILE_LOGO_H = "h-16";
-  const MOBILE_ICON_SIZE = 28;
-  const MOBILE_ICON_STROKE = 2.25;
+  const MOBILE_LOGO_H = "h-20";
+  const MOBILE_ICON_SIZE = 44;
+  const MOBILE_ICON_STROKE = 2.6;
 
-  // Always white logo outside dashboard; inside dashboard, respect theme
   const resolvedLogo =
     logoSrcProp ??
     (!isDashboard ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
@@ -194,23 +192,20 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
 
   return (
     <>
-      {/* Transparent background at all times */}
-      <header className="flex w-full relative items-center z-50 px-6 md:px-11 py-5 text-app bg-transparent">
-        <div className="w-full grid grid-cols-[1fr_auto_1fr] items-center">
-          {/* Left: logo pulled toward edge */}
-          <div className="justify-self-start -ml-3 md:-ml-4">
-            <Link to={homeHref} className="flex items-center gap-4">
+      <header className="flex w-full relative items-center z-50 px-6 md:px-10 py-4 text-app bg-transparent">
+        <div className="w-full flex justify-between items-center md:grid md:grid-cols-[1fr_auto_1fr]">
+          <div className="justify-self-start -ml-2 md:-ml-6 pl-2 md:pl-0 flex-shrink-0">
+            <Link to={homeHref} className="flex items-center md:gap-4 gap-3">
               <img
                 src={resolvedLogo}
                 alt="Inkmity Logo"
-                className="h-16 md:h-20 lg:h-24 w-auto object-contain"
+                className="h-20 md:h-24 lg:h-28 w-auto object-contain"
                 draggable={false}
               />
               <span className="sr-only">Inkmity</span>
             </Link>
           </div>
 
-          {/* Center: nav perfectly centered */}
           <div className="hidden md:block justify-self-center">
             <NavDesktop
               items={NAV_ITEMS}
@@ -218,18 +213,25 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
               isSignedIn={!!isSignedIn}
               onDisabledDashboardHover={onDashMouseMove}
               onDisabledDashboardLeave={onDashLeave}
-              className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-lg"
+              className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[19px]"
             />
           </div>
 
-          {/* Right: username/theme pulled toward edge */}
-          <div className="justify-self-end flex items-center gap-4 -mr-3 md:-mr-4">
-            {isDashboard && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />}
-
+          <div className="flex items-center gap-4 pr-2 md:pr-0 justify-self-end">
+            {isDashboard && (
+              <div className="hidden md:block mt-[5px]">
+                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
+              </div>
+            )}
+            {isDashboard && (
+              <div className="md:hidden mt-[5px]">
+                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
+              </div>
+            )}
             <Button
               aria-label="Open menu"
               variant="ghost"
-              className="md:hidden p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
+              className="md:hidden p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app ml-1"
               onClick={() => setMobileMenuOpen(true)}
             >
               <Menu size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
@@ -242,10 +244,10 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
                 onMouseLeave={() => setShowDropdown(false)}
               >
                 <div className={dropdownBtnClasses}>
-                  <span className="mr-2 font-semibold text-xl">✦</span>
-                  <span className="inline-flex items-center text-lg">
-                    <span>Hello,&nbsp;</span>
-                    <span className="font-bold max-w-[14rem] truncate leading-none">{userLabel}</span>
+                  <span className="mr-2 font-semibold text-xl leading-none">✦</span>
+                  <span className="inline-flex items-center leading-none">
+                    <span className="mr-1">Hello,</span>
+                    <span className="font-bold max-w-[14rem] truncate">{userLabel}</span>
                   </span>
                 </div>
                 <div

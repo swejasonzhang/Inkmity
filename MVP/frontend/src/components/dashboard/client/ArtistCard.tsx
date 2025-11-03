@@ -100,7 +100,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   return (
     <div className={shellClass} style={{ borderColor: "var(--border)" }} data-artist-card="true">
       <div className="relative w-full">
-        <div className="relative w-full h-[24.125rem] sm:h-[14.375rem] md:h-[22.125rem] lg:h-[25.3125rem] overflow-hidden" style={{ background: "var(--elevated)" }}>
+        <div className="relative w-full h-[18.125rem] sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden" style={{ background: "var(--elevated)" }}>
           {bgOk && artist.coverImage ? (
             <img
               src={artist.coverImage}
