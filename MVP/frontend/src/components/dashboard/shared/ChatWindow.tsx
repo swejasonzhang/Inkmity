@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { displayNameFromUsername } from "@/lib/format";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import RequestPanel from "./messages/requestPanel";
+import RequestPanel from "./messages/RequestPanel";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 

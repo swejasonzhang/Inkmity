@@ -1,81 +1,75 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+
+type Mode = "dark" | "light";
+
+function readStoredMode(): Mode {
+    const v = typeof window !== "undefined" ? window.localStorage.getItem("ink-theme") : null;
+    return v === "light" ? "light" : "dark";
+}
+
+function writeStoredMode(mode: Mode) {
+    try {
+        window.localStorage.setItem("ink-theme", mode);
+    } catch { }
+}
+
+function veilMs(el: HTMLElement) {
+    const ms = getComputedStyle(el).getPropertyValue("--veil-ms").trim();
+    const n = parseInt(ms.replace("ms", ""), 10);
+    return Number.isFinite(n) ? n : 900;
+}
 
 export default function ThemeBridge() {
-    const { pathname } = useLocation();
-    const isDashboard = pathname.startsWith("/dashboard");
-
     useEffect(() => {
-        const scope =
-            (document.getElementById("dashboard-scope") as HTMLElement | null) ||
-            (document.querySelector(".ink-scope") as HTMLElement | null) ||
-            document.documentElement;
+        document.documentElement.classList.remove("ink-light");
+        document.body.classList.remove("ink-light");
 
-        const root = document.documentElement;
+        const scope = document.getElementById("dashboard-scope");
+        if (!scope) return;
 
-        const vars = [
-            "--background",
-            "--foreground",
-            "--card",
-            "--card-h",
-            "--card-foreground",
-            "--popover",
-            "--popover-foreground",
-            "--primary",
-            "--primary-foreground",
-            "--secondary",
-            "--secondary-foreground",
-            "--muted",
-            "--muted2",
-            "--muted-foreground",
-            "--accent",
-            "--accent-h",
-            "--accent-foreground",
-            "--border",
-            "--border-h",
-            "--input",
-            "--ring",
-            "--bg",
-            "--fg",
-            "--subtle",
-            "--elevated",
-        ];
-
-        const applyFromScope = () => {
-            if (!scope) return;
-            const cs = getComputedStyle(scope);
-            vars.forEach((v) => {
-                const val = cs.getPropertyValue(v);
-                if (val) root.style.setProperty(v, val.trim());
-            });
+        const apply = (mode: Mode, withVeil: boolean) => {
+            if (withVeil) {
+                scope.classList.add("ink-theming", "ink-smoothing");
+                window.setTimeout(() => scope.classList.remove("ink-theming"), veilMs(scope));
+            }
+            if (mode === "light") {
+                scope.setAttribute("data-ink", "light");
+                scope.classList.add("ink-light");
+            } else {
+                scope.setAttribute("data-ink", "dark");
+                scope.classList.remove("ink-light");
+            }
         };
 
-        const resetToRootDefaults = () => {
-            vars.forEach((v) => root.style.removeProperty(v));
+        apply(readStoredMode(), true);
+
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === "ink-theme") apply(readStoredMode(), true);
         };
-
-        if (isDashboard) {
-            applyFromScope();
-        } else {
-            scope.classList.remove("ink-light");
-            resetToRootDefaults();
-        }
-
-        const mo = new MutationObserver(() => {
-            if (isDashboard) applyFromScope();
-        });
-        if (scope) mo.observe(scope, { attributes: true, attributeFilter: ["class", "style"] });
-
-        const onBus = () => {
-            if (isDashboard) applyFromScope();
-        };
-        window.addEventListener("ink:theme-change", onBus);
+        window.addEventListener("storage", onStorage);
 
         return () => {
-            mo.disconnect();
-            window.removeEventListener("ink:theme-change", onBus);
+            window.removeEventListener("storage", onStorage);
+            scope.removeAttribute("data-ink");
+            scope.classList.remove("ink-light", "ink-theming", "ink-smoothing");
         };
-    }, [pathname]);
+    }, []);
 
     return null;
+}
+
+export function toggleDashboardTheme() {
+    const scope = document.getElementById("dashboard-scope");
+    if (!scope) return;
+    const next: Mode = scope.classList.contains("ink-light") ? "dark" : "light";
+    writeStoredMode(next);
+    scope.classList.add("ink-theming", "ink-smoothing");
+    window.setTimeout(() => scope.classList.remove("ink-theming"), veilMs(scope));
+    if (next === "light") {
+        scope.setAttribute("data-ink", "light");
+        scope.classList.add("ink-light");
+    } else {
+        scope.setAttribute("data-ink", "dark");
+        scope.classList.remove("ink-light");
+    }
 }

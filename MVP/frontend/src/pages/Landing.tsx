@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
     LazyMotion,
@@ -20,13 +21,9 @@ const Landing: React.FC = () => {
 
     const textFadeUp: Variants = {
         hidden: { opacity: 0, y: 10 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: prefersReduced
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 220, damping: 26, mass: 0.7, velocity: 0.2 },
-        },
+        visible: prefersReduced
+            ? { opacity: 1, y: 0, transition: { duration: 0 } }
+            : { opacity: 1, y: 0, transition: { type: "spring", stiffness: 220, damping: 26, mass: 0.7, velocity: 0.2 } },
     };
 
     const introStagger = {
@@ -34,38 +31,137 @@ const Landing: React.FC = () => {
         visible: { transition: { staggerChildren: 0.12, delayChildren: 0.04 } },
     };
 
+    const [revealed, setRevealed] = React.useState(false);
+    const [didMount, setDidMount] = React.useState(false);
+
+    const dividerWrapRef = React.useRef<HTMLDivElement | null>(null);
+    const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+
+    React.useEffect(() => setDidMount(true), []);
+
+    const reveal = React.useCallback(() => setRevealed(true), []);
+
+    const handleRevealButton = () => {
+        reveal();
+        const target = document.getElementById("features-title");
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    
+    React.useEffect(() => {
+        if (revealed) return;
+
+        const onIntent = () => {
+            if (!revealed) reveal();
+        };
+
+        window.addEventListener("wheel", onIntent, { passive: true });
+        window.addEventListener("touchmove", onIntent, { passive: true });
+        window.addEventListener("pointerdown", onIntent, { passive: true });
+        window.addEventListener("keydown", onIntent);
+
+        return () => {
+            window.removeEventListener("wheel", onIntent);
+            window.removeEventListener("touchmove", onIntent);
+            window.removeEventListener("pointerdown", onIntent);
+            window.removeEventListener("keydown", onIntent);
+        };
+    }, [revealed, reveal]);
+
+    
+    React.useEffect(() => {
+        if (revealed) return;
+        const el = sentinelRef.current;
+        if (!el) return;
+
+        const io = new IntersectionObserver(
+            (entries) => {
+                if (entries.some((e) => e.isIntersecting)) reveal();
+            },
+            { root: null, threshold: 0.01 }
+        );
+
+        io.observe(el);
+        return () => io.disconnect();
+    }, [revealed, reveal]);
+
+    
+    const featuresFade: Variants = prefersReduced
+        ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0 } } }
+        : {
+            hidden: { opacity: 0, y: 8 },
+            show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } },
+        };
+
     return (
         <>
             <div className="fixed inset-0 -z-20 bg-app" aria-hidden />
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
-                    <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
+                    <div className="relative z-10 text-app flex flex-col min-h-[100vh]">
                         <div className="sticky top-0 z-50 bg-app/80 backdrop-blur border-b border-app">
                             <Header />
                         </div>
+
                         <main className="flex-1">
-                            <section className="relative">
-                                <div className="mx-auto max-w-7xl px-4">
+                            {}
+                            <section className="relative pt-6 md:pt-10">
+                                <div className="mx-auto max-w-6xl px-4">
                                     <m.div
                                         variants={introStagger}
                                         initial="hidden"
                                         whileInView="visible"
                                         viewport={{ once: true, amount: 0.4 }}
-                                        className="space-y-16 md:space-y-24"
+                                        className="space-y-10 md:space-y-12"
                                     >
-                                        <Hero prefersReduced={!!prefersReduced} wc={wc} textFadeUp={textFadeUp} />
+                                        <Hero
+                                            prefersReduced={!!prefersReduced}
+                                            wc={wc}
+                                            textFadeUp={textFadeUp}
+                                            onReveal={handleRevealButton}
+                                        />
                                     </m.div>
                                 </div>
                             </section>
-                            <Divider className="my-10" />
-                            <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
-                            <Divider className="my-10" />
-                            <Differentiators textFadeUp={textFadeUp} wc={wc} />
-                            <BottomCTA textFadeUp={textFadeUp} wc={wc} />
-                            <Divider />
+
+                            {}
+                            <div ref={dividerWrapRef} className="mt-6 mb-[5px]">
+                                <Divider />
+                            </div>
+
+                            {}
+                            <div ref={sentinelRef} style={{ height: 10 }} />
+
+                            {}
+                            {!revealed && didMount && (
+                                <div aria-hidden className="mx-auto max-w-6xl px-4">
+                                    <div style={{ height: "70vh" }} />
+                                </div>
+                            )}
+
+                            {}
+                            <m.div
+                                initial="hidden"
+                                animate={revealed ? "show" : "hidden"}
+                                variants={featuresFade}
+                                className="mx-auto max-w-6xl px-4"
+                                style={{ willChange: "opacity, transform" }}
+                            >
+                                {revealed && (
+                                    <>
+                                        <div id="features-title" />
+                                        <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
+                                        <Divider className="my-6" />
+                                        <Differentiators textFadeUp={textFadeUp} wc={wc} />
+                                        <BottomCTA textFadeUp={textFadeUp} wc={wc} />
+                                        <Divider />
+                                    </>
+                                )}
+                            </m.div>
                         </main>
-                        <footer className="p-6">
-                            <div className="mx-auto max-w-7xl text-center text-sm text-subtle">
+
+                        <footer className="p-4">
+                            <div className="mx-auto max-w-6xl text-center text-xs md:text-sm text-subtle">
                                 © {new Date().getFullYear()} Inkmity. All rights reserved.
                             </div>
                         </footer>

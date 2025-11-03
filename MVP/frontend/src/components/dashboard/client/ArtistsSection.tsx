@@ -88,16 +88,11 @@ export default function ArtistsSection({
     const [bookingFilter, setBookingFilter] = useState<string>(initialPreset.bookingFilter ?? "all");
     const [travelFilter, setTravelFilter] = useState<string>(initialPreset.travelFilter ?? "all");
     const [sort, setSort] = useState<string>(initialPreset.sort || "experience_desc");
-    const [searchQuery, setSearchQuery] = useState<string>(
-        typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : ""
-    );
-    const [debouncedSearch, setDebouncedSearch] = useState<string>(
-        (typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "").trim().toLowerCase()
-    );
+    const [searchQuery, setSearchQuery] = useState<string>(typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "");
+    const [debouncedSearch, setDebouncedSearch] = useState<string>((typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "").trim().toLowerCase());
     const [currentPage, setCurrentPage] = useState(1);
 
-    const usingExternalPaging =
-        typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
+    const usingExternalPaging = typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -115,17 +110,7 @@ export default function ArtistsSection({
         try {
             localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
         } catch { }
-    }, [
-        priceFilter,
-        locationFilter,
-        styleFilter,
-        availabilityFilter,
-        experienceFilter,
-        bookingFilter,
-        travelFilter,
-        sort,
-        searchQuery
-    ]);
+    }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(searchQuery.trim().toLowerCase()), 250);
@@ -134,7 +119,6 @@ export default function ArtistsSection({
 
     const filtered = useMemo(() => {
         const now = new Date();
-
         const inAvailability = (a: Artist) => {
             const isNow = (a as any).isAvailableNow === true;
             const nextRaw = (a as any).nextAvailableDate as string | undefined;
@@ -154,12 +138,10 @@ export default function ArtistsSection({
             if (availabilityFilter === "lte6m") return diffDays <= 180;
             return true;
         };
-
         const inPriceRange = (_a: Artist) => {
             if (priceFilter === "all") return true;
             return true;
         };
-
         const matchesKeyword = (a: Artist, q: string) => {
             if (!q) return true;
             const styles = Array.isArray((a as any).styles) ? (a as any).styles : [];
@@ -171,19 +153,16 @@ export default function ArtistsSection({
                 styles.some((s: string) => s.toLowerCase().includes(q))
             );
         };
-
         const matchesBooking = (a: Artist, v: string) => {
             if (!v || v === "all") return true;
             const booking = ((a as any).bookingPreference ?? "").toString();
             return booking === v;
         };
-
         const matchesTravel = (a: Artist, v: string) => {
             if (!v || v === "all") return true;
             const travel = ((a as any).travelFrequency ?? "").toString();
             return travel === v;
         };
-
         let list = artists.filter((a) => {
             if (!inPriceRange(a)) return false;
             if (!(locationFilter === "all" || (a as any).location === locationFilter)) return false;
@@ -197,7 +176,6 @@ export default function ArtistsSection({
             if (!matchesTravel(a, travelFilter)) return false;
             return true;
         });
-
         if (sort === "experience_desc" || sort === "experience_asc") {
             list = list.slice().sort((a, b) => {
                 const ay = normalizeYears((a as any).yearsExperience);
@@ -207,12 +185,7 @@ export default function ArtistsSection({
                 return sort === "experience_desc" ? bv - av : av - bv;
             });
         } else if (sort === "newest") {
-            list = list
-                .slice()
-                .sort(
-                    (a, b) =>
-                        new Date((b as any).createdAt ?? 0).getTime() - new Date((a as any).createdAt ?? 0).getTime()
-                );
+            list = list.slice().sort((a, b) => new Date((b as any).createdAt ?? 0).getTime() - new Date((a as any).createdAt ?? 0).getTime());
         } else if (sort === "highest_rated") {
             list = list.slice().sort((a, b) => {
                 const ar = toNumber((a as any).rating, 0);
@@ -232,44 +205,28 @@ export default function ArtistsSection({
                 return br - ar;
             });
         }
-
         return list;
-    }, [
-        artists,
-        priceFilter,
-        locationFilter,
-        styleFilter,
-        debouncedSearch,
-        availabilityFilter,
-        experienceFilter,
-        bookingFilter,
-        travelFilter,
-        sort
-    ]);
+    }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]);
 
-    const clientPageItems = filtered.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const listItems = usingExternalPaging ? filtered : clientPageItems;
     const isCenterLoading = loading || !showArtists;
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!onRequestCloseModal) return;
         const target = e.target as HTMLElement;
-        const interactive = target.closest(
-            'button,a,[role="button"],input,textarea,select,[data-keep-open="true"]'
-        );
+        const interactive = target.closest('button,a,[role="button"],input,textarea,select,[data-keep-open="true"]');
         if (interactive) return;
         const insideCard = target.closest('[data-artist-card="true"]');
         if (insideCard) return;
         onRequestCloseModal();
     };
 
+    const snapHeight = "calc(100dvh - var(--header-h, 6rem) - var(--fb-safe, 0px))";
+
     return (
-        <div className="flex flex-col flex-1 min-h-0 w-full">
-            {/* Added pb to create space between filter and cards */}
-            <div className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4">
+        <div className="flex flex-col h-full min-h-0 w-full">
+            <div className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={(v) => {
@@ -319,44 +276,63 @@ export default function ArtistsSection({
                 />
             </div>
 
-            <div
-                className="relative flex-1 min-h-0"
-                onPointerDownCapture={handleGridPointerDown}
-            >
+            <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
                 {isCenterLoading && (
                     <div className="absolute inset-0 z-10 grid place-items-center">
                         <CircularProgress sx={{ color: "var(--fg)" }} />
                     </div>
                 )}
 
-                <div className={`min-h-full ${isCenterLoading ? "opacity-0 pointer-events-none" : ""}`}>
-                    {listItems.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3">
-                            {listItems.map((artist, index) => (
-                                <motion.div
-                                    key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="h-full flex"
-                                >
-                                    <div className="h-full w-full flex" data-artist-card="true">
-                                        <ArtistCard
-                                            artist={{
-                                                ...(artist as any),
-                                                images: (artist as any).portfolioImages || []
-                                            } as any}
-                                            onClick={() => onSelectArtist(artist)}
-                                        />
+                <div className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}>
+                    <div className="md:hidden h-full min-h-0">
+                        {listItems.length > 0 ? (
+                            <div
+                                className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory"
+                                style={{ scrollSnapType: "y mandatory" }}
+                            >
+                                {listItems.map((artist, index) => (
+                                    <div
+                                        key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                                        className="snap-start"
+                                        style={{ height: snapHeight }}
+                                    >
+                                        <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} fullScreen />
                                     </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="min-h-[240px] grid place-items-center p-0 md:p-6">
-                            <p className="text-muted text-center">No artists match your filters.</p>
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        ) : (
+                            <div
+                                className="grid place-items-center"
+                                style={{ height: snapHeight }}
+                            >
+                                <p className="text-muted text-center">No artists match your filters.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="hidden md:block h-full min-h-0">
+                        {listItems.length > 0 ? (
+                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3">
+                                {listItems.map((artist, index) => (
+                                    <motion.div
+                                        key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="h-full flex"
+                                    >
+                                        <div className="h-full w-full flex" data-artist-card="true">
+                                            <ArtistCard artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any} onClick={() => onSelectArtist(artist)} />
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="min-h-full grid place-items-center p-0 md:p-6">
+                                <p className="text-muted text-center">No artists match your filters.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

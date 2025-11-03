@@ -20,12 +20,11 @@ export function NavDesktop({
     className?: string;
 }) {
     return (
-        <nav className={["flex items-center gap-8", className].join(" ")}>
+        <nav className={["flex items-center gap-12", className].join(" ")}>
             {items.map((item) => {
                 const active = isActive(item.to);
                 const base =
                     "relative group inline-flex items-center gap-3 px-4 py-2 text-[17px] md:text-[18px] font-extrabold uppercase tracking-wide text-app/90 hover:text-app";
-
                 const isDisabled = item.to === "#" || item.disabled;
 
                 if (isDisabled) {

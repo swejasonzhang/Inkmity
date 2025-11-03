@@ -33,7 +33,7 @@ const Pagination: React.FC<Props> = ({
                 bottom: `calc(env(safe-area-inset-bottom, 0px) + 20px)`,
             }}
         >
-            {/* Desktop */}
+            
             <div
                 className="hidden md:flex justify-center items-center gap-4 text-app pointer-events-auto"
                 role="navigation"
@@ -86,7 +86,7 @@ const Pagination: React.FC<Props> = ({
                 </button>
             </div>
 
-            {/* Mobile */}
+            {}
             <div className="md:hidden pointer-events-auto mt-2">
                 <div
                     className="grid place-items-center w-full"

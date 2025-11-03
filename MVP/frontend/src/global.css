@@ -51,7 +51,8 @@ body,
 #__next {
   height: 100%;
   min-height: 100%;
-  overflow-y: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 :root {
@@ -110,6 +111,7 @@ body,
     --elevated var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+.ink-scope[data-ink="light"],
 .ink-scope.ink-light {
   --bg: #ffffff;
   --fg: #111111;
@@ -216,6 +218,33 @@ body {
   color: var(--fg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+#root,
+#__next {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+#root::-webkit-scrollbar,
+#__next::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+  background: transparent;
 }
 
 .no-scrollbar {
@@ -290,6 +319,7 @@ h3 {
     --ui-ms: 0ms;
     --theme-ms: 0ms;
   }
+  .ink-scope[data-ink="light"],
   .ink-scope.ink-light {
     --video-opacity: 0.45;
   }
@@ -330,6 +360,7 @@ h3 {
 .overlay-readable {
   background: rgba(0, 0, 0, 0.3);
 }
+.ink-scope[data-ink="light"] .overlay-readable,
 .ink-scope.ink-light .overlay-readable {
   background: rgba(0, 0, 0, 0.2);
 }

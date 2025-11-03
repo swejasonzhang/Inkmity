@@ -96,8 +96,7 @@ export default function FloatingBar({
     bottom: `calc(max(${vvBottom}px, 20px) + env(safe-area-inset-bottom, 0px))`,
   };
 
-  const btnCommon =
-    "bg-app text-app inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
+  const btnCommon = "bg-app text-app inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
   const collapsedHeight = 44;
   const assistantBtnClass = [btnCommon, "px-3 md:px-4"].join(" ");
 
@@ -109,10 +108,7 @@ export default function FloatingBar({
   const DESKTOP_OPEN_W = 1200;
   const DESKTOP_CLOSED_W = 160;
 
-  const convW = isMdUp
-    ? (open ? DESKTOP_OPEN_W + (role === "Artist" ? PANEL_W : 0) : DESKTOP_CLOSED_W)
-    : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
-
+  const convW = isMdUp ? (open ? DESKTOP_OPEN_W + (role === "Artist" ? PANEL_W : 0) : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
   const convH = isMdUp ? (open ? 860 : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
 
   const centerRef = useRef<HTMLDivElement | null>(null);
@@ -172,11 +168,9 @@ export default function FloatingBar({
               {assistantLocked && <span className="hidden md:inline-block ml-1 opacity-90"><Lock size={14} /></span>}
             </Button>
           </div>
-
           <div ref={centerRef} className="pointer-events-auto flex items-center justify-center" style={{ paddingInline: 8 }}>
             {rightContent}
           </div>
-
           <div className="pointer-events-auto flex items-center justify-end" style={{ paddingRight: isMdUp ? pad.right : 12, height: convH }}>
             <div ref={btnRef}>
               <InkConversations
