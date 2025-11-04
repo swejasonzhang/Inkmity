@@ -224,6 +224,20 @@ export default function ArtistsSection({
 
     const snapHeight = "calc(100dvh - var(--header-h, 6rem) - var(--fb-safe, 0px))";
 
+    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+    const activeCount = useMemo(() => {
+        let n = 0;
+        if (priceFilter !== "all") n++;
+        if (locationFilter !== "all") n++;
+        if (styleFilter !== "all") n++;
+        if (availabilityFilter !== "all") n++;
+        if (experienceFilter !== "all") n++;
+        if (bookingFilter !== "all") n++;
+        if (travelFilter !== "all") n++;
+        if (searchQuery.trim()) n++;
+        return n;
+    }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, searchQuery]);
+
     return (
         <div className="flex flex-col h-full min-h-0 w-full">
             <div className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
@@ -276,6 +290,83 @@ export default function ArtistsSection({
                 />
             </div>
 
+            {/* Mobile filter trigger + panel */}
+            <div className="md:hidden sticky top-[calc(var(--header-h,56px))] z-20 bg-app/95 backdrop-blur border-b border-app">
+                <div className="px-3 py-2 flex items-center justify-between">
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg border border-app bg-card px-3 py-2 text-app text-sm active:scale-[0.98]"
+                        onClick={() => setMobileFiltersOpen((v) => !v)}
+                    >
+                        <span>Filters</span>
+                        {activeCount > 0 && (
+                            <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full border border-app bg-elevated px-1 text-xs font-bold">
+                                {activeCount}
+                            </span>
+                        )}
+                    </button>
+                    <div className="text-xs text-subtle">
+                        {filtered.length} artist{filtered.length === 1 ? "" : "s"}
+                    </div>
+                </div>
+                <motion.div
+                    initial={false}
+                    animate={{ height: mobileFiltersOpen ? "auto" : 0, opacity: mobileFiltersOpen ? 1 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden px-3 pb-2"
+                >
+                    {mobileFiltersOpen && (
+                        <ArtistFilter
+                            priceFilter={priceFilter}
+                            setPriceFilter={(v) => {
+                                setPriceFilter(v);
+                                setCurrentPage(1);
+                            }}
+                            locationFilter={locationFilter}
+                            setLocationFilter={(v) => {
+                                setLocationFilter(v);
+                                setCurrentPage(1);
+                            }}
+                            styleFilter={styleFilter}
+                            setStyleFilter={(v) => {
+                                setStyleFilter(v);
+                                setCurrentPage(1);
+                            }}
+                            availabilityFilter={availabilityFilter}
+                            setAvailabilityFilter={(v) => {
+                                setAvailabilityFilter(v);
+                                setCurrentPage(1);
+                            }}
+                            experienceFilter={experienceFilter}
+                            setExperienceFilter={(v) => {
+                                setExperienceFilter(v);
+                                setCurrentPage(1);
+                            }}
+                            bookingFilter={bookingFilter}
+                            setBookingFilter={(v) => {
+                                setBookingFilter(v);
+                                setCurrentPage(1);
+                            }}
+                            travelFilter={travelFilter}
+                            setTravelFilter={(v) => {
+                                setTravelFilter(v);
+                                setCurrentPage(1);
+                            }}
+                            sort={sort}
+                            setSort={(v) => {
+                                setSort(v);
+                                setCurrentPage(1);
+                            }}
+                            artists={artists}
+                            setCurrentPage={setCurrentPage}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                            className="bg-card rounded-lg border border-app p-2"
+                        />
+                    )}
+                </motion.div>
+            </div>
+
             <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
                 {isCenterLoading && (
                     <div className="absolute inset-0 z-10 grid place-items-center">
@@ -286,10 +377,7 @@ export default function ArtistsSection({
                 <div className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}>
                     <div className="md:hidden h-full min-h-0">
                         {listItems.length > 0 ? (
-                            <div
-                                className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory"
-                                style={{ scrollSnapType: "y mandatory" }}
-                            >
+                            <div className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory" style={{ scrollSnapType: "y mandatory" }}>
                                 {listItems.map((artist, index) => (
                                     <div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
@@ -301,10 +389,7 @@ export default function ArtistsSection({
                                 ))}
                             </div>
                         ) : (
-                            <div
-                                className="grid place-items-center"
-                                style={{ height: snapHeight }}
-                            >
+                            <div className="grid place-items-center" style={{ height: snapHeight }}>
                                 <p className="text-muted text-center">No artists match your filters.</p>
                             </div>
                         )}
