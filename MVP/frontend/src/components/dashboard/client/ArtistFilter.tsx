@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import clsx from "clsx";
 
@@ -119,12 +113,8 @@ const getExperienceCategory = (
   if (!value) return undefined;
   const raw = value.toString().trim().toLowerCase();
   if (raw === "all") return "all";
-  if (["amateur", "experienced", "professional", "veteran"].includes(raw))
-    return raw as any;
-  const cleaned = raw
-    .replace(/\s+/g, "")
-    .replace(/years?|yrs?|yoe|exp/g, "")
-    .replace(/\u2013|\u2014/g, "-");
+  if (["amateur", "experienced", "professional", "veteran"].includes(raw)) return raw as any;
+  const cleaned = raw.replace(/\s+/g, "").replace(/years?|yrs?|yoe|exp/g, "").replace(/\u2013|\u2014/g, "-");
   if (/amateur/.test(raw)) return "amateur";
   if (/experienced/.test(raw)) return "experienced";
   if (/professional/.test(raw)) return "professional";
@@ -216,8 +206,7 @@ const ArtistFilter: React.FC<Props> = ({
         if (p.locationFilter) setLocationFilter(p.locationFilter);
         if (p.styleFilter) setStyleFilter(p.styleFilter);
         if (p.availabilityFilter) setAvailabilityFilter(p.availabilityFilter);
-        if (p.experienceFilter)
-          setExperienceFilter(getExperienceCategory(p.experienceFilter) ?? "all");
+        if (p.experienceFilter) setExperienceFilter(getExperienceCategory(p.experienceFilter) ?? "all");
         if (p.bookingFilter) setBookingFilter(p.bookingFilter);
         if (p.travelFilter) setTravelFilter(p.travelFilter);
         if (p.sort) setSort(p.sort);
@@ -263,26 +252,12 @@ const ArtistFilter: React.FC<Props> = ({
     try {
       localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(payload));
     } catch { }
-  }, [
-    priceFilter,
-    locationFilter,
-    styleFilter,
-    availabilityFilter,
-    experienceFilter,
-    bookingFilter,
-    travelFilter,
-    sort,
-    searchQuery,
-  ]);
+  }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const scope =
-      (document.getElementById("ink-root") ||
-        document.querySelector<HTMLElement>(".ink-scope")) ??
-      document.documentElement;
+    const scope = (document.getElementById("ink-root") || document.querySelector<HTMLElement>(".ink-scope")) ?? document.documentElement;
     const root = document.documentElement;
-
     const vars = [
       "--background",
       "--foreground",
@@ -310,7 +285,6 @@ const ArtistFilter: React.FC<Props> = ({
       "--subtle",
       "--elevated",
     ];
-
     const apply = () => {
       const cs = getComputedStyle(scope);
       vars.forEach((v) => {
@@ -319,18 +293,13 @@ const ArtistFilter: React.FC<Props> = ({
       });
       root.setAttribute("data-ink-theme-ts", String(Date.now()));
     };
-
     apply();
-
     const mo = new MutationObserver(apply);
     mo.observe(scope, { attributes: true, attributeFilter: ["class", "style"] });
-
     const mql = window.matchMedia?.("(prefers-color-scheme: dark)");
     const onScheme = () => apply();
     mql?.addEventListener?.("change", onScheme);
-
     window.addEventListener("storage", apply);
-
     return () => {
       mo.disconnect();
       mql?.removeEventListener?.("change", onScheme);
@@ -338,25 +307,24 @@ const ArtistFilter: React.FC<Props> = ({
     };
   }, []);
 
-  const triggerBase =
-    "h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
-  const contentBase =
-    "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
-  const itemCentered =
-    "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
+  const triggerBase = "h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
+  const contentBase = "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
+  const itemCentered = "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
   const FILTER_W = "w-full sm:w-[260px] sm:shrink-0";
   const SEARCH_W = "w-full sm:flex-1 sm:min-w-[320px]";
 
   return (
-    <div
+    <section
       className={clsx(
-        "w-full bg-card border border-app rounded-xl shadow-sm",
+        "w-full bg-card border-b border-app mb-3",
+        "sm:border sm:rounded-xl sm:shadow-sm sm:mb-0",
         "mx-auto",
         className
       )}
       role="region"
       aria-label="Artist filters"
     >
+      <div className="sm:hidden border-t border-app" aria-hidden="true" />
       <div className="w-full mx-auto">
         <div className="p-2 sm:p-3">
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3 w-full">
@@ -373,7 +341,7 @@ const ArtistFilter: React.FC<Props> = ({
                   "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app/80",
                   "selection:bg-elevated selection:text-app",
                   "caret-[var(--fg)]",
-                  "text-center"
+                  "text-left sm:text-center"
                 )}
               />
             </div>
@@ -554,7 +522,8 @@ const ArtistFilter: React.FC<Props> = ({
           </div>
         </div>
       </div>
-    </div>
+      <div className="sm:hidden border-t border-app" aria-hidden="true" />
+    </section>
   );
 };
 

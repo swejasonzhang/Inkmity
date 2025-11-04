@@ -95,7 +95,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
 
   const shellClass = fullScreen
     ? "group w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition"
-    : "group w-full h-full min-h-[46.25rem] sm:min-h-[46.25rem] md:min-h-[51.25rem] flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition";
+    : "group w-full h-full min-h-[38rem] sm:min-h-[46.25rem] md:min-h-[51.25rem] flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition";
 
   return (
     <div className={shellClass} style={{ borderColor: "var(--border)" }} data-artist-card="true">

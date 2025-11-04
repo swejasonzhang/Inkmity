@@ -1,22 +1,16 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
-
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
-import ThemeBridge from "@/components/theme/ThemeBridge";
 
 const PublicScope: React.FC = () => {
-  useEffect(() => {
-    document.documentElement.classList.remove("ink-light");
-    document.body.classList.remove("ink-light");
-  }, []);
   return (
-    <div id="public-scope" className="ink-scope theme-smooth" data-ink="dark">
+    <div id="public-scope" className="ink-scope theme-smooth">
       <Outlet />
     </div>
   );
@@ -25,7 +19,6 @@ const PublicScope: React.FC = () => {
 const DashboardScope: React.FC = () => (
   <div id="dashboard-scope" className="ink-scope theme-smooth">
     <SignedIn>
-      <ThemeBridge />
       <Outlet />
     </SignedIn>
     <SignedOut>
@@ -40,14 +33,12 @@ const App: React.FC = () => {
       <Route path="/dashboard" element={<DashboardScope />}>
         <Route index element={<Dashboard />} />
       </Route>
-
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/landing" element={<Landing />} />
-
         <Route
           path="/"
           element={

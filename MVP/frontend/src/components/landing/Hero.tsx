@@ -1,5 +1,7 @@
 import React from "react";
 import { m } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 type HeroProps = {
     textFadeUp: any;
@@ -8,45 +10,23 @@ type HeroProps = {
     onReveal: () => void;
 };
 
-function useIsLightTheme() {
-    const [isLight, setIsLight] = React.useState(
-        typeof document !== "undefined" ? document.documentElement.classList.contains("light") : false
-    );
-    React.useEffect(() => {
-        if (typeof document === "undefined") return;
-        const html = document.documentElement;
-        const mo = new MutationObserver(() => setIsLight(html.classList.contains("light")));
-        mo.observe(html, { attributes: true, attributeFilter: ["class", "data-ink-theme"] });
-        return () => mo.disconnect();
-    }, []);
-    return isLight;
-}
-
 const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal }) => {
-    const isLight = useIsLightTheme();
-
     const gradientInitial = { backgroundPositionX: "100%" as const };
     const gradientAnimate = { backgroundPositionX: "0%" as const };
-    const gradientTransition = {
-        backgroundPositionX: { duration: 2, ease: [0.22, 1, 0.36, 1], delay: 0.1 },
-    } as const;
+    const gradientTransition = { backgroundPositionX: { duration: 2, ease: [0.22, 1, 0.36, 1], delay: 0.1 } } as const;
 
     const scrollDown = () => {
         onReveal();
         const anchor = document.getElementById("features-title") as HTMLElement | null;
-        if (anchor) {
-            anchor.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-            window.scrollBy({ top: Math.max(0, window.innerHeight * 0.9), behavior: "smooth" });
-        }
+        if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+        else window.scrollBy({ top: Math.max(0, window.innerHeight * 0.9), behavior: "smooth" });
     };
 
     return (
         <section className="px-3">
-            <div className="mx-auto max-w-9xl pt-20 text-center">
+            <div className="mx-auto max-w-9xl pt-10 sm:pt-14 md:pt-20 text-center">
                 <h1 className="text-5xl md:text-6xl lg:text-8xl font-extrabold leading-tight tracking-tight" style={wc}>
                     <m.span
-                        key={`hero-head-${isLight ? "light" : "dark"}`}
                         initial={gradientInitial}
                         {...(!prefersReduced && { animate: gradientAnimate })}
                         transition={gradientTransition}
@@ -57,20 +37,35 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
 
                 <m.p
                     variants={textFadeUp}
-                    className="mt-5 text-2xl md:text-2xl lg:text-3xl font-bold leading-tight max-w-4xl mx-auto"
+                    className="mt-4 md:mt-5 text-2xl md:text-2xl lg:text-3xl font-bold leading-tight max-w-4xl mx-auto"
                     style={wc}
                 >
-                    Inkmity brings real availability, real context, and verified reviews—so you can align fast
-                    and book with confidence.
+                    Inkmity brings real availability, real context, and verified reviews—so you can align fast and book with confidence.
                 </m.p>
 
-                <m.div variants={textFadeUp} className="mt-10 flex items-center justify-center">
+                <m.div variants={textFadeUp} className="mt-5 sm:mt-6 flex items-center justify-center gap-2 sm:gap-4">
+                    <Button
+                        asChild
+                        className="rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                    >
+                        <Link to="/signup" aria-label="Create your Inkmity account">Create your account</Link>
+                    </Button>
+                    <Button
+                        asChild
+                        variant="outline"
+                        className="rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold border border-app bg-card/70 text-app hover:bg-card/80 focus-visible:ring-2 focus-visible:ring-[color:var(--border)]/40"
+                    >
+                        <Link to="/login" aria-label="Log in to Inkmity">I’m already logged in</Link>
+                    </Button>
+                </m.div>
+
+                <m.div variants={textFadeUp} className="mt-3 md:mt-6 flex items-center justify-center">
                     <button
                         type="button"
                         onClick={scrollDown}
                         className={[
-                            "group inline-flex items-center gap-3 rounded-full border border-app",
-                            "bg-card/70 backdrop-blur px-6 py-3 text-base md:text-lg font-semibold text-app",
+                            "group inline-flex items-center gap-2 sm:gap-3 rounded-full border border-app",
+                            "bg-card/70 backdrop-blur px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold text-app",
                             "transition active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
                             "shadow-[0_6px_20px_rgba(0,0,0,0.25)]",
                         ].join(" ")}
@@ -84,7 +79,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
                         </span>
                         <span
                             className={[
-                                "inline-grid h-8 w-8 place-items-center rounded-full border border-app text-app",
+                                "inline-grid h-6 w-6 md:h-8 md:w-8 place-items-center rounded-full border border-app text-app",
                                 "transition-transform",
                                 "group-hover:translate-y-0.5",
                             ].join(" ")}
@@ -101,7 +96,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.6 }}
-                className="mx-auto mt-12 h-px w-48 md:w-64 lg:w-80 bg-gradient-to-r from-transparent via-[color:var(--border)] to-transparent"
+                className="mx-auto mt-8 md:mt-12 h-px w-40 md:w-64 lg:w-80 bg-gradient-to-r from-transparent via-[color:var(--border)] to-transparent"
             />
         </section>
     );

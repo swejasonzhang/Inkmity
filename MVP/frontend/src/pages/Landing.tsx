@@ -1,13 +1,5 @@
-
 import React from "react";
-import {
-    LazyMotion,
-    domAnimation,
-    type Variants,
-    MotionConfig,
-    useReducedMotion,
-    m,
-} from "framer-motion";
+import { LazyMotion, domAnimation, type Variants, MotionConfig, useReducedMotion, m } from "framer-motion";
 import Header from "@/components/header/Header";
 import Hero from "@/components/landing/Hero";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
@@ -40,26 +32,21 @@ const Landing: React.FC = () => {
     React.useEffect(() => setDidMount(true), []);
 
     const reveal = React.useCallback(() => setRevealed(true), []);
-
     const handleRevealButton = () => {
         reveal();
         const target = document.getElementById("features-title");
         if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
     };
 
-    
     React.useEffect(() => {
         if (revealed) return;
-
         const onIntent = () => {
             if (!revealed) reveal();
         };
-
         window.addEventListener("wheel", onIntent, { passive: true });
         window.addEventListener("touchmove", onIntent, { passive: true });
         window.addEventListener("pointerdown", onIntent, { passive: true });
         window.addEventListener("keydown", onIntent);
-
         return () => {
             window.removeEventListener("wheel", onIntent);
             window.removeEventListener("touchmove", onIntent);
@@ -68,102 +55,83 @@ const Landing: React.FC = () => {
         };
     }, [revealed, reveal]);
 
-    
     React.useEffect(() => {
         if (revealed) return;
         const el = sentinelRef.current;
         if (!el) return;
-
         const io = new IntersectionObserver(
             (entries) => {
                 if (entries.some((e) => e.isIntersecting)) reveal();
             },
             { root: null, threshold: 0.01 }
         );
-
         io.observe(el);
         return () => io.disconnect();
     }, [revealed, reveal]);
 
-    
     const featuresFade: Variants = prefersReduced
         ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0 } } }
-        : {
-            hidden: { opacity: 0, y: 8 },
-            show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } },
-        };
+        : { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } } };
 
     return (
         <>
             <div className="fixed inset-0 -z-20 bg-app" aria-hidden />
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
-                    <div className="relative z-10 text-app flex flex-col min-h-[100vh]">
+                    <div className="relative z-10 text-app flex flex-col min-h-[100svh]">
                         <div className="sticky top-0 z-50 bg-app/80 backdrop-blur border-b border-app">
                             <Header />
                         </div>
 
                         <main className="flex-1">
-                            {}
-                            <section className="relative pt-6 md:pt-10">
+                            <section className="relative pt-4 md:pt-10">
                                 <div className="mx-auto max-w-6xl px-4">
                                     <m.div
                                         variants={introStagger}
                                         initial="hidden"
                                         whileInView="visible"
                                         viewport={{ once: true, amount: 0.4 }}
-                                        className="space-y-10 md:space-y-12"
+                                        className="space-y-6 md:space-y-12"
                                     >
-                                        <Hero
-                                            prefersReduced={!!prefersReduced}
-                                            wc={wc}
-                                            textFadeUp={textFadeUp}
-                                            onReveal={handleRevealButton}
-                                        />
+                                        <Hero prefersReduced={!!prefersReduced} wc={wc} textFadeUp={textFadeUp} onReveal={handleRevealButton} />
                                     </m.div>
                                 </div>
                             </section>
 
-                            {}
-                            <div ref={dividerWrapRef} className="mt-6 mb-[5px]">
+                            <div ref={dividerWrapRef} className="mt-4 md:mt-6 mb-2 md:mb-[5px]">
                                 <Divider />
                             </div>
 
-                            {}
                             <div ref={sentinelRef} style={{ height: 10 }} />
 
-                            {}
                             {!revealed && didMount && (
                                 <div aria-hidden className="mx-auto max-w-6xl px-4">
-                                    <div style={{ height: "70vh" }} />
+                                    <div className="h-[40vh] md:h-[70vh]" />
                                 </div>
                             )}
 
-                            {}
                             <m.div
                                 initial="hidden"
                                 animate={revealed ? "show" : "hidden"}
                                 variants={featuresFade}
-                                className="mx-auto max-w-6xl px-4"
+                                className="mx-auto max-w-6xl px-4 py-2 md:py-4"
                                 style={{ willChange: "opacity, transform" }}
                             >
                                 {revealed && (
                                     <>
                                         <div id="features-title" />
                                         <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
-                                        <Divider className="my-6" />
+                                        <Divider className="my-4 md:my-6" />
                                         <Differentiators textFadeUp={textFadeUp} wc={wc} />
                                         <BottomCTA textFadeUp={textFadeUp} wc={wc} />
-                                        <Divider />
+                                        <Divider className="my-4 md:my-6" />
                                     </>
                                 )}
                             </m.div>
                         </main>
 
-                        <footer className="p-4">
-                            <div className="mx-auto max-w-6xl text-center text-xs md:text-sm text-subtle">
-                                © {new Date().getFullYear()} Inkmity. All rights reserved.
-                            </div>
+                        <footer className="p-3 md:p-4">
+                            <div className="mx-auto max-w-6xl text-center text-xs md:text-sm text-subtle">© {new Date().getFullYear()} Inkmity. All rights reserved.</div>
                         </footer>
                     </div>
                 </LazyMotion>
