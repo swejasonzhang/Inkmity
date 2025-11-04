@@ -91,14 +91,22 @@ export default function FloatingBar({
   });
 
   const pad = {
-    left: isMdUp ? "calc(1.85rem + 1px + env(safe-area-inset-left, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-left, 0px))",
+    left: isMdUp ? "calc(25px + env(safe-area-inset-left, 0px))" : "calc(13px + env(safe-area-inset-left, 0px))",
     right: isMdUp ? "calc(1.85rem + 1px + env(safe-area-inset-right, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-right, 0px))",
     bottom: `calc(max(${vvBottom}px, 20px) + env(safe-area-inset-bottom, 0px))`,
   };
 
-  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none focus:ring-2 focus:ring-app/40 font-semibold border-2";
+  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border-2";
   const collapsedHeight = 44;
-  const assistantBtnClass = ["px-3 md:px-4", "bg-card text-app border-app shadow-md", btnCommon].join(" ");
+  const assistantBtnClass = [
+    "ink-assistant-btn",
+    "px-3 md:px-4",
+    "bg-app text-bg border-app shadow-lg",
+    "focus:ring-2 focus:ring-app/50 focus:ring-offset-2 focus:ring-offset-[color:var(--bg)]",
+    "hover:brightness-[1.08] active:scale-[0.99]",
+    "disabled:opacity-100 disabled:bg-app disabled:text-bg",
+    btnCommon
+  ].join(" ");
 
   const MOBILE_CLOSED_W = 112;
   const MOBILE_OPEN_W = Math.min(Math.max(240, vp.w - 48), 360);
@@ -161,7 +169,10 @@ export default function FloatingBar({
           aria-disabled={assistantLocked}
           disabled={assistantLocked}
           title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
-          style={{ height: collapsedHeight }}
+          style={{
+            height: collapsedHeight,
+            boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)"
+          }}
           variant="outline"
         >
           <Bot size={18} aria-hidden />
@@ -181,6 +192,8 @@ export default function FloatingBar({
 
       <div className={`fixed inset-x-0 z-[2147483646] pointer-events-none ${themeClass}`} style={{ bottom: pad.bottom }}>
         <style>{`
+          .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
+          .ink-assistant-btn { backdrop-filter: none; }
           .ink-solid-controls :is(button, [role="button"], .btn),
           .ink-solid-controls :is(nav button, nav a),
           .ink-solid-controls [data-pagination] :is(button, a) {
