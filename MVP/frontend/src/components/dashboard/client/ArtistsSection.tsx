@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -222,11 +222,49 @@ export default function ArtistsSection({
         onRequestCloseModal();
     };
 
+    const filterRef = useRef<HTMLDivElement | null>(null);
+    const [filterH, setFilterH] = useState(0);
+    const [isSmUp, setIsSmUp] = useState(false);
+    const [isMdUp, setIsMdUp] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const sm = window.matchMedia("(min-width: 640px)");
+        const md = window.matchMedia("(min-width: 768px)");
+        const onChange = () => {
+            setIsSmUp(sm.matches);
+            setIsMdUp(md.matches);
+        };
+        onChange();
+        sm.addEventListener?.("change", onChange);
+        md.addEventListener?.("change", onChange);
+        return () => {
+            sm.removeEventListener?.("change", onChange);
+            md.removeEventListener?.("change", onChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!filterRef.current) return;
+        const ro = new ResizeObserver(() => {
+            setFilterH(filterRef.current?.offsetHeight || 0);
+        });
+        ro.observe(filterRef.current);
+        setFilterH(filterRef.current.offsetHeight || 0);
+        return () => ro.disconnect();
+    }, []);
+
+    const cardMinRem = isMdUp ? 51.25 : isSmUp ? 46.25 : 38;
+    const cardMinPx = Math.round(cardMinRem * 16);
+    const gridVPadPx = isMdUp ? 24 : 0;
+    const sectionMinPx = (isMdUp ? filterH : 0) + cardMinPx + gridVPadPx;
+    const minGridPx = cardMinPx + gridVPadPx;
+
     const snapHeight = "calc(100dvh - var(--header-h, 6rem) - var(--fb-safe, 0px))";
 
     return (
-        <div className="flex flex-col h-full min-h-0 w-full">
-            <div className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
+        <div className="flex flex-col h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
+            <div ref={filterRef} className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={(v) => {
@@ -306,7 +344,7 @@ export default function ArtistsSection({
 
                     <div className="hidden md:block h-full min-h-0">
                         {listItems.length > 0 ? (
-                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3">
+                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3" style={{ minHeight: `${minGridPx}px` }}>
                                 {listItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
@@ -322,7 +360,7 @@ export default function ArtistsSection({
                                 ))}
                             </div>
                         ) : (
-                            <div className="min-h-full grid place-items-center p-0 md:p-6">
+                            <div className="min-h-full grid place-items-center p-0 md:p-3" style={{ minHeight: `${minGridPx}px` }}>
                                 <p className="text-muted text-center">No artists match your filters.</p>
                             </div>
                         )}
