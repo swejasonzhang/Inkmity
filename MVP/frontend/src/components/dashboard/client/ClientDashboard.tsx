@@ -16,6 +16,7 @@ import { useMessaging } from "@/hooks/useMessaging";
 import type { Artist as ArtistDto } from "@/api";
 import { AnimatePresence, motion } from "framer-motion";
 import Pagination from "@/components/dashboard/shared/Pagination";
+import ArtistFilter from "@/components/dashboard/client/ArtistFilter";
 
 const ArtistsSection = lazy(() => import("@/components/dashboard/client/ArtistsSection"));
 const ArtistModal = lazy(() => import("@/components/dashboard/client/ArtistModal"));
@@ -30,6 +31,16 @@ export default function ClientDashboard() {
 
     const [assistantOpen, setAssistantOpen] = useState(false);
     const [page, setPage] = useState(1);
+
+    const [priceFilter, setPriceFilter] = useState("all");
+    const [locationFilter, setLocationFilter] = useState("all");
+    const [styleFilter, setStyleFilter] = useState("all");
+    const [availabilityFilter, setAvailabilityFilter] = useState("all");
+    const [experienceFilter, setExperienceFilter] = useState("all");
+    const [bookingFilter, setBookingFilter] = useState("all");
+    const [travelFilter, setTravelFilter] = useState("all");
+    const [sort, setSort] = useState("highest_rated");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const authFetch = useCallback(
         async (url: string, options: RequestInit = {}) => {
@@ -56,30 +67,62 @@ export default function ClientDashboard() {
     }, [isLoaded, isSignedIn, navigate]);
 
     const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
-    const totalPages = Math.max(1, Math.ceil((artists.length || 0) / PAGE_SIZE));
+
+    const filtered = useMemo(() => {
+        const txt = searchQuery.trim().toLowerCase();
+        const inPrice = (a: any) => {
+            if (priceFilter === "all") return true;
+            const r = a?.priceRange || {};
+            const min = Number(r.min ?? 0);
+            const max = Number(r.max ?? Number.POSITIVE_INFINITY);
+            const [loRaw, hiRaw] = priceFilter.split("-");
+            const lo = loRaw.endsWith("+") ? Number(loRaw.replace("+", "")) : Number(loRaw);
+            const hi = hiRaw ? Number(hiRaw) : Number.POSITIVE_INFINITY;
+            return max >= lo && min <= hi;
+        };
+        const inLocation = (a: any) => locationFilter === "all" || (a.location || "").toLowerCase() === locationFilter.toLowerCase();
+        const inStyle = (a: any) => {
+            if (styleFilter === "all") return true;
+            const arr = Array.isArray(a.styles) ? a.styles : typeof a.styles === "string" ? a.styles.split(/[;,/]+/) : [];
+            return arr.map((s: any) => String(s).trim().toLowerCase()).includes(styleFilter.toLowerCase());
+        };
+        const inAvail = (a: any) => availabilityFilter === "all" || a.availabilityCode === availabilityFilter;
+        const inExp = (a: any) => {
+            if (experienceFilter === "all") return true;
+            const y = Number(a.yearsExperience ?? -1);
+            if (!Number.isFinite(y) || y < 0) return false;
+            if (experienceFilter === "amateur") return y <= 2;
+            if (experienceFilter === "experienced") return y >= 3 && y <= 5;
+            if (experienceFilter === "professional") return y >= 6 && y <= 10;
+            if (experienceFilter === "veteran") return y >= 10;
+            return true;
+        };
+        const inBooking = (a: any) => bookingFilter === "all" || a.bookingPreference === bookingFilter;
+        const inTravel = (a: any) => travelFilter === "all" || a.travelFrequency === travelFilter;
+        const inSearch = (a: any) => {
+            if (!txt) return true;
+            const hay = [a.username, a.bio, a.location, ...(Array.isArray(a.styles) ? a.styles : [])].filter(Boolean).join(" ").toLowerCase();
+            return hay.includes(txt);
+        };
+        const out = artists.filter(a => inPrice(a) && inLocation(a) && inStyle(a) && inAvail(a) && inExp(a) && inBooking(a) && inTravel(a) && inSearch(a));
+        const by = (v: string) => {
+            if (v === "highest_rated") return [...out].sort((a: any, b: any) => (b.rating ?? 0) - (a.rating ?? 0));
+            if (v === "most_reviews") return [...out].sort((a: any, b: any) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0));
+            if (v === "experience_desc") return [...out].sort((a: any, b: any) => (b.yearsExperience ?? 0) - (a.yearsExperience ?? 0));
+            if (v === "experience_asc") return [...out].sort((a: any, b: any) => (a.yearsExperience ?? 0) - (b.yearsExperience ?? 0));
+            if (v === "newest") return [...out].sort((a: any, b: any) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+            return out;
+        };
+        return by(sort);
+    }, [artists, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
+
+    const totalPages = Math.max(1, Math.ceil((filtered.length || 0) / PAGE_SIZE));
 
     const handlePageChange = (next: number) => {
         if (next < 1 || next > totalPages) return;
         setPage(next);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
-
-    const modalArtist = useMemo(() => {
-        if (!selectedArtist) return null;
-        const imgs: string[] = ((selectedArtist as any).portfolioImages as string[] | undefined)?.filter(Boolean) ?? [];
-        const pastWorks: string[] = (selectedArtist as any).pastWorks?.filter(Boolean) ?? imgs;
-        const healedWorks: string[] = (selectedArtist as any).healedWorks?.filter(Boolean) ?? [];
-        const sketches: string[] = (selectedArtist as any).sketches?.filter(Boolean) ?? [];
-        return {
-            _id: selectedArtist._id,
-            clerkId: (selectedArtist as any).clerkId,
-            username: displayNameFromUsername(selectedArtist.username),
-            bio: (selectedArtist as any).bio,
-            pastWorks,
-            healedWorks,
-            sketches,
-        };
-    }, [selectedArtist]);
 
     if (!isLoaded || !initialized) {
         return (
@@ -106,6 +149,32 @@ export default function ClientDashboard() {
         <div className="min-h-dvh bg-app text-app flex flex-col overflow-hidden" style={{ paddingBottom: "var(--fb-safe, 0px)" }}>
             <Header />
 
+            <div className="sm:hidden px-3 mt-2">
+                <ArtistFilter
+                    priceFilter={priceFilter}
+                    setPriceFilter={setPriceFilter}
+                    locationFilter={locationFilter}
+                    setLocationFilter={setLocationFilter}
+                    styleFilter={styleFilter}
+                    setStyleFilter={setStyleFilter}
+                    availabilityFilter={availabilityFilter}
+                    setAvailabilityFilter={setAvailabilityFilter}
+                    experienceFilter={experienceFilter}
+                    setExperienceFilter={setExperienceFilter}
+                    bookingFilter={bookingFilter}
+                    setBookingFilter={setBookingFilter}
+                    travelFilter={travelFilter}
+                    setTravelFilter={setTravelFilter}
+                    sort={sort}
+                    setSort={setSort}
+                    artists={artists}
+                    setCurrentPage={setPage}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    className="mb-3"
+                />
+            </div>
+
             <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 flex">
                     <div className="w-full md:my-auto my-0 px-0 md:px-3">
@@ -125,7 +194,7 @@ export default function ClientDashboard() {
                             }
                         >
                             <ArtistsSection
-                                artists={artists.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                                artists={filtered.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
                                 loading={loading}
                                 showArtists
                                 onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
@@ -189,10 +258,18 @@ export default function ClientDashboard() {
             </AnimatePresence>
 
             <Suspense fallback={null}>
-                {modalArtist && (
+                {selectedArtist && (
                     <ArtistModal
                         open={Boolean(selectedArtist)}
-                        artist={modalArtist}
+                        artist={{
+                            _id: selectedArtist._id,
+                            clerkId: (selectedArtist as any).clerkId,
+                            username: displayNameFromUsername(selectedArtist.username),
+                            bio: (selectedArtist as any).bio,
+                            pastWorks: ((selectedArtist as any).pastWorks ?? (selectedArtist as any).portfolioImages ?? []).filter(Boolean),
+                            healedWorks: ((selectedArtist as any).healedWorks ?? []).filter(Boolean),
+                            sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean),
+                        }}
                         onClose={() => setSelectedArtist(null)}
                         onMessage={async a => {
                             window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } }));
