@@ -96,9 +96,9 @@ export default function FloatingBar({
     bottom: `calc(max(${vvBottom}px, 20px) + env(safe-area-inset-bottom, 0px))`,
   };
 
-  const btnCommon = "bg-app text-app inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto border border-app shadow-md transition focus:outline-none focus:ring-2 focus:ring-app/40";
+  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none focus:ring-2 focus:ring-app/40 font-semibold border-2";
   const collapsedHeight = 44;
-  const assistantBtnClass = [btnCommon, "px-3 md:px-4"].join(" ");
+  const assistantBtnClass = ["px-3 md:px-4", "bg-card text-app border-app shadow-md", btnCommon].join(" ");
 
   const MOBILE_CLOSED_W = 112;
   const MOBILE_OPEN_W = Math.min(Math.max(240, vp.w - 48), 360);
@@ -141,57 +141,89 @@ export default function FloatingBar({
 
   useEffect(() => {
     const EXTRA_SAFE_GAP = 12;
-    document.documentElement.style.setProperty("--fb-safe", `${wrapperH + EXTRA_SAFE_GAP}px`);
+    document.documentElement.style.setProperty("--fb-safe", `${collapsedHeight + EXTRA_SAFE_GAP}px`);
     return () => {
       document.documentElement.style.removeProperty("--fb-safe");
     };
-  }, [wrapperH]);
+  }, []);
 
-  const bar = (
-    <div className={`fixed inset-x-0 z-[1000] pointer-events-none ${themeClass}`} style={{ bottom: pad.bottom }}>
-      <div className="relative w-full" style={{ height: Math.max(wrapperH, collapsedHeight) }}>
-        <div className={`grid ${isMdUp ? "items-end" : "items-center"}`} style={{ gridTemplateColumns: "auto 1fr auto" }}>
-          <div className="pointer-events-auto" style={{ paddingLeft: isMdUp ? pad.left : 12, height: collapsedHeight }}>
-            <Button
-              type="button"
-              onClick={assistantLocked ? undefined : onAssistantOpen}
-              className={assistantBtnClass}
-              aria-label="Open assistant"
-              aria-disabled={assistantLocked}
-              disabled={assistantLocked}
-              title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
-              style={{ height: collapsedHeight }}
-              variant="outline"
+  const ui = (
+    <>
+      <div
+        className={`fixed z-[2147483647] ${themeClass}`}
+        style={{ left: pad.left, bottom: pad.bottom, height: collapsedHeight }}
+      >
+        <Button
+          type="button"
+          onClick={assistantLocked ? undefined : onAssistantOpen}
+          className={assistantBtnClass}
+          aria-label={assistantLocked ? "Assistant locked" : "Open assistant"}
+          aria-disabled={assistantLocked}
+          disabled={assistantLocked}
+          title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
+          style={{ height: collapsedHeight }}
+          variant="outline"
+        >
+          <Bot size={18} aria-hidden />
+          <span className="text-sm hidden md:inline">Assistant</span>
+          {assistantLocked && (
+            <>
+              <span className="hidden md:inline-block ml-1 opacity-90">
+                <Lock size={14} aria-hidden />
+              </span>
+              <span className="md:hidden ml-1">
+                <Lock size={14} aria-hidden />
+              </span>
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className={`fixed inset-x-0 z-[2147483646] pointer-events-none ${themeClass}`} style={{ bottom: pad.bottom }}>
+        <style>{`
+          .ink-solid-controls :is(button, [role="button"], .btn),
+          .ink-solid-controls :is(nav button, nav a),
+          .ink-solid-controls [data-pagination] :is(button, a) {
+            background: var(--card);
+            color: var(--fg);
+            border: 2px solid var(--app, var(--border));
+            font-weight: 600;
+            border-radius: 9999px;
+          }
+          .ink-solid-controls :is(button, [role="button"], .btn) { padding: 0.5rem 0.75rem; }
+        `}</style>
+        <div className="relative w-full" style={{ height: Math.max(wrapperH, collapsedHeight) }}>
+          <div className="grid items-center" style={{ gridTemplateColumns: "auto 1fr auto" }}>
+            <div style={{ width: 0, height: collapsedHeight }} />
+            <div
+              ref={centerRef}
+              className="ink-solid-controls flex items-center justify-center"
+              style={{ paddingInline: 8, pointerEvents: rightContent ? "auto" : "none" }}
             >
-              <Bot size={18} aria-hidden />
-              <span className="text-sm font-medium hidden md:inline">Assistant</span>
-              {assistantLocked && <span className="hidden md:inline-block ml-1 opacity-90"><Lock size={14} /></span>}
-            </Button>
-          </div>
-          <div ref={centerRef} className="pointer-events-auto flex items-center justify-center" style={{ paddingInline: 8 }}>
-            {rightContent}
-          </div>
-          <div className="pointer-events-auto flex items-center justify-end" style={{ paddingRight: isMdUp ? pad.right : 12, height: convH }}>
-            <div ref={btnRef}>
-              <InkConversations
-                role={role}
-                isMdUp={isMdUp}
-                width={isMdUp ? convW : Math.max(0, convW - 50)}
-                height={convH}
-                open={open}
-                setOpen={setOpen}
-                unreadConvoCount={unreadConvoCount}
-                requestCount={requestCount}
-                derivedTotal={derivedTotal}
-                messagesContent={messagesContent}
-              />
+              {rightContent}
+            </div>
+            <div className="pointer-events-auto flex items-center justify-center" style={{ paddingRight: isMdUp ? pad.right : 12, height: convH }}>
+              <div ref={btnRef} className="ink-solid-controls flex items-center justify-center">
+                <InkConversations
+                  role={role}
+                  isMdUp={isMdUp}
+                  width={isMdUp ? convW : Math.max(0, convW - 50)}
+                  height={convH}
+                  open={open}
+                  setOpen={setOpen}
+                  unreadConvoCount={unreadConvoCount}
+                  requestCount={requestCount}
+                  derivedTotal={derivedTotal}
+                  messagesContent={messagesContent}
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 
   if (typeof document === "undefined") return null;
-  return createPortal(bar, portalTarget ?? document.body);
+  return createPortal(ui, portalTarget ?? document.body);
 }

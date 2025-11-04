@@ -27,18 +27,19 @@ const Pagination: React.FC<Props> = ({
                 "fixed z-[1001] pointer-events-none",
                 "left-1/2 -translate-x-1/2",
                 "w-auto max-w-[calc(100vw-24px)]",
+                "[--pg-offset:5px] md:[--pg-offset:px]",
                 className || "",
             ].join(" ")}
             style={{
-                bottom: `calc(env(safe-area-inset-bottom, 0px) + 20px)`,
+                bottom: `calc(env(safe-area-inset-bottom, 0px) + var(--pg-offset))`,
             }}
         >
-            
             <div
                 className="hidden md:flex justify-center items-center gap-4 text-app pointer-events-auto"
                 role="navigation"
                 aria-label="Pagination"
                 aria-disabled={!desktopEnabled}
+                data-pagination
                 style={{ opacity: desktopEnabled ? 1 : 0.5, pointerEvents: desktopEnabled ? "auto" : "none" }}
             >
                 <button
@@ -47,21 +48,21 @@ const Pagination: React.FC<Props> = ({
                     disabled={atStart}
                     aria-label="Previous page"
                     className={[
-                        "h-11 w-11 grid place-items-center rounded-full",
-                        "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
-                        "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
-                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        "h-12 w-12 flex items-center justify-center rounded-full leading-none",
+                        "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
+                        "focus:outline-none focus:ring-2 focus:ring-app",
+                        "disabled:cursor-not-allowed",
                     ].join(" ")}
                 >
-                    <ChevronLeft size={18} aria-hidden />
+                    <ChevronLeft size={20} aria-hidden className="block" />
                 </button>
 
                 <span
                     className={[
                         "inline-flex items-center justify-center",
-                        "h-12 min-w-[10rem] px-6",
-                        "rounded-full border border-app bg-card/70 backdrop-blur",
-                        "text-lg leading-none",
+                        "h-12 min-w-[12rem] px-8",
+                        "rounded-full border-2 border-app bg-app text-bg",
+                        "text-xl leading-none",
                     ].join(" ")}
                     aria-live="polite"
                 >
@@ -76,17 +77,16 @@ const Pagination: React.FC<Props> = ({
                     disabled={atEnd}
                     aria-label="Next page"
                     className={[
-                        "h-11 w-11 grid place-items-center rounded-full",
-                        "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
-                        "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
-                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        "h-12 w-12 flex items-center justify-center rounded-full leading-none",
+                        "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
+                        "focus:outline-none focus:ring-2 focus:ring-app",
+                        "disabled:cursor-not-allowed",
                     ].join(" ")}
                 >
-                    <ChevronRight size={18} aria-hidden />
+                    <ChevronRight size={20} aria-hidden className="block" />
                 </button>
             </div>
 
-            {}
             <div className="md:hidden pointer-events-auto mt-2">
                 <div
                     className="grid place-items-center w-full"
@@ -102,9 +102,9 @@ const Pagination: React.FC<Props> = ({
                             aria-label="Next page"
                             className={[
                                 "h-12 w-12 grid place-items-center rounded-full",
-                                "border border-app bg-elevated hover:bg-elevated active:scale-[0.99]",
-                                "focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
-                                "disabled:opacity-50 disabled:cursor-not-allowed",
+                                "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
+                                "focus:outline-none focus:ring-2 focus:ring-app",
+                                "disabled:cursor-not-allowed",
                             ].join(" ")}
                         >
                             <ChevronDown size={22} aria-hidden />
