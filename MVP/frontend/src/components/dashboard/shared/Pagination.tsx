@@ -35,7 +35,7 @@ const Pagination: React.FC<Props> = ({
             }}
         >
             <div
-                className="hidden md:flex justify-center items-center gap-4 text-app pointer-events-auto"
+                className="hidden md:flex justify-center items-center gap-2 text-app pointer-events-auto"
                 role="navigation"
                 aria-label="Pagination"
                 aria-disabled={!desktopEnabled}
@@ -48,19 +48,19 @@ const Pagination: React.FC<Props> = ({
                     disabled={atStart}
                     aria-label="Previous page"
                     className={[
-                        "h-12 w-12 flex items-center justify-center rounded-full leading-none",
+                        "h-[38px] w-[38px] flex items-center justify-center rounded-full leading-none",
                         "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
                         "focus:outline-none focus:ring-2 focus:ring-app",
                         "disabled:cursor-not-allowed",
                     ].join(" ")}
                 >
-                    <ChevronLeft size={20} aria-hidden className="block" />
+                    <ChevronLeft size={30} aria-hidden className="block" />
                 </button>
 
                 <span
                     className={[
                         "inline-flex items-center justify-center",
-                        "h-12 min-w-[12rem] px-8",
+                        "h-[38px] min-w-[10rem] px-6",
                         "rounded-full border-2 border-app bg-app text-bg",
                         "text-xl leading-none",
                     ].join(" ")}
@@ -77,13 +77,13 @@ const Pagination: React.FC<Props> = ({
                     disabled={atEnd}
                     aria-label="Next page"
                     className={[
-                        "h-12 w-12 flex items-center justify-center rounded-full leading-none",
+                        "h-[38px] w-[38px] flex items-center justify-center rounded-full leading-none",
                         "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
                         "focus:outline-none focus:ring-2 focus:ring-app",
                         "disabled:cursor-not-allowed",
                     ].join(" ")}
                 >
-                    <ChevronRight size={20} aria-hidden className="block" />
+                    <ChevronRight size={30} aria-hidden className="block" />
                 </button>
             </div>
 

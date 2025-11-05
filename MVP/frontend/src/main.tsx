@@ -31,7 +31,7 @@ function ClerkWithRouter({ children }: { children: React.ReactNode }) {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <ThemeProvider attribute="data-ink" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="data-ink-app" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
       <BrowserRouter>
         <ClerkWithRouter>
           <App />
