@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, useNavigate } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
 import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
 import "./global.css";
@@ -31,12 +30,10 @@ function ClerkWithRouter({ children }: { children: React.ReactNode }) {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <ThemeProvider attribute="data-ink-app" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
-      <BrowserRouter>
-        <ClerkWithRouter>
-          <App />
-        </ClerkWithRouter>
-      </BrowserRouter>
-    </ThemeProvider>
+    <BrowserRouter>
+      <ClerkWithRouter>
+        <App />
+      </ClerkWithRouter>
+    </BrowserRouter>
   </React.StrictMode>
 );

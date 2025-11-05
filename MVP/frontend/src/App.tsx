@@ -7,25 +7,30 @@ import Dashboard from "./pages/Dashboard";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
+import { useTheme } from "@/hooks/useTheme";
 
 const PublicScope: React.FC = () => {
+  const { themeClass } = useTheme();
   return (
-    <div id="public-scope" className="ink-scope theme-smooth">
+    <div id="public-scope" className={`${themeClass} theme-smooth`} data-ink="dark">
       <Outlet />
     </div>
   );
 };
 
-const DashboardScope: React.FC = () => (
-  <div id="dashboard-scope" className="ink-scope theme-smooth">
-    <SignedIn>
-      <Outlet />
-    </SignedIn>
-    <SignedOut>
-      <RedirectToSignIn />
-    </SignedOut>
-  </div>
-);
+const DashboardScope: React.FC = () => {
+  const { themeClass } = useTheme();
+  return (
+    <div id="dashboard-scope" className={`${themeClass} theme-smooth`}>
+      <SignedIn>
+        <Outlet />
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   return (
