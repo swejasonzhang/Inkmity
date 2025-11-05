@@ -5,13 +5,17 @@ export const THEME_MS = 900;
 type Theme = "dark" | "light";
 const STORAGE_KEY = "dashboard-theme";
 
-function resolveScope(scopeEl?: Element | null): HTMLElement | null {
+const qs = (sel: string) => document.querySelector(sel) as HTMLElement | null;
+const qsa = (sel: string) =>
+  Array.from(document.querySelectorAll(sel)) as HTMLElement[];
+
+function resolveScope(
+  isDashboard: boolean,
+  scopeEl?: Element | null
+): HTMLElement | null {
   if (scopeEl instanceof HTMLElement) return scopeEl;
-  return (
-    (document.getElementById("dashboard-scope") as HTMLElement | null) ||
-    (document.querySelector(".ink-scope") as HTMLElement | null) ||
-    document.documentElement
-  );
+  if (isDashboard) return qs("#dashboard-scope") || qs(".ink-scope");
+  return qs("#public-scope") || qs(".ink-scope");
 }
 
 function getInitialTheme(): Theme {
@@ -21,8 +25,8 @@ function getInitialTheme(): Theme {
   } catch {}
   const prefersDark = window.matchMedia?.(
     "(prefers-color-scheme: dark)"
-  ).matches;
-  return prefersDark ? "dark" : "dark";
+  )?.matches;
+  return prefersDark ? "dark" : "light";
 }
 
 export function useTheme(scopeEl?: Element | null) {
@@ -33,14 +37,23 @@ export function useTheme(scopeEl?: Element | null) {
   const lastApplied = useRef<Theme | null>(null);
   const timer = useRef<number | null>(null);
 
+  const stripAllLight = () => {
+    qsa(".ink-scope.ink-light").forEach((n) => n.classList.remove("ink-light"));
+  };
+
   const applyToScope = (t: Theme, animate: boolean) => {
-    const el = resolveScope(scopeEl);
-    if (!el) return false;
+    const el = resolveScope(isDashboard, scopeEl);
+    if (!el) {
+      if (!isDashboard) stripAllLight();
+      return false;
+    }
 
     el.classList.add("ink-scope");
 
     const shouldLight = isDashboard && t === "light";
     el.classList.toggle("ink-light", shouldLight);
+
+    if (!isDashboard) stripAllLight();
 
     if (animate && isDashboard) {
       el.classList.add("ink-theming", "ink-smoothing");
@@ -62,17 +75,20 @@ export function useTheme(scopeEl?: Element | null) {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}
     return () => {
+      const el = resolveScope(isDashboard, scopeEl);
+      if (el) {
+        el.classList.remove("ink-theming", "ink-smoothing");
+        el.classList.remove("ink-light");
+      }
       if (timer.current) {
         window.clearTimeout(timer.current);
         timer.current = null;
       }
     };
-  }, []); 
+  }, [isDashboard, scopeEl]);
 
   useEffect(() => {
-    if (lastApplied.current === null) {
-      return;
-    }
+    if (lastApplied.current === null) return;
     applyToScope(theme, true);
     try {
       localStorage.setItem(STORAGE_KEY, theme);

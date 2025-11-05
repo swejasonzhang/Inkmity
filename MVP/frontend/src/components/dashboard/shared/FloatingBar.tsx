@@ -41,6 +41,7 @@ export default function FloatingBar({
   const [isMdUp, setIsMdUp] = useState(false);
   const [vp, setVp] = useState({ w: 375, h: 667 });
   const [vvBottom, setVvBottom] = useState(0);
+  const [themeTick, setThemeTick] = useState(0);
   const { themeClass } = useTheme(portalTarget ?? undefined);
 
   useEffect(() => {
@@ -79,6 +80,21 @@ export default function FloatingBar({
     };
   }, [vp.h]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === "attributes" && (m.attributeName === "class" || m.attributeName === "data-theme")) {
+          setThemeTick((x) => x + 1);
+          break;
+        }
+      }
+    });
+    mo.observe(root, { attributes: true, attributeFilter: ["class", "data-theme"] });
+    return () => mo.disconnect();
+  }, []);
+
   const { btnRef, open, setOpen, unreadConvoCount, requestCount, derivedTotal } = useInkConversations({
     role,
     unreadCount,
@@ -92,7 +108,7 @@ export default function FloatingBar({
 
   const pad = {
     left: isMdUp ? "calc(25px + env(safe-area-inset-left, 0px))" : "calc(13px + env(safe-area-inset-left, 0px))",
-    right: isMdUp ? "calc(1.85rem + 1px + env(safe-area-inset-right, 0px))" : "calc(0.9rem + 8px + env(safe-area-inset-right, 0px))",
+    right: isMdUp ? "calc(25px + env(safe-area-inset-right, 0px))" : "calc(13px + env(safe-area-inset-right, 0px))",
     bottom: `calc(max(${vvBottom}px, 20px) + env(safe-area-inset-bottom, 0px))`,
   };
 
@@ -101,10 +117,10 @@ export default function FloatingBar({
   const assistantBtnClass = [
     "ink-assistant-btn",
     "px-3 md:px-4",
-    "bg-app text-bg border-app shadow-lg",
+    "bg-app text-[color:var(--fg)] border-app shadow-lg",
     "focus:ring-2 focus:ring-app/50 focus:ring-offset-2 focus:ring-offset-[color:var(--bg)]",
     "hover:brightness-[1.08] active:scale-[0.99]",
-    "disabled:opacity-100 disabled:bg-app disabled:text-bg",
+    "disabled:opacity-100 disabled:bg-app disabled:text-[color:var(--fg)]",
     btnCommon
   ].join(" ");
 
@@ -145,7 +161,7 @@ export default function FloatingBar({
     };
   }, []);
 
-  const wrapperH = Math.max(convH, collapsedHeight, centerH || 0);
+  const wrapperH = Math.max(collapsedHeight, centerH || 0);
 
   useEffect(() => {
     const EXTRA_SAFE_GAP = 12;
@@ -174,6 +190,7 @@ export default function FloatingBar({
             boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)"
           }}
           variant="outline"
+          data-theme-tick={themeTick}
         >
           <Bot size={18} aria-hidden />
           <span className="text-sm hidden md:inline">Assistant</span>
@@ -215,20 +232,37 @@ export default function FloatingBar({
             >
               {rightContent}
             </div>
-            <div className="pointer-events-auto flex items-center justify-center" style={{ paddingRight: isMdUp ? pad.right : 12, height: convH }}>
-              <div ref={btnRef} className="ink-solid-controls flex items-center justify-center">
-                <InkConversations
-                  role={role}
-                  isMdUp={isMdUp}
-                  width={isMdUp ? convW : Math.max(0, convW - 50)}
-                  height={convH}
-                  open={open}
-                  setOpen={setOpen}
-                  unreadConvoCount={unreadConvoCount}
-                  requestCount={requestCount}
-                  derivedTotal={derivedTotal}
-                  messagesContent={messagesContent}
-                />
+            <div
+              className="pointer-events-none"
+              style={{
+                height: collapsedHeight,
+                position: "relative"
+              }}
+            >
+              <div
+                className="pointer-events-auto flex items-center justify-center"
+                style={{
+                  position: "absolute",
+                  right: isMdUp ? pad.right : "12px",
+                  bottom: 0,
+                  width: isMdUp ? convW : Math.max(0, convW - 50),
+                  height: convH
+                }}
+              >
+                <div ref={btnRef} className="ink-solid-controls flex items-center justify-center">
+                  <InkConversations
+                    role={role}
+                    isMdUp={isMdUp}
+                    width={isMdUp ? convW : Math.max(0, convW - 50)}
+                    height={convH}
+                    open={open}
+                    setOpen={setOpen}
+                    unreadConvoCount={unreadConvoCount}
+                    requestCount={requestCount}
+                    derivedTotal={derivedTotal}
+                    messagesContent={messagesContent}
+                  />
+                </div>
               </div>
             </div>
           </div>

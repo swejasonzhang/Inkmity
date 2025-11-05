@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -105,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
-    await signOut({ redirectUrl: "/" });
+    await signOut({ redirectUrl: "/login" });
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
@@ -144,6 +144,33 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const onDashLeave = () => setTip((t) => ({ ...t, show: false }));
 
   const [showDropdown, setShowDropdown] = useState(false);
+  const triggerRef = useRef<HTMLDivElement | null>(null);
+  const [triggerWidth, setTriggerWidth] = useState<number>(0);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openDropdown = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setShowDropdown(true);
+  };
+
+  const scheduleCloseDropdown = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setShowDropdown(false), 150);
+  };
+
+  useEffect(() => {
+    const measure = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      setTriggerWidth(rect.width);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   const portalTarget =
     document.getElementById("dashboard-portal-root") ??
@@ -239,11 +266,16 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
 
             {isSignedIn && user && (
               <div
-                className="relative hidden md:inline-block align-top group text-app [&_*]:text-app [&_*]:border-app"
-                onMouseEnter={() => setShowDropdown(true)}
-                onMouseLeave={() => setShowDropdown(false)}
+                className="relative hidden md:inline-block align-top text-app [&_*]:text-app [&_*]:border-app"
+                onMouseEnter={openDropdown}
+                onMouseLeave={scheduleCloseDropdown}
               >
-                <div className={dropdownBtnClasses}>
+                <div
+                  ref={triggerRef}
+                  className={dropdownBtnClasses}
+                  aria-haspopup="menu"
+                  aria-expanded={showDropdown}
+                >
                   <span className="mr-2 font-semibold text-xl leading-none">✦</span>
                   <span className="inline-flex items-center leading-none">
                     <span className="mr-1">Hello,</span>
@@ -251,11 +283,15 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
                   </span>
                 </div>
                 <div
-                  className={`absolute right-0 mt-3 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"
-                    }`}
+                  role="menu"
+                  aria-label="User menu"
+                  onMouseEnter={openDropdown}
+                  onMouseLeave={scheduleCloseDropdown}
+                  style={{ width: triggerWidth || undefined }}
+                  className={`absolute right-0 mt-3 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
                 >
                   <button
-                    onClick={async () => await signOut({ redirectUrl: "/login" })}
+                    onClick={handleLogout}
                     className="w-full px-4 py-3 text-center hover:bg-elevated rounded-lg text-app text-lg"
                   >
                     Logout
