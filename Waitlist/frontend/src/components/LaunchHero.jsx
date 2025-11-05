@@ -13,10 +13,10 @@ export default function LaunchHero() {
   const nextLaunchEnd = () => {
     const now = new Date();
     let year = now.getFullYear();
-    let target = new Date(year, 10, 7, 23, 59, 59, 999); 
+    let target = new Date(year, 10, 14, 23, 59, 59, 999);
     if (now > target) {
       year += 1;
-      target = new Date(year, 10, 7, 23, 59, 59, 999);
+      target = new Date(year, 10, 14, 23, 59, 59, 999);
     }
     return target.getTime();
   };
@@ -98,7 +98,8 @@ export default function LaunchHero() {
           animate="show"
           className="mt-4 text-sm md:text-base text-white/75 tracking-tight"
         >
-          Launching <span className="font-semibold text-white">November 7</span>
+          Launching{" "}
+          <span className="font-semibold text-white">November 14</span>
         </motion.p>
 
         <motion.div
