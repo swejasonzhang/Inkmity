@@ -2,7 +2,6 @@ import { createPortal } from "react-dom";
 import { Bot, Lock } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "@/hooks/useTheme";
 import { useInkConversations } from "@/hooks/useInkConversations";
 import { InkConversations } from "./messages/InkConversations";
 import type { Role } from "@/hooks/useInkConversations";
@@ -38,11 +37,10 @@ export default function FloatingBar({
   pendingRequestIds,
   rightContent,
 }: Props) {
+  const portalRootRef = useRef<HTMLElement | null>(null);
   const [isMdUp, setIsMdUp] = useState(false);
   const [vp, setVp] = useState({ w: 375, h: 667 });
   const [vvBottom, setVvBottom] = useState(0);
-  const [themeTick, setThemeTick] = useState(0);
-  const { themeClass } = useTheme(portalTarget ?? undefined);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -79,21 +77,6 @@ export default function FloatingBar({
       window.visualViewport?.removeEventListener("scroll", onVV);
     };
   }, [vp.h]);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const root = document.documentElement;
-    const mo = new MutationObserver((muts) => {
-      for (const m of muts) {
-        if (m.type === "attributes" && (m.attributeName === "class" || m.attributeName === "data-theme")) {
-          setThemeTick((x) => x + 1);
-          break;
-        }
-      }
-    });
-    mo.observe(root, { attributes: true, attributeFilter: ["class", "data-theme"] });
-    return () => mo.disconnect();
-  }, []);
 
   const { btnRef, open, setOpen, unreadConvoCount, requestCount, derivedTotal } = useInkConversations({
     role,
@@ -165,18 +148,27 @@ export default function FloatingBar({
 
   useEffect(() => {
     const EXTRA_SAFE_GAP = 12;
-    document.documentElement.style.setProperty("--fb-safe", `${collapsedHeight + EXTRA_SAFE_GAP}px`);
+    const host = portalRootRef.current;
+    if (!host) return;
+    host.style.setProperty("--fb-safe", `${collapsedHeight + EXTRA_SAFE_GAP}px`);
     return () => {
-      document.documentElement.style.removeProperty("--fb-safe");
+      host.style.removeProperty("--fb-safe");
     };
-  }, []);
+  }, [collapsedHeight]);
+
+  const resolveTarget = (): HTMLElement => {
+    if (portalTarget instanceof HTMLElement) return portalTarget as HTMLElement;
+    const byId = document.getElementById("dashboard-portal-root") as HTMLElement | null;
+    if (byId) return byId;
+    const scope = document.getElementById("dashboard-scope") as HTMLElement | null;
+    return scope ?? (document.body as HTMLElement);
+  };
+  const targetEl = resolveTarget();
+  portalRootRef.current = targetEl;
 
   const ui = (
     <>
-      <div
-        className={`fixed z-[2147483647] ${themeClass}`}
-        style={{ left: pad.left, bottom: pad.bottom, height: collapsedHeight }}
-      >
+      <div className="fixed z-[2147483647]" style={{ left: pad.left, bottom: pad.bottom, height: collapsedHeight }}>
         <Button
           type="button"
           onClick={assistantLocked ? undefined : onAssistantOpen}
@@ -190,7 +182,6 @@ export default function FloatingBar({
             boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)"
           }}
           variant="outline"
-          data-theme-tick={themeTick}
         >
           <Bot size={18} aria-hidden />
           <span className="text-sm hidden md:inline">Assistant</span>
@@ -207,7 +198,7 @@ export default function FloatingBar({
         </Button>
       </div>
 
-      <div className={`fixed inset-x-0 z-[2147483646] pointer-events-none ${themeClass}`} style={{ bottom: pad.bottom }}>
+      <div className="fixed inset-x-0 z-[2147483646] pointer-events-none" style={{ bottom: pad.bottom }}>
         <style>{`
           .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
           .ink-assistant-btn { backdrop-filter: none; }
@@ -272,5 +263,5 @@ export default function FloatingBar({
   );
 
   if (typeof document === "undefined") return null;
-  return createPortal(ui, portalTarget ?? document.body);
+  return createPortal(ui, targetEl);
 }

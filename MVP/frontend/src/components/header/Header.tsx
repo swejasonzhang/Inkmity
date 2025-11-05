@@ -25,14 +25,19 @@ type ThemeSwitchProps = {
 };
 
 const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
+  const { pathname } = useLocation();
+  const isDashboard = pathname.startsWith("/dashboard");
+  if (!isDashboard) return null;
+
   const isLight = theme === "light";
-  const dims =
-    size === "lg"
-      ? { h: "h-[45px]", w: "w-24", knob: "h-[35px] w-[35px]", icon: 22 }
-      : size === "md"
-        ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 20 }
-        : { h: "h-9", w: "w-16", knob: "h-7 w-7", icon: 18 };
+  const dims = size === "lg"
+    ? { h: "h-[45px]", w: "w-24", knob: "h-[35px] w-[35px]", icon: 22 }
+    : size === "md"
+      ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 20 }
+      : { h: "h-9", w: "w-16", knob: "h-7 w-7", icon: 18 };
+  
   const iconColorClass = isLight ? "text-black" : "text-white";
+  
   return (
     <button
       type="button"

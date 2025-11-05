@@ -1,95 +1,77 @@
-import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import { useEffect, useMemo, useState, useLayoutEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 export const THEME_MS = 900;
 type Theme = "dark" | "light";
 const STORAGE_KEY = "dashboard-theme";
 
-const qs = (sel: string) => document.querySelector(sel) as HTMLElement | null;
+const q = (sel: string) => document.querySelector<HTMLElement>(sel);
 const qsa = (sel: string) =>
-  Array.from(document.querySelectorAll(sel)) as HTMLElement[];
-
-function resolveScope(
-  isDashboard: boolean,
-  scopeEl?: Element | null
-): HTMLElement | null {
-  if (scopeEl instanceof HTMLElement) return scopeEl;
-  if (isDashboard) return qs("#dashboard-scope") || qs(".ink-scope");
-  return qs("#public-scope") || qs(".ink-scope");
-}
+  Array.from(document.querySelectorAll<HTMLElement>(sel));
 
 function getInitialTheme(): Theme {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === "light" || saved === "dark") return saved as Theme;
   } catch {}
-  const prefersDark = window.matchMedia?.(
-    "(prefers-color-scheme: dark)"
-  )?.matches;
-  return prefersDark ? "dark" : "light";
+  return "dark";
 }
 
-export function useTheme(scopeEl?: Element | null) {
+export function useTheme() {
   const { pathname } = useLocation();
   const isDashboard = pathname.startsWith("/dashboard");
 
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
-  const lastApplied = useRef<Theme | null>(null);
-  const timer = useRef<number | null>(null);
+  const timers = new Set<number>();
 
-  const stripAllLight = () => {
-    qsa(".ink-scope.ink-light").forEach((n) => n.classList.remove("ink-light"));
-  };
+  const applyTheme = (t: Theme, animate: boolean) => {
+    const dash = q("#dashboard-scope");
+    const publicScope = q("#public-scope");
+    const scopes = qsa(".ink-scope");
 
-  const applyToScope = (t: Theme, animate: boolean) => {
-    const el = resolveScope(isDashboard, scopeEl);
-    if (!el) {
-      if (!isDashboard) stripAllLight();
-      return false;
+    scopes.forEach((n) => {
+      n.classList.remove("ink-light", "ink-theming", "ink-smoothing");
+      n.removeAttribute("data-ink");
+    });
+
+    if (isDashboard && dash) {
+      if (animate) {
+        dash.classList.add("ink-theming", "ink-smoothing");
+        const id = window.setTimeout(() => {
+          dash.classList.remove("ink-theming", "ink-smoothing");
+          timers.delete(id);
+        }, THEME_MS + 40);
+        timers.add(id);
+      }
+
+      if (t === "light") {
+        dash.classList.add("ink-light");
+        dash.setAttribute("data-ink", "light");
+      } else {
+        dash.setAttribute("data-ink", "dark");
+      }
     }
 
-    el.classList.add("ink-scope");
-
-    const shouldLight = isDashboard && t === "light";
-    el.classList.toggle("ink-light", shouldLight);
-
-    if (!isDashboard) stripAllLight();
-
-    if (animate && isDashboard) {
-      el.classList.add("ink-theming", "ink-smoothing");
-      if (timer.current) window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => {
-        el.classList.remove("ink-theming", "ink-smoothing");
-      }, THEME_MS + 40);
-    } else {
-      el.classList.remove("ink-theming", "ink-smoothing");
+    if (publicScope) {
+      publicScope.classList.remove("ink-light");
+      publicScope.setAttribute("data-ink", "dark");
     }
-
-    lastApplied.current = t;
-    return true;
   };
 
   useLayoutEffect(() => {
-    applyToScope(theme, false);
+    applyTheme(theme, false);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}
+
     return () => {
-      const el = resolveScope(isDashboard, scopeEl);
-      if (el) {
-        el.classList.remove("ink-theming", "ink-smoothing");
-        el.classList.remove("ink-light");
-      }
-      if (timer.current) {
-        window.clearTimeout(timer.current);
-        timer.current = null;
-      }
+      timers.forEach((id) => window.clearTimeout(id));
+      timers.clear();
     };
-  }, [isDashboard, scopeEl]);
+  }, [isDashboard]);
 
   useEffect(() => {
-    if (lastApplied.current === null) return;
-    applyToScope(theme, true);
+    applyTheme(theme, true);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}
@@ -99,14 +81,7 @@ export function useTheme(scopeEl?: Element | null) {
         detail: { key: STORAGE_KEY, value: theme },
       })
     );
-
-    return () => {
-      if (timer.current) {
-        window.clearTimeout(timer.current);
-        timer.current = null;
-      }
-    };
-  }, [theme, isDashboard, scopeEl]);
+  }, [theme, isDashboard]);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -117,34 +92,30 @@ export function useTheme(scopeEl?: Element | null) {
         setTheme(next);
       } catch {}
     };
-    const onBus = (e: Event) => {
-      const det = (e as CustomEvent).detail;
-      if (!det || det.key !== STORAGE_KEY) return;
-      setTheme(det.value === "light" ? "light" : "dark");
-    };
+
     window.addEventListener("storage", onStorage);
-    window.addEventListener("ink:theme-change", onBus);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("ink:theme-change", onBus);
-    };
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
+  const toggleTheme = () => {
+    if (!isDashboard) return; 
+    setTheme((t) => (t === "light" ? "dark" : "light"));
+  };
 
-  const themeClass = useMemo(
-    () =>
-      theme === "light" && isDashboard ? "ink-scope ink-light" : "ink-scope",
-    [theme, isDashboard]
-  );
+  const themeClass = useMemo(() => "ink-scope", []);
 
-  const logoSrc = useMemo(
-    () =>
-      theme === "light" && isDashboard
-        ? "/assets/BlackLogo.png"
-        : "/assets/WhiteLogo.png",
-    [theme, isDashboard]
-  );
+  const logoSrc = useMemo(() => {
+    if (!isDashboard) return "/assets/WhiteLogo.png";
+    return theme === "light"
+      ? "/assets/BlackLogo.png"
+      : "/assets/WhiteLogo.png";
+  }, [theme, isDashboard]);
 
-  return { theme, toggleTheme, logoSrc, themeClass };
+  return {
+    theme: isDashboard ? theme : "dark", 
+    toggleTheme,
+    logoSrc,
+    themeClass,
+    canToggleTheme: isDashboard, 
+  };
 }
