@@ -207,7 +207,7 @@ export default function FloatingBar({
           .ink-solid-controls [data-pagination] :is(button, a) {
             background: var(--card);
             color: var(--fg);
-            border: 2px solid var(--app, var(--border));
+            border: 1px solid var(--app, var(--border));
             font-weight: 600;
             border-radius: 9999px;
           }
@@ -234,7 +234,7 @@ export default function FloatingBar({
                 className="pointer-events-auto flex items-center justify-center"
                 style={{
                   position: "absolute",
-                  right: isMdUp ? pad.right : "12px",
+                  right: isMdUp ? pad.right : "17px",
                   bottom: 0,
                   width: isMdUp ? convW : Math.max(0, convW - 50),
                   height: convH
