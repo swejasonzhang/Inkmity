@@ -160,7 +160,7 @@ export default function Login() {
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
-  const CARD_H = "md:h-[580px]";
+  const CARD_H = "md:h-[720px]";
 
   const togglePwd = () => {
     const el = pwdRef.current;
@@ -181,24 +181,17 @@ export default function Login() {
 
   return (
     <>
-      <div className="relative z-10 min-h-[100svh] max-h-[100svh] overflow-hidden text-app flex flex-col">
-        <div className="sticky top-0 z-40 bg-black/20 supports-[backdrop-filter]:bg-black/30 backdrop-blur border-b border-white/10">
+      <div className="relative z-10 min-h-[100svh] max-h-[100svh] overflow-hidden text-app flex flex-col no-shadow-all">
+        <style>{`.no-shadow-all, .no-shadow-all * { box-shadow: none !important; filter: none !important; backdrop-filter: none !important; }`}</style>
+        <div className="sticky top-0 z-40 bg-black/20 border-b border-white/10">
           <Header />
         </div>
-        <main className="relative z-10 flex-1 h-full overflow-y-auto flex items-center justify-center *:overflow-hidden">
+        <main className="relative z-10 flex-1 h-full overflow-y-auto flex items-center justify-center">
           <div className="w-full max-w-5xl flex items-center justify-center h-full min-h-0 max-h-full">
-            <motion.div
-              variants={container}
-              initial={prefersReduced ? false : "hidden"}
-              animate={prefersReduced ? undefined : "show"}
-              className="w-full h-full flex items-center justify-center min-h-0 max-h-full"
-            >
+            <motion.div variants={container} initial={prefersReduced ? false : "hidden"} animate={prefersReduced ? undefined : "show"} className="w-full h-full flex items-center justify-center min-h-0 max-h-full">
               <div className={`relative flex flex-col md:flex-row w-full p-2 justify-center items-center h-full min-h-0 max-h-full ${showInfo ? "md:grid md:grid-cols-2" : ""}`}>
                 {showInfo && (
-                  <motion.div
-                    layout
-                    className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full min-h-0 max-h-full`}
-                  >
+                  <motion.div layout className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full min-h-0 max-h-full`}>
                     <div className="h-full w-full flex items-center justify-center min-h-0 max-h-full">
                       <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                     </div>
@@ -212,14 +205,7 @@ export default function Login() {
                   transition={prefersReduced ? undefined : { duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                   className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full min-h-0 max-h-full`}
                 >
-                  <FormCard
-                    mode="login"
-                    showInfo={showInfo}
-                    hasError={mascotError}
-                    titleOverride="Welcome Back!"
-                    subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey."
-                    className="h-full w-full"
-                  >
+                  <FormCard mode="login" showInfo={showInfo} hasError={mascotError} titleOverride="Welcome Back!" subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey." className="h-full w-full">
                     <div className="flex flex-col justify-center items-center h-full w-full">
                       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
                         <div className="text-left w-full">
@@ -293,12 +279,12 @@ export default function Login() {
           draggable={false}
           limit={1}
           transition={Slide}
-          toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl shadow-lg text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
+          toastClassName="bg-black/80 text-white text-lg font-bold rounded-xl text-center px-5 py-3 min-w-[280px] flex items-center justify-center border border-white/10"
           style={{ top: toastTop !== undefined ? toastTop : 12 }}
         />
         {!userId && tip.show && (
           <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
-            <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-2.5 py-1.5 shadow-lg">
+            <div className="relative rounded-lg border border-app bg-card/95 px-2.5 py-1.5">
               <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
               <span className="text-xs text-app whitespace-nowrap">Log in to view your dashboard</span>
             </div>

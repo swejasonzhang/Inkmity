@@ -76,168 +76,64 @@ export default function FormCard(props: Props) {
   const { showInfo, hasError, titleOverride, subtitleOverride, children, className } = props;
   const isSignup = props.mode === "signup";
   const title = titleOverride ?? (isSignup ? "Sign up" : "Welcome Back!");
-  const subtitle =
-    subtitleOverride ??
-    (isSignup
-      ? "A few quick steps to personalize your experience."
-      : "Login to continue exploring artists, styles, and your tattoo journey.");
+  const subtitle = subtitleOverride ?? (isSignup ? "A few quick steps to personalize your experience." : "Login to continue exploring artists, styles, and your tattoo journey.");
   const isRoleSlide = isSignup && (props as SignupProps).slides[(props as SignupProps).step].key === "role";
   const disableNextForEmail = isRoleSlide && (props as SignupProps).emailTaken;
   const totalSteps = isSignup ? (props as SignupProps).slides.length + 1 : 0;
-  const currentIndex = isSignup
-    ? (props as SignupProps).awaitingCode
-      ? (props as SignupProps).slides.length
-      : (props as SignupProps).step
-    : 0;
+  const currentIndex = isSignup ? ((props as SignupProps).awaitingCode ? (props as SignupProps).slides.length : (props as SignupProps).step) : 0;
 
   return (
-    <div
-      className={`relative md:-ml-px max-w-5xl h-full min-h-0 flex items-center justify-center ${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} ${className ?? ""}`}
-    >
-      <div
-        className={`bg-[#0b0b0b]/80 border border-white/10 p-6 sm:p-8 md:p-12 ${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} h-full w-full`}
-      >
-        <div className="flex h-full flex-col justify-center space-y-6 sm:space-y-8 md:space-y-10">
-          <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-center text-white/80">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm">
-                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
+    <div className={`relative w-full ${className ?? ""}`}>
+      <div className={`${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} w-full max-w-2xl m-0 bg-[#0b0b0b]/75 border border-white/10 ring-1 ring-white/5 p-4 sm:p-6 h-full`}>
+        <div className="h-full w-full flex flex-col justify-evenly items-center gap-4">
+          <div className="flex flex-col items-center text-center gap-1">
+            <div className="text-white/80">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
+                <Sparkles className="h-3 w-3" />
                 <span>{isSignup ? "Join the Inkmity community" : "Welcome to Inkmity"}</span>
               </div>
             </div>
-            <div className="space-y-1 sm:space-y-2">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white">{title}</h1>
-              <p className="text-white/60 text-xs sm:text-sm md:text-base px-2">{subtitle}</p>
+            <div className="space-y-0.5">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-white">{title}</h1>
+              <p className="text-white/60 text-xs sm:text-sm">{subtitle}</p>
             </div>
           </div>
 
           {isSignup ? (
-            <div className="flex h-full flex-col justify-center space-y-4 sm:space-y-6">
-              <div>
-                <ProgressDots total={totalSteps} current={currentIndex} showVerify={(props as SignupProps).awaitingCode} />
-              </div>
-
-              <motion.div
-                variants={shake}
-                animate={hasError ? "error" : "idle"}
-                className="relative h-full min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain flex items-center"
-              >
+            <div className="w-full flex flex-col items-center gap-3">
+              <ProgressDots total={totalSteps} current={currentIndex} showVerify={(props as SignupProps).awaitingCode} />
+              <motion.div variants={shake} animate={hasError ? "error" : "idle"} className="w-full">
                 <AnimatePresence initial={false} mode="wait">
                   {!(props as SignupProps).awaitingCode ? (
-                    <motion.div
-                      key={(props as SignupProps).slides[(props as SignupProps).step].key}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className={`min-w-0 break-words hyphens-auto w-full ${isRoleSlide ? "w-full" : "grid gap-3 sm:gap-4"}`}
-                    >
-                      <div className={`${isRoleSlide ? "w-full" : ""}`}>
+                    <motion.div key={(props as SignupProps).slides[(props as SignupProps).step].key} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="w-full">
+                      <div className="w-full">
                         {isRoleSlide && (
-                          <div className="w-full max-w-none [&_*]:max-w-none">
-                            <SharedAccountStep
-                              role={(props as SignupProps).role}
-                              setRole={(props as SignupProps).setRole}
-                              shared={(props as SignupProps).shared}
-                              onChange={(props as SignupProps).onSharedChange}
-                              onPasswordVisibilityChange={props.onPasswordVisibilityChange}
-                              onEmailBlur={(props as SignupProps).onEmailBlur}
-                              bio={(props as SignupProps).bio}
-                              onBioChange={(props as SignupProps).onBioChange}
-                            />
+                          <div className="w-full">
+                            <SharedAccountStep role={(props as SignupProps).role} setRole={(props as SignupProps).setRole} shared={(props as SignupProps).shared} onChange={(props as SignupProps).onSharedChange} onPasswordVisibilityChange={props.onPasswordVisibilityChange} onEmailBlur={(props as SignupProps).onEmailBlur} bio={(props as SignupProps).bio} onBioChange={(props as SignupProps).onBioChange} />
                           </div>
                         )}
-
-                        {(props as SignupProps).slides[(props as SignupProps).step].key === "client-1" && (
-                          <ClientDetailsStep
-                            client={(props as SignupProps).client}
-                            onChange={(props as SignupProps).onClientChange}
-                          />
-                        )}
-
-                        {(props as SignupProps).slides[(props as SignupProps).step].key === "artist-1" && (
-                          <ArtistDetailsStep
-                            artist={(props as SignupProps).artist}
-                            onChange={(props as SignupProps).onArtistChange}
-                          />
-                        )}
-
+                        {(props as SignupProps).slides[(props as SignupProps).step].key === "client-1" && <ClientDetailsStep client={(props as SignupProps).client} onChange={(props as SignupProps).onClientChange} />}
+                        {(props as SignupProps).slides[(props as SignupProps).step].key === "artist-1" && <ArtistDetailsStep artist={(props as SignupProps).artist} onChange={(props as SignupProps).onArtistChange} />}
                         {(props as SignupProps).slides[(props as SignupProps).step].key === "upload" &&
                           ((props as SignupProps).role === "client" ? (
-                            <SignupUpload
-                              label="Reference images (up to 3)"
-                              kind="client_ref"
-                              value={(props as SignupProps).clientRefs}
-                              onChange={(props as SignupProps).setClientRefs}
-                            />
+                            <SignupUpload label="Reference images (up to 3)" kind="client_ref" value={(props as SignupProps).clientRefs} onChange={(props as SignupProps).setClientRefs} />
                           ) : (
-                            <SignupUpload
-                              label="Portfolio highlights (up to 3)"
-                              kind="artist_portfolio"
-                              value={(props as SignupProps).artistPortfolioImgs}
-                              onChange={(props as SignupProps).setArtistPortfolioImgs}
-                            />
+                            <SignupUpload label="Portfolio highlights (up to 3)" kind="artist_portfolio" value={(props as SignupProps).artistPortfolioImgs} onChange={(props as SignupProps).setArtistPortfolioImgs} />
                           ))}
-
-                        {(props as SignupProps).slides[(props as SignupProps).step].key === "review" && (
-                          <ReviewStep
-                            role={(props as SignupProps).role}
-                            shared={(props as SignupProps).shared}
-                            client={(props as SignupProps).client}
-                            artist={(props as SignupProps).artist}
-                            clientImages={(props as SignupProps).clientRefs}
-                            artistImages={(props as SignupProps).artistPortfolioImgs}
-                          />
-                        )}
+                        {(props as SignupProps).slides[(props as SignupProps).step].key === "review" && <ReviewStep role={(props as SignupProps).role} shared={(props as SignupProps).shared} client={(props as SignupProps).client} artist={(props as SignupProps).artist} clientImages={(props as SignupProps).clientRefs} artistImages={(props as SignupProps).artistPortfolioImgs} />}
                       </div>
-
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
-                        <Button
-                          type="button"
-                          onClick={(props as SignupProps).onBack}
-                          disabled={(props as SignupProps).step === 0}
-                          className="bg-white/10 hover:bg-white/20 text-white h-10 sm:h-11 text-sm sm:text-base rounded-xl sm:w-32"
-                        >
-                          Back
-                        </Button>
-
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                        <Button type="button" onClick={(props as SignupProps).onBack} disabled={(props as SignupProps).step === 0} className="bg-white/10 hover:bg-white/20 text-white h-10 text-sm rounded-xl">Back</Button>
                         {(props as SignupProps).step < (props as SignupProps).slides.length - 1 && (
-                          <Button
-                            type="button"
-                            onClick={(props as SignupProps).onNext}
-                            disabled={!!disableNextForEmail || (props as SignupProps).loading}
-                            className={`${disableNextForEmail
-                              ? "bg-white/10 text-white/40 cursor-not-allowed"
-                              : "bg-white/15 hover:bg-white/25 text-white"
-                              } h-10 sm:h-11 text-sm sm:text-base rounded-xl sm:flex-1`}
-                          >
-                            Next
-                          </Button>
+                          <Button type="button" onClick={(props as SignupProps).onNext} disabled={!!disableNextForEmail || (props as SignupProps).loading} className={`${disableNextForEmail ? "bg-white/10 text-white/40 cursor-not-allowed" : "bg-white/15 hover:bg-white/25 text-white"} h-10 text-sm rounded-xl sm:col-span-2`}>Next</Button>
                         )}
-
                         {(props as SignupProps).step === (props as SignupProps).slides.length - 1 && (
-                          <Button
-                            type="button"
-                            onClick={(props as SignupProps).onStartVerification}
-                            disabled={
-                              (props as SignupProps).loading ||
-                              !(props as SignupProps).isLoaded ||
-                              !!(props as SignupProps).emailTaken
-                            }
-                            className="bg-white/15 hover:bg-white/25 text-white h-10 sm:h-11 text-sm sm:text-base rounded-xl sm:flex-1"
-                          >
-                            Send Verification Code
-                          </Button>
+                          <Button type="button" onClick={(props as SignupProps).onStartVerification} disabled={(props as SignupProps).loading || !(props as SignupProps).isLoaded || !!(props as SignupProps).emailTaken} className="bg-white/15 hover:bg-white/25 text-white h-10 text-sm rounded-xl sm:col-span-2">Send Verification Code</Button>
                         )}
                       </div>
                     </motion.div>
                   ) : (
-                    <motion.div
-                      key="otp"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="grid gap-3 sm:gap-4 min-w-0 break-words hyphens-auto w-full"
-                    >
+                    <motion.div key="otp" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="w-full">
                       <OtpStep
                         code={(props as SignupProps).code}
                         setCode={(props as SignupProps).setCode}
@@ -252,25 +148,22 @@ export default function FormCard(props: Props) {
                   )}
                 </AnimatePresence>
               </motion.div>
-
-              <p className="text-white text-center text-xs sm:text-sm">
-                Already have an account? <a href="/login" className="underline hover:opacity-80">Login</a>
-              </p>
             </div>
           ) : (
-            <div className="flex h-full flex-col justify-center space-y-4 sm:space-y-6">
-              <motion.div
-                variants={shake}
-                animate={hasError ? "error" : "idle"}
-                className="relative min-w-0 break-words hyphens-auto w-full flex items-center justify-center"
-              >
+            <div className="w-full grid place-items-center">
+              <motion.div variants={shake} animate={hasError ? "error" : "idle"} className="w-full grid place-items-center">
                 {children}
               </motion.div>
-              <p className="text-white/60 text-center text-xs sm:text-sm">
-                Don&apos;t have an account? <a href="/signup" className="underline hover:opacity-80">Sign Up</a>
-              </p>
             </div>
           )}
+
+          <div className="text-white/60 text-center text-xs sm:text-sm">
+            {isSignup ? (
+              <span>Already have an account? <a href="/login" className="underline hover:opacity-80">Login</a></span>
+            ) : (
+              <span>Don&apos;t have an account? <a href="/signup" className="underline hover:opacity-80">Sign Up</a></span>
+            )}
+          </div>
         </div>
       </div>
     </div>
