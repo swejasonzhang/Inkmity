@@ -31,7 +31,7 @@ export default function Login() {
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
   const MOBILE_CARD_W = "w-full max-w-[22rem]";
-  const MOBILE_CARD_H = "h-auto min-h-[420px] sm:min-h-[480px]";
+  const MOBILE_CARD_H = "h-auto";
 
   useEffect(() => {
     const mm = (e: MouseEvent) => {
@@ -181,22 +181,25 @@ export default function Login() {
 
   return (
     <>
-      <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
+      <div className="relative z-10 min-h-[100svh] max-h-[100svh] overflow-hidden text-app flex flex-col">
         <div className="sticky top-0 z-40 bg-black/20 supports-[backdrop-filter]:bg-black/30 backdrop-blur border-b border-white/10">
           <Header />
         </div>
-        <main className="relative z-10 flex-1 flex items-center justify-center *:overflow-hidden">
-          <div className="w-full max-w-5xl flex items-center justify-center h-full">
+        <main className="relative z-10 flex-1 h-full overflow-y-auto flex items-center justify-center *:overflow-hidden">
+          <div className="w-full max-w-5xl flex items-center justify-center h-full min-h-0 max-h-full">
             <motion.div
               variants={container}
               initial={prefersReduced ? false : "hidden"}
               animate={prefersReduced ? undefined : "show"}
-              className="w-full h-full flex items-center justify-center"
+              className="w-full h-full flex items-center justify-center min-h-0 max-h-full"
             >
-              <div className={`relative flex flex-col md:flex-row w-full p-2 justify-center items-center h-full ${showInfo ? "md:grid md:grid-cols-2" : ""}`}>
+              <div className={`relative flex flex-col md:flex-row w-full p-2 justify-center items-center h-full min-h-0 max-h-full ${showInfo ? "md:grid md:grid-cols-2" : ""}`}>
                 {showInfo && (
-                  <motion.div layout className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full`}>
-                    <div className="h-full w-full flex items-center justify-center">
+                  <motion.div
+                    layout
+                    className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full min-h-0 max-h-full`}
+                  >
+                    <div className="h-full w-full flex items-center justify-center min-h-0 max-h-full">
                       <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                     </div>
                   </motion.div>
@@ -204,7 +207,10 @@ export default function Login() {
                 <motion.div
                   ref={cardRef}
                   layout
-                  className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full`}
+                  initial={prefersReduced ? false : { y: 22, opacity: 0 }}
+                  animate={prefersReduced ? undefined : { y: 0, opacity: 1 }}
+                  transition={prefersReduced ? undefined : { duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                  className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full min-h-0 max-h-full`}
                 >
                   <FormCard
                     mode="login"
@@ -214,10 +220,10 @@ export default function Login() {
                     subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey."
                     className="h-full w-full"
                   >
-                    <div className="flex flex-col justify-center items-center h-full w-full py-4 pt-12">
+                    <div className="flex flex-col justify-center items-center h-full w-full">
                       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
                         <div className="text-left w-full">
-                          <label className="block text-xs text-white/70 mb-1" htmlFor="email">Email</label>
+                          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="email">Email</label>
                           <div className="relative">
                             <input
                               id="email"
@@ -232,7 +238,7 @@ export default function Login() {
                           </div>
                         </div>
                         <div className="text-left w-full">
-                          <label className="block text-xs text-white/70 mb-1" htmlFor="password">Password</label>
+                          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="password">Password</label>
                           <div className="relative">
                             <input
                               ref={pwdRef}

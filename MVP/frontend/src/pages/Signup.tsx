@@ -278,17 +278,17 @@ export default function SignUp() {
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
     return role === "client"
       ? [
-        { key: "role", valid: allSharedValid },
-        { key: "client-1", valid: allClientValid },
-        { key: "upload", valid: true },
-        { key: "review", valid: allSharedValid && allClientValid },
-      ]
+          { key: "role", valid: allSharedValid },
+          { key: "client-1", valid: allClientValid },
+          { key: "upload", valid: true },
+          { key: "review", valid: allSharedValid && allClientValid },
+        ]
       : [
-        { key: "role", valid: allSharedValid },
-        { key: "artist-1", valid: allArtistValid },
-        { key: "upload", valid: true },
-        { key: "review", valid: allSharedValid && allArtistValid },
-      ];
+          { key: "role", valid: allSharedValid },
+          { key: "artist-1", valid: allArtistValid },
+          { key: "upload", valid: true },
+          { key: "review", valid: allSharedValid && allArtistValid },
+        ];
   }, [role, allSharedValid, allClientValid, allArtistValid]);
 
   const isLastFormSlide = step === slides.length - 1;
@@ -390,12 +390,12 @@ export default function SignUp() {
           }
           try {
             sessionStorage.setItem("signupJustCompleted", "1");
-          } catch { }
+          } catch {}
           try {
             localStorage.setItem("trustedDevice", shared.email);
             localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
             localStorage.removeItem(LOGOUT_TYPE_KEY);
-          } catch { }
+          } catch {}
           toast.success("Sign up successful, redirecting to Dashboard.", { position: "top-center", theme: "dark" });
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
@@ -405,7 +405,7 @@ export default function SignUp() {
           toast.error("Failed to save your account. Please try again.", { position: "top-center", theme: "dark" });
           try {
             await signOut();
-          } catch { }
+          } catch {}
           return;
         }
       }
@@ -417,7 +417,7 @@ export default function SignUp() {
       triggerMascotError();
       try {
         await signOut();
-      } catch { }
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -425,7 +425,7 @@ export default function SignUp() {
     triggerMascotError();
     try {
       await signOut();
-    } catch { }
+    } catch {}
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
@@ -441,7 +441,7 @@ export default function SignUp() {
       if (start !== null && end !== null) {
         try {
           input.setSelectionRange(start, end);
-        } catch { }
+        } catch {}
       }
     });
   };
