@@ -15,11 +15,10 @@ type ChatBoxProps = {
 export default function ChatBox({ open, onClose, currentUserId, isArtist = false }: ChatBoxProps) {
   const PANEL_W = 320;
   const CHAT_W = 720;
-  const HEIGHT = 1080;
   const { themeClass } = useTheme();
   const dims = useMemo(() => {
     const width = isArtist ? CHAT_W + PANEL_W : CHAT_W;
-    return { width, height: HEIGHT };
+    return { width };
   }, [isArtist]);
   const panelVariants = {
     hidden: { height: 0, opacity: 0 },
@@ -37,12 +36,12 @@ export default function ChatBox({ open, onClose, currentUserId, isArtist = false
             exit="exit"
             variants={panelVariants}
             transition={{ type: "spring", stiffness: 220, damping: 24 }}
-            className="pointer-events-auto fixed right-2 md:right-4 bottom-2 md:bottom-4"
+            className="pointer-events-auto fixed inset-y-0 right-2 md:right-4"
             style={{ width: `${dims.width}px` }}
           >
             <Card
-              className="bg-background text-app border border-app shadow-2xl rounded-2xl flex"
-              style={{ width: `${dims.width}px`, height: `${dims.height}px` }}
+              className="bg-background text-app border border-app shadow-2xl rounded-2xl flex h-full"
+              style={{ width: `${dims.width}px` }}
             >
               <div className="flex-1 min-w-0 flex flex-col">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-app">
@@ -62,6 +61,6 @@ export default function ChatBox({ open, onClose, currentUserId, isArtist = false
           </motion.div>
         )}
       </AnimatePresence>
-    </div >
+    </div>
   );
 }
