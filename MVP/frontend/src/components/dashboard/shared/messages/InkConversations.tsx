@@ -37,7 +37,7 @@ export const InkConversations: React.FC<Props> = ({
 
   return (
     <div
-      className="bg-app text-app inline-flex items-center justify-center rounded-full pointer-events-auto border border-app shadow-md transition focus-within:ring-2 focus-within:ring-app/40"
+      className="ink-conv-scope bg-app text-app inline-flex items-center justify-center rounded-full pointer-events-auto border border-app/40 shadow-md transition"
       aria-label={open ? "Messages" : "Open messages"}
       aria-expanded={open}
       style={{
@@ -88,7 +88,7 @@ export const InkConversations: React.FC<Props> = ({
         </Button>
       ) : (
         <div className="flex flex-col h-full w-full">
-          <div className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-2 py-1"} border-b border-app`}>
+          <div className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-2 py-1"} border-b border-app/40`}>
             <div className="flex items-center gap-2 font-semibold">
               <MessageSquare size={16} />
               <span className={isMdUp ? "" : "text-sm"}>Messages</span>
@@ -111,7 +111,7 @@ export const InkConversations: React.FC<Props> = ({
               <span className="sr-only">Close messages</span>
               <Button
                 type="button"
-                className={`p-1 rounded-full hover:bg-elevated ${isMdUp ? "" : "h-7 w-7"}`}
+                className={`p-1 rounded-full hover:bg-elevated ${isMdUp ? "" : "h-7 w-7"} focus:outline-none`}
                 onClick={() => setOpen(false)}
                 aria-label="Close messages"
                 title="Close messages"

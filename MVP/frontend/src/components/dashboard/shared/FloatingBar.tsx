@@ -168,7 +168,7 @@ export default function FloatingBar({
 
   const ui = (
     <>
-      <div className="fixed z-[2147483647]" style={{ left: pad.left, bottom: pad.bottom, height: collapsedHeight }}>
+      <div className="fixed z-[200]" style={{ left: pad.left, bottom: pad.bottom, height: collapsedHeight }}>
         <Button
           type="button"
           onClick={assistantLocked ? undefined : onAssistantOpen}
@@ -198,7 +198,7 @@ export default function FloatingBar({
         </Button>
       </div>
 
-      <div className="fixed inset-x-0 z-[2147483646] pointer-events-none" style={{ bottom: pad.bottom }}>
+      <div className="fixed inset-x-0 z-[190] pointer-events-none" style={{ bottom: pad.bottom }}>
         <style>{`
           .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
           .ink-assistant-btn { backdrop-filter: none; }

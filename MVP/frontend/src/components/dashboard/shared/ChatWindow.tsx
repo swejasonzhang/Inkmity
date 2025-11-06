@@ -103,6 +103,23 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [qbOpen, setQbOpen] = useState(false);
   const [qbArtist, setQbArtist] = useState<{ username: string; clerkId: string } | null>(null);
 
+  const appRef = useRef<HTMLDivElement | null>(null);
+  const overlayActive = confirmOpen || !!viewerUrl;
+
+  useEffect(() => {
+    const el = appRef.current as any;
+    if (!el) return;
+    if (overlayActive) {
+      el.setAttribute("aria-hidden", "true");
+      el.inert = true;
+    } else {
+      el.removeAttribute("aria-hidden");
+      try {
+        el.inert = false;
+      } catch { }
+    }
+  }, [overlayActive]);
+
   useEffect(() => {
     if (!currentUserId) return;
     let mounted = true;
@@ -351,7 +368,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     if (prevExpandedRef.current) setExpandedId(prevExpandedRef.current);
   };
 
-  const avatarFor = (c: Conversation) => {
+  const avatarFor = (c: Conversation, opts?: { border?: boolean }) => {
     const name = displayNameFromUsername(c.username || "");
     const initials = name
       .split(" ")
@@ -359,8 +376,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
       .slice(0, 2)
       .map(ch => ch[0]?.toUpperCase())
       .join("");
+    const withBorder = opts?.border !== false;
     return (
-      <span className="h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold border border-app">
+      <span
+        className={`h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold ${withBorder ? "border border-app" : ""}`}
+      >
         {initials || "?"}
       </span>
     );
@@ -489,7 +509,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   return (
     <>
-      <div className="h-full w-full min-h-0 flex flex-col">
+      <div
+        ref={appRef}
+        className={`h-full w-full min-h-0 flex flex-col ${overlayActive ? "pointer-events-none" : ""}`}
+      >
         <div className="w-full flex-1 min-h-0 bg-card rounded-2xl p-3 flex gap-3">
           {isArtist && (
             <aside
@@ -515,7 +538,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           )}
           <div className="flex-1 min-w-0 flex min-h-0">
             <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] h-full min-h-0 flex-1">
-              <aside className="hidden md:block h-full rounded-xl border border-app bg-card min-h-0 overflow-y-auto">
+              <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto">
                 <ul className="divide-y divide-app/60">
                   {conversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
@@ -539,7 +562,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           }}
                           className={`w-full flex items-center gap-3 px-3 py-2 text-left ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
                         >
-                          {avatarFor(c)}
+                          {avatarFor(c, { border: false })}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
@@ -579,7 +602,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           onMarkRead(val);
                         }}
                       >
-                        <SelectTrigger className="h-9">
+                        <SelectTrigger className="h-9 focus:outline-none">
                           <SelectValue placeholder="Select conversation" />
                         </SelectTrigger>
                         <SelectContent className="max-h-[50vh]">
@@ -746,9 +769,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             if (expandedId !== c.participantId) setExpandedId(c.participantId);
                             onMarkRead(c.participantId);
                           }}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"} border-app`}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
                         >
-                          {avatarFor(c)}
+                          {avatarFor(c, { border: false })}
                           <span className="text-xs">{displayNameFromUsername(c.username)}</span>
                         </button>
                       </li>
