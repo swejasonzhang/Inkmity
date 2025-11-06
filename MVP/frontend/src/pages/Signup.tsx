@@ -33,9 +33,7 @@ const LOGIN_TIMESTAMP_KEY = "lastLogin";
 const TOAST_H = 64;
 const TOAST_GAP = 36;
 
-const RAW_API_BASE =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) ||
-  "http://localhost:5005/api";
+const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:5005/api";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 function apiUrl(path: string, qs?: Record<string, string>) {
   const url = new URL(path.replace(/^\/+/, ""), API_BASE + "/");
@@ -63,19 +61,7 @@ function friendlyClerkMessage(code?: string, message?: string) {
   }
 }
 
-function collectIssues({
-  role,
-  step,
-  shared,
-  client,
-  artist,
-}: {
-  role: Role;
-  step: number;
-  shared: SharedAccount;
-  client: ClientProfile;
-  artist: ArtistProfile;
-}) {
+function collectIssues({ role, step, shared, client, artist }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile }) {
   const tips: string[] = [];
   const emailOk = validateEmail(shared.email);
   const pwdOk = validatePassword(shared.password);
@@ -172,11 +158,30 @@ export default function SignUp() {
   const navigate = useNavigate();
 
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [headerH, setHeaderH] = useState(0);
   const [toastTop, setToastTop] = useState<number | undefined>(undefined);
+  const [cardH, setCardH] = useState<number | null>(null);
+  const [isMdUp, setIsMdUp] = useState<boolean>(typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const measure = () => setHeaderH(el.offsetHeight || 0);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    measure();
+    const onResize = () => measure();
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -196,6 +201,24 @@ export default function SignUp() {
       onEvents.forEach((evt) => window.removeEventListener(evt, updateTop));
       ro.disconnect();
     };
+  }, []);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const measure = () => setCardH(el.offsetHeight || null);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => setIsMdUp(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, []);
 
   useEffect(() => {
@@ -240,8 +263,7 @@ export default function SignUp() {
   const minVal = Math.max(0, Math.min(5000, num(client.budgetMin)));
   const maxVal = Math.max(0, Math.min(5000, num(client.budgetMax)));
 
-  const allSharedValid =
-    validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
+  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
   const allClientValid = !!client.location && maxVal > minVal;
   const allArtistValid =
     !!artist.location &&
@@ -280,10 +302,7 @@ export default function SignUp() {
     const currentValid = slides[step].valid;
     if (!currentValid) {
       const tips = collectIssues({ role, step, shared, client, artist });
-      toast.error(tips.length ? tips.join("\n") : "Please complete the required fields", {
-        position: "top-center",
-        theme: "dark",
-      });
+      toast.error(tips.length ? tips.join("\n") : "Please complete the required fields", { position: "top-center", theme: "dark" });
       triggerMascotError();
       return;
     }
@@ -307,21 +326,13 @@ export default function SignUp() {
     setLoading(true);
     try {
       if (userId) await signOut();
-      const profile =
-        role === "client"
-          ? { ...client, referenceImages: clientRefs.filter(Boolean) }
-          : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
-
+      const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
       const attempt =
         signUpAttempt ??
         (await signUp.create({
           emailAddress: shared.email.trim().toLowerCase(),
           password: shared.password,
-          publicMetadata: {
-            role,
-            displayName: shared.username.trim(),
-            profile,
-          },
+          publicMetadata: { role, displayName: shared.username.trim(), profile },
         } as any));
       setSignUpAttempt(attempt as SignUpResource);
       setAwaitingCode(true);
@@ -346,18 +357,12 @@ export default function SignUp() {
       return;
     }
     if (!signUpAttempt) {
-      toast.error("Verification isn't ready yet. Please request a new code.", {
-        position: "top-center",
-        theme: "dark",
-      });
+      toast.error("Verification isn't ready yet. Please request a new code.", { position: "top-center", theme: "dark" });
       triggerMascotError();
       return;
     }
     if (!isLoaded || !setActive) {
-      toast.error("Account session is still loading. Please try again in a moment.", {
-        position: "top-center",
-        theme: "dark",
-      });
+      toast.error("Account session is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
       return;
     }
     setLoading(true);
@@ -369,54 +374,20 @@ export default function SignUp() {
           const token = await getToken();
           const headers: Record<string, string> = { "Content-Type": "application/json" };
           if (token) headers.Authorization = `Bearer ${token}`;
-
-          const basePayload = {
-            email: shared.email.trim().toLowerCase(),
-            role,
-            username: shared.username.trim(),
-            bio: (role === "client" ? client.bio : artist.bio) || "",
-          };
-
-          const payload =
-            role === "client"
-              ? {
-                ...basePayload,
-                profile: { ...client, referenceImages: clientRefs.filter(Boolean) },
-              }
-              : {
-                ...basePayload,
-                profile: { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) },
-              };
-
-          const syncRes = await fetch(apiUrl("/users/sync"), {
-            method: "POST",
-            credentials: "include",
-            headers,
-            body: JSON.stringify(payload),
-          });
+          const basePayload = { email: shared.email.trim().toLowerCase(), role, username: shared.username.trim(), bio: (role === "client" ? client.bio : artist.bio) || "" };
+          const payload = role === "client" ? { ...basePayload, profile: { ...client, referenceImages: clientRefs.filter(Boolean) } } : { ...basePayload, profile: { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) } };
+          const syncRes = await fetch(apiUrl("/users/sync"), { method: "POST", credentials: "include", headers, body: JSON.stringify(payload) });
           if (!syncRes.ok) throw new Error("sync_failed");
-
-          const meRes = await fetch(apiUrl("/users/me"), {
-            method: "GET",
-            credentials: "include",
-            headers,
-          });
+          const meRes = await fetch(apiUrl("/users/me"), { method: "GET", credentials: "include", headers });
           if (!meRes.ok) throw new Error("me_not_found");
           const me = await meRes.json();
           if (!me?._id) throw new Error("me_missing_id");
-
           if (role === "client") {
             const urls = clientRefs.filter(Boolean).slice(0, 3);
             if (urls.length) {
-              await fetch(apiUrl("/users/me/references"), {
-                method: "PUT",
-                credentials: "include",
-                headers,
-                body: JSON.stringify({ urls }),
-              });
+              await fetch(apiUrl("/users/me/references"), { method: "PUT", credentials: "include", headers, body: JSON.stringify({ urls }) });
             }
           }
-
           try {
             sessionStorage.setItem("signupJustCompleted", "1");
           } catch { }
@@ -425,34 +396,19 @@ export default function SignUp() {
             localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
             localStorage.removeItem(LOGOUT_TYPE_KEY);
           } catch { }
-
-          toast.success("Sign up successful, redirecting to Dashboard.", {
-            position: "top-center",
-            theme: "dark",
-          });
+          toast.success("Sign up successful, redirecting to Dashboard.", { position: "top-center", theme: "dark" });
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
           }, 1800);
           return;
         } catch {
-          toast.error("Failed to save your account. Please try again.", {
-            position: "top-center",
-            theme: "dark",
-          });
+          toast.error("Failed to save your account. Please try again.", { position: "top-center", theme: "dark" });
           try {
             await signOut();
           } catch { }
           return;
         }
       }
-      toast.error("Verification failed. Check your code and try again.", {
-        position: "top-center",
-        theme: "dark",
-      });
-      triggerMascotError();
-      try {
-        await signOut();
-      } catch { }
     } catch (err: any) {
       const e = Array.isArray(err?.errors) && err.errors.length ? err.errors[0] : null;
       const code = e?.code || err?.code;
@@ -465,6 +421,11 @@ export default function SignUp() {
     } finally {
       setLoading(false);
     }
+    toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
+    triggerMascotError();
+    try {
+      await signOut();
+    } catch { }
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
@@ -493,50 +454,33 @@ export default function SignUp() {
 
   return (
     <div className="relative text-app">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0"
-        aria-hidden
-      >
+      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
 
-      <div className="absolute inset-x-0 top-0 z-30">
+      <div ref={headerRef} className="sticky top-0 z-30 bg-black/20">
         <Header />
       </div>
 
-      <main className="fixed inset-0 z-10 grid place-items-center px-2 py-1 md:px-0 md:py-0">
-        <div className="mx-auto w-full max-w-7xl flex items-center justify-center px-1 md:px-0">
-          <motion.div variants={container} initial="hidden" animate="show" className="w-full">
-            <div
-              className={`relative grid w-full p-1 gap-0 md:p-0 md:gap-0 min-h-[50svh] md:minh-[60svh] ${showInfo
-                ? "md:grid-cols-2 md:items-stretch md:justify-items-center md:content-stretch"
-                : "grid-cols-1 place-items-center"
-                }`}
-            >
+      <main
+        className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0"
+        style={{ minHeight: `calc(100svh - ${headerH}px)` }}
+      >
+        <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
+          <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
+            <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : ""}`}>
               {showInfo && (
                 <motion.div
                   layout
-                  className="flex w-full max-w-2xl p-1 mx-0 md:p-0 md:mx-0 place-self-center h-full"
+                  className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
+                  style={{ height: isMdUp ? cardH || undefined : undefined }}
                 >
-                  <InfoPanel
-                    show={showInfo}
-                    prefersReduced={prefersReduced}
-                    hasError={mascotError}
-                    isPasswordHidden={mascotEyesClosed}
-                    mode="signup"
-                  />
+                  <div className="h-full w-full">
+                    <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
+                  </div>
                 </motion.div>
               )}
-              <motion.div
-                ref={cardRef}
-                layout
-                className="w-full max-w-2xl p-1 mx-0 md:p-0 md:mx-0 place-self-center translate-y-10 h-full"
-              >
+              <motion.div ref={cardRef} layout className="w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center">
                 <FormCard
                   mode="signup"
                   showInfo={showInfo}

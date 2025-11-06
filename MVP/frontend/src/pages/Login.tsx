@@ -30,6 +30,9 @@ export default function Login() {
   const { userId } = useAuth();
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
+  const MOBILE_CARD_W = "w-full max-w-[22rem]";
+  const MOBILE_CARD_H = "h-auto min-h-[420px] sm:min-h-[480px]";
+
   useEffect(() => {
     const mm = (e: MouseEvent) => {
       const t = e.target as Element | null;
@@ -157,7 +160,7 @@ export default function Login() {
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
-  const CARD_H = "h-[520px] sm:h-[560px] md:h-[580px]";
+  const CARD_H = "md:h-[580px]";
 
   const togglePwd = () => {
     const el = pwdRef.current;
@@ -179,31 +182,42 @@ export default function Login() {
   return (
     <>
       <div className="relative z-10 min-h-[100svh] text-app flex flex-col">
-        <Header />
-        <main className="relative z-10 flex-1 min-h-0 grid place-items-center px-4 py-4 md:px-0 md:py-0">
-          <div className="mx-auto w-full max-w-5xl flex items-center justify-center px-1 md:px-0">
-            <motion.div variants={container} initial={prefersReduced ? false : "hidden"} animate={prefersReduced ? undefined : "show"} className="w-full">
-              <div className={`relative grid w-full p-2 gap-0 md:p-0 md:gap-0 ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : "grid-cols-1 place-items-center"}`}>
+        <div className="sticky top-0 z-40 bg-black/20 supports-[backdrop-filter]:bg-black/30 backdrop-blur border-b border-white/10">
+          <Header />
+        </div>
+        <main className="relative z-10 flex-1 flex items-center justify-center *:overflow-hidden">
+          <div className="w-full max-w-5xl flex items-center justify-center h-full">
+            <motion.div
+              variants={container}
+              initial={prefersReduced ? false : "hidden"}
+              animate={prefersReduced ? undefined : "show"}
+              className="w-full h-full flex items-center justify-center"
+            >
+              <div className={`relative flex flex-col md:flex-row w-full p-2 justify-center items-center h-full ${showInfo ? "md:grid md:grid-cols-2" : ""}`}>
                 {showInfo && (
-                  <motion.div layout className={`w-full max-w-xl ${CARD_H} p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100`}>
-                    <div className="h-full">
+                  <motion.div layout className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full`}>
+                    <div className="h-full w-full flex items-center justify-center">
                       <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                     </div>
                   </motion.div>
                 )}
-                <motion.div ref={cardRef} layout className={`w-full max-w-xl ${CARD_H} justify-self-center p-3 mx-0 scale-95 md:p-0 md:mx-0 md:scale-100`}>
+                <motion.div
+                  ref={cardRef}
+                  layout
+                  className={`${MOBILE_CARD_W} ${MOBILE_CARD_H} md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full`}
+                >
                   <FormCard
                     mode="login"
                     showInfo={showInfo}
                     hasError={mascotError}
                     titleOverride="Welcome Back!"
                     subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey."
-                    className="h-full min-w-0"
+                    className="h-full w-full"
                   >
-                    <div className="grid place-items-center h-full overflow-hidden">
-                      <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-sm">
-                        <div className="text-left">
-                          <label className="block text-sm text-white/70 mb-1" htmlFor="email">Email</label>
+                    <div className="flex flex-col justify-center items-center h-full w-full py-4 pt-12">
+                      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+                        <div className="text-left w-full">
+                          <label className="block text-xs text-white/70 mb-1" htmlFor="email">Email</label>
                           <div className="relative">
                             <input
                               id="email"
@@ -212,13 +226,13 @@ export default function Login() {
                               value={email}
                               placeholder="Email"
                               onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                              className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-white/30"
+                              className="w-full h-10 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-3 outline-none focus:ring-2 focus:ring-white/30"
                               autoComplete="email"
                             />
                           </div>
                         </div>
-                        <div className="text-left">
-                          <label className="block text-sm text-white/70 mb-1" htmlFor="password">Password</label>
+                        <div className="text-left w-full">
+                          <label className="block text-xs text-white/70 mb-1" htmlFor="password">Password</label>
                           <div className="relative">
                             <input
                               ref={pwdRef}
@@ -228,14 +242,14 @@ export default function Login() {
                               value={password}
                               placeholder="Password"
                               onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                              className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-4 pr-12 outline-none focus:ring-2 focus:ring-white/30"
+                              className="w-full h-10 rounded-xl bg-white/10 text-white placeholder:text-white/40 px-3 pr-10 outline-none focus:ring-2 focus:ring-white/30"
                               autoComplete="current-password"
                             />
                             <button
                               type="button"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={togglePwd}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
                               aria-label={showPassword ? "Hide password" : "Show password"}
                             >
                               {showPassword ? (
@@ -253,7 +267,7 @@ export default function Login() {
                             </button>
                           </div>
                         </div>
-                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-base rounded-xl w-full" disabled={loading}>
+                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-10 text-sm rounded-xl w-full mt-2" disabled={loading}>
                           {loading ? "Signing In..." : "Sign In"}
                         </Button>
                       </form>
