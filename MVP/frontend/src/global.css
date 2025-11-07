@@ -535,7 +535,9 @@ h3 {
   place-items: center;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   -webkit-tap-highlight-color: transparent;
   --tw-ring-color: transparent;
   --tw-ring-offset-width: 0px;
@@ -550,8 +552,28 @@ h3 {
   box-shadow: none !important;
 }
 
-:is(button, [role="button"], .btn, input, select, textarea, a, summary, [tabindex]):focus,
-:is(button, [role="button"], .btn, input, select, textarea, a, summary, [tabindex]):focus-visible {
+:is(
+    button,
+    [role="button"],
+    .btn,
+    input,
+    select,
+    textarea,
+    a,
+    summary,
+    [tabindex]
+  ):focus,
+:is(
+    button,
+    [role="button"],
+    .btn,
+    input,
+    select,
+    textarea,
+    a,
+    summary,
+    [tabindex]
+  ):focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
@@ -568,4 +590,20 @@ input::-moz-focus-inner {
 [data-radix-focus-guard] {
   outline: none !important;
   box-shadow: none !important;
+}
+
+@keyframes ink-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  20% {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.95);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.ink-flash {
+  animation: ink-flash 1400ms ease-in-out;
 }
