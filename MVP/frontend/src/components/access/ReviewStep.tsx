@@ -60,6 +60,8 @@ type Props = {
     artist: ArtistProfileReview;
     clientImages?: string[];
     artistImages?: string[];
+    bio: string;
+    onBioChange: React.ChangeEventHandler<HTMLTextAreaElement>;
 };
 
 function InlineWrapBadges({ items }: { items?: string[] }) {
@@ -75,7 +77,16 @@ function InlineWrapBadges({ items }: { items?: string[] }) {
     );
 }
 
-export default function ReviewStep({ role, shared, client, artist, clientImages = [], artistImages = [] }: Props) {
+export default function ReviewStep({
+    role,
+    shared,
+    client,
+    artist,
+    clientImages = [],
+    artistImages = [],
+    bio,
+    onBioChange,
+}: Props) {
     const budgetText =
         client.budgetMin && client.budgetMax
             ? `$${Number(client.budgetMin).toLocaleString()} – $${Number(client.budgetMax).toLocaleString()}`
@@ -171,9 +182,7 @@ export default function ReviewStep({ role, shared, client, artist, clientImages 
             </div>
 
             <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                <h3 className="text-sm font-semibold mb-2">
-                    {role === "client" ? "Reference Images" : "Portfolio Highlights"}
-                </h3>
+                <h3 className="text-sm font-semibold mb-2">{role === "client" ? "Reference Images" : "Portfolio Highlights"}</h3>
                 <div className="grid grid-cols-3 gap-1.5">
                     {tiles.map((i) => {
                         const u = imgs[i];
@@ -189,6 +198,17 @@ export default function ReviewStep({ role, shared, client, artist, clientImages 
                     })}
                 </div>
                 <p className="mt-2 text-[11px] text-white/60">Images will appear larger on your dashboard.</p>
+            </section>
+
+            <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                <h3 className="text-sm font-semibold mb-2">Bio (optional)</h3>
+                <textarea
+                    value={bio}
+                    onChange={onBioChange}
+                    rows={5}
+                    placeholder={role === "client" ? "Add context for artists. Style preferences, constraints, ideas." : "Add notes about style, experience, booking details."}
+                    className="w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                />
             </section>
         </div>
     );
