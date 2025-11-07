@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
-import StepBarRow from "@/components/dashboard/client/StepBarRow";
 
 export type ArtistWithGroups = {
     _id: string;
@@ -20,12 +19,9 @@ export type ArtistWithGroups = {
 
 export type PortfolioProps = {
     artist: ArtistWithGroups;
-    onNext?: () => void;
-    onGoToStep?: (step: 0 | 1 | 2) => void;
-    onClose?: () => void;
 };
 
-const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep }) => {
+const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
     const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
@@ -34,8 +30,8 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
     const openZoom = (items: string[], index: number, label: "Past Works" | "Healed Works" | "Upcoming Sketches") => setZoom({ items, index, label });
     const closeZoom = () => setZoom(null);
-    const goPrev = () => setZoom((z) => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
-    const goNext = () => setZoom((z) => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
+    const goPrev = () => setZoom(z => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
+    const goNext = () => setZoom(z => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
 
     const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) =>
         images.length ? (
@@ -79,7 +75,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
     const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
         const [index, setIndex] = useState(0);
-        const swipeTo = (dir: "prev" | "next") => setIndex((i) => (dir === "prev" ? (i + images.length - 1) % images.length : (i + 1) % images.length));
+        const swipeTo = (dir: "prev" | "next") => setIndex(i => (dir === "prev" ? (i + images.length - 1) % images.length : (i + 1) % images.length));
         const onDragEnd = (_: any, info: { offset: { x: number } }) => {
             const t = 50;
             if (info.offset.x < -t) swipeTo("next");
@@ -153,22 +149,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, onNext, onGoToStep 
 
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-                <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-                    <div className="py-2 sm:py-3">
-                        <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
-                            <StepBarRow
-                                active={0}
-                                onGoToStep={onGoToStep}
-                                rightLabel="Next: Booking & Message"
-                                onRightClick={onNext}
-                                centerHint="Scroll to explore the portfolio"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
                 <section className="w-full mt-1">
                     <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>

@@ -396,14 +396,22 @@ export default function SignUp() {
                 <motion.div
                   layout
                   className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
-                  style={{ height: isMdUp ? cardH || undefined : undefined }}
+                  style={{
+                    height: isMdUp ? (showSuccess ? Math.max(cardH ?? 0, 640) : cardH || undefined) : undefined,
+                    minHeight: isMdUp && showSuccess ? 640 : undefined
+                  }}
                 >
                   <div className="h-full w-full">
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
                   </div>
                 </motion.div>
               )}
-              <motion.div ref={cardRef} layout className="w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center">
+              <motion.div
+                ref={cardRef}
+                layout
+                className="w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
+                style={{ minHeight: isMdUp && showSuccess ? 640 : undefined }}
+              >
                 <SignupFormCard
                   showInfo={showInfo}
                   hasError={mascotError}

@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import ArtistPortfolio, { ArtistWithGroups } from "./ArtistPortfolio";
 import ArtistBooking from "./ArtistBooking";
 import ArtistReviews from "./ArtistReviews";
+import StepBarRow from "./StepBarRow";
 
 declare global {
   interface Window {
@@ -87,8 +88,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     };
   }, []);
 
-  const isNestedDialogOpen = () =>
-    !!document.querySelector('[data-radix-dialog-content][data-state="open"]');
+  const isNestedDialogOpen = () => !!document.querySelector('[data-radix-dialog-content][data-state="open"]');
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
@@ -143,7 +143,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
 
   if (!open || !mounted || !portalRef.current) return null;
 
-  const handleOverlayPointerDown: React.PointerEventHandler<HTMLDivElement> = (e) => {
+  const handleOverlayPointerDown: React.PointerEventHandler<HTMLDivElement> = e => {
     if (isNestedDialogOpen()) {
       e.stopPropagation();
       e.preventDefault();
@@ -157,12 +157,19 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     closeNow();
   };
 
-  const handleClosePointerDown: React.PointerEventHandler = (e) => {
+  const handleClosePointerDown: React.PointerEventHandler = e => {
     (e as any).nativeEvent?.stopImmediatePropagation?.();
     e.stopPropagation();
     e.preventDefault();
     closeNow();
   };
+
+  const stepMeta =
+    step === 0
+      ? { active: 0 as 0 | 1 | 2, rightLabel: "Next: Booking & Message", onRight: () => setStep(1), centerHint: "Scroll to explore the portfolio" }
+      : step === 1
+        ? { active: 1 as 0 | 1 | 2, rightLabel: "Next: Reviews", onRight: () => setStep(2), centerHint: "Scroll to message and book" }
+        : { active: 2 as 0 | 1 | 2, rightLabel: "Back: Booking & Message", onRight: () => setStep(1), centerHint: "Scroll to browse reviews or change the sort" };
 
   const modalUI = (
     <motion.div
@@ -196,31 +203,29 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             </button>
             <Separator className="mt-4 w-full" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
           </div>
+
+          <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+            <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
+              <div className="py-2 sm:py-3">
+                <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
+                  <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => setStep(s)} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="w-full max-w-[1200px] mx-auto">
-            {step === 0 && (
-              <ArtistPortfolio
-                artist={artist}
-                onNext={() => setStep(1)}
-                onGoToStep={(s: 0 | 1 | 2) => setStep(s)}
-                onClose={closeNow}
-              />
-            )}
+            {step === 0 && <ArtistPortfolio artist={artist} />}
             {step === 1 && (
               <ArtistBooking
                 artist={artist}
                 onBack={() => setStep(0)}
                 onClose={onClose}
-                onGoToStep={(s) => setStep(s)}
+                onGoToStep={s => setStep(s)}
                 onMessage={onMessage}
               />
             )}
-            {step === 2 && (
-              <ArtistReviews
-                artist={artist}
-                onGoToStep={(s: 0 | 1 | 2) => setStep(s)}
-                onClose={closeNow}
-              />
-            )}
+            {step === 2 && <ArtistReviews artist={artist} />}
           </div>
         </ScrollArea>
       </div>

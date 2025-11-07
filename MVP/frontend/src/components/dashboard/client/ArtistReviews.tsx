@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Star, X } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { displayNameFromUsername } from "@/lib/format";
-import StepBarRow from "@/components/dashboard/client/StepBarRow";
 import { ChevronDown } from "lucide-react";
 
 export type Review = {
@@ -22,9 +21,6 @@ type ReviewsProps = {
     artist: ArtistWithGroups;
     reviews?: Review[];
     averageRating?: number;
-    onGoToStep?: (step: 0 | 1 | 2) => void;
-    onGoToBooking?: () => void;
-    onClose?: () => void;
 };
 
 const fmtDate = (d: string | Date) => {
@@ -47,7 +43,7 @@ const Stars: React.FC<{ value: number }> = React.memo(({ value }) => {
                         style={{
                             color: filled || half ? "var(--fg)" : "color-mix(in oklab, var(--fg) 35%, transparent)",
                             fill: filled ? "var(--fg)" : half ? "color-mix(in oklab, var(--fg) 70%, transparent)" : "transparent",
-                            stroke: "currentColor",
+                            stroke: "currentColor"
                         }}
                     />
                 );
@@ -74,7 +70,7 @@ const mapReview = (raw: any): Review => {
         createdAt: raw?.createdAt ?? new Date().toISOString(),
         title: raw?.title || undefined,
         body: String(raw?.comment ?? raw?.body ?? ""),
-        photos: Array.isArray(raw?.photos) ? raw.photos : undefined,
+        photos: Array.isArray(raw?.photos) ? raw.photos : undefined
     };
 };
 
@@ -115,7 +111,7 @@ const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React
 });
 ReviewCard.displayName = "ReviewCard";
 
-export default function ArtistReviews({ artist, reviews = [], averageRating, onGoToStep, onGoToBooking }: ReviewsProps) {
+export default function ArtistReviews({ artist, reviews = [], averageRating }: ReviewsProps) {
     const { getToken } = useAuth();
     const [sort, setSort] = useState<"recent" | "high" | "low">("recent");
     const [zoomSrc, setZoomSrc] = useState<string | null>(null);
@@ -171,7 +167,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
                         const res = await fetch(url, {
                             headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                             signal: controller.signal,
-                            cache: "force-cache",
+                            cache: "force-cache"
                         });
                         const ctype = res.headers.get("content-type") || "";
                         if (!res.ok) {
@@ -246,22 +242,6 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
 
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="sticky top-0 z-20 w-full backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-                <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-                    <div className="py-2 sm:py-3">
-                        <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
-                            <StepBarRow
-                                active={2}
-                                onGoToStep={onGoToStep}
-                                rightLabel="Back: Booking & Message"
-                                onRightClick={onGoToBooking ?? (() => onGoToStep?.(1))}
-                                centerHint="Scroll to browse reviews or change the sort"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
                 <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
                     <CardHeader className="text-center space-y-1 px-3 sm:px-6">
@@ -282,21 +262,13 @@ export default function ArtistReviews({ artist, reviews = [], averageRating, onG
                             </div>
 
                             <div className="flex items-center gap-2 mt-2 w-full justify-center">
-                                <label
-                                    className="text-sm"
-                                    style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}
-                                >
+                                <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
                                     Sort:
                                 </label>
 
                                 <div className="relative">
-                                    <div
-                                        className="text-sm rounded-md px-3 py-2 border w-auto sm:w-[180px] flex items-center justify-center"
-                                        style={{ background: "var(--elevated)", color: "var(--fg)" }}
-                                    >
-                                        <span className="truncate">
-                                            {sort === "recent" ? "Most recent" : sort === "high" ? "Highest rating" : "Lowest rating"}
-                                        </span>
+                                    <div className="text-sm rounded-md px-3 py-2 border w-auto sm:w-[180px] flex items-center justify-center" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
+                                        <span className="truncate">{sort === "recent" ? "Most recent" : sort === "high" ? "Highest rating" : "Lowest rating"}</span>
                                         <ChevronDown size={14} className="ml-2" />
                                     </div>
 
