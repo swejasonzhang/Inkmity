@@ -69,7 +69,7 @@ function swallowGestureTail(ms = 220) {
 export default function BookingPicker({ artistId, date }: Props) {
   const scopeRef = useRef<HTMLDivElement>(null)
   const portalRef = useRef<HTMLDivElement>(null)
-  const { theme } = useTheme(scopeRef.current)
+  const { theme } = useTheme()
   const isLightTheme = theme === "light"
 
   const [kind, setKind] = useState<Kind>("consultation")

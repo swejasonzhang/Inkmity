@@ -3,9 +3,8 @@ import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useApi, isAbortError, getMe } from "@/api";
+import { useApi, isAbortError } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
-import StepBarRow from "./StepBarRow";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -24,13 +23,7 @@ type Gate = {
   blocked: boolean;
 };
 
-const toUrlList = (arr: any[] | undefined | null) =>
-  (Array.isArray(arr) ? arr : [])
-    .map((r: any) => (typeof r === "string" ? r : r?.url))
-    .filter((u: any) => typeof u === "string" && u.trim().length > 0)
-    .map((u: string) => u.trim());
-
-export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: BookingProps) {
+export default function ArtistBooking({ artist, onBack, onClose }: BookingProps) {
   const { request } = useApi();
   const apiOrigin =
     (import.meta as any)?.env?.VITE_API_URL ||
@@ -41,13 +34,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
   const [errorMsg, setErrorMsg] = useState("");
   const [gate, setGate] = useState<Gate | null>(null);
   const sentRef = useRef(false);
-
-  const [profile, setProfile] = useState<any | null>(null);
-  const [profileRefs, setProfileRefs] = useState<string[]>([]);
-  const [desiredStyle, setDesiredStyle] = useState<string | undefined>(undefined);
-  const [budgetRange, setBudgetRange] = useState<{ min?: number; max?: number }>({});
-  const [placement, setPlacement] = useState<string | undefined>(undefined);
-  const [size, setSize] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -66,20 +52,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
         }
       } catch (e) {
         if (!isAbortError(e)) console.error("[ArtistBooking] gate fetch failed", { artistId: artist?.clerkId, error: e });
-      }
-      try {
-        const me: any = await getMe({ signal: ac.signal });
-        setProfile(me);
-        const refs: string[] = me?.references?.map((r: any) => r.url || r) || me?.referenceUrls || [];
-        setProfileRefs((refs || []).filter(Boolean));
-        setDesiredStyle(me?.preferredStyle || me?.style || me?.styles?.[0] || undefined);
-        const min = me?.budgetMin ?? me?.budget?.min;
-        const max = me?.budgetMax ?? me?.budget?.max;
-        setBudgetRange({ min, max });
-        setPlacement(me?.placement || undefined);
-        setSize(me?.size || undefined);
-      } catch (e) {
-        if (!isAbortError(e)) console.error("[ArtistBooking] /users/me fetch failed", e);
       }
     })();
     return () => ac.abort();
@@ -113,43 +85,16 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     );
 
   const preloadedMessage = useMemo(() => {
-    const me = profile || {};
-    const refs: string[] =
-      (Array.isArray(me.references) ? me.references : [])?.map((r: any) => r?.url || r)?.filter(Boolean) || profileRefs;
-    const styleList: string[] = (Array.isArray(me.styles) ? me.styles : [])
-      .map((s: string) => String(s || "").trim())
-      .filter(Boolean);
-    const pickedStyle = (desiredStyle || "").trim() || styleList.find(s => s.toLowerCase() !== "all") || "";
-    const sizeVal = String(me.size || size || "").trim();
-    const placeVal = String(me.placement || placement || "").trim();
-    let sizePlacementSentence = "";
-    if (sizeVal && placeVal) sizePlacementSentence = `I'm thinking size ${sizeVal} near ${placeVal}.`;
-    else if (sizeVal) sizePlacementSentence = `I'm thinking size ${sizeVal}. I'm flexible on placement.`;
-    else if (placeVal) sizePlacementSentence = `I'm thinking a piece near ${placeVal}. I'm flexible on size.`;
-    else sizePlacementSentence = "I'm flexible on size and placement.";
-    const min = me?.budgetMin ?? budgetRange.min;
-    const max = me?.budgetMax ?? budgetRange.max;
-    const budgetSentence =
-      min != null || max != null
-        ? `Budget: ${min != null ? `$${min}` : ""}${min != null && max != null ? "–" : ""}${max != null ? `$${max}` : ""}.`
-        : "";
-    const styleSentence = pickedStyle ? `Style: ${pickedStyle}.` : "I'm flexible on style.";
-    const refsSentence = refs && refs.length ? `Refs: ${refs.slice(0, 10).join(", ")}${refs.length > 10 ? `, +${refs.length - 10} more` : ""}.` : "";
-    const signer = (profile?.username || profile?.handle || "").toString().trim();
-    const signerSentence = signer ? `- ${signer}${profile?.handle && profile?.username ? ` (${profile?.handle})` : ""}` : "";
     const parts = [
       `Hi ${artist.username}, I've looked through your work and I'm interested.`,
-      sizePlacementSentence,
-      styleSentence,
-      budgetSentence,
-      refsSentence,
-      "Are you interested in this project?",
-      signerSentence
+      "I'm flexible on size and placement.",
+      "I'm flexible on style.",
+      "Are you interested in this project?"
     ]
       .filter(Boolean)
       .join(" ");
     return parts.replace(/\s+/g, " ").trim();
-  }, [artist.username, profile, profileRefs, desiredStyle, budgetRange.min, budgetRange.max, placement, size]);
+  }, [artist.username]);
 
   function mapError(status: number | undefined, body: any): string {
     const code = typeof body?.error === "string" ? body.error : "";
@@ -185,28 +130,24 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     setStatus("sending");
     setErrorMsg("");
     try {
-      const refsFromProfile = toUrlList(profile?.references);
-      const refsFromField = toUrlList(profile?.referenceUrls);
-      const refsFromState = toUrlList(profileRefs);
-      const allRefs = Array.from(new Set([...refsFromProfile, ...refsFromField, ...refsFromState]));
       const payload = {
         artistId: artist.clerkId,
         text: preMsg,
-        references: allRefs,
-        referenceUrls: allRefs,
-        workRefs: allRefs,
+        references: [],
+        referenceUrls: [],
+        workRefs: [],
         type: "request",
         meta: {
-          style: desiredStyle || null,
-          size: size || null,
-          placement: placement || null,
-          budgetMin: budgetRange.min ?? null,
-          budgetMax: budgetRange.max ?? null,
+          style: null,
+          size: null,
+          placement: null,
+          budgetMin: null,
+          budgetMax: null,
           targetDate: date ? date.toISOString() : null,
-          referenceUrls: allRefs,
-          workRefs: allRefs,
-          refs: allRefs,
-          stylesSnapshot: desiredStyle ? [desiredStyle] : []
+          referenceUrls: [],
+          workRefs: [],
+          refs: [],
+          stylesSnapshot: []
         }
       };
       const res: any = await request(`${apiOrigin}/messages/request`, {
@@ -250,20 +191,8 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
     }
   };
 
-  const handleNext = () => onGoToStep?.(2);
-
   return (
     <div className="w-full ink-scope" style={{ background: "var(--card)", color: "var(--fg)" }}>
-      <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-          <div className="py-2 sm:py-3">
-            <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
-              <StepBarRow active={1} onGoToStep={onGoToStep} rightLabel="Next: Reviews" onRightClick={handleNext} centerHint="Scroll to message and book" />
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
         <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
@@ -308,42 +237,6 @@ export default function ArtistBooking({ artist, onBack, onClose, onGoToStep }: B
             </div>
           </CardContent>
         </Card>
-
-        {profile && (
-          <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-            <CardHeader className="text-center space-y-1 px-3 sm:px-6">
-              <CardTitle className="text-base sm:text-lg">Your profile</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div><strong>Preferred style:</strong> {profile.preferredStyle ?? profile.style ?? profile.styles?.[0] ?? "—"}</div>
-                <div><strong>Placement:</strong> {profile.placement ?? "—"}</div>
-                <div><strong>Size:</strong> {profile.size ?? "—"}</div>
-                <div>
-                  <strong>Budget:</strong> {(profile.budgetMin ?? profile.budget?.min ?? "—")}
-                  {profile.budgetMin != null || profile.budget?.min != null ? "–" : ""}
-                  {(profile.budgetMax ?? profile.budget?.max ?? "")}
-                </div>
-                <div className="sm:col-span-2">
-                  <strong>Reference URLs:</strong>
-                  <ul className="list-disc pl-5 mt-1">
-                    {(profile.references?.map((r: any) => r.url || r) || profile.referenceUrls || [])
-                      .filter(Boolean)
-                      .slice(0, 10)
-                      .map((u: string) => (
-                        <li key={u}>
-                          <a href={u} target="_blank" rel="noreferrer" className="underline">{u}</a>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              </div>
-              <pre className="mt-4 p-3 rounded text-xs overflow-auto" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
-                {JSON.stringify(profile, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        )}
 
         <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
           <CardHeader className="text-center space-y-1 px-3 sm:px-6">
