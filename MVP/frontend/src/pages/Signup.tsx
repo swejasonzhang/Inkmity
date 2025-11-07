@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState, ChangeEvent, useRef } from "react";
 import Header from "@/components/header/Header";
-import { ToastContainer, toast, Slide } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { motion, useReducedMotion } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
@@ -30,8 +28,6 @@ type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
-const TOAST_H = 64;
-const TOAST_GAP = 36;
 
 const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:5005/api";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
@@ -39,26 +35,6 @@ function apiUrl(path: string, qs?: Record<string, string>) {
   const url = new URL(path.replace(/^\/+/, ""), API_BASE + "/");
   if (qs) Object.entries(qs).forEach(([k, v]) => url.searchParams.set(k, v));
   return url.toString();
-}
-
-function friendlyClerkMessage(code?: string, message?: string) {
-  if (!code && message) return message;
-  switch (code) {
-    case "too_many_requests":
-      return "Too many attempts. Try again shortly.";
-    case "identifier_already_exists":
-      return "This email is already registered.";
-    case "form_param_unknown":
-      return "One of the fields is not allowed. Please try again.";
-    case "invalid_password":
-      return "Password does not meet the requirements.";
-    case "form_code_incorrect":
-      return "Incorrect code. Check your email and try again.";
-    case "form_code_expired":
-      return "Code expired. Request a new one.";
-    default:
-      return message || "Something went wrong. Please try again.";
-  }
 }
 
 function collectIssues({ role, step, shared, client, artist }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile }) {
@@ -160,7 +136,6 @@ export default function SignUp() {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerH, setHeaderH] = useState(0);
-  const [toastTop, setToastTop] = useState<number | undefined>(undefined);
   const [cardH, setCardH] = useState<number | null>(null);
   const [isMdUp, setIsMdUp] = useState<boolean>(typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false);
 
@@ -181,25 +156,6 @@ export default function SignUp() {
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", onResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const updateTop = () => {
-      const el = cardRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const top = Math.max(8, Math.floor(rect.top) - TOAST_H - TOAST_GAP);
-      setToastTop(top);
-    };
-    updateTop();
-    const onEvents = ["resize", "scroll"];
-    onEvents.forEach((evt) => window.addEventListener(evt, updateTop, { passive: true }));
-    const ro = new ResizeObserver(updateTop);
-    if (cardRef.current) ro.observe(cardRef.current);
-    return () => {
-      onEvents.forEach((evt) => window.removeEventListener(evt, updateTop));
-      ro.disconnect();
     };
   }, []);
 
@@ -278,17 +234,17 @@ export default function SignUp() {
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
     return role === "client"
       ? [
-          { key: "role", valid: allSharedValid },
-          { key: "client-1", valid: allClientValid },
-          { key: "upload", valid: true },
-          { key: "review", valid: allSharedValid && allClientValid },
-        ]
+        { key: "role", valid: allSharedValid },
+        { key: "client-1", valid: allClientValid },
+        { key: "upload", valid: true },
+        { key: "review", valid: allSharedValid && allClientValid },
+      ]
       : [
-          { key: "role", valid: allSharedValid },
-          { key: "artist-1", valid: allArtistValid },
-          { key: "upload", valid: true },
-          { key: "review", valid: allSharedValid && allArtistValid },
-        ];
+        { key: "role", valid: allSharedValid },
+        { key: "artist-1", valid: allArtistValid },
+        { key: "upload", valid: true },
+        { key: "review", valid: allSharedValid && allArtistValid },
+      ];
   }, [role, allSharedValid, allClientValid, allArtistValid]);
 
   const isLastFormSlide = step === slides.length - 1;
@@ -301,8 +257,6 @@ export default function SignUp() {
   const handleNext = () => {
     const currentValid = slides[step].valid;
     if (!currentValid) {
-      const tips = collectIssues({ role, step, shared, client, artist });
-      toast.error(tips.length ? tips.join("\n") : "Please complete the required fields", { position: "top-center", theme: "dark" });
       triggerMascotError();
       return;
     }
@@ -315,12 +269,10 @@ export default function SignUp() {
     if (loading) return;
     const tips = collectIssues({ role, step: 3, shared, client, artist });
     if (tips.length) {
-      toast.error(tips.join("\n"), { position: "top-center", theme: "dark" });
       triggerMascotError();
       return;
     }
     if (!isLoaded || !signUp) {
-      toast.error("Sign up is still loading. Try again.", { position: "top-center", theme: "dark" });
       return;
     }
     setLoading(true);
@@ -337,13 +289,8 @@ export default function SignUp() {
       setSignUpAttempt(attempt as SignUpResource);
       setAwaitingCode(true);
       await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
-      toast.info("Verification code sent.", { position: "top-center", theme: "dark" });
-    } catch (err: any) {
+    } catch {
       setAwaitingCode(false);
-      const e = Array.isArray(err?.errors) && err.errors.length ? err.errors[0] : null;
-      const code = e?.code || err?.code;
-      const msg = e?.message || err?.message;
-      toast.error(friendlyClerkMessage(code, msg), { position: "top-center", theme: "dark" });
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -352,17 +299,14 @@ export default function SignUp() {
 
   const verifyCode = async () => {
     if (!code.trim()) {
-      toast.error("Enter the verification code", { position: "top-center", theme: "dark" });
       triggerMascotError();
       return;
     }
     if (!signUpAttempt) {
-      toast.error("Verification isn't ready yet. Please request a new code.", { position: "top-center", theme: "dark" });
       triggerMascotError();
       return;
     }
     if (!isLoaded || !setActive) {
-      toast.error("Account session is still loading. Please try again in a moment.", { position: "top-center", theme: "dark" });
       return;
     }
     setLoading(true);
@@ -389,43 +333,32 @@ export default function SignUp() {
             }
           }
           try {
-            sessionStorage.setItem("signupJustCompleted", "1");
-          } catch {}
-          try {
             localStorage.setItem("trustedDevice", shared.email);
             localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
             localStorage.removeItem(LOGOUT_TYPE_KEY);
-          } catch {}
-          toast.success("Sign up successful, redirecting to Dashboard.", { position: "top-center", theme: "dark" });
+          } catch { }
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
           }, 1800);
           return;
         } catch {
-          toast.error("Failed to save your account. Please try again.", { position: "top-center", theme: "dark" });
           try {
             await signOut();
-          } catch {}
+          } catch { }
           return;
         }
       }
-    } catch (err: any) {
-      const e = Array.isArray(err?.errors) && err.errors.length ? err.errors[0] : null;
-      const code = e?.code || err?.code;
-      const msg = e?.message || err?.message;
-      toast.error(friendlyClerkMessage(code, msg), { position: "top-center", theme: "dark" });
-      triggerMascotError();
+    } catch {
       try {
         await signOut();
-      } catch {}
+      } catch { }
     } finally {
       setLoading(false);
     }
-    toast.error("Verification failed. Check your code and try again.", { position: "top-center", theme: "dark" });
     triggerMascotError();
     try {
       await signOut();
-    } catch {}
+    } catch { }
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
@@ -441,7 +374,7 @@ export default function SignUp() {
       if (start !== null && end !== null) {
         try {
           input.setSelectionRange(start, end);
-        } catch {}
+        } catch { }
       }
     });
   };
@@ -521,19 +454,6 @@ export default function SignUp() {
           </motion.div>
         </div>
       </main>
-
-      <ToastContainer
-        position="top-center"
-        autoClose={1600}
-        hideProgressBar
-        closeOnClick
-        pauseOnHover={false}
-        draggable={false}
-        limit={1}
-        transition={Slide}
-        toastClassName="bg-black/80 text-white text-base font-semibold rounded-lg shadow-lg text-center px-4 py-2.5 min-w-[240px] flex items-center justify-center border border-white/10"
-        style={{ top: toastTop !== undefined ? toastTop : 10 }}
-      />
     </div>
   );
 }
