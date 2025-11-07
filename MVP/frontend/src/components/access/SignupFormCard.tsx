@@ -33,6 +33,8 @@ type BaseProps = {
   className?: string;
   invalidFields?: string[];
   flashToken?: number;
+  success?: boolean;
+  successHeading?: string;
 };
 
 type SignupProps = BaseProps & {
@@ -102,9 +104,27 @@ export default function SignupFormCard(props: SignupProps) {
     onCancelVerification,
     bio,
     onBioChange,
-    invalidFields = [],
-    flashToken = 0
+    invalidFields,
+    flashToken,
+    success,
+    successHeading
   } = props;
+
+  if (success) {
+    return (
+      <div className={`relative w-full ${className ?? ""}`}>
+        <div className={`${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="ink-success-wrap">
+              <div className="ink-spinner" />
+              <div className="text-white text-base sm:text-lg font-semibold">{successHeading || "Signup successful."}</div>
+              <div className="text-white/80 text-sm">Redirecting now<span className="ink-dots"><span className="ink-dot" /><span className="ink-dot" /><span className="ink-dot" /></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isRoleSlide = slides[step].key === "role";
   const disableNextForEmail = isRoleSlide && emailTaken;
@@ -113,11 +133,11 @@ export default function SignupFormCard(props: SignupProps) {
 
   return (
     <div className={`relative w-full ${className ?? ""}`}>
-      <div className={`${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border-[0.5px] ring-[0.5px] p-5 sm:p-6 h-full mx-auto border-white/10 ring-white/10 transition-colors duration-300`}>
+      <div className={`${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
         <div className="h-full w-full flex flex-col gap-5">
           <div className="flex flex-col items-center text-center gap-1">
             <div className="text-white">
-              <div className="inline-flex items-center gap-1.5 rounded-full border-[0.5px] border-white/20 bg-white/10 px-3 py-1 text-xs">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs">
                 <Sparkles className="h-3 w-3" />
                 <span>Join the Inkmity community</span>
               </div>
@@ -127,12 +147,10 @@ export default function SignupFormCard(props: SignupProps) {
               <p className="text-white/90 text-sm sm:text-base">A few quick steps to personalize your experience.</p>
             </div>
           </div>
-
           <div className="w-full flex flex-col">
             <div className="w-full px-0 sm:px-1 md:px-2 mb-3 sm:mb-4">
               <ProgressDots total={totalSteps} current={currentIndex} showVerify={awaitingCode} />
             </div>
-
             <motion.div variants={shake} animate={hasError ? "error" : "idle"} className="w-full">
               <AnimatePresence initial={false} mode="wait">
                 {!awaitingCode ? (
@@ -152,28 +170,22 @@ export default function SignupFormCard(props: SignupProps) {
                           />
                         </div>
                       )}
-
                       {slides[step].key === "client-1" && <ClientDetailsStep client={client} onChange={onClientChange} />}
-
                       {slides[step].key === "artist-1" && <ArtistDetailsStep artist={artist} onChange={onArtistChange} />}
-
                       {slides[step].key === "upload" &&
                         (role === "client" ? (
                           <SignupUpload label="Reference images (up to 3)" kind="client_ref" value={clientRefs} onChange={setClientRefs} />
                         ) : (
                           <SignupUpload label="Portfolio highlights (up to 3)" kind="artist_portfolio" value={artistPortfolioImgs} onChange={setArtistPortfolioImgs} />
                         ))}
-
                       {slides[step].key === "review" && (
                         <ReviewStep role={role} shared={shared} client={client} artist={artist} clientImages={clientRefs} artistImages={artistPortfolioImgs} bio={bio} onBioChange={onBioChange} />
                       )}
                     </div>
-
                     <div className="w-full mt-3 sm:mt-4 flex flex-col gap-2">
                       <Button type="button" onClick={onBack} disabled={step === 0} className="w-full bg-white/10 hover:bg-white/20 text-white h-11 text-sm rounded-xl">
                         Back
                       </Button>
-
                       {step < slides.length - 1 && (
                         <Button
                           type="button"
@@ -184,7 +196,6 @@ export default function SignupFormCard(props: SignupProps) {
                           Next
                         </Button>
                       )}
-
                       {step === slides.length - 1 && (
                         <Button type="button" onClick={onStartVerification} disabled={loading || !isLoaded || !!emailTaken} className="w-full bg-white/15 hover:bg-white/25 text-white h-11 text-sm rounded-xl">
                           Send Verification Code
@@ -209,7 +220,6 @@ export default function SignupFormCard(props: SignupProps) {
               </AnimatePresence>
             </motion.div>
           </div>
-
           <div className="text-white/90 text-center text-xs sm:text-sm">
             <span>Already have an account? <a href="/login" className="underline hover:opacity-80">Login</a></span>
           </div>

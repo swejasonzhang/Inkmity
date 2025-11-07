@@ -28,7 +28,6 @@ type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
-
 const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:5005/api";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 function apiUrl(path: string, qs?: Record<string, string>) {
@@ -104,18 +103,18 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
   const [mascotError, setMascotError] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { userId, getToken } = useAuth();
   const navigate = useNavigate();
-  const [invalidFields, setInvalidFields] = useState<string[]>([]);
-  const [flashToken, setFlashToken] = useState(0);
-
   const cardRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerH, setHeaderH] = useState(0);
   const [cardH, setCardH] = useState<number | null>(null);
   const [isMdUp, setIsMdUp] = useState<boolean>(typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false);
+  const [invalidFields, setInvalidFields] = useState<string[]>([]);
+  const [flashToken, setFlashToken] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
@@ -332,9 +331,10 @@ export default function SignUp() {
             localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
             localStorage.removeItem(LOGOUT_TYPE_KEY);
           } catch { }
+          setShowSuccess(true);
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
-          }, 1800);
+          }, 2000);
           return;
         } catch {
           try {
@@ -360,21 +360,18 @@ export default function SignUp() {
 
   const handlePasswordVisibilityChange = (hidden: boolean) => {
     setShowPassword(!hidden);
-    if (hidden) return;
     const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
     if (!input) return;
     const start = input.selectionStart ?? null;
     const end = input.selectionEnd ?? null;
-    if (document.activeElement === input) {
-      requestAnimationFrame(() => {
-        input.focus({ preventScroll: true });
-        if (start !== null && end !== null) {
-          try {
-            input.setSelectionRange(start, end);
-          } catch { }
-        }
-      });
-    }
+    requestAnimationFrame(() => {
+      input.focus({ preventScroll: true });
+      if (start !== null && end !== null) {
+        try {
+          input.setSelectionRange(start, end);
+        } catch { }
+      }
+    });
   };
 
   const bio = role === "client" ? client.bio || "" : artist.bio || "";
@@ -396,7 +393,11 @@ export default function SignUp() {
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
             <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : ""}`}>
               {showInfo && (
-                <motion.div layout className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center" style={{ height: isMdUp ? cardH || undefined : undefined }}>
+                <motion.div
+                  layout
+                  className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
+                  style={{ height: isMdUp ? cardH || undefined : undefined }}
+                >
                   <div className="h-full w-full">
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
                   </div>
@@ -438,6 +439,8 @@ export default function SignUp() {
                   onBioChange={(e) => setBio(e.target.value)}
                   invalidFields={invalidFields}
                   flashToken={flashToken}
+                  success={showSuccess}
+                  successHeading="Signup successful."
                 />
               </motion.div>
             </div>
