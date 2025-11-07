@@ -25,6 +25,14 @@ export default function Login() {
   const { userId } = useAuth();
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const [authError, setAuthError] = useState("");
+  const pwdRef = useRef<HTMLInputElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [headerH, setHeaderH] = useState(0);
+  const [cardH, setCardH] = useState<number | null>(null);
+  const [isMdUp, setIsMdUp] = useState<boolean>(typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false);
+  const [invalid, setInvalid] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
+  const [flashToken, setFlashToken] = useState(0);
 
   useEffect(() => {
     const mm = (e: MouseEvent) => {
@@ -47,8 +55,6 @@ export default function Login() {
       document.removeEventListener("click", click, true);
     };
   }, []);
-
-  const pwdRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
@@ -89,6 +95,39 @@ export default function Login() {
     };
   }, []);
 
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const measure = () => setHeaderH(el.offsetHeight || 0);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    measure();
+    const onResize = () => measure();
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const measure = () => setCardH(el.offsetHeight || null);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => setIsMdUp(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   const triggerMascotError = () => {
     setMascotError(true);
     window.setTimeout(() => setMascotError(false), 900);
@@ -96,7 +135,6 @@ export default function Login() {
 
   const emailOk = email.trim().length > 0 && validateEmail(email);
   const pwdOk = password.trim().length > 0;
-
   const emailHelp = email.trim().length === 0 ? "Required. Enter your email." : emailOk ? "Looks good." : "Invalid email. Use a format like name@example.com.";
   const pwdHelp = password.trim().length === 0 ? "Required. Enter your password." : pwdOk ? "Keep this private." : "Password required.";
 
@@ -104,6 +142,8 @@ export default function Login() {
     e.preventDefault();
     setAuthError("");
     if (!emailOk || !pwdOk) {
+      setInvalid({ email: !emailOk, password: !pwdOk });
+      setFlashToken((t) => t + 1);
       triggerMascotError();
       return;
     }
@@ -132,7 +172,6 @@ export default function Login() {
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
-  const CARD_H = "md:h-[720px]";
 
   const togglePwd = () => {
     const el = pwdRef.current;
@@ -142,120 +181,115 @@ export default function Login() {
     requestAnimationFrame(() => {
       const input = pwdRef.current;
       if (!input) return;
-      input.focus({ preventScroll: true });
-      if (start !== null && end !== null) {
-        try {
-          input.setSelectionRange(start, end);
-        } catch { }
+      if (document.activeElement === input) {
+        input.focus({ preventScroll: true });
+        if (start !== null && end !== null) {
+          try {
+            input.setSelectionRange(start, end);
+          } catch { }
+        }
       }
     });
   };
 
   return (
-    <>
-      <div className="relative z-10 min-h-[100svh] max-h-[100svh] overflow-hidden text-app flex flex-col no-shadow-all">
-        <style>{`.no-shadow-all, .no-shadow-all * { box-shadow: none !important; filter: none !important; backdrop-filter: none !important; }`}</style>
-        <div className="sticky top-0 z-40 bg-black/20 border-b border-white/10">
-          <Header />
-        </div>
-        <main className="relative z-10 flex-1 h-full overflow-y-auto flex items-center justify-center">
-          <div className="w-full max-w-5xl flex items-center justify-center h-full min-h-0 max-h-full">
-            <motion.div variants={container} initial={prefersReduced ? false : "hidden"} animate={prefersReduced ? undefined : "show"} className="w-full h-full flex items-center justify-center min-h-0 max-h-full">
-              <div className={`relative flex flex-col md:flex-row w-full p-2 justify-center items-center h-full min-h-0 max-h-full ${showInfo ? "md:grid md:grid-cols-2" : ""}`}>
-                {showInfo && (
-                  <motion.div layout className={`w-full max-w-[22rem] h-auto md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full min-h-0 max-h-full`}>
-                    <div className="h-full w-full flex items-center justify-center min-h-0 max-h-full">
-                      <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
-                    </div>
-                  </motion.div>
-                )}
-                <motion.div
-                  layout
-                  initial={prefersReduced ? false : { y: 22, opacity: 0 }}
-                  animate={prefersReduced ? undefined : { y: 0, opacity: 1 }}
-                  transition={prefersReduced ? undefined : { duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                  className={`w-full max-w-[22rem] h-auto md:max-w-xl ${CARD_H} p-2 md:p-0 flex items-center justify-center h-full min-h-0 max-h-full`}
-                >
-                  <LoginFormCard showInfo={showInfo} hasError={mascotError} titleOverride="Welcome Back!" subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey." className="h-full w-full">
-                    <div className="flex flex-col justify-center items-center h-full w-full">
-                      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
-                        <div className="text-left w-full">
-                          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="email">Email</label>
-                          <div className="relative">
-                            <input
-                              id="email"
-                              type="email"
-                              name="email"
-                              value={email}
-                              placeholder="name@example.com"
-                              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                setEmail(e.target.value);
-                                if (authError) setAuthError("");
-                              }}
-                              className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-3 outline-none focus:ring-2 focus:ring-white/30 text-center"
-                              autoComplete="email"
-                              aria-describedby="email-help"
-                            />
-                          </div>
-                          <p id="email-help" className={`mt-1 text-xs ${emailOk ? "text-white/60" : "text-red-400"}`}>{emailHelp}</p>
-                        </div>
-                        <div className="text-left w-full">
-                          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="password">Password</label>
-                          <div className="relative">
-                            <input
-                              ref={pwdRef}
-                              id="password"
-                              type={showPassword ? "text" : "password"}
-                              name="password"
-                              value={password}
-                              placeholder="Enter your password"
-                              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                                setPassword(e.target.value);
-                                if (authError) setAuthError("");
-                              }}
-                              className="w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-3 pr-10 outline-none focus:ring-2 focus:ring-white/30 text-center"
-                              autoComplete="current-password"
-                              aria-describedby="password-help auth-help"
-                            />
-                            <button
-                              type="button"
-                              onMouseDown={(e) => e.preventDefault()}
-                              onClick={togglePwd}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
-                              aria-label={showPassword ? "Hide password" : "Show password"}
-                            >
-                              {showPassword ? (
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                  <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3.11-11-8 0-1.26.31-2.45.86-3.5M6.1 6.1C7.94 4.8 9.94 4 12 4c5 0 9.27 3.11 11 8-.39 1.01-.93 1.96-1.58 2.81M1 1l22 22" />
-                                  <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
-                                  <circle cx="12" cy="12" r="3" />
-                                </svg>
-                              )}
-                              <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
-                            </button>
-                          </div>
-                          <p id="password-help" className={`mt-1 text-xs ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
-                          {authError ? <p id="auth-help" className="mt-1 text-xs text-red-400">{authError}</p> : null}
-                        </div>
-                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-sm rounded-xl w-full mt-2" disabled={loading}>
-                          {loading ? "Signing In..." : "Sign In"}
-                        </Button>
-                      </form>
-                    </div>
-                  </LoginFormCard>
-                </motion.div>
-              </div>
-            </motion.div>
-          </div>
-        </main>
-      </div>
+    <div className="relative text-app">
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
+      <div ref={headerRef} className="sticky top-0 z-30 bg-black/20 border-b border-white/10">
+        <Header />
+      </div>
+      <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
+        <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
+          <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
+            <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : ""}`}>
+              {showInfo && (
+                <motion.div layout className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center" style={{ height: isMdUp ? cardH || undefined : undefined }}>
+                  <div className="h-full w-full">
+                    <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
+                  </div>
+                </motion.div>
+              )}
+              <motion.div ref={cardRef} layout className="w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center">
+                <LoginFormCard showInfo={showInfo} hasError={mascotError} titleOverride="Welcome Back!" subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey." className="h-full w-full">
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
+                    <div className="text-left w-full">
+                      <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="email">Email</label>
+                      <div className="relative">
+                        <input
+                          key={invalid.email ? `email-invalid-${flashToken}` : "email"}
+                          id="email"
+                          type="email"
+                          name="email"
+                          value={email}
+                          placeholder="name@example.com"
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                            setEmail(e.target.value);
+                            if (authError) setAuthError("");
+                            if (invalid.email) setInvalid((p) => ({ ...p, email: false }));
+                          }}
+                          className={`w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-3 outline-none focus:ring-2 focus:ring-white/30 text-center border border-white/10 ${invalid.email ? "ink-flash" : ""}`}
+                          autoComplete="email"
+                          aria-describedby="email-help"
+                        />
+                      </div>
+                      <p id="email-help" className={`mt-1 text-xs text-center ${emailOk ? "text-white/60" : "text-red-400"}`}>{emailHelp}</p>
+                    </div>
+                    <div className="text-left w-full">
+                      <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="password">Password</label>
+                      <div className="relative">
+                        <input
+                          key={invalid.password ? `pwd-invalid-${flashToken}` : "pwd"}
+                          ref={pwdRef}
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          value={password}
+                          placeholder="Enter your password"
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                            setPassword(e.target.value);
+                            if (authError) setAuthError("");
+                            if (invalid.password) setInvalid((p) => ({ ...p, password: false }));
+                          }}
+                          className={`w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-3 pr-10 outline-none focus:ring-2 focus:ring-white/30 text-center border border-white/10 ${invalid.password ? "ink-flash" : ""}`}
+                          autoComplete="current-password"
+                          aria-describedby="password-help auth-help"
+                        />
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={togglePwd}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? (
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3.11-11-8 0-1.26.31-2.45.86-3.5M6.1 6.1C7.94 4.8 9.94 4 12 4c5 0 9.27 3.11 11 8-.39 1.01-.93 1.96-1.58 2.81M1 1l22 22" />
+                              <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
+                            </svg>
+                          ) : (
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          )}
+                          <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
+                        </button>
+                      </div>
+                      <p id="password-help" className={`mt-1 text-xs text-center ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
+                      {authError ? <p id="auth-help" className="mt-1 text-xs text-center text-red-400">{authError}</p> : null}
+                    </div>
+                    <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-sm rounded-xl w-full mt-2" disabled={loading}>
+                      {loading ? "Signing In..." : "Sign In"}
+                    </Button>
+                  </form>
+                </LoginFormCard>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </main>
       {!userId && tip.show && (
         <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
           <div className="relative rounded-lg border border-app bg-card/95 px-2.5 py-1.5">
@@ -264,6 +298,6 @@ export default function Login() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
