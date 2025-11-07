@@ -5,7 +5,7 @@ import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
-import FormCard from "@/components/access/FormCard";
+import SignupFormCard from "@/components/access/SignupFormCard";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
@@ -42,14 +42,12 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
   const emailOk = validateEmail(shared.email);
   const pwdOk = validatePassword(shared.password);
   const usernameOk = !!shared.username.trim();
-
   if (step === 0) {
     if (!usernameOk) tips.push("Username is required — enter a display name.");
     if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
     if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
     return tips;
   }
-
   if (role === "client") {
     if (step === 1) {
       if (!client.location) tips.push("City is required — choose your city from the list.");
@@ -85,39 +83,17 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
     }
   }
-
   return tips;
 }
 
 export default function SignUp() {
   useAlreadySignedInRedirect();
-
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
-
-  const [client, setClient] = useState<ClientProfile>({
-    budgetMin: "100",
-    budgetMax: "200",
-    location: "New York, New York",
-    placement: "",
-    size: "",
-    bio: "",
-  });
-
-  const [artist, setArtist] = useState<ArtistProfile>({
-    location: "New York, New York",
-    shop: "independent",
-    years: "1",
-    baseRate: "",
-    bookingPreference: "open",
-    travelFrequency: "rare",
-    portfolio: "",
-    styles: [],
-    bio: "",
-  });
-
+  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, New York", placement: "", size: "", bio: "" });
+  const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, New York", shop: "independent", years: "1", baseRate: "", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
   const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", ""]);
   const [awaitingCode, setAwaitingCode] = useState(false);
@@ -132,6 +108,8 @@ export default function SignUp() {
   const { signOut } = useClerk();
   const { userId, getToken } = useAuth();
   const navigate = useNavigate();
+  const [invalidFields, setInvalidFields] = useState<string[]>([]);
+  const [flashToken, setFlashToken] = useState(0);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -237,13 +215,13 @@ export default function SignUp() {
         { key: "role", valid: allSharedValid },
         { key: "client-1", valid: allClientValid },
         { key: "upload", valid: true },
-        { key: "review", valid: allSharedValid && allClientValid },
+        { key: "review", valid: allSharedValid && allClientValid }
       ]
       : [
         { key: "role", valid: allSharedValid },
         { key: "artist-1", valid: allArtistValid },
         { key: "upload", valid: true },
-        { key: "review", valid: allSharedValid && allArtistValid },
+        { key: "review", valid: allSharedValid && allArtistValid }
       ];
   }, [role, allSharedValid, allClientValid, allArtistValid]);
 
@@ -254,12 +232,27 @@ export default function SignUp() {
     window.setTimeout(() => setMascotError(false), 900);
   };
 
+  const computeInvalidForRoleStep = () => {
+    const out: string[] = [];
+    if (!shared.username.trim()) out.push("username");
+    if (!validateEmail(shared.email)) out.push("email");
+    if (!validatePassword(shared.password)) out.push("password");
+    return out;
+  };
+
   const handleNext = () => {
     const currentValid = slides[step].valid;
     if (!currentValid) {
+      if (slides[step].key === "role") {
+        setInvalidFields(computeInvalidForRoleStep());
+      } else {
+        setInvalidFields([]);
+      }
+      setFlashToken((t) => t + 1);
       triggerMascotError();
       return;
     }
+    setInvalidFields([]);
     if (!isLastFormSlide) setStep((s) => s + 1);
   };
 
@@ -269,6 +262,8 @@ export default function SignUp() {
     if (loading) return;
     const tips = collectIssues({ role, step: 3, shared, client, artist });
     if (tips.length) {
+      setInvalidFields([]);
+      setFlashToken((t) => t + 1);
       triggerMascotError();
       return;
     }
@@ -284,7 +279,7 @@ export default function SignUp() {
         (await signUp.create({
           emailAddress: shared.email.trim().toLowerCase(),
           password: shared.password,
-          publicMetadata: { role, displayName: shared.username.trim(), profile },
+          publicMetadata: { role, displayName: shared.username.trim(), profile }
         } as any));
       setSignUpAttempt(attempt as SignUpResource);
       setAwaitingCode(true);
@@ -365,18 +360,21 @@ export default function SignUp() {
 
   const handlePasswordVisibilityChange = (hidden: boolean) => {
     setShowPassword(!hidden);
+    if (hidden) return;
     const input = document.querySelector('input[name="password"]') as HTMLInputElement | null;
     if (!input) return;
     const start = input.selectionStart ?? null;
     const end = input.selectionEnd ?? null;
-    requestAnimationFrame(() => {
-      input.focus({ preventScroll: true });
-      if (start !== null && end !== null) {
-        try {
-          input.setSelectionRange(start, end);
-        } catch { }
-      }
-    });
+    if (document.activeElement === input) {
+      requestAnimationFrame(() => {
+        input.focus({ preventScroll: true });
+        if (start !== null && end !== null) {
+          try {
+            input.setSelectionRange(start, end);
+          } catch { }
+        }
+      });
+    }
   };
 
   const bio = role === "client" ? client.bio || "" : artist.bio || "";
@@ -390,32 +388,22 @@ export default function SignUp() {
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
         <source src="/Background.mp4" type="video/mp4" />
       </video>
-
       <div ref={headerRef} className="sticky top-0 z-30 bg-black/20">
         <Header />
       </div>
-
-      <main
-        className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0"
-        style={{ minHeight: `calc(100svh - ${headerH}px)` }}
-      >
+      <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
         <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
             <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : ""}`}>
               {showInfo && (
-                <motion.div
-                  layout
-                  className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
-                  style={{ height: isMdUp ? cardH || undefined : undefined }}
-                >
+                <motion.div layout className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center" style={{ height: isMdUp ? cardH || undefined : undefined }}>
                   <div className="h-full w-full">
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
                   </div>
                 </motion.div>
               )}
               <motion.div ref={cardRef} layout className="w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center">
-                <FormCard
-                  mode="signup"
+                <SignupFormCard
                   showInfo={showInfo}
                   hasError={mascotError}
                   role={role}
@@ -433,7 +421,7 @@ export default function SignUp() {
                   code={code}
                   setCode={setCode}
                   loading={loading}
-                  isLoaded={isLoaded}
+                  isLoaded={isLoaded as boolean}
                   onNext={handleNext}
                   onBack={handleBack}
                   onStartVerification={startVerification}
@@ -448,6 +436,8 @@ export default function SignUp() {
                   onCancelVerification={() => setAwaitingCode(false)}
                   bio={bio}
                   onBioChange={(e) => setBio(e.target.value)}
+                  invalidFields={invalidFields}
+                  flashToken={flashToken}
                 />
               </motion.div>
             </div>
