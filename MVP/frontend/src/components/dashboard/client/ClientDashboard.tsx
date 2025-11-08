@@ -17,6 +17,7 @@ import type { Artist as ArtistDto } from "@/api";
 import { AnimatePresence, motion } from "framer-motion";
 import Pagination from "@/components/dashboard/shared/Pagination";
 import ArtistFilter from "@/components/dashboard/client/ArtistFilter";
+import "@/styles/client-dashboard.css";
 
 const ArtistsSection = lazy(() => import("@/components/dashboard/client/ArtistsSection"));
 const ArtistModal = lazy(() => import("@/components/dashboard/client/ArtistModal"));
@@ -146,7 +147,7 @@ export default function ClientDashboard() {
     };
 
     return (
-        <div className="min-h-dvh bg-app text-app flex flex-col overflow-hidden" style={{ paddingBottom: "var(--fb-safe, 0px)" }}>
+        <div className="min-h-dvh bg-app text-app flex flex-col overflow-hidden client-dashboard-root">
             <Header />
 
             <div className="sm:hidden px-3 mt-2">
@@ -211,7 +212,7 @@ export default function ClientDashboard() {
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
-                    messagesContent={<div style={{ height: 800 }}><ChatWindow currentUserId={user.id} role="client" /></div>}
+                    messagesContent={<div className="client-dashboard-messages"><ChatWindow currentUserId={user.id} role="client" /></div>}
                     unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
                     unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
                     pendingRequestIds={pendingRequestIds}
@@ -236,10 +237,9 @@ export default function ClientDashboard() {
                         exit="exit"
                         variants={panelVariants}
                         transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                        className="fixed bottom-4 right-4 z-50"
-                        style={{ transformOrigin: "bottom right" }}
+                        className="fixed bottom-4 right-4 z-50 client-dashboard-assistant"
                     >
-                        <div className="w-[88vw] max-w-[400px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden" style={{ height: 360 }}>
+                        <div className="w-[88vw] max-w-[400px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden client-dashboard-assistant-card">
                             <div className="flex items-center justify-between px-3 py-2 border-b border-app">
                                 <div className="flex items-center gap-2 font-semibold">
                                     <Bot size={16} />
