@@ -130,10 +130,7 @@ initSocket(io);
 (async () => {
   try {
     await connectDB();
-    server.listen(PORT, () => {
-      console.log(`✅ Server ready on :${PORT} (NODE_ENV=${ENV})`);
-      console.log(`✅ CORS allowed origins: ${[...allowed].join(", ")}`);
-    });
+    server.listen(PORT);
   } catch (e) {
     console.error("Failed to start server:", e);
     process.exit(1);

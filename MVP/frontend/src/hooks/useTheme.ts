@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useLayoutEffect } from "react";
+import { useEffect, useMemo, useState, useLayoutEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 export const THEME_MS = 900;
@@ -58,11 +58,14 @@ export function useTheme() {
     }
   };
 
+  const initialEffectRef = useRef(true);
+
   useLayoutEffect(() => {
     applyTheme(theme, false);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}
+    initialEffectRef.current = true;
 
     return () => {
       timers.forEach((id) => window.clearTimeout(id));
@@ -71,7 +74,11 @@ export function useTheme() {
   }, [isDashboard]);
 
   useEffect(() => {
-    applyTheme(theme, true);
+    const shouldAnimate = initialEffectRef.current ? false : true;
+    applyTheme(theme, shouldAnimate);
+    if (initialEffectRef.current) {
+      initialEffectRef.current = false;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {}

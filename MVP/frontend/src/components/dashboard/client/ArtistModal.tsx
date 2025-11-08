@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -24,9 +23,7 @@ type Props = {
 };
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
-  console.log("[ArtistModal] Component render", { open, initialStep, artistId: artist?._id, artistUsername: artist?.username });
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
-  console.log("[ArtistModal] Current step state", { step });
   const portalRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -34,7 +31,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
   const scrollYRef = useRef<number>(0);
 
   useEffect(() => {
-    console.log("[ArtistModal] Step effect triggered", { initialStep, open });
     setStep(initialStep);
   }, [initialStep, open]);
 
@@ -76,16 +72,104 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         styleEl.id = styleId;
         styleEl.textContent = `
           #inkmity-modal-root,
-          #inkmity-modal-root * {
+          #inkmity-modal-root *,
+          #inkmity-modal-root *::before,
+          #inkmity-modal-root *::after {
             transition: none !important;
+            animation: none !important;
             --theme-ms: 0ms !important;
             --ui-ms: 0ms !important;
           }
-          #inkmity-modal-root[data-ink-no-anim-permanent="true"] {
+          #inkmity-modal-root[data-ink-no-anim-permanent="true"],
+          #inkmity-modal-root[data-ink-no-anim-permanent="true"] *,
+          #inkmity-modal-root[data-ink-no-anim-permanent="true"] *::before,
+          #inkmity-modal-root[data-ink-no-anim-permanent="true"] *::after {
             transition: none !important;
+            animation: none !important;
           }
-          #inkmity-modal-root[data-ink-no-anim-permanent="true"] * {
+          #inkmity-modal-root [data-radix-scroll-area-viewport],
+          #inkmity-modal-root [data-radix-scroll-area-viewport] * {
             transition: none !important;
+            animation: none !important;
+          }
+          /* Disable all framer-motion animations */
+          #inkmity-modal-root [data-framer-appear-id],
+          #inkmity-modal-root [data-framer-name],
+          #inkmity-modal-root [style*="transform"],
+          #inkmity-modal-root [style*="opacity"] {
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+          }
+          /* Force disable all motion animations */
+          #inkmity-modal-root [class*="motion"],
+          #inkmity-modal-root [data-motion] {
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+            opacity: 1 !important;
+          }
+          /* Prevent flash on step change */
+          #inkmity-modal-root > div > div > div[data-radix-scroll-area-root],
+          #inkmity-modal-root > div > div > div[data-radix-scroll-area-root] > div {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transition: none !important;
+            animation: none !important;
+          }
+          /* Prevent flash when step content changes */
+          #inkmity-modal-root [class*="max-w-[1200px]"] {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transition: none !important;
+            animation: none !important;
+          }
+          /* Disable Dialog animations */
+          #inkmity-modal-root [data-slot="dialog-overlay"],
+          #inkmity-modal-root [data-slot="dialog-content"],
+          #inkmity-modal-root [data-radix-dialog-overlay],
+          #inkmity-modal-root [data-radix-dialog-content] {
+            transition: none !important;
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+          /* Disable Tailwind animate-in/out animations */
+          #inkmity-modal-root [class*="animate-in"],
+          #inkmity-modal-root [class*="animate-out"],
+          #inkmity-modal-root [class*="fade-in"],
+          #inkmity-modal-root [class*="fade-out"],
+          #inkmity-modal-root [class*="zoom-in"],
+          #inkmity-modal-root [class*="zoom-out"],
+          #inkmity-modal-root [class*="slide-in"],
+          #inkmity-modal-root [class*="slide-out"] {
+            transition: none !important;
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+          /* Disable data-state animations */
+          #inkmity-modal-root [data-state="open"],
+          #inkmity-modal-root [data-state="closed"] {
+            transition: none !important;
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+          /* Disable Card and other component animations */
+          #inkmity-modal-root [data-slot="card"],
+          #inkmity-modal-root [data-slot="card-content"],
+          #inkmity-modal-root [data-slot="card-header"],
+          #inkmity-modal-root [data-slot="card-title"] {
+            transition: none !important;
+            animation: none !important;
+            opacity: 1 !important;
+          }
+          /* Disable all duration-based transitions */
+          #inkmity-modal-root [class*="duration-"],
+          #inkmity-modal-root [style*="duration"] {
+            transition: none !important;
+            animation: none !important;
           }
         `;
         document.head.appendChild(styleEl);
@@ -102,7 +186,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       el.classList.add("ink-scope", "ink-no-anim");
       el.setAttribute("data-ink-no-anim-permanent", "true");
       
-      // Find the main themed ancestor
       const getThemedAncestor = () => {
         return document.getElementById("dashboard-scope") || 
                document.getElementById("ink-root") || 
@@ -110,7 +193,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
                document.documentElement;
       };
       
-      // CSS variables to sync
       const themeVars = [
         "--background",
         "--foreground",
@@ -139,7 +221,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         "--elevated",
       ];
       
-      // Sync theme classes and CSS variables from the main scope
       const syncTheme = () => {
         const themedAncestor = getThemedAncestor();
         const isLight = themedAncestor?.classList.contains("ink-light") || 
@@ -152,7 +233,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           el.setAttribute("data-ink", "dark");
         }
         
-        // Sync CSS variables from the themed ancestor to the portal root
         const cs = getComputedStyle(themedAncestor);
         themeVars.forEach((v) => {
           const val = cs.getPropertyValue(v);
@@ -162,7 +242,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         });
       };
       
-      // Initial theme sync
       syncTheme();
       portalRef.current = el;
       
@@ -172,7 +251,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         }
       };
       
-      // Observer for class changes on the portal element itself
       const portalObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -182,7 +260,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         forceNoAnim();
       });
       
-      // Observer for theme changes on the main themed ancestor
       const themeObserver = new MutationObserver(() => {
         syncTheme();
       });
@@ -195,7 +272,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         });
       }
       
-      // Listen for theme change events
       const handleThemeChange = () => {
         syncTheme();
       };
@@ -316,26 +392,21 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
 
   const stepMeta =
     step === 0
-      ? { active: 0 as 0 | 1 | 2, rightLabel: "Next: Booking & Message", onRight: () => { console.log("[ArtistModal] onRight clicked - going to step 1"); setStep(1); }, centerHint: "Scroll to explore the portfolio" }
+      ? { active: 0 as 0 | 1 | 2, rightLabel: "Next: Booking & Message", onRight: () => { setStep(1); }, centerHint: "Scroll to explore the portfolio" }
       : step === 1
-        ? { active: 1 as 0 | 1 | 2, rightLabel: "Next: Reviews", onRight: () => { console.log("[ArtistModal] onRight clicked - going to step 2"); setStep(2); }, centerHint: "Scroll to message and book" }
-        : { active: 2 as 0 | 1 | 2, rightLabel: "Back: Booking & Message", onRight: () => { console.log("[ArtistModal] onRight clicked - going to step 1"); setStep(1); }, centerHint: "Scroll to browse reviews or change the sort" };
-  
-  console.log("[ArtistModal] Step meta", { step, stepMeta });
+        ? { active: 1 as 0 | 1 | 2, rightLabel: "Next: Reviews", onRight: () => { setStep(2); }, centerHint: "Scroll to message and book" }
+        : { active: 2 as 0 | 1 | 2, rightLabel: "Back: Booking & Message", onRight: () => { setStep(1); }, centerHint: "Scroll to browse reviews or change the sort" };
 
   const modalUI = (
-    <motion.div
+    <div
       ref={overlayRef}
       key={artist._id}
-      initial={false}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.96, opacity: 0 }}
-      transition={{ duration: 0, ease: "easeOut" }}
       className="fixed inset-0 flex items-center justify-center ink-no-anim"
       style={{ 
         background: "color-mix(in oklab, var(--bg) 30%, transparent)", 
         overscrollBehavior: "contain",
-        transition: "none !important"
+        transition: "none !important",
+        animation: "none !important"
       } as React.CSSProperties}
       aria-modal="true"
       role="dialog"
@@ -369,31 +440,36 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
               <div className="py-2 sm:py-3">
                 <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
-                  <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => { console.log("[ArtistModal] StepBarRow onGoToStep called", { step: s }); setStep(s); }} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
+                  <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => { setStep(s); }} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="w-full max-w-[1200px] mx-auto">
-            {step === 0 && (() => { console.log("[ArtistModal] Rendering ArtistPortfolio"); return <ArtistPortfolio artist={artist} />; })()}
-            {step === 1 && (() => {
-              console.log("[ArtistModal] Rendering ArtistBooking");
-              return (
-                <ArtistBooking
-                  artist={artist}
-                  onBack={() => { console.log("[ArtistModal] ArtistBooking onBack called"); setStep(0); }}
-                  onClose={onClose}
-                  onGoToStep={s => { console.log("[ArtistModal] ArtistBooking onGoToStep called", { step: s }); setStep(s); }}
-                  onMessage={onMessage}
-                />
-              );
-            })()}
-            {step === 2 && (() => { console.log("[ArtistModal] Rendering ArtistReviews"); return <ArtistReviews artist={artist} />; })()}
+          <div 
+            className="w-full max-w-[1200px] mx-auto ink-no-anim" 
+            style={{ 
+              transition: "none !important",
+              animation: "none !important",
+              opacity: 1,
+              visibility: "visible"
+            } as React.CSSProperties}
+          >
+            {step === 0 && <ArtistPortfolio artist={artist} />}
+            {step === 1 && (
+              <ArtistBooking
+                artist={artist}
+                onBack={() => { setStep(0); }}
+                onClose={onClose}
+                onGoToStep={s => { setStep(s); }}
+                onMessage={onMessage}
+              />
+            )}
+            {step === 2 && <ArtistReviews artist={artist} />}
           </div>
         </ScrollArea>
       </div>
-    </motion.div>
+    </div>
   );
 
   return ReactDOM.createPortal(modalUI, portalRef.current);
