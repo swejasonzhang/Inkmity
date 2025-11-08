@@ -7,12 +7,10 @@ import InfoPanel from "@/components/access/InfoPanel";
 import LoginFormCard from "@/components/access/LoginFormCard";
 import { Button } from "@/components/ui/button";
 import { container } from "@/lib/animations";
-import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
 type TipState = { show: boolean; x: number; y: number };
 
 export default function Login() {
-  useAlreadySignedInRedirect();
   const prefersReduced = !!useReducedMotion();
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
@@ -129,6 +127,15 @@ export default function Login() {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+    setShowSuccess(true);
+    const t = setTimeout(() => {
+      window.location.assign("/dashboard");
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [userId]);
+
   const triggerMascotError = () => {
     setMascotError(true);
     window.setTimeout(() => setMascotError(false), 900);
@@ -163,7 +170,7 @@ export default function Login() {
         setShowSuccess(true);
         setTimeout(() => {
           window.location.assign("/dashboard");
-        }, 2000);
+        }, 1500);
       } else {
         setAuthError("Login failed. Check your credentials and try again.");
         triggerMascotError();
@@ -196,6 +203,8 @@ export default function Login() {
       }
     });
   };
+
+  const successTitle = userId ? "You’re already logged in." : "Login successful.";
 
   return (
     <div className="relative text-app">
@@ -231,7 +240,7 @@ export default function Login() {
                         <div className="ink-ring__inner" />
                       </div>
                       <div className="text-center">
-                        <p className="text-white text-2xl md:text-3xl font-semibold">Login successful.</p>
+                        <p className="text-white text-2xl md:text-3xl font-semibold">{successTitle}</p>
                         <p className="text-white/80 mt-2 text-base md:text-lg">
                           Redirecting now
                           <span className="ink-dots" aria-hidden="true">
@@ -240,7 +249,7 @@ export default function Login() {
                             <span className="ink-dot" />
                           </span>
                         </p>
-                        <span className="sr-only" aria-live="polite">Login successful. Redirecting now.</span>
+                        <span className="sr-only" aria-live="polite">{successTitle} Redirecting now.</span>
                       </div>
                     </div>
                   ) : (

@@ -24,7 +24,9 @@ type Props = {
 };
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
+  console.log("[ArtistModal] Component render", { open, initialStep, artistId: artist?._id, artistUsername: artist?.username });
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
+  console.log("[ArtistModal] Current step state", { step });
   const portalRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -32,6 +34,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
   const scrollYRef = useRef<number>(0);
 
   useEffect(() => {
+    console.log("[ArtistModal] Step effect triggered", { initialStep, open });
     setStep(initialStep);
   }, [initialStep, open]);
 
@@ -65,27 +68,90 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
 
   useEffect(() => {
     if (!portalRef.current) {
+      const styleId = 'artist-modal-no-transitions';
+      let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+      
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        styleEl.textContent = `
+          #inkmity-modal-root,
+          #inkmity-modal-root * {
+            transition: none !important;
+            --theme-ms: 0ms !important;
+            --ui-ms: 0ms !important;
+          }
+          #inkmity-modal-root[data-ink-no-anim-permanent="true"] {
+            transition: none !important;
+          }
+          #inkmity-modal-root[data-ink-no-anim-permanent="true"] * {
+            transition: none !important;
+          }
+        `;
+        document.head.appendChild(styleEl);
+      }
+      
       const el = document.createElement("div");
       el.id = "inkmity-modal-root";
       el.style.position = "fixed";
       el.style.inset = "0";
       el.style.zIndex = "1200";
       el.style.isolation = "isolate";
-      el.classList.add("ink-scope");
+      el.style.transition = "none";
+      el.style.background = "transparent";
+      el.classList.add("ink-scope", "ink-no-anim");
+      el.setAttribute("data-ink-no-anim-permanent", "true");
       const themedAncestor = document.querySelector(".ink-scope");
       const isLight = themedAncestor?.classList.contains("ink-light");
       if (isLight) el.classList.add("ink-light");
       portalRef.current = el;
+      
+      const forceNoAnim = () => {
+        if (portalRef.current && !portalRef.current.classList.contains('ink-no-anim')) {
+          portalRef.current.classList.add('ink-no-anim');
+        }
+      };
+      
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            forceNoAnim();
+          }
+        });
+        forceNoAnim();
+      });
+      
       document.body.appendChild(el);
+      observer.observe(el, { attributes: true, attributeFilter: ['class'], subtree: true });
+      
+      const intervalId = setInterval(forceNoAnim, 50);
+      
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setMounted(true);
+          setTimeout(() => clearInterval(intervalId), 2000);
+        });
+      });
+      
+      return () => {
+        observer.disconnect();
+        clearInterval(intervalId);
+        if (portalRef.current) {
+          try {
+            if (portalRef.current.parentNode) {
+              document.body.removeChild(portalRef.current);
+            }
+          } catch {}
+          portalRef.current = null;
+        }
+        setMounted(false);
+      };
+    } else {
+      setMounted(true);
+      return () => {
+        setMounted(false);
+      };
     }
-    setMounted(true);
-    return () => {
-      if (portalRef.current) {
-        document.body.removeChild(portalRef.current);
-        portalRef.current = null;
-      }
-      setMounted(false);
-    };
   }, []);
 
   const isNestedDialogOpen = () => !!document.querySelector('[data-radix-dialog-content][data-state="open"]');
@@ -166,21 +232,27 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
 
   const stepMeta =
     step === 0
-      ? { active: 0 as 0 | 1 | 2, rightLabel: "Next: Booking & Message", onRight: () => setStep(1), centerHint: "Scroll to explore the portfolio" }
+      ? { active: 0 as 0 | 1 | 2, rightLabel: "Next: Booking & Message", onRight: () => { console.log("[ArtistModal] onRight clicked - going to step 1"); setStep(1); }, centerHint: "Scroll to explore the portfolio" }
       : step === 1
-        ? { active: 1 as 0 | 1 | 2, rightLabel: "Next: Reviews", onRight: () => setStep(2), centerHint: "Scroll to message and book" }
-        : { active: 2 as 0 | 1 | 2, rightLabel: "Back: Booking & Message", onRight: () => setStep(1), centerHint: "Scroll to browse reviews or change the sort" };
+        ? { active: 1 as 0 | 1 | 2, rightLabel: "Next: Reviews", onRight: () => { console.log("[ArtistModal] onRight clicked - going to step 2"); setStep(2); }, centerHint: "Scroll to message and book" }
+        : { active: 2 as 0 | 1 | 2, rightLabel: "Back: Booking & Message", onRight: () => { console.log("[ArtistModal] onRight clicked - going to step 1"); setStep(1); }, centerHint: "Scroll to browse reviews or change the sort" };
+  
+  console.log("[ArtistModal] Step meta", { step, stepMeta });
 
   const modalUI = (
     <motion.div
       ref={overlayRef}
       key={artist._id}
-      initial={{ scale: 0.96, opacity: 0 }}
+      initial={false}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.96, opacity: 0 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className="fixed inset-0 flex items-center justify-center"
-      style={{ background: "color-mix(in oklab, var(--bg) 30%, transparent)", overscrollBehavior: "contain" } as React.CSSProperties}
+      transition={{ duration: 0, ease: "easeOut" }}
+      className="fixed inset-0 flex items-center justify-center ink-no-anim"
+      style={{ 
+        background: "color-mix(in oklab, var(--bg) 30%, transparent)", 
+        overscrollBehavior: "contain",
+        transition: "none !important"
+      } as React.CSSProperties}
       aria-modal="true"
       role="dialog"
       onPointerDown={handleOverlayPointerDown}
@@ -188,8 +260,13 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       <div className="pointer-events-none w-full h-full flex items-center justify-center">
         <ScrollArea
           ref={panelRef as any}
-          className="pointer-events-auto w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col items-center text-center"
-          style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
+          className="pointer-events-auto w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col items-center text-center ink-no-anim"
+          style={{ 
+            background: "var(--card)", 
+            borderColor: "var(--border)", 
+            color: "var(--fg)",
+            transition: "none !important"
+          } as React.CSSProperties}
         >
           <div className="w-full max-w-[1100px] mx-auto px-6 pt-5 relative flex flex-col items-center">
             <h2 className="text-2xl font-extrabold">{artist.username}</h2>
@@ -208,24 +285,27 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
               <div className="py-2 sm:py-3">
                 <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
-                  <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => setStep(s)} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
+                  <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => { console.log("[ArtistModal] StepBarRow onGoToStep called", { step: s }); setStep(s); }} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
                 </div>
               </div>
             </div>
           </div>
 
           <div className="w-full max-w-[1200px] mx-auto">
-            {step === 0 && <ArtistPortfolio artist={artist} />}
-            {step === 1 && (
-              <ArtistBooking
-                artist={artist}
-                onBack={() => setStep(0)}
-                onClose={onClose}
-                onGoToStep={s => setStep(s)}
-                onMessage={onMessage}
-              />
-            )}
-            {step === 2 && <ArtistReviews artist={artist} />}
+            {step === 0 && (() => { console.log("[ArtistModal] Rendering ArtistPortfolio"); return <ArtistPortfolio artist={artist} />; })()}
+            {step === 1 && (() => {
+              console.log("[ArtistModal] Rendering ArtistBooking");
+              return (
+                <ArtistBooking
+                  artist={artist}
+                  onBack={() => { console.log("[ArtistModal] ArtistBooking onBack called"); setStep(0); }}
+                  onClose={onClose}
+                  onGoToStep={s => { console.log("[ArtistModal] ArtistBooking onGoToStep called", { step: s }); setStep(s); }}
+                  onMessage={onMessage}
+                />
+              );
+            })()}
+            {step === 2 && (() => { console.log("[ArtistModal] Rendering ArtistReviews"); return <ArtistReviews artist={artist} />; })()}
           </div>
         </ScrollArea>
       </div>

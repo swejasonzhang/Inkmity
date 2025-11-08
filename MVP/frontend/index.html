@@ -1,44 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="ink-scope" data-ink="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
     <title>Inkmity</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-
-    <style>
-      html {
-        background: #0b0b0b;
-        color: #f5f5f5;
-      }
-    </style>
-
-    <script>
-      (function () {
-        try {
-          var d = document;
-          var isDashboard = location.pathname.indexOf("/dashboard") === 0;
-          var saved = localStorage.getItem("dashboard-theme");
-          var scope = d.getElementById("dashboard-scope") || d.documentElement;
-
-          scope.classList.add("ink-scope", "ink-no-anim");
-
-          if (isDashboard && saved === "light") {
-            scope.classList.add("ink-light");
-          } else {
-            scope.classList.remove("ink-light");
-          }
-
-          requestAnimationFrame(function () {
-            scope.classList.remove("ink-no-anim");
-          });
-        } catch (e) {
-        }
-      })();
-    </script>
   </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -54,6 +54,9 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
             else if (active === 2) onGoToStep?.(1);
         });
 
+    const preventMouseFocus: React.MouseEventHandler = e => e.preventDefault();
+    const preventPointerFocus: React.PointerEventHandler = e => e.preventDefault();
+
     return (
         <div className={`col-span-3 flex items-center justify-between h-full w-full pt-6 sm:pt-14 pb-3 sm:pb-4 ${className}`}>
             <div className="flex items-center h-full">
@@ -95,7 +98,10 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
             <div className="flex items-center justify-end h-full gap-2 sm:gap-3">
                 {computedLeftLabel ? (
                     <Button
+                        type="button"
                         onClick={handleLeft}
+                        onMouseDown={preventMouseFocus}
+                        onPointerDown={preventPointerFocus}
                         className="rounded-full px-3 sm:px-4 text-xs sm:text-sm font-medium shadow-sm border-0 min-h-[40px] sm:min-h-[44px]"
                         style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                         variant="outline"
@@ -104,7 +110,10 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
                     </Button>
                 ) : null}
                 <Button
+                    type="button"
                     onClick={handleRight}
+                    onMouseDown={preventMouseFocus}
+                    onPointerDown={preventPointerFocus}
                     className="rounded-full px-3 sm:px-4 text-xs sm:text-sm font-medium shadow-sm border-0 min-h-[40px] sm:min-h-[44px]"
                     style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                     variant="outline"
