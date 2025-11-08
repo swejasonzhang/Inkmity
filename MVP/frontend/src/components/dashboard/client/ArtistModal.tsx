@@ -101,9 +101,69 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       el.style.background = "transparent";
       el.classList.add("ink-scope", "ink-no-anim");
       el.setAttribute("data-ink-no-anim-permanent", "true");
-      const themedAncestor = document.querySelector(".ink-scope");
-      const isLight = themedAncestor?.classList.contains("ink-light");
-      if (isLight) el.classList.add("ink-light");
+      
+      // Find the main themed ancestor
+      const getThemedAncestor = () => {
+        return document.getElementById("dashboard-scope") || 
+               document.getElementById("ink-root") || 
+               document.querySelector<HTMLElement>(".ink-scope") ||
+               document.documentElement;
+      };
+      
+      // CSS variables to sync
+      const themeVars = [
+        "--background",
+        "--foreground",
+        "--card",
+        "--card-h",
+        "--card-foreground",
+        "--popover",
+        "--popover-foreground",
+        "--primary",
+        "--primary-foreground",
+        "--secondary",
+        "--secondary-foreground",
+        "--muted",
+        "--muted2",
+        "--muted-foreground",
+        "--accent",
+        "--accent-h",
+        "--accent-foreground",
+        "--border",
+        "--border-h",
+        "--input",
+        "--ring",
+        "--bg",
+        "--fg",
+        "--subtle",
+        "--elevated",
+      ];
+      
+      // Sync theme classes and CSS variables from the main scope
+      const syncTheme = () => {
+        const themedAncestor = getThemedAncestor();
+        const isLight = themedAncestor?.classList.contains("ink-light") || 
+                       themedAncestor?.getAttribute("data-ink") === "light";
+        if (isLight) {
+          el.classList.add("ink-light");
+          el.setAttribute("data-ink", "light");
+        } else {
+          el.classList.remove("ink-light");
+          el.setAttribute("data-ink", "dark");
+        }
+        
+        // Sync CSS variables from the themed ancestor to the portal root
+        const cs = getComputedStyle(themedAncestor);
+        themeVars.forEach((v) => {
+          const val = cs.getPropertyValue(v);
+          if (val) {
+            el.style.setProperty(v, val);
+          }
+        });
+      };
+      
+      // Initial theme sync
+      syncTheme();
       portalRef.current = el;
       
       const forceNoAnim = () => {
@@ -112,7 +172,8 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         }
       };
       
-      const observer = new MutationObserver((mutations) => {
+      // Observer for class changes on the portal element itself
+      const portalObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
             forceNoAnim();
@@ -121,8 +182,28 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         forceNoAnim();
       });
       
+      // Observer for theme changes on the main themed ancestor
+      const themeObserver = new MutationObserver(() => {
+        syncTheme();
+      });
+      
+      const themedAncestor = getThemedAncestor();
+      if (themedAncestor) {
+        themeObserver.observe(themedAncestor, { 
+          attributes: true, 
+          attributeFilter: ['class', 'data-ink', 'style'] 
+        });
+      }
+      
+      // Listen for theme change events
+      const handleThemeChange = () => {
+        syncTheme();
+      };
+      window.addEventListener("ink:theme-change", handleThemeChange);
+      window.addEventListener("storage", handleThemeChange);
+      
       document.body.appendChild(el);
-      observer.observe(el, { attributes: true, attributeFilter: ['class'], subtree: true });
+      portalObserver.observe(el, { attributes: true, attributeFilter: ['class'], subtree: true });
       
       const intervalId = setInterval(forceNoAnim, 50);
       
@@ -134,7 +215,10 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       });
       
       return () => {
-        observer.disconnect();
+        portalObserver.disconnect();
+        themeObserver.disconnect();
+        window.removeEventListener("ink:theme-change", handleThemeChange);
+        window.removeEventListener("storage", handleThemeChange);
         clearInterval(intervalId);
         if (portalRef.current) {
           try {
