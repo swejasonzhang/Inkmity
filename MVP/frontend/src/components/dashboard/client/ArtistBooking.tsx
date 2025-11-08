@@ -24,8 +24,6 @@ type Gate = {
 };
 
 export default function ArtistBooking({ artist, onBack, onClose }: BookingProps) {
-  console.log("[ArtistBooking] Component render", { artistId: artist?.clerkId, artistUsername: artist?.username });
-  
   const { request } = useApi();
   const apiOrigin =
     (import.meta as any)?.env?.VITE_API_URL ||
@@ -46,14 +44,10 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     requestRef.current = request;
   }, [request]);
 
-  console.log("[ArtistBooking] Current state", { status, gateReady, gate, hasGate: !!gate });
-
   useEffect(() => {
     const artistId = artist?.clerkId;
     const artistChanged = lastArtistIdRef.current !== artistId;
     const isInitialRender = initialRenderRef.current;
-    
-    console.log("[ArtistBooking] Gate fetch effect triggered", { artistId, apiOrigin, artistChanged, alreadyFetching: fetchingRef.current, hasGate: !!gate, gateReady, isInitialRender });
     
     if (isInitialRender) {
       initialRenderRef.current = false;
@@ -65,21 +59,17 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       if (!isInitialRender) {
         setGateReady(false);
       }
-      console.log("[ArtistBooking] Artist changed, resetting gate state");
     }
     
     if (fetchingRef.current) {
-      console.log("[ArtistBooking] Already fetching, skipping duplicate call");
       return;
     }
     
     if (gateReady && gate !== null && !artistChanged && !isInitialRender) {
-      console.log("[ArtistBooking] Gate already loaded for this artist, skipping fetch");
       return;
     }
     
     if (!artistId) {
-      console.log("[ArtistBooking] No artist clerkId, keeping gateReady true");
       return;
     }
     
@@ -89,22 +79,16 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     
     (async () => {
       try {
-        console.log("[ArtistBooking] Starting gate API call", { url: `${apiOrigin}/messages/gate/${artistId}` });
-        const startTime = Date.now();
         const g = await requestRef.current(`${apiOrigin}/messages/gate/${artistId}`, {
           method: "GET",
           signal: ac.signal as any
         });
         if (!mounted) {
-          console.log("[ArtistBooking] Component unmounted, skipping state update");
           return;
         }
-        const duration = Date.now() - startTime;
-        console.log("[ArtistBooking] Gate API call completed", { duration: `${duration}ms`, gate: g });
         setGate(g as Gate);
         setGateReady(true);
         if ((g as Gate)?.lastStatus === "pending" && !(g as Gate)?.allowed) {
-          console.log("[ArtistBooking] Gate shows pending request, setting status to sent");
           sentRef.current = true;
           setStatus("sent");
         }
@@ -113,9 +97,6 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
         if (!isAbortError(e)) {
           console.error("[ArtistBooking] gate fetch failed", { artistId, error: e });
           if (mounted) setGateReady(true);
-        } else {
-          console.log("[ArtistBooking] Gate fetch aborted");
-          return;
         }
       } finally {
         if (mounted) fetchingRef.current = false;
@@ -123,7 +104,6 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     })();
     
     return () => {
-      console.log("[ArtistBooking] Gate fetch effect cleanup - aborting");
       mounted = false;
       fetchingRef.current = false;
       ac.abort();
@@ -131,17 +111,13 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   }, [apiOrigin, artist?.clerkId]);
 
   useEffect(() => {
-    const handler = (e: CustomEvent<{ artistId: string; username: string }>) => {
-      console.log("[ArtistBooking] ink:open-booking", e.detail.artistId);
-    };
+    const handler = (e: CustomEvent<{ artistId: string; username: string }>) => {};
     window.addEventListener("ink:open-booking", handler as EventListener);
     return () => window.removeEventListener("ink:open-booking", handler as EventListener);
   }, []);
 
   const isPending = gate === null ? false : (gate?.lastStatus === "pending" && !gate?.allowed) || status === "sent";
   const hasExistingChat = gate === null ? false : !!(gate?.allowed || gate?.lastStatus === "accepted");
-  
-  console.log("[ArtistBooking] Computed values", { isPending, hasExistingChat, gateReady, gateStatus: gate?.lastStatus });
 
   const startOfToday = useMemo(() => {
     const d = new Date();
@@ -152,11 +128,9 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   const [month, setMonth] = useState<Date>(startOfToday);
 
   const openMessages = () => {
-    console.log("[ArtistBooking] openMessages called");
     window.dispatchEvent(new CustomEvent("ink:open-messages"));
   };
   const addPending = () => {
-    console.log("[ArtistBooking] addPending called", { artistId: artist.clerkId, username: artist.username });
     window.dispatchEvent(
       new CustomEvent("ink:add-pending-conversation", {
         detail: { artistId: artist.clerkId, username: artist.username }
@@ -187,35 +161,28 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   }
 
   const handleSendMessage = async () => {
-    console.log("[ArtistBooking] handleSendMessage called", { sentRef: sentRef.current, status, hasExistingChat });
     if (sentRef.current || status === "sending" || hasExistingChat) {
-      console.log("[ArtistBooking] handleSendMessage early return", { reason: sentRef.current ? "sentRef" : status === "sending" ? "sending" : "hasExistingChat" });
       return;
     }
     if (!artist.clerkId) {
       setStatus("error");
       setErrorMsg("Artist clerkId missing.");
-      console.error("[ArtistBooking] Missing artist.clerkId");
       return;
     }
     if (!artist.username) {
       setStatus("error");
       setErrorMsg("Artist username missing.");
-      console.error("[ArtistBooking] Missing artist.username");
       return;
     }
     const preMsg = preloadedMessage.trim();
     if (!preMsg) {
       setStatus("error");
       setErrorMsg("Message is empty.");
-      console.error("[ArtistBooking] Preloaded message empty");
       return;
     }
-    console.log("[ArtistBooking] Setting status to sending");
     setStatus("sending");
     setErrorMsg("");
     try {
-      console.log("[ArtistBooking] Preparing request payload", { artistId: artist.clerkId, targetDate: date?.toISOString() });
       const payload = {
         artistId: artist.clerkId,
         text: preMsg,
@@ -236,18 +203,13 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           stylesSnapshot: []
         }
       };
-      console.log("[ArtistBooking] Sending message request", { url: `${apiOrigin}/messages/request` });
-      const startTime = Date.now();
       const res: any = await request(`${apiOrigin}/messages/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload)
       });
-      const duration = Date.now() - startTime;
-      console.log("[ArtistBooking] Message request completed", { duration: `${duration}ms`, response: res });
       const ok = typeof res?.ok === "boolean" ? res.ok : true;
       if (!ok) throw Object.assign(new Error(res?.error || `HTTP ${res?.status || 500}`), { status: res?.status, body: res });
-      console.log("[ArtistBooking] Message sent successfully, updating state");
       sentRef.current = true;
       setStatus("sent");
       setGate(g => ({ ...(g || { allowed: false, declines: 0, blocked: false, lastStatus: "pending" }), lastStatus: "pending" }));
@@ -281,16 +243,16 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       setErrorMsg(msg);
     }
   };
-
-  console.log("[ArtistBooking] Rendering component", { gateReady, hasExistingChat, isPending, status });
   
   return (
     <div 
       className="w-full ink-scope ink-no-anim" 
       style={{ 
         background: "var(--card)", 
-        color: "var(--fg)"
-      }}
+        color: "var(--fg)",
+        transition: "none !important",
+        animation: "none !important"
+      } as React.CSSProperties}
     >
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
         <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
@@ -337,17 +299,17 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           </CardContent>
         </Card>
 
-        <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-          <CardHeader className="text-center space-y-1 px-3 sm:px-6">
-            <CardTitle className="text-base sm:text-lg">Book an appointment</CardTitle>
+        <Card className="w-full shadow-none ink-no-anim" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+          <CardHeader className="text-center space-y-1 px-3 sm:px-6 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+            <CardTitle className="text-base sm:text-lg ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>Book an appointment</CardTitle>
           </CardHeader>
-          <CardContent className="p-2 sm:p-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 items-stretch">
-              <div className="min-h-[360px] sm:min-h-[420px]">
+          <CardContent className="p-2 sm:p-5 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 items-stretch ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+              <div className="min-h-[360px] sm:min-h-[420px] ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                 <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
               </div>
-              <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
-                <div className="w-full max-w-[920px] p-2 sm:p-3">
+              <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2 ink-no-anim" style={{ background: "var(--elevated)", color: "var(--fg)", transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+                <div className="w-full max-w-[920px] p-2 sm:p-3 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                   <BookingPicker artistId={artist.clerkId} date={date} />
                 </div>
               </div>
