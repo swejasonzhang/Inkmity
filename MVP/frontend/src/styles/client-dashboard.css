@@ -1,0 +1,16 @@
+.client-dashboard-root {
+  padding-bottom: var(--fb-safe, 0px);
+}
+
+.client-dashboard-messages {
+  height: 800px;
+}
+
+.client-dashboard-assistant {
+  transform-origin: bottom right;
+}
+
+.client-dashboard-assistant-card {
+  height: 360px;
+}
+

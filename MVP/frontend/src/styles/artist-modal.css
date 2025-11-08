@@ -1,0 +1,103 @@
+#inkmity-modal-root,
+#inkmity-modal-root *,
+#inkmity-modal-root *::before,
+#inkmity-modal-root *::after {
+  transition: none !important;
+  animation: none !important;
+  --theme-ms: 0ms !important;
+  --ui-ms: 0ms !important;
+}
+
+#inkmity-modal-root[data-ink-no-anim-permanent="true"],
+#inkmity-modal-root[data-ink-no-anim-permanent="true"] *,
+#inkmity-modal-root[data-ink-no-anim-permanent="true"] *::before,
+#inkmity-modal-root[data-ink-no-anim-permanent="true"] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+#inkmity-modal-root [data-radix-scroll-area-viewport],
+#inkmity-modal-root [data-radix-scroll-area-viewport] * {
+  transition: none !important;
+  animation: none !important;
+}
+
+#inkmity-modal-root [data-framer-appear-id],
+#inkmity-modal-root [data-framer-name],
+#inkmity-modal-root [style*="transform"],
+#inkmity-modal-root [style*="opacity"] {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+#inkmity-modal-root [class*="motion"],
+#inkmity-modal-root [data-motion] {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+#inkmity-modal-root > div > div > div[data-radix-scroll-area-root],
+#inkmity-modal-root > div > div > div[data-radix-scroll-area-root] > div {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+#inkmity-modal-root [class*="max-w-[1200px]"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+#inkmity-modal-root [data-slot="dialog-overlay"],
+#inkmity-modal-root [data-slot="dialog-content"],
+#inkmity-modal-root [data-radix-dialog-overlay],
+#inkmity-modal-root [data-radix-dialog-content] {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+#inkmity-modal-root [class*="animate-in"],
+#inkmity-modal-root [class*="animate-out"],
+#inkmity-modal-root [class*="fade-in"],
+#inkmity-modal-root [class*="fade-out"],
+#inkmity-modal-root [class*="zoom-in"],
+#inkmity-modal-root [class*="zoom-out"],
+#inkmity-modal-root [class*="slide-in"],
+#inkmity-modal-root [class*="slide-out"] {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+#inkmity-modal-root [data-state="open"],
+#inkmity-modal-root [data-state="closed"] {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+#inkmity-modal-root [data-slot="card"],
+#inkmity-modal-root [data-slot="card-content"],
+#inkmity-modal-root [data-slot="card-header"],
+#inkmity-modal-root [data-slot="card-title"] {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+#inkmity-modal-root [class*="duration-"],
+#inkmity-modal-root [style*="duration"] {
+  transition: none !important;
+  animation: none !important;
+}
+

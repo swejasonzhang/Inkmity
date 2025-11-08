@@ -7,6 +7,7 @@ import ArtistPortfolio, { ArtistWithGroups } from "./ArtistPortfolio";
 import ArtistBooking from "./ArtistBooking";
 import ArtistReviews from "./ArtistReviews";
 import StepBarRow from "./StepBarRow";
+import "@/styles/artist-modal.css";
 
 declare global {
   interface Window {
@@ -64,117 +65,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
 
   useEffect(() => {
     if (!portalRef.current) {
-      const styleId = 'artist-modal-no-transitions';
-      let styleEl = document.getElementById(styleId) as HTMLStyleElement;
-      
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = styleId;
-        styleEl.textContent = `
-          #inkmity-modal-root,
-          #inkmity-modal-root *,
-          #inkmity-modal-root *::before,
-          #inkmity-modal-root *::after {
-            transition: none !important;
-            animation: none !important;
-            --theme-ms: 0ms !important;
-            --ui-ms: 0ms !important;
-          }
-          #inkmity-modal-root[data-ink-no-anim-permanent="true"],
-          #inkmity-modal-root[data-ink-no-anim-permanent="true"] *,
-          #inkmity-modal-root[data-ink-no-anim-permanent="true"] *::before,
-          #inkmity-modal-root[data-ink-no-anim-permanent="true"] *::after {
-            transition: none !important;
-            animation: none !important;
-          }
-          #inkmity-modal-root [data-radix-scroll-area-viewport],
-          #inkmity-modal-root [data-radix-scroll-area-viewport] * {
-            transition: none !important;
-            animation: none !important;
-          }
-          /* Disable all framer-motion animations */
-          #inkmity-modal-root [data-framer-appear-id],
-          #inkmity-modal-root [data-framer-name],
-          #inkmity-modal-root [style*="transform"],
-          #inkmity-modal-root [style*="opacity"] {
-            transition: none !important;
-            animation: none !important;
-            transform: none !important;
-          }
-          /* Force disable all motion animations */
-          #inkmity-modal-root [class*="motion"],
-          #inkmity-modal-root [data-motion] {
-            transition: none !important;
-            animation: none !important;
-            transform: none !important;
-            opacity: 1 !important;
-          }
-          /* Prevent flash on step change */
-          #inkmity-modal-root > div > div > div[data-radix-scroll-area-root],
-          #inkmity-modal-root > div > div > div[data-radix-scroll-area-root] > div {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transition: none !important;
-            animation: none !important;
-          }
-          /* Prevent flash when step content changes */
-          #inkmity-modal-root [class*="max-w-[1200px]"] {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transition: none !important;
-            animation: none !important;
-          }
-          /* Disable Dialog animations */
-          #inkmity-modal-root [data-slot="dialog-overlay"],
-          #inkmity-modal-root [data-slot="dialog-content"],
-          #inkmity-modal-root [data-radix-dialog-overlay],
-          #inkmity-modal-root [data-radix-dialog-content] {
-            transition: none !important;
-            animation: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-          }
-          /* Disable Tailwind animate-in/out animations */
-          #inkmity-modal-root [class*="animate-in"],
-          #inkmity-modal-root [class*="animate-out"],
-          #inkmity-modal-root [class*="fade-in"],
-          #inkmity-modal-root [class*="fade-out"],
-          #inkmity-modal-root [class*="zoom-in"],
-          #inkmity-modal-root [class*="zoom-out"],
-          #inkmity-modal-root [class*="slide-in"],
-          #inkmity-modal-root [class*="slide-out"] {
-            transition: none !important;
-            animation: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-          }
-          /* Disable data-state animations */
-          #inkmity-modal-root [data-state="open"],
-          #inkmity-modal-root [data-state="closed"] {
-            transition: none !important;
-            animation: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-          }
-          /* Disable Card and other component animations */
-          #inkmity-modal-root [data-slot="card"],
-          #inkmity-modal-root [data-slot="card-content"],
-          #inkmity-modal-root [data-slot="card-header"],
-          #inkmity-modal-root [data-slot="card-title"] {
-            transition: none !important;
-            animation: none !important;
-            opacity: 1 !important;
-          }
-          /* Disable all duration-based transitions */
-          #inkmity-modal-root [class*="duration-"],
-          #inkmity-modal-root [style*="duration"] {
-            transition: none !important;
-            animation: none !important;
-          }
-        `;
-        document.head.appendChild(styleEl);
-      }
-      
       const el = document.createElement("div");
       el.id = "inkmity-modal-root";
       el.style.position = "fixed";
