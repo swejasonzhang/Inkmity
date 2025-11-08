@@ -8,7 +8,6 @@ import InfoPanel from "@/components/access/InfoPanel";
 import SignupFormCard from "@/components/access/SignupFormCard";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
-import { useAlreadySignedInRedirect } from "@/hooks/useAlreadySignedInRedirect";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
@@ -86,7 +85,6 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
 }
 
 export default function SignUp() {
-  useAlreadySignedInRedirect();
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
@@ -174,6 +172,15 @@ export default function SignUp() {
       document.removeEventListener("input", onClickOrInput, true);
     };
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    setShowSuccess(true);
+    const t = setTimeout(() => {
+      navigate("/dashboard", { replace: true });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [userId, navigate]);
 
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
     const name = (e as InputLike).target?.name;
@@ -334,7 +341,7 @@ export default function SignUp() {
           setShowSuccess(true);
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
-          }, 2000);
+          }, 1500);
           return;
         } catch {
           try {
@@ -351,9 +358,6 @@ export default function SignUp() {
       setLoading(false);
     }
     triggerMascotError();
-    try {
-      await signOut();
-    } catch { }
   };
 
   const mascotEyesClosed = showPassword && pwdFocused;
@@ -380,6 +384,8 @@ export default function SignUp() {
     else setArtist((prev) => ({ ...prev, bio: v }));
   };
 
+  const successHeading = userId ? "You're already logged in." : "Signup successful.";
+
   return (
     <div className="relative text-app">
       <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
@@ -391,14 +397,14 @@ export default function SignUp() {
       <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
         <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
-            <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : ""}`}>
+            <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? `md:grid-cols-2 ${showSuccess ? "md:items-center" : "md:items-stretch"} md:justify-items-center` : ""}`}>
               {showInfo && (
                 <motion.div
                   layout
                   className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
                   style={{
-                    height: isMdUp ? (showSuccess ? Math.max(cardH ?? 0, 640) : cardH || undefined) : undefined,
-                    minHeight: isMdUp && showSuccess ? 640 : undefined
+                    height: isMdUp ? (showSuccess ? Math.max(cardH ?? 0, 880) : cardH || undefined) : undefined,
+                    minHeight: isMdUp && showSuccess ? 880 : undefined
                   }}
                 >
                   <div className="h-full w-full">
@@ -409,8 +415,8 @@ export default function SignUp() {
               <motion.div
                 ref={cardRef}
                 layout
-                className="w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
-                style={{ minHeight: isMdUp && showSuccess ? 640 : undefined }}
+                className={`w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center ${showSuccess ? "flex items-center justify-center" : ""}`}
+                style={{ minHeight: isMdUp && showSuccess ? 880 : undefined }}
               >
                 <SignupFormCard
                   showInfo={showInfo}
@@ -448,7 +454,7 @@ export default function SignUp() {
                   invalidFields={invalidFields}
                   flashToken={flashToken}
                   success={showSuccess}
-                  successHeading="Signup successful."
+                  successHeading={successHeading}
                 />
               </motion.div>
             </div>
