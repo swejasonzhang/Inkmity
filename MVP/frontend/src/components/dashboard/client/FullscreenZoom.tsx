@@ -17,8 +17,9 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
 
     const [lensOn, setLensOn] = useState(false);
     const [lensPos, setLensPos] = useState({ x: 0, y: 0 });
-    const [origin, setOrigin] = useState({ oxPct: 50, oyPct: 50 });
-    const zoom = 2.2;
+    const [origin, setOrigin] = useState({ oxPct: 50, oyPct: 50, oxPx: 0, oyPx: 0 });
+    const [imageSize, setImageSize] = useState({ width: 1, height: 1 });
+    const zoom = 1.5;
     const lensSize = useResponsiveLensSize();
 
     useEffect(() => {
@@ -38,14 +39,21 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
         setLensPos({ x, y });
 
         const imgRect = img.getBoundingClientRect();
-        const rx = Math.max(0, Math.min((clientX - imgRect.left) / imgRect.width, 1));
-        const ry = Math.max(0, Math.min((clientY - imgRect.top) / imgRect.height, 1));
-        setOrigin({ oxPct: rx * 100, oyPct: ry * 100 });
+        const relX = Math.max(0, Math.min(clientX - imgRect.left, imgRect.width));
+        const relY = Math.max(0, Math.min(clientY - imgRect.top, imgRect.height));
+        const rx = imgRect.width ? relX / imgRect.width : 0.5;
+        const ry = imgRect.height ? relY / imgRect.height : 0.5;
+        setOrigin({ oxPct: rx * 100, oyPct: ry * 100, oxPx: relX, oyPx: relY });
+        setImageSize({ width: imgRect.width || 1, height: imgRect.height || 1 });
     };
 
     const onPointerDown: React.PointerEventHandler<HTMLDivElement> = (e) => {
         e.preventDefault();
-        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+        setLensOn(true);
+        updateFromPointer(e.clientX, e.clientY);
+    };
+
+    const onPointerEnter: React.PointerEventHandler<HTMLDivElement> = (e) => {
         setLensOn(true);
         updateFromPointer(e.clientX, e.clientY);
     };
@@ -55,8 +63,7 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
         updateFromPointer(e.clientX, e.clientY);
     };
 
-    const onPointerUp: React.PointerEventHandler<HTMLDivElement> = (e) => {
-        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    const onPointerUp: React.PointerEventHandler<HTMLDivElement> = () => {
         setLensOn(false);
     };
 
@@ -95,6 +102,7 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                     style={{ maxHeight: "calc(100vh - 20px)", height: "calc(100vh - 20px)" }}
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
+                    onPointerEnter={onPointerEnter}
                     onPointerUp={onPointerUp}
                     onPointerLeave={() => setLensOn(false)}
                 >
@@ -103,8 +111,8 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                         key={src}
                         src={src}
                         alt="Zoomed artwork"
-                        className="w-screen select-none"
-                        style={{ height: "calc(100vh - 20px)", objectFit: "contain" }}
+                        className="select-none"
+                        style={{ width: "min(98vw, 900px)", height: "calc(100vh - 20px)", objectFit: "contain" }}
                         draggable={false}
                         initial={{ opacity: 0, scale: 0.985 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -112,37 +120,24 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                     />
 
                     {lensOn && (
-                        <>
-                            <div
-                                className="absolute inset-0 pointer-events-none"
-                                style={{ clipPath: `circle(${lensSize / 2}px at ${lensPos.x}px ${lensPos.y}px)` }}
-                            >
-                                <img
-                                    src={src}
-                                    alt=""
-                                    className="w-screen select-none"
-                                    style={{
-                                        height: "calc(100vh - 20px)",
-                                        objectFit: "contain",
-                                        transform: `scale(${zoom})`,
-                                        transformOrigin: `${origin.oxPct}% ${origin.oyPct}%`,
-                                    }}
-                                    draggable={false}
-                                />
-                            </div>
-
-                            <div
-                                className="pointer-events-none absolute rounded-full border"
-                                style={{
-                                    width: lensSize,
-                                    height: lensSize,
-                                    left: lensPos.x - lensSize / 2,
-                                    top: lensPos.y - lensSize / 2,
-                                    borderColor: "var(--border)",
-                                    boxShadow: "0 10px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06)",
-                                }}
-                            />
-                        </>
+                        <div
+                            className="pointer-events-none absolute"
+                            style={{
+                                width: lensSize,
+                                height: lensSize,
+                                left: lensPos.x - lensSize / 2,
+                                top: lensPos.y - lensSize / 2,
+                                borderRadius: "50%",
+                                border: "1px solid var(--border)",
+                                boxShadow: "0 10px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.1)",
+                                zIndex: 6,
+                                backgroundImage: `url(${src})`,
+                                backgroundRepeat: "no-repeat",
+                                backgroundSize: `${imageSize.width * zoom}px ${imageSize.height * zoom}px`,
+                                backgroundPosition: `${lensSize / 2 - origin.oxPx * zoom}px ${lensSize / 2 - origin.oyPx * zoom}px`,
+                                backgroundColor: "transparent"
+                            }}
+                        />
                     )}
 
                     <button

@@ -16,7 +16,7 @@ export function useSyncOnAuth() {
       try {
         const token = await getToken();
         try {
-          await getMe(token ?? "");
+          await getMe({ token: token ?? undefined });
           return;
         } catch {}
         if (!user) return;
@@ -64,7 +64,7 @@ export function useSyncOnAuth() {
           });
         } catch {}
         try {
-          await getMe(token ?? "");
+          await getMe({ token: token ?? undefined });
         } catch {}
       } catch {}
     })();
