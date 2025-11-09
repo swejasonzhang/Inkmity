@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent, ChangeEvent, useRef } from "react";
+import { useState, useEffect, FormEvent, ChangeEvent, useRef, useCallback } from "react";
 import Header from "@/components/header/Header";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
@@ -20,7 +20,7 @@ export default function Login() {
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive } = useSignIn();
-  const { userId } = useAuth();
+  const { userId, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const [authError, setAuthError] = useState("");
   const pwdRef = useRef<HTMLInputElement | null>(null);
@@ -32,6 +32,25 @@ export default function Login() {
   const [invalid, setInvalid] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
   const [flashToken, setFlashToken] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successType, setSuccessType] = useState<"login" | "already" | null>(null);
+  const redirectTimerRef = useRef<number | null>(null);
+
+  const beginRedirect = useCallback(() => {
+    if (redirectTimerRef.current !== null) {
+      window.clearTimeout(redirectTimerRef.current);
+    }
+    redirectTimerRef.current = window.setTimeout(() => {
+      window.location.assign("/dashboard");
+    }, 1500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current !== null) {
+        window.clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const mm = (e: MouseEvent) => {
@@ -128,13 +147,22 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
-    setShowSuccess(true);
-    const t = setTimeout(() => {
-      window.location.assign("/dashboard");
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [userId]);
+    if (!authLoaded) return;
+    if (isSignedIn) {
+      setShowSuccess(true);
+      setSuccessType((prev) =>
+        prev === "login" || prev === "already" ? prev : "already"
+      );
+      beginRedirect();
+    } else if (successType !== "login") {
+      if (redirectTimerRef.current !== null) {
+        window.clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+      if (showSuccess) setShowSuccess(false);
+      if (successType !== null) setSuccessType(null);
+    }
+  }, [authLoaded, isSignedIn, beginRedirect, successType, showSuccess]);
 
   const triggerMascotError = () => {
     setMascotError(true);
@@ -167,10 +195,9 @@ export default function Login() {
         try {
           sessionStorage.setItem("authRedirect", "1");
         } catch { }
+        setSuccessType("login");
         setShowSuccess(true);
-        setTimeout(() => {
-          window.location.assign("/dashboard");
-        }, 1500);
+        beginRedirect();
       } else {
         setAuthError("Login failed. Check your credentials and try again.");
         triggerMascotError();
@@ -204,7 +231,8 @@ export default function Login() {
     });
   };
 
-  const successTitle = userId ? "You’re already logged in." : "Login successful.";
+  const successTitle =
+    successType === "already" ? "You’re already logged in." : "Login successful.";
 
   return (
     <div className="relative text-app">

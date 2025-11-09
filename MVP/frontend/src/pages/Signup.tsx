@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, ChangeEvent, useRef } from "react";
+import { useEffect, useMemo, useState, ChangeEvent, useRef, useCallback } from "react";
 import Header from "@/components/header/Header";
 import { motion, useReducedMotion } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
@@ -104,7 +104,7 @@ export default function SignUp() {
   const [showSuccess, setShowSuccess] = useState(false);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
-  const { userId, getToken } = useAuth();
+  const { userId, getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
