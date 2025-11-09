@@ -20,7 +20,7 @@ export function useRole() {
     (async () => {
       try {
         const token = await getToken();
-        const me = await getMe(token ?? "");
+        const me = await getMe({ token: token ?? undefined });
         const r =
           me?.role === "artist"
             ? "artist"

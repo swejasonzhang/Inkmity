@@ -659,3 +659,16 @@ input::-moz-focus-inner {
 .ink-dot:nth-child(3) {
   animation-delay: 0.3s;
 }
+
+.fullscreen-zoom__count {
+  background: var(--bg);
+  border: 2px solid color-mix(in oklab, var(--fg) 80%, transparent);
+  color: color-mix(in oklab, var(--bg) 20%, var(--fg));
+  transition: color 200ms ease, border-color 200ms ease;
+}
+
+.ink-scope[data-ink="light"] .fullscreen-zoom__count,
+.ink-scope.ink-light .fullscreen-zoom__count {
+  color: #111111;
+  border-color: rgba(17, 17, 17, 0.75);
+}

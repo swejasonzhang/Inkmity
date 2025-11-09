@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import RequestPanel from "./messages/RequestPanel";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
+import "@/styles/ink-conversations.css";
 
 declare global {
   interface Window {
@@ -458,13 +459,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
           >
             <span className="text-xl leading-none">×</span>
           </button>
-          <div className="relative pointer-events-none">
+          <div className="relative pointer-events-none ink-conv-image-viewer">
             <img
               key={viewerUrl || ""}
               src={viewerUrl || ""}
               alt="preview"
-              className="block object-contain"
-              style={{ width: "100%", height: "100%" }}
+              className="ink-conv-image-viewer__img"
               referrerPolicy="no-referrer"
             />
           </div>
@@ -687,13 +687,13 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     key={u}
                                     type="button"
                                     onClick={() => setViewerUrl(u)}
-                                    className="w-full rounded-lg border border-app/60 overflow-hidden"
+                                    className="w-full ink-conv-image-button"
                                     title="Open"
                                   >
                                     <img
                                       src={u}
                                       alt="reference"
-                                      className="w-full aspect-[4/3] object-cover bg-black/5"
+                                      className="ink-conv-chat-thumb"
                                       loading="lazy"
                                       referrerPolicy="no-referrer"
                                     />
