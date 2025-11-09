@@ -107,7 +107,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                             <Maximize2 className="h-3.5 w-3.5" /> View
                         </div>
                     </div>
-                    <div className="flex justify-center gap-2 py-4">
+                    <div className="flex justify-center gap-2 py-4">abs
                         {images.map((_, i) => (
                             <button
                                 key={i}

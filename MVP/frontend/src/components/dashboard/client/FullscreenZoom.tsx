@@ -116,10 +116,9 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                 onClick={stop}
             >
                 <div
-                    className="absolute left-1/2 -translate-x-1/2 top-3 sm:top-4 rounded-full shadow-sm z-[9999] pointer-events-none"
-                    style={{ background: "var(--bg)", border: "2px solid #000", color: "#000" }}
+                    className="absolute left-1/2 -translate-x-1/2 top-3 sm:top-4 rounded-full shadow-sm z-[9999] pointer-events-none fullscreen-zoom__count"
                 >
-                    <div className="flex items-center gap-2 px-5 py-2 text-white font-semibold">
+                    <div className="flex items-center gap-2 px-5 py-2 font-semibold">
                         <span>{count}</span>
                     </div>
                 </div>
