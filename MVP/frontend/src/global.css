@@ -1,21 +1,21 @@
 .portfolio-section-title {
-  color: var(--fg);
+  color: var(--fg) !important;
   transition: color 200ms ease;
 }
 
 .portfolio-section-count {
-  color: color-mix(in oklab, var(--fg) 65%, transparent);
+  color: color-mix(in oklab, var(--fg) 65%, transparent) !important;
   transition: color 200ms ease;
 }
 
 .ink-scope[data-ink="light"] .portfolio-section-title,
 .ink-scope.ink-light .portfolio-section-title {
-  color: #000;
+  color: #000 !important;
 }
 
 .ink-scope[data-ink="light"] .portfolio-section-count,
 .ink-scope.ink-light .portfolio-section-count {
-  color: color-mix(in oklab, #000 70%, transparent);
+  color: color-mix(in oklab, #000 70%, transparent) !important;
 }
 @tailwind base;
 @tailwind components;
