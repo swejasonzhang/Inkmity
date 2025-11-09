@@ -41,14 +41,14 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                         <button
                             key={`${src}-${i}`}
                             onClick={() => openZoom(images, i, label)}
-                            className="group relative w-full max-w-[360px] aspect-[4/3] rounded-3xl border shadow-sm overflow-hidden flex items-center justify-center ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="group relative w-full max-w-[360px] rounded-3xl border shadow-sm overflow-hidden flex items-center justify-center ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
                             aria-label={`Open ${imgAltPrefix} ${i + 1}`}
                         >
                             <img
                                 src={src}
                                 alt={`${imgAltPrefix} ${i + 1}`}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                                className="block max-w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[0.97]"
                                 loading={i < 4 ? "eager" : "lazy"}
                                 fetchPriority={i < 4 ? "high" : undefined}
                                 decoding="async"
@@ -98,9 +98,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                             aria-label={`Open ${imgAltPrefix} ${index + 1}`}
                             className="block w-full"
                         >
-                            <div className="w-full aspect-[4/3]">
-                                <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="h-full w-full object-cover" loading="eager" decoding="async" referrerPolicy="no-referrer" />
-                            </div>
+                            <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="block max-w-full h-auto object-contain mx-auto" loading="eager" decoding="async" referrerPolicy="no-referrer" />
                         </motion.button>
                         <div
                             className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
@@ -108,17 +106,17 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                         >
                             <Maximize2 className="h-3.5 w-3.5" /> View
                         </div>
-                        <div className="absolute left-0 right-0 -bottom-8 flex justify-center gap-2 py-3">
-                            {images.map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setIndex(i)}
-                                    aria-label={`Go to ${label} ${i + 1}`}
-                                    className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
-                                    style={{ backgroundColor: i === index ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
-                                />
-                            ))}
-                        </div>
+                    </div>
+                    <div className="flex justify-center gap-2 py-4">
+                        {images.map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setIndex(i)}
+                                aria-label={`Go to ${label} ${i + 1}`}
+                                className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
+                                style={{ backgroundColor: i === index ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
+                            />
+                        ))}
                     </div>
                     <div className="sm:hidden grid grid-cols-2 gap-3 mt-6">
                         <Button variant="outline" onClick={() => swipeTo("prev")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
@@ -195,8 +193,8 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
                 <section className="w-full">
                     <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                        <h3 className="text-base sm:text-lg font-semibold">Past Works</h3>
-                        <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                        <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Past Works</h3>
+                        <span className="text-xs portfolio-section-count">
                             {past.length ? `${past.length} image${past.length === 1 ? "" : "s"}` : "—"}
                         </span>
                     </header>
@@ -207,8 +205,8 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                 {healed.length > 0 && (
                     <section className="w-full">
                         <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold">Healed Works</h3>
-                            <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Healed Works</h3>
+                            <span className="text-xs portfolio-section-count">
                                 {healed.length} image{healed.length === 1 ? "" : "s"}
                             </span>
                         </header>
@@ -220,8 +218,8 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                 {sketches.length > 0 && (
                     <section className="w-full">
                         <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold">Upcoming Sketches & Ideas</h3>
-                            <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Upcoming Sketches & Ideas</h3>
+                            <span className="text-xs portfolio-section-count">
                                 {sketches.length} image{sketches.length === 1 ? "" : "s"}
                             </span>
                         </header>
