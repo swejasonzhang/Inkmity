@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ChatWindow from "@/components/dashboard/shared/ChatWindow";
 import ChatBot from "@/components/dashboard/shared/ChatBot";
 import { toast } from "react-toastify";
-import CircularProgress from "@mui/material/CircularProgress";
 import { displayNameFromUsername } from "@/lib/format";
 import { API_URL } from "@/lib/http";
 import { useDashboardData } from "@/hooks";
@@ -125,19 +124,8 @@ export default function ClientDashboard() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    if (!isLoaded || !initialized) {
-        return (
-            <div className="fixed inset-0 grid place-items-center bg-app text-app">
-                <CircularProgress sx={{ color: "var(--fg)" }} />
-            </div>
-        );
-    }
-    if (!user) {
-        return (
-            <div className="fixed inset-0 grid place-items-center bg-app text-app">
-                <CircularProgress sx={{ color: "var(--fg)" }} />
-            </div>
-        );
+    if (!isLoaded || !initialized || !user) {
+        return null;
     }
 
     const panelVariants = {
@@ -149,7 +137,6 @@ export default function ClientDashboard() {
     return (
         <div className="min-h-dvh bg-app text-app flex flex-col overflow-hidden client-dashboard-root">
             <Header />
-
             <div className="sm:hidden px-3 mt-2">
                 <ArtistFilter
                     priceFilter={priceFilter}
@@ -175,7 +162,6 @@ export default function ClientDashboard() {
                     className="mb-3"
                 />
             </div>
-
             <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 flex">
                     <div className="w-full md:my-auto my-0 px-0 md:px-3">
@@ -207,7 +193,6 @@ export default function ClientDashboard() {
                     </div>
                 </div>
             </main>
-
             <div className="shrink-0 px-3">
                 <FloatingBar
                     role="Client"
@@ -227,7 +212,6 @@ export default function ClientDashboard() {
                     }
                 />
             </div>
-
             <AnimatePresence>
                 {assistantOpen && (
                     <motion.div
@@ -256,7 +240,6 @@ export default function ClientDashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
             <Suspense fallback={null}>
                 {selectedArtist && (
                     <ArtistModal
@@ -268,7 +251,7 @@ export default function ClientDashboard() {
                             bio: (selectedArtist as any).bio,
                             pastWorks: ((selectedArtist as any).pastWorks ?? (selectedArtist as any).portfolioImages ?? []).filter(Boolean),
                             healedWorks: ((selectedArtist as any).healedWorks ?? []).filter(Boolean),
-                            sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean),
+                            sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean)
                         }}
                         onClose={() => setSelectedArtist(null)}
                         onMessage={async a => {

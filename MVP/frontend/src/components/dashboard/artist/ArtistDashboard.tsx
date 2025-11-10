@@ -30,12 +30,10 @@ export default function ArtistDashboard() {
         if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
         return fetch(url, { ...options, headers, credentials: "include" });
       }
-
       const base = API_URL.replace(/\/+$/g, "");
       let path = url.startsWith("/") ? url : `/${url}`;
-      if (base.endsWith("/api") && /^\/api(\/|$)/.test(path)) path = path.replace(/^\/api/, "")
+      if (base.endsWith("/api") && /^\/api(\/|$)/.test(path)) path = path.replace(/^\/api/, "");
       const full = `${base}${path}`;
-
       const token = await getToken();
       const headers = new Headers(options.headers || {});
       if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -78,7 +76,6 @@ export default function ArtistDashboard() {
                 </Suspense>
               </CardContent>
             </Card>
-
             <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
               <CardHeader className="px-4 py-5 border-b border-app">
                 <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Analytics</CardTitle>
@@ -96,19 +93,13 @@ export default function ArtistDashboard() {
                     </div>
                   }
                 >
-                  {isArtist ? (
-                    <AnalyticsPanel />
-                  ) : (
-                    <div className="text-sm opacity-70">Analytics available to artist accounts only.</div>
-                  )}
+                  {isArtist ? <AnalyticsPanel /> : <div className="text-sm opacity-70">Analytics available to artist accounts only.</div>}
                 </Suspense>
               </CardContent>
             </Card>
           </div>
         </main>
-
         <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
-
         <FloatingBar
           role={isArtist ? "Artist" : "Client"}
           onAssistantOpen={() => setAssistantOpen(true)}
@@ -119,7 +110,6 @@ export default function ArtistDashboard() {
           pendingRequestIds={pendingRequestIds}
           pendingRequestsCount={pendingRequestsCount}
         />
-
         <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
           <div
             className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`}
@@ -127,8 +117,7 @@ export default function ArtistDashboard() {
             aria-hidden
           />
           <div
-            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"
-              }`}
+            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-app">
               <div className="flex items-center gap-2 font-semibold">
@@ -145,4 +134,4 @@ export default function ArtistDashboard() {
       </div>
     </div>
   );
-}
+} 
