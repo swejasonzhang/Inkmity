@@ -31,7 +31,6 @@ export const initSocket = (ioInstance) => {
     socket.on("thread:join", async ({ threadKey }) => {
       if (!threadKey) return;
       socket.join(threadRoom(threadKey));
-
       const viewerId = socket.data.userId;
       if (viewerId) {
         const [a, b] = String(threadKey).split(":");
@@ -57,30 +56,28 @@ export const initSocket = (ioInstance) => {
         const { senderId, receiverId, text, meta } = data || {};
         if (!senderId || !receiverId || !text)
           return ack?.({ error: "missing_fields" });
-
         const allowed = await isAllowedToChat(senderId, receiverId);
         if (!allowed) return ack?.({ error: "not_allowed" });
-
+        const now = new Date();
         const message = await Message.create({
           senderId: String(senderId),
           receiverId: String(receiverId),
           text: String(text),
           type: "message",
           meta: meta && typeof meta === "object" ? meta : undefined,
-          delivered: false,
+          delivered: true,
+          deliveredAt: now,
           seen: false,
         });
-
         const payload = {
           senderId: message.senderId,
           receiverId: message.receiverId,
           text: message.text,
           timestamp: message.createdAt.getTime(),
           meta: message.meta || undefined,
-          delivered: !!message.delivered,
-          seen: !!message.seen,
+          delivered: true,
+          seen: false,
         };
-
         io.to(userRoom(message.senderId))
           .to(userRoom(message.receiverId))
           .to(threadRoom(message.threadKey))
@@ -88,7 +85,16 @@ export const initSocket = (ioInstance) => {
             convoId: message.threadKey,
             message: payload,
           });
-
+        io.to(userRoom(message.senderId))
+          .to(userRoom(message.receiverId))
+          .to(threadRoom(message.threadKey))
+          .emit("conversation:ack", {
+            convoId: message.threadKey,
+            viewerId: message.receiverId,
+            participantId: message.senderId,
+            delivered: true,
+            seen: false,
+          });
         ack?.({ ok: true, message: payload });
       } catch {
         ack?.({ error: "save_failed" });
@@ -128,7 +134,6 @@ async function isAllowedToChat(a, b) {
       receiverId: a,
     }));
   if (!accepted) return false;
-
   const lastReq = await Message.findOne({
     type: "request",
     $or: [
@@ -138,7 +143,6 @@ async function isAllowedToChat(a, b) {
   })
     .sort({ createdAt: -1 })
     .lean();
-
   if (!lastReq) return true;
   const clientId = lastReq.senderId;
   const artistId = lastReq.receiverId;
