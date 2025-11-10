@@ -14,11 +14,11 @@ type AuthSocket = ReturnType<typeof ioClient> & {
   auth?: Record<string, unknown>;
 };
 
-let socket: AuthSocket = ioClient(SOCKET_URL.replace(/\/+$/, ""), {
+export const socket: AuthSocket = ioClient(SOCKET_URL.replace(/\/+$/, ""), {
   path: SOCKET_PATH,
   transports: ["websocket"],
   autoConnect: false,
-});
+}) as AuthSocket;
 
 export function getSocket() {
   return socket;
