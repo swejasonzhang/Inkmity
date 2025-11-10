@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
@@ -28,16 +28,14 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
   const { pathname } = useLocation();
   const isDashboard = pathname.startsWith("/dashboard");
   if (!isDashboard) return null;
-
   const isLight = theme === "light";
-  const dims = size === "lg"
-    ? { h: "h-[45px]", w: "w-24", knob: "h-[35px] w-[35px]", icon: 22 }
-    : size === "md"
-      ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 20 }
-      : { h: "h-9", w: "w-16", knob: "h-7 w-7", icon: 18 };
-  
+  const dims =
+    size === "lg"
+      ? { h: "h-[45px]", w: "w-24", knob: "h-[35px] w-[35px]", icon: 22 }
+      : size === "md"
+        ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 20 }
+        : { h: "h-9", w: "w-16", knob: "h-7 w-7", icon: 18 };
   const iconColorClass = isLight ? "text-black" : "text-white";
-  
   return (
     <button
       type="button"
@@ -53,13 +51,7 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
       <span className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${iconColorClass}`}>
         <Sun size={dims.icon} />
       </span>
-      <span
-        className={[
-          "absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300 bg-[color:var(--fg)]",
-          dims.knob,
-          isLight ? "right-1.5" : "left-1.5",
-        ].join(" ")}
-      />
+      <span className={["absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300 bg-[color:var(--fg)]", dims.knob, isLight ? "right-1.5" : "left-1.5"].join(" ")} />
       <span className="sr-only">{isLight ? "Switch to dark theme" : "Switch to light theme"}</span>
     </button>
   );
@@ -67,7 +59,7 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
 
 const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: logoSrcProp }) => {
   const { signOut } = useClerk();
-  const { user, isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -75,37 +67,54 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
 
   const isDashboard = pathname.startsWith("/dashboard");
 
-  const [userLabel, setUserLabel] = useState<string>("User");
+  const [userLabel, setUserLabel] = useState<string>("");
+  const [labelLoaded, setLabelLoaded] = useState<boolean>(false);
   const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
 
   useEffect(() => {
+    if (!isLoaded) return;
     let cancelled = false;
-    (async () => {
-      if (!isSignedIn || !API_BASE) {
-        if (!cancelled) setUserLabel("User");
-        return;
-      }
+    let resolved = false;
+    setLabelLoaded(false);
+    const FALLBACK_MS = 450;
+    const fallbackTimer = window.setTimeout(() => {
+      if (cancelled || resolved) return;
+      setUserLabel("User");
+      setLabelLoaded(true);
+    }, FALLBACK_MS);
+    async function run() {
+      if (!isSignedIn || !API_BASE) return;
       try {
         const token = await getToken();
         const res = await fetch(`${API_BASE}/users/me`, {
           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           credentials: "include",
         });
-        if (!res.ok) throw new Error(`status ${res.status}`);
+        if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         const name =
           (data?.username && String(data.username).trim()) ||
           (data?.handle && String(data.handle).replace(/^@/, "")) ||
-          "User";
-        if (!cancelled) setUserLabel(name);
+          "";
+        if (cancelled) return;
+        resolved = true;
+        window.clearTimeout(fallbackTimer);
+        setUserLabel(name || "User");
+        setLabelLoaded(true);
       } catch {
-        if (!cancelled) setUserLabel("User");
+        if (cancelled) return;
+        resolved = true;
+        window.clearTimeout(fallbackTimer);
+        setUserLabel("User");
+        setLabelLoaded(true);
       }
-    })();
+    }
+    run();
     return () => {
       cancelled = true;
+      window.clearTimeout(fallbackTimer);
     };
-  }, [isSignedIn, getToken, API_BASE]);
+  }, [isLoaded, isSignedIn, getToken, API_BASE]);
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -123,10 +132,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
     }
   };
 
-  const NAV_ITEMS: BuildNavItem[] = useMemo(
-    () => buildNavItems(dashboardDisabled, onDashboardGate),
-    [dashboardDisabled, onDashboardGate]
-  );
+  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(dashboardDisabled, onDashboardGate), [dashboardDisabled, onDashboardGate]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -139,7 +145,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
     };
   }, [mobileMenuOpen]);
 
-  const dropdownBtnClasses = "inline-flex h-11 md:h-12 items-center justify-center px-4 rounded-lg cursor-pointer transition border border-app bg-elevated text-app hover:bg-elevated text-[17px] whitespace-nowrap";
+  const dropdownBtnClasses =
+    "relative inline-flex h-11 md:h-12 items-center justify-center px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] bg-[color-mix(in_oklab,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_oklab,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shadow-[0_6px_24px_-8px_rgba(0,0,0,0.35)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--fg)_10%,transparent)]";
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
@@ -152,14 +159,6 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const triggerRef = useRef<HTMLDivElement | null>(null);
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const openDropdown = () => {
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-    setShowDropdown(true);
-  };
 
   const scheduleCloseDropdown = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -177,19 +176,29 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  const portalTarget =
-    document.getElementById("dashboard-portal-root") ??
-    document.getElementById("dashboard-scope") ??
-    document.body;
+  useEffect(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setTriggerWidth(rect.width);
+  }, [labelLoaded, userLabel]);
+
+  useEffect(() => {
+    if (!showDropdown) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowDropdown(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showDropdown]);
+
+  const portalTarget = document.getElementById("dashboard-portal-root") ?? document.getElementById("dashboard-scope") ?? document.body;
 
   const MOBILE_HEADER_H = "h-24";
   const MOBILE_LOGO_H = "h-20";
   const MOBILE_ICON_SIZE = 44;
   const MOBILE_ICON_STROKE = 2.6;
 
-  const resolvedLogo =
-    logoSrcProp ??
-    (!isDashboard ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
+  const resolvedLogo = logoSrcProp ?? (!isDashboard ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
 
   const mobileSheet = mobileMenuOpen
     ? createPortal(
@@ -200,22 +209,11 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
             <div className="flex items-center gap-4">
               <img src={resolvedLogo} alt="Inkmity Logo" className={`${MOBILE_LOGO_H} w-auto object-contain`} />
             </div>
-            <Button
-              aria-label="Close menu"
-              variant="ghost"
-              className="p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Button aria-label="Close menu" variant="ghost" className="p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
               <X size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
           </div>
-          <NavMobile
-            items={NAV_ITEMS}
-            isActive={isActive}
-            isSignedIn={!!isSignedIn}
-            setMobileMenuOpen={setMobileMenuOpen}
-            handleLogout={handleLogout}
-          />
+          <NavMobile items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
         </div>
       </div>,
       portalTarget
@@ -228,78 +226,67 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
         <div className="w-full flex justify-between items-center md:grid md:grid-cols-[1fr_auto_1fr]">
           <div className="justify-self-start -ml-2 md:-ml-6 pl-2 md:pl-0 flex-shrink-0">
             <Link to={homeHref} className="flex items-center md:gap-4 gap-3">
-              <img
-                src={resolvedLogo}
-                alt="Inkmity Logo"
-                className="h-20 md:h-24 lg:h-28 w-auto object-contain"
-                draggable={false}
-              />
+              <img src={resolvedLogo} alt="Inkmity Logo" className="h-20 md:h-24 lg:h-28 w-auto object-contain" draggable={false} />
               <span className="sr-only">Inkmity</span>
             </Link>
           </div>
 
           <div className="hidden md:block justify-self-center">
-            <NavDesktop
-              items={NAV_ITEMS}
-              isActive={isActive}
-              isSignedIn={!!isSignedIn}
-              onDisabledDashboardHover={onDashMouseMove}
-              onDisabledDashboardLeave={onDashLeave}
-              className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[19px]"
-            />
+            <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[19px]" />
           </div>
 
           <div className="flex items-center gap-4 pr-2 md:pr-0 justify-self-end">
             {isDashboard && (
-              <div className="hidden md:block mt-[5px]">
-                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
-              </div>
+              <>
+                <div className="hidden md:block mt-[5px]">
+                  <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
+                </div>
+                <div className="md:hidden mt-[5px]">
+                  <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
+                </div>
+              </>
             )}
-            {isDashboard && (
-              <div className="md:hidden mt-[5px]">
-                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
-              </div>
-            )}
-            <Button
-              aria-label="Open menu"
-              variant="ghost"
-              className="md:hidden p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app ml-1"
-              onClick={() => setMobileMenuOpen(true)}
-            >
+
+            <Button aria-label="Open menu" variant="ghost" className="md:hidden p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app ml-1" onClick={() => setMobileMenuOpen(true)}>
               <Menu size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
 
-            {isSignedIn && user && (
+            {isSignedIn && isLoaded && labelLoaded && (
               <div
                 className="relative hidden md:inline-block align-top text-app [&_*]:text-app [&_*]:border-app"
-                onMouseEnter={openDropdown}
+                onMouseEnter={() => setShowDropdown(true)}
                 onMouseLeave={scheduleCloseDropdown}
               >
                 <div
                   ref={triggerRef}
-                  className={dropdownBtnClasses}
+                  className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
                   aria-haspopup="menu"
                   aria-expanded={showDropdown}
+                  onClick={() => setShowDropdown((v) => !v)}
                 >
                   <span className="mr-2 font-semibold text-xl leading-none">✦</span>
                   <span className="inline-flex items-center leading-none">
                     <span className="mr-1">Hello,</span>
-                    <span className="font-bold max-w-[14rem] truncate">{userLabel}</span>
+                    <span className="font-bold max-w-[14rem] truncate">{userLabel || "User"}</span>
                   </span>
                 </div>
+
+                <div className="absolute left-0 right-0 top-full h-2" />
+
                 <div
                   role="menu"
                   aria-label="User menu"
-                  onMouseEnter={openDropdown}
-                  onMouseLeave={scheduleCloseDropdown}
-                  style={{ width: triggerWidth || undefined }}
-                  className={`absolute right-0 mt-3 bg-card border border-app rounded-lg shadow-xl transform transition-all duration-200 ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
+                  style={{ width: triggerWidth || undefined, marginTop: 6 }}
+                  className={`absolute right-0 top-full bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-200 z-[2147483000] overflow-hidden ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-1 invisible"}`}
                 >
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-3 text-center hover:bg-elevated rounded-lg text-app text-lg"
-                  >
-                    Logout
+                  <div className="px-4 py-3 text-center">
+                    <div className="text-xs subtle">Signed in as</div>
+                    <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
+                  </div>
+                  <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+                  <button onClick={handleLogout} className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">
+                    <LogOut size={18} />
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>
@@ -308,19 +295,15 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
         </div>
 
         {dashboardDisabled && tip.show && (
-          <div
-            className="fixed z-[70] pointer-events-none"
-            style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}
-          >
+          <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
             <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-3 py-2 shadow-lg">
               <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
-              <span className="text-sm text-app whitespace-nowrap">
-                Not authorized. <span className="text-app">Sign up first.</span>
-              </span>
+              <span className="text-sm text-app whitespace-nowrap">Not authorized. <span className="text-app">Sign up first.</span></span>
             </div>
           </div>
         )}
       </header>
+
       {mobileSheet}
     </>
   );
