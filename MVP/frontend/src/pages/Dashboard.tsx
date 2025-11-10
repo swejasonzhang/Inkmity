@@ -8,11 +8,38 @@ import { useSyncOnAuth } from "@/hooks/useSyncOnAuth";
 const ClientDashboard = lazy(() => import("@/components/dashboard/client/ClientDashboard"));
 const ArtistDashboard = lazy(() => import("@/components/dashboard/artist/ArtistDashboard"));
 
-const Loading = () => (
-  <div className="fixed inset-0 grid place-items-center bg-app text-app">
-    <CircularProgress sx={{ color: "var(--fg)" }} />
-  </div>
-);
+function readInitialTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "dark";
+  const LEGACY = "dashboard-theme";
+  const NS = `${LEGACY}::`;
+  const GUEST = `${NS}guest`;
+  try {
+    const a = window.localStorage.getItem(LEGACY);
+    const b = window.localStorage.getItem(GUEST);
+    const val = (a === "light" || a === "dark") ? a : (b === "light" || b === "dark") ? b : null;
+    return val ?? "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+const Loading: React.FC = () => {
+  const t = readInitialTheme();
+  const bg = t === "light" ? "#ffffff" : "#0b0b0b";
+  const fg = t === "light" ? "#111111" : "#f5f5f5";
+  return (
+    <div
+      className="fixed inset-0 grid place-items-center"
+      style={{
+        background: bg,
+        color: fg,
+        transition: "none",
+      }}
+    >
+      <CircularProgress sx={{ color: fg }} />
+    </div>
+  );
+};
 
 function useDevOverride() {
   const isDev = import.meta.env.MODE !== "production";
@@ -31,6 +58,7 @@ function useDashboardScope(scopeEl: HTMLElement | null) {
       let isLight = false;
       try { isLight = localStorage.getItem(KEY) === "light"; } catch { }
       scopeEl.classList.toggle("ink-light", isLight);
+      scopeEl.setAttribute("data-ink", isLight ? "light" : "dark");
     };
     apply();
     requestAnimationFrame(() => {
