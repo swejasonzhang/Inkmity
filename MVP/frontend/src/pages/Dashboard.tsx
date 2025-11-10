@@ -13,25 +13,29 @@ function readInitialTheme(): "light" | "dark" {
   try {
     const v = window.localStorage.getItem(KEY);
     return v === "light" || v === "dark" ? v : "dark";
-  } catch { return "dark"; }
+  } catch {
+    return "dark";
+  }
 }
 
 const LOAD_MS = 400;
 const FADE_MS = 160;
 
-const Loading: React.FC = () => {
+const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
+  const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
+  const fg = theme === "light" ? "#111111" : "#f5f5f5";
   return (
     <div
       className="fixed inset-0 grid place-items-center"
-      style={{ zIndex: 2147483640, background: "var(--bg)", color: "var(--fg)" }}
+      style={{ zIndex: 2147483640, background: bg, color: fg }}
     >
       <style>{`
         @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
         @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
       `}</style>
       <div className="flex flex-col items-center gap-4">
-        <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "color-mix(in oklab, var(--fg) 10%, transparent)" }}>
-          <div className="h-full origin-left" style={{ background: "var(--fg)", transform: "scaleX(0)", animation: `ink-fill ${LOAD_MS}ms linear forwards` }} />
+        <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
+          <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: `ink-fill ${LOAD_MS}ms linear forwards` }} />
         </div>
         <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite" }}>
           Loading
@@ -68,11 +72,15 @@ function useDashboardScope(scopeEl: HTMLElement | null, initialTheme: "light" | 
       } catch { }
       applyTheme(scopeEl, t);
     };
-    const onStorage = (e: StorageEvent) => { if (!e.key || e.key === KEY) sync(); };
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === KEY) sync();
+    };
     const onBus = (e: Event) => {
       const d = (e as CustomEvent).detail;
       if (d?.key !== KEY) return;
-      try { if (d.value === "light" || d.value === "dark") localStorage.setItem(KEY, d.value); } catch { }
+      try {
+        if (d.value === "light" || d.value === "dark") localStorage.setItem(KEY, d.value);
+      } catch { }
       sync();
     };
     requestAnimationFrame(() => scopeEl.classList.remove("ink-no-anim"));
@@ -117,6 +125,14 @@ const Dashboard: React.FC = () => {
     return () => window.clearTimeout(t1);
   }, [isLoaded, isSignedIn]);
 
+  useLayoutEffect(() => {
+    const prev = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = initialTheme === "light" ? "#ffffff" : "#0b0b0b";
+    return () => {
+      document.body.style.backgroundColor = prev;
+    };
+  }, [initialTheme]);
+
   const roleToUse = useMemo<"client" | "artist">(() => {
     if (override) return override;
     if (role === "artist" || role === "client") return role;
@@ -126,14 +142,17 @@ const Dashboard: React.FC = () => {
   const scopeRef = useRef<HTMLDivElement | null>(null);
   useDashboardScope(scopeRef.current, initialTheme);
 
+  const shellBg = initialTheme === "light" ? "#ffffff" : "#0b0b0b";
+  const shellFg = initialTheme === "light" ? "#111111" : "#f5f5f5";
+
   return (
     <div
       ref={scopeRef}
       id="dashboard-scope"
       className="ink-scope min-h-dvh overflow-y-hidden flex flex-col"
-      style={{ background: "var(--bg)", color: "var(--fg)" }}
+      style={{ background: shellBg, color: shellFg }}
     >
-      {!bootDone && <Loading />}
+      {!bootDone && <Loading theme={initialTheme} />}
       <div
         className="flex-1 min-h-0 w-full"
         style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
