@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { socket } from "@/lib/socket";
+import { getSocket } from "@/lib/socket";
 
 export type Message = {
   senderId: string;
@@ -9,6 +9,8 @@ export type Message = {
   meta?: any;
   delivered?: boolean;
   seen?: boolean;
+  deliveredAt?: number;
+  seenAt?: number;
 };
 
 export type ConversationMeta = {
@@ -252,7 +254,6 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
 
   const toggleCollapse = useCallback((participantId: string) => {
     setCollapsedMap((m) => ({ ...m, [participantId]: !m[participantId] }));
-    setExpandedId((id) => (id === participantId ? null : participantId));
   }, []);
 
   const markAsRead = useCallback(
@@ -261,8 +262,16 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         m[participantId] ? { ...m, [participantId]: 0 } : m
       );
       markReadBackend(participantId);
+      const s = getSocket();
+      s.emit("conversation:ack", {
+        convoId: threadKeyOf(currentUserId, participantId),
+        viewerId: currentUserId,
+        participantId,
+        seen: true,
+        seenAt: Date.now(),
+      });
     },
-    [markReadBackend]
+    [markReadBackend, currentUserId]
   );
 
   const send = useCallback(
@@ -295,7 +304,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
 
   useEffect(() => {
     if (!currentUserId) return;
-    const s = socket;
+    const s = getSocket();
 
     const onConnect = () => {
       s.emit("register", currentUserId);
@@ -350,7 +359,24 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       });
       const isInbound = m.senderId !== currentUserId;
       const isActiveThread = expandedId === pid && messagesOpen;
-      if (isInbound && !isActiveThread) {
+      if (isInbound) {
+        s.emit("conversation:ack", {
+          convoId: p.convoId,
+          viewerId: currentUserId,
+          participantId: pid,
+          delivered: true,
+          deliveredAt: Date.now(),
+        });
+        if (isActiveThread) {
+          s.emit("conversation:ack", {
+            convoId: p.convoId,
+            viewerId: currentUserId,
+            participantId: pid,
+            seen: true,
+            seenAt: Date.now(),
+          });
+        }
+      } else {
         fetchUnread();
       }
     };
@@ -431,6 +457,8 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       participantId: string;
       delivered?: boolean;
       seen?: boolean;
+      deliveredAt?: number;
+      seenAt?: number;
     }) => {
       const pid = p.participantId;
       if (p.viewerId !== currentUserId) return;
@@ -440,8 +468,14 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         for (let i = msgs.length - 1; i >= 0; i--) {
           if (msgs[i].senderId === currentUserId) {
             const next = { ...msgs[i] };
-            if (p.seen) next.seen = true;
-            if (p.delivered) next.delivered = true;
+            if (p.seen) {
+              next.seen = true;
+              next.seenAt = p.seenAt || Date.now();
+            }
+            if (p.delivered) {
+              next.delivered = true;
+              next.deliveredAt = p.deliveredAt || Date.now();
+            }
             msgs[i] = next;
             break;
           }
@@ -499,8 +533,12 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       );
       markAsRead(expandedId);
       fetchUnread();
+      const s = getSocket();
+      s.emit("thread:join", {
+        threadKey: threadKeyOf(currentUserId, expandedId),
+      });
     }
-  }, [messagesOpen, expandedId, markAsRead, fetchUnread]);
+  }, [messagesOpen, expandedId, markAsRead, fetchUnread, currentUserId]);
 
   return {
     loading,
@@ -510,20 +548,6 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     toggleCollapse,
     removeConversation,
     send,
-    destroy: async (participantId: string) => {
-      const res = await authFetch(`${apiBase}/messages/conversations`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ userId: currentUserId, participantId }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      removeConversation(participantId);
-      fetchUnread();
-      fetchIncomingRequests();
-    },
     refresh: fetchAll,
     unreadMap,
     markAsRead,
@@ -534,6 +558,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     unreadState,
     pendingRequestIds,
     pendingRequestsCount: pendingRequestIds.length,
+    setExpandedId,
   };
 }
 
