@@ -35,6 +35,8 @@ export type Message = {
   };
   delivered?: boolean;
   seen?: boolean;
+  deliveredAt?: number;
+  seenAt?: number;
 };
 
 export type Conversation = {
@@ -276,14 +278,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const status: GateStatus | null = isClient ? null : computedStatus;
   const canSend = isClient ? true : status === "accepted" && (override === "accepted" || !!activeConv?.meta?.allowed);
   const needsApproval = isClient ? false : status === "pending" && !canSend;
-
-  const lastOutgoingIndex = useMemo(() => {
-    if (!activeConv?.messages?.length) return -1;
-    for (let i = activeConv.messages.length - 1; i >= 0; i--) {
-      if (activeConv.messages[i].senderId === currentUserId) return i;
-    }
-    return -1;
-  }, [activeConv?.messages, currentUserId]);
 
   if (!currentUserId) {
     return (
@@ -671,8 +665,14 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         .concat(msg.meta?.refs ?? []);
                       const fromText = getUrlsFromText(msg.text);
                       const merged = Array.from(new Set([...fromMetaRef, ...fromText])).slice(0, 3);
-                      const isLastOutgoing = isMe && idx === lastOutgoingIndex;
-                      const readableStatus = isLastOutgoing ? (msg.seen ? "Seen" : msg.delivered ? "Delivered" : null) : null;
+                      const isLastOutgoing = isMe && idx === activeConv.messages.reduce((p, m, i) => (m.senderId === currentUserId ? i : p), -1);
+                      const statusSuffix = isLastOutgoing
+                        ? msg.seen
+                          ? ` · Seen ${fmtTime(msg.seenAt || Date.now())}`
+                          : msg.delivered
+                            ? ` · Delivered ${fmtTime(msg.deliveredAt || Date.now())}`
+                            : ""
+                        : "";
 
                       return (
                         <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
@@ -702,7 +702,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               </div>
                             )}
                             <div className={`mt-1 text-[13px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                              {readableStatus ? `${fmtTime(msg.timestamp)} · ${readableStatus}` : fmtTime(msg.timestamp)}
+                              {fmtTime(msg.timestamp)}{statusSuffix}
                             </div>
                           </div>
                         </div>
