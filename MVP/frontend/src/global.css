@@ -42,7 +42,7 @@
 @property --elevated {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(255, 255, 255, 0.06);
+  initial-value: rgba(244, 244, 244, 0.06);
 }
 
 html,
@@ -61,17 +61,15 @@ body,
   --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Helvetica, Arial;
   --tw-font-sans: var(--font-body);
-
   --bg: #0b0b0b;
-  --fg: #f5f5f5;
+  --fg: #f4f4f4;
   --muted: rgba(245, 245, 245, 0.56);
-  --subtle: rgba(245, 245, 245, 0.72);
+  --subtle: rgba(244, 244, 244, 0.72);
   --card: #111111;
   --overlay: rgba(0, 0, 0, 0.6);
   --border: rgba(245, 245, 245, 0.2);
-  --elevated: rgba(255, 255, 255, 0.06);
+  --elevated: rgba(244, 244, 244, 0.06);
   --accent: #7dd3fc;
-
   --background: 0 0% 4%;
   --foreground: 0 0% 96%;
   --card-h: 0 0% 7%;
@@ -91,59 +89,45 @@ body,
   --border-h: 0 0% 76% / 0.2;
   --input: var(--border-h);
   --ring: var(--primary);
-
   --radius: 12px;
-
   --theme-ms: 900ms;
   --ui-ms: 900ms;
   --veil-ms: 900ms;
-
   --video-blend: normal;
   --video-opacity: 0.35;
-
-  transition: --bg var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1),
-    --fg var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1),
-    --muted var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1),
-    --subtle var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1),
-    --card var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1),
-    --overlay var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1),
-    --border var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1),
-    --elevated var(--theme-ms) cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .ink-scope[data-ink="light"],
 .ink-scope.ink-light {
-  --bg: #ffffff;
-  --fg: #111111;
-  --muted: rgba(17, 17, 17, 0.56);
-  --subtle: rgba(17, 17, 17, 0.72);
-  --card: #ffffff;
-  --overlay: rgba(0, 0, 0, 0.45);
-  --border: rgba(17, 17, 17, 0.16);
-  --elevated: rgba(0, 0, 0, 0.06);
-
-  --background: 0 0% 100%;
-  --foreground: 0 0% 7%;
-  --card-h: 0 0% 98%;
-  --card-foreground: var(--foreground);
-  --popover: var(--card-h);
-  --popover-foreground: var(--foreground);
-  --primary: 197 95% 50%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 96%;
-  --secondary-foreground: 0 0% 7%;
-  --muted2: 0 0% 45%;
-  --muted-foreground: 0 0% 30%;
-  --accent-h: 197 95% 50%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 72% 46%;
-  --destructive-foreground: 0 0% 98%;
-  --border-h: 0 0% 12% / 0.16;
-  --input: var(--border-h);
-  --ring: var(--primary);
-
-  --video-blend: normal;
-  --video-opacity: 0.45;
+  --bg: #ffffff !important;
+  --fg: #111111 !important;
+  --muted: rgba(17, 17, 17, 0.56) !important;
+  --subtle: rgba(17, 17, 17, 0.72) !important;
+  --card: #ffffff !important;
+  --overlay: rgba(0, 0, 0, 0.45) !important;
+  --border: rgba(17, 17, 17, 0.16) !important;
+  --elevated: rgba(0, 0, 0, 0.06) !important;
+  --background: 0 0% 100% !important;
+  --foreground: 0 0% 7% !important;
+  --card-h: 0 0% 98% !important;
+  --card-foreground: var(--foreground) !important;
+  --popover: var(--card-h) !important;
+  --popover-foreground: var(--foreground) !important;
+  --primary: 197 95% 50% !important;
+  --primary-foreground: 0 0% 100% !important;
+  --secondary: 0 0% 96% !important;
+  --secondary-foreground: 0 0% 7% !important;
+  --muted2: 0 0% 45% !important;
+  --muted-foreground: 0 0% 30% !important;
+  --accent-h: 197 95% 50% !important;
+  --accent-foreground: 0 0% 100% !important;
+  --destructive: 0 72% 46% !important;
+  --destructive-foreground: 0 0% 98% !important;
+  --border-h: 0 0% 12% / 0.16 !important;
+  --input: var(--border-h) !important;
+  --ring: var(--primary) !important;
+  --video-blend: normal !important;
+  --video-opacity: 0.45 !important;
 }
 
 .ink-scope.ink-smoothing,
@@ -151,11 +135,6 @@ body,
   transition: color var(--ui-ms) ease, background-color var(--ui-ms) ease,
     border-color var(--ui-ms) ease, fill var(--ui-ms) ease,
     stroke var(--ui-ms) ease, box-shadow var(--ui-ms) ease;
-}
-
-.ink-scope.ink-no-anim,
-.ink-scope.ink-no-anim * {
-  transition: none !important;
 }
 
 .ink-scope.ink-theming {
@@ -214,13 +193,17 @@ html,
 body {
   margin: 0;
   height: 100%;
-  background: var(--bg);
   color: var(--fg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+body:not(.ink-scope-present) {
+  background: var(--bg);
+}
+
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
@@ -441,7 +424,7 @@ h3 {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.06),
+    rgba(244, 244, 244, 0.06),
     transparent
   );
   background-size: 200% 100%;
@@ -516,17 +499,14 @@ h3 {
   border-radius: 12px;
   overflow: hidden;
 }
-
 .ink-conv-scope button[title="Open"] img[alt="reference"] {
   aspect-ratio: 1 / 1 !important;
   object-fit: cover;
 }
-
 .ink-conv-scope footer .flex-1.flex {
   align-items: center;
   border: none !important;
 }
-
 .ink-conv-scope footer .flex-1.flex > button:last-child {
   width: 40px;
   height: 40px;
@@ -544,14 +524,12 @@ h3 {
   --tw-ring-shadow: 0 0 #0000;
   --tw-ring-offset-shadow: 0 0 #0000;
 }
-
 *:focus,
 *:focus-visible {
   outline: none !important;
   outline-color: transparent !important;
   box-shadow: none !important;
 }
-
 :is(
     button,
     [role="button"],
@@ -577,12 +555,10 @@ h3 {
   outline: none !important;
   box-shadow: none !important;
 }
-
 button::-moz-focus-inner,
 input::-moz-focus-inner {
   border: 0;
 }
-
 [data-radix-portal] *:focus,
 [data-radix-portal] *:focus-visible,
 [data-radix-popper-content-wrapper]:focus,
@@ -603,7 +579,6 @@ input::-moz-focus-inner {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
   }
 }
-
 .ink-flash {
   animation: ink-flash 1400ms ease-in-out;
 }
@@ -636,8 +611,8 @@ input::-moz-focus-inner {
   width: 84px;
   height: 84px;
   border-radius: 9999px;
-  border: 3px solid rgba(255, 255, 255, 0.15);
-  border-top-color: #fff;
+  border: 3px solid rgba(244, 244, 244, 0.15);
+  border-top-color: var(--fg);
   animation: ink-spin 1s linear infinite;
 }
 .ink-dots {
@@ -650,7 +625,7 @@ input::-moz-focus-inner {
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: #fff;
+  background: var(--fg);
   animation: ink-bounce 1.2s ease-in-out infinite;
 }
 .ink-dot:nth-child(2) {
@@ -666,7 +641,6 @@ input::-moz-focus-inner {
   color: color-mix(in oklab, var(--bg) 20%, var(--fg));
   transition: color 200ms ease, border-color 200ms ease;
 }
-
 .ink-scope[data-ink="light"] .fullscreen-zoom__count,
 .ink-scope.ink-light .fullscreen-zoom__count {
   color: #111111;
@@ -677,17 +651,14 @@ input::-moz-focus-inner {
   color: var(--fg) !important;
   transition: color 200ms ease;
 }
-
 .portfolio-section-count {
   color: color-mix(in oklab, var(--fg) 65%, transparent) !important;
   transition: color 200ms ease;
 }
-
 .ink-scope[data-ink="light"] .portfolio-section-title,
 .ink-scope.ink-light .portfolio-section-title {
   color: #000 !important;
 }
-
 .ink-scope[data-ink="light"] .portfolio-section-count,
 .ink-scope.ink-light .portfolio-section-count {
   color: color-mix(in oklab, #000 70%, transparent) !important;
