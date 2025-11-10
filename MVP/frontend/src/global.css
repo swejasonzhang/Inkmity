@@ -1,22 +1,3 @@
-.portfolio-section-title {
-  color: var(--fg) !important;
-  transition: color 200ms ease;
-}
-
-.portfolio-section-count {
-  color: color-mix(in oklab, var(--fg) 65%, transparent) !important;
-  transition: color 200ms ease;
-}
-
-.ink-scope[data-ink="light"] .portfolio-section-title,
-.ink-scope.ink-light .portfolio-section-title {
-  color: #000 !important;
-}
-
-.ink-scope[data-ink="light"] .portfolio-section-count,
-.ink-scope.ink-light .portfolio-section-count {
-  color: color-mix(in oklab, #000 70%, transparent) !important;
-}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -690,4 +671,24 @@ input::-moz-focus-inner {
 .ink-scope.ink-light .fullscreen-zoom__count {
   color: #111111;
   border-color: rgba(17, 17, 17, 0.75);
+}
+
+.portfolio-section-title {
+  color: var(--fg) !important;
+  transition: color 200ms ease;
+}
+
+.portfolio-section-count {
+  color: color-mix(in oklab, var(--fg) 65%, transparent) !important;
+  transition: color 200ms ease;
+}
+
+.ink-scope[data-ink="light"] .portfolio-section-title,
+.ink-scope.ink-light .portfolio-section-title {
+  color: #000 !important;
+}
+
+.ink-scope[data-ink="light"] .portfolio-section-count,
+.ink-scope.ink-light .portfolio-section-count {
+  color: color-mix(in oklab, #000 70%, transparent) !important;
 }

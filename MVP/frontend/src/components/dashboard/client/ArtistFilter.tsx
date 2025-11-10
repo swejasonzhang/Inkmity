@@ -100,6 +100,51 @@ const SORT_OPTIONS = [
 ] as const;
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
+const LEGACY_THEME_KEY = "dashboard-theme";
+const THEME_NS = `${LEGACY_THEME_KEY}::`;
+const GUEST_THEME_KEY = `${THEME_NS}guest`;
+
+function readInitialTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "dark";
+  try {
+    const a = localStorage.getItem(LEGACY_THEME_KEY);
+    const b = localStorage.getItem(GUEST_THEME_KEY);
+    if (a === "light" || a === "dark") return a;
+    if (b === "light" || b === "dark") return b;
+  } catch { }
+  return "dark";
+}
+
+function themeVarsSnapshot(t: "light" | "dark"): React.CSSProperties {
+  if (t === "light") {
+    return {
+      "--bg": "#ffffff",
+      "--fg": "#111111",
+      "--card": "#ffffff",
+      "--border": "rgba(17, 17, 17, 0.16)",
+      "--elevated": "rgba(0, 0, 0, 0.06)",
+      "--muted": "rgba(17, 17, 17, 0.56)",
+      "--subtle": "rgba(17, 17, 17, 0.72)",
+      "--background": "0 0% 100%",
+      "--foreground": "0 0% 7%",
+      "--card-h": "0 0% 98%",
+      "--border-h": "0 0% 12% / 0.16",
+    } as React.CSSProperties;
+  }
+  return {
+    "--bg": "#0b0b0b",
+    "--fg": "#f5f5f5",
+    "--card": "#111111",
+    "--border": "rgba(245, 245, 245, 0.2)",
+    "--elevated": "rgba(255, 255, 255, 0.06)",
+    "--muted": "rgba(245, 245, 245, 0.56)",
+    "--subtle": "rgba(245, 245, 245, 0.72)",
+    "--background": "0 0% 4%",
+    "--foreground": "0 0% 96%",
+    "--card-h": "0 0% 7%",
+    "--border-h": "0 0% 76% / 0.2",
+  } as React.CSSProperties;
+}
 
 const getExperienceCategory = (
   value: string | undefined
@@ -152,6 +197,23 @@ const ArtistFilter: React.FC<Props> = ({
   setSearchQuery,
   className,
 }) => {
+  const [noFlash, setNoFlash] = useState(true);
+  const initialTheme = useMemo(readInitialTheme, []);
+  const inlineTheme = noFlash ? { ...themeVarsSnapshot(initialTheme), transition: "none" } : undefined;
+
+  useEffect(() => {
+    const off = () => setNoFlash(false);
+    const id = window.requestAnimationFrame(off);
+    const onBus = (e: Event) => {
+      if ((e as CustomEvent).detail?.key === LEGACY_THEME_KEY) off();
+    };
+    window.addEventListener("ink:theme-change", onBus as EventListener);
+    return () => {
+      window.cancelAnimationFrame(id);
+      window.removeEventListener("ink:theme-change", onBus as EventListener);
+    };
+  }, []);
+
   const uniqueLocations = useMemo(() => {
     const set = new Set<string>();
     for (const a of artists) if (a.location) set.add(a.location);
@@ -323,6 +385,7 @@ const ArtistFilter: React.FC<Props> = ({
       )}
       role="region"
       aria-label="Artist filters"
+      style={inlineTheme}
     >
       <div className="sm:hidden border-t border-app" aria-hidden="true" />
       <div className="w-full mx-auto">
