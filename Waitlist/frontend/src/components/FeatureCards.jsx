@@ -168,7 +168,7 @@ export function MessagingCard({ compact = true }) {
       widthClass="max-w-md md:max-w-6xl"
       heightClass="min-h-[14rem] sm:min-h-[16rem] md:min-h-[26rem]"
     >
-      <div className="w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-md md:max-w-5xl">
+      <div className="w-full mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-md md:max-w-5xl">
         {threads.map((t, ti) => (
           <div
             key={t.header}
