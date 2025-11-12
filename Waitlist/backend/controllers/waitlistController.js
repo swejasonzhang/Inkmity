@@ -26,7 +26,7 @@ export const joinWaitlist = async (req, res) => {
     if (rawName.length > 120)
       return res.status(400).json({ error: "Name is too long" });
 
-    const firstName = rawName.split(" ")[0];
+    const first = rawName.split(" ")[0];
 
     const existing = await Waitlist.findOne({ email: emailNorm });
     if (existing) {
@@ -53,21 +53,62 @@ export const joinWaitlist = async (req, res) => {
     try {
       await sendWelcomeEmail({
         to: emailNorm,
-        subject: `${firstName}, you’re on the Inkmity waitlist`,
-        text: `Hi ${firstName},
+        subject: `${first}, welcome to Inkmity`,
+        text: `Hi ${first},
 
-Welcome to Inkmity — you’re #${position} in line.
+You're on the list.
 
-We’ll email you at launch. Share your link:
-${shareUrl}
+We’re building a reliable, high-quality way to discover artists, keep every message and reference in one place, and book with clarity on price and availability.
 
-With inked love,
-Inkmity`,
-        html: `<h2>Hi ${firstName},</h2>
-<p>Welcome to <strong>Inkmity</strong> — you’re <strong>#${position}</strong> in line.</p>
-<p>We’ll email you at launch. Share your link:</p>
-<p><a href="${shareUrl}" target="_blank" rel="noopener noreferrer">${shareUrl}</a></p>
-<p style="margin-top:20px;">With inked love,<br><strong>Inkmity</strong></p>`,
+We’ll email you when early access opens.
+
+— Inkmity`,
+        html: `<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Welcome to Inkmity</title>
+  </head>
+  <body style="margin:0;padding:0;background:#ffffff;text-align:center;">
+    <div style="width:100%;background:#ffffff;margin:0;padding:0;text-align:center;">
+
+      <!-- Card container -->
+      <div style="padding:32px 16px;display:flex;justify-content:center;align-items:center;text-align:center;">
+        <div style="max-width:560px;width:100%;margin:0 auto;background:linear-gradient(180deg,#f3f4f6,#e5e7eb);border:1px solid #d1d5db;border-radius:16px;overflow:hidden;text-align:center;">
+
+          <div style="padding:40px 28px 16px;text-align:center;">
+            <h2 style="margin:0 0 12px;font-size:24px;line-height:1.35;color:#111827;text-align:center;">Hi ${first}, you’re in.</h2>
+          </div>
+
+          <div style="padding:0 28px;text-align:center;">
+            <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#111827;text-align:center;">
+              We’re building a reliable, high-quality experience to <strong>discover artists</strong>, keep every <strong>message and reference</strong> in one place, and <strong>book with zero guesswork</strong> on price or availability.
+            </p>
+          </div>
+
+          <div style="padding:0 28px;text-align:center;">
+            <p style="margin:0 8px 8px;font-size:13px;line-height:1.6;color:#111827;text-align:center;">• Thoughtful discovery for style and budget</p>
+            <p style="margin:0 8px 8px;font-size:13px;line-height:1.6;color:#111827;text-align:center;">• One thread for messages and references</p>
+            <p style="margin:0 8px 8px;font-size:13px;line-height:1.6;color:#111827;text-align:center;">• Clear pricing, availability, and booking</p>
+          </div>
+
+          <div style="padding:0 28px 8px;text-align:center;">
+            <p style="margin:0;font-size:14px;line-height:1.6;color:#111827;text-align:center;">We’ll email you when early access opens. No spam.</p>
+          </div>
+
+          <div style="height:40px;line-height:40px;font-size:0;text-align:center;">&nbsp;</div>
+
+          <div style="padding:16px 28px 36px;border-top:1px solid #d1d5db;text-align:center;">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#374151;text-align:center;">© ${new Date().getFullYear()} Inkmity. All rights reserved.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`,
       });
     } catch {}
 
