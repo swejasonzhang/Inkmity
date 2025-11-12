@@ -3,12 +3,19 @@
 @tailwind utilities;
 
 html,
-body {
+body,
+#root {
   height: 100%;
-  overflow-y: auto;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}
+
+html,
+body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   display: none;
@@ -57,13 +64,17 @@ body::-webkit-scrollbar {
 
   body {
     color: #fff !important;
+    overflow-x: hidden;
   }
+
   * {
     color: inherit !important;
   }
+
   a {
     color: #fff !important;
   }
+
   ::placeholder {
     color: rgba(255, 255, 255, 0.7) !important;
   }
