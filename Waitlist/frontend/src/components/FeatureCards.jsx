@@ -160,6 +160,63 @@ export function MessagingCard({ compact = true }) {
     },
   ];
 
+  const ThreadCard = (t, ti) => (
+    <div
+      key={t.header}
+      className="rounded-2xl border border-white/15 bg-white/[0.04] p-3 md:p-4"
+    >
+      <div className="mb-2 text-xs md:text-sm font-semibold text-white/90">
+        {t.header}
+      </div>
+      <div className="space-y-2 md:space-y-3">
+        {t.msgs.map((m, i) => {
+          const isLast = i === t.msgs.length - 1;
+          return (
+            <motion.div
+              key={`${t.header}-${i}`}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.6 }}
+              transition={{ duration: 0.22, delay: i * 0.05 + ti * 0.02 }}
+              className={`flex ${m.me ? "justify-end" : "justify-start"}`}
+            >
+              <div className="max-w-[85%]">
+                <div
+                  className={`rounded-2xl px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] md:text-sm leading-snug border ${
+                    m.me
+                      ? "bg-white !text-black border-white rounded-br-sm"
+                      : "bg-black !text-white border-white/20 rounded-bl-sm"
+                  }`}
+                >
+                  <div
+                    className={`mb-0.5 text-[9px] md:text-[10px] uppercase tracking-wide ${
+                      m.me ? "!text-black/70" : "!text-white/70"
+                    }`}
+                  >
+                    {m.name}
+                  </div>
+                  <div>{m.text}</div>
+                </div>
+                <div
+                  className={`mt-1 text-[10px] md:text-[11px] ${
+                    m.me
+                      ? "text-white/60 text-right pr-1"
+                      : "text-white/60 text-left pl-1"
+                  }`}
+                >
+                  <time className="normal-case">
+                    {m.time}
+                    {isLast ? ` • ${t.status} • ${t.date}` : ""}
+                  </time>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <Shell
       icon={MessageSquare}
@@ -168,64 +225,25 @@ export function MessagingCard({ compact = true }) {
       widthClass="max-w-md md:max-w-6xl"
       heightClass="min-h-[14rem] sm:min-h-[16rem] md:min-h-[26rem]"
     >
-      <div className="w-full mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-md md:max-w-5xl">
-        {threads.map((t, ti) => (
-          <div
-            key={t.header}
-            className="rounded-2xl border border-white/15 bg-white/[0.04] p-3 md:p-4"
-          >
-            <div className="mb-2 text-xs md:text-sm font-semibold text-white/90">
-              {t.header}
+      {/* Mobile: scroll-snap carousel */}
+      <div className="w-full mx-auto md:hidden">
+        <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 px-1">
+          {threads.map((t, ti) => (
+            <div
+              key={`mobile-${t.header}`}
+              className="snap-center shrink-0 w-[85%]"
+            >
+              {ThreadCard(t, ti)}
             </div>
-            <div className="space-y-2 md:space-y-3">
-              {t.msgs.map((m, i) => {
-                const isLast = i === t.msgs.length - 1;
-                return (
-                  <motion.div
-                    key={`${t.header}-${i}`}
-                    initial={{ opacity: 0, y: 8 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.6 }}
-                    transition={{ duration: 0.22, delay: i * 0.05 + ti * 0.02 }}
-                    className={`flex ${m.me ? "justify-end" : "justify-start"}`}
-                  >
-                    <div className="max-w-[85%]">
-                      <div
-                        className={`rounded-2xl px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] md:text-sm leading-snug border ${
-                          m.me
-                            ? "bg-white !text-black border-white rounded-br-sm"
-                            : "bg-black !text-white border-white/20 rounded-bl-sm"
-                        }`}
-                      >
-                        <div
-                          className={`mb-0.5 text-[9px] md:text-[10px] uppercase tracking-wide ${
-                            m.me ? "!text-black/70" : "!text-white/70"
-                          }`}
-                        >
-                          {m.name}
-                        </div>
-                        <div>{m.text}</div>
-                      </div>
-                      <div
-                        className={`mt-1 text-[10px] md:text-[11px] ${
-                          m.me
-                            ? "text-white/60 text-right pr-1"
-                            : "text-white/60 text-left pl-1"
-                        }`}
-                      >
-                        <time className="normal-case">
-                          {m.time}
-                          {isLast ? ` • ${t.status} • ${t.date}` : ""}
-                        </time>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      {/* Desktop: unchanged 3-column grid */}
+      <div className="w-full mx-auto hidden md:grid grid-cols-3 gap-6 max-w-md md:max-w-5xl">
+        {threads.map((t, ti) => ThreadCard(t, ti))}
+      </div>
+
       <div className="mt-4 md:mt-6 flex gap-2 justify-center">
         <Badge
           variant="outline"
@@ -554,19 +572,22 @@ export function FlashDealsCard({ compact = true }) {
                   {toTitle(d.title)} — {d.artist}
                 </h3>
               </div>
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px] md:text-xs">
-                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+
+              {/* One-line tags without horizontal scroll */}
+              <div className="flex w-full items-center gap-1 flex-nowrap text-[10px] md:text-xs">
+                <span className="flex-1 min-w-0 truncate rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
                   <span className="text-white/60">Style:</span>{" "}
                   <span className="text-white/90">{d.style}</span>
                 </span>
-                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                <span className="flex-1 min-w-0 truncate rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
                   <span className="text-white/60">City:</span>{" "}
                   <span className="text-white/90">{d.city}</span>
                 </span>
-                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
-                  Cost: ${d.price}
+                <span className="flex-[0_0_auto] rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                  ${d.price}
                 </span>
               </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-xs md:text-sm text-white/70 whitespace-nowrap">
                   Ends in {fmtCountdown(remaining)}
@@ -667,7 +688,7 @@ export function LoyaltyCard({ compact = true }) {
 
           <div className="mt-4 md:mt-5">
             <div className="text-sm mb-2">Your perks</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 justify-center md:justify-center">
               {perksByTier[current.name].map((p) => (
                 <span
                   key={p}
