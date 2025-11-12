@@ -49,26 +49,15 @@ export default function LaunchHero() {
         </motion.h1>
 
         <motion.p
-          custom={1}
-          variants={fade}
-          initial="hidden"
-          animate="show"
-          className="mt-1.5 md:mt-4 text-[0.85rem] md:text-base text-white/80 tracking-tight"
-        >
-          Inkmity is in active development. Launch timing will be announced. We
-          are focused on building a reliable, high-quality experience and will
-          share updates as we progress.
-        </motion.p>
-
-        <motion.p
           custom={3}
           variants={fade}
           initial="hidden"
           animate="show"
           className="mx-auto mt-2.5 md:mt-8 max-w-3xl text-pretty text-[0.95rem] sm:text-xl md:text-2xl font-semibold text-white/95"
         >
-          One hub to discover artists, keep every message and reference in one
-          place, and book with zero guesswork on price or availability.
+          Inkmity is in active development—one hub to discover artists, keep
+          every message and reference in one place, and book with clear price
+          and availability; launch timing will be announced as we progress.
         </motion.p>
 
         <motion.div
