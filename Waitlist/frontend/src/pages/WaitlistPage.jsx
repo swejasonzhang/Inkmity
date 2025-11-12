@@ -16,6 +16,8 @@ const fade = {
   }),
 };
 
+const vp = { once: true, amount: 0.01, margin: "0px 0px" };
+
 function ConfettiBurst({ fire }) {
   const prefersReduced = useReducedMotion();
   const pieces = useMemo(() => {
@@ -68,10 +70,8 @@ function ConfettiBurst({ fire }) {
 }
 
 export default function WaitlistPage() {
-  const vp = { once: true, amount: 0.18, margin: "-10% 0px" };
   const [confettiKey, setConfettiKey] = useState(0);
   const [fire, setFire] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
 
   const container = "container mx-auto w-full max-w-4xl px-4";
 
@@ -82,22 +82,13 @@ export default function WaitlistPage() {
   }
 
   useEffect(() => {
-    const activate = () => setHasScrolled(true);
-    const onScroll = () => {
-      if (window.scrollY > 0) activate();
-    };
-    const onKeydown = (e) => {
-      if (["Space", "ArrowDown", "PageDown"].includes(e.code)) activate();
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("wheel", activate, { passive: true });
-    window.addEventListener("touchstart", activate, { passive: true });
-    window.addEventListener("keydown", onKeydown);
+    const html = document.documentElement;
+    const body = document.body;
+    html.classList.add("overscroll-none");
+    body.classList.add("overscroll-none", "overflow-x-hidden");
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("wheel", activate);
-      window.removeEventListener("touchstart", activate);
-      window.removeEventListener("keydown", onKeydown);
+      html.classList.remove("overscroll-none");
+      body.classList.remove("overscroll-none", "overflow-x-hidden");
     };
   }, []);
 
@@ -106,13 +97,13 @@ export default function WaitlistPage() {
       <BackgroundVideo />
       <ConfettiBurst fire={fire} key={confettiKey} />
       <div className="relative z-10 w-full">
-        <main className="w-full flex flex-col items-center pt-0 pb-5 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <main className="w-full flex flex-col items-center pt-0 pb-5 overflow-visible">
           <motion.section
             variants={fade}
             initial="hidden"
             whileInView="show"
             viewport={vp}
-            className="w-full flex items-center transform-gpu"
+            className="w-full flex items-center transform-gpu min-h-screen"
             style={{ willChange: "opacity, transform" }}
           >
             <div className={container}>
@@ -120,31 +111,29 @@ export default function WaitlistPage() {
             </div>
           </motion.section>
 
-          {hasScrolled && (
-            <>
-              <motion.section
-                custom={1}
-                variants={fade}
-                initial="hidden"
-                animate="show"
-                className={`${container} transform-gpu`}
-                style={{ willChange: "opacity, transform" }}
-              >
-                <FeatureShowcase />
-              </motion.section>
+          <motion.section
+            custom={1}
+            variants={fade}
+            initial="hidden"
+            whileInView="show"
+            viewport={vp}
+            className={`${container} transform-gpu`}
+            style={{ willChange: "opacity, transform" }}
+          >
+            <FeatureShowcase />
+          </motion.section>
 
-              <motion.section
-                custom={2}
-                variants={fade}
-                initial="hidden"
-                animate="show"
-                className={`${container} transform-gpu`}
-                style={{ willChange: "opacity, transform" }}
-              >
-                <WaitlistForm onSuccess={triggerConfetti} />
-              </motion.section>
-            </>
-          )}
+          <motion.section
+            custom={2}
+            variants={fade}
+            initial="hidden"
+            whileInView="show"
+            viewport={vp}
+            className={`${container} transform-gpu`}
+            style={{ willChange: "opacity, transform" }}
+          >
+            <WaitlistForm onSuccess={triggerConfetti} />
+          </motion.section>
         </main>
       </div>
     </div>
