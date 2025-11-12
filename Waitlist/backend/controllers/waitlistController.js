@@ -1,3 +1,4 @@
+// controllers/waitlist.js
 import Waitlist from "../models/Waitlist.js";
 import { sendWelcomeEmail } from "../config/email.js";
 
@@ -26,7 +27,8 @@ export const joinWaitlist = async (req, res) => {
     if (rawName.length > 120)
       return res.status(400).json({ error: "Name is too long" });
 
-    const first = rawName.split(" ")[0];
+    const firstName = rawName.split(" ")[0];
+    const first = firstName;
 
     const existing = await Waitlist.findOne({ email: emailNorm });
     if (existing) {
@@ -67,46 +69,63 @@ We’ll email you when early access opens.
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="color-scheme" content="light" />
-    <meta name="supported-color-schemes" content="light" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="supported-color-schemes" content="dark light" />
     <title>Welcome to Inkmity</title>
   </head>
-  <body style="margin:0;padding:0;background:#ffffff;text-align:center;">
-    <div style="width:100%;background:#ffffff;margin:0;padding:0;text-align:center;">
-
-      <!-- Card container -->
-      <div style="padding:32px 16px;display:flex;justify-content:center;align-items:center;text-align:center;">
-        <div style="max-width:560px;width:100%;margin:0 auto;background:linear-gradient(180deg,#f3f4f6,#e5e7eb);border:1px solid #d1d5db;border-radius:16px;overflow:hidden;text-align:center;">
-
-          <div style="padding:40px 28px 16px;text-align:center;">
-            <h2 style="margin:0 0 12px;font-size:24px;line-height:1.35;color:#111827;text-align:center;">Hi ${first}, you’re in.</h2>
-          </div>
-
-          <div style="padding:0 28px;text-align:center;">
-            <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#111827;text-align:center;">
-              We’re building a reliable, high-quality experience to <strong>discover artists</strong>, keep every <strong>message and reference</strong> in one place, and <strong>book with zero guesswork</strong> on price or availability.
-            </p>
-          </div>
-
-          <div style="padding:0 28px;text-align:center;">
-            <p style="margin:0 8px 8px;font-size:13px;line-height:1.6;color:#111827;text-align:center;">• Thoughtful discovery for style and budget</p>
-            <p style="margin:0 8px 8px;font-size:13px;line-height:1.6;color:#111827;text-align:center;">• One thread for messages and references</p>
-            <p style="margin:0 8px 8px;font-size:13px;line-height:1.6;color:#111827;text-align:center;">• Clear pricing, availability, and booking</p>
-          </div>
-
-          <div style="padding:0 28px 8px;text-align:center;">
-            <p style="margin:0;font-size:14px;line-height:1.6;color:#111827;text-align:center;">We’ll email you when early access opens. No spam.</p>
-          </div>
-
-          <div style="height:40px;line-height:40px;font-size:0;text-align:center;">&nbsp;</div>
-
-          <div style="padding:16px 28px 36px;border-top:1px solid #d1d5db;text-align:center;">
-            <p style="margin:0;font-size:12px;line-height:1.6;color:#374151;text-align:center;">© ${new Date().getFullYear()} Inkmity. All rights reserved.</p>
-          </div>
-
-        </div>
-      </div>
-    </div>
+  <body style="margin:0;padding:0;background:#0b0b0b;color:#e5e5e5;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Apple Color Emoji','Segoe UI Emoji';">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b0b0b;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 24px 8px;text-align:center;background:
+                radial-gradient(120px 80px at 20% 0%, rgba(255,255,255,0.08), transparent),
+                radial-gradient(120px 80px at 80% 100%, rgba(255,255,255,0.06), transparent);">
+                <img src="https://inkmity.com/logo.png" alt="Inkmity" width="200" height="200 style="display:inline-block;border:0;outline:none;text-decoration:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.35));" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 28px 0;">
+                <h2 style="margin:0 0 6px;font-size:24px;line-height:1.25;color:#fff;">Hi ${first}, you’re in.</h2>
+                <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#d4d4d4;">
+                  We’re building a reliable, high-quality experience to <strong style="color:#fff;">discover artists</strong>, keep every <strong style="color:#fff;">message and reference</strong> in one place, and <strong style="color:#fff;">book with zero guesswork</strong> on price or availability.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 10px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 8px;">
+                  <tr>
+                    <td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;">• Thoughtful discovery for style and budget</td>
+                  </tr>
+                  <tr>
+                    <td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;">• One thread for messages and references</td>
+                  </tr>
+                  <tr>
+                    <td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;">• Clear pricing, availability, and booking</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 28px 24px;">
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#d4d4d4;">
+                  We’ll email you when early access opens. No spam.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:14px 28px 28px;border-top:1px solid rgba(255,255,255,0.06);">
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">
+                  © ${new Date().getFullYear()} Inkmity. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`,
       });
