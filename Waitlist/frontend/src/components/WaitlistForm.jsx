@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   PenTool,
   Mail,
@@ -9,15 +9,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -111,8 +104,8 @@ export default function WaitlistForm({ onSuccess }) {
         const data = await res.json();
         if (res.ok && typeof data.totalSignups === "number")
           setTotalSignups(data.totalSignups);
-      } catch (e) {
-        if (import.meta.env && import.meta.env.DEV) console.error(e);
+      } catch {
+        return null;
       }
     })();
   }, []);
@@ -142,12 +135,14 @@ export default function WaitlistForm({ onSuccess }) {
 
   useEffect(() => {
     if (!success) return;
-    const t = setTimeout(() => setSuccess(false), 600);
+    const t = setTimeout(() => setSuccess(false), 1500);
     return () => clearTimeout(t);
   }, [success]);
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (loading) return;
+
     setErrorMsg("");
     const fn = firstName.trim();
     const ln = lastName.trim();
@@ -157,11 +152,11 @@ export default function WaitlistForm({ onSuccess }) {
     if (!em) return setErrorMsg("Enter your email.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))
       return setErrorMsg("Use a valid email.");
-    setSuccess(true);
-    if (onSuccess) onSuccess();
+
     setLoading(true);
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), 5000);
+
     try {
       const res = await fetch(`${API_URL}/api/waitlist`, {
         method: "POST",
@@ -170,20 +165,22 @@ export default function WaitlistForm({ onSuccess }) {
         signal: ac.signal,
       });
       clearTimeout(to);
+
       if (res.status === 204 || res.ok) {
         setFirstName("");
         setLastName("");
         setEmail("");
         setTotalSignups((v) => (typeof v === "number" ? v + 1 : 1));
+        setSuccess(true);
+        if (onSuccess) onSuccess();
       } else {
         const data = await res.json().catch(() => ({}));
         setSuccess(false);
         setErrorMsg(data.error || "Something went wrong.");
       }
-    } catch (e) {
+    } catch {
       setSuccess(false);
       setErrorMsg("Network error. Try again.");
-      if (import.meta.env && import.meta.env.DEV) console.error(e);
     } finally {
       setLoading(false);
     }
@@ -221,7 +218,11 @@ export default function WaitlistForm({ onSuccess }) {
             <SuccessNote show={success} />
             <ErrorBanner message={errorMsg} />
             <p className="mb-3 text-sm md:text-base text-white/90 text-center">
-              Sign up for updates. We will email you at launch.
+              Sign up for updates. Press{" "}
+              <kbd className="px-1 py-0.5 rounded bg-white/10 border border-white/20">
+                Enter
+              </kbd>{" "}
+              to submit.
             </p>
             <form onSubmit={handleSubmit} noValidate className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -234,6 +235,7 @@ export default function WaitlistForm({ onSuccess }) {
                     className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
                     autoComplete="off"
                     spellCheck={false}
+                    required
                   />
                 </div>
                 <div className="group relative">
@@ -245,6 +247,7 @@ export default function WaitlistForm({ onSuccess }) {
                     className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
                     autoComplete="off"
                     spellCheck={false}
+                    required
                   />
                 </div>
               </div>
@@ -258,24 +261,10 @@ export default function WaitlistForm({ onSuccess }) {
                   className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
                   autoComplete="off"
                   spellCheck={false}
+                  required
                 />
               </div>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="group relative h-12 w-full rounded-2xl !bg-black !text-white !ring-1 !ring-white/40 hover:!ring-white transition-[transform,box-shadow] duration-100 active:translate-y-0"
-              >
-                {loading ? (
-                  "Saving…"
-                ) : (
-                  <span className="relative z-10 inline-flex items-center justify-center gap-2">
-                    {"CLAIM YOUR SPOT "}
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-[10px] text-white">
-                      →
-                    </span>
-                  </span>
-                )}
-              </Button>
+              <input type="submit" hidden aria-hidden="true" />
             </form>
             <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-white/70">
               <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
