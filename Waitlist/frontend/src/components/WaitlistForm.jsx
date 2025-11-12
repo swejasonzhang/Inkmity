@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import {
   PenTool,
   Mail,
-  User,
   Users,
   AlertTriangle,
   CheckCircle,
+  IdCard,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -21,11 +21,11 @@ function ErrorBanner({ message }) {
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className="mb-3 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-100"
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-red-100"
       role="alert"
     >
       <AlertTriangle className="h-4 w-4" />
-      <span className="text-sm">{message}</span>
+      <span className="text-sm text-center">{message}</span>
     </motion.div>
   );
 }
@@ -37,11 +37,11 @@ function SuccessNote({ show }) {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.16 }}
-      className="mb-3 flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-emerald-100"
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-2.5 text-emerald-100"
       role="status"
     >
       <CheckCircle className="h-4 w-4" />
-      <span className="text-sm">
+      <span className="text-sm text-center">
         You’re on the waitlist. We’ll email you at launch.
       </span>
     </motion.div>
@@ -102,8 +102,9 @@ export default function WaitlistForm({ onSuccess }) {
           cache: "no-store",
         });
         const data = await res.json();
-        if (res.ok && typeof data.totalSignups === "number")
+        if (res.ok && typeof data.totalSignups === "number") {
           setTotalSignups(data.totalSignups);
+        }
       } catch {
         return null;
       }
@@ -218,16 +219,12 @@ export default function WaitlistForm({ onSuccess }) {
             <SuccessNote show={success} />
             <ErrorBanner message={errorMsg} />
             <p className="mb-3 text-sm md:text-base text-white/90 text-center">
-              Sign up for updates. Press{" "}
-              <kbd className="px-1 py-0.5 rounded bg-white/10 border border-white/20">
-                Enter
-              </kbd>{" "}
-              to submit.
+              Sign up for launch updates.
             </p>
             <form onSubmit={handleSubmit} noValidate className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="group relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 !text-black/60 pointer-events-none" />
+                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 !text-black/60 pointer-events-none" />
                   <Input
                     placeholder="First name"
                     value={firstName}
@@ -239,7 +236,7 @@ export default function WaitlistForm({ onSuccess }) {
                   />
                 </div>
                 <div className="group relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 !text-black/60 pointer-events-none" />
+                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 !text-black/60 pointer-events-none" />
                   <Input
                     placeholder="Last name"
                     value={lastName}
@@ -264,7 +261,49 @@ export default function WaitlistForm({ onSuccess }) {
                   required
                 />
               </div>
-              <input type="submit" hidden aria-hidden="true" />
+              <div className="pt-1.5">
+                <motion.button
+                  type="submit"
+                  disabled={loading}
+                  aria-busy={loading}
+                  initial={false}
+                  whileHover={
+                    prefersReduced
+                      ? {}
+                      : {
+                          y: -2,
+                          backgroundPosition: "100% 0%",
+                          boxShadow:
+                            "0px 10px 30px rgba(255,255,255,0.06), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                          letterSpacing: "0.3px",
+                        }
+                  }
+                  whileTap={prefersReduced ? {} : { y: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                  className="group relative w-full h-14 rounded-2xl text-white font-semibold tracking-tight text-xl md:text-2xl outline-none ring-0 border border-white/15 shadow-[0_6px_24px_rgba(0,0,0,0.35)] focus-visible:ring-2 focus-visible:ring-white/30 disabled:opacity-70 overflow-hidden"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(120deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.14) 100%), radial-gradient(160px 100px at 20% 0%, rgba(255,255,255,0.10), transparent), radial-gradient(160px 100px at 80% 100%, rgba(255,255,255,0.08), transparent)",
+                    backgroundBlendMode: "screen, normal, normal",
+                    backgroundSize: "200% 200%, auto, auto",
+                    backgroundPosition: "0% 0%, center, center",
+                    WebkitBackdropFilter: "saturate(120%)",
+                    backdropFilter: "saturate(120%)",
+                  }}
+                >
+                  <span className="relative z-10 transition-[letter-spacing] duration-300 ease-out">
+                    Join the Inklist
+                  </span>
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background:
+                        "radial-gradient(200px 120px at 30% 0%, rgba(255,255,255,0.07), transparent 60%), radial-gradient(200px 120px at 70% 100%, rgba(255,255,255,0.06), transparent 60%)",
+                    }}
+                  />
+                </motion.button>
+              </div>
             </form>
             <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-white/70">
               <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
