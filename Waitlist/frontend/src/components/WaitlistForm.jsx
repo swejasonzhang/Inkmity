@@ -134,16 +134,9 @@ export default function WaitlistForm({ onSuccess }) {
     };
   }, [prefersReduced]);
 
-  useEffect(() => {
-    if (!success) return;
-    const t = setTimeout(() => setSuccess(false), 1500);
-    return () => clearTimeout(t);
-  }, [success]);
-
   async function handleSubmit(e) {
     e.preventDefault();
     if (loading) return;
-
     setErrorMsg("");
     const fn = firstName.trim();
     const ln = lastName.trim();
@@ -153,11 +146,9 @@ export default function WaitlistForm({ onSuccess }) {
     if (!em) return setErrorMsg("Enter your email.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))
       return setErrorMsg("Use a valid email.");
-
     setLoading(true);
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), 5000);
-
     try {
       const res = await fetch(`${API_URL}/api/waitlist`, {
         method: "POST",
@@ -166,7 +157,6 @@ export default function WaitlistForm({ onSuccess }) {
         signal: ac.signal,
       });
       clearTimeout(to);
-
       if (res.status === 204 || res.ok) {
         setFirstName("");
         setLastName("");
