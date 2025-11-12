@@ -5,9 +5,9 @@
 html,
 body {
   height: 100%;
-  overflow-y: auto; 
-  -ms-overflow-style: none; 
-  scrollbar-width: none; 
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
@@ -21,6 +21,10 @@ body::-webkit-scrollbar {
     background: transparent !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    font-size: clamp(17px, 1.1vw + 14px, 19px);
   }
 
   :root {
