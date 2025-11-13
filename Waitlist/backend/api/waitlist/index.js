@@ -1,5 +1,6 @@
+import "dotenv/config";
 import mongoose from "mongoose";
-import Waitlist from "../../models/Waitlist.js";
+import { getTotalSignups, joinWaitlist } from "../../waitlistController.js";
 
 const CONN = { ready: false };
 
@@ -58,48 +59,12 @@ export default async function handler(req, res) {
     await connectDB();
 
     if (req.method === "GET") {
-      const totalSignups = await Waitlist.countDocuments();
-      return res.status(200).json({ totalSignups });
+      return getTotalSignups(req, res);
     }
 
     if (req.method === "POST") {
-      const body = getBody(req);
-      const rawName = String(body.name || "")
-        .trim()
-        .replace(/\s+/g, " ");
-      const email = String(body.email || "")
-        .trim()
-        .toLowerCase();
-
-      if (!rawName || !email)
-        return res.status(400).json({ error: "Name and email are required" });
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-        return res.status(400).json({ error: "Use a valid email" });
-      if (rawName.length > 120)
-        return res.status(400).json({ error: "Name is too long" });
-
-      const existing = await Waitlist.findOne({ email });
-      if (existing) {
-        const totalSignups = await Waitlist.countDocuments();
-        return res.status(200).json({
-          message: "Already on waitlist",
-          data: {
-            id: existing._id,
-            name: existing.name,
-            email: existing.email,
-          },
-          meta: { totalSignups },
-        });
-      }
-
-      const entry = await Waitlist.create({ name: rawName, email });
-      const totalSignups = await Waitlist.countDocuments();
-
-      return res.status(201).json({
-        message: "Added to waitlist",
-        data: { id: entry._id, name: entry.name, email: entry.email },
-        meta: { totalSignups },
-      });
+      req.body = getBody(req);
+      return joinWaitlist(req, res);
     }
 
     res.setHeader("Allow", ["GET", "POST"]);
@@ -108,6 +73,11 @@ export default async function handler(req, res) {
     try {
       setCors(req, res);
     } catch {}
+    console.error("waitlist handler error:", {
+      message: err?.message,
+      stack: err?.stack,
+      raw: err,
+    });
     return res.status(500).json({ error: err?.message || "Server error" });
   }
 }

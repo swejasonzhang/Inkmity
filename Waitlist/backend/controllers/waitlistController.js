@@ -1,13 +1,19 @@
-// controllers/waitlist.js
-import Waitlist from "../models/Waitlist.js";
-import { sendWelcomeEmail } from "../config/email.js";
+import Waitlist from "./models/Waitlist.js";
+import { sendWelcomeEmail } from "./config/email.js";
 
-export const getTotalSignups = async (req, res, next) => {
+export const getTotalSignups = async (req, res) => {
   try {
     const totalSignups = await Waitlist.countDocuments();
-    res.status(200).json({ totalSignups });
+    return res.status(200).json({ totalSignups });
   } catch (err) {
-    next(err);
+    console.error("getTotalSignups error:", {
+      message: err?.message,
+      stack: err?.stack,
+      raw: err,
+    });
+    return res
+      .status(500)
+      .json({ error: "Server error, please try again later" });
   }
 };
 
@@ -20,12 +26,25 @@ export const joinWaitlist = async (req, res) => {
       .trim()
       .toLowerCase();
 
-    if (!rawName || !emailNorm)
+    if (!rawName || !emailNorm) {
+      console.log("joinWaitlist validation failed: missing name/email", {
+        rawName,
+        emailNorm,
+      });
       return res.status(400).json({ error: "Name and email are required" });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm))
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm)) {
+      console.log("joinWaitlist validation failed: invalid email", {
+        emailNorm,
+      });
       return res.status(400).json({ error: "Use a valid email" });
-    if (rawName.length > 120)
+    }
+    if (rawName.length > 120) {
+      console.log("joinWaitlist validation failed: name too long", {
+        rawNameLength: rawName.length,
+      });
       return res.status(400).json({ error: "Name is too long" });
+    }
 
     const firstName = rawName.split(" ")[0];
     const first = firstName;
@@ -35,12 +54,23 @@ export const joinWaitlist = async (req, res) => {
       if (existing.name !== rawName) {
         existing.name = rawName;
         await existing.save();
+        console.log("joinWaitlist: updated existing name", {
+          id: existing._id.toString(),
+          email: existing.email,
+          name: existing.name,
+        });
+      } else {
+        console.log("joinWaitlist: existing waitlist entry", {
+          id: existing._id.toString(),
+          email: existing.email,
+          name: existing.name,
+        });
       }
       const totalSignups = await Waitlist.countDocuments();
       return res.status(200).json({
         message: "Already on waitlist",
         data: { id: existing._id, name: existing.name, email: existing.email },
-        meta: { totalSignups },
+        meta: { totalSignups, emailSent: false },
       });
     }
 
@@ -48,15 +78,20 @@ export const joinWaitlist = async (req, res) => {
     const entry = await Waitlist.create({ name: rawName, email: emailNorm });
     const position = preCount + 1;
     const totalSignups = position;
-
     const refCode = entry._id.toString().slice(-8);
     const shareUrl = `https://inkmity.com/?r=${refCode}`;
 
-    try {
-      await sendWelcomeEmail({
-        to: emailNorm,
-        subject: `${first}, welcome to Inkmity`,
-        text: `Hi ${first},
+    console.log("joinWaitlist: created new entry", {
+      id: entry._id.toString(),
+      email: entry.email,
+      name: entry.name,
+      position,
+    });
+
+    const emailResult = await sendWelcomeEmail({
+      to: emailNorm,
+      subject: `${first}, welcome to Inkmity`,
+      text: `Hi ${first},
 
 You're on the list.
 
@@ -65,7 +100,7 @@ We’re building a reliable, high-quality way to discover artists, keep every me
 We’ll email you when early access opens.
 
 — Inkmity`,
-        html: `<!doctype html>
+      html: `<!doctype html>
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -77,48 +112,98 @@ We’ll email you when early access opens.
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b0b0b;">
       <tr>
         <td align="center" style="padding:32px 16px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
+          <table
+            role="presentation"
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            align="center"
+            style="max-width:560px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;"
+          >
             <tr>
-              <td style="padding:28px 24px 8px;text-align:center;background:
-                radial-gradient(120px 80px at 20% 0%, rgba(255,255,255,0.08), transparent),
-                radial-gradient(120px 80px at 80% 100%, rgba(255,255,255,0.06), transparent);">
-                <img src="https://inkmity.com/logo.png" alt="Inkmity" width="200" height="200 style="display:inline-block;border:0;outline:none;text-decoration:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.35));" />
+              <td
+                align="center"
+                style="padding:28px 24px 8px;text-align:center;background:
+                  radial-gradient(120px 80px at 20% 0%, rgba(255,255,255,0.08), transparent),
+                  radial-gradient(120px 80px at 80% 100%, rgba(255,255,255,0.06), transparent);"
+              >
+                <img
+                  src="https://inkmity.com/logo.png"
+                  alt="Inkmity"
+                  width="200"
+                  height="200"
+                  style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.35));"
+                />
               </td>
             </tr>
             <tr>
-              <td style="padding:8px 28px 0;">
-                <h2 style="margin:0 0 6px;font-size:24px;line-height:1.25;color:#fff;">Hi ${first}, you’re in.</h2>
-                <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#d4d4d4;">
-                  We’re building a reliable, high-quality experience to <strong style="color:#fff;">discover artists</strong>, keep every <strong style="color:#fff;">message and reference</strong> in one place, and <strong style="color:#fff;">book with zero guesswork</strong> on price or availability.
+              <td align="center" style="padding:8px 28px 0;text-align:center;">
+                <h2
+                  style="margin:0 0 6px;font-size:24px;line-height:1.25;color:#fff;text-align:center;"
+                >
+                  Hi ${first}, you’re in.
+                </h2>
+                <p
+                  style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#d4d4d4;text-align:center;"
+                >
+                  We’re building a reliable, high-quality experience to
+                  <strong style="color:#fff;">discover artists</strong>, keep every
+                  <strong style="color:#fff;">message and reference</strong> in one place,
+                  and <strong style="color:#fff;">book with zero guesswork</strong> on price or availability.
                 </p>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 28px 10px;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 8px;">
+              <td align="center" style="padding:0 28px 10px;text-align:center;">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  style="border-collapse:separate;border-spacing:0_8px;"
+                >
                   <tr>
-                    <td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;">• Thoughtful discovery for style and budget</td>
+                    <td
+                      style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;text-align:center;"
+                    >
+                      • Thoughtful discovery for style and budget
+                    </td>
                   </tr>
                   <tr>
-                    <td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;">• One thread for messages and references</td>
+                    <td
+                      style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;text-align:center;"
+                    >
+                      • One thread for messages and references
+                    </td>
                   </tr>
                   <tr>
-                    <td style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;">• Clear pricing, availability, and booking</td>
+                    <td
+                      style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;font-size:13px;color:#e5e5e5;text-align:center;"
+                    >
+                      • Clear pricing, availability, and booking
+                    </td>
                   </tr>
                 </table>
               </td>
             </tr>
             <tr>
-              <td style="padding:6px 28px 24px;">
-                <p style="margin:0;font-size:14px;line-height:1.6;color:#d4d4d4;">
+              <td align="center" style="padding:6px 28px 24px;text-align:center;">
+                <p
+                  style="margin:0;font-size:14px;line-height:1.6;color:#d4d4d4;text-align:center;"
+                >
                   We’ll email you when early access opens. No spam.
                 </p>
               </td>
             </tr>
             <tr>
-              <td style="padding:14px 28px 28px;border-top:1px solid rgba(255,255,255,0.06);">
-                <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">
-                  © ${new Date().getFullYear()} Inkmity. All rights reserved.
+              <td
+                align="center"
+                style="padding:14px 28px 28px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;"
+              >
+                <p
+                  style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;text-align:center;"
+                >
+                  © 2025 Inkmity. All rights reserved.
                 </p>
               </td>
             </tr>
@@ -128,17 +213,37 @@ We’ll email you when early access opens.
     </table>
   </body>
 </html>`,
+      name: rawName,
+    });
+
+    if (!emailResult.ok) {
+      console.error("joinWaitlist: welcome email failed", {
+        email: emailNorm,
+        error: emailResult.error,
       });
-    } catch {}
+    }
 
     return res.status(201).json({
       message: "Added to waitlist",
       data: { id: entry._id, name: entry.name, email: entry.email },
-      meta: { position, totalSignups, refCode, shareUrl },
+      meta: {
+        position,
+        totalSignups,
+        refCode,
+        shareUrl,
+        emailSent: !!emailResult.ok,
+      },
     });
   } catch (err) {
-    if (err?.code === 11000)
+    console.error("joinWaitlist error:", {
+      message: err?.message,
+      code: err?.code,
+      stack: err?.stack,
+      raw: err,
+    });
+    if (err?.code === 11000) {
       return res.status(200).json({ message: "Already on waitlist" });
+    }
     return res
       .status(500)
       .json({ error: "Server error, please try again later" });
