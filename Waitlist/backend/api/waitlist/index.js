@@ -16,20 +16,8 @@ async function connectDB() {
   CONN.ready = true;
 }
 
-const allowlist = new Set([
-  "https://inkmity.com",
-  "https://www.inkmity.com",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-]);
-
 function setCors(req, res) {
-  const origin = req.headers.origin || "";
-  const allow =
-    /^http:\/\/localhost:\d+$/.test(origin) || allowlist.has(origin);
-  if (allow) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader(
