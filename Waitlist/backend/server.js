@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -37,6 +38,7 @@ app.use(
     credentials: false,
   })
 );
+
 app.use((req, res, next) => {
   res.setHeader("Vary", "Origin");
   next();
@@ -54,7 +56,13 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 8080;
-const URI = process.env.MONGODB_URI;
+const URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+
+console.log("Boot env:", {
+  hasMongoUri: !!URI,
+  hasPostmarkToken: !!process.env.POSTMARK_SERVER_TOKEN,
+});
+
 mongoose.set("strictQuery", true);
 mongoose
   .connect(URI, { dbName: process.env.MONGODB_DB || undefined })
