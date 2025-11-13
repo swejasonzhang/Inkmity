@@ -1,4 +1,3 @@
-import "dotenv/config";
 import mongoose from "mongoose";
 import { getTotalSignups, joinWaitlist } from "../../waitlistController.js";
 
