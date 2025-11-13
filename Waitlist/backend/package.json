@@ -1,7 +1,6 @@
 {
   "type": "module",
   "dependencies": {
-    "dotenv": "^17.2.1",
     "mongoose": "^8.17.2",
     "nodemailer": "^7.0.5"
   }
