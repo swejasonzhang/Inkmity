@@ -41,7 +41,7 @@ export default function Login() {
     }
     redirectTimerRef.current = window.setTimeout(() => {
       window.location.assign("/dashboard");
-    }, 1500);
+    }, 2000);
   }, []);
 
   useEffect(() => {
@@ -232,7 +232,7 @@ export default function Login() {
   };
 
   const successTitle =
-    successType === "already" ? "You’re already logged in." : "Login successful.";
+    successType === "already" ? "You're already logged in." : "Login successful.";
 
   return (
     <div className="relative text-app">
@@ -242,18 +242,18 @@ export default function Login() {
       <div ref={headerRef} className="sticky top-0 z-30 bg-black/20 border-b border-white/10">
         <Header />
       </div>
-      <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
-        <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
-          <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
-            <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? "md:grid-cols-2 md:items-stretch md:justify-items-center" : ""}`}>
-              {showInfo && (
-                <motion.div layout className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center" style={{ height: isMdUp ? cardH || undefined : undefined }}>
+      <main className="z-10 grid place-items-center px-3 md:px-0 overflow-hidden" style={{ height: `calc(100svh - ${headerH}px)`, maxHeight: `calc(100svh - ${headerH}px)` }}>
+        <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
+          <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
+            <div className={`relative flex w-full h-full flex-col md:flex-row p-0 ${showInfo && !showSuccess && !isSignedIn ? "" : "justify-center"}`} style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
+              {showInfo && !showSuccess && !isSignedIn && (
+                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 mt-4 md:mt-0" style={{ height: isMdUp ? cardH || undefined : undefined }}>
                   <div className="h-full w-full">
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                   </div>
                 </motion.div>
               )}
-              <motion.div ref={cardRef} layout className="w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center">
+              <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && !isSignedIn ? "flex-1 w-full md:w-1/2" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
                 <LoginFormCard
                   showInfo={showInfo}
                   hasError={mascotError}
@@ -281,7 +281,7 @@ export default function Login() {
                       </div>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-sm mx-auto text-center">
                       <div className="text-left w-full">
                         <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="email">Email</label>
                         <div className="relative">

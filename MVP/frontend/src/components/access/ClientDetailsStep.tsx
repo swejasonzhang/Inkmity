@@ -288,7 +288,7 @@ export default function ClientDetailsStep({
         <div className="w-full h-full grid place-items-center">
             <div className="w-full max-w-2xl mx-auto grid gap-6 text-center justify-items-center">
                 <div className="w-full">
-                    <label className="mb-2 block text-sm text-white/70">Estimated budget (USD)</label>
+                    <label className="mb-2 block text-sm text-white/70">Estimated budget (USD) <span className="text-white/50">(optional)</span></label>
                     <div className="relative pb-4 pt-5">
                         <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/10" />
                         <div className="pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/40" style={{ left: `${leftPct}%`, right: `${rightPct}%` }} />

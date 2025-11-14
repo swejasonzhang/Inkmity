@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { shake } from "@/lib/animations";
 import ProgressDots from "@/components/access/ProgressDots";
@@ -110,17 +111,44 @@ export default function SignupFormCard(props: SignupProps) {
     successHeading
   } = props;
 
-  if (success) {
+  const { isSignedIn, isLoaded: authLoaded } = useAuth();
+
+  // Check if user is already signed in
+  const isAlreadyLoggedIn = authLoaded && isSignedIn;
+  // Wait for auth to load before showing form
+  const shouldShowForm = authLoaded && !isSignedIn;
+
+  if (success || isAlreadyLoggedIn) {
+    const heading = isAlreadyLoggedIn ? "You're already logged in." : (successHeading || "Signup successful.");
     return (
       <div className={`relative w-full ${className ?? ""}`}>
-        <div className={`${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="ink-success-wrap">
+        <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto">
+          <div className="w-full h-full flex items-center justify-center min-h-[560px] md:min-h-[680px]">
+            <div className="ink-success-wrap flex flex-col items-center justify-center gap-8 py-16">
               <div className="ink-spinner" />
-              <div className="text-white text-base sm:text-lg font-semibold">{successHeading || "Signup successful."}</div>
-              <div className="text-white/80 text-sm">Redirecting now<span className="ink-dots"><span className="ink-dot" /><span className="ink-dot" /><span className="ink-dot" /></span></div>
+              <div className="text-center space-y-2">
+                <div className="text-white text-2xl md:text-3xl font-semibold">{heading}</div>
+                <div className="text-white/80 text-base md:text-lg">
+                  Redirecting now
+                  <span className="ink-dots" aria-hidden="true">
+                    <span className="ink-dot" />
+                    <span className="ink-dot" />
+                    <span className="ink-dot" />
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show form until auth is loaded
+  if (!shouldShowForm) {
+    return (
+      <div className={`relative w-full ${className ?? ""}`}>
+        <div className={`${showInfo ? "rounded-b-3xl md:rounded-r-3xl md:rounded-l-none md:rounded-b-3xl" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
         </div>
       </div>
     );
@@ -133,16 +161,16 @@ export default function SignupFormCard(props: SignupProps) {
 
   return (
     <div className={`relative w-full ${className ?? ""}`}>
-      <div className={`${showInfo ? "rounded-3xl md:rounded-r-3xl md:rounded-l-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
+      <div className={`${showInfo ? "rounded-b-3xl md:rounded-r-3xl md:rounded-l-none md:rounded-b-3xl" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
         <div className="h-full w-full flex flex-col gap-5">
-          <div className="flex flex-col items-center text-center gap-1">
+          <div className="flex flex-col items-center text-center gap-4">
             <div className="text-white">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs">
                 <Sparkles className="h-3 w-3" />
                 <span>Join the Inkmity community</span>
               </div>
             </div>
-            <div className="space-y-0.5">
+            <div className="space-y-2">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white">Sign up</h1>
               <p className="text-white/90 text-sm sm:text-base">A few quick steps to personalize your experience.</p>
             </div>
@@ -182,22 +210,24 @@ export default function SignupFormCard(props: SignupProps) {
                         <ReviewStep role={role} shared={shared} client={client} artist={artist} clientImages={clientRefs} artistImages={artistPortfolioImgs} bio={bio} onBioChange={onBioChange} />
                       )}
                     </div>
-                    <div className="w-full mt-3 sm:mt-4 flex flex-col gap-2">
-                      <Button type="button" onClick={onBack} disabled={step === 0} className="w-full bg-white/10 hover:bg-white/20 text-white h-11 text-sm rounded-xl">
-                        Back
-                      </Button>
+                    <div className={`w-full mt-3 sm:mt-4 flex flex-row gap-2`}>
+                      {step > 0 && (
+                        <Button type="button" onClick={onBack} className="flex-1 bg-white/10 hover:bg-white/20 text-white h-11 text-sm rounded-xl">
+                          Back
+                        </Button>
+                      )}
                       {step < slides.length - 1 && (
                         <Button
                           type="button"
                           onClick={onNext}
                           disabled={!!disableNextForEmail || loading}
-                          className={`w-full ${disableNextForEmail ? "bg-white/10 text-white/40 cursor-not-allowed" : "bg-white/15 hover:bg-white/25 text-white"} h-11 text-sm rounded-xl`}
+                          className={`${step === 0 ? "w-full" : "flex-1"} ${disableNextForEmail ? "bg-white/10 text-white/40 cursor-not-allowed" : "bg-white/15 hover:bg-white/25 text-white"} h-11 text-sm rounded-xl`}
                         >
                           Next
                         </Button>
                       )}
                       {step === slides.length - 1 && (
-                        <Button type="button" onClick={onStartVerification} disabled={loading || !isLoaded || !!emailTaken} className="w-full bg-white/15 hover:bg-white/25 text-white h-11 text-sm rounded-xl">
+                        <Button type="button" onClick={onStartVerification} disabled={loading || !isLoaded || !!emailTaken} className="flex-1 bg-white/15 hover:bg-white/25 text-white h-11 text-sm rounded-xl">
                           Send Verification Code
                         </Button>
                       )}
