@@ -402,7 +402,7 @@ export default function SignUp() {
       <div ref={headerRef} className="sticky top-0 z-30 bg-black/20">
         <Header />
       </div>
-      <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
+      <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
         <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
             <div className={`relative flex w-full h-full flex-col md:flex-row p-0 ${showInfo && !showSuccess && !userId ? "" : "justify-center"}`}>
@@ -410,7 +410,7 @@ export default function SignUp() {
                 <motion.div
                   layout={!showSuccess && !userId}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="flex-1 w-full md:w-1/2 mt-4 md:mt-0"
+                  className="flex-1 w-full md:w-1/2 mt-2 md:mt-0"
                   style={{
                     height: isMdUp ? cardH || undefined : undefined
                   }}
@@ -424,7 +424,7 @@ export default function SignUp() {
                 ref={cardRef}
                 layout={!showSuccess && !userId}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2" : "w-full max-w-lg"} p-0 mb-4 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
+                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2" : "w-full max-w-lg"} p-0 mb-2 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
                 style={{ minHeight: isMdUp && showSuccess ? 880 : undefined }}
               >
                 <SignupFormCard
