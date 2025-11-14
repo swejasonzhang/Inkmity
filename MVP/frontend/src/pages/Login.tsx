@@ -34,11 +34,15 @@ export default function Login() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successType, setSuccessType] = useState<"login" | "already" | null>(null);
   const redirectTimerRef = useRef<number | null>(null);
+  const isMountedRef = useRef(false);
+  const justLoggedInRef = useRef(false);
+  const isRedirectingRef = useRef(false);
 
   const beginRedirect = useCallback(() => {
     if (redirectTimerRef.current !== null) {
       window.clearTimeout(redirectTimerRef.current);
     }
+    isRedirectingRef.current = true;
     redirectTimerRef.current = window.setTimeout(() => {
       window.location.assign("/dashboard");
     }, 2000);
@@ -46,8 +50,9 @@ export default function Login() {
 
   useEffect(() => {
     return () => {
-      if (redirectTimerRef.current !== null) {
+      if (redirectTimerRef.current !== null && !isRedirectingRef.current) {
         window.clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
       }
     };
   }, []);
@@ -149,18 +154,28 @@ export default function Login() {
   useEffect(() => {
     if (!authLoaded) return;
     if (isSignedIn) {
-      setShowSuccess(true);
-      setSuccessType((prev) =>
-        prev === "login" || prev === "already" ? prev : "already"
-      );
-      beginRedirect();
-    } else if (successType !== "login") {
-      if (redirectTimerRef.current !== null) {
+      if (justLoggedInRef.current) {
+        justLoggedInRef.current = false;
+        return;
+      }
+      if (!isMountedRef.current) {
+        isMountedRef.current = true;
+        setShowSuccess(true);
+        setSuccessType("already");
+        beginRedirect();
+      }
+    } else {
+      if (!isMountedRef.current) {
+        isMountedRef.current = true;
+      }
+      if (!isRedirectingRef.current && redirectTimerRef.current !== null) {
         window.clearTimeout(redirectTimerRef.current);
         redirectTimerRef.current = null;
       }
-      if (showSuccess) setShowSuccess(false);
-      if (successType !== null) setSuccessType(null);
+      if (showSuccess && successType !== "login" && successType !== "already") {
+        setShowSuccess(false);
+        setSuccessType(null);
+      }
     }
   }, [authLoaded, isSignedIn, beginRedirect, successType, showSuccess]);
 
@@ -195,6 +210,8 @@ export default function Login() {
         try {
           sessionStorage.setItem("authRedirect", "1");
         } catch { }
+        justLoggedInRef.current = true;
+        isMountedRef.current = true;
         setSuccessType("login");
         setShowSuccess(true);
         beginRedirect();
@@ -232,7 +249,9 @@ export default function Login() {
   };
 
   const successTitle =
-    successType === "already" ? "You're already logged in." : "Login successful.";
+    successType === "already" ? "You're already logged in." : "Welcome Back!";
+  const successSubtitle =
+    successType === "already" ? "Redirecting now" : "Redirecting to Dashboard";
 
   return (
     <div className="relative text-app">
@@ -270,14 +289,14 @@ export default function Login() {
                       <div className="text-center">
                         <p className="text-white text-2xl md:text-3xl font-semibold">{successTitle}</p>
                         <p className="text-white/80 mt-2 text-base md:text-lg">
-                          Redirecting now
+                          {successSubtitle}
                           <span className="ink-dots" aria-hidden="true">
                             <span className="ink-dot" />
                             <span className="ink-dot" />
                             <span className="ink-dot" />
                           </span>
                         </p>
-                        <span className="sr-only" aria-live="polite">{successTitle} Redirecting now.</span>
+                        <span className="sr-only" aria-live="polite">{successTitle} {successSubtitle}.</span>
                       </div>
                     </div>
                   ) : (

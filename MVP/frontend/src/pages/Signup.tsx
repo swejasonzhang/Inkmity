@@ -112,6 +112,11 @@ export default function SignUp() {
   const [pwdFocused, setPwdFocused] = useState(false);
   const [mascotError, setMascotError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successType, setSuccessType] = useState<"signup" | "already" | null>(null);
+  const isMountedRef = useRef(false);
+  const justSignedUpRef = useRef(false);
+  const redirectTimerRef = useRef<number | null>(null);
+  const isRedirectingRef = useRef(false);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { userId, getToken } = useAuth();
@@ -125,17 +130,42 @@ export default function SignUp() {
   const [flashToken, setFlashToken] = useState(0);
 
   useEffect(() => {
-    if (!userId) return;
-    setShowSuccess(true);
-    const t = setTimeout(() => {
-      navigate("/dashboard", { replace: true });
-    }, 2000);
-    return () => clearTimeout(t);
+    if (!userId) {
+      if (!isMountedRef.current) {
+        isMountedRef.current = true;
+      }
+      return;
+    }
+    if (justSignedUpRef.current) {
+      justSignedUpRef.current = false;
+      return;
+    }
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      setShowSuccess(true);
+      setSuccessType("already");
+      isRedirectingRef.current = true;
+      if (redirectTimerRef.current !== null) {
+        clearTimeout(redirectTimerRef.current);
+      }
+      redirectTimerRef.current = window.setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 2000);
+    }
   }, [userId, navigate]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current !== null && !isRedirectingRef.current) {
+        clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -340,8 +370,15 @@ export default function SignUp() {
             localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
             localStorage.removeItem(LOGOUT_TYPE_KEY);
           } catch { }
+          justSignedUpRef.current = true;
+          isMountedRef.current = true;
+          setSuccessType("signup");
           setShowSuccess(true);
-          setTimeout(() => {
+          isRedirectingRef.current = true;
+          if (redirectTimerRef.current !== null) {
+            clearTimeout(redirectTimerRef.current);
+          }
+          redirectTimerRef.current = window.setTimeout(() => {
             navigate("/dashboard", { replace: true });
           }, 2000);
           return;
@@ -386,7 +423,8 @@ export default function SignUp() {
     else setArtist((prev) => ({ ...prev, bio: v }));
   };
 
-  const successHeading = userId ? "You're already logged in." : "Signup successful.";
+  const successHeading = successType === "already" ? "You're already logged in." : "Signup Successful!";
+  const successSubtitle = successType === "already" ? "Redirecting now" : "Redirecting to Dashboard";
 
   return (
     <div className="relative text-app">
@@ -458,6 +496,7 @@ export default function SignUp() {
                   flashToken={flashToken}
                   success={showSuccess}
                   successHeading={successHeading}
+                  successSubtitle={successSubtitle}
                 />
               </motion.div>
             </div>
