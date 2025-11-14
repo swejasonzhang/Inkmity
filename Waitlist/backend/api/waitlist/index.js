@@ -142,8 +142,10 @@ We’ll email you when early access opens.
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark light" />
     <meta name="supported-color-schemes" content="dark light" />
+    <meta name="format-detection" content="telephone=no" />
     <title>Welcome to Inkmity</title>
   </head>
   <body style="margin:0;padding:0;background:#0b0b0b;color:#e5e5e5;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Apple Color Emoji','Segoe UI Emoji';">
@@ -167,10 +169,11 @@ We’ll email you when early access opens.
               >
                 <img
                   src="https://inkmity.com/logo.png"
-                  alt="Inkmity"
+                  alt="Inkmity Logo"
                   width="200"
                   height="200"
-                  style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.35));"
+                  style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.35));max-width:200px;height:auto;"
+                  title="Inkmity"
                 />
               </td>
             </tr>
@@ -198,7 +201,7 @@ We’ll email you when early access opens.
                   width="100%"
                   cellpadding="0"
                   cellspacing="0"
-                  style="border-collapse:separate;border-spacing:0_8px;"
+                  style="border-collapse:separate;border-spacing:0_12px;"
                 >
                   <tr>
                     <td
