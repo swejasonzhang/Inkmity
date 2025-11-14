@@ -141,7 +141,7 @@ export default function SharedAccountStep({
                     className={`w-full flex-1 px-4 py-3 md:py-2 rounded-xl text-sm ${role === "client" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
                     variant="secondary"
                 >
-                    I’m a client
+                    I'm a client
                 </Button>
                 <Button
                     type="button"
@@ -149,7 +149,7 @@ export default function SharedAccountStep({
                     className={`w-full flex-1 px-4 py-3 md:py-2 rounded-xl text-sm ${role === "artist" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
                     variant="secondary"
                 >
-                    I’m an artist
+                    I'm an artist
                 </Button>
             </div>
         </div>

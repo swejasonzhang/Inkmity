@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, ChangeEvent, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState, ChangeEvent, useRef } from "react";
 import Header from "@/components/header/Header";
 import { motion, useReducedMotion } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
@@ -49,10 +49,11 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
   if (role === "client") {
     if (step === 1) {
       if (!client.location) tips.push("City is required — choose your city from the list.");
+      // Budget is optional, but if provided, validate it
       const min = Number(client.budgetMin);
       const max = Number(client.budgetMax);
-      if (!Number.isFinite(min)) tips.push("Budget min must be a number — enter a value like 100.");
-      if (!Number.isFinite(max)) tips.push("Budget max must be a number — enter a value like 500.");
+      if (client.budgetMin && !Number.isFinite(min)) tips.push("Budget min must be a number — enter a value like 100.");
+      if (client.budgetMax && !Number.isFinite(max)) tips.push("Budget max must be a number — enter a value like 500.");
       if (Number.isFinite(min) && Number.isFinite(max) && max <= min) tips.push("Budget range invalid — set max greater than min by at least 1.");
     }
     if (step === 3) {
@@ -60,25 +61,38 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
       if (!client.location) tips.push("City is required — choose your city from the list.");
+      // Budget validation only if provided
       const min = Number(client.budgetMin);
       const max = Number(client.budgetMax);
-      if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) tips.push("Budget range invalid — ensure both numbers and max > min.");
+      if (client.budgetMin && client.budgetMax && (!Number.isFinite(min) || !Number.isFinite(max) || max <= min)) {
+        tips.push("Budget range invalid — ensure both numbers and max > min.");
+      }
     }
   } else {
     if (step === 1) {
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
-      if (!artist.years || artist.years === "__unset__") tips.push("Years of experience is required — enter a number.");
-      if (!artist.baseRate || artist.baseRate === "__unset__") tips.push("Base rate is required — enter an hourly or day rate number.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
+      // Years and baseRate are optional, but validate if provided
+      if (artist.years && artist.years !== "__unset__" && !Number.isFinite(Number(artist.years))) {
+        tips.push("Years of experience must be a valid number.");
+      }
+      if (artist.baseRate && artist.baseRate !== "__unset__" && !Number.isFinite(Number(artist.baseRate))) {
+        tips.push("Base rate must be a valid number.");
+      }
     }
     if (step === 3) {
       if (!usernameOk) tips.push("Username is required — enter a display name.");
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
-      if (!artist.years || artist.years === "__unset__") tips.push("Years of experience is required — enter a number.");
-      if (!artist.baseRate || artist.baseRate === "__unset__") tips.push("Base rate is required — enter an hourly or day rate number.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
+      // Years and baseRate validation only if provided
+      if (artist.years && artist.years !== "__unset__" && !Number.isFinite(Number(artist.years))) {
+        tips.push("Years of experience must be a valid number.");
+      }
+      if (artist.baseRate && artist.baseRate !== "__unset__" && !Number.isFinite(Number(artist.baseRate))) {
+        tips.push("Base rate must be a valid number.");
+      }
     }
   }
   return tips;
@@ -104,7 +118,7 @@ export default function SignUp() {
   const [showSuccess, setShowSuccess] = useState(false);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
-  const { userId, getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { userId, getToken } = useAuth();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +127,15 @@ export default function SignUp() {
   const [isMdUp, setIsMdUp] = useState<boolean>(typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false);
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [flashToken, setFlashToken] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+    setShowSuccess(true);
+    const t = setTimeout(() => {
+      navigate("/dashboard", { replace: true });
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [userId, navigate]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
@@ -173,15 +196,6 @@ export default function SignUp() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!userId) return;
-    setShowSuccess(true);
-    const t = setTimeout(() => {
-      navigate("/dashboard", { replace: true });
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [userId, navigate]);
-
   const handleClient = (e: ChangeEvent<HTMLInputElement> | InputLike) => {
     const name = (e as InputLike).target?.name;
     const value = (e as InputLike).target?.value;
@@ -199,19 +213,13 @@ export default function SignUp() {
     }
   };
 
-  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
-  const minVal = Math.max(0, Math.min(5000, num(client.budgetMin)));
-  const maxVal = Math.max(0, Math.min(5000, num(client.budgetMax)));
-
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
-  const allClientValid = !!client.location && maxVal > minVal;
+  // Clients only need location (budget is optional)
+  const allClientValid = !!client.location;
+  // Artists only need location and at least one style (years, baseRate are optional)
   const allArtistValid =
     !!artist.location &&
     artist.location !== "__unset__" &&
-    !!artist.years &&
-    artist.years !== "__unset__" &&
-    !!artist.baseRate &&
-    artist.baseRate !== "__unset__" &&
     Array.isArray(artist.styles) &&
     artist.styles.length >= 1;
 
@@ -341,7 +349,7 @@ export default function SignUp() {
           setShowSuccess(true);
           setTimeout(() => {
             navigate("/dashboard", { replace: true });
-          }, 1500);
+          }, 2000);
           return;
         } catch {
           try {
@@ -397,14 +405,14 @@ export default function SignUp() {
       <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible pt-6 pb-10 md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
         <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
-            <div className={`relative grid w-full h-full grid-cols-1 p-0 gap-2 md:gap-0 md:p-0 place-items-center ${showInfo ? `md:grid-cols-2 ${showSuccess ? "md:items-center" : "md:items-stretch"} md:justify-items-center` : ""}`}>
-              {showInfo && (
+            <div className={`relative flex w-full h-full flex-col md:flex-row p-0 ${showInfo && !showSuccess && !userId ? "" : "justify-center"}`}>
+              {showInfo && !showSuccess && !userId && (
                 <motion.div
-                  layout
-                  className="flex w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center"
+                  layout={!showSuccess && !userId}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="flex-1 w-full md:w-1/2 mt-4 md:mt-0"
                   style={{
-                    height: isMdUp ? (showSuccess ? Math.max(cardH ?? 0, 880) : cardH || undefined) : undefined,
-                    minHeight: isMdUp && showSuccess ? 880 : undefined
+                    height: isMdUp ? cardH || undefined : undefined
                   }}
                 >
                   <div className="h-full w-full">
@@ -414,8 +422,9 @@ export default function SignUp() {
               )}
               <motion.div
                 ref={cardRef}
-                layout
-                className={`w-full max-w-2xl p-0 mx-0 mt-0 md:mt-[20px] md:p-0 md:mx-0 place-self-center ${showSuccess ? "flex items-center justify-center" : ""}`}
+                layout={!showSuccess && !userId}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2" : "w-full max-w-lg"} p-0 mb-4 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
                 style={{ minHeight: isMdUp && showSuccess ? 880 : undefined }}
               >
                 <SignupFormCard

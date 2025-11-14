@@ -86,14 +86,14 @@ export default function InfoPanel({
         >
             <div
                 ref={panelRef}
-                className="w-full h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none"
+                className="w-full h-full rounded-t-3xl md:rounded-l-3xl md:rounded-r-none md:rounded-t-3xl"
                 style={{
                     background:
                         "linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.06))",
                     boxShadow: "0 0 0 1px rgba(255,255,255,0.12), 0 10px 40px -12px rgba(0,0,0,0.5)",
                 }}
             >
-                <div className="w-full h-full rounded-3xl md:rounded-l-3xl md:rounded-r-none bg-[#0b0b0b]/80 backdrop-blur-xl px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-12 flex flex-col">
+                <div className="w-full h-full rounded-t-3xl md:rounded-l-3xl md:rounded-r-none md:rounded-t-3xl bg-[#0b0b0b]/80 backdrop-blur-xl px-5 py-6 sm:px-6 sm:py-8 md:px-10 md:py-12 flex flex-col">
                     <div className="w-full mx-auto text-center flex-1 flex flex-col items-center justify-center">
                         <div className="inline-flex items-center gap-2 text-white/80 text-xs sm:text-sm mb-3 sm:mb-4 select-none">
                             <Sparkles className="h-4 w-4" />

@@ -291,7 +291,7 @@ export default function ArtistDetailsStep({
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className={labelCls}>Years of experience</label>
+                    <label className={labelCls}>Years of experience <span className="text-white/50">(optional)</span></label>
                     <Select value={artist.years || "__unset__"} onValueChange={handleSelect("years")}>
                         <SelectTrigger className={triggerCls}>
                             <SelectValue placeholder="Select years" />
@@ -308,7 +308,7 @@ export default function ArtistDetailsStep({
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className={labelCls}>Base hourly rate (USD)</label>
+                    <label className={labelCls}>Base hourly rate (USD) <span className="text-white/50">(optional)</span></label>
                     <Select value={artist.baseRate || "__unset__"} onValueChange={handleSelect("baseRate")}>
                         <SelectTrigger className={triggerCls}>
                             <SelectValue placeholder="Choose a rate or Custom…" />
