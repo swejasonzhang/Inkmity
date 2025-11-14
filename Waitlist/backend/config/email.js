@@ -1,22 +1,14 @@
-import nodemailer from "nodemailer";
+import { ServerClient } from "postmark";
 
 const { POSTMARK_SERVER_TOKEN, MAIL_FROM } = process.env;
 
-let transporter;
+let client;
 
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: "smtp.postmarkapp.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: POSTMARK_SERVER_TOKEN,
-        pass: POSTMARK_SERVER_TOKEN,
-      },
-    });
+function getClient() {
+  if (!client && POSTMARK_SERVER_TOKEN) {
+    client = new ServerClient(POSTMARK_SERVER_TOKEN);
   }
-  return transporter;
+  return client;
 }
 
 export async function sendWelcomeEmail({ to, subject, text, html, name }) {
@@ -26,31 +18,45 @@ export async function sendWelcomeEmail({ to, subject, text, html, name }) {
   }
 
   try {
-    const tx = getTransporter();
-    const from = MAIL_FROM || "Inkmity <no-reply@inkmity.com>";
-    const headers = { "X-PM-Tag": "waitlist-welcome" };
-    if (name) headers["X-PM-Metadata-Name"] = name;
+    const pmClient = getClient();
+    if (!pmClient) {
+      throw new Error("Postmark client not initialized");
+    }
 
-    const info = await tx.sendMail({
-      from,
-      to,
-      subject,
-      text,
-      html,
-      headers,
-    });
+    const from = MAIL_FROM || "jason@inkmity.com";
+    
+    const message = {
+      From: from,
+      To: to,
+      Subject: subject,
+      HtmlBody: html,
+      TextBody: text,
+      MessageStream: "outbound",
+      Tag: "waitlist-welcome",
+      ReplyTo: "jason@inkmity.com",
+      TrackOpens: false,
+      TrackLinks: "None",
+    };
+
+    if (name) {
+      message.Metadata = { name };
+    }
+
+    const result = await pmClient.sendEmail(message);
 
     console.log("sendWelcomeEmail success:", {
       to,
-      messageId: info?.messageId,
-      response: info?.response,
+      messageId: result.MessageID,
+      submittedAt: result.SubmittedAt,
+      toEmail: result.To,
     });
 
     return { ok: true };
   } catch (err) {
     console.error("sendWelcomeEmail error:", {
       message: err?.message,
-      code: err?.code,
+      code: err?.ErrorCode,
+      statusCode: err?.statusCode,
       response: err?.response,
       stack: err?.stack,
     });
