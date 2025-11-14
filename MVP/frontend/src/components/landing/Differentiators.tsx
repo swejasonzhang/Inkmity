@@ -15,7 +15,7 @@ const Differentiators: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> =
     ];
 
     return (
-        <section className="px-1 sm:px-3 mt-2 mb-12 grid place-items-center">
+        <section className="px-1 sm:px-3 mt-2 mb-6 grid place-items-center">
             <div className="mx-auto w-full max-w-[100rem] rounded-2xl bg-card p-5 sm:p-6 md:p-8 text-center border border-app">
                 <LazyMotion features={domAnimation} strict>
                     <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>

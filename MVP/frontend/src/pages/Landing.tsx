@@ -91,14 +91,14 @@ const Landing: React.FC = () => {
                                         initial="hidden"
                                         whileInView="visible"
                                         viewport={{ once: true, amount: 0.4 }}
-                                        className="space-y-6 md:space-y-12"
+                                        className="space-y-4 md:space-y-6"
                                     >
                                         <Hero prefersReduced={!!prefersReduced} wc={wc} textFadeUp={textFadeUp} onReveal={handleRevealButton} />
                                     </m.div>
                                 </div>
                             </section>
 
-                            <div ref={dividerWrapRef} className="mt-4 md:mt-6 mb-2 md:mb-[5px]">
+                            <div ref={dividerWrapRef} className="mt-2 md:mt-3 mb-1 md:mb-2">
                                 <Divider />
                             </div>
 
@@ -114,23 +114,23 @@ const Landing: React.FC = () => {
                                 initial="hidden"
                                 animate={revealed ? "show" : "hidden"}
                                 variants={featuresFade}
-                                className="mx-auto max-w-6xl px-4 py-2 md:py-4"
+                                className="mx-auto max-w-6xl px-4 py-1 md:py-2"
                                 style={{ willChange: "opacity, transform" }}
                             >
                                 {revealed && (
                                     <>
                                         <div id="features-title" />
                                         <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
-                                        <Divider className="my-4 md:my-6" />
+                                        <Divider className="my-2 md:my-3" />
                                         <Differentiators textFadeUp={textFadeUp} wc={wc} />
                                         <BottomCTA textFadeUp={textFadeUp} wc={wc} />
-                                        <Divider className="my-4 md:my-6" />
+                                        <Divider className="mt-1 md:mt-2 mb-0" />
                                     </>
                                 )}
                             </m.div>
                         </main>
 
-                        <footer className="p-3 md:p-4">
+                        <footer className="pt-1 md:pt-2 pb-3 md:pb-4 px-3 md:px-4">
                             <div className="mx-auto max-w-6xl text-center text-xs md:text-sm text-subtle">© {new Date().getFullYear()} Inkmity. All rights reserved.</div>
                         </footer>
                     </div>

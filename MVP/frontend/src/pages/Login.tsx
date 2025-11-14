@@ -37,6 +37,7 @@ export default function Login() {
   const isMountedRef = useRef(false);
   const justLoggedInRef = useRef(false);
   const isRedirectingRef = useRef(false);
+  const intendedSuccessTypeRef = useRef<"login" | "already" | null>(null);
 
   const beginRedirect = useCallback(() => {
     if (redirectTimerRef.current !== null) {
@@ -154,12 +155,12 @@ export default function Login() {
   useEffect(() => {
     if (!authLoaded) return;
     if (isSignedIn) {
-      if (justLoggedInRef.current) {
-        justLoggedInRef.current = false;
+      if (justLoggedInRef.current || intendedSuccessTypeRef.current === "login" || successType === "login") {
         return;
       }
       if (!isMountedRef.current) {
         isMountedRef.current = true;
+        intendedSuccessTypeRef.current = "already";
         setShowSuccess(true);
         setSuccessType("already");
         beginRedirect();
@@ -176,6 +177,7 @@ export default function Login() {
         setShowSuccess(false);
         setSuccessType(null);
       }
+      intendedSuccessTypeRef.current = null;
     }
   }, [authLoaded, isSignedIn, beginRedirect, successType, showSuccess]);
 
@@ -210,11 +212,15 @@ export default function Login() {
         try {
           sessionStorage.setItem("authRedirect", "1");
         } catch { }
-        justLoggedInRef.current = true;
         isMountedRef.current = true;
+        justLoggedInRef.current = true;
+        intendedSuccessTypeRef.current = "login";
         setSuccessType("login");
         setShowSuccess(true);
         beginRedirect();
+        setTimeout(() => {
+          justLoggedInRef.current = false;
+        }, 1000);
       } else {
         setAuthError("Login failed. Check your credentials and try again.");
         triggerMascotError();
@@ -272,7 +278,7 @@ export default function Login() {
                   </div>
                 </motion.div>
               )}
-              <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && !isSignedIn ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
+              <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && !isSignedIn ? "flex-1 w-full md:w-1/2 md:flex-none" : showSuccess ? "w-full max-w-2xl" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
                 <LoginFormCard
                   showInfo={showInfo}
                   hasError={mascotError}

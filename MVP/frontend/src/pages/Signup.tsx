@@ -456,7 +456,7 @@ export default function SignUp() {
                 ref={cardRef}
                 layout={!showSuccess && !userId}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-2 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
+                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2 md:flex-none" : showSuccess ? "w-full max-w-2xl" : "w-full max-w-lg"} p-0 mb-2 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
                 style={{ minHeight: isMdUp && showSuccess ? 880 : undefined }}
               >
                 <SignupFormCard

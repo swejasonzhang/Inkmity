@@ -24,7 +24,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
 
     return (
         <section className="px-3">
-            <div className="mx-auto max-w-9xl pt-10 sm:pt-14 md:pt-20 text-center">
+            <div className="mx-auto max-w-9xl text-center">
                 <h1 className="text-5xl md:text-6xl lg:text-8xl font-extrabold leading-tight tracking-tight" style={wc}>
                     <m.span
                         initial={gradientInitial}
@@ -48,14 +48,14 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
                         asChild
                         className="rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                     >
-                        <Link to="/signup" aria-label="Create your Inkmity account">Create your account</Link>
+                        <Link to="/signup" aria-label="Create your Inkmity account">Create your account!</Link>
                     </Button>
                     <Button
                         asChild
                         variant="outline"
                         className="rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold border border-app bg-card/70 text-app hover:bg-card/80 focus-visible:ring-2 focus-visible:ring-[color:var(--border)]/40"
                     >
-                        <Link to="/login" aria-label="Log in to Inkmity">I’m already logged in</Link>
+                        <Link to="/login" aria-label="Log in to Inkmity">Login here!</Link>
                     </Button>
                 </m.div>
 
