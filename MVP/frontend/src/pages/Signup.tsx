@@ -423,8 +423,8 @@ export default function SignUp() {
     else setArtist((prev) => ({ ...prev, bio: v }));
   };
 
-  const successHeading = successType === "already" ? "You're already logged in." : "Signup Successful!";
-  const successSubtitle = successType === "already" ? "Redirecting now" : "Redirecting to Dashboard";
+  const successHeading = successType === "already" ? "You're already logged in." : "Successful signup!";
+  const successSubtitle = successType === "already" ? "Redirecting now" : "Redirecting to Dashboard.";
 
   return (
     <div className="relative text-app">

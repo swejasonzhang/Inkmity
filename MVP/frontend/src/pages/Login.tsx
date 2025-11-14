@@ -257,7 +257,7 @@ export default function Login() {
   const successTitle =
     successType === "already" ? "You're already logged in." : "Welcome Back!";
   const successSubtitle =
-    successType === "already" ? "Redirecting now" : "Redirecting to Dashboard";
+    successType === "already" ? "Redirecting now" : "Redirecting to Dashboard!";
 
   return (
     <div className="relative text-app">
