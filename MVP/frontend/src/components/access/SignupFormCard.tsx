@@ -115,12 +115,9 @@ export default function SignupFormCard(props: SignupProps) {
 
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
 
-  const isAlreadyLoggedIn = authLoaded && isSignedIn;
   const shouldShowForm = authLoaded && !isSignedIn;
 
-  if (success || isAlreadyLoggedIn) {
-    const heading = isAlreadyLoggedIn ? "You're already logged in." : (successHeading || "Signup Successful!");
-    const subtitle = isAlreadyLoggedIn ? "Redirecting now" : (successSubtitle || "Redirecting to Dashboard");
+  if (success) {
     return (
       <div className={`relative w-full ${className ?? ""}`}>
         <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto">
@@ -128,9 +125,9 @@ export default function SignupFormCard(props: SignupProps) {
             <div className="ink-success-wrap flex flex-col items-center justify-center gap-8 py-16">
               <div className="ink-spinner" />
               <div className="text-center space-y-2">
-                <div className="text-white text-2xl md:text-3xl font-semibold">{heading}</div>
+                <div className="text-white text-2xl md:text-3xl font-semibold">{successHeading || "Signup Successful!"}</div>
                 <div className="text-white/80 text-base md:text-lg">
-                  {subtitle}
+                  {successSubtitle || "Redirecting to Dashboard"}
                   <span className="ink-dots" aria-hidden="true">
                     <span className="ink-dot" />
                     <span className="ink-dot" />
@@ -145,7 +142,7 @@ export default function SignupFormCard(props: SignupProps) {
     );
   }
 
-  if (!shouldShowForm) {
+  if (!shouldShowForm && !success) {
     return (
       <div className={`relative w-full ${className ?? ""}`}>
         <div className={`${showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
