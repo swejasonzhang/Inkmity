@@ -49,7 +49,6 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
   if (role === "client") {
     if (step === 1) {
       if (!client.location) tips.push("City is required — choose your city from the list.");
-      // Budget is optional, but if provided, validate it
       const min = Number(client.budgetMin);
       const max = Number(client.budgetMax);
       if (client.budgetMin && !Number.isFinite(min)) tips.push("Budget min must be a number — enter a value like 100.");
@@ -61,7 +60,6 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
       if (!client.location) tips.push("City is required — choose your city from the list.");
-      // Budget validation only if provided
       const min = Number(client.budgetMin);
       const max = Number(client.budgetMax);
       if (client.budgetMin && client.budgetMax && (!Number.isFinite(min) || !Number.isFinite(max) || max <= min)) {
@@ -72,7 +70,6 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
     if (step === 1) {
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
-      // Years and baseRate are optional, but validate if provided
       if (artist.years && artist.years !== "__unset__" && !Number.isFinite(Number(artist.years))) {
         tips.push("Years of experience must be a valid number.");
       }
@@ -86,7 +83,6 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
-      // Years and baseRate validation only if provided
       if (artist.years && artist.years !== "__unset__" && !Number.isFinite(Number(artist.years))) {
         tips.push("Years of experience must be a valid number.");
       }
@@ -214,9 +210,7 @@ export default function SignUp() {
   };
 
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
-  // Clients only need location (budget is optional)
   const allClientValid = !!client.location;
-  // Artists only need location and at least one style (years, baseRate are optional)
   const allArtistValid =
     !!artist.location &&
     artist.location !== "__unset__" &&
@@ -405,14 +399,14 @@ export default function SignUp() {
       <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
         <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
-            <div className={`relative flex w-full h-full flex-col md:flex-row p-0 ${showInfo && !showSuccess && !userId ? "" : "justify-center"}`}>
+            <div className={`relative flex w-full h-full flex-col md:flex-row md:items-center md:justify-center p-0 ${showInfo && !showSuccess && !userId ? "" : "justify-center"}`}>
               {showInfo && !showSuccess && !userId && (
                 <motion.div
                   layout={!showSuccess && !userId}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="flex-1 w-full md:w-1/2 mt-2 md:mt-0"
+                  className="flex-1 w-full md:w-1/2 md:flex-none mt-2 md:mt-0"
                   style={{
-                    height: isMdUp ? cardH || undefined : undefined
+                    height: isMdUp && cardH ? cardH : undefined
                   }}
                 >
                   <div className="h-full w-full">
@@ -424,7 +418,7 @@ export default function SignUp() {
                 ref={cardRef}
                 layout={!showSuccess && !userId}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2" : "w-full max-w-lg"} p-0 mb-2 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
+                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-2 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
                 style={{ minHeight: isMdUp && showSuccess ? 880 : undefined }}
               >
                 <SignupFormCard
