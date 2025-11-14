@@ -245,15 +245,15 @@ export default function Login() {
       <main className="z-10 grid place-items-center px-3 md:px-0 overflow-hidden" style={{ height: `calc(100svh - ${headerH}px)`, maxHeight: `calc(100svh - ${headerH}px)` }}>
         <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
-            <div className={`relative flex w-full h-full flex-col md:flex-row p-0 ${showInfo && !showSuccess && !isSignedIn ? "" : "justify-center"}`} style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
+            <div className={`relative flex w-full h-full flex-col md:flex-row md:items-center md:justify-center p-0 ${showInfo && !showSuccess && !isSignedIn ? "" : "justify-center"}`} style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
               {showInfo && !showSuccess && !isSignedIn && (
-                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 mt-4 md:mt-0" style={{ height: isMdUp ? cardH || undefined : undefined }}>
+                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 md:flex-none mt-4 md:mt-0" style={{ height: isMdUp && cardH ? cardH : undefined }}>
                   <div className="h-full w-full">
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                   </div>
                 </motion.div>
               )}
-              <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && !isSignedIn ? "flex-1 w-full md:w-1/2" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
+              <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && !isSignedIn ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
                 <LoginFormCard
                   showInfo={showInfo}
                   hasError={mascotError}

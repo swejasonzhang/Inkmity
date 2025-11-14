@@ -113,9 +113,7 @@ export default function SignupFormCard(props: SignupProps) {
 
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
 
-  // Check if user is already signed in
   const isAlreadyLoggedIn = authLoaded && isSignedIn;
-  // Wait for auth to load before showing form
   const shouldShowForm = authLoaded && !isSignedIn;
 
   if (success || isAlreadyLoggedIn) {
@@ -144,11 +142,10 @@ export default function SignupFormCard(props: SignupProps) {
     );
   }
 
-  // Don't show form until auth is loaded
   if (!shouldShowForm) {
     return (
       <div className={`relative w-full ${className ?? ""}`}>
-        <div className={`${showInfo ? "rounded-b-3xl md:rounded-r-3xl md:rounded-l-none md:rounded-b-3xl" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
+        <div className={`${showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
         </div>
       </div>
     );
@@ -161,7 +158,7 @@ export default function SignupFormCard(props: SignupProps) {
 
   return (
     <div className={`relative w-full ${className ?? ""}`}>
-      <div className={`${showInfo ? "rounded-b-3xl md:rounded-r-3xl md:rounded-l-none md:rounded-b-3xl" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
+      <div className={`${showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
         <div className="h-full w-full flex flex-col gap-5">
           <div className="flex flex-col items-center text-center gap-4">
             <div className="text-white">

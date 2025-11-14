@@ -20,14 +20,12 @@ export default function LoginFormCard({ showInfo, hasError, titleOverride, subti
     const title = titleOverride ?? "Welcome Back!";
     const subtitle = subtitleOverride ?? "Login to continue exploring artists, styles, and your tattoo journey.";
 
-    // Wait for auth to load before showing form
-    // If user is already signed in, show redirecting message instead of form
     const isAlreadyLoggedIn = isLoaded && isSignedIn;
     const shouldShowForm = isLoaded && !isSignedIn;
 
     return (
         <div className={`relative w-full h-full flex flex-col ${className ?? ""}`}>
-            <div className={`${isAlreadyLoggedIn ? "rounded-3xl" : showInfo ? "rounded-b-3xl md:rounded-r-3xl md:rounded-l-none md:rounded-b-3xl" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 sm:p-5 h-full mx-auto flex flex-col overflow-hidden`}>
+            <div className={`${isAlreadyLoggedIn ? "rounded-3xl" : showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 sm:p-5 h-full mx-auto flex flex-col overflow-hidden`}>
                 {isAlreadyLoggedIn ? (
                     <div className="w-full h-full flex items-center justify-center min-h-[560px] md:min-h-[680px]">
                         <div className="ink-success-wrap flex flex-col items-center justify-center gap-8 py-16">
