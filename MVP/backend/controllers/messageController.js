@@ -62,6 +62,8 @@ export const getAllMessagesForUser = async (req, res) => {
         meta: m.meta || undefined,
         delivered: !!m.delivered,
         seen: !!m.seen,
+        deliveredAt: m.deliveredAt ? new Date(m.deliveredAt).getTime() : undefined,
+        seenAt: m.seenAt ? new Date(m.seenAt).getTime() : undefined,
       });
       if (m.receiverId === userId && !m.seen) unreadSet.add(pid);
     }
@@ -505,14 +507,25 @@ export const markConversationRead = async (req, res) => {
     await Message.ackForPair(viewerId, otherId);
     const io = getIO();
     if (io) {
+      const threadKey = [viewerId, otherId].sort().join(":");
+      const now = Date.now();
       io.to(userRoom(viewerId))
-        .to(threadRoom([viewerId, otherId].sort().join(":")))
+        .to(userRoom(otherId))
+        .to(threadRoom(threadKey))
         .emit("conversation:ack", {
-          convoId: [viewerId, otherId].sort().join(":"),
+          convoId: threadKey,
           viewerId,
           participantId: otherId,
           delivered: true,
           seen: true,
+          deliveredAt: now,
+          seenAt: now,
+        });
+      io.to(userRoom(viewerId))
+        .to(userRoom(otherId))
+        .emit("unread:update", {
+          userId: viewerId,
+          participantId: otherId,
         });
     }
     res.json({ ok: true });

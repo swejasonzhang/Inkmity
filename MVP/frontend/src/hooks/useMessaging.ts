@@ -488,23 +488,48 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       participantId: string;
       delivered?: boolean;
       seen?: boolean;
+      deliveredAt?: number;
+      seenAt?: number;
     }) => {
       const pid = p.participantId;
-      if (p.viewerId !== currentUserId) return;
+      const isViewer = p.viewerId === currentUserId;
+      const isParticipant = p.participantId === currentUserId;
+      
+      if (!isViewer && !isParticipant) return;
+      
       upsert(pid, (prev?: Conversation) => {
         if (!prev) return prev as any;
         const msgs = [...prev.messages];
         for (let i = msgs.length - 1; i >= 0; i--) {
-          if (msgs[i].senderId === currentUserId) {
-            const next = { ...msgs[i] };
-            if (p.seen) next.seen = true;
-            if (p.delivered) next.delivered = true;
+          const msg = msgs[i];
+          const isMyMessage = msg.senderId === currentUserId;
+          const shouldUpdate = isViewer ? isMyMessage : !isMyMessage;
+          
+          if (shouldUpdate) {
+            const next = { ...msg };
+            if (p.seen) {
+              next.seen = true;
+              if (p.seenAt) next.seenAt = p.seenAt;
+            }
+            if (p.delivered) {
+              next.delivered = true;
+              if (p.deliveredAt) next.deliveredAt = p.deliveredAt;
+            }
             msgs[i] = next;
             break;
           }
         }
         return { ...prev, messages: msgs };
       });
+      
+      if (isViewer) {
+        setUnreadMap(m => (m[pid] ? { ...m, [pid]: 0 } : m));
+        fetchUnread();
+      }
+    };
+
+    const onUnreadUpdate = () => {
+      fetchUnread();
     };
 
     const onRemoved = () => {
@@ -518,6 +543,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     s.on("conversation:accepted", onAccepted);
     s.on("conversation:ack", onAck);
     s.on("conversation:removed", onRemoved);
+    s.on("unread:update", onUnreadUpdate);
     if (!s.connected) s.connect();
 
     return () => {
@@ -527,14 +553,15 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       s.off("conversation:accepted", onAccepted);
       s.off("conversation:ack", onAck);
       s.off("conversation:removed", onRemoved);
+      s.off("unread:update", onUnreadUpdate);
     };
   }, [
     currentUserId,
     expandedId,
     upsert,
     messagesOpen,
-    fetchAll,
     fetchUnread,
+    fetchAll,
     fetchIncomingRequests,
     markReadBackend,
   ]);
