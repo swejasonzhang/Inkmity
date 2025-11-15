@@ -111,7 +111,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   }, [apiOrigin, artist?.clerkId]);
 
   useEffect(() => {
-    const handler = (e: CustomEvent<{ artistId: string; username: string }>) => {};
+    const handler = () => {};
     window.addEventListener("ink:open-booking", handler as EventListener);
     return () => window.removeEventListener("ink:open-booking", handler as EventListener);
   }, []);
@@ -261,7 +261,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           </CardHeader>
           <CardContent className="flex items-center justify-center px-2 sm:px-6">
             <div className="w-full mx-auto flex flex-col items-center justify-center gap-3 sm:gap-4 px-1 sm:px-4">
-              <p className="px-3 py-2 rounded-md text-center w-full max-w-[36rem] text-[13px] sm:text-sm leading-5 sm:leading-6" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
+              <p className="px-3 py-2 rounded-full text-center w-full max-w-[36rem] text-[13px] sm:text-sm leading-5 sm:leading-6" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
                 {hasExistingChat ? "You already have an open conversation with this artist. Please resume your chat below." : "Send a request to message. You will be able to chat once the artist accepts."}
               </p>
               {status === "error" && (
@@ -272,29 +272,29 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
               <span className="sr-only" aria-live="polite">
                 {status === "sending" ? "Sending request" : isPending ? "Request pending" : hasExistingChat ? "Conversation already exists" : ""}
               </span>
-              <div className="flex items-center gap-2">
+              {hasExistingChat ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("ink:open-messages"));
+                    onClose?.();
+                  }}
+                  className="w-full sm:w-auto text-base sm:text-sm min-h-[48px] sm:min-h-[56px] rounded-full"
+                  style={{ background: "var(--elevated)", color: "var(--fg)" }}
+                >
+                  Open Messages
+                </Button>
+              ) : (
                 <Button
                   type="button"
                   onClick={handleSendMessage}
-                  disabled={status === "sending" || isPending || hasExistingChat}
+                  disabled={status === "sending" || isPending}
                   className="w-full sm:w-auto text-base sm:text-sm border-0 min-h-[48px] sm:min-h-[56px]"
                   style={{ background: "var(--elevated)", color: "var(--fg)" }}
                 >
-                  {status === "sending" ? "Sending..." : isPending ? "Request Pending" : hasExistingChat ? "Already Chatting" : "Send Request"}
+                  {status === "sending" ? "Sending..." : isPending ? "Request Pending" : "Send Request"}
                 </Button>
-                {hasExistingChat && (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      window.dispatchEvent(new CustomEvent("ink:open-messages"));
-                    }}
-                    className="w-full sm:w-auto text-base sm:text-sm min-h-[48px] sm:min-h-[56px]"
-                    style={{ background: "var(--elevated)", color: "var(--fg)" }}
-                  >
-                    Open Messages
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -324,14 +324,27 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
             <Button onClick={onBack} className="col-span-1 w-full text-sm border-0 min-h-[48px]" style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }} variant="outline">
               Back
             </Button>
-            <Button
-              onClick={hasExistingChat ? openMessages : handleSendMessage}
-              disabled={status === "sending" || isPending || hasExistingChat}
-              className="col-span-2 w-full text-sm min-h-[48px]"
-              style={{ background: "var(--elevated)", color: "var(--fg)" }}
-            >
-              {status === "sending" ? "Sending..." : isPending ? "Pending" : hasExistingChat ? "Already Chatting" : "Send Request"}
-            </Button>
+            {hasExistingChat ? (
+              <Button
+                onClick={() => {
+                  openMessages();
+                  onClose?.();
+                }}
+                className="col-span-2 w-full text-sm min-h-[48px] rounded-full"
+                style={{ background: "var(--elevated)", color: "var(--fg)" }}
+              >
+                Open Messages
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSendMessage}
+                disabled={status === "sending" || isPending}
+                className="col-span-2 w-full text-sm min-h-[48px]"
+                style={{ background: "var(--elevated)", color: "var(--fg)" }}
+              >
+                {status === "sending" ? "Sending..." : isPending ? "Pending" : "Send Request"}
+              </Button>
+            )}
           </div>
         </div>
       </div>
