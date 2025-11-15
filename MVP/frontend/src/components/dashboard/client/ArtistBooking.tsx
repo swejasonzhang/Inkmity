@@ -247,6 +247,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   return (
     <div 
       className="w-full ink-scope ink-no-anim" 
+      data-ink-no-theme="true"
       style={{ 
         background: "var(--card)", 
         color: "var(--fg)",

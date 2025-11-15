@@ -151,6 +151,9 @@ body,
   mix-blend-mode: normal;
   z-index: 2147483000;
 }
+.ink-scope[data-ink-no-theme="true"].ink-theming::after {
+  display: none;
+}
 
 @keyframes inkVeil {
   0% {

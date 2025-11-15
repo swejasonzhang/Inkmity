@@ -63,33 +63,7 @@ function useDashboardScope(scopeEl: HTMLElement | null, initialTheme: "light" | 
     if (!scopeEl) return;
     scopeEl.classList.add("ink-scope", "ink-no-anim");
     applyTheme(scopeEl, initialTheme);
-    const KEY = "dashboard-theme";
-    const sync = () => {
-      let t: "light" | "dark" = initialTheme;
-      try {
-        const v = localStorage.getItem(KEY);
-        if (v === "light" || v === "dark") t = v;
-      } catch { }
-      applyTheme(scopeEl, t);
-    };
-    const onStorage = (e: StorageEvent) => {
-      if (!e.key || e.key === KEY) sync();
-    };
-    const onBus = (e: Event) => {
-      const d = (e as CustomEvent).detail;
-      if (d?.key !== KEY) return;
-      try {
-        if (d.value === "light" || d.value === "dark") localStorage.setItem(KEY, d.value);
-      } catch { }
-      sync();
-    };
     requestAnimationFrame(() => scopeEl.classList.remove("ink-no-anim"));
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("ink:theme-change", onBus);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("ink:theme-change", onBus);
-    };
   }, [scopeEl, initialTheme]);
 }
 
