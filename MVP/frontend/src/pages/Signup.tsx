@@ -119,7 +119,7 @@ export default function SignUp() {
   const isRedirectingRef = useRef(false);
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
-  const { userId, getToken } = useAuth();
+  const { userId, getToken, isLoaded: authLoaded } = useAuth();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -130,6 +130,7 @@ export default function SignUp() {
   const [flashToken, setFlashToken] = useState(0);
 
   useEffect(() => {
+    if (!authLoaded) return;
     if (!userId) {
       if (!isMountedRef.current) {
         isMountedRef.current = true;
@@ -152,7 +153,7 @@ export default function SignUp() {
         navigate("/dashboard", { replace: true });
       }, 2000);
     }
-  }, [userId, navigate]);
+  }, [authLoaded, userId, navigate]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
@@ -437,8 +438,8 @@ export default function SignUp() {
       <main className="z-10 grid place-items-center px-3 md:px-0 overflow-y-auto md:overflow-visible md:pt-0 md:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
         <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
-            <div className={`relative flex w-full h-full flex-col md:flex-row md:items-center md:justify-center p-0 ${showInfo && !showSuccess && !userId ? "" : "justify-center"}`}>
-              {showInfo && !showSuccess && !userId && (
+            <div className={`relative flex w-full h-full flex-col md:flex-row md:items-center md:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId ? "" : "justify-center"}`}>
+              {showInfo && !showSuccess && authLoaded && !userId && (
                 <motion.div
                   layout={!showSuccess && !userId}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -452,53 +453,97 @@ export default function SignUp() {
                   </div>
                 </motion.div>
               )}
-              <motion.div
-                ref={cardRef}
-                layout={!showSuccess && !userId}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`${showInfo && !showSuccess && !userId ? "flex-1 w-full md:w-1/2 md:flex-none" : showSuccess ? "w-full max-w-2xl" : "w-full max-w-lg"} p-0 mb-2 md:mb-0 ${showSuccess ? "flex items-center justify-center" : ""}`}
-                style={{ minHeight: isMdUp && showSuccess ? 880 : undefined }}
-              >
-                <SignupFormCard
-                  showInfo={showInfo}
-                  hasError={mascotError}
-                  role={role}
-                  setRole={setRole}
-                  step={step}
-                  setStep={setStep}
-                  slides={slides}
-                  shared={shared}
-                  client={client}
-                  artist={artist}
-                  onSharedChange={(e) => setShared({ ...shared, [e.target.name]: e.target.value })}
-                  onClientChange={handleClient}
-                  onArtistChange={handleArtist}
-                  awaitingCode={awaitingCode}
-                  code={code}
-                  setCode={setCode}
-                  loading={loading}
-                  isLoaded={isLoaded as boolean}
-                  onNext={handleNext}
-                  onBack={handleBack}
-                  onStartVerification={startVerification}
-                  onVerify={verifyCode}
-                  onPasswordVisibilityChange={handlePasswordVisibilityChange}
-                  emailTaken={false}
-                  className=""
-                  clientRefs={clientRefs}
-                  setClientRefs={setClientRefs}
-                  artistPortfolioImgs={artistPortfolioImgs}
-                  setArtistPortfolioImgs={setArtistPortfolioImgs}
-                  onCancelVerification={() => setAwaitingCode(false)}
-                  bio={bio}
-                  onBioChange={(e) => setBio(e.target.value)}
-                  invalidFields={invalidFields}
-                  flashToken={flashToken}
-                  success={showSuccess}
-                  successHeading={successHeading}
-                  successSubtitle={successSubtitle}
-                />
-              </motion.div>
+              {authLoaded && userId ? (
+                <motion.div
+                  ref={cardRef}
+                  layout={false}
+                  className="w-full max-w-2xl p-0 mb-2 md:mb-0 flex items-center justify-center"
+                >
+                  <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 mx-auto">
+                    <div className="w-full min-h-[560px] md:min-h-[680px] flex items-center justify-center">
+                      <div className="ink-success-wrap flex flex-col items-center justify-center gap-8 py-16">
+                        <div className="ink-spinner" />
+                        <div className="text-center space-y-2">
+                          <div className="text-white text-2xl md:text-3xl font-semibold">{successHeading}</div>
+                          <div className="text-white/80 text-base md:text-lg">
+                            {successSubtitle}
+                            <span className="ink-dots" aria-hidden="true">
+                              <span className="ink-dot" />
+                              <span className="ink-dot" />
+                              <span className="ink-dot" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : !authLoaded ? (
+                <motion.div
+                  ref={cardRef}
+                  layout={false}
+                  className="w-full max-w-2xl p-0 mb-2 md:mb-0 flex items-center justify-center"
+                >
+                  <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 mx-auto">
+                    <div className="w-full min-h-[560px] md:min-h-[680px] flex items-center justify-center">
+                      <div className="ink-success-wrap flex flex-col items-center justify-center gap-8 py-16">
+                        <div className="ink-spinner" />
+                        <div className="text-center space-y-2">
+                          <div className="text-white text-2xl md:text-3xl font-semibold">Loading...</div>
+                          <span className="sr-only" aria-live="polite">Loading authentication state</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : authLoaded && !userId ? (
+                <motion.div
+                  ref={cardRef}
+                  layout={!showSuccess && !userId}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className={`${showInfo && !showSuccess && authLoaded && !userId ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-2 md:mb-0`}
+                >
+                  <SignupFormCard
+                    showInfo={showInfo}
+                    hasError={mascotError}
+                    role={role}
+                    setRole={setRole}
+                    step={step}
+                    setStep={setStep}
+                    slides={slides}
+                    shared={shared}
+                    client={client}
+                    artist={artist}
+                    onSharedChange={(e) => setShared({ ...shared, [e.target.name]: e.target.value })}
+                    onClientChange={handleClient}
+                    onArtistChange={handleArtist}
+                    awaitingCode={awaitingCode}
+                    code={code}
+                    setCode={setCode}
+                    loading={loading}
+                    isLoaded={isLoaded as boolean}
+                    onNext={handleNext}
+                    onBack={handleBack}
+                    onStartVerification={startVerification}
+                    onVerify={verifyCode}
+                    onPasswordVisibilityChange={handlePasswordVisibilityChange}
+                    emailTaken={false}
+                    className=""
+                    clientRefs={clientRefs}
+                    setClientRefs={setClientRefs}
+                    artistPortfolioImgs={artistPortfolioImgs}
+                    setArtistPortfolioImgs={setArtistPortfolioImgs}
+                    onCancelVerification={() => setAwaitingCode(false)}
+                    bio={bio}
+                    onBioChange={(e) => setBio(e.target.value)}
+                    invalidFields={invalidFields}
+                    flashToken={flashToken}
+                    success={showSuccess}
+                    successHeading={successHeading}
+                    successSubtitle={successSubtitle}
+                  />
+                </motion.div>
+              ) : null}
             </div>
           </motion.div>
         </div>
