@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useLayoutEffect, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 
@@ -23,10 +23,23 @@ const qsa = (sel: string) =>
   Array.from(document.querySelectorAll<HTMLElement>(sel));
 
 function getInitialTheme(): Theme {
-  const scoped = getStoredTheme(GUEST_STORAGE_KEY);
-  if (scoped) return scoped;
+  if (typeof window === "undefined") return "dark";
+  
   const legacy = getStoredTheme(LEGACY_STORAGE_KEY);
   if (legacy) return legacy;
+  
+  const scoped = getStoredTheme(GUEST_STORAGE_KEY);
+  if (scoped) return scoped;
+  
+  try {
+    const userId = (window as any).__CLERK_USER_ID__;
+    if (userId) {
+      const userKey = `${STORAGE_NAMESPACE}${userId}`;
+      const userTheme = getStoredTheme(userKey);
+      if (userTheme) return userTheme;
+    }
+  } catch {}
+  
   return "dark";
 }
 
@@ -42,7 +55,10 @@ export function useTheme() {
   const { user, isLoaded: isUserLoaded } = useUser();
   const isDashboard = pathname.startsWith("/dashboard");
 
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = getInitialTheme();
+    return stored;
+  });
   const timersRef = useRef(new Set<number>());
 
   const storageKey = useMemo(
@@ -56,7 +72,16 @@ export function useTheme() {
     const publicScope = q("#public-scope");
     const scopes = qsa(".ink-scope");
 
+    if (isDashboard && dash) {
+      const currentTheme = dash.classList.contains("ink-light") || dash.getAttribute("data-ink") === "light" ? "light" : "dark";
+      if (!animate && currentTheme === t && initialEffectRef.current === false) {
+        return;
+      }
+    }
+
     scopes.forEach((n) => {
+      if (n.getAttribute("data-ink-modal-portal") === "true") return;
+      if (n.getAttribute("data-ink-no-theme") === "true") return;
       n.classList.remove("ink-light", "ink-theming", "ink-smoothing");
       n.removeAttribute("data-ink");
     });
@@ -86,34 +111,87 @@ export function useTheme() {
   };
 
   const initialEffectRef = useRef(true);
-
-  useLayoutEffect(() => {
-    applyTheme(theme, false);
-    initialEffectRef.current = true;
-
-    return () => {
-      const timers = timersRef.current;
-      timers.forEach((id) => window.clearTimeout(id));
-      timers.clear();
-    };
-  }, [isDashboard, storageKey]);
+  const previousThemeRef = useRef<Theme | null>(null);
+  const userLoadedRef = useRef(false);
 
   useEffect(() => {
     if (!isUserLoaded) return;
+    
     const stored =
       getStoredTheme(storageKey) ??
-      (user?.id ? getStoredTheme(LEGACY_STORAGE_KEY) : null);
+      (user?.id ? getStoredTheme(LEGACY_STORAGE_KEY) : getStoredTheme(LEGACY_STORAGE_KEY));
+    
     if (stored && stored !== theme) {
       setTheme(stored);
+      return;
     }
-  }, [storageKey, isUserLoaded]);
+    
+    if (!userLoadedRef.current) {
+      userLoadedRef.current = true;
+      if (!stored && theme !== "dark") {
+        setStoredTheme(storageKey, theme);
+        if (storageKey !== LEGACY_STORAGE_KEY) {
+          setStoredTheme(LEGACY_STORAGE_KEY, theme);
+        }
+      }
+    }
+  }, [isUserLoaded, storageKey, user?.id]);
 
   useEffect(() => {
-    const shouldAnimate = initialEffectRef.current ? false : true;
-    applyTheme(theme, shouldAnimate);
-    if (initialEffectRef.current) {
+    const isInitialMount = initialEffectRef.current;
+    const previousTheme = previousThemeRef.current;
+    const themeChanged = previousTheme !== null && previousTheme !== theme;
+    
+    const dash = q("#dashboard-scope");
+    const currentDashTheme = dash?.classList.contains("ink-light") || dash?.getAttribute("data-ink") === "light" ? "light" : "dark";
+    
+    if (isInitialMount) {
+      const stored =
+        getStoredTheme(storageKey) ??
+        (user?.id ? getStoredTheme(LEGACY_STORAGE_KEY) : getStoredTheme(LEGACY_STORAGE_KEY));
+      
+      if (stored && stored !== theme) {
+        setTheme(stored);
+        return;
+      }
+      
+      applyTheme(theme, false);
       initialEffectRef.current = false;
+      previousThemeRef.current = theme;
+      setStoredTheme(storageKey, theme);
+      if (storageKey !== LEGACY_STORAGE_KEY) {
+        setStoredTheme(LEGACY_STORAGE_KEY, theme);
+      }
+      window.dispatchEvent(
+        new CustomEvent("ink:theme-change", {
+          detail: {
+            key: LEGACY_STORAGE_KEY,
+            scopedKey: storageKey,
+            value: theme,
+          },
+        })
+      );
+      return;
     }
+
+    if (!themeChanged) {
+      if (isDashboard && dash && currentDashTheme !== theme) {
+        applyTheme(theme, false);
+        setStoredTheme(storageKey, theme);
+        if (storageKey !== LEGACY_STORAGE_KEY) {
+          setStoredTheme(LEGACY_STORAGE_KEY, theme);
+        }
+      }
+      return;
+    }
+
+    if (currentDashTheme === theme) {
+      previousThemeRef.current = theme;
+      return;
+    }
+
+    applyTheme(theme, true);
+    previousThemeRef.current = theme;
     setStoredTheme(storageKey, theme);
     if (storageKey !== LEGACY_STORAGE_KEY) {
       setStoredTheme(LEGACY_STORAGE_KEY, theme);
@@ -128,7 +206,13 @@ export function useTheme() {
         },
       })
     );
-  }, [theme, isDashboard, storageKey]);
+
+    return () => {
+      const timers = timersRef.current;
+      timers.forEach((id) => window.clearTimeout(id));
+      timers.clear();
+    };
+  }, [theme, storageKey, user?.id, isDashboard]);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -146,10 +230,17 @@ export function useTheme() {
     return () => window.removeEventListener("storage", onStorage);
   }, [storageKey]);
 
-  const toggleTheme = () => {
-    if (!isDashboard) return; 
-    setTheme((t) => (t === "light" ? "dark" : "light"));
-  };
+  const toggleTheme = useCallback(() => {
+    if (!isDashboard) return;
+    const dash = q("#dashboard-scope");
+    const currentTheme = dash?.classList.contains("ink-light") || dash?.getAttribute("data-ink") === "light" ? "light" : "dark";
+    const newTheme = currentTheme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    setStoredTheme(storageKey, newTheme);
+    if (storageKey !== LEGACY_STORAGE_KEY) {
+      setStoredTheme(LEGACY_STORAGE_KEY, newTheme);
+    }
+  }, [isDashboard, storageKey]);
 
   const themeClass = useMemo(() => "ink-scope", []);
 
