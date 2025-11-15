@@ -98,9 +98,13 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const upsert = useCallback(
     (pid: string, apply: (prev?: Conversation) => Conversation) => {
       setConversations((prev) => {
-        const map = new Map(prev.map((c) => [c.participantId, c]));
-        map.set(pid, apply(map.get(pid)));
-        return Array.from(map.values());
+        const filtered = prev.filter((c): c is Conversation => c != null && c.participantId != null);
+        const map = new Map(filtered.map((c) => [c.participantId, c]));
+        const result = apply(map.get(pid));
+        if (result != null && result.participantId != null) {
+          map.set(pid, result);
+        }
+        return Array.from(map.values()).filter((c): c is Conversation => c != null && c.participantId != null);
       });
     },
     []
@@ -306,7 +310,19 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } catch {
         upsert(receiverId, (prev?: Conversation) => {
-          if (!prev) return prev as any;
+          if (!prev) {
+            return {
+              participantId: receiverId,
+              username: "Conversation",
+              messages: [],
+              meta: {
+                allowed: true,
+                lastStatus: null,
+                declines: 0,
+                blocked: false,
+              },
+            };
+          }
           return {
             ...prev,
             messages: prev.messages.filter(
@@ -395,7 +411,19 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       }
       if (!isInbound) {
         upsert(pid, (prev?: Conversation) => {
-          if (!prev) return prev as any;
+          if (!prev) {
+            return {
+              participantId: pid,
+              username: "Conversation",
+              messages: [],
+              meta: {
+                allowed: false,
+                lastStatus: null,
+                declines: 0,
+                blocked: false,
+              },
+            };
+          }
           const msgs = [...prev.messages];
           for (let i = msgs.length - 1; i >= 0; i--) {
             if (
@@ -498,7 +526,19 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       if (!isViewer && !isParticipant) return;
       
       upsert(pid, (prev?: Conversation) => {
-        if (!prev) return prev as any;
+        if (!prev) {
+          return {
+            participantId: pid,
+            username: "Conversation",
+            messages: [],
+            meta: {
+              allowed: false,
+              lastStatus: null,
+              declines: 0,
+              blocked: false,
+            },
+          };
+        }
         const msgs = [...prev.messages];
         for (let i = msgs.length - 1; i >= 0; i--) {
           const msg = msgs[i];

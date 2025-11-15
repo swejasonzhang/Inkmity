@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { Send } from "lucide-react";
+import { Send, Image as ImageIcon } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,16 +11,8 @@ import RequestPanel from "./messages/RequestPanel";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import { socket } from "@/lib/socket";
+import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
 import "@/styles/ink-conversations.css";
-
-declare global {
-  interface Window {
-    cloudinary?: any;
-  }
-}
-
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
 
 export type Message = {
   senderId: string;
@@ -108,6 +100,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [qbOpen, setQbOpen] = useState(false);
   const [qbArtist, setQbArtist] = useState<{ username: string; clerkId: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [pendingImages, setPendingImages] = useState<Record<string, string[]>>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const appRef = useRef<HTMLDivElement | null>(null);
   const overlayActive = confirmOpen || !!viewerUrl;
@@ -415,23 +410,33 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }
 
   const handleSend = async (participantId: string) => {
-    const text = messageInput[participantId]?.trim();
-    if (!text) return;
+    const text = messageInput[participantId]?.trim() || "";
+    const images = pendingImages[participantId] || [];
+    
+    if (!text && images.length === 0) return;
+    
     setSendError(null);
     setExpandedId(participantId);
     setMessageInput(prev => ({ ...prev, [participantId]: "" }));
+    setPendingImages(prev => ({ ...prev, [participantId]: [] }));
+    
     try {
-      const meta: Record<string, any> = {};
+      const imageUrls = getUrlsFromText(text);
+      const allImageUrls = [...new Set([...imageUrls, ...images])];
+      const meta: Record<string, any> = {
+        ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
+      };
       const res = await authFetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ receiverId: participantId, text, meta })
+        body: JSON.stringify({ receiverId: participantId, text, meta, referenceUrls: allImageUrls })
       });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       onMarkRead(participantId);
     } catch (err: any) {
       setSendError(err?.message || "Failed to send message.");
       setMessageInput(prev => ({ ...prev, [participantId]: text }));
+      setPendingImages(prev => ({ ...prev, [participantId]: images }));
     }
   };
 
@@ -577,30 +582,51 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const openUpload = () => {
     if (!activeConv) return;
-    if (!window.cloudinary || !CLOUD_NAME || !UPLOAD_PRESET) return;
-    const widget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: CLOUD_NAME,
-        uploadPreset: UPLOAD_PRESET,
-        multiple: true,
-        sources: ["local", "camera", "url"],
-        resourceType: "image",
-        maxFiles: 8
-      },
-      (err: any, result: any) => {
-        if (err) return;
-        if (result?.event === "success") {
-          const url = result.info?.secure_url || result.info?.url;
-          const id = activeConv!.participantId;
-          setMessageInput(prev => {
-            const prevVal = prev[id] || "";
-            const sep = prevVal ? "\n" : "";
-            return { ...prev, [id]: `${prevVal}${sep}${url}` };
-          });
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !activeConv) return;
+
+    setUploading(true);
+    setSendError(null);
+
+    try {
+      const sig = await getSignedUpload("client_ref");
+      const uploadedUrls: string[] = [];
+
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        if (file.size > 12 * 1024 * 1024) {
+          setSendError(`File ${file.name} is too large. Maximum size is 12MB.`);
+          continue;
+        }
+
+        try {
+          const result = await uploadToCloudinary(file, sig);
+          const url = result.secure_url || result.url;
+          if (url) uploadedUrls.push(url);
+        } catch (err) {
+          console.error("Upload error:", err);
+          setSendError(`Failed to upload ${file.name}. Please try again.`);
         }
       }
-    );
-    widget.open();
+
+      if (uploadedUrls.length > 0) {
+        const id = activeConv.participantId;
+        setPendingImages(prev => ({
+          ...prev,
+          [id]: [...(prev[id] || []), ...uploadedUrls]
+        }));
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      setSendError(err?.message || "Failed to upload images. Please try again.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const openBooking = () => {
@@ -830,17 +856,59 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   )}
                 </div>
                 {sendError && <div className="px-4 pb-2 text-sm text-destructive">{sendError}</div>}
+                {activeConv && pendingImages[activeConv.participantId] && pendingImages[activeConv.participantId].length > 0 && (
+                  <div className="px-4 py-2 border-t border-app bg-elevated/50">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {pendingImages[activeConv.participantId].map((url, idx) => (
+                        <div key={idx} className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPendingImages(prev => ({
+                                ...prev,
+                                [activeConv.participantId]: prev[activeConv.participantId].filter((_, i) => i !== idx)
+                              }));
+                            }}
+                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Remove image"
+                          >
+                            ×
+                          </button>
+                          <img
+                            src={url}
+                            alt={`Preview ${idx + 1}`}
+                            className="w-16 h-16 object-cover rounded-lg border border-app"
+                            loading="lazy"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <footer className="p-2.5 md:p-3 border-t border-app">
                   <div className="flex items-stretch gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={needsApproval && !isClient || uploading}
+                    />
                     <button
                       type="button"
                       onClick={openUpload}
-                      className="px-3 h-15 md:h-17 rounded-xl border border-app bg-elevated hover:bg-elevated/80 text-app text-sm"
+                      disabled={needsApproval && !isClient || uploading}
+                      className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
                       aria-label="Add images"
                       title="Add images"
-                      disabled={needsApproval && !isClient}
                     >
-                      + Image
+                      {uploading ? (
+                        <CircularProgress size={18} className="text-app" />
+                      ) : (
+                        <ImageIcon size={18} />
+                      )}
                     </button>
                     <div className="flex-1 flex rounded-xl overflow-hidden border border-app bg-card">
                       <input
