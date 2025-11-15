@@ -20,6 +20,7 @@ const MessageSchema = new mongoose.Schema(
     seen: { type: Boolean, default: false, index: true },
     delivered: { type: Boolean, default: false, index: true },
     deliveredAt: { type: Date },
+    seenAt: { type: Date },
     meta: {
       budgetCents: { type: Number },
       style: { type: String },
@@ -61,7 +62,7 @@ MessageSchema.statics.ackForPair = function (viewerId, participantId) {
     ),
     this.updateMany(
       { threadKey, receiverId: viewerId, seen: false },
-      { $set: { seen: true } }
+      { $set: { seen: true, seenAt: now } }
     ),
   ]);
 };

@@ -3,12 +3,14 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
+import { Send } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPanel from "./messages/RequestPanel";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
+import { socket } from "@/lib/socket";
 import "@/styles/ink-conversations.css";
 
 declare global {
@@ -31,12 +33,13 @@ export type Message = {
     refs?: string[];
     budgetMin?: number;
     budgetMax?: number;
+    createdAt?: string | number;
     [k: string]: any;
   };
   delivered?: boolean;
   seen?: boolean;
-  deliveredAt?: number;
-  seenAt?: number;
+  deliveredAt?: number | string;
+  seenAt?: number | string;
 };
 
 export type Conversation = {
@@ -157,6 +160,83 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }, [conversations, expandedId, collapsedMap]);
 
   useEffect(() => {
+    if (!currentUserId) return;
+    if (!socket.connected) {
+      socket.connect();
+    }
+    socket.emit("register", currentUserId);
+    return () => {
+      socket.emit("unregister");
+    };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!expandedId || !currentUserId) return;
+    const threadKey = [currentUserId, expandedId].sort().join(":");
+    socket.emit("thread:join", { threadKey });
+    return () => {
+      socket.emit("thread:leave", { threadKey });
+    };
+  }, [expandedId, currentUserId]);
+
+  useEffect(() => {
+    const onAck = (p: {
+      convoId: string;
+      viewerId: string;
+      participantId: string;
+      delivered?: boolean;
+      seen?: boolean;
+      deliveredAt?: number;
+      seenAt?: number;
+    }) => {
+      const pid = p.participantId;
+      const isViewer = p.viewerId === currentUserId;
+      const isParticipant = p.participantId === currentUserId;
+      
+      if (!isViewer && !isParticipant) return;
+      
+      setConversations(prev => prev.map(conv => {
+        if (conv.participantId !== pid) return conv;
+        const msgs = conv.messages.map(msg => {
+          let shouldUpdate = false;
+          
+          if (isViewer) {
+            shouldUpdate = msg.senderId === pid && msg.receiverId === currentUserId;
+          } else if (isParticipant) {
+            shouldUpdate = msg.senderId === currentUserId && msg.receiverId === p.viewerId;
+          }
+          
+          if (shouldUpdate) {
+            const next = { ...msg };
+            if (p.seen && !next.seen) {
+              next.seen = true;
+              if (p.seenAt) next.seenAt = p.seenAt;
+            }
+            if (p.delivered && !next.delivered) {
+              next.delivered = true;
+              if (p.deliveredAt) next.deliveredAt = p.deliveredAt;
+            }
+            return next;
+          }
+          return msg;
+        });
+        return { ...conv, messages: msgs };
+      }));
+    };
+
+    const onUnreadUpdate = () => {
+      window.dispatchEvent(new Event("ink:unread-update"));
+    };
+
+    socket.on("conversation:ack", onAck);
+    socket.on("unread:update", onUnreadUpdate);
+    return () => {
+      socket.off("conversation:ack", onAck);
+      socket.off("unread:update", onUnreadUpdate);
+    };
+  }, [currentUserId]);
+
+  useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<string | { id?: string; clerkId?: string }>).detail;
       const id = typeof detail === "string" ? detail : detail?.id || detail?.clerkId || null;
@@ -184,10 +264,29 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
   }, [viewerUrl]);
 
+  const onMarkRead = useCallback(async (participantId: string) => {
+    setUnreadMap(m => (m[participantId] ? { ...m, [participantId]: 0 } : m));
+    window.dispatchEvent(new CustomEvent("ink:conversation-read", { detail: participantId }));
+    try {
+      await authFetch("/api/messages/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: participantId }),
+      });
+    } catch {
+    }
+  }, [authFetch]);
+
   const activeConv = useMemo(
     () => conversations.find(c => c.participantId === expandedId) || conversations[0],
     [conversations, expandedId]
   );
+
+  useEffect(() => {
+    if (expandedId && activeConv) {
+      onMarkRead(expandedId);
+    }
+  }, [expandedId, activeConv, onMarkRead]);
 
   const fmtTime = (ts: number) => {
     try {
@@ -201,12 +300,21 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   };
 
+  const fmtDateTime = (ts: number | string | undefined) => {
+    try {
+      if (!ts) return "";
+      const d = typeof ts === "string" ? new Date(ts) : new Date(ts);
+      if (isNaN(d.getTime())) return "";
+      const dateStr = d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
+      const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      return `${dateStr}, ${timeStr}`;
+    } catch {
+      return "";
+    }
+  };
+
   const onToggleCollapse = (participantId: string) =>
     setCollapsedMap(m => ({ ...m, [participantId]: !m[participantId] }));
-
-  const onMarkRead = useCallback((participantId: string) => {
-    setUnreadMap(m => (m[participantId] ? { ...m, [participantId]: 0 } : m));
-  }, []);
 
   const fetchRequestsAndFindId = async (participantId: string): Promise<string | null> => {
     if (isClient) return null;
@@ -665,14 +773,25 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         .concat(msg.meta?.refs ?? []);
                       const fromText = getUrlsFromText(msg.text);
                       const merged = Array.from(new Set([...fromMetaRef, ...fromText])).slice(0, 3);
-                      const isLastOutgoing = isMe && idx === activeConv.messages.reduce((p, m, i) => (m.senderId === currentUserId ? i : p), -1);
-                      const statusSuffix = isLastOutgoing
-                        ? msg.seen
-                          ? ` · Seen ${fmtTime(msg.seenAt || Date.now())}`
-                          : msg.delivered
-                            ? ` · Delivered ${fmtTime(msg.deliveredAt || Date.now())}`
-                            : ""
-                        : "";
+                      
+                      let timestampText = "";
+                      let statusText = "";
+                      if (isMe) {
+                        if (msg.seen) {
+                          const seenTimestamp = msg.seenAt || (msg.deliveredAt && msg.seen ? msg.deliveredAt : msg.timestamp);
+                          timestampText = fmtDateTime(seenTimestamp);
+                          statusText = " · Seen";
+                        } else if (msg.delivered) {
+                          const deliveredTimestamp = msg.deliveredAt || msg.timestamp;
+                          timestampText = fmtDateTime(deliveredTimestamp);
+                          statusText = " · Delivered";
+                        } else {
+                          timestampText = fmtDateTime(msg.timestamp);
+                          statusText = " · Sending";
+                        }
+                      } else {
+                        timestampText = fmtDateTime(msg.timestamp);
+                      }
 
                       return (
                         <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
@@ -702,7 +821,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               </div>
                             )}
                             <div className={`mt-1 text-[13px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                              {fmtTime(msg.timestamp)}{statusSuffix}
+                              {timestampText}{statusText}
                             </div>
                           </div>
                         </div>
@@ -750,9 +869,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         type="button"
                         onClick={() => activeConv && (!needsApproval || isClient) && handleSend(activeConv.participantId)}
                         disabled={needsApproval && !isClient}
-                        className="px-4 h-10 md:h-10 text-sm font-medium bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                        className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                        aria-label="Send message"
                       >
-                        Send
+                        <Send size={18} />
                       </button>
                     </div>
                   </div>

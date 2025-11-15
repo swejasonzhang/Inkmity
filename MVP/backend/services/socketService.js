@@ -39,13 +39,25 @@ export const initSocket = (ioInstance) => {
           const otherId = ids[0] === viewerId ? ids[1] : ids[0];
           try {
             await Message.ackForPair(viewerId, otherId);
-            io.to(threadRoom(threadKey)).emit("conversation:ack", {
-              convoId: threadKey,
-              viewerId,
-              participantId: otherId,
-              delivered: true,
-              seen: true,
-            });
+            const now = Date.now();
+            io.to(userRoom(viewerId))
+              .to(userRoom(otherId))
+              .to(threadRoom(threadKey))
+              .emit("conversation:ack", {
+                convoId: threadKey,
+                viewerId,
+                participantId: otherId,
+                delivered: true,
+                seen: true,
+                deliveredAt: now,
+                seenAt: now,
+              });
+            io.to(userRoom(viewerId))
+              .to(userRoom(otherId))
+              .emit("unread:update", {
+                userId: viewerId,
+                participantId: otherId,
+              });
           } catch {}
         }
       }
