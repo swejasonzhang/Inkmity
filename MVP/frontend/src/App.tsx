@@ -12,7 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
   return (
-    <div id="public-scope" className={`${themeClass} theme-smooth`} data-ink="dark">
+    <div id="public-scope" className={themeClass} data-ink="dark" data-ink-no-theme="true">
       <Outlet />
     </div>
   );
