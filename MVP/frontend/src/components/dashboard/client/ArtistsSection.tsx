@@ -302,7 +302,7 @@ export default function ArtistsSection({
     };
 
     return (
-        <div className="flex flex-col h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
+        <div className="grid grid-rows-[auto,1fr] h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
             <div ref={filterRef} className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
                 <ArtistFilter
                     priceFilter={priceFilter}
@@ -353,14 +353,17 @@ export default function ArtistsSection({
                 />
             </div>
 
-            <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
+            <div className="flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
                 {isCenterLoading && (
                     <div className="absolute inset-0 z-10 grid place-items-center">
                         <CircularProgress sx={{ color: "var(--fg)" }} />
                     </div>
                 )}
 
-                <div className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}>
+                <div
+                    className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}
+                    style={{ minHeight: `${isMdUp ? minGridPx : 0}px` }}
+                >
                     <div className="md:hidden h-full min-h-0">
                         {listItems.length > 0 ? (
                             <div
@@ -411,7 +414,7 @@ export default function ArtistsSection({
                                 ))}
                             </div>
                         ) : (
-                            <div className="min-h-full p-0 md:p-3" style={{ minHeight: `${minGridPx}px` }}>
+                            <div className="min-h-full p-0 md:p-3" style={{ minHeight: `${minGridPx}px`, height: `${minGridPx}px` }}>
                                 <div className="w-full h-full grid place-items-center">
                                     <div className="text-center max-w-prose">
                                         <p className="text-lg font-semibold" style={{ color: "var(--fg)" }}>No artists match your filters.</p>

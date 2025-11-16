@@ -164,7 +164,7 @@ export default function ClientDashboard() {
             </div>
             <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 flex">
-                    <div className="w-full md:my-auto my-0 px-0 md:px-3">
+                    <div className="w-full my-0 md:my-0 px-0 md:px-3">
                         <Suspense
                             fallback={
                                 <div className="p-4 space-y-4">
