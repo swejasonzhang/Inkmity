@@ -228,6 +228,7 @@ const ArtistFilter: React.FC<Props> = ({
 
   const [localSearch, setLocalSearch] = useState(searchQuery ?? "");
   const debounceRef = useRef<number | null>(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
     if (!sort) setSort("highest_rated");
@@ -391,7 +392,7 @@ const ArtistFilter: React.FC<Props> = ({
       <div className="w-full mx-auto">
         <div className="p-2 sm:p-3">
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3 w-full">
-            <div className={clsx("relative col-span-3 sm:col-span-1", SEARCH_W, "sm:mr-2")}>
+            <div className={clsx("relative col-span-2 sm:col-span-1", SEARCH_W, "sm:mr-2")}>
               <Input
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
@@ -408,8 +409,22 @@ const ArtistFilter: React.FC<Props> = ({
                 )}
               />
             </div>
+            <div className="col-span-1 sm:hidden">
+              <button
+                type="button"
+                aria-label="Toggle filters"
+                aria-expanded={showMobileFilters}
+                onClick={() => setShowMobileFilters((v) => !v)}
+                className={clsx(
+                  "h-[34px] w-full bg-elevated border border-app text-app rounded-lg",
+                  "text-xs px-3 outline-none ring-0 focus:ring-0 focus-visible:ring-0"
+                )}
+              >
+                {showMobileFilters ? "Hide Filters" : "Show Filters"}
+              </button>
+            </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={priceFilter}
                 onValueChange={(value) => {
@@ -430,7 +445,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={locationFilter}
                 onValueChange={(value) => {
@@ -454,7 +469,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={styleFilter}
                 onValueChange={(value) => {
@@ -478,7 +493,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={availabilityFilter}
                 onValueChange={(v) => {
@@ -499,7 +514,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={experienceFilter}
                 onValueChange={(v) => {
@@ -520,7 +535,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={bookingFilter}
                 onValueChange={(v) => {
@@ -541,7 +556,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={travelFilter}
                 onValueChange={(v) => {
@@ -562,7 +577,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W)}>
+            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={sort}
                 onValueChange={(v) => {
