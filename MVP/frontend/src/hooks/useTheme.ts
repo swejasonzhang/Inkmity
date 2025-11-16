@@ -56,8 +56,13 @@ export function useTheme() {
   const isDashboard = pathname.startsWith("/dashboard");
 
   const [theme, setTheme] = useState<Theme>(() => {
-    const stored = getInitialTheme();
-    return stored;
+    // Only read theme from storage if we're on dashboard
+    if (isDashboard) {
+      const stored = getInitialTheme();
+      return stored;
+    }
+    // Always dark for non-dashboard pages
+    return "dark";
   });
   const timersRef = useRef(new Set<number>());
 
@@ -116,6 +121,7 @@ export function useTheme() {
 
   useEffect(() => {
     if (!isUserLoaded) return;
+    if (!isDashboard) return; // Don't load theme for non-dashboard pages
     
     const stored =
       getStoredTheme(storageKey) ??
@@ -135,7 +141,14 @@ export function useTheme() {
         }
       }
     }
-  }, [isUserLoaded, storageKey, user?.id]);
+  }, [isUserLoaded, storageKey, user?.id, isDashboard]);
+
+  // Reset theme to dark when navigating away from dashboard
+  useEffect(() => {
+    if (!isDashboard && theme !== "dark") {
+      setTheme("dark");
+    }
+  }, [isDashboard, theme]);
 
   useEffect(() => {
     const isInitialMount = initialEffectRef.current;
@@ -146,6 +159,14 @@ export function useTheme() {
     const currentDashTheme = dash?.classList.contains("ink-light") || dash?.getAttribute("data-ink") === "light" ? "light" : "dark";
     
     if (isInitialMount) {
+      // For non-dashboard pages, always apply dark immediately without transitions
+      if (!isDashboard) {
+        applyTheme("dark", false);
+        initialEffectRef.current = false;
+        previousThemeRef.current = "dark";
+        return;
+      }
+      
       const stored =
         getStoredTheme(storageKey) ??
         (user?.id ? getStoredTheme(LEGACY_STORAGE_KEY) : getStoredTheme(LEGACY_STORAGE_KEY));
