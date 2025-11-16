@@ -26,9 +26,9 @@ export default function LoginFormCard({ showInfo, hasError, titleOverride, subti
 
     return (
         <div className={`relative w-full h-full flex flex-col ${className ?? ""}`}>
-            <div className={`${isShowingSuccess ? "rounded-3xl" : showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 sm:p-5 h-full mx-auto flex flex-col overflow-hidden`}>
+            <div className={`${isShowingSuccess ? "rounded-3xl" : showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 sm:p-5 h-full mx-auto flex flex-col items-center justify-center overflow-hidden`}>
                 {shouldShowForm ? (
-                    <div className="h-full w-full flex flex-col gap-3 justify-between">
+                    <div className="w-full flex flex-col items-center justify-center gap-3">
                         {!hideHeader && (
                             <div className="flex flex-col items-center text-center gap-2 flex-shrink-0">
                                 <div className="text-white">
@@ -44,7 +44,7 @@ export default function LoginFormCard({ showInfo, hasError, titleOverride, subti
                             </div>
                         )}
 
-                        <div className="w-full grid place-items-center flex-1 min-h-0">
+                        <div className="w-full grid place-items-center">
                             <motion.div variants={shake} animate={hasError ? "error" : "idle"} className="w-full max-w-sm mx-auto">
                                 {children}
                             </motion.div>

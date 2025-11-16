@@ -158,8 +158,8 @@ export default function SignupFormCard(props: SignupProps) {
 
   return (
     <div className={`relative w-full ${className ?? ""}`}>
-      <div className={`${showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto`}>
-        <div className="h-full w-full flex flex-col gap-5">
+      <div className={`${showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-5 sm:p-6 h-full mx-auto flex items-center justify-center`}>
+        <div className="w-full flex flex-col items-center justify-center gap-5">
           <div className="flex flex-col items-center text-center gap-4">
             <div className="text-white">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs">

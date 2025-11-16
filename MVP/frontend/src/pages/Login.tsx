@@ -300,22 +300,8 @@ export default function Login() {
                     </div>
                   </div>
                 </motion.div>
-              ) : !authLoaded ? (
-                <motion.div ref={cardRef} layout={false} className="w-full max-w-2xl p-0 mb-4 md:mb-0">
-                  <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 sm:p-5 h-full mx-auto flex flex-col overflow-hidden">
-                    <div className="w-full min-h-[560px] md:min-h-[680px] flex flex-col items-center justify-center gap-8 py-16">
-                      <div className="ink-ring scale-125 md:scale-150" aria-hidden="true">
-                        <div className="ink-ring__inner" />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-white text-2xl md:text-3xl font-semibold">Loading...</p>
-                        <span className="sr-only" aria-live="polite">Loading authentication state</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ) : authLoaded && !isSignedIn ? (
-                <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && authLoaded && !isSignedIn ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
+              ) : (
+                <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && (!authLoaded || !isSignedIn) ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
                   <LoginFormCard
                     showInfo={showInfo}
                     hasError={mascotError}
@@ -417,7 +403,7 @@ export default function Login() {
                     )}
                   </LoginFormCard>
                 </motion.div>
-              ) : null}
+              )}
             </div>
           </motion.div>
         </div>
