@@ -17,6 +17,8 @@ type Props = {
     onEmailBlur?: () => void;
     invalidFields?: string[];
     flashToken?: number;
+    confirmPassword?: string;
+    setConfirmPassword: (v: string) => void;
 };
 
 export default function SharedAccountStep({
@@ -27,18 +29,27 @@ export default function SharedAccountStep({
     onPasswordVisibilityChange,
     onEmailBlur,
     invalidFields = [],
-    flashToken = 0
+    flashToken = 0,
+    confirmPassword,
+    setConfirmPassword
 }: Props) {
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const pwdRef = useRef<HTMLInputElement>(null);
+    const confirmPwdRef = useRef<HTMLInputElement>(null);
     const [flashUser, setFlashUser] = useState(false);
     const [flashEmail, setFlashEmail] = useState(false);
     const [flashPwd, setFlashPwd] = useState(false);
+    const [flashConfirmPwd, setFlashConfirmPwd] = useState(false);
 
     const togglePassword = () => {
         const next = !showPassword;
         setShowPassword(next);
         onPasswordVisibilityChange?.(!next);
+    };
+
+    const toggleConfirmPassword = () => {
+        setShowConfirmPassword((prev) => !prev);
     };
 
     useEffect(() => {
@@ -56,16 +67,23 @@ export default function SharedAccountStep({
             setFlashPwd(true);
             timers.push(window.setTimeout(() => setFlashPwd(false), 1400));
         }
+        if (invalidFields.includes("confirmPassword")) {
+            setFlashConfirmPwd(true);
+            timers.push(window.setTimeout(() => setFlashConfirmPwd(false), 1400));
+        }
         return () => timers.forEach((t) => clearTimeout(t));
     }, [flashToken, invalidFields]);
 
     const usernameOk = shared.username.trim().length > 0;
     const emailOk = shared.email.trim().length > 0 && validateEmail(shared.email);
     const pwdOk = shared.password.trim().length > 0 && validatePassword(shared.password);
+    const passwordsMatch = shared.password === (confirmPassword || "");
+    const confirmPwdOk = (confirmPassword || "").trim().length > 0 && passwordsMatch;
 
     const usernameHelp = usernameOk ? "You can change your username later. Your handle, created from this, cannot be changed." : "Required. Enter a display name.";
-    const emailHelp = shared.email.trim().length === 0 ? "Required. Enter your email." : emailOk ? "We’ll send confirmations here." : "Invalid email. Use a format like name@example.com.";
+    const emailHelp = shared.email.trim().length === 0 ? "Required. Enter your email." : emailOk ? "We'll send confirmations here." : "Invalid email. Use a format like name@example.com.";
     const pwdHelp = shared.password.trim().length === 0 ? "Required. Use at least 8 characters with letters and numbers." : pwdOk ? "Keep this private." : "Password must be at least 8 characters and include letters and numbers.";
+    const confirmPwdHelp = (confirmPassword || "").trim().length === 0 ? "Required. Re-enter your password to confirm." : passwordsMatch ? "Passwords match." : "Passwords do not match.";
 
     return (
         <div className="grid w-full mx-0 p-0 place-items-stretch text-center">
@@ -132,6 +150,38 @@ export default function SharedAccountStep({
                     </Button>
                 </div>
                 <p id="password-help" className={`mt-1 text-xs ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
+            </div>
+
+            <div className="w-full mt-3">
+                <Label className="block text-sm text-white/80 mb-1" htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                    <Input
+                        id="confirmPassword"
+                        ref={confirmPwdRef}
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        value={confirmPassword || ""}
+                        placeholder="Re-enter your password"
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className={`h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-white/30 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
+                        aria-describedby="confirm-password-help"
+                        aria-invalid={!confirmPwdOk}
+                    />
+                    <Button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); }}
+                        onClick={toggleConfirmPassword}
+                        className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 md:h-8 md:w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showConfirmPassword}
+                    >
+                        {showConfirmPassword ? <EyeOff className="h-5 w-5 md:h-4 md:w-4" /> : <Eye className="h-5 w-5 md:h-4 md:w-4" />}
+                        <span className="sr-only">{showConfirmPassword ? "Hide" : "Show"}</span>
+                    </Button>
+                </div>
+                <p id="confirm-password-help" className={`mt-1 text-xs ${confirmPwdOk ? "text-white/60" : "text-red-400"}`}>{confirmPwdHelp}</p>
             </div>
 
             <div className="w-full mt-4 flex flex-col md:flex-row gap-2 items-stretch">

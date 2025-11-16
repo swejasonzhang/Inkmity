@@ -33,7 +33,6 @@ type ClientProfile = {
 
 type ArtistProfile = {
   location: string;
-  shop: string;
   years: string;
   baseRate: string;
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";

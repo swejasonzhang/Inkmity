@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; bio?: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string };
 type ArtistProfile = {
   location: string;
   shop: string;
@@ -35,15 +35,18 @@ function apiUrl(path: string, qs?: Record<string, string>) {
   return url.toString();
 }
 
-function collectIssues({ role, step, shared, client, artist }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile }) {
+function collectIssues({ role, step, shared, client, artist, confirmPassword }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile; confirmPassword: string }) {
   const tips: string[] = [];
   const emailOk = validateEmail(shared.email);
   const pwdOk = validatePassword(shared.password);
   const usernameOk = !!shared.username.trim();
+  const passwordsMatch = shared.password === (confirmPassword || "");
   if (step === 0) {
     if (!usernameOk) tips.push("Username is required — enter a display name.");
     if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
     if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
+    if (!passwordsMatch && (confirmPassword || "").trim().length > 0) tips.push("Passwords do not match — ensure both password fields are identical.");
+    if ((confirmPassword || "").trim().length === 0 && shared.password.trim().length > 0) tips.push("Please confirm your password.");
     return tips;
   }
   if (role === "client") {
@@ -59,6 +62,9 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
       if (!usernameOk) tips.push("Username is required — enter a display name.");
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
+      if (!passwordsMatch || !confirmPassword || !confirmPassword.trim()) {
+        tips.push("Passwords do not match — ensure both password fields are identical.");
+      }
       if (!client.location) tips.push("City is required — choose your city from the list.");
       const min = Number(client.budgetMin);
       const max = Number(client.budgetMax);
@@ -70,24 +76,27 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
     if (step === 1) {
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
-      if (artist.years && artist.years !== "__unset__" && !Number.isFinite(Number(artist.years))) {
-        tips.push("Years of experience must be a valid number.");
+      if (!artist.years || artist.years === "__unset__" || !Number.isFinite(Number(artist.years))) {
+        tips.push("Years of experience is required — select your years of experience.");
       }
-      if (artist.baseRate && artist.baseRate !== "__unset__" && !Number.isFinite(Number(artist.baseRate))) {
-        tips.push("Base rate must be a valid number.");
+      if (!artist.baseRate || artist.baseRate === "__unset__" || !Number.isFinite(Number(artist.baseRate))) {
+        tips.push("Base hourly rate is required — choose a rate or enter a custom amount.");
       }
     }
     if (step === 3) {
       if (!usernameOk) tips.push("Username is required — enter a display name.");
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
+      if (!passwordsMatch || !confirmPassword || !confirmPassword.trim()) {
+        tips.push("Passwords do not match — ensure both password fields are identical.");
+      }
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
-      if (artist.years && artist.years !== "__unset__" && !Number.isFinite(Number(artist.years))) {
-        tips.push("Years of experience must be a valid number.");
+      if (!artist.years || artist.years === "__unset__" || !Number.isFinite(Number(artist.years))) {
+        tips.push("Years of experience is required — select your years of experience.");
       }
-      if (artist.baseRate && artist.baseRate !== "__unset__" && !Number.isFinite(Number(artist.baseRate))) {
-        tips.push("Base rate must be a valid number.");
+      if (!artist.baseRate || artist.baseRate === "__unset__" || !Number.isFinite(Number(artist.baseRate))) {
+        tips.push("Base hourly rate is required — choose a rate or enter a custom amount.");
       }
     }
   }
@@ -99,8 +108,9 @@ export default function SignUp() {
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
-  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, New York", placement: "", size: "", bio: "" });
-  const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, New York", shop: "independent", years: "1", baseRate: "", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "" });
+  const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, NY", shop: "", years: "0", baseRate: "100", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
   const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", ""]);
   const [awaitingCode, setAwaitingCode] = useState(false);
@@ -240,13 +250,19 @@ export default function SignUp() {
     }
   };
 
-  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
+  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim() && shared.password === confirmPassword;
   const allClientValid = !!client.location;
   const allArtistValid =
     !!artist.location &&
     artist.location !== "__unset__" &&
     Array.isArray(artist.styles) &&
-    artist.styles.length >= 1;
+    artist.styles.length >= 1 &&
+    !!artist.years &&
+    artist.years !== "__unset__" &&
+    Number.isFinite(Number(artist.years)) &&
+    !!artist.baseRate &&
+    artist.baseRate !== "__unset__" &&
+    Number.isFinite(Number(artist.baseRate));
 
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
     return role === "client"
@@ -276,6 +292,7 @@ export default function SignUp() {
     if (!shared.username.trim()) out.push("username");
     if (!validateEmail(shared.email)) out.push("email");
     if (!validatePassword(shared.password)) out.push("password");
+    if (shared.password !== confirmPassword || !confirmPassword.trim()) out.push("confirmPassword");
     return out;
   };
 
@@ -299,7 +316,7 @@ export default function SignUp() {
 
   const startVerification = async () => {
     if (loading) return;
-    const tips = collectIssues({ role, step: 3, shared, client, artist });
+    const tips = collectIssues({ role, step: 3, shared, client, artist, confirmPassword });
     if (tips.length) {
       setInvalidFields([]);
       setFlashToken((t) => t + 1);
@@ -310,9 +327,19 @@ export default function SignUp() {
       return;
     }
     setLoading(true);
+    
+    // Optimistic UI: Show OTP step immediately
+    setAwaitingCode(true);
+    
+    // Make signOut non-blocking (fire and forget)
+    if (userId) {
+      signOut().catch(() => {
+        // Silently fail - not critical for signup flow
+      });
+    }
+    
     try {
-      if (userId) await signOut();
-      const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) };
+      const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean), shop: undefined };
       const attempt =
         signUpAttempt ??
         (await signUp.create({
@@ -321,13 +348,23 @@ export default function SignUp() {
           publicMetadata: { role, displayName: shared.username.trim(), profile }
         } as any));
       setSignUpAttempt(attempt as SignUpResource);
-      setAwaitingCode(true);
-      await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
-    } catch {
+      
+      // Send verification email in background (user already sees OTP step)
+      attempt.prepareEmailAddressVerification({ strategy: "email_code" })
+        .catch((error) => {
+          console.error("Error sending verification email:", error);
+          // Revert UI state on error
+          setAwaitingCode(false);
+          triggerMascotError();
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } catch (error) {
+      console.error("Error in startVerification:", error);
       setAwaitingCode(false);
-      triggerMascotError();
-    } finally {
       setLoading(false);
+      triggerMascotError();
     }
   };
 
@@ -352,7 +389,7 @@ export default function SignUp() {
           const token = await getToken();
           const headers: Record<string, string> = { "Content-Type": "application/json" };
           if (token) headers.Authorization = `Bearer ${token}`;
-          const basePayload = { email: shared.email.trim().toLowerCase(), role, username: shared.username.trim(), bio: (role === "client" ? client.bio : artist.bio) || "" };
+          const basePayload = { email: shared.email.trim().toLowerCase(), role, username: shared.username.trim(), bio: role === "artist" ? (artist.bio || "") : "" };
           const payload = role === "client" ? { ...basePayload, profile: { ...client, referenceImages: clientRefs.filter(Boolean) } } : { ...basePayload, profile: { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) } };
           const syncRes = await fetch(apiUrl("/users/sync"), { method: "POST", credentials: "include", headers, body: JSON.stringify(payload) });
           if (!syncRes.ok) throw new Error("sync_failed");
@@ -418,10 +455,9 @@ export default function SignUp() {
     });
   };
 
-  const bio = role === "client" ? client.bio || "" : artist.bio || "";
+  const bio = role === "artist" ? artist.bio || "" : "";
   const setBio = (v: string) => {
-    if (role === "client") setClient((prev) => ({ ...prev, bio: v }));
-    else setArtist((prev) => ({ ...prev, bio: v }));
+    if (role === "artist") setArtist((prev) => ({ ...prev, bio: v }));
   };
 
   const successHeading = successType === "already" ? "You're already logged in." : "Successful signup!";
@@ -520,6 +556,8 @@ export default function SignUp() {
                     onBioChange={(e) => setBio(e.target.value)}
                     invalidFields={invalidFields}
                     flashToken={flashToken}
+                    confirmPassword={confirmPassword}
+                    setConfirmPassword={setConfirmPassword}
                     success={showSuccess}
                     successHeading={successHeading}
                     successSubtitle={successSubtitle}

@@ -67,7 +67,7 @@ const AVAILABILITY_OPTIONS = [
 
 const EXPERIENCE_OPTIONS = [
   { value: "all", label: "All Experience" },
-  { value: "amateur", label: "Amateur (0–2 yrs)" },
+  { value: "amateur", label: "Amateur (<1–2 yrs)" },
   { value: "experienced", label: "Experienced (3–5 yrs)" },
   { value: "professional", label: "Professional (6–10 yrs)" },
   { value: "veteran", label: "Veteran (10+ yrs)" },
