@@ -35,10 +35,9 @@ export function useSyncOnAuth() {
         const profile =
           role === "artist"
             ? {
-                location: "",
-                shop: "",
+                location: "New York, NY",
                 years: 0,
-                baseRate: 0,
+                baseRate: 100,
                 bookingPreference: "open",
                 travelFrequency: "rare",
                 styles: [],
@@ -47,10 +46,9 @@ export function useSyncOnAuth() {
             : {
                 budgetMin: 100,
                 budgetMax: 200,
-                location: "",
+                location: "New York, NY",
                 placement: "",
                 size: "",
-                bio: "",
               };
         try {
           await syncUser(token ?? "", {

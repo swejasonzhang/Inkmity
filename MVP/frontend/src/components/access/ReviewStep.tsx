@@ -14,7 +14,6 @@ type ClientProfile = {
 };
 type ArtistProfileReview = {
     location: string;
-    shop: string;
     years: string;
     baseRate: string;
     bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
@@ -94,7 +93,6 @@ export default function ReviewStep({
     const sizeText = client.size ? SIZE_LABELS[client.size] ?? client.size : "Optional";
     const availText = client.availability ? AVAIL_LABELS[client.availability] ?? client.availability : "Optional";
     const styleText = client.style && client.style !== "all" ? client.style : "Optional";
-    const shopText = artist.shop?.trim() ? artist.shop : "No shop / Independent";
     const imgs = role === "client" ? clientImages.filter(Boolean) : artistImages.filter(Boolean);
     const tiles = [0, 1, 2];
 
@@ -156,11 +154,8 @@ export default function ReviewStep({
                             <Row label="Location:">
                                 <span>{artist.location || "Not set"}</span>
                             </Row>
-                            <Row label="Shop:">
-                                <span>{shopText}</span>
-                            </Row>
                             <Row label="Years:">
-                                <span>{artist.years || "Not set"}</span>
+                                <span>{artist.years === "0" ? "<1" : artist.years || "Not set"}</span>
                             </Row>
                             <Row label="Base Rate:">
                                 <span>{artist.baseRate ? `$${Number(artist.baseRate).toLocaleString()}` : "Not set"}</span>
@@ -200,16 +195,18 @@ export default function ReviewStep({
                 <p className="mt-2 text-[11px] text-white/60">Images will appear larger on your dashboard.</p>
             </section>
 
-            <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                <h3 className="text-sm font-semibold mb-2">Bio (optional)</h3>
-                <textarea
-                    value={bio}
-                    onChange={onBioChange}
-                    rows={5}
-                    placeholder={role === "client" ? "Add context for artists. Style preferences, constraints, ideas." : "Add notes about style, experience, booking details."}
-                    className="w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                />
-            </section>
+            {role === "artist" && (
+                <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                    <h3 className="text-sm font-semibold mb-2">Bio (optional)</h3>
+                    <textarea
+                        value={bio}
+                        onChange={onBioChange}
+                        rows={5}
+                        placeholder="Add notes about style, experience, booking details."
+                        className="w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                    />
+                </section>
+            )}
         </div>
     );
 }

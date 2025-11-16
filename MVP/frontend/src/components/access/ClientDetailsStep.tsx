@@ -319,18 +319,18 @@ export default function ClientDetailsStep({
                     <Select
                         open={openCity}
                         onOpenChange={setOpenCity}
-                        value={client.location || ""}
+                        value={client.location && client.location !== "" ? client.location : "New York, NY"}
                         onValueChange={(val) => {
                             emit("location", val);
                             savePreset({ location: val });
                         }}
                     >
                         <SelectTrigger className="h-11 w-72 rounded-xl border border-white/10 bg-white/10 px-4 text-white mx-auto justify-center text-center [&_span]:w-full [&_span]:text-center">
-                            <SelectValue placeholder="Choose your city" />
+                            <SelectValue placeholder="Choose your city" className="text-center" />
                         </SelectTrigger>
                         <SelectContent position="popper" side="bottom" align="center" sideOffset={6} avoidCollisions={false} className="max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white text-center">
                             {cities.map((c) => (
-                                <SelectItem key={c} value={c} className="text-white text-center">
+                                <SelectItem key={c} value={c} className="text-white text-center justify-center">
                                     {c}
                                 </SelectItem>
                             ))}
@@ -351,14 +351,14 @@ export default function ClientDetailsStep({
                             }}
                         >
                             <SelectTrigger className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white max-w-[18rem] mx-auto justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="No preference" />
+                                <SelectValue placeholder="No preference" className="text-center" />
                             </SelectTrigger>
                             <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white text-center">
-                                <SelectItem value="all" className="text-center">
+                                <SelectItem value="all" className="text-center justify-center">
                                     No preference
                                 </SelectItem>
                                 {STYLE_OPTIONS.slice(1).map((s) => (
-                                    <SelectItem key={s} value={s} className="text-center">
+                                    <SelectItem key={s} value={s} className="text-center justify-center">
                                         {s}
                                     </SelectItem>
                                 ))}
@@ -377,11 +377,11 @@ export default function ClientDetailsStep({
                             }}
                         >
                             <SelectTrigger className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white max-w-[18rem] mx-auto justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="No preference" />
+                                <SelectValue placeholder="No preference" className="text-center" />
                             </SelectTrigger>
                             <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl border-white/10 bg-[#0b0b0b] text-white text-center">
                                 {AVAILABILITY_OPTIONS.map((a) => (
-                                    <SelectItem key={a.value} value={a.value} className="text-center">
+                                    <SelectItem key={a.value} value={a.value} className="text-center justify-center">
                                         {a.label}
                                     </SelectItem>
                                 ))}
@@ -393,13 +393,13 @@ export default function ClientDetailsStep({
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center text-center">
                     <div className="w-full max-w-sm">
                         <label className="mb-1 block text-sm text-white/70">Placement (optional)</label>
-                        <Select value={client.placement || ""} onValueChange={(v) => emit("placement", v)}>
+                        <Select value={client.placement && client.placement !== "" ? client.placement : undefined} onValueChange={(v) => emit("placement", v)}>
                             <SelectTrigger className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white max-w-[18rem] mx-auto justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="Select placement" />
+                                <SelectValue placeholder="Select placement" className="text-center" />
                             </SelectTrigger>
                             <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white text-center">
                                 {PLACEMENT_OPTIONS.map((p) => (
-                                    <SelectItem key={p} value={p} className="text-center">
+                                    <SelectItem key={p} value={p} className="text-center justify-center">
                                         {p}
                                     </SelectItem>
                                 ))}
@@ -409,13 +409,13 @@ export default function ClientDetailsStep({
 
                     <div className="w-full max-w-sm">
                         <label className="mb-1 block text-sm text-white/70">Approximate size (optional)</label>
-                        <Select value={client.size || ""} onValueChange={(v) => emit("size", v)}>
+                        <Select value={client.size && client.size !== "" ? client.size : undefined} onValueChange={(v) => emit("size", v)}>
                             <SelectTrigger className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white max-w-[18rem] mx-auto justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="Select size" />
+                                <SelectValue placeholder="Select size" className="text-center" />
                             </SelectTrigger>
                             <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white text-center">
                                 {SIZE_OPTIONS.map((s) => (
-                                    <SelectItem key={s.value} value={s.value} className="text-center">
+                                    <SelectItem key={s.value} value={s.value} className="text-center justify-center">
                                         {s.label}
                                     </SelectItem>
                                 ))}

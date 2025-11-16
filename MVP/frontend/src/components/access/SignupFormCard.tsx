@@ -14,10 +14,9 @@ import SignupUpload from "@/components/upload/SignupUpload";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; bio?: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string };
 type ArtistProfile = {
   location: string;
-  shop: string;
   years: string;
   baseRate: string;
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
@@ -69,6 +68,8 @@ type SignupProps = BaseProps & {
   onCancelVerification: () => void;
   bio: string;
   onBioChange: React.ChangeEventHandler<HTMLTextAreaElement>;
+  confirmPassword: string;
+  setConfirmPassword: (v: string) => void;
 };
 
 export default function SignupFormCard(props: SignupProps) {
@@ -110,7 +111,9 @@ export default function SignupFormCard(props: SignupProps) {
     flashToken,
     success,
     successHeading,
-    successSubtitle
+    successSubtitle,
+    confirmPassword,
+    setConfirmPassword
   } = props;
 
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
@@ -192,6 +195,8 @@ export default function SignupFormCard(props: SignupProps) {
                             onEmailBlur={onEmailBlur}
                             invalidFields={invalidFields}
                             flashToken={flashToken}
+                            confirmPassword={confirmPassword}
+                            setConfirmPassword={setConfirmPassword}
                           />
                         </div>
                       )}
@@ -225,7 +230,7 @@ export default function SignupFormCard(props: SignupProps) {
                       )}
                       {step === slides.length - 1 && (
                         <Button type="button" onClick={onStartVerification} disabled={loading || !isLoaded || !!emailTaken} className="flex-1 bg-white/15 hover:bg-white/25 text-white h-11 text-sm rounded-xl">
-                          Send Verification Code
+                          {loading ? "Sending..." : "Send Verification Code"}
                         </Button>
                       )}
                     </div>
