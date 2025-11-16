@@ -9,7 +9,6 @@
     <script>
       (function() {
         try {
-          // Only apply theme if we're on dashboard route
           const path = window.location.pathname;
           if (path.startsWith("/dashboard")) {
             const theme = localStorage.getItem("dashboard-theme");
@@ -35,7 +34,6 @@
               }
             }
           } else {
-            // Always dark for public pages
             const html = document.documentElement;
             const body = document.body;
             if (html) {

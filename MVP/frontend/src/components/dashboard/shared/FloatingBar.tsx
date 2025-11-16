@@ -147,7 +147,7 @@ export default function FloatingBar({
   const wrapperH = Math.max(collapsedHeight, centerH || 0);
 
   useEffect(() => {
-    const EXTRA_SAFE_GAP = 12;
+    const EXTRA_SAFE_GAP = 16;
     const host = portalRootRef.current;
     if (!host) return;
     host.style.setProperty("--fb-safe", `${collapsedHeight + EXTRA_SAFE_GAP}px`);
@@ -198,7 +198,10 @@ export default function FloatingBar({
         </Button>
       </div>
 
-      <div className="fixed inset-x-0 z-[190] pointer-events-none" style={{ bottom: pad.bottom }}>
+      <div
+        className="fixed inset-x-0 z-[190] pointer-events-none"
+        style={{ bottom: pad.bottom, marginTop: isMdUp ? 0 : 8 }}
+      >
         <style>{`
           .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
           .ink-assistant-btn { backdrop-filter: none; }

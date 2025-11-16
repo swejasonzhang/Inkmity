@@ -260,7 +260,46 @@ export default function ArtistsSection({
     const sectionMinPx = (isMdUp ? filterH : 0) + cardMinPx + gridVPadPx;
     const minGridPx = cardMinPx + gridVPadPx;
 
-    const snapHeight = "calc(100dvh - var(--header-h, 6rem) - var(--fb-safe, 0px))";
+    const snapHeight = "100%";
+    const mobileListRef = useRef<HTMLDivElement | null>(null);
+    const lastTouchYRef = useRef<number | null>(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const lastIndex = Math.max(0, (usingExternalPaging ? filtered : clientPageItems).length - 1);
+
+    const handleMobileScroll = () => {
+        const el = mobileListRef.current;
+        if (!el) return;
+        const h = el.clientHeight || 1;
+        const idx = Math.round(el.scrollTop / h);
+        const clampedIdx = Math.max(0, Math.min(idx, lastIndex));
+        setCurrentIndex(clampedIdx);
+        // Hard clamp overscroll past the last snap
+        const maxTop = lastIndex * h;
+        if (clampedIdx >= lastIndex && el.scrollTop > maxTop) {
+            el.scrollTop = maxTop;
+        }
+    };
+
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+        lastTouchYRef.current = e.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        const el = mobileListRef.current;
+        if (!el) return;
+        const lastY = lastTouchYRef.current;
+        const y = e.touches[0]?.clientY ?? null;
+        if (lastY == null || y == null) return;
+        const dy = y - lastY; // positive when swiping down, negative when swiping up (scrolling down)
+        const atLast = currentIndex >= lastIndex;
+        if (atLast && dy < 0) {
+            // Prevent further downward scroll when on last card
+            e.preventDefault();
+            e.stopPropagation();
+            const h = el.clientHeight || 1;
+            el.scrollTop = lastIndex * h;
+        }
+    };
 
     return (
         <div className="flex flex-col h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
@@ -324,21 +363,28 @@ export default function ArtistsSection({
                 <div className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}>
                     <div className="md:hidden h-full min-h-0">
                         {listItems.length > 0 ? (
-                            <div className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory" style={{ scrollSnapType: "y mandatory" }}>
+                            <div
+                                ref={mobileListRef}
+                                className={`h-full min-h-0 ${listItems.length <= 1 ? "overflow-hidden" : "overflow-y-auto"} snap-y snap-mandatory overscroll-contain`}
+                                style={{ scrollSnapType: "y mandatory" }}
+                                onScroll={handleMobileScroll}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                            >
                                 {listItems.map((artist, index) => (
                                     <div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                        className="snap-start"
-                                        style={{ height: snapHeight }}
+                                        className="snap-start h-full flex items-center justify-center"
+                                        style={{ height: snapHeight, scrollSnapStop: "always" }}
                                     >
                                         <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} fullScreen />
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory" style={{ scrollSnapType: "y mandatory" }}>
+                            <div className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory" }}>
                                 {Array.from({ length: 3 }).map((_, index) => (
-                                    <div key={`placeholder-mobile-${index}`} className="snap-start px-3 sm:px-0" style={{ height: snapHeight }}>
+                                    <div key={`placeholder-mobile-${index}`} className="snap-start px-3 sm:px-0" style={{ height: snapHeight, scrollSnapStop: "always" }}>
                                         <div className="w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90" style={{ borderColor: "var(--border)" }}>
                                             <div className="relative w-full">
                                                 <div className="relative w-full h-[18.125rem] sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden" style={{ background: "var(--elevated)" }}>
