@@ -383,45 +383,12 @@ export default function ArtistsSection({
                             </div>
                         ) : (
                             <div className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory" }}>
-                                {Array.from({ length: 3 }).map((_, index) => (
-                                    <div key={`placeholder-mobile-${index}`} className="snap-start px-3 sm:px-0" style={{ height: snapHeight, scrollSnapStop: "always" }}>
-                                        <div className="w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90" style={{ borderColor: "var(--border)" }}>
-                                            <div className="relative w-full">
-                                                <div className="relative w-full h-[18.125rem] sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden" style={{ background: "var(--elevated)" }}>
-                                                    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
-                                                    <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
-                                                    <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
-                                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
-                                                        <div className="relative rounded-full overflow-hidden h-36 w-36 sm:h-40 sm:w-40 md:h-44 md:w-44 shadow-2xl ring-2 ring-[color:var(--card)]" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                                                            <div className="absolute inset-0 grid place-items-center text-3xl sm:text-4xl font-semibold opacity-30" style={{ color: "var(--fg)" }}>
-                                                                ?
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="px-7 pt-6 pb-8 flex-1 min-h-0 flex flex-col gap-7">
-                                                <div className="flex flex-col items-center text-center gap-4 sm:gap-5">
-                                                    <div className="h-8 w-32 rounded bg-elevated opacity-50" style={{ background: "var(--elevated)" }} />
-                                                    <div className="h-10 w-40 rounded bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                    <div className="h-16 w-full max-w-prose rounded bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                    <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                                                        <div className="h-6 w-20 rounded-full bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                        <div className="h-6 w-24 rounded-full bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                        <div className="h-6 w-16 rounded-full bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                    </div>
-                                                </div>
-                                                <div className="mt-2">
-                                                    <div className="grid grid-cols-3 gap-[0.375rem] sm:gap-2">
-                                                        {Array.from({ length: 6 }).map((_, i) => (
-                                                            <div key={i} className="relative aspect-square w-full overflow-hidden rounded-xl border bg-elevated opacity-30" style={{ borderColor: "var(--border)", background: "var(--elevated)" }} />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                <div className="snap-start px-3 sm:px-0 flex items-center justify-center" style={{ height: snapHeight, scrollSnapStop: "always" }}>
+                                    <div className="text-center px-4">
+                                        <p className="text-base font-medium" style={{ color: "var(--fg)" }}>No artists match your filters.</p>
+                                        <p className="text-sm mt-1" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Try adjusting filters or keywords.</p>
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -444,46 +411,15 @@ export default function ArtistsSection({
                                 ))}
                             </div>
                         ) : (
-                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3" style={{ minHeight: `${minGridPx}px` }}>
-                                {Array.from({ length: 6 }).map((_, index) => (
-                                    <div key={`placeholder-${index}`} className="h-full flex" data-artist-card="true">
-                                        <div className="w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90" style={{ borderColor: "var(--border)" }}>
-                                            <div className="relative w-full">
-                                                <div className="relative w-full h-[18.125rem] sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden" style={{ background: "var(--elevated)" }}>
-                                                    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
-                                                    <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
-                                                    <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
-                                                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
-                                                        <div className="relative rounded-full overflow-hidden h-36 w-36 sm:h-40 sm:w-40 md:h-44 md:w-44 shadow-2xl ring-2 ring-[color:var(--card)]" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                                                            <div className="absolute inset-0 grid place-items-center text-3xl sm:text-4xl font-semibold opacity-30" style={{ color: "var(--fg)" }}>
-                                                                ?
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="px-7 pt-6 pb-8 flex-1 min-h-0 flex flex-col gap-7">
-                                                <div className="flex flex-col items-center text-center gap-4 sm:gap-5">
-                                                    <div className="h-8 w-32 rounded bg-elevated opacity-50" style={{ background: "var(--elevated)" }} />
-                                                    <div className="h-10 w-40 rounded bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                    <div className="h-16 w-full max-w-prose rounded bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                    <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-                                                        <div className="h-6 w-20 rounded-full bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                        <div className="h-6 w-24 rounded-full bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                        <div className="h-6 w-16 rounded-full bg-elevated opacity-30" style={{ background: "var(--elevated)" }} />
-                                                    </div>
-                                                </div>
-                                                <div className="mt-2">
-                                                    <div className="grid grid-cols-3 gap-[0.375rem] sm:gap-2">
-                                                        {Array.from({ length: 6 }).map((_, i) => (
-                                                            <div key={i} className="relative aspect-square w-full overflow-hidden rounded-xl border bg-elevated opacity-30" style={{ borderColor: "var(--border)", background: "var(--elevated)" }} />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                            <div className="min-h-full p-0 md:p-3" style={{ minHeight: `${minGridPx}px` }}>
+                                <div className="w-full h-full grid place-items-center">
+                                    <div className="text-center max-w-prose">
+                                        <p className="text-lg font-semibold" style={{ color: "var(--fg)" }}>No artists match your filters.</p>
+                                        <p className="text-sm mt-1.5" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                            Try adjusting filters or keywords to broaden your search.
+                                        </p>
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         )}
                     </div>
