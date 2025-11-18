@@ -489,7 +489,7 @@ export default function SignUp() {
                   </div>
                 </motion.div>
               )}
-              {authLoaded && userId ? (
+              {!authLoaded ? null : userId ? (
                 <motion.div
                   ref={cardRef}
                   layout={false}
