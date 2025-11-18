@@ -278,7 +278,7 @@ export default function Login() {
                   </div>
                 </motion.div>
               )}
-              {authLoaded && isSignedIn ? (
+              {!authLoaded ? null : isSignedIn ? (
                 <motion.div ref={cardRef} layout={false} className="w-full max-w-2xl p-0 mb-4 md:mb-0">
                   <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 sm:p-5 h-full mx-auto flex flex-col overflow-hidden">
                     <div className="w-full min-h-[560px] md:min-h-[680px] flex flex-col items-center justify-center gap-8 py-16">
