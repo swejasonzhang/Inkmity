@@ -3,6 +3,8 @@ import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
 import CircularProgress from "@mui/material/CircularProgress";
 import { motion } from "framer-motion";
+import { ChevronUp, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { Artist } from "@/api";
 
 type Props = {
@@ -301,6 +303,30 @@ export default function ArtistsSection({
         }
     };
 
+    const scrollToIndex = (index: number) => {
+        const el = mobileListRef.current;
+        if (!el) return;
+        const h = el.clientHeight || 1;
+        const targetIndex = Math.max(0, Math.min(index, lastIndex));
+        el.scrollTo({ top: targetIndex * h, behavior: "smooth" });
+        setCurrentIndex(targetIndex);
+    };
+
+    const handlePrev = () => {
+        if (currentIndex > 0) {
+            scrollToIndex(currentIndex - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentIndex < lastIndex) {
+            scrollToIndex(currentIndex + 1);
+        }
+    };
+
+    const atStart = currentIndex === 0;
+    const atEnd = currentIndex >= lastIndex;
+
     return (
         <div className="grid grid-rows-[auto,1fr] h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
             <div ref={filterRef} className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
@@ -364,26 +390,62 @@ export default function ArtistsSection({
                     className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}
                     style={{ minHeight: `${isMdUp ? minGridPx : 0}px` }}
                 >
-                    <div className="md:hidden h-full min-h-0">
+                    <div className="md:hidden h-full min-h-0 relative">
                         {listItems.length > 0 ? (
-                            <div
-                                ref={mobileListRef}
-                                className={`h-full min-h-0 ${listItems.length <= 1 ? "overflow-hidden" : "overflow-y-auto"} snap-y snap-mandatory overscroll-contain`}
-                                style={{ scrollSnapType: "y mandatory" }}
-                                onScroll={handleMobileScroll}
-                                onTouchStart={handleTouchStart}
-                                onTouchMove={handleTouchMove}
-                            >
-                                {listItems.map((artist, index) => (
-                                    <div
-                                        key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                        className="snap-start h-full flex items-center justify-center"
-                                        style={{ height: snapHeight, scrollSnapStop: "always" }}
-                                    >
-                                        <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} fullScreen />
+                            <>
+                                <div
+                                    ref={mobileListRef}
+                                    className={`h-full min-h-0 ${listItems.length <= 1 ? "overflow-hidden" : "overflow-y-auto"} snap-y snap-mandatory overscroll-contain`}
+                                    style={{ scrollSnapType: "y mandatory" }}
+                                    onScroll={handleMobileScroll}
+                                    onTouchStart={handleTouchStart}
+                                    onTouchMove={handleTouchMove}
+                                >
+                                    {listItems.map((artist, index) => (
+                                        <div
+                                            key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                                            className="snap-start h-full flex items-center justify-center"
+                                            style={{ height: snapHeight, scrollSnapStop: "always" }}
+                                        >
+                                            <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} fullScreen />
+                                        </div>
+                                    ))}
+                                </div>
+                                {listItems.length > 1 && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-10 pointer-events-none">
+                                        <Button
+                                            type="button"
+                                            onClick={handlePrev}
+                                            disabled={atStart}
+                                            className="pointer-events-auto rounded-full h-12 w-12 p-0 shadow-lg"
+                                            style={{
+                                                borderColor: "var(--border)",
+                                                backgroundColor: atStart ? "color-mix(in oklab, var(--elevated) 60%, transparent)" : "color-mix(in oklab, var(--card) 95%, transparent)",
+                                                color: "var(--fg)",
+                                                opacity: atStart ? 0.5 : 1,
+                                            }}
+                                            aria-label="Previous artist"
+                                        >
+                                            <ChevronUp className="h-5 w-5" />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={handleNext}
+                                            disabled={atEnd}
+                                            className="pointer-events-auto rounded-full h-12 w-12 p-0 shadow-lg"
+                                            style={{
+                                                borderColor: "var(--border)",
+                                                backgroundColor: atEnd ? "color-mix(in oklab, var(--elevated) 60%, transparent)" : "color-mix(in oklab, var(--card) 95%, transparent)",
+                                                color: "var(--fg)",
+                                                opacity: atEnd ? 0.5 : 1,
+                                            }}
+                                            aria-label="Next artist"
+                                        >
+                                            <ChevronDown className="h-5 w-5" />
+                                        </Button>
                                     </div>
-                                ))}
-                            </div>
+                                )}
+                            </>
                         ) : (
                             <div className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory" }}>
                                 <div className="snap-start px-3 sm:px-0 flex items-center justify-center" style={{ height: snapHeight, scrollSnapStop: "always" }}>

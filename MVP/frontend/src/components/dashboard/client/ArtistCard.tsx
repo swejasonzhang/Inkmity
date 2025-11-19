@@ -145,8 +145,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         </div>
 
         <div
-          className={`${fullScreen ? "px-5 pt-4 pb-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col ${fullScreen ? "gap-4" : "gap-7"}`}
-          style={fullScreen ? ({ paddingBottom: 0 } as React.CSSProperties) : undefined}
+          className={`${fullScreen ? "px-5 pt-4 pb-8 sm:pb-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col ${fullScreen ? "gap-4" : "gap-7"}`}
+          style={fullScreen ? undefined : undefined}
         >
           <div className={`flex flex-col items-center text-center ${fullScreen ? "gap-4" : "gap-4 sm:gap-5"}`}>
             <h2 className={`font-extrabold tracking-tight ${fullScreen ? "text-4xl" : "text-2xl md:text-3xl"}`} style={{ color: "var(--fg)" }}>
@@ -178,7 +178,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           </div>
 
           {portfolio.length > 0 && (
-            <div className={`mt-3 ${fullScreen ? "w-full max-w-full mx-auto" : ""}`}>
+            <div className={`mt-3 ${fullScreen ? "w-full max-w-full mx-auto px-4 sm:px-0" : "px-4 sm:px-0"}`}>
               <Grid images={portfolio} />
             </div>
           )}
