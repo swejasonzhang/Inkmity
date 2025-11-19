@@ -51,7 +51,7 @@ const Pagination: React.FC<Props> = ({
                         "h-[38px] w-[38px] flex items-center justify-center rounded-full leading-none",
                         "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
                         "focus:outline-none focus:ring-2 focus:ring-app",
-                        "disabled:cursor-not-allowed",
+                        "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100",
                     ].join(" ")}
                 >
                     <ChevronLeft size={30} aria-hidden className="block" />
@@ -80,7 +80,7 @@ const Pagination: React.FC<Props> = ({
                         "h-[38px] w-[38px] flex items-center justify-center rounded-full leading-none",
                         "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
                         "focus:outline-none focus:ring-2 focus:ring-app",
-                        "disabled:cursor-not-allowed",
+                        "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100",
                     ].join(" ")}
                 >
                     <ChevronRight size={30} aria-hidden className="block" />
@@ -104,7 +104,7 @@ const Pagination: React.FC<Props> = ({
                                 "h-12 w-12 grid place-items-center rounded-full",
                                 "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
                                 "focus:outline-none focus:ring-2 focus:ring-app",
-                                "disabled:cursor-not-allowed",
+                                "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100",
                             ].join(" ")}
                         >
                             <ChevronDown size={22} aria-hidden />
