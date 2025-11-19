@@ -108,8 +108,9 @@ export default function FloatingBar({
   ].join(" ");
 
   const MOBILE_CLOSED_W = 112;
-  const MOBILE_OPEN_W = Math.min(Math.max(240, vp.w - 48), 360);
-  const MOBILE_OPEN_H = Math.min(Math.max(300, vp.h - 180), 480);
+  const MOBILE_OPEN_W = isMdUp ? Math.min(Math.max(240, vp.w - 48), 360) : vp.w; // Full width on mobile
+  const MOBILE_HEADER_PADDING = 16; // Padding between header and messages div
+  const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - 96 - MOBILE_HEADER_PADDING; // Full height minus header and padding
 
   const PANEL_W = 320;
   const DESKTOP_OPEN_W = 1200;
@@ -199,8 +200,12 @@ export default function FloatingBar({
       </div>
 
       <div
-        className="fixed inset-x-0 z-[190] pointer-events-none"
-        style={{ bottom: pad.bottom, marginTop: isMdUp ? 0 : 8 }}
+        className="fixed inset-x-0 pointer-events-none"
+        style={{ 
+          bottom: pad.bottom, 
+          marginTop: isMdUp ? 0 : 8,
+          zIndex: !isMdUp && open ? 9999 : 190
+        }}
       >
         <style>{`
           .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
@@ -222,7 +227,12 @@ export default function FloatingBar({
             <div
               ref={centerRef}
               className="ink-solid-controls flex items-center justify-center"
-              style={{ paddingInline: 8, pointerEvents: rightContent ? "auto" : "none" }}
+              style={{ 
+                paddingInline: 8, 
+                pointerEvents: rightContent && (!open || isMdUp) ? "auto" : "none",
+                opacity: !isMdUp && open ? 0 : 1,
+                visibility: !isMdUp && open ? "hidden" : "visible"
+              }}
             >
               {rightContent}
             </div>
@@ -236,19 +246,38 @@ export default function FloatingBar({
               <div
                 className="pointer-events-auto flex items-center justify-center"
                 style={{
-                  position: "absolute",
-                  right: isMdUp ? pad.right : "17px",
-                  bottom: 0,
-                  width: isMdUp ? convW : Math.max(0, convW - 50),
-                  height: convH
+                  position: isMdUp ? "absolute" : (open ? "fixed" : "absolute"),
+                  ...(isMdUp ? {
+                    right: pad.right,
+                    bottom: 0,
+                  } : open ? {
+                    top: 96 + MOBILE_HEADER_PADDING, // Header height (h-24 = 96px) + padding
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: "100vw",
+                    height: MOBILE_OPEN_H,
+                  } : {
+                    right: "17px",
+                    bottom: 0,
+                  }),
+                  ...(isMdUp || !open ? {
+                    width: isMdUp ? convW : Math.max(0, convW - 50),
+                    height: isMdUp ? convH : convH,
+                  } : {}),
+                  zIndex: !isMdUp && open ? 9999 : undefined
                 }}
               >
-                <div ref={btnRef} className="ink-solid-controls flex items-center justify-center">
+                <div 
+                  ref={btnRef} 
+                  className={`ink-solid-controls flex items-center justify-center ${!isMdUp && open ? "w-full h-full" : ""}`}
+                  style={!isMdUp && open ? { width: "100%", height: "100%" } : undefined}
+                >
                   <InkConversations
                     role={role}
                     isMdUp={isMdUp}
-                    width={isMdUp ? convW : Math.max(0, convW - 50)}
-                    height={convH}
+                    width={isMdUp ? convW : (open ? vp.w : Math.max(0, convW - 50))}
+                    height={isMdUp ? convH : (open ? MOBILE_OPEN_H : convH)}
                     open={open}
                     setOpen={setOpen}
                     unreadConvoCount={unreadConvoCount}
