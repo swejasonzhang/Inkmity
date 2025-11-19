@@ -275,7 +275,6 @@ export default function ArtistsSection({
         const idx = Math.round(el.scrollTop / h);
         const clampedIdx = Math.max(0, Math.min(idx, lastIndex));
         setCurrentIndex(clampedIdx);
-        // Hard clamp overscroll past the last snap
         const maxTop = lastIndex * h;
         if (clampedIdx >= lastIndex && el.scrollTop > maxTop) {
             el.scrollTop = maxTop;
@@ -292,10 +291,9 @@ export default function ArtistsSection({
         const lastY = lastTouchYRef.current;
         const y = e.touches[0]?.clientY ?? null;
         if (lastY == null || y == null) return;
-        const dy = y - lastY; // positive when swiping down, negative when swiping up (scrolling down)
+        const dy = y - lastY;
         const atLast = currentIndex >= lastIndex;
         if (atLast && dy < 0) {
-            // Prevent further downward scroll when on last card
             e.preventDefault();
             e.stopPropagation();
             const h = el.clientHeight || 1;
