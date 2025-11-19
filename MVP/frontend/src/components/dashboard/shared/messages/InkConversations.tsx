@@ -37,7 +37,7 @@ export const InkConversations: React.FC<Props> = ({
 
   return (
     <div
-      className="ink-conv-scope bg-app text-app inline-flex items-center justify-center rounded-full pointer-events-auto border border-app/40 shadow-md transition"
+      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex w-full" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} pointer-events-auto border border-app/40 shadow-md transition`}
       aria-label={open ? "Messages" : "Open messages"}
       aria-expanded={open}
       style={{
@@ -51,7 +51,8 @@ export const InkConversations: React.FC<Props> = ({
         position: "relative",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
+        ...(!isMdUp && open ? { maxWidth: "100%", minWidth: "100%" } : {})
       }}
     >
       {!open ? (
@@ -88,8 +89,19 @@ export const InkConversations: React.FC<Props> = ({
         </Button>
       ) : (
         <div className="flex flex-col h-full w-full">
-          <div className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-2 py-1"} border-b border-app/40`}>
-            <div className="flex items-center gap-2 font-semibold">
+          <div 
+            className={`flex items-center justify-between ${isMdUp ? "px-3" : "px-2"} border-b border-app/40`}
+            style={{ 
+              height: !isMdUp ? "30px" : undefined,
+              paddingTop: !isMdUp ? "0" : undefined,
+              paddingBottom: !isMdUp ? "0" : undefined,
+              ...(isMdUp ? {} : { display: "flex", alignItems: "center" })
+            }}
+          >
+            <div 
+              className={`flex items-center gap-2 font-semibold ${!isMdUp ? "h-10" : ""}`}
+              style={!isMdUp ? { minHeight: "40px" } : undefined}
+            >
               <MessageSquare size={16} />
               <span className={isMdUp ? "" : "text-sm"}>Messages</span>
               <Badge
@@ -123,7 +135,7 @@ export const InkConversations: React.FC<Props> = ({
             </div>
           </div>
           <div className="flex-1 min-h-0">
-            <div className="h-full">{messagesContent}</div>
+            <div className={`h-full ${!isMdUp ? "text-center" : ""}`}>{messagesContent}</div>
           </div>
         </div>
       )}
