@@ -328,13 +328,10 @@ export default function SignUp() {
     }
     setLoading(true);
     
-    // Optimistic UI: Show OTP step immediately
     setAwaitingCode(true);
     
-    // Make signOut non-blocking (fire and forget)
     if (userId) {
       signOut().catch(() => {
-        // Silently fail - not critical for signup flow
       });
     }
     
@@ -349,11 +346,9 @@ export default function SignUp() {
         } as any));
       setSignUpAttempt(attempt as SignUpResource);
       
-      // Send verification email in background (user already sees OTP step)
       attempt.prepareEmailAddressVerification({ strategy: "email_code" })
         .catch((error) => {
           console.error("Error sending verification email:", error);
-          // Revert UI state on error
           setAwaitingCode(false);
           triggerMascotError();
         })

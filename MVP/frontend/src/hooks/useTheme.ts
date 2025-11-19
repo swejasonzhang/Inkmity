@@ -56,12 +56,10 @@ export function useTheme() {
   const isDashboard = pathname.startsWith("/dashboard");
 
   const [theme, setTheme] = useState<Theme>(() => {
-    // Only read theme from storage if we're on dashboard
     if (isDashboard) {
       const stored = getInitialTheme();
       return stored;
     }
-    // Always dark for non-dashboard pages
     return "dark";
   });
   const timersRef = useRef(new Set<number>());
@@ -143,7 +141,6 @@ export function useTheme() {
     }
   }, [isUserLoaded, storageKey, user?.id, isDashboard]);
 
-  // Reset theme to dark when navigating away from dashboard
   useEffect(() => {
     if (!isDashboard && theme !== "dark") {
       setTheme("dark");
@@ -159,7 +156,6 @@ export function useTheme() {
     const currentDashTheme = dash?.classList.contains("ink-light") || dash?.getAttribute("data-ink") === "light" ? "light" : "dark";
     
     if (isInitialMount) {
-      // For non-dashboard pages, always apply dark immediately without transitions
       if (!isDashboard) {
         applyTheme("dark", false);
         initialEffectRef.current = false;

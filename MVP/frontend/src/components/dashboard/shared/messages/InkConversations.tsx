@@ -90,13 +90,8 @@ export const InkConversations: React.FC<Props> = ({
       ) : (
         <div className="flex flex-col h-full w-full">
           <div 
-            className={`flex items-center justify-between ${isMdUp ? "px-3" : "px-2"} border-b border-app/40`}
-            style={{ 
-              height: !isMdUp ? "30px" : undefined,
-              paddingTop: !isMdUp ? "0" : undefined,
-              paddingBottom: !isMdUp ? "0" : undefined,
-              ...(isMdUp ? {} : { display: "flex", alignItems: "center" })
-            }}
+            className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-4 py-3"} border-b border-app/40`}
+            style={!isMdUp ? { minHeight: "50px" } : undefined}
           >
             <div 
               className={`flex items-center gap-2 font-semibold ${!isMdUp ? "h-10" : ""}`}
@@ -135,7 +130,7 @@ export const InkConversations: React.FC<Props> = ({
             </div>
           </div>
           <div className="flex-1 min-h-0">
-            <div className={`h-full ${!isMdUp ? "text-center" : ""}`}>{messagesContent}</div>
+            <div className={`h-full ${!isMdUp ? "text-center px-4" : ""}`}>{messagesContent}</div>
           </div>
         </div>
       )}

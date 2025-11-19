@@ -108,9 +108,9 @@ export default function FloatingBar({
   ].join(" ");
 
   const MOBILE_CLOSED_W = 112;
-  const MOBILE_OPEN_W = isMdUp ? Math.min(Math.max(240, vp.w - 48), 360) : vp.w; // Full width on mobile
-  const MOBILE_HEADER_PADDING = 16; // Padding between header and messages div
-  const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - 96 - MOBILE_HEADER_PADDING; // Full height minus header and padding
+  const MOBILE_OPEN_W = isMdUp ? Math.min(Math.max(240, vp.w - 48), 360) : vp.w;
+  const MOBILE_HEADER_PADDING = 16;
+  const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - 96 - MOBILE_HEADER_PADDING;
 
   const PANEL_W = 320;
   const DESKTOP_OPEN_W = 1200;
@@ -251,7 +251,7 @@ export default function FloatingBar({
                     right: pad.right,
                     bottom: 0,
                   } : open ? {
-                    top: 96 + MOBILE_HEADER_PADDING, // Header height (h-24 = 96px) + padding
+                    top: 96 + MOBILE_HEADER_PADDING,
                     left: 0,
                     right: 0,
                     bottom: 0,
