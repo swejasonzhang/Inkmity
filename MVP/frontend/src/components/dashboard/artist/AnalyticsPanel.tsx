@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 type KPI = { label: string; value: string | number; sublabel?: string };
 type WeekPoint = { week: string; hoursTattooed: number; sessions: number; revenue: number };
@@ -26,6 +27,31 @@ type Props = {
 };
 
 export default function AnalyticsPanel(props: Props) {
+  const [showNotes, setShowNotes] = useState(false);
+  const notesRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notesRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShowNotes(true);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(notesRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const weeks: WeekPoint[] =
     props.weeks ?? [
       { week: "W-6", hoursTattooed: 18, sessions: 8, revenue: 5100 },
@@ -87,8 +113,8 @@ export default function AnalyticsPanel(props: Props) {
   const pct = (n: number) => `${Math.round(n * 100)}%`;
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="w-full max-w-screen-2xl mx-auto flex flex-col gap-6 p-4 sm:p-6">
+    <div ref={containerRef} className="w-full min-h-full flex items-start justify-center">
+      <div className="w-full max-w-full mx-auto flex flex-col gap-6 pb-4">
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
           {kpis.map((k, i) => (
             <div key={i} className="rounded-2xl border border-app bg-elevated px-6 py-5 text-center">
@@ -226,9 +252,44 @@ export default function AnalyticsPanel(props: Props) {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-app bg-elevated p-6">
-          <div className="text-base font-semibold text-app">Notes to watch</div>
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+        <div className="rounded-2xl border border-app bg-elevated p-6 relative">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                const scrollContainer = containerRef.current?.closest('[class*="overflow-y-auto"]') || containerRef.current?.parentElement?.querySelector('[class*="overflow-y-auto"]');
+                if (scrollContainer) {
+                  scrollContainer.scrollBy({ top: 200, behavior: "smooth" });
+                } else if (notesRef.current) {
+                  notesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              className="p-2 rounded-lg border border-app bg-card hover:bg-elevated transition-colors"
+              aria-label="Scroll down"
+            >
+              <ChevronDown className="h-5 w-5 text-app" />
+            </button>
+            <div className="text-base font-semibold text-app">Notes to watch</div>
+            <button
+              type="button"
+              onClick={() => {
+                const scrollContainer = containerRef.current?.closest('[class*="overflow-y-auto"]') || containerRef.current?.parentElement?.querySelector('[class*="overflow-y-auto"]');
+                if (scrollContainer) {
+                  scrollContainer.scrollBy({ top: 200, behavior: "smooth" });
+                } else if (notesRef.current) {
+                  notesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              className="p-2 rounded-lg border border-app bg-card hover:bg-elevated transition-colors"
+              aria-label="Scroll down"
+            >
+              <ChevronDown className="h-5 w-5 text-app" />
+            </button>
+          </div>
+          <div
+            ref={notesRef}
+            className={`grid grid-cols-1 md:grid-cols-3 gap-3 text-sm transition-all duration-300 ${showNotes ? "opacity-100 max-h-[500px]" : "opacity-0 max-h-0 overflow-hidden"}`}
+          >
             <div className="rounded-lg bg-card border border-app px-3 py-2">
               <div className="text-muted">Minimum charge adherence</div>
               <div className="mt-1 text-[12px] opacity-80 text-app">Spot audit last week: 100% (no below-min tickets)</div>
