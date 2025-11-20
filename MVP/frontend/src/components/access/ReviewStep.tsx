@@ -97,16 +97,16 @@ export default function ReviewStep({
     const tiles = [0, 1, 2];
 
     const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
-        <div className="grid justify-items-center gap-0.5">
-            <span className="text-[11px] text-white/60">{label}</span>
-            <div className="min-w-0 text-[12px] text-white/80 text-center">{children}</div>
+        <div className="grid justify-items-center items-center gap-0.5">
+            <span className="text-[11px] text-white/60 text-center">{label}</span>
+            <div className="min-w-0 text-[12px] text-white/80 text-center flex items-center justify-center">{children}</div>
         </div>
     );
 
     const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-        <section className="rounded-xl border border-white/10 bg-white/5 p-3 text-center h-full">
+        <section className="rounded-xl border border-white/10 bg-white/5 p-3 text-center h-full flex flex-col">
             <h3 className="text-sm font-semibold mb-2">{title}</h3>
-            <div className="grid gap-2">{children}</div>
+            <div className="grid gap-2 flex-1 items-center justify-center">{children}</div>
         </section>
     );
 
@@ -114,20 +114,22 @@ export default function ReviewStep({
         <div className="grid gap-3 text-white place-items-center">
             <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
                 <Card title="Account">
-                    <Row label="Username:">
-                        <span className="text-sm">{shared.username}</span>
-                    </Row>
-                    <Row label="Email:">
-                        <span className="text-sm">{shared.email}</span>
-                    </Row>
-                    <Row label="Role:">
-                        <span className="capitalize text-sm">{role}</span>
-                    </Row>
+                    <div className="flex flex-col items-center justify-center gap-2 w-full">
+                        <Row label="Username:">
+                            <span className="text-sm">{shared.username}</span>
+                        </Row>
+                        <Row label="Email:">
+                            <span className="text-sm">{shared.email}</span>
+                        </Row>
+                        <Row label="Role:">
+                            <span className="capitalize text-sm">{role}</span>
+                        </Row>
+                    </div>
                 </Card>
 
                 {role === "client" ? (
                     <Card title="Client Details">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 items-center justify-items-center w-full">
                             <Row label="Budget:">
                                 <span>{budgetText}</span>
                             </Row>
@@ -150,7 +152,7 @@ export default function ReviewStep({
                     </Card>
                 ) : (
                     <Card title="Artist Details">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 items-center justify-items-center w-full">
                             <Row label="Location:">
                                 <span>{artist.location || "Not set"}</span>
                             </Row>
@@ -163,18 +165,27 @@ export default function ReviewStep({
                             <Row label="Booking:">
                                 <span>{artist.bookingPreference ? BOOKING_LABELS[artist.bookingPreference] : "Not set"}</span>
                             </Row>
-                            <Row label="Travel:">
-                                <span>{artist.travelFrequency ? TRAVEL_LABELS[artist.travelFrequency] : "Not set"}</span>
-                            </Row>
-                            <div className="col-span-2">
-                                <Row label="Styles:">
-                                    <InlineWrapBadges items={artist.styles} />
+                            <div className="col-span-2 flex items-center justify-center">
+                                <Row label="Travel:">
+                                    <span>{artist.travelFrequency ? TRAVEL_LABELS[artist.travelFrequency] : "Not set"}</span>
                                 </Row>
                             </div>
                         </div>
                     </Card>
                 )}
             </div>
+
+            {role === "artist" && (
+                <div className="w-full max-w-5xl">
+                    <Card title="Styles">
+                        <div className="flex items-center justify-center w-full">
+                            <Row label="">
+                                <InlineWrapBadges items={artist.styles} />
+                            </Row>
+                        </div>
+                    </Card>
+                </div>
+            )}
 
             <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
                 <h3 className="text-sm font-semibold mb-2">{role === "client" ? "Reference Images" : "Portfolio Highlights"}</h3>
