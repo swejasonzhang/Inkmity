@@ -137,12 +137,22 @@ export default function Login() {
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
-    const measure = () => setCardH(el.offsetHeight || null);
-    measure();
-    const ro = new ResizeObserver(measure);
+    const measure = () => {
+      const height = el.offsetHeight || null;
+      if (height && height > 0) {
+        setCardH(height);
+      }
+    };
+    const timeoutId = setTimeout(measure, 0);
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(measure);
+    });
     ro.observe(el);
-    return () => ro.disconnect();
-  }, [authError, showSuccess, loading]);
+    return () => {
+      clearTimeout(timeoutId);
+      ro.disconnect();
+    };
+  }, [authError, showSuccess, loading, authLoaded, isSignedIn]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -207,7 +217,12 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const result = await signIn.create({ identifier: email, password });
+      const result = await signIn.create({ identifier: email.trim().toLowerCase(), password });
+      
+      if (import.meta.env.DEV) {
+        console.log("Sign-in result:", result);
+        console.log("Sign-in status:", result.status);
+      }
       
       if (result.status === "complete") {
         if (!result.createdSessionId) {
@@ -271,27 +286,14 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error("Login error:", err);
-      console.error("Error type:", typeof err);
-      console.error("Error keys:", err ? Object.keys(err) : "no keys");
-      if (err?.errors) {
-        console.error("Error errors array:", err.errors);
-        if (Array.isArray(err.errors) && err.errors.length > 0) {
-          console.error("First error:", err.errors[0]);
-          console.error("First error keys:", Object.keys(err.errors[0]));
-        }
-      }
-      if (err?.status) console.error("Error status:", err.status);
-      if (err?.statusCode) console.error("Error statusCode:", err.statusCode);
-      if (err?.code) console.error("Error code:", err.code);
+      console.error("Full error object:", JSON.stringify(err, null, 2));
       
       let errorMessage = "Login failed. Please check your credentials and try again.";
       
       if (err?.errors && Array.isArray(err.errors) && err.errors.length > 0) {
         const firstError = err.errors[0];
-        const clerkMessage = firstError.message || firstError.longMessage || firstError.code || firstError.meta?.paramName;
-        if (clerkMessage) {
-          errorMessage = clerkMessage;
-        }
+        console.error("First error details:", firstError);
+        errorMessage = firstError.message || firstError.longMessage || firstError.code || errorMessage;
       } else if (err?.message) {
         errorMessage = err.message;
       } else if (typeof err === "string") {
@@ -304,8 +306,7 @@ export default function Login() {
           lowerMessage.includes("form_password_incorrect") || 
           lowerMessage.includes("form_param_format_invalid") ||
           lowerMessage.includes("identifier_not_found") ||
-          lowerMessage.includes("password_incorrect") ||
-          lowerMessage.includes("form_identifier_exists") === false) {
+          lowerMessage.includes("password_incorrect")) {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
       } else if (lowerMessage.includes("two-factor") || 
                  lowerMessage.includes("2fa") || 
@@ -314,10 +315,12 @@ export default function Login() {
         errorMessage = "Login failed. Please check your credentials and try again.";
       } else if (lowerMessage.includes("identifier") || lowerMessage.includes("password")) {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
-      } else if (!errorMessage || errorMessage === "Login failed. Please check your credentials and try again.") {
-        if (err?.status === 401 || err?.statusCode === 401) {
-          errorMessage = "Invalid email or password. Please check your credentials and try again.";
-        }
+      } else if (err?.status === 401 || err?.statusCode === 401) {
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+      }
+      
+      if (import.meta.env.DEV) {
+        console.error("Final error message:", errorMessage);
       }
       
       setAuthError(errorMessage);
@@ -366,8 +369,8 @@ export default function Login() {
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
             <div className={`relative flex w-full h-full flex-col md:flex-row md:items-center md:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !isSignedIn ? "" : "justify-center"}`} style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
               {showInfo && !showSuccess && authLoaded && !isSignedIn && (
-                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 md:flex-none mt-4 md:mt-0" style={{ height: isMdUp && cardH ? cardH : undefined, minHeight: isMdUp && cardH ? cardH : undefined }}>
-                  <div className="h-full w-full" style={{ height: isMdUp && cardH ? cardH : undefined, minHeight: isMdUp && cardH ? cardH : undefined }}>
+                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 md:flex-none mt-4 md:mt-0" style={{ height: isMdUp && cardH ? `${cardH}px` : undefined }}>
+                  <div className="h-full w-full" style={{ height: isMdUp && cardH ? `${cardH}px` : undefined }}>
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                   </div>
                 </motion.div>

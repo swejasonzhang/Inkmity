@@ -75,7 +75,7 @@ function collectIssues({ role, step, shared, client, artist, confirmPassword }: 
   } else {
     if (step === 1) {
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
-      if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
+      if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("Pick one or more styles. At least one is required.");
       if (!artist.years || artist.years === "__unset__" || !Number.isFinite(Number(artist.years))) {
         tips.push("Years of experience is required — select your years of experience.");
       }
@@ -91,7 +91,7 @@ function collectIssues({ role, step, shared, client, artist, confirmPassword }: 
         tips.push("Passwords do not match — ensure both password fields are identical.");
       }
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
-      if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("At least one style is required — add styles separated by commas.");
+      if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("Pick one or more styles. At least one is required.");
       if (!artist.years || artist.years === "__unset__" || !Number.isFinite(Number(artist.years))) {
         tips.push("Years of experience is required — select your years of experience.");
       }
@@ -197,12 +197,22 @@ export default function SignUp() {
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
-    const measure = () => setCardH(el.offsetHeight || null);
-    measure();
-    const ro = new ResizeObserver(measure);
+    const measure = () => {
+      const height = el.offsetHeight || null;
+      if (height && height > 0) {
+        setCardH(height);
+      }
+    };
+    const timeoutId = setTimeout(measure, 0);
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(measure);
+    });
     ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    return () => {
+      clearTimeout(timeoutId);
+      ro.disconnect();
+    };
+  }, [step, showSuccess, awaitingCode, authLoaded, userId]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -476,10 +486,10 @@ export default function SignUp() {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   className="flex-1 w-full md:w-1/2 md:flex-none mt-2 md:mt-0"
                   style={{
-                    height: isMdUp && cardH ? cardH : undefined
+                    height: isMdUp && cardH ? `${cardH}px` : undefined
                   }}
                 >
-                  <div className="h-full w-full">
+                  <div className="h-full w-full" style={{ height: isMdUp && cardH ? `${cardH}px` : undefined }}>
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
                   </div>
                 </motion.div>
