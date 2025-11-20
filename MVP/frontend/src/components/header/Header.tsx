@@ -117,21 +117,6 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   }, [isLoaded, isSignedIn, getToken, API_BASE]);
 
   const handleLogout = async () => {
-    try {
-      const token = await getToken();
-      if (token && API_BASE) {
-        await fetch(`${API_BASE}/auth/revoke-token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: "include",
-        }).catch(() => {});
-      }
-    } catch (error) {
-      console.error("[handleLogout] Failed to revoke token:", error);
-    }
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
     await signOut({ redirectUrl: "/login" });
