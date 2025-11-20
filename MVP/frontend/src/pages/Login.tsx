@@ -19,7 +19,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
-  const { signIn, setActive } = useSignIn();
+  const { signIn, setActive, isLoaded: signInLoaded } = useSignIn();
   const { userId, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const [authError, setAuthError] = useState("");
@@ -142,7 +142,7 @@ export default function Login() {
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [authError, showSuccess, loading]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -200,15 +200,32 @@ export default function Login() {
       triggerMascotError();
       return;
     }
-    if (!signIn) {
-      setAuthError("Sign in unavailable. Please try again later.");
+    if (!signIn || !signInLoaded) {
+      setAuthError("Sign in unavailable. Please wait a moment and try again.");
+      setLoading(false);
       return;
     }
     setLoading(true);
     try {
       const result = await signIn.create({ identifier: email, password });
+      
       if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
+        if (!result.createdSessionId) {
+          setAuthError("Login failed: No session created. Please try again.");
+          triggerMascotError();
+          setLoading(false);
+          return;
+        }
+        
+        try {
+          await setActive({ session: result.createdSessionId });
+        } catch (activeErr: any) {
+          setAuthError(activeErr?.errors?.[0]?.message || activeErr?.message || "Failed to activate session. Please try again.");
+          triggerMascotError();
+          setLoading(false);
+          return;
+        }
+        
         try {
           sessionStorage.setItem("authRedirect", "1");
         } catch { }
@@ -221,12 +238,89 @@ export default function Login() {
         setTimeout(() => {
           justLoggedInRef.current = false;
         }, 1000);
+      } else if (result.status === "needs_second_factor") {
+        if (result.createdSessionId) {
+          try {
+            await setActive({ session: result.createdSessionId });
+            try {
+              sessionStorage.setItem("authRedirect", "1");
+            } catch { }
+            isMountedRef.current = true;
+            justLoggedInRef.current = true;
+            intendedSuccessTypeRef.current = "login";
+            setSuccessType("login");
+            setShowSuccess(true);
+            beginRedirect();
+            setTimeout(() => {
+              justLoggedInRef.current = false;
+            }, 1000);
+          } catch (activeErr: any) {
+            setAuthError("Login failed. Please check your credentials and try again.");
+            triggerMascotError();
+          }
+        } else {
+          setAuthError("Login failed. Please check your credentials and try again.");
+          triggerMascotError();
+        }
+      } else if (result.status === "needs_new_password") {
+        setAuthError("Password reset required. Please reset your password.");
+        triggerMascotError();
       } else {
-        setAuthError("Login failed. Check your credentials and try again.");
+        setAuthError("Login failed. Please check your credentials and try again.");
         triggerMascotError();
       }
     } catch (err: any) {
-      setAuthError(err?.errors?.[0]?.message || err?.message || "Unexpected error occurred");
+      console.error("Login error:", err);
+      console.error("Error type:", typeof err);
+      console.error("Error keys:", err ? Object.keys(err) : "no keys");
+      if (err?.errors) {
+        console.error("Error errors array:", err.errors);
+        if (Array.isArray(err.errors) && err.errors.length > 0) {
+          console.error("First error:", err.errors[0]);
+          console.error("First error keys:", Object.keys(err.errors[0]));
+        }
+      }
+      if (err?.status) console.error("Error status:", err.status);
+      if (err?.statusCode) console.error("Error statusCode:", err.statusCode);
+      if (err?.code) console.error("Error code:", err.code);
+      
+      let errorMessage = "Login failed. Please check your credentials and try again.";
+      
+      if (err?.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+        const firstError = err.errors[0];
+        const clerkMessage = firstError.message || firstError.longMessage || firstError.code || firstError.meta?.paramName;
+        if (clerkMessage) {
+          errorMessage = clerkMessage;
+        }
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      }
+      
+      const lowerMessage = errorMessage.toLowerCase();
+      
+      if (lowerMessage.includes("form_identifier_not_found") || 
+          lowerMessage.includes("form_password_incorrect") || 
+          lowerMessage.includes("form_param_format_invalid") ||
+          lowerMessage.includes("identifier_not_found") ||
+          lowerMessage.includes("password_incorrect") ||
+          lowerMessage.includes("form_identifier_exists") === false) {
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+      } else if (lowerMessage.includes("two-factor") || 
+                 lowerMessage.includes("2fa") || 
+                 lowerMessage.includes("second factor") || 
+                 lowerMessage.includes("needs_second_factor")) {
+        errorMessage = "Login failed. Please check your credentials and try again.";
+      } else if (lowerMessage.includes("identifier") || lowerMessage.includes("password")) {
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+      } else if (!errorMessage || errorMessage === "Login failed. Please check your credentials and try again.") {
+        if (err?.status === 401 || err?.statusCode === 401) {
+          errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        }
+      }
+      
+      setAuthError(errorMessage);
       triggerMascotError();
     } finally {
       setLoading(false);
@@ -272,8 +366,8 @@ export default function Login() {
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
             <div className={`relative flex w-full h-full flex-col md:flex-row md:items-center md:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !isSignedIn ? "" : "justify-center"}`} style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
               {showInfo && !showSuccess && authLoaded && !isSignedIn && (
-                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 md:flex-none mt-4 md:mt-0" style={{ height: isMdUp && cardH ? cardH : undefined }}>
-                  <div className="h-full w-full">
+                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 md:flex-none mt-4 md:mt-0" style={{ height: isMdUp && cardH ? cardH : undefined, minHeight: isMdUp && cardH ? cardH : undefined }}>
+                  <div className="h-full w-full" style={{ height: isMdUp && cardH ? cardH : undefined, minHeight: isMdUp && cardH ? cardH : undefined }}>
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                   </div>
                 </motion.div>
@@ -396,7 +490,7 @@ export default function Login() {
                           <p id="password-help" className={`mt-1 text-xs text-center ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
                           {authError ? <p id="auth-help" className="mt-1 text-xs text-center text-red-400">{authError}</p> : null}
                         </div>
-                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-sm rounded-xl w-full mt-2" disabled={loading}>
+                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-sm rounded-xl w-full mt-2" disabled={loading || !signInLoaded || !signIn}>
                           {loading ? "Signing In..." : "Sign In"}
                         </Button>
                       </form>
