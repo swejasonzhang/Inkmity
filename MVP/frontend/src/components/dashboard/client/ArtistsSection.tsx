@@ -458,7 +458,7 @@ export default function ArtistsSection({
 
                     <div className="hidden md:block h-full min-h-0">
                         {listItems.length > 0 ? (
-                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3" style={{ minHeight: `${minGridPx}px` }}>
+                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3 md:pb-20" style={{ minHeight: `${minGridPx}px` }}>
                                 {listItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}

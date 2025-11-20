@@ -104,31 +104,44 @@ export default function ArtistDetailsStep({
                         <Button
                             type="button"
                             variant="outline"
-                            className="w-full justify-center rounded-xl border-white/10 bg-white/10 text-white"
+                            className="w-full justify-center rounded-xl border-white/10 bg-white/10 text-white min-h-0"
                         >
-                            <div className="flex flex-wrap items-center justify-center gap-1.5 text-center">
+                            <div className="flex flex-wrap items-center justify-center gap-1.5 text-center max-w-full overflow-hidden">
                                 {value.length === 0 ? (
                                     <span className="text-white/60 text-center">{placeholder}</span>
                                 ) : (
-                                    value.map((v) => (
-                                        <Badge
-                                            key={v}
-                                            variant="secondary"
-                                            className="bg-white/15 text-white hover:bg-white/25 text-center"
-                                        >
-                                            {v}
-                                            <X
-                                                className="ml-1 h-3 w-3 cursor-pointer"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    clearOne(v);
-                                                }}
-                                            />
-                                        </Badge>
-                                    ))
+                                    <>
+                                        {value.slice(0, 1).map((v) => (
+                                            <Badge
+                                                key={v}
+                                                variant="secondary"
+                                                className="bg-white/15 text-white hover:bg-white/25 text-center max-w-full truncate"
+                                            >
+                                                <span className="truncate">{v}</span>
+                                                <button
+                                                    type="button"
+                                                    className="ml-1 h-3 w-3 cursor-pointer inline-flex items-center justify-center hover:opacity-80 flex-shrink-0"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        clearOne(v);
+                                                    }}
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                    }}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </Badge>
+                                        ))}
+                                        {value.length > 1 && (
+                                            <span className="text-white/60 text-sm whitespace-nowrap">+{value.length - 1} more</span>
+                                        )}
+                                    </>
                                 )}
                             </div>
-                            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-70" />
+                            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-70 flex-shrink-0" />
                         </Button>
                     </PopoverTrigger>
 
@@ -137,24 +150,26 @@ export default function ArtistDetailsStep({
                         align="start"
                     >
                         <Command className="bg-transparent">
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => scrollBy(-120)}
-                                    className="absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-md px-2 py-1 text-white/80 hover:bg-white/10"
-                                    aria-label="Scroll up"
-                                >
-                                    <ChevronUp className="h-4 w-4" />
-                                </button>
+                            <div className="relative flex flex-col max-h-64">
+                                <div className="flex-shrink-0 flex items-center justify-center py-2 bg-[#0b0b0b] border-b border-white/10">
+                                    <button
+                                        type="button"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => scrollBy(-120)}
+                                        className="rounded-md px-2 py-1 text-white/80 hover:bg-white/10 bg-[#0b0b0b]/90 backdrop-blur-sm"
+                                        aria-label="Scroll up"
+                                    >
+                                        <ChevronUp className="h-4 w-4" />
+                                    </button>
+                                </div>
 
                                 <div
                                     ref={listRef}
                                     className="
-                    max-h-64 overflow-y-auto
+                    flex-1 min-h-0 overflow-y-auto overflow-x-hidden
                     scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]
                     [&::-webkit-scrollbar]:hidden
-                    pt-6 pb-6
+                    scroll-smooth
                   "
                                 >
                                     <CommandList className="bg-transparent">
@@ -169,11 +184,11 @@ export default function ArtistDetailsStep({
                                                         key={opt}
                                                         value={opt}
                                                         onSelect={() => toggle(opt)}
-                                                        className="relative flex w-full items-center justify-center text-center aria-selected:bg-white/5 data-[selected=true]:bg-white/10"
+                                                        className="relative flex w-full items-center justify-center text-center aria-selected:bg-white/5 data-[selected=true]:bg-white/10 pl-8"
                                                         data-selected={checked ? "true" : "false"}
                                                     >
                                                         <Check
-                                                            className={`absolute left-1/2 -translate-x-full h-4 w-4 ${checked ? "opacity-100" : "opacity-0"}`}
+                                                            className={`absolute left-4 h-4 w-4 ${checked ? "opacity-100" : "opacity-0"}`}
                                                         />
                                                         <span className="pointer-events-none text-center">{opt}</span>
                                                     </CommandItem>
@@ -183,18 +198,20 @@ export default function ArtistDetailsStep({
                                     </CommandList>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => scrollBy(120)}
-                                    className="absolute left-1/2 bottom-0 z-10 -translate-x-1/2 rounded-md px-2 py-1 text-white/80 hover:bg-white/10"
-                                    aria-label="Scroll down"
-                                >
-                                    <ChevronDown className="h-4 w-4" />
-                                </button>
+                                <div className="flex-shrink-0 flex items-center justify-center py-2 bg-[#0b0b0b] border-t border-white/10">
+                                    <button
+                                        type="button"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => scrollBy(120)}
+                                        className="rounded-md px-2 py-1 text-white/80 hover:bg-white/10 bg-[#0b0b0b]/90 backdrop-blur-sm"
+                                        aria-label="Scroll down"
+                                    >
+                                        <ChevronDown className="h-4 w-4" />
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="flex items-center justify-between border-t border-white/10 p-2">
+                            <div className="flex items-center justify-between border-t border-white/10 p-2 bg-[#0b0b0b]">
                                 <span className="text-xs text-white/60">{value.length} selected</span>
                                 <Button
                                     type="button"
@@ -329,7 +346,7 @@ export default function ArtistDetailsStep({
                             placeholder="Select one or more styles"
                         />
                     </div>
-                    <p className={helpCls}>Pick one or more styles and/or type your own. At least one is required.</p>
+                    <p className={helpCls}>Pick one or more styles. At least one is required.</p>
                 </div>
 
                 <div className="space-y-1.5 flex flex-col items-center">
