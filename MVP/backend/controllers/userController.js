@@ -326,6 +326,7 @@ export async function syncUser(req, res) {
       const bookingPreference = profile.bookingPreference || "open";
       const travelFrequency = profile.travelFrequency || "rare";
       const shop = profile.shop || "";
+      const coverImage = profile.coverImage || "";
       const portfolio = (
         Array.isArray(profile.portfolioImages) ? profile.portfolioImages : []
       )
@@ -339,6 +340,7 @@ export async function syncUser(req, res) {
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
         bookingPreference,
         travelFrequency,
+        ...(coverImage ? { coverImage } : {}),
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
       });
     }

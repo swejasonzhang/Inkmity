@@ -1,8 +1,8 @@
-import { useMemo, useState, useRef, useEffect } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { useMemo, useState } from "react";
 
 type KPI = { label: string; value: string | number; sublabel?: string };
-type WeekPoint = { week: string; hoursTattooed: number; sessions: number; revenue: number };
+type DayData = { day: string; hours: number };
+type WeekPoint = { week: string; hoursTattooed: number; sessions: number; revenue: number; days: DayData[] };
 type StyleRow = { style: string; share: number };
 type LeadRow = { source: string; share: number };
 
@@ -27,56 +27,81 @@ type Props = {
 };
 
 export default function AnalyticsPanel(props: Props) {
-  const [showNotes, setShowNotes] = useState(false);
-  const notesRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!notesRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setShowNotes(true);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(notesRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  const [hoveredBar, setHoveredBar] = useState<string | null>(null);
 
   const weeks: WeekPoint[] =
     props.weeks ?? [
-      { week: "W-6", hoursTattooed: 18, sessions: 8, revenue: 5100 },
-      { week: "W-5", hoursTattooed: 20, sessions: 9, revenue: 5600 },
-      { week: "W-4", hoursTattooed: 16, sessions: 7, revenue: 4700 },
-      { week: "W-3", hoursTattooed: 22, sessions: 9, revenue: 6000 },
-      { week: "W-2", hoursTattooed: 24, sessions: 10, revenue: 6550 },
-      { week: "W-1", hoursTattooed: 21, sessions: 9, revenue: 5980 },
+      { 
+        week: "Week 1", 
+        hoursTattooed: 22, 
+        sessions: 9, 
+        revenue: 6000,
+        days: [
+          { day: "M", hours: 4 },
+          { day: "T", hours: 3 },
+          { day: "W", hours: 5 },
+          { day: "Th", hours: 4 },
+          { day: "F", hours: 6 },
+        ]
+      },
+      { 
+        week: "Week 2", 
+        hoursTattooed: 24, 
+        sessions: 10, 
+        revenue: 6550,
+        days: [
+          { day: "M", hours: 5 },
+          { day: "T", hours: 4 },
+          { day: "W", hours: 6 },
+          { day: "Th", hours: 5 },
+          { day: "F", hours: 4 },
+        ]
+      },
+      { 
+        week: "Week 3", 
+        hoursTattooed: 21, 
+        sessions: 9, 
+        revenue: 5980,
+        days: [
+          { day: "M", hours: 3 },
+          { day: "T", hours: 5 },
+          { day: "W", hours: 4 },
+          { day: "Th", hours: 5 },
+          { day: "F", hours: 4 },
+        ]
+      },
+      { 
+        week: "Week 4", 
+        hoursTattooed: 23, 
+        sessions: 10, 
+        revenue: 6200,
+        days: [
+          { day: "M", hours: 4 },
+          { day: "T", hours: 5 },
+          { day: "W", hours: 5 },
+          { day: "Th", hours: 4 },
+          { day: "F", hours: 5 },
+        ]
+      },
     ];
 
-  const styleMix: StyleRow[] =
+  const styleMix: StyleRow[] = (
     props.styleMix ?? [
       { style: "Flash", share: 0.34 },
       { style: "Custom", share: 0.46 },
       { style: "Black & Grey", share: 0.12 },
       { style: "Color", share: 0.08 },
-    ];
+    ]
+  ).sort((a, b) => b.share - a.share);
 
-  const leadSources: LeadRow[] =
+  const leadSources: LeadRow[] = (
     props.leadSources ?? [
       { source: "Instagram", share: 0.52 },
       { source: "Referral", share: 0.23 },
       { source: "Walk-in", share: 0.17 },
       { source: "Other", share: 0.08 },
-    ];
+    ]
+  ).sort((a, b) => b.share - a.share);
 
   const mtd = {
     noShowRate: 0.06,
@@ -95,8 +120,8 @@ export default function AnalyticsPanel(props: Props) {
 
   const kpis: KPI[] =
     props.kpis ?? [
-      { label: "Hours (last week)", value: weeks[weeks.length - 1]?.hoursTattooed ?? 0 },
-      { label: "Sessions (last week)", value: weeks[weeks.length - 1]?.sessions ?? 0 },
+      { label: "Hours", sublabel: "(week 4)", value: weeks[weeks.length - 1]?.hoursTattooed ?? 0 },
+      { label: "Sessions", sublabel: "(week 4)", value: weeks[weeks.length - 1]?.sessions ?? 0 },
       { label: "Revenue/hr", value: `$${mtd.revenuePerHour}` },
       { label: "Supplies/hr", value: `$${mtd.suppliesCostPerHour}` },
       { label: "Avg session", value: `${mtd.avgSessionLenHrs}h` },
@@ -104,7 +129,7 @@ export default function AnalyticsPanel(props: Props) {
     ];
 
   const maxHours = useMemo(
-    () => Math.max(1, ...weeks.map((w) => w.hoursTattooed || 0)),
+    () => Math.max(1, ...weeks.flatMap((w) => w.days.map((d) => d.hours || 0))),
     [weeks]
   );
 
@@ -113,112 +138,82 @@ export default function AnalyticsPanel(props: Props) {
   const pct = (n: number) => `${Math.round(n * 100)}%`;
 
   return (
-    <div ref={containerRef} className="w-full min-h-full flex items-start justify-center">
-      <div className="w-full max-w-full mx-auto flex flex-col gap-6 pb-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="w-full h-full overflow-hidden flex items-center justify-center p-4">
+      <div className="w-full h-full max-w-full mx-auto flex flex-col gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 flex-shrink-0">
           {kpis.map((k, i) => (
-            <div key={i} className="rounded-2xl border border-app bg-elevated px-6 py-5 text-center">
-              <div className="text-sm text-muted">{k.label}</div>
-              <div className="mt-1 text-3xl sm:text-4xl font-bold text-app">{k.value}</div>
-              {k.sublabel && <div className="mt-1 text-sm text-muted">{k.sublabel}</div>}
+            <div key={i} className="rounded-xl border border-app bg-elevated px-4 py-5 flex flex-col items-center justify-center text-center">
+              <div className="text-xs text-muted">
+                {k.label}
+                {k.sublabel && <div className="mt-0.5">{k.sublabel}</div>}
+              </div>
+              <div className="mt-2 text-3xl font-bold text-app">{k.value}</div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2 rounded-2xl border border-app bg-elevated p-6">
-            <div className="flex items-baseline justify-between">
-              <div className="text-base font-semibold text-app">Hours on needle (last 6 weeks)</div>
-              <div className="text-sm text-muted">Max {maxHours}h</div>
+        <div className="flex-1 min-h-0">
+          <div className="rounded-xl border border-app bg-elevated p-4 flex flex-col h-full overflow-visible">
+            <div className="flex items-baseline justify-center flex-shrink-0">
+              <div className="text-sm font-semibold text-app">Hours on needle (last 4 weeks)</div>
             </div>
-            <div className="mt-5 flex w-full items-end justify-between gap-6 sm:gap-8 px-2 sm:px-6 h-56">
-              {weeks.map((w, i) => {
-                const h = Math.max(8, Math.round((w.hoursTattooed / maxHours) * 192));
-                return (
-                  <div key={i} className="flex flex-col items-center">
-                    <div
-                      className="w-10 rounded-t-lg border text-app [background:linear-gradient(to_top,color-mix(in_oklab,currentColor_15%,transparent),color-mix(in_oklab,currentColor_40%,transparent))] [border-color:color-mix(in_oklab,currentColor_10%,transparent)]"
-                      style={{ height: `${h}px` }}
-                      title={`${w.week}: ${w.hoursTattooed}h, ${w.sessions} sessions`}
-                    />
-                    <div className="mt-2 text-[11px] text-muted">{w.week}</div>
-                    <div className="text-[11px] opacity-80 text-app">{w.sessions}x</div>
+            <div className="mt-3 flex w-full items-end justify-between gap-6 px-2 flex-1 min-h-0 pb-8 pt-10 relative">
+              {weeks.map((w, weekIdx) => (
+                <div key={weekIdx} className="flex-1 flex flex-col items-center h-full justify-end">
+                  <div className="flex items-end justify-center gap-1.5 h-full w-full">
+                    {w.days.map((day, dayIdx) => {
+                      const heightPercent = Math.max(10, (day.hours / maxHours) * 100);
+                      const barId = `${weekIdx}-${dayIdx}`;
+                      const isHovered = hoveredBar === barId;
+                      return (
+                        <div
+                          key={dayIdx}
+                          className="flex-1 rounded-t-md bg-gradient-to-t from-zinc-400 to-zinc-300 dark:from-zinc-600 dark:to-zinc-500 transition-all duration-200 ease-out cursor-pointer relative group"
+                          style={{ 
+                            height: `${heightPercent}%`,
+                            transform: isHovered ? 'scaleY(1.05) translateY(-2px)' : 'scaleY(1)',
+                            transformOrigin: 'bottom',
+                            opacity: isHovered ? 1 : 0.7
+                          }}
+                          onMouseEnter={() => setHoveredBar(barId)}
+                          onMouseLeave={() => setHoveredBar(null)}
+                        >
+                          {isHovered && (
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black text-[10px] px-2 py-1 rounded whitespace-nowrap font-medium shadow-lg z-10">
+                              {day.day}: {day.hours}h
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-black dark:border-t-white"></div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-6 grid grid-cols-3 gap-3 text-sm">
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Last week revenue</div>
-                <div className="font-semibold text-app">${weeks[weeks.length - 1]?.revenue.toLocaleString()}</div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">No-show rate</div>
-                <div className="font-semibold text-app">{pct(mtd.noShowRate!)}</div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Deposit capture</div>
-                <div className="font-semibold text-app">{pct(mtd.depositCapture!)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-app bg-elevated p-6">
-            <div className="text-base font-semibold text-app">Shop ops — this month</div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Tip rate</div>
-                <div className="font-semibold text-app">{pct(mtd.tipRate!)}</div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Repeat clients</div>
-                <div className="font-semibold text-app">{pct(mtd.repeatClientRate!)}</div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Median lead time</div>
-                <div className="font-semibold text-app">{mtd.bookingLeadDaysMedian} days</div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Avg session length</div>
-                <div className="font-semibold text-app">{mtd.avgSessionLenHrs} h</div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Touch-up rate</div>
-                <div className="font-semibold text-app">{pct(mtd.touchUpRate!)}</div>
-              </div>
-              <div className="rounded-lg bg-card border border-app px-3 py-2 text-center">
-                <div className="text-muted">Aftercare issues</div>
-                <div className="font-semibold text-app">{pct(mtd.aftercareIssuesRate!)}</div>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="col-span-2 rounded-lg bg-card border border-app px-3 py-2">
-                <div className="text-muted text-center">Net $/hr</div>
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 max-w-full text-app">
-                  <span className="text-[12px] text-muted whitespace-nowrap">Rev</span>
-                  <span className="font-semibold whitespace-nowrap">${mtd.revenuePerHour}</span>
-                  <span className="text-[12px] text-muted whitespace-nowrap">– Supplies</span>
-                  <span className="font-semibold whitespace-nowrap">${mtd.suppliesCostPerHour}</span>
-                  <span className="text-[12px] text-muted">=</span>
-                  <span className="font-bold whitespace-nowrap">
-                    ${Math.max(0, (mtd.revenuePerHour ?? 0) - (mtd.suppliesCostPerHour ?? 0)).toFixed(0)}
-                  </span>
+                  <div className="mt-2 text-[10px] text-muted text-center font-medium">{w.week}</div>
+                  <div className="text-[10px] text-app font-semibold">{w.hoursTattooed}h</div>
                 </div>
-              </div>
+              ))}
             </div>
 
+            <div className="mt-auto grid grid-cols-2 gap-2 text-xs flex-shrink-0">
+              <div className="rounded-lg bg-card border border-app px-3 py-3 flex flex-col items-center justify-center text-center">
+                <div className="text-muted">Monthly revenue</div>
+                <div className="mt-2 font-semibold text-app">${weeks[weeks.length - 1]?.revenue.toLocaleString()}</div>
+              </div>
+              <div className="rounded-lg bg-card border border-app px-3 py-3 flex flex-col items-center justify-center text-center">
+                <div className="text-muted">No-show rate</div>
+                <div className="mt-2 font-semibold text-app">{pct(mtd.noShowRate!)}</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-app bg-elevated p-6">
-            <div className="text-base font-semibold text-app">Style mix</div>
-            <div className="mt-4 space-y-3">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 flex-shrink-0">
+          <div className="rounded-xl border border-app bg-elevated p-4">
+            <div className="text-sm font-semibold text-app text-center">Style mix</div>
+            <div className="mt-3 space-y-3">
               {styleMix.map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-28 text-[12px] text-muted">{s.style}</div>
+                  <div className="w-28 text-[11px] text-muted">{s.style}</div>
                   <div className="flex-1 h-3 rounded-full bg-card border border-app overflow-hidden">
                     <div
                       className="h-full text-app [background:color-mix(in_oklab,currentColor_35%,transparent)] transition-[width] duration-500"
@@ -226,18 +221,18 @@ export default function AnalyticsPanel(props: Props) {
                       title={pct(s.share)}
                     />
                   </div>
-                  <div className="w-12 text-right text-[12px] text-app">{pct(s.share)}</div>
+                  <div className="w-12 text-right text-[11px] text-app">{pct(s.share)}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-app bg-elevated p-6">
-            <div className="text-base font-semibold text-app">Lead sources</div>
-            <div className="mt-4 space-y-3">
+          <div className="rounded-xl border border-app bg-elevated p-4">
+            <div className="text-sm font-semibold text-app text-center">Lead sources</div>
+            <div className="mt-3 space-y-3">
               {leadSources.map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-28 text-[12px] text-muted">{s.source}</div>
+                  <div className="w-28 text-[11px] text-muted">{s.source}</div>
                   <div className="flex-1 h-3 rounded-full bg-card border border-app overflow-hidden">
                     <div
                       className="h-full text-app [background:color-mix(in_oklab,currentColor_35%,transparent)] transition-[width] duration-500"
@@ -245,62 +240,9 @@ export default function AnalyticsPanel(props: Props) {
                       title={pct(s.share)}
                     />
                   </div>
-                  <div className="w-12 text-right text-[12px] text-app">{pct(s.share)}</div>
+                  <div className="w-12 text-right text-[11px] text-app">{pct(s.share)}</div>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-app bg-elevated p-6 relative">
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <button
-              type="button"
-              onClick={() => {
-                const scrollContainer = containerRef.current?.closest('[class*="overflow-y-auto"]') || containerRef.current?.parentElement?.querySelector('[class*="overflow-y-auto"]');
-                if (scrollContainer) {
-                  scrollContainer.scrollBy({ top: 200, behavior: "smooth" });
-                } else if (notesRef.current) {
-                  notesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-              }}
-              className="p-2 rounded-lg border border-app bg-card hover:bg-elevated transition-colors"
-              aria-label="Scroll down"
-            >
-              <ChevronDown className="h-5 w-5 text-app" />
-            </button>
-            <div className="text-base font-semibold text-app">Notes to watch</div>
-            <button
-              type="button"
-              onClick={() => {
-                const scrollContainer = containerRef.current?.closest('[class*="overflow-y-auto"]') || containerRef.current?.parentElement?.querySelector('[class*="overflow-y-auto"]');
-                if (scrollContainer) {
-                  scrollContainer.scrollBy({ top: 200, behavior: "smooth" });
-                } else if (notesRef.current) {
-                  notesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-              }}
-              className="p-2 rounded-lg border border-app bg-card hover:bg-elevated transition-colors"
-              aria-label="Scroll down"
-            >
-              <ChevronDown className="h-5 w-5 text-app" />
-            </button>
-          </div>
-          <div
-            ref={notesRef}
-            className={`grid grid-cols-1 md:grid-cols-3 gap-3 text-sm transition-all duration-300 ${showNotes ? "opacity-100 max-h-[500px]" : "opacity-0 max-h-0 overflow-hidden"}`}
-          >
-            <div className="rounded-lg bg-card border border-app px-3 py-2">
-              <div className="text-muted">Minimum charge adherence</div>
-              <div className="mt-1 text-[12px] opacity-80 text-app">Spot audit last week: 100% (no below-min tickets)</div>
-            </div>
-            <div className="rounded-lg bg-card border border-app px-3 py-2">
-              <div className="text-muted">Healed photo returns</div>
-              <div className="mt-1 text-[12px] opacity-80 text-app">Ask at checkout; offer 10% off next for healed pics</div>
-            </div>
-            <div className="rounded-lg bg-card border border-app px-3 py-2">
-              <div className="text-muted">Aftercare sales</div>
-              <div className="mt-1 text-[12px] opacity-80 text-app">Add upsell: balm/film bundles near checkout</div>
             </div>
           </div>
         </div>

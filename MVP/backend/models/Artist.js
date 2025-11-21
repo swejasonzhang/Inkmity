@@ -23,6 +23,7 @@ const ArtistSchema = new Schema(
     },
     baseRate: { type: Number, default: 0 },
     portfolioImages: { type: [String], default: [] },
+    coverImage: { type: String, default: "" },
   },
   { timestamps: true }
 );
