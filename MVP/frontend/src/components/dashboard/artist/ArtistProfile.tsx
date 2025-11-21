@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
-import { Save, Edit2, Upload, X, Plus, Camera } from "lucide-react";
+import { Save, Edit2, X, Plus, Camera, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 interface Artist {
@@ -93,9 +96,9 @@ export default function ArtistProfile() {
         try {
             setUploading(true);
             const token = await getToken();
-            
+
             const sigResponse = await fetch(
-                type === "avatar" 
+                type === "avatar"
                     ? `${API_URL}/users/avatar/signature`
                     : `${API_URL}/images/sign?kind=artist_portfolio`,
                 {
@@ -124,14 +127,15 @@ export default function ArtistProfile() {
                 if (!updateResponse.ok) throw new Error("Failed to update avatar");
                 await loadProfile();
             } else if (type === "cover") {
-                setEditedArtist({ ...editedArtist, coverImage: uploadData.secure_url || uploadData.url });
+                const newCoverUrl = uploadData.secure_url || uploadData.url;
+                setEditedArtist(prev => ({ ...prev, coverImage: newCoverUrl }));
                 setBgOk(true);
             } else if (type === "portfolio") {
                 const currentPortfolio = editedArtist.portfolioImages || artist?.portfolioImages || [];
-                setEditedArtist({ 
-                    ...editedArtist, 
+                setEditedArtist(prev => ({
+                    ...prev,
                     portfolioImages: [...currentPortfolio, uploadData.secure_url || uploadData.url]
-                });
+                }));
             }
         } catch (error) {
             console.error("Failed to upload image:", error);
@@ -141,11 +145,6 @@ export default function ArtistProfile() {
         }
     };
 
-    const handleRemovePortfolioImage = (index: number) => {
-        const currentPortfolio = editedArtist.portfolioImages || artist?.portfolioImages || [];
-        const updated = currentPortfolio.filter((_, i) => i !== index);
-        setEditedArtist({ ...editedArtist, portfolioImages: updated });
-    };
 
     const handleAddStyle = () => {
         if (!newStyleInput.trim()) return;
@@ -170,7 +169,7 @@ export default function ArtistProfile() {
             const token = await getToken();
             const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || "";
             const username = editedArtist.username || artist.username || user.firstName || email.split("@")[0] || "user";
-            
+
             if (editedArtist.portfolioImages && JSON.stringify(editedArtist.portfolioImages) !== JSON.stringify(artist.portfolioImages)) {
                 const portfolioResponse = await fetch(`${API_URL}/users/me/portfolio`, {
                     method: "PUT",
@@ -210,7 +209,7 @@ export default function ArtistProfile() {
                 }),
             });
             if (!response.ok) throw new Error("Failed to save profile");
-            
+
             await loadProfile();
             setEditedArtist({});
             setEditing(false);
@@ -222,16 +221,24 @@ export default function ArtistProfile() {
         }
     };
 
-    const currentUsername = editing ? (editedArtist.username ?? artist?.username) : artist?.username;
-    const currentBio = editing ? (editedArtist.bio ?? artist?.bio) : artist?.bio;
-    const currentLocation = editing ? (editedArtist.location ?? artist?.location) : artist?.location;
-    const currentShop = editing ? (editedArtist.shop ?? artist?.shop) : artist?.shop;
-    const currentYearsExperience = editing ? (editedArtist.yearsExperience ?? artist?.yearsExperience) : artist?.yearsExperience;
-    const currentBaseRate = editing ? (editedArtist.baseRate ?? artist?.baseRate) : artist?.baseRate;
-    const currentStyles = editing ? (editedArtist.styles ?? artist?.styles) : artist?.styles;
-    const currentPortfolio = editing ? (editedArtist.portfolioImages ?? artist?.portfolioImages) : artist?.portfolioImages;
-    const currentProfileImage = editing ? (editedArtist.profileImage ?? artist?.profileImage) : artist?.profileImage;
-    const currentCoverImage = editing ? (editedArtist.coverImage ?? artist?.coverImage) : artist?.coverImage;
+    const currentUsername = artist?.username;
+    const currentBio = artist?.bio;
+    const currentLocation = artist?.location;
+    const currentShop = artist?.shop;
+    const currentYearsExperience = artist?.yearsExperience;
+    const currentStyles = artist?.styles;
+    const currentPortfolio = artist?.portfolioImages;
+    const currentProfileImage = artist?.profileImage;
+    const currentCoverImage = artist?.coverImage;
+
+    const modalUsername = editedArtist.username ?? artist?.username;
+    const modalBio = editedArtist.bio ?? artist?.bio;
+    const modalLocation = editedArtist.location ?? artist?.location;
+    const modalYearsExperience = editedArtist.yearsExperience ?? artist?.yearsExperience;
+    const modalBaseRate = editedArtist.baseRate ?? artist?.baseRate;
+    const modalStyles = editedArtist.styles ?? artist?.styles;
+    const modalProfileImage = editedArtist.profileImage ?? artist?.profileImage;
+    const modalCoverImage = editedArtist.coverImage ?? artist?.coverImage;
 
     const portfolio = useMemo(() => (currentPortfolio || []).filter(Boolean), [currentPortfolio]);
     const healedWorks = artist?.healedWorks?.length ? artist.healedWorks : [];
@@ -247,12 +254,18 @@ export default function ArtistProfile() {
         return arr.map(s => String(s).trim()).filter(Boolean);
     }, [currentStyles]);
 
+    const modalStylesClean = useMemo(() => {
+        const raw = modalStyles ?? [];
+        const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[;,/]+/) : [];
+        return arr.map(s => String(s).trim()).filter(Boolean);
+    }, [modalStyles]);
+
     const stylesPrimary = stylesClean.slice(0, 3);
     const stylesOverflow = Math.max(0, stylesClean.length - stylesPrimary.length);
 
     const Grid: React.FC<{ images: string[]; eager?: number }> = ({ images, eager = 6 }) =>
         images.length ? (
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
                 {images.map((src, i) => (
                     <div
                         key={`${src}-${i}`}
@@ -283,10 +296,11 @@ export default function ArtistProfile() {
     );
 
     const shopLabel = currentShop || "";
-    const years = typeof currentYearsExperience === "number" && currentYearsExperience >= 0 ? `${currentYearsExperience} yr${currentYearsExperience === 1 ? "" : "s"} exp` : "";
+    const years = typeof currentYearsExperience === "number" && currentYearsExperience >= 0
+        ? (currentYearsExperience === 0 ? "<1 yr exp" : `${currentYearsExperience} yr${currentYearsExperience === 1 ? "" : "s"} exp`)
+        : "";
     const loc = currentLocation?.trim() || "";
 
-    // Update avatar/cover display states when edited
     useEffect(() => {
         if (currentProfileImage) setAvatarOk(true);
         if (currentCoverImage) setBgOk(true);
@@ -336,214 +350,300 @@ export default function ArtistProfile() {
                 }}
             />
             <div className="group w-full max-w-4xl h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8 items-center justify-center" data-artist-card="true" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 95%, var(--fg) 5%), color-mix(in oklab, var(--bg) 75%, var(--fg) 25%))" }}>
-                {bgOk && currentCoverImage ? (
-                    <img
-                        src={currentCoverImage}
-                        alt={`${currentUsername} background`}
-                        className="absolute inset-0 h-full w-full object-cover"
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        onError={() => setBgOk(false)}
-                    />
-                ) : (
-                    <div className="absolute inset-0" />
-                )}
-                {editing && (
-                    <Button
-                        onClick={() => coverInputRef.current?.click()}
-                        disabled={uploading}
-                        size="sm"
-                        className="absolute top-4 right-4 z-10"
-                        variant="secondary"
-                    >
-                        <Camera className="h-4 w-4 mr-2" />
-                        {currentCoverImage ? "Change Cover" : "Add Cover"}
-                    </Button>
-                )}
+                <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative">
+                    <div className="absolute top-0 right-0 z-20 flex gap-2">
+                        <Button
+                            onClick={() => {
+                                setEditing(true);
+                                setEditedArtist({});
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="backdrop-blur-sm bg-[color:var(--card)]/80 border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                        >
+                            <Edit2 className="h-4 w-4 mr-2" />
+                            Edit Profile
+                        </Button>
+                    </div>
 
-                <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl">
-                    <div className={`relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 ${editing ? 'h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28' : 'h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40'}`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+                    <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+                        {bgOk && currentCoverImage && (
+                            <img
+                                src={currentCoverImage}
+                                alt="Background"
+                                className="absolute inset-0 h-full w-full object-cover opacity-30"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                onError={() => setBgOk(false)}
+                            />
+                        )}
                         {avatarOk && currentProfileImage ? (
                             <img
                                 src={currentProfileImage}
                                 alt={`${currentUsername} profile`}
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-cover z-10"
                                 loading="lazy"
                                 referrerPolicy="no-referrer"
                                 onError={() => setAvatarOk(false)}
                             />
                         ) : (
-                            <span className={`absolute inset-0 grid place-items-center font-semibold ${editing ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'}`} style={{ color: "var(--fg)" }}>
+                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl sm:text-3xl md:text-4xl z-10" style={{ color: "var(--fg)" }}>
                                 {initials}
                             </span>
                         )}
-                        {editing && (
-                            <button
-                                onClick={() => avatarInputRef.current?.click()}
-                                disabled={uploading}
-                                className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
-                            >
-                                <Camera className="h-6 w-6 text-white" />
-                            </button>
-                        )}
                     </div>
 
-                    <div className="flex items-center justify-center w-full">
-                            <Button
-                                onClick={() => {
-                                    if (editing) {
-                                        saveProfile();
-                                    } else {
-                                        setEditing(true);
-                                        setEditedArtist({});
-                                    }
-                                }}
-                                disabled={saving || uploading}
-                                size="sm"
-                                variant="ghost"
-                            >
-                                {editing ? (
-                                    <>
-                                        <Save className="h-4 w-4 mr-2" />
-                                        {saving ? "Saving..." : "Save"}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Edit2 className="h-4 w-4 mr-2" />
-                                        Edit Profile
-                                    </>
-                                )}
-                            </Button>
+                    <div className="flex flex-col items-center w-full mt-2">
+                        <h2 className="font-extrabold tracking-tight text-xl md:text-2xl" style={{ color: "var(--fg)" }}>
+                            {currentUsername}
+                        </h2>
                     </div>
 
-                    <div className="flex flex-col items-center w-full">
-                            {editing ? (
-                                <input
-                                    type="text"
-                                    value={currentUsername}
-                                    onChange={(e) => setEditedArtist({ ...editedArtist, username: e.target.value })}
-                                    className="font-extrabold tracking-tight text-xl md:text-2xl bg-transparent border-b-2 border-white/20 focus:outline-none focus:border-white/40 text-center"
-                                    style={{ color: "var(--fg)" }}
-                                    placeholder="Your name"
-                                />
-                            ) : (
-                                <h2 className="font-extrabold tracking-tight text-xl md:text-2xl" style={{ color: "var(--fg)" }}>
-                                    {currentUsername}
-                                </h2>
-                            )}
+                    <div className="w-full flex justify-center mt-2">
+                        <p className="text-xs md:text-sm leading-relaxed max-w-prose text-center mx-auto" style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
+                            {bioText}
+                        </p>
                     </div>
 
-                    <div className="w-full flex justify-center">
-                            {editing ? (
-                                <textarea
-                                    value={currentBio || ""}
-                                    onChange={(e) => setEditedArtist({ ...editedArtist, bio: e.target.value })}
-                                    className="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:outline-none focus:border-white/40 resize-none text-xs md:text-sm text-center"
-                                    rows={2}
-                                    style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}
-                                    placeholder="Tell clients about yourself..."
-                                />
-                            ) : (
-                                <p className="text-xs md:text-sm leading-relaxed max-w-prose text-center mx-auto" style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
-                                    {bioText}
-                                </p>
-                            )}
-                    </div>
+                    <Dialog open={editing} onOpenChange={(open) => {
+                        if (!open) {
+                            setEditing(false);
+                            setEditedArtist({});
+                        }
+                    }}>
+                        <DialogContent
+                            className="max-w-3xl max-h-[90vh] overflow-y-auto z-[9999]"
+                            style={{
+                                background: "var(--card)",
+                                borderColor: "var(--border)",
+                                color: "var(--fg)"
+                            }}
+                            showCloseButton={true}
+                        >
+                            <DialogHeader className="space-y-4 text-center">
+                                <DialogTitle className="text-2xl font-bold flex items-center gap-2 justify-center" style={{ color: "var(--fg)" }}>
+                                    <Edit2 className="h-6 w-6" style={{ color: "var(--fg)" }} />
+                                    Edit Profile
+                                </DialogTitle>
+                            </DialogHeader>
 
-                    {/* Editable fields in edit mode */}
-                    {editing && (
-                        <div className="w-full flex flex-col gap-2 mt-1">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-xs font-medium mb-1 block" style={{ color: "var(--fg)" }}>Location</label>
-                                        <input
-                                            type="text"
-                                            value={currentLocation || ""}
-                                            onChange={(e) => setEditedArtist({ ...editedArtist, location: e.target.value })}
-                                            className="w-full bg-transparent border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-                                            style={{ color: "var(--fg)" }}
-                                            placeholder="City, State"
-                                        />
+                            <div className="space-y-6 py-4 flex flex-col items-center">
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="relative rounded-full overflow-hidden shadow-xl ring-2 ring-[color:var(--border)] h-32 w-32" style={{ background: "var(--card)" }}>
+                                        {modalCoverImage && (
+                                            <img
+                                                src={modalCoverImage}
+                                                alt="Background"
+                                                className="absolute inset-0 h-full w-full object-cover opacity-30"
+                                                loading="lazy"
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        )}
+                                        {avatarOk && modalProfileImage ? (
+                                            <img
+                                                src={modalProfileImage}
+                                                alt={`${modalUsername} profile`}
+                                                className="h-full w-full object-cover z-10"
+                                                loading="lazy"
+                                                referrerPolicy="no-referrer"
+                                                onError={() => setAvatarOk(false)}
+                                            />
+                                        ) : (
+                                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl z-10" style={{ color: "var(--fg)" }}>
+                                                {initials}
+                                            </span>
+                                        )}
+                                        <button
+                                            onClick={() => avatarInputRef.current?.click()}
+                                            disabled={uploading}
+                                            className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 group z-20"
+                                        >
+                                            <Camera className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                                            <span className="text-xs text-white/80">Change</span>
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-medium mb-1 block" style={{ color: "var(--fg)" }}>Shop Name</label>
-                                        <input
-                                            type="text"
-                                            value={currentShop || ""}
-                                            onChange={(e) => setEditedArtist({ ...editedArtist, shop: e.target.value })}
-                                            className="w-full bg-transparent border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-                                            style={{ color: "var(--fg)" }}
-                                            placeholder="Shop name"
-                                        />
+
+                                    <Button
+                                        onClick={() => coverInputRef.current?.click()}
+                                        disabled={uploading}
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                    >
+                                        <Camera className="h-4 w-4 mr-2" />
+                                        {modalCoverImage ? "Change Background" : "Add Background"}
+                                    </Button>
+                                </div>
+
+                                <div className="space-y-2 w-full max-w-md">
+                                    <Label htmlFor="modal-username" className="text-center block w-full" style={{ color: "var(--fg)" }}>Display Name</Label>
+                                    <Input
+                                        id="modal-username"
+                                        type="text"
+                                        value={modalUsername}
+                                        onChange={(e) => setEditedArtist({ ...editedArtist, username: e.target.value })}
+                                        className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
+                                        placeholder="Your name"
+                                    />
+                                </div>
+
+                                <div className="space-y-2 w-full max-w-md">
+                                    <Label htmlFor="modal-bio" className="text-center block w-full" style={{ color: "var(--fg)" }}>Bio</Label>
+                                    <textarea
+                                        id="modal-bio"
+                                        value={modalBio || ""}
+                                        onChange={(e) => setEditedArtist({ ...editedArtist, bio: e.target.value })}
+                                        className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm transition-all text-center"
+                                        rows={3}
+                                        style={{ color: "var(--fg)" }}
+                                        placeholder="Tell clients about yourself..."
+                                    />
+                                </div>
+
+                                <div className="rounded-2xl p-6 border backdrop-blur-sm w-full max-w-2xl"
+                                    style={{
+                                        background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                                        borderColor: "var(--border)"
+                                    }}>
+                                    <h3 className="text-sm font-semibold mb-5 flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
+                                        <Briefcase className="h-4 w-4" style={{ color: "var(--fg)" }} />
+                                        Professional Information
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="location" className="text-xs flex items-center justify-center gap-2 w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                                Location
+                                            </Label>
+                                            <Input
+                                                id="location"
+                                                type="text"
+                                                value={modalLocation || ""}
+                                                onChange={(e) => setEditedArtist({ ...editedArtist, location: e.target.value })}
+                                                className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
+                                                placeholder="City, State"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="years" className="text-xs flex items-center justify-center gap-2 w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                                Years Experience
+                                            </Label>
+                                            <Input
+                                                id="years"
+                                                type="number"
+                                                min="0"
+                                                value={modalYearsExperience || 0}
+                                                onChange={(e) => setEditedArtist({ ...editedArtist, yearsExperience: parseInt(e.target.value) || 0 })}
+                                                className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="rate" className="text-xs flex items-center justify-center gap-2 w-full whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                                Base Rate (USD/hr)
+                                            </Label>
+                                            <Input
+                                                id="rate"
+                                                type="number"
+                                                min="0"
+                                                value={modalBaseRate || 0}
+                                                onChange={(e) => setEditedArtist({ ...editedArtist, baseRate: parseInt(e.target.value) || 0 })}
+                                                className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-xs font-medium mb-1 block" style={{ color: "var(--fg)" }}>Years Experience</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={currentYearsExperience || 0}
-                                            onChange={(e) => setEditedArtist({ ...editedArtist, yearsExperience: parseInt(e.target.value) || 0 })}
-                                            className="w-full bg-transparent border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-                                            style={{ color: "var(--fg)" }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium mb-1 block" style={{ color: "var(--fg)" }}>Base Rate ($)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={currentBaseRate || 0}
-                                            onChange={(e) => setEditedArtist({ ...editedArtist, baseRate: parseInt(e.target.value) || 0 })}
-                                            className="w-full bg-transparent border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-                                            style={{ color: "var(--fg)" }}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Styles/Tags editor */}
-                                <div>
-                                    <label className="text-xs font-medium mb-1 block" style={{ color: "var(--fg)" }}>Styles/Tags</label>
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                        {stylesClean.map((style) => (
+                                <div className="rounded-2xl p-6 border backdrop-blur-sm w-full max-w-2xl"
+                                    style={{
+                                        background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                                        borderColor: "var(--border)"
+                                    }}>
+                                    <Label className="text-sm font-semibold mb-4 flex items-center justify-center gap-2 w-full" style={{ color: "var(--fg)" }}>
+                                        Specialty Styles
+                                    </Label>
+                                    <div className="flex flex-wrap gap-2 mb-4 min-h-[42px] p-3 rounded-lg border justify-center"
+                                        style={{
+                                            background: "color-mix(in oklab, var(--elevated) 40%, transparent)",
+                                            borderColor: "var(--border)"
+                                        }}>
+                                        {modalStylesClean.length > 0 ? modalStylesClean.map((style) => (
                                             <span
                                                 key={style}
-                                                className="rounded-full px-3 py-1 border flex items-center gap-1 text-sm"
-                                                style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
+                                                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all hover:scale-105"
+                                                style={{
+                                                    borderColor: "var(--border)",
+                                                    background: "linear-gradient(135deg, color-mix(in oklab, var(--elevated) 95%, var(--fg) 5%), color-mix(in oklab, var(--elevated) 85%, var(--fg) 15%))",
+                                                    color: "var(--fg)"
+                                                }}
                                             >
                                                 {style}
                                                 <button
                                                     onClick={() => handleRemoveStyle(style)}
-                                                    className="hover:text-red-400"
+                                                    className="hover:text-red-400 transition-colors hover:scale-110"
                                                 >
-                                                    <X className="h-3 w-3" />
+                                                    <X className="h-3.5 w-3.5" />
                                                 </button>
                                             </span>
-                                        ))}
+                                        )) : (
+                                            <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                                No styles added yet
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="flex gap-2">
-                                        <input
+                                    <div className="flex gap-2 w-full">
+                                        <Input
                                             type="text"
                                             value={newStyleInput}
                                             onChange={(e) => setNewStyleInput(e.target.value)}
-                                            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddStyle())}
-                                            className="flex-1 bg-transparent border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-                                            style={{ color: "var(--fg)" }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    e.preventDefault();
+                                                    handleAddStyle();
+                                                }
+                                            }}
+                                            className="flex-1 bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
                                             placeholder="Add a style (e.g. Traditional, Realism)"
                                         />
-                                        <Button onClick={handleAddStyle} size="sm" variant="secondary">
-                                            <Plus className="h-4 w-4" />
+                                        <Button
+                                            onClick={handleAddStyle}
+                                            size="sm"
+                                            style={{ background: "var(--fg)", color: "var(--bg)" }}
+                                            className="hover:opacity-90 font-semibold"
+                                        >
+                                            <Plus className="h-4 w-4 mr-1" />
+                                            Add
                                         </Button>
                                     </div>
                                 </div>
                             </div>
-                    )}
 
-                    {/* Display tags when not editing */}
+                            <div className="flex gap-3 justify-center pt-4 border-t w-full" style={{ borderColor: "var(--border)" }}>
+                                <Button
+                                    onClick={() => {
+                                        setEditing(false);
+                                        setEditedArtist({});
+                                    }}
+                                    disabled={saving || uploading}
+                                    variant="outline"
+                                    className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={saveProfile}
+                                    disabled={saving || uploading}
+                                    style={{ background: "var(--fg)", color: "var(--bg)" }}
+                                    className="hover:opacity-90 font-semibold"
+                                >
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {saving ? "Saving..." : "Save Changes"}
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+
                     {!editing && (
-                        <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
+                        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
                             {stylesPrimary.map((s, i) => chip(s, `${s}-${i}`))}
                             {stylesOverflow > 0 && chip(`+${stylesOverflow} more`, "styles-overflow")}
                             {shopLabel && chip(shopLabel, "shop")}
@@ -552,22 +652,9 @@ export default function ArtistProfile() {
                         </div>
                     )}
 
-                    <div className="mt-1 w-full">
-                        {editing && (
-                            <div className="flex items-center justify-center mb-1">
-                                <Button
-                                    onClick={() => portfolioInputRef.current?.click()}
-                                    disabled={uploading}
-                                    size="sm"
-                                    variant="secondary"
-                                >
-                                    <Plus className="h-4 w-4 mr-1" />
-                                    Add Images
-                                </Button>
-                            </div>
-                        )}
+                    <div className="mt-6 w-full">
                         {portfolio.length > 0 ? (
-                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
                                 {portfolio.map((src, i) => (
                                     <div
                                         key={`${src}-${i}`}
@@ -582,36 +669,15 @@ export default function ArtistProfile() {
                                             decoding="async"
                                             referrerPolicy="no-referrer"
                                         />
-                                        {editing && (
-                                            <button
-                                                onClick={() => handleRemovePortfolioImage(i)}
-                                                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        )}
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            editing && (
-                                <div
-                                    className="w-full h-32 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-white/40 transition-colors"
-                                    style={{ borderColor: "var(--border)" }}
-                                    onClick={() => portfolioInputRef.current?.click()}
-                                >
-                                    <div className="flex flex-col items-center gap-2" style={{ color: "var(--fg)" }}>
-                                        <Upload className="h-6 w-6" />
-                                        <span className="text-sm">Click to upload portfolio images</span>
-                                    </div>
-                                </div>
-                            )
-                        )}
+                        ) : null}
                     </div>
 
                     {healedWorks.length > 0 && (
-                        <div className="mt-1 w-full">
-                            <h4 className="text-sm font-semibold mb-1" style={{ color: "var(--fg)" }}>
+                        <div className="mt-6 w-full">
+                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
                                 Healed Works
                             </h4>
                             <Grid images={healedWorks} />
@@ -619,8 +685,8 @@ export default function ArtistProfile() {
                     )}
 
                     {sketches.length > 0 && (
-                        <div className="mt-1 w-full">
-                            <h4 className="text-sm font-semibold mb-1" style={{ color: "var(--fg)" }}>
+                        <div className="mt-6 w-full">
+                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
                                 Sketches
                             </h4>
                             <Grid images={sketches} />
