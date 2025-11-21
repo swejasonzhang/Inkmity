@@ -222,7 +222,6 @@ export default function ArtistProfile() {
         }
     };
 
-    // Get current display values (either edited or original)
     const currentUsername = editing ? (editedArtist.username ?? artist?.username) : artist?.username;
     const currentBio = editing ? (editedArtist.bio ?? artist?.bio) : artist?.bio;
     const currentLocation = editing ? (editedArtist.location ?? artist?.location) : artist?.location;
@@ -310,7 +309,7 @@ export default function ArtistProfile() {
     }
 
     return (
-        <div className="h-full min-h-0 w-full overflow-hidden">
+        <div className="h-full min-h-0 w-full overflow-hidden flex items-center justify-center py-4 px-4">
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -336,68 +335,60 @@ export default function ArtistProfile() {
                     files.forEach(file => handleImageUpload(file, "portfolio"));
                 }}
             />
-            <div className="group w-full h-full flex flex-col overflow-hidden rounded-3xl bg-card/90 transition" data-artist-card="true">
-                <div className="relative w-full flex-shrink-0">
-                    <div className="relative w-full h-[10rem] sm:h-[9rem] md:h-[11rem] overflow-hidden" style={{ background: "var(--elevated)" }}>
-                        {bgOk && currentCoverImage ? (
+            <div className="group w-full max-w-4xl h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8 items-center justify-center" data-artist-card="true" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 95%, var(--fg) 5%), color-mix(in oklab, var(--bg) 75%, var(--fg) 25%))" }}>
+                {bgOk && currentCoverImage ? (
+                    <img
+                        src={currentCoverImage}
+                        alt={`${currentUsername} background`}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={() => setBgOk(false)}
+                    />
+                ) : (
+                    <div className="absolute inset-0" />
+                )}
+                {editing && (
+                    <Button
+                        onClick={() => coverInputRef.current?.click()}
+                        disabled={uploading}
+                        size="sm"
+                        className="absolute top-4 right-4 z-10"
+                        variant="secondary"
+                    >
+                        <Camera className="h-4 w-4 mr-2" />
+                        {currentCoverImage ? "Change Cover" : "Add Cover"}
+                    </Button>
+                )}
+
+                <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl">
+                    <div className={`relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 ${editing ? 'h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28' : 'h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40'}`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+                        {avatarOk && currentProfileImage ? (
                             <img
-                                src={currentCoverImage}
-                                alt={`${currentUsername} background`}
-                                className="absolute inset-0 h-full w-full object-cover"
+                                src={currentProfileImage}
+                                alt={`${currentUsername} profile`}
+                                className="h-full w-full object-cover"
                                 loading="lazy"
                                 referrerPolicy="no-referrer"
-                                onError={() => setBgOk(false)}
+                                onError={() => setAvatarOk(false)}
                             />
                         ) : (
-                            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+                            <span className={`absolute inset-0 grid place-items-center font-semibold ${editing ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'}`} style={{ color: "var(--fg)" }}>
+                                {initials}
+                            </span>
                         )}
                         {editing && (
-                            <Button
-                                onClick={() => coverInputRef.current?.click()}
+                            <button
+                                onClick={() => avatarInputRef.current?.click()}
                                 disabled={uploading}
-                                size="sm"
-                                className="absolute top-4 right-4 z-10"
-                                variant="secondary"
+                                className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
                             >
-                                <Camera className="h-4 w-4 mr-2" />
-                                {currentCoverImage ? "Change Cover" : "Add Cover"}
-                            </Button>
+                                <Camera className="h-6 w-6 text-white" />
+                            </button>
                         )}
-                        <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "3rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
-                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
-                            <div className="relative rounded-full overflow-hidden h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 shadow-2xl ring-2 ring-[color:var(--card)]" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                                {avatarOk && currentProfileImage ? (
-                                    <img
-                                        src={currentProfileImage}
-                                        alt={`${currentUsername} profile`}
-                                        className="h-full w-full object-cover"
-                                        loading="lazy"
-                                        referrerPolicy="no-referrer"
-                                        onError={() => setAvatarOk(false)}
-                                    />
-                                ) : (
-                                    <span className="absolute inset-0 grid place-items-center text-xl sm:text-2xl font-semibold" style={{ color: "var(--fg)" }}>
-                                        {initials}
-                                    </span>
-                                )}
-                                {editing && (
-                                    <button
-                                        onClick={() => avatarInputRef.current?.click()}
-                                        disabled={uploading}
-                                        className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
-                                    >
-                                        <Camera className="h-6 w-6 text-white" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
                     </div>
-                </div>
 
-                <div className="px-4 sm:px-6 pt-1 pb-3 flex-1 min-h-0 flex flex-col gap-2 overflow-hidden items-center">
-                    <div className="flex flex-col items-center text-center gap-2 w-full max-w-2xl">
-                        <div className="flex items-center justify-center w-full">
+                    <div className="flex items-center justify-center w-full">
                             <Button
                                 onClick={() => {
                                     if (editing) {
@@ -423,9 +414,9 @@ export default function ArtistProfile() {
                                     </>
                                 )}
                             </Button>
-                        </div>
+                    </div>
 
-                        <div className="flex flex-col items-center w-full">
+                    <div className="flex flex-col items-center w-full">
                             {editing ? (
                                 <input
                                     type="text"
@@ -440,29 +431,29 @@ export default function ArtistProfile() {
                                     {currentUsername}
                                 </h2>
                             )}
-                        </div>
+                    </div>
 
-                        <div className="w-full">
+                    <div className="w-full flex justify-center">
                             {editing ? (
                                 <textarea
                                     value={currentBio || ""}
                                     onChange={(e) => setEditedArtist({ ...editedArtist, bio: e.target.value })}
-                                    className="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:outline-none focus:border-white/40 resize-none text-xs md:text-sm"
+                                    className="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:outline-none focus:border-white/40 resize-none text-xs md:text-sm text-center"
                                     rows={2}
                                     style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}
                                     placeholder="Tell clients about yourself..."
                                 />
                             ) : (
-                                <p className="text-xs md:text-sm leading-relaxed max-w-prose" style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
+                                <p className="text-xs md:text-sm leading-relaxed max-w-prose text-center mx-auto" style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
                                     {bioText}
                                 </p>
                             )}
-                        </div>
+                    </div>
 
-                        {/* Editable fields in edit mode */}
-                        {editing && (
-                            <div className="w-full flex flex-col gap-3 mt-2">
-                                <div className="grid grid-cols-2 gap-3">
+                    {/* Editable fields in edit mode */}
+                    {editing && (
+                        <div className="w-full flex flex-col gap-2 mt-1">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="text-xs font-medium mb-1 block" style={{ color: "var(--fg)" }}>Location</label>
                                         <input
@@ -487,7 +478,7 @@ export default function ArtistProfile() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="text-xs font-medium mb-1 block" style={{ color: "var(--fg)" }}>Years Experience</label>
                                         <input
@@ -548,94 +539,93 @@ export default function ArtistProfile() {
                                     </div>
                                 </div>
                             </div>
-                        )}
+                    )}
 
-                        {/* Display tags when not editing */}
-                        {!editing && (
-                            <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
-                                {stylesPrimary.map((s, i) => chip(s, `${s}-${i}`))}
-                                {stylesOverflow > 0 && chip(`+${stylesOverflow} more`, "styles-overflow")}
-                                {shopLabel && chip(shopLabel, "shop")}
-                                {years && chip(years, "years")}
-                                {loc && chip(loc, "loc")}
+                    {/* Display tags when not editing */}
+                    {!editing && (
+                        <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
+                            {stylesPrimary.map((s, i) => chip(s, `${s}-${i}`))}
+                            {stylesOverflow > 0 && chip(`+${stylesOverflow} more`, "styles-overflow")}
+                            {shopLabel && chip(shopLabel, "shop")}
+                            {years && chip(years, "years")}
+                            {loc && chip(loc, "loc")}
+                        </div>
+                    )}
+
+                    <div className="mt-1 w-full">
+                        {editing && (
+                            <div className="flex items-center justify-center mb-1">
+                                <Button
+                                    onClick={() => portfolioInputRef.current?.click()}
+                                    disabled={uploading}
+                                    size="sm"
+                                    variant="secondary"
+                                >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add Images
+                                </Button>
                             </div>
                         )}
-
-                        <div className="mt-3 w-full">
-                            {editing && (
-                                <div className="flex items-center justify-center mb-2">
-                                    <Button
-                                        onClick={() => portfolioInputRef.current?.click()}
-                                        disabled={uploading}
-                                        size="sm"
-                                        variant="secondary"
-                                    >
-                                        <Plus className="h-4 w-4 mr-1" />
-                                        Add Images
-                                    </Button>
-                                </div>
-                            )}
-                            {portfolio.length > 0 ? (
-                                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
-                                    {portfolio.map((src, i) => (
-                                        <div
-                                            key={`${src}-${i}`}
-                                            className="relative aspect-square w-full overflow-hidden rounded-xl border group"
-                                            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                                        >
-                                            <img
-                                                src={src}
-                                                alt={`Work ${i + 1}`}
-                                                className="h-full w-full object-cover"
-                                                loading={i < 6 ? "eager" : "lazy"}
-                                                decoding="async"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                            {editing && (
-                                                <button
-                                                    onClick={() => handleRemovePortfolioImage(i)}
-                                                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                editing && (
+                        {portfolio.length > 0 ? (
+                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+                                {portfolio.map((src, i) => (
                                     <div
-                                        className="w-full h-32 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-white/40 transition-colors"
-                                        style={{ borderColor: "var(--border)" }}
-                                        onClick={() => portfolioInputRef.current?.click()}
+                                        key={`${src}-${i}`}
+                                        className="relative aspect-square w-full overflow-hidden rounded-xl border group"
+                                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                     >
-                                        <div className="flex flex-col items-center gap-2" style={{ color: "var(--fg)" }}>
-                                            <Upload className="h-6 w-6" />
-                                            <span className="text-sm">Click to upload portfolio images</span>
-                                        </div>
+                                        <img
+                                            src={src}
+                                            alt={`Work ${i + 1}`}
+                                            className="h-full w-full object-cover"
+                                            loading={i < 6 ? "eager" : "lazy"}
+                                            decoding="async"
+                                            referrerPolicy="no-referrer"
+                                        />
+                                        {editing && (
+                                            <button
+                                                onClick={() => handleRemovePortfolioImage(i)}
+                                                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </button>
+                                        )}
                                     </div>
-                                )
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            editing && (
+                                <div
+                                    className="w-full h-32 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer hover:border-white/40 transition-colors"
+                                    style={{ borderColor: "var(--border)" }}
+                                    onClick={() => portfolioInputRef.current?.click()}
+                                >
+                                    <div className="flex flex-col items-center gap-2" style={{ color: "var(--fg)" }}>
+                                        <Upload className="h-6 w-6" />
+                                        <span className="text-sm">Click to upload portfolio images</span>
+                                    </div>
+                                </div>
+                            )
+                        )}
                     </div>
 
-                        {healedWorks.length > 0 && (
-                            <div className="mt-2 w-full">
-                                <h4 className="text-sm font-semibold mb-2" style={{ color: "var(--fg)" }}>
-                                    Healed Works
-                                </h4>
-                                <Grid images={healedWorks} />
-                            </div>
-                        )}
+                    {healedWorks.length > 0 && (
+                        <div className="mt-1 w-full">
+                            <h4 className="text-sm font-semibold mb-1" style={{ color: "var(--fg)" }}>
+                                Healed Works
+                            </h4>
+                            <Grid images={healedWorks} />
+                        </div>
+                    )}
 
-                        {sketches.length > 0 && (
-                            <div className="mt-2 w-full">
-                                <h4 className="text-sm font-semibold mb-2" style={{ color: "var(--fg)" }}>
-                                    Sketches
-                                </h4>
-                                <Grid images={sketches} />
-                            </div>
-                        )}
+                    {sketches.length > 0 && (
+                        <div className="mt-1 w-full">
+                            <h4 className="text-sm font-semibold mb-1" style={{ color: "var(--fg)" }}>
+                                Sketches
+                            </h4>
+                            <Grid images={sketches} />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
