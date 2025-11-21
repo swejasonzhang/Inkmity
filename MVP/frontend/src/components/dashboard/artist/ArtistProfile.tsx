@@ -40,8 +40,6 @@ export default function ArtistProfile() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [editing, setEditing] = useState(false);
-    const [avatarOk, setAvatarOk] = useState(false);
-    const [bgOk, setBgOk] = useState(false);
     const [artist, setArtist] = useState<Artist | null>(null);
     const [editedArtist, setEditedArtist] = useState<Partial<Artist>>({});
     const [uploading, setUploading] = useState(false);
@@ -83,8 +81,6 @@ export default function ArtistProfile() {
                 avatar: data.avatar,
             };
             setArtist(artistData);
-            setAvatarOk(Boolean(artistData.profileImage));
-            setBgOk(Boolean(artistData.coverImage));
         } catch (error) {
             console.error("Failed to load profile:", error);
         } finally {
@@ -129,7 +125,6 @@ export default function ArtistProfile() {
             } else if (type === "cover") {
                 const newCoverUrl = uploadData.secure_url || uploadData.url;
                 setEditedArtist(prev => ({ ...prev, coverImage: newCoverUrl }));
-                setBgOk(true);
             } else if (type === "portfolio") {
                 const currentPortfolio = editedArtist.portfolioImages || artist?.portfolioImages || [];
                 setEditedArtist(prev => ({
@@ -301,10 +296,6 @@ export default function ArtistProfile() {
         : "";
     const loc = currentLocation?.trim() || "";
 
-    useEffect(() => {
-        if (currentProfileImage) setAvatarOk(true);
-        if (currentCoverImage) setBgOk(true);
-    }, [currentProfileImage, currentCoverImage]);
 
     if (loading) {
         return (
@@ -367,27 +358,27 @@ export default function ArtistProfile() {
                     </div>
 
                     <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                        {bgOk && currentCoverImage && (
+                        {currentCoverImage && (
                             <img
                                 src={currentCoverImage}
                                 alt="Background"
-                                className="absolute inset-0 h-full w-full object-cover opacity-30"
+                                className="absolute inset-0 h-full w-full object-cover"
+                                style={{ opacity: 0.4, filter: 'blur(3px)', zIndex: 1 }}
                                 loading="lazy"
                                 referrerPolicy="no-referrer"
-                                onError={() => setBgOk(false)}
                             />
                         )}
-                        {avatarOk && currentProfileImage ? (
+                        {currentProfileImage ? (
                             <img
                                 src={currentProfileImage}
                                 alt={`${currentUsername} profile`}
-                                className="h-full w-full object-cover z-10"
+                                className="absolute inset-0 h-full w-full object-cover"
+                                style={{ zIndex: 2 }}
                                 loading="lazy"
                                 referrerPolicy="no-referrer"
-                                onError={() => setAvatarOk(false)}
                             />
                         ) : (
-                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl sm:text-3xl md:text-4xl z-10" style={{ color: "var(--fg)" }}>
+                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl sm:text-3xl md:text-4xl" style={{ color: "var(--fg)", zIndex: 2 }}>
                                 {initials}
                             </span>
                         )}
@@ -432,31 +423,35 @@ export default function ArtistProfile() {
                                     <div className="relative rounded-full overflow-hidden shadow-xl ring-2 ring-[color:var(--border)] h-32 w-32" style={{ background: "var(--card)" }}>
                                         {modalCoverImage && (
                                             <img
+                                                key={modalCoverImage}
                                                 src={modalCoverImage}
                                                 alt="Background"
-                                                className="absolute inset-0 h-full w-full object-cover opacity-30"
-                                                loading="lazy"
+                                                className="absolute inset-0 h-full w-full object-cover"
+                                                style={{ opacity: 0.4, filter: 'blur(3px)', zIndex: 1 }}
+                                                loading="eager"
                                                 referrerPolicy="no-referrer"
                                             />
                                         )}
-                                        {avatarOk && modalProfileImage ? (
+                                        {modalProfileImage ? (
                                             <img
+                                                key={modalProfileImage}
                                                 src={modalProfileImage}
                                                 alt={`${modalUsername} profile`}
-                                                className="h-full w-full object-cover z-10"
+                                                className="absolute inset-0 h-full w-full object-cover"
+                                                style={{ zIndex: 2 }}
                                                 loading="lazy"
                                                 referrerPolicy="no-referrer"
-                                                onError={() => setAvatarOk(false)}
                                             />
                                         ) : (
-                                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl z-10" style={{ color: "var(--fg)" }}>
+                                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl" style={{ color: "var(--fg)", zIndex: 2 }}>
                                                 {initials}
                                             </span>
                                         )}
                                         <button
                                             onClick={() => avatarInputRef.current?.click()}
                                             disabled={uploading}
-                                            className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 group z-20"
+                                            className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 group"
+                                            style={{ zIndex: 20 }}
                                         >
                                             <Camera className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
                                             <span className="text-xs text-white/80">Change</span>
@@ -471,7 +466,7 @@ export default function ArtistProfile() {
                                         className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
                                     >
                                         <Camera className="h-4 w-4 mr-2" />
-                                        {modalCoverImage ? "Change Background" : "Add Background"}
+                                        {uploading ? "Uploading..." : (modalCoverImage ? "Change Background" : "Add Background")}
                                     </Button>
                                 </div>
 
