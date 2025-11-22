@@ -3,7 +3,7 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import { Save, Edit2, X, Plus, Camera, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; 
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { uploadToCloudinary } from "@/lib/cloudinary";
@@ -340,9 +340,20 @@ export default function ArtistProfile() {
                     files.forEach(file => handleImageUpload(file, "portfolio"));
                 }}
             />
-            <div className="group w-full max-w-4xl h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8 items-center justify-center" data-artist-card="true" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 95%, var(--fg) 5%), color-mix(in oklab, var(--bg) 75%, var(--fg) 25%))" }}>
-                <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative">
-                    <div className="absolute top-0 right-0 z-20 flex gap-2">
+            <div className="group w-full max-w-4xl h-full flex flex-col rounded-3xl transition relative overflow-hidden" data-artist-card="true" style={{ background: "var(--bg)" }}>
+                <div className="relative w-full h-64 flex items-center justify-center overflow-hidden rounded-t-3xl" style={{ background: "var(--bg)" }}>
+                    {currentCoverImage && (
+                        <div className="absolute inset-0 z-0">
+                            <img
+                                src={currentCoverImage}
+                                alt="Profile banner"
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                            />
+                        </div>
+                    )}
+                    <div className="absolute top-4 right-4 z-20 flex gap-2">
                         <Button
                             onClick={() => {
                                 setEditing(true);
@@ -356,18 +367,7 @@ export default function ArtistProfile() {
                             Edit Profile
                         </Button>
                     </div>
-
-                    <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                        {currentCoverImage && (
-                            <img
-                                src={currentCoverImage}
-                                alt="Background"
-                                className="absolute inset-0 h-full w-full object-cover"
-                                style={{ opacity: 0.4, filter: 'blur(3px)', zIndex: 1 }}
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                            />
-                        )}
+                    <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40 z-10" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
                         {currentProfileImage ? (
                             <img
                                 src={currentProfileImage}
@@ -383,15 +383,17 @@ export default function ArtistProfile() {
                             </span>
                         )}
                     </div>
+                </div>
 
-                    <div className="flex flex-col items-center w-full mt-2">
+                <div className="flex-1 flex flex-col items-center justify-center text-center gap-6 w-full relative px-8 py-12 rounded-b-3xl" style={{ background: "linear-gradient(to bottom, var(--bg), color-mix(in oklab, var(--bg) 85%, var(--fg) 15%))" }}>
+                    <div className="flex flex-col items-center justify-center w-full">
                         <h2 className="font-extrabold tracking-tight text-xl md:text-2xl" style={{ color: "var(--fg)" }}>
                             {currentUsername}
                         </h2>
                     </div>
 
-                    <div className="w-full flex justify-center mt-2">
-                        <p className="text-xs md:text-sm leading-relaxed max-w-prose text-center mx-auto" style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
+                    <div className="w-full flex justify-center px-4">
+                        <p className="text-sm md:text-base leading-relaxed max-w-prose text-center mx-auto" style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
                             {bioText}
                         </p>
                     </div>
@@ -418,20 +420,21 @@ export default function ArtistProfile() {
                                 </DialogTitle>
                             </DialogHeader>
 
-                            <div className="space-y-6 py-4 flex flex-col items-center">
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="relative rounded-full overflow-hidden shadow-xl ring-2 ring-[color:var(--border)] h-32 w-32" style={{ background: "var(--card)" }}>
-                                        {modalCoverImage && (
+                            <div className="space-y-6 flex flex-col">
+                                <div className="relative w-full max-w-md mx-auto h-40 flex items-center justify-center overflow-hidden rounded-lg px-4">
+                                    {modalCoverImage && (
+                                        <div className="absolute inset-0 z-0">
                                             <img
                                                 key={modalCoverImage}
                                                 src={modalCoverImage}
-                                                alt="Background"
-                                                className="absolute inset-0 h-full w-full object-cover"
-                                                style={{ opacity: 0.4, filter: 'blur(3px)', zIndex: 1 }}
+                                                alt="Profile banner"
+                                                className="h-full w-full object-cover object-center"
                                                 loading="eager"
                                                 referrerPolicy="no-referrer"
                                             />
-                                        )}
+                                        </div>
+                                    )}
+                                    <div className="relative rounded-full overflow-hidden shadow-xl ring-2 ring-[color:var(--border)] h-28 w-28 z-10" style={{ background: "var(--card)" }}>
                                         {modalProfileImage ? (
                                             <img
                                                 key={modalProfileImage}
@@ -443,7 +446,7 @@ export default function ArtistProfile() {
                                                 referrerPolicy="no-referrer"
                                             />
                                         ) : (
-                                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl" style={{ color: "var(--fg)", zIndex: 2 }}>
+                                            <span className="absolute inset-0 grid place-items-center font-semibold text-xl" style={{ color: "var(--fg)", zIndex: 2 }}>
                                                 {initials}
                                             </span>
                                         )}
@@ -457,18 +460,22 @@ export default function ArtistProfile() {
                                             <span className="text-xs text-white/80">Change</span>
                                         </button>
                                     </div>
-
+                                </div>
+                                <div className="flex justify-center">
                                     <Button
                                         onClick={() => coverInputRef.current?.click()}
                                         disabled={uploading}
-                                        size="sm"
+                                        size="default"
                                         variant="outline"
-                                        className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                        className="border-2 border-[color:var(--border)] hover:bg-[color:var(--elevated)] bg-[color:var(--card)] font-semibold shadow-md px-4 py-2"
+                                        style={{ color: "var(--fg)" }}
                                     >
                                         <Camera className="h-4 w-4 mr-2" />
-                                        {uploading ? "Uploading..." : (modalCoverImage ? "Change Background" : "Add Background")}
+                                        {uploading ? "Uploading..." : (modalCoverImage ? "Change Banner" : "Add Banner")}
                                     </Button>
                                 </div>
+
+                            <div className="space-y-6 py-4 flex flex-col items-center px-6">
 
                                 <div className="space-y-2 w-full max-w-md">
                                     <Label htmlFor="modal-username" className="text-center block w-full" style={{ color: "var(--fg)" }}>Display Name</Label>
@@ -610,8 +617,9 @@ export default function ArtistProfile() {
                                     </div>
                                 </div>
                             </div>
+                            </div>
 
-                            <div className="flex gap-3 justify-center pt-4 border-t w-full" style={{ borderColor: "var(--border)" }}>
+                            <div className="flex gap-3 justify-center pt-4 border-t w-full px-6" style={{ borderColor: "var(--border)" }}>
                                 <Button
                                     onClick={() => {
                                         setEditing(false);
@@ -638,7 +646,7 @@ export default function ArtistProfile() {
                     </Dialog>
 
                     {!editing && (
-                        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm">
+                        <div className="flex flex-wrap items-center justify-center gap-2 px-4">
                             {stylesPrimary.map((s, i) => chip(s, `${s}-${i}`))}
                             {stylesOverflow > 0 && chip(`+${stylesOverflow} more`, "styles-overflow")}
                             {shopLabel && chip(shopLabel, "shop")}
@@ -647,19 +655,19 @@ export default function ArtistProfile() {
                         </div>
                     )}
 
-                    <div className="mt-6 w-full">
-                        {portfolio.length > 0 ? (
-                            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+                    {portfolio.length > 0 && (
+                        <div className="w-full flex justify-center px-4 py-6">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-4xl">
                                 {portfolio.map((src, i) => (
                                     <div
                                         key={`${src}-${i}`}
-                                        className="relative aspect-square w-full overflow-hidden rounded-xl border group"
+                                        className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 group shadow-lg transition-transform hover:scale-[1.02]"
                                         style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                     >
                                         <img
                                             src={src}
                                             alt={`Work ${i + 1}`}
-                                            className="h-full w-full object-cover"
+                                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
                                             loading={i < 6 ? "eager" : "lazy"}
                                             decoding="async"
                                             referrerPolicy="no-referrer"
@@ -667,24 +675,62 @@ export default function ArtistProfile() {
                                     </div>
                                 ))}
                             </div>
-                        ) : null}
-                    </div>
+                        </div>
+                    )}
 
                     {healedWorks.length > 0 && (
-                        <div className="mt-6 w-full">
-                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
+                        <div className="w-full flex flex-col items-center px-4 py-6">
+                            <h4 className="text-lg md:text-xl font-bold mb-6" style={{ color: "var(--fg)" }}>
                                 Healed Works
                             </h4>
-                            <Grid images={healedWorks} />
+                            <div className="w-full max-w-4xl">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full">
+                                    {healedWorks.map((src, i) => (
+                                        <div
+                                            key={`${src}-${i}`}
+                                            className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 shadow-lg transition-transform hover:scale-[1.02]"
+                                            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                                        >
+                                            <img
+                                                src={src}
+                                                alt={`Healed work ${i + 1}`}
+                                                className="h-full w-full object-cover"
+                                                loading={i < 6 ? "eager" : "lazy"}
+                                                decoding="async"
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {sketches.length > 0 && (
-                        <div className="mt-6 w-full">
-                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
+                        <div className="w-full flex flex-col items-center px-4 py-6">
+                            <h4 className="text-lg md:text-xl font-bold mb-6" style={{ color: "var(--fg)" }}>
                                 Sketches
                             </h4>
-                            <Grid images={sketches} />
+                            <div className="w-full max-w-4xl">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full">
+                                    {sketches.map((src, i) => (
+                                        <div
+                                            key={`${src}-${i}`}
+                                            className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 shadow-lg transition-transform hover:scale-[1.02]"
+                                            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                                        >
+                                            <img
+                                                src={src}
+                                                alt={`Sketch ${i + 1}`}
+                                                className="h-full w-full object-cover"
+                                                loading={i < 6 ? "eager" : "lazy"}
+                                                decoding="async"
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

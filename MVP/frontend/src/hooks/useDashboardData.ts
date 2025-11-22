@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { fetchArtists, type Artist } from "@/api";
 import { toast } from "react-toastify";
+import { connectSocket, disconnectSocket, getSocket } from "@/lib/socket";
 
 type ArtistFilters = {
   search?: string;
@@ -17,7 +18,8 @@ type ArtistFilters = {
 const PAGE_SIZE = 12;
 
 export function useDashboardData() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,7 +55,7 @@ export function useDashboardData() {
     return fetchArtists(params);
   }
 
-  async function loadFirst(filters: ArtistFilters = {}) {
+  const loadFirst = useCallback(async (filters: ArtistFilters = {}) => {
     if (!isLoaded || !isSignedIn) {
       setArtists([]);
       setTotal(0);
@@ -78,7 +80,7 @@ export function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [isLoaded, isSignedIn]);
 
   async function loadMore() {
     if (loading || !hasMore) return;
@@ -102,7 +104,36 @@ export function useDashboardData() {
   useEffect(() => {
     void loadFirst({});
     return () => reqRef.current?.abort();
-  }, [isLoaded, isSignedIn]);
+  }, [loadFirst]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+
+    const socket = getSocket();
+    let connected = false;
+
+    const handleProfileUpdate = () => {
+      void loadFirst(lastFilters.current);
+    };
+
+    const setupSocket = async () => {
+      try {
+        await connectSocket(getToken, user.id);
+        connected = true;
+        socket.on("artist:profile:updated", handleProfileUpdate);
+      } catch (error) {
+        console.error("Failed to connect socket for dashboard updates:", error);
+      }
+    };
+
+    void setupSocket();
+
+    return () => {
+      if (connected) {
+        socket.off("artist:profile:updated", handleProfileUpdate);
+      }
+    };
+  }, [isLoaded, isSignedIn, user, getToken, loadFirst]);
 
   return {
     artists,
