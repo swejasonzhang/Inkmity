@@ -4,6 +4,7 @@ import "../models/Client.js";
 import "../models/Artist.js";
 import cloudinary from "../lib/cloudinary.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
+import { getIO } from "../services/socketService.js";
 
 const SAFE_ROLES = new Set(["client", "artist"]);
 
@@ -105,6 +106,16 @@ export async function updateMyAvatar(req, res) {
     { new: true }
   ).lean();
   if (!user) return res.status(404).json({ error: "User not found" });
+  
+  if (user.role === "artist") {
+    try {
+      const io = getIO();
+      io.emit("artist:profile:updated", { clerkId, artistId: user._id });
+    } catch (e) {
+      console.error("[updateMyAvatar] Failed to emit profile update event:", e);
+    }
+  }
+  
   res.json(user);
 }
 
@@ -356,6 +367,16 @@ export async function syncUser(req, res) {
         setDefaultsOnInsert: true,
       }
     ).lean();
+    
+    if (role === "artist" && user) {
+      try {
+        const io = getIO();
+        io.emit("artist:profile:updated", { clerkId, artistId: user._id });
+      } catch (e) {
+        console.error("[syncUser] Failed to emit profile update event:", e);
+      }
+    }
+    
     res.status(200).json(user);
   } catch (e) {
     console.error("[syncUser] failed:", e);
@@ -401,6 +422,14 @@ export async function saveMyPortfolio(req, res) {
       { new: true }
     ).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
+    
+    try {
+      const io = getIO();
+      io.emit("artist:profile:updated", { clerkId, artistId: user._id });
+    } catch (e) {
+      console.error("[saveMyPortfolio] Failed to emit profile update event:", e);
+    }
+    
     res.json({ ok: true, portfolioImages: user.portfolioImages || [] });
   } catch {
     res.status(500).json({ error: "save_portfolio_failed" });

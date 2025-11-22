@@ -90,7 +90,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   );
 
   const shopLabel = artist.shopName || artist.shop || "";
-  const years = typeof artist.yearsExperience === "number" && artist.yearsExperience >= 0 ? `${artist.yearsExperience} yr${artist.yearsExperience === 1 ? "" : "s"} exp` : "";
+  const currentYearsExperience = typeof artist.yearsExperience === "number" ? artist.yearsExperience : 0;
+  const years = currentYearsExperience === 0 ? "<1 yr exp" : currentYearsExperience === 1 ? "1 yr exp" : `${currentYearsExperience} yrs exp`;
   const loc = artist.location?.trim() || "";
 
   const shellClass = fullScreen
@@ -106,47 +107,42 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           : undefined
       }
     >
-      <div className={shellClass} style={{ borderColor: "var(--border)" }} data-artist-card="true">
-        <div className="relative w-full">
-          <div className={`relative w-full ${fullScreen ? "h-[15rem]" : "h-[18.125rem]"} sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden`} style={{ background: "var(--elevated)" }}>
-            {bgOk && artist.coverImage ? (
+      <div className={shellClass} style={{ borderColor: "var(--border)", background: "var(--bg)" }} data-artist-card="true">
+        <div className={`relative w-full ${fullScreen ? "h-48" : "h-56"} sm:h-52 md:h-64 flex items-center justify-center overflow-hidden rounded-t-3xl`} style={{ background: "var(--bg)" }}>
+          {artist.coverImage && (
+            <div className="absolute inset-0 z-0">
               <img
                 src={artist.coverImage}
                 alt={`${artist.username} background`}
-                className="absolute inset-0 h-full w-full object-cover"
+                className="h-full w-full object-cover"
                 loading="lazy"
                 referrerPolicy="no-referrer"
                 onError={() => setBgOk(false)}
               />
-            ) : (
-              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
-            )}
-            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
-              <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-32 w-32" : "h-36 w-36"} sm:h-40 sm:w-40 md:h-44 md:w-44 shadow-2xl ring-2 ring-[color:var(--card)]`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                {avatarOk && artist.profileImage ? (
-                  <img
-                    src={artist.profileImage}
-                    alt={`${artist.username} profile`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    onError={() => setAvatarOk(false)}
-                  />
-                ) : (
-                  <span className="absolute inset-0 grid place-items-center text-3xl sm:text-4xl font-semibold" style={{ color: "var(--fg)" }}>
-                    {initials}
-                  </span>
-                )}
-              </div>
             </div>
+          )}
+          <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-28 w-28" : "h-32 w-32"} sm:h-36 sm:w-36 md:h-40 md:w-40 shadow-2xl ring-2 ring-[color:var(--card)] z-10`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+            {artist.profileImage ? (
+              <img
+                src={artist.profileImage}
+                alt={`${artist.username} profile`}
+                className="absolute inset-0 h-full w-full object-cover"
+                style={{ zIndex: 2 }}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarOk(false)}
+              />
+            ) : (
+              <span className="absolute inset-0 grid place-items-center text-2xl sm:text-3xl md:text-4xl font-semibold z-10" style={{ color: "var(--fg)" }}>
+                {initials}
+              </span>
+            )}
           </div>
         </div>
 
         <div
-          className={`${fullScreen ? "px-5 pt-4 pb-8 sm:pb-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col ${fullScreen ? "gap-4" : "gap-7"}`}
-          style={fullScreen ? undefined : undefined}
+          className={`${fullScreen ? "px-5 pt-4 pb-8 sm:pb-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col items-center justify-center ${fullScreen ? "gap-4" : "gap-7"} rounded-b-3xl`}
+          style={{ background: "linear-gradient(to bottom, var(--bg), color-mix(in oklab, var(--bg) 85%, var(--fg) 15%))" }}
         >
           <div className={`flex flex-col items-center text-center ${fullScreen ? "gap-4" : "gap-4 sm:gap-5"}`}>
             <h2 className={`font-extrabold tracking-tight ${fullScreen ? "text-4xl" : "text-2xl md:text-3xl"}`} style={{ color: "var(--fg)" }}>
