@@ -1,77 +1,61 @@
-import { lazy, Suspense, useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef, useEffect } from "react";
 import { useRole } from "@/hooks/useRole";
+import { useTheme } from "@/hooks/useTheme";
 import Header from "@/components/header/Header";
-
-const LOAD_MS = 400;
 
 const ArtistProfile = lazy(() => import("@/components/dashboard/artist/ArtistProfile"));
 const ClientProfile = lazy(() => import("@/components/dashboard/client/ClientProfile"));
-
-function readInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "dark";
-  const KEY = "dashboard-theme";
-  try {
-    const v = window.localStorage.getItem(KEY);
-    return v === "light" || v === "dark" ? v : "dark";
-  } catch {
-    return "dark";
-  }
-}
 
 function applyTheme(el: HTMLElement, theme: "light" | "dark") {
   el.classList.toggle("ink-light", theme === "light");
   el.setAttribute("data-ink", theme);
 }
 
-function useDashboardScope(scopeEl: HTMLElement | null, initialTheme: "light" | "dark") {
+function useDashboardScope(scopeEl: HTMLElement | null, theme: "light" | "dark") {
   useLayoutEffect(() => {
     if (!scopeEl) return;
     scopeEl.classList.add("ink-scope", "ink-no-anim");
-    applyTheme(scopeEl, initialTheme);
+    applyTheme(scopeEl, theme);
     requestAnimationFrame(() => scopeEl.classList.remove("ink-no-anim"));
-  }, [scopeEl, initialTheme]);
+  }, [scopeEl, theme]);
 }
-
-const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
-  const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
-  const fg = theme === "light" ? "#111111" : "#f5f5f5";
-  return (
-    <div
-      className="fixed inset-0 grid place-items-center"
-      style={{ zIndex: 2147483640, background: bg, color: fg }}
-    >
-      <style>{`
-        @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
-        @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
-      `}</style>
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
-          <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: `ink-fill ${LOAD_MS}ms linear forwards` }} />
-        </div>
-        <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite" }}>
-          Loading
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function Profile() {
   const { role, isLoaded } = useRole();
-  const initialTheme = readInitialTheme();
+  const { theme } = useTheme();
   const scopeRef = useRef<HTMLDivElement | null>(null);
-  useDashboardScope(scopeRef.current, initialTheme);
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = initialTheme === "light" ? "#ffffff" : "#0b0b0b";
+    document.body.style.backgroundColor = theme === "light" ? "#ffffff" : "#0b0b0b";
     return () => {
       document.body.style.backgroundColor = prev;
     };
-  }, [initialTheme]);
+  }, [theme]);
 
-  const shellBg = initialTheme === "light" ? "#ffffff" : "#0b0b0b";
-  const shellFg = initialTheme === "light" ? "#111111" : "#f5f5f5";
+  useEffect(() => {
+    const handleThemeChange = (e?: CustomEvent) => {
+      const scope = scopeRef.current;
+      if (!scope) return;
+      const newTheme = (e?.detail?.value as "light" | "dark") || theme;
+      applyTheme(scope, newTheme);
+      const shellBg = newTheme === "light" ? "#ffffff" : "#0b0b0b";
+      const shellFg = newTheme === "light" ? "#111111" : "#f5f5f5";
+      scope.style.background = shellBg;
+      scope.style.color = shellFg;
+      document.body.style.backgroundColor = shellBg;
+    };
+    
+    handleThemeChange();
+    const handler = handleThemeChange as EventListener;
+    window.addEventListener("ink:theme-change", handler);
+    return () => window.removeEventListener("ink:theme-change", handler);
+  }, [theme]);
+
+  useDashboardScope(scopeRef.current, theme);
+
+  const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
+  const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
   if (!isLoaded) {
     return (
@@ -82,7 +66,6 @@ export default function Profile() {
         style={{ background: shellBg, color: shellFg }}
       >
         <Header />
-        <Loading theme={initialTheme} />
       </div>
     );
   }
@@ -97,11 +80,7 @@ export default function Profile() {
       <Header />
       <main className="flex-1 min-h-0 overflow-y-auto">
         <div className="container mx-auto px-4 py-8 h-full">
-          <Suspense
-            fallback={
-              <Loading theme={initialTheme} />
-            }
-          >
+          <Suspense fallback={null}>
             {role === "artist" ? <ArtistProfile /> : <ClientProfile />}
           </Suspense>
         </div>

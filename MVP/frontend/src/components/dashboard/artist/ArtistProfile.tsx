@@ -50,7 +50,7 @@ export default function ArtistProfile() {
 
     useEffect(() => {
         const startTime = Date.now();
-        const minLoadTime = 1500; // 1.5 seconds
+        const minLoadTime = 1500;
         
         const load = async () => {
             try {
