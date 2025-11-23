@@ -326,7 +326,7 @@ export default function ArtistsSection({
     const atEnd = currentIndex >= lastIndex;
 
     return (
-        <div className="grid grid-rows-[auto,1fr] h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
+        <div className="md:grid md:grid-rows-[auto,1fr] md:h-full md:min-h-0 w-full h-full flex flex-col md:flex-none" style={{ minHeight: window.innerWidth < 768 ? undefined : `${sectionMinPx}px` }}>
             <div ref={filterRef} className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
                 <ArtistFilter
                     priceFilter={priceFilter}
@@ -385,15 +385,15 @@ export default function ArtistsSection({
                 )}
 
                 <div
-                    className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}
+                    className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} md:h-full md:min-h-0 h-full`}
                     style={{ minHeight: listItems.length >= 4 && isMdUp ? `${minGridPx}px` : "auto" }}
                 >
-                    <div className="md:hidden h-full min-h-0 relative">
+                    <div className="md:hidden relative" style={{ height: "100%", paddingBottom: "14px", boxSizing: "border-box" }}>
                         {listItems.length > 0 ? (
                             <>
                                 <div
                                     ref={mobileListRef}
-                                    className={`h-full min-h-0 ${listItems.length <= 1 ? "overflow-hidden" : "overflow-y-auto"} snap-y snap-mandatory overscroll-contain`}
+                                    className={`h-full ${listItems.length <= 1 ? "overflow-hidden" : "overflow-y-auto"} snap-y snap-mandatory overscroll-contain`}
                                     style={{ scrollSnapType: "y mandatory" }}
                                     onScroll={handleMobileScroll}
                                     onTouchStart={handleTouchStart}
@@ -458,7 +458,7 @@ export default function ArtistsSection({
 
                     <div className={`hidden md:block h-full min-h-0 ${listItems.length >= 4 ? "overflow-y-auto" : "overflow-hidden"}`}>
                         {listItems.length > 0 ? (
-                            <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3 ${listItems.length >= 4 ? "md:pb-20" : ""}`} style={{ minHeight: listItems.length >= 4 ? `${minGridPx}px` : "auto" }}>
+                            <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-1 p-0 md:gap-5 md:p-3 ${listItems.length >= 4 ? "md:pb-20" : ""}`} style={{ minHeight: listItems.length >= 4 ? `${minGridPx}px` : "auto" }}>
                                 {listItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}

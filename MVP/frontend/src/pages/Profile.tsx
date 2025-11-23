@@ -1,10 +1,12 @@
-import { lazy, Suspense, useLayoutEffect, useRef, useEffect } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef, useEffect, useState } from "react";
 import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import Header from "@/components/header/Header";
 
 const ArtistProfile = lazy(() => import("@/components/dashboard/artist/ArtistProfile"));
 const ClientProfile = lazy(() => import("@/components/dashboard/client/ClientProfile"));
+
+const FADE_MS = 300;
 
 function applyTheme(el: HTMLElement, theme: "light" | "dark") {
   el.classList.toggle("ink-light", theme === "light");
@@ -24,6 +26,7 @@ export default function Profile() {
   const { role, isLoaded } = useRole();
   const { theme } = useTheme();
   const scopeRef = useRef<HTMLDivElement | null>(null);
+  const [fadeIn, setFadeIn] = useState(false);
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
@@ -32,6 +35,20 @@ export default function Profile() {
       document.body.style.backgroundColor = prev;
     };
   }, [theme]);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      setFadeIn(false);
+      return;
+    }
+    
+    setFadeIn(false);
+    const timer = setTimeout(() => {
+      setFadeIn(true);
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [isLoaded, role]);
 
   useEffect(() => {
     const handleThemeChange = (e?: CustomEvent) => {
@@ -78,7 +95,13 @@ export default function Profile() {
       style={{ background: shellBg, color: shellFg }}
     >
       <Header />
-      <main className="flex-1 min-h-0 overflow-y-auto">
+      <main 
+        className="flex-1 min-h-0 overflow-y-auto"
+        style={{ 
+          opacity: fadeIn ? 1 : 0, 
+          transition: `opacity ${FADE_MS}ms ease-in-out` 
+        }}
+      >
         <div className="container mx-auto px-4 py-8 h-full">
           <Suspense fallback={null}>
             {role === "artist" ? <ArtistProfile /> : <ClientProfile />}

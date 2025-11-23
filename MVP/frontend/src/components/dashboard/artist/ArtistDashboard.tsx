@@ -5,11 +5,13 @@ import { X, Bot } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChatWindow from "@/components/dashboard/shared/ChatWindow";
+import ChatBot from "@/components/dashboard/shared/ChatBot";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { API_URL } from "@/lib/http";
 import { useMessaging } from "@/hooks/useMessaging";
 import ArtistProfile from "@/components/dashboard/artist/ArtistProfile";
+import { AnimatePresence, motion } from "framer-motion";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
 const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
@@ -47,8 +49,18 @@ export default function ArtistDashboard() {
   const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(user?.id ?? "", authFetch);
 
   return (
-    <div>
-      <div className="min-h-dvh h-dvh bg-app text-app flex flex-col overflow-hidden">
+    <>
+        <style>{`
+            @media (max-width: 767px) {
+                html, body {
+                    overflow: hidden !important;
+                    height: 100vh !important;
+                }
+            }
+            #middle-content::-webkit-scrollbar { display: none; }
+        `}</style>
+        <div>
+      <div className="min-h-dvh h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto">
         <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
         <Header />
         <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-24">
@@ -123,28 +135,44 @@ export default function ArtistDashboard() {
           pendingRequestIds={pendingRequestIds}
           pendingRequestsCount={pendingRequestsCount}
         />
-        <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-          <div
-            className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`}
-            onClick={() => setAssistantOpen(false)}
-            aria-hidden
-          />
-          <div
-            className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-app">
-              <div className="flex items-center gap-2 font-semibold">
-                <Bot size={18} />
-                <span>Assistant</span>
-              </div>
-              <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 p-4 text-sm opacity-80">Assistant panel</div>
-          </div>
-        </div>
+
+        <AnimatePresence>
+          {assistantOpen && (
+            <>
+              <motion.div
+                className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setAssistantOpen(false)}
+              />
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-4 lg:right-4 z-50"
+              >
+                <div className="w-full h-[90dvh] lg:w-[88vw] lg:h-auto lg:max-w-[400px] bg-card border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <Bot size={18} />
+                      <span>Assistant</span>
+                    </div>
+                    <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <ChatBot />
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </div>
+    </>
   );
 } 

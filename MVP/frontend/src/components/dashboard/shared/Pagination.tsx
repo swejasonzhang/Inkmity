@@ -24,15 +24,8 @@ const Pagination: React.FC<Props> = ({
     return (
         <div
             className={[
-                "fixed z-[1001] pointer-events-none",
-                "left-1/2 -translate-x-1/2",
-                "w-auto max-w-[calc(100vw-24px)]",
-                "[--pg-offset:5px] md:[--pg-offset:px]",
                 className || "",
             ].join(" ")}
-            style={{
-                bottom: `calc(env(safe-area-inset-bottom, 0px) + var(--pg-offset))`,
-            }}
         >
             <div
                 className="hidden md:flex justify-center items-center gap-2 text-app pointer-events-auto"
@@ -87,12 +80,12 @@ const Pagination: React.FC<Props> = ({
                 </button>
             </div>
 
-            <div className="md:hidden pointer-events-auto mt-2">
+            <div className="md:hidden pointer-events-auto">
                 <div
                     className="grid place-items-center w-full"
                     role="navigation"
                     aria-label="Pagination (mobile)"
-                    style={{ minHeight: 72 }}
+                    style={{ minHeight: 48 }}
                 >
                     <div className="flex flex-col items-center justify-center gap-2 text-app">
                         <button
