@@ -251,7 +251,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
               <Menu size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
 
-            {isSignedIn && isLoaded && labelLoaded && (
+            {isSignedIn && isLoaded && labelLoaded && userLabel && userLabel !== "User" && (
               <div
                 className="relative hidden md:inline-block align-top text-app [&_*]:text-app [&_*]:border-app"
                 onMouseEnter={() => setShowDropdown(true)}
@@ -267,7 +267,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
                   <span className="mr-2 font-semibold text-xl leading-none">✦</span>
                   <span className="inline-flex items-center leading-none">
                     <span className="mr-1">Hello,</span>
-                    <span className="font-bold max-w-[14rem] truncate">{userLabel || "User"}</span>
+                    <span className="font-bold max-w-[14rem] truncate">{userLabel}</span>
                   </span>
                 </div>
 
@@ -281,7 +281,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
                 >
                   <div className="px-4 py-3 text-center">
                     <div className="text-xs subtle">Signed in as</div>
-                    <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
+                    <div className="text-lg font-semibold truncate">{userLabel}</div>
                   </div>
                   <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
                   <Link to="/profile" className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">

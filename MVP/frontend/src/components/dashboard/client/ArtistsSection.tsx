@@ -386,7 +386,7 @@ export default function ArtistsSection({
 
                 <div
                     className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}
-                    style={{ minHeight: `${isMdUp ? minGridPx : 0}px` }}
+                    style={{ minHeight: listItems.length >= 4 && isMdUp ? `${minGridPx}px` : "auto" }}
                 >
                     <div className="md:hidden h-full min-h-0 relative">
                         {listItems.length > 0 ? (
@@ -456,9 +456,9 @@ export default function ArtistsSection({
                         )}
                     </div>
 
-                    <div className="hidden md:block h-full min-h-0">
+                    <div className={`hidden md:block h-full min-h-0 ${listItems.length >= 4 ? "overflow-y-auto" : "overflow-hidden"}`}>
                         {listItems.length > 0 ? (
-                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3 md:pb-20" style={{ minHeight: `${minGridPx}px` }}>
+                            <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3 ${listItems.length >= 4 ? "md:pb-20" : ""}`} style={{ minHeight: listItems.length >= 4 ? `${minGridPx}px` : "auto" }}>
                                 {listItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}

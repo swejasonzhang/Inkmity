@@ -182,12 +182,12 @@ export default function ClientProfile() {
     }, []);
 
     const saveProfile = useCallback(async () => {
-        if (!user || !client || Object.keys(editedClient).length === 0) return;
+        if (!user || Object.keys(editedClient).length === 0) return;
         try {
             setSaving(true);
             const token = await getToken();
             const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || "";
-            const username = editedClient.username || client.username || user.firstName || email.split("@")[0] || "user";
+            const username = editedClient.username || client?.username || user.firstName || email.split("@")[0] || "user";
 
             const response = await fetch(`${API_URL}/users/sync`, {
                 method: "POST",
@@ -201,14 +201,14 @@ export default function ClientProfile() {
                     role: "client",
                     username,
                     profile: {
-                        location: editedClient.location ?? client.location,
-                        budgetMin: editedClient.budgetMin ?? client.budgetMin,
-                        budgetMax: editedClient.budgetMax ?? client.budgetMax,
-                        placement: editedClient.placement ?? client.placement,
-                        size: editedClient.size ?? client.size,
-                        referenceImages: editedClient.references ?? client.references,
+                        location: editedClient.location ?? client?.location,
+                        budgetMin: editedClient.budgetMin ?? client?.budgetMin,
+                        budgetMax: editedClient.budgetMax ?? client?.budgetMax,
+                        placement: editedClient.placement ?? client?.placement,
+                        size: editedClient.size ?? client?.size,
+                        referenceImages: editedClient.references ?? client?.references,
                     },
-                    bio: editedClient.bio ?? client.bio,
+                    bio: editedClient.bio ?? client?.bio,
                 }),
             });
             if (!response.ok) throw new Error("Failed to save profile");
@@ -281,23 +281,16 @@ export default function ClientProfile() {
         setEditedClient(prev => ({ ...prev, references: newRefs }));
     };
 
-    if (!client) {
-        return (
-            <div className="flex items-center justify-center h-full min-h-[60vh]">
-                <div style={{ color: "var(--fg)" }}>No profile data available</div>
-            </div>
-        );
-    }
 
-    const profileImageUrl = editedClient.avatar?.url || client.avatar?.url || "";
-    const username = editedClient.username ?? client.username;
-    const bio = editedClient.bio ?? client.bio ?? "";
-    const location = editedClient.location ?? client.location ?? "";
-    const budgetMin = editedClient.budgetMin ?? client.budgetMin ?? 100;
-    const budgetMax = editedClient.budgetMax ?? client.budgetMax ?? 200;
-    const placement = editedClient.placement ?? client.placement ?? "";
-    const size = editedClient.size ?? client.size ?? "";
-    const references = editedClient.references ?? client.references ?? [];
+    const profileImageUrl = editedClient.avatar?.url || client?.avatar?.url || "";
+    const username = editedClient.username ?? client?.username ?? "";
+    const bio = editedClient.bio ?? client?.bio ?? "";
+    const location = editedClient.location ?? client?.location ?? "";
+    const budgetMin = editedClient.budgetMin ?? client?.budgetMin ?? 100;
+    const budgetMax = editedClient.budgetMax ?? client?.budgetMax ?? 200;
+    const placement = editedClient.placement ?? client?.placement ?? "";
+    const size = editedClient.size ?? client?.size ?? "";
+    const references = editedClient.references ?? client?.references ?? [];
 
     const initials = (username || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join("");
 
@@ -336,14 +329,14 @@ export default function ClientProfile() {
             />
 
             <div className="space-y-6 sm:space-y-8">
-                <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4 mb-6 sm:mb-8 text-center sm:text-left">
-                    <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: "var(--fg)" }}>Profile Settings</h1>
+                <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-center" style={{ color: "var(--fg)" }}>Profile Settings</h1>
                     {hasChanges && (
                         <Button
                             onClick={saveProfile}
                             disabled={saving || uploading}
                             style={{ background: "var(--fg)", color: "var(--bg)" }}
-                            className="hover:opacity-90 w-full sm:w-auto"
+                            className="hover:opacity-90 w-full sm:w-auto sm:absolute sm:right-0"
                         >
                             <Save className="h-4 w-4 mr-2" />
                             {saving ? "Saving..." : "Save Changes"}
