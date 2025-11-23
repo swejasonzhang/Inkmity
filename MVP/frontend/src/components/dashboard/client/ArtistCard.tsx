@@ -105,12 +105,12 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   const loc = artist.location?.trim() || "";
 
   const shellClass = fullScreen
-    ? "group w-full h-full min-h-0 flex flex-col items-center justify-center overflow-hidden rounded-3xl border bg-card/90 transition"
-    : "group w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition";
+    ? "group w-full h-full min-h-0 flex flex-col items-center justify-center rounded-3xl border bg-card/90 transition"
+    : "group w-full h-full flex flex-col rounded-3xl border bg-card/90 transition";
 
   return (
     <div
-      className={fullScreen ? "h-full min-h-0 px-3 sm:px-0" : undefined}
+      className={fullScreen ? "h-full min-h-0 px-3 sm:px-0 flex items-center justify-center" : undefined}
       style={
         fullScreen
           ? ({ paddingBottom: "10px" } as React.CSSProperties)
@@ -119,7 +119,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
     >
       <div className={shellClass} style={{ borderColor: "var(--border)" }} data-artist-card="true">
         <div className="relative w-full">
-          <div className={`relative w-full ${fullScreen ? "h-[15rem]" : "h-[18.125rem]"} sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden`} style={{ background: "var(--elevated)" }}>
+          <div className={`relative w-full ${fullScreen ? "flex-1 md:h-[15rem] md:flex-none" : "h-[18.125rem]"} sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem]`} style={{ background: "var(--elevated)", ...(fullScreen ? { minHeight: "200px" } : {}) }}>
             {bgOk && coverImageUrl ? (
               <img
                 src={coverImageUrl}
@@ -156,7 +156,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         </div>
 
         <div
-          className={`${fullScreen ? "px-5 pt-4 pb-8 sm:pb-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col ${fullScreen ? "gap-4" : "gap-7"}`}
+          className={`${fullScreen ? "px-5 py-8 sm:py-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col items-center justify-center ${fullScreen ? "gap-4" : "gap-7"}`}
           style={fullScreen ? undefined : undefined}
         >
           <div className={`flex flex-col items-center text-center ${fullScreen ? "gap-4" : "gap-4 sm:gap-5"}`}>

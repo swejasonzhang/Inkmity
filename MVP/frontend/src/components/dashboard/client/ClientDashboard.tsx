@@ -128,14 +128,17 @@ export default function ClientDashboard() {
         return null;
     }
 
-    const panelVariants = {
-        hidden: { opacity: 0, scale: 0.98, y: 8 },
-        visible: { opacity: 1, scale: 1, y: 0 },
-        exit: { opacity: 0, scale: 0.98, y: 8 }
-    };
-
     return (
-        <div className="min-h-dvh bg-app text-app flex flex-col overflow-hidden client-dashboard-root">
+        <>
+            <style>{`
+                @media (max-width: 767px) {
+                    html, body {
+                        overflow: hidden !important;
+                        height: 100vh !important;
+                    }
+                }
+            `}</style>
+            <div className="h-dvh md:min-h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root">
             <Header />
             <div className="sm:hidden px-3 mt-2">
                 <ArtistFilter
@@ -164,7 +167,7 @@ export default function ClientDashboard() {
             </div>
             <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 flex">
-                    <div className="w-full my-0 md:my-0 px-0 md:px-3">
+                    <div className="w-full h-full my-0 md:my-0 px-0 md:px-3">
                         <Suspense
                             fallback={
                                 <div className="p-4 space-y-4">
@@ -193,7 +196,7 @@ export default function ClientDashboard() {
                     </div>
                 </div>
             </main>
-            <div className="shrink-0 px-3">
+            <div className="shrink-0 px-2 md:px-3">
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
@@ -212,34 +215,44 @@ export default function ClientDashboard() {
                     }
                 />
             </div>
+
             <AnimatePresence>
                 {assistantOpen && (
-                    <motion.div
-                        key="assistant"
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        variants={panelVariants}
-                        transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                        className="fixed bottom-4 right-4 z-50 client-dashboard-assistant"
-                    >
-                        <div className="w-[88vw] max-w-[400px] bg-card border border-app shadow-2xl rounded-2xl flex flex-col overflow-hidden client-dashboard-assistant-card">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-app">
-                                <div className="flex items-center gap-2 font-semibold">
-                                    <Bot size={16} />
-                                    <span className="text-sm">Assistant</span>
+                    <>
+                        <motion.div
+                            className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setAssistantOpen(false)}
+                        />
+                        <motion.div
+                            key="assistant"
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                            className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-4 lg:right-4 z-50 client-dashboard-assistant"
+                        >
+                            <div className="w-full h-[90dvh] lg:w-[88vw] lg:h-auto lg:max-w-[400px] bg-card border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card">
+                                <div className="flex items-center justify-between px-3 py-2 lg:px-3 lg:py-2 border-b border-app">
+                                    <div className="flex items-center gap-2 font-semibold">
+                                        <Bot size={16} />
+                                        <span className="text-sm">Assistant</span>
+                                    </div>
+                                    <button onClick={() => setAssistantOpen(false)} className="p-1.5 rounded-full hover:bg-elevated" aria-label="Close assistant">
+                                        <X size={16} />
+                                    </button>
                                 </div>
-                                <button onClick={() => setAssistantOpen(false)} className="p-1.5 rounded-full hover:bg-elevated" aria-label="Close assistant">
-                                    <X size={16} />
-                                </button>
+                                <div className="flex-1 overflow-y-auto">
+                                    <ChatBot />
+                                </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto">
-                                <ChatBot />
-                            </div>
-                        </div>
-                    </motion.div>
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
+
             <Suspense fallback={null}>
                 {selectedArtist && (
                     <ArtistModal
@@ -261,5 +274,6 @@ export default function ClientDashboard() {
                 )}
             </Suspense>
         </div>
+        </>
     );
 }
