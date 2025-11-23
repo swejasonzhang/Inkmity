@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import { Save, Edit2, X, Plus, Camera, Briefcase } from "lucide-react";
@@ -257,28 +257,6 @@ export default function ArtistProfile() {
 
     const stylesPrimary = stylesClean.slice(0, 3);
     const stylesOverflow = Math.max(0, stylesClean.length - stylesPrimary.length);
-
-    const Grid: React.FC<{ images: string[]; eager?: number }> = ({ images, eager = 6 }) =>
-        images.length ? (
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
-                {images.map((src, i) => (
-                    <div
-                        key={`${src}-${i}`}
-                        className="relative aspect-square w-full overflow-hidden rounded-xl border"
-                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                    >
-                        <img
-                            src={src}
-                            alt={`Work ${i + 1}`}
-                            className="h-full w-full object-cover"
-                            loading={i < eager ? "eager" : "lazy"}
-                            decoding="async"
-                            referrerPolicy="no-referrer"
-                        />
-                    </div>
-                ))}
-            </div>
-        ) : null;
 
     const chip = (text: string, key?: string | number) => (
         <span
