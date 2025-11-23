@@ -110,26 +110,39 @@ export function useDashboardData() {
     if (!isLoaded || !isSignedIn || !user) return;
 
     const socket = getSocket();
-    let connected = false;
+    let listenerAdded = false;
 
     const handleProfileUpdate = () => {
       void loadFirst(lastFilters.current);
     };
 
+    const setupListener = () => {
+      if (!listenerAdded) {
+        socket.on("artist:profile:updated", handleProfileUpdate);
+        listenerAdded = true;
+      }
+    };
+
     const setupSocket = async () => {
       try {
-        await connectSocket(getToken, user.id);
-        connected = true;
-        socket.on("artist:profile:updated", handleProfileUpdate);
+        if (!socket.connected) {
+          await connectSocket(getToken, user.id);
+        }
+        setupListener();
       } catch (error) {
         console.error("Failed to connect socket for dashboard updates:", error);
       }
     };
 
-    void setupSocket();
+    if (socket.connected) {
+      setupListener();
+    } else {
+      socket.once("connect", setupListener);
+      void setupSocket();
+    }
 
     return () => {
-      if (connected) {
+      if (listenerAdded) {
         socket.off("artist:profile:updated", handleProfileUpdate);
       }
     };
