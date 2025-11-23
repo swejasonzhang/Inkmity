@@ -368,10 +368,14 @@ export async function syncUser(req, res) {
       }
     ).lean();
     
-    if (role === "artist" && user) {
+    if (user) {
       try {
         const io = getIO();
-        io.emit("artist:profile:updated", { clerkId, artistId: user._id });
+        if (role === "artist") {
+          io.emit("artist:profile:updated", { clerkId, artistId: user._id });
+        } else if (role === "client") {
+          io.emit("client:profile:updated", { clerkId, clientId: user._id });
+        }
       } catch (e) {
         console.error("[syncUser] Failed to emit profile update event:", e);
       }

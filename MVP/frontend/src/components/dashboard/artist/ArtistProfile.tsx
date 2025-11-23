@@ -49,7 +49,22 @@ export default function ArtistProfile() {
     const portfolioInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        loadProfile();
+        const startTime = Date.now();
+        const minLoadTime = 1500; // 1.5 seconds
+        
+        const load = async () => {
+            try {
+                await loadProfile();
+            } finally {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, minLoadTime - elapsed);
+                setTimeout(() => {
+                    setLoading(false);
+                }, remaining);
+            }
+        };
+        
+        load();
     }, []);
 
     const loadProfile = async () => {
@@ -83,8 +98,6 @@ export default function ArtistProfile() {
             setArtist(artistData);
         } catch (error) {
             console.error("Failed to load profile:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -275,18 +288,34 @@ export default function ArtistProfile() {
     const loc = currentLocation?.trim() || "";
 
 
-    if (loading) {
+    const LoadingComponent = () => {
+        const fg = "var(--fg)";
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="text-white/60">Loading profile...</div>
+                <style>{`
+                    @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+                    @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
+                `}</style>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
+                        <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: "ink-fill 400ms linear forwards" }} />
+                    </div>
+                    <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite", color: fg }}>
+                        Loading Profile
+                    </div>
+                </div>
             </div>
         );
+    };
+
+    if (loading) {
+        return <LoadingComponent />;
     }
 
     if (!artist) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div className="text-white/60">No profile data available</div>
+                <div style={{ color: "var(--fg)" }}>No profile data available</div>
             </div>
         );
     }
