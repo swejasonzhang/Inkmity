@@ -53,7 +53,7 @@ function setStoredTheme(key: string, value: Theme) {
 export function useTheme() {
   const { pathname } = useLocation();
   const { user, isLoaded: isUserLoaded } = useUser();
-  const isDashboard = pathname.startsWith("/dashboard");
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
 
   const [theme, setTheme] = useState<Theme>(() => {
     if (isDashboard) {
@@ -80,6 +80,8 @@ export function useTheme() {
       if (!animate && currentTheme === t && initialEffectRef.current === false) {
         return;
       }
+    } else if (!isDashboard) {
+      return;
     }
 
     scopes.forEach((n) => {
@@ -103,6 +105,7 @@ export function useTheme() {
         dash.classList.add("ink-light");
         dash.setAttribute("data-ink", "light");
       } else {
+        dash.classList.remove("ink-light");
         dash.setAttribute("data-ink", "dark");
       }
     }
@@ -119,7 +122,7 @@ export function useTheme() {
 
   useEffect(() => {
     if (!isUserLoaded) return;
-    if (!isDashboard) return; // Don't load theme for non-dashboard pages
+    if (!isDashboard) return;
     
     const stored =
       getStoredTheme(storageKey) ??
@@ -139,7 +142,7 @@ export function useTheme() {
         }
       }
     }
-  }, [isUserLoaded, storageKey, user?.id, isDashboard]);
+  }, [isUserLoaded, storageKey, user?.id, isDashboard, theme]);
 
   useEffect(() => {
     if (!isDashboard && theme !== "dark") {
@@ -252,11 +255,23 @@ export function useTheme() {
     const dash = q("#dashboard-scope");
     const currentTheme = dash?.classList.contains("ink-light") || dash?.getAttribute("data-ink") === "light" ? "light" : "dark";
     const newTheme = currentTheme === "light" ? "dark" : "light";
+    
     setTheme(newTheme);
+    applyTheme(newTheme, true);
     setStoredTheme(storageKey, newTheme);
     if (storageKey !== LEGACY_STORAGE_KEY) {
       setStoredTheme(LEGACY_STORAGE_KEY, newTheme);
     }
+    
+    window.dispatchEvent(
+      new CustomEvent("ink:theme-change", {
+        detail: {
+          key: LEGACY_STORAGE_KEY,
+          scopedKey: storageKey,
+          value: newTheme,
+        },
+      })
+    );
   }, [isDashboard, storageKey]);
 
   const themeClass = useMemo(() => "ink-scope", []);

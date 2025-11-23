@@ -3,20 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useRole } from "@/hooks/useRole";
 import { useSyncOnAuth } from "@/hooks/useSyncOnAuth";
+import { useTheme } from "@/hooks/useTheme";
 
 const ClientDashboard = lazy(() => import("@/components/dashboard/client/ClientDashboard"));
 const ArtistDashboard = lazy(() => import("@/components/dashboard/artist/ArtistDashboard"));
-
-function readInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "dark";
-  const KEY = "dashboard-theme";
-  try {
-    const v = window.localStorage.getItem(KEY);
-    return v === "light" || v === "dark" ? v : "dark";
-  } catch {
-    return "dark";
-  }
-}
 
 const LOAD_MS = 400;
 const FADE_MS = 160;
@@ -73,7 +63,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const warnedRef = useRef(false as boolean);
   const { override } = useDevOverride();
-  const initialTheme = readInitialTheme();
+  const { theme } = useTheme();
 
   const [bootDone, setBootDone] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
@@ -101,11 +91,30 @@ const Dashboard: React.FC = () => {
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = initialTheme === "light" ? "#ffffff" : "#0b0b0b";
+    document.body.style.backgroundColor = theme === "light" ? "#ffffff" : "#0b0b0b";
     return () => {
       document.body.style.backgroundColor = prev;
     };
-  }, [initialTheme]);
+  }, [theme]);
+
+  useEffect(() => {
+    const handleThemeChange = (e?: CustomEvent) => {
+      const scope = scopeRef.current;
+      if (!scope) return;
+      const newTheme = (e?.detail?.value as "light" | "dark") || theme;
+      applyTheme(scope, newTheme);
+      const shellBg = newTheme === "light" ? "#ffffff" : "#0b0b0b";
+      const shellFg = newTheme === "light" ? "#111111" : "#f5f5f5";
+      scope.style.background = shellBg;
+      scope.style.color = shellFg;
+      document.body.style.backgroundColor = shellBg;
+    };
+    
+    handleThemeChange();
+    const handler = handleThemeChange as EventListener;
+    window.addEventListener("ink:theme-change", handler);
+    return () => window.removeEventListener("ink:theme-change", handler);
+  }, [theme]);
 
   const roleToUse = useMemo<"client" | "artist">(() => {
     if (override) return override;
@@ -114,10 +123,10 @@ const Dashboard: React.FC = () => {
   }, [override, role]);
 
   const scopeRef = useRef<HTMLDivElement | null>(null);
-  useDashboardScope(scopeRef.current, initialTheme);
+  useDashboardScope(scopeRef.current, theme);
 
-  const shellBg = initialTheme === "light" ? "#ffffff" : "#0b0b0b";
-  const shellFg = initialTheme === "light" ? "#111111" : "#f5f5f5";
+  const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
+  const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
   return (
     <div
@@ -126,7 +135,7 @@ const Dashboard: React.FC = () => {
       className="ink-scope min-h-dvh overflow-y-hidden flex flex-col"
       style={{ background: shellBg, color: shellFg }}
     >
-      {!bootDone && <Loading theme={initialTheme} />}
+      {!bootDone && <Loading theme={theme} />}
       <div
         className="flex-1 min-h-0 w-full"
         style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}

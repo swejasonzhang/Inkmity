@@ -61,7 +61,6 @@ const MIN_GAP = 100;
 export default function ClientProfile() {
     const { getToken } = useAuth();
     const { user } = useUser();
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [client, setClient] = useState<Client | null>(null);
     const [editedClient, setEditedClient] = useState<Partial<Client>>({});
@@ -142,13 +141,14 @@ export default function ClientProfile() {
             setEditedClient({});
         } catch (error) {
             console.error("Failed to load profile:", error);
-        } finally {
-            setLoading(false);
         }
     }, [getToken]);
 
     useEffect(() => {
-        loadProfile();
+        const load = async () => {
+            await loadProfile();
+        };
+        load();
     }, [loadProfile]);
 
     useEffect(() => {
@@ -280,30 +280,6 @@ export default function ClientProfile() {
         const newRefs = currentRefs.filter((_, i) => i !== index);
         setEditedClient(prev => ({ ...prev, references: newRefs }));
     };
-
-    const LoadingComponent = () => {
-        const fg = "var(--fg)";
-        return (
-            <div className="flex items-center justify-center h-full min-h-[60vh]">
-                <style>{`
-                    @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
-                    @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
-                `}</style>
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
-                        <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: "ink-fill 400ms linear forwards" }} />
-                    </div>
-                    <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite", color: fg }}>
-                        Loading Profile
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    if (loading) {
-        return <LoadingComponent />;
-    }
 
     if (!client) {
         return (
