@@ -312,13 +312,6 @@ export default function ArtistProfile() {
         return <LoadingComponent />;
     }
 
-    if (!artist) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div style={{ color: "var(--fg)" }}>No profile data available</div>
-            </div>
-        );
-    }
 
     return (
         <div className="h-full min-h-0 w-full overflow-hidden flex items-center justify-center py-4 px-4">

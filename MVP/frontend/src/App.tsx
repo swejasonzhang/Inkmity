@@ -1,14 +1,15 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
 import { useTheme } from "@/hooks/useTheme";
+
+const Profile = lazy(() => import("./pages/Profile"));
 
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
@@ -40,7 +41,7 @@ const App: React.FC = () => {
         <Route index element={<Dashboard />} />
       </Route>
       <Route path="/profile" element={<DashboardScope />}>
-        <Route index element={<Profile />} />
+        <Route index element={<Suspense fallback={null}><Profile /></Suspense>} />
       </Route>
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
