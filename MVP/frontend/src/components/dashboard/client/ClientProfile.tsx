@@ -308,7 +308,8 @@ export default function ClientProfile() {
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto border-2 rounded-xl p-4 sm:p-6 h-full sm:h-auto overflow-y-hidden sm:overflow-visible" style={{ borderColor: "var(--fg)", maxHeight: "100%", minHeight: 0 }}>
+        <div className="w-full flex items-stretch sm:items-center justify-center h-full">
+            <div className="w-full max-w-2xl mx-auto border-2 rounded-xl p-4 sm:p-6 overflow-y-hidden sm:overflow-visible h-[calc(100%-8px)] sm:h-auto" style={{ borderColor: "var(--fg)" }}>
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -532,9 +533,10 @@ export default function ClientProfile() {
                                 (up to 3)
                             </span>
                         </h2>
-                        <div className="flex sm:grid sm:grid-cols-3 gap-2 sm:gap-4 max-w-2xl mx-auto overflow-x-auto sm:overflow-visible justify-center items-center pr-2 sm:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                        <div className="max-w-2xl mx-auto">
+                            <div className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible justify-center items-center" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                             {references.map((src, i) => (
-                                <div key={i} className="relative aspect-square flex-shrink-0 w-32 sm:w-full group">
+                                <div key={i} className="relative aspect-square flex-shrink-0 w-28 sm:w-full group sm:first:ml-0 sm:last:mr-0">
                                     <div className="absolute inset-0 rounded-lg overflow-hidden border border-[color:var(--border)]">
                                         <img
                                             src={src}
@@ -556,13 +558,14 @@ export default function ClientProfile() {
                                 <button
                                     onClick={() => referenceInputRef.current?.click()}
                                     disabled={uploading}
-                                    className="aspect-square flex-shrink-0 w-32 sm:w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-[color:var(--elevated)] transition-colors disabled:opacity-50"
+                                    className="aspect-square flex-shrink-0 w-28 sm:w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-[color:var(--elevated)] transition-colors disabled:opacity-50"
                                     style={{ borderColor: "var(--border)", color: "var(--fg)" }}
                                 >
                                     <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                                     <span className="text-xs">Add Image</span>
                                 </button>
                             )}
+                            </div>
                         </div>
                         {references.length === 0 && (
                             <p className="text-sm text-center py-4" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
@@ -586,6 +589,7 @@ export default function ClientProfile() {
                         </Button>
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

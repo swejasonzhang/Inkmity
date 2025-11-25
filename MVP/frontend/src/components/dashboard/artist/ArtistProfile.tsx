@@ -318,7 +318,7 @@ export default function ArtistProfile() {
 
 
     return (
-        <div className="w-full flex items-center justify-center">
+        <div className="w-full flex items-stretch sm:items-center justify-center h-full">
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -344,7 +344,7 @@ export default function ArtistProfile() {
                     files.forEach(file => handleImageUpload(file, "portfolio"));
                 }}
             />
-            <div className="group w-full max-w-2xl flex flex-col rounded-2xl sm:rounded-3xl transition relative overflow-hidden border-2 h-full sm:h-auto overflow-y-hidden sm:overflow-visible" data-artist-card="true" style={{ background: "var(--bg)", borderColor: "var(--fg)", maxHeight: "100%", minHeight: 0 }}>
+            <div className="group w-full max-w-2xl flex flex-col rounded-2xl sm:rounded-3xl transition relative overflow-hidden border-2 overflow-y-hidden sm:overflow-visible h-[calc(100%-8px)] sm:h-auto" data-artist-card="true" style={{ background: "var(--bg)", borderColor: "var(--fg)" }}>
                 <div className="relative w-full h-48 sm:h-64 flex items-center justify-center overflow-hidden rounded-t-2xl sm:rounded-t-3xl" style={{ background: "var(--bg)" }}>
                     {currentCoverImage && (
                         <div className="absolute inset-0 z-0">
@@ -409,8 +409,22 @@ export default function ArtistProfile() {
                         }
                     }}>
                         <DialogContent
-                            className="max-w-3xl overflow-y-auto z-[9999] fixed inset-0 h-screen w-screen rounded-none border-0 sm:inset-auto sm:h-auto sm:w-auto sm:max-h-[90vh] sm:rounded-lg sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:border"
-                            style={{
+                            className="max-w-3xl overflow-y-auto z-[9999] rounded-none border-0 sm:rounded-lg sm:border sm:max-h-[90vh]"
+                            style={typeof window !== "undefined" && window.innerWidth < 640 ? {
+                                background: "var(--card)",
+                                color: "var(--fg)",
+                                position: "fixed",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                height: "100vh",
+                                width: "100vw",
+                                transform: "none",
+                                maxWidth: "100vw",
+                                margin: 0,
+                                borderRadius: 0
+                            } : {
                                 background: "var(--card)",
                                 color: "var(--fg)"
                             }}
@@ -660,43 +674,17 @@ export default function ArtistProfile() {
 
                     {portfolio.length > 0 && (
                         <div className="w-full flex justify-center items-center px-2 sm:px-4 py-4 sm:py-6">
-                            <div className="flex md:grid md:grid-cols-3 gap-2 sm:gap-4 md:gap-6 w-full max-w-4xl overflow-x-auto md:overflow-visible pr-2 md:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                                {portfolio.map((src, i) => (
-                                    <div
-                                        key={`${src}-${i}`}
-                                        className="relative aspect-square flex-shrink-0 w-32 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 group shadow-lg"
-                                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                                    >
-                                        <img
-                                            src={src}
-                                            alt={`Work ${i + 1}`}
-                                            className="h-full w-full object-cover"
-                                            loading={i < 6 ? "eager" : "lazy"}
-                                            decoding="async"
-                                            referrerPolicy="no-referrer"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {healedWorks.length > 0 && (
-                        <div className="w-full flex flex-col items-center justify-center px-2 sm:px-4 py-4 sm:py-6">
-                            <h4 className="text-base sm:text-lg md:text-xl font-bold mb-4 sm:mb-6" style={{ color: "var(--fg)" }}>
-                                Healed Works
-                            </h4>
-                            <div className="w-full max-w-4xl flex justify-center items-center">
-                                <div className="flex md:grid md:grid-cols-3 gap-2 sm:gap-4 md:gap-6 w-full overflow-x-auto md:overflow-visible pr-2 md:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                                    {healedWorks.map((src, i) => (
+                            <div className="w-full max-w-4xl">
+                                <div className="flex md:grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 overflow-x-auto md:overflow-visible justify-center md:justify-start" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                    {portfolio.map((src, i) => (
                                         <div
                                             key={`${src}-${i}`}
-                                            className="relative aspect-square flex-shrink-0 w-32 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 shadow-lg"
+                                            className="relative aspect-square flex-shrink-0 w-28 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 group shadow-lg"
                                             style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                         >
                                             <img
                                                 src={src}
-                                                alt={`Healed work ${i + 1}`}
+                                                alt={`Work ${i + 1}`}
                                                 className="h-full w-full object-cover"
                                                 loading={i < 6 ? "eager" : "lazy"}
                                                 decoding="async"
@@ -709,29 +697,61 @@ export default function ArtistProfile() {
                         </div>
                     )}
 
+                    {healedWorks.length > 0 && (
+                        <div className="w-full flex flex-col items-center justify-center px-2 sm:px-4 py-4 sm:py-6">
+                            <h4 className="text-base sm:text-lg md:text-xl font-bold mb-4 sm:mb-6" style={{ color: "var(--fg)" }}>
+                                Healed Works
+                            </h4>
+                            <div className="w-full max-w-4xl flex justify-center items-center">
+                                <div className="w-full max-w-4xl">
+                                    <div className="flex md:grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 overflow-x-auto md:overflow-visible justify-center md:justify-start" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                        {healedWorks.map((src, i) => (
+                                            <div
+                                                key={`${src}-${i}`}
+                                                className="relative aspect-square flex-shrink-0 w-28 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 shadow-lg md:first:ml-0 md:last:mr-0"
+                                                style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                                            >
+                                                <img
+                                                    src={src}
+                                                    alt={`Healed work ${i + 1}`}
+                                                    className="h-full w-full object-cover"
+                                                    loading={i < 6 ? "eager" : "lazy"}
+                                                    decoding="async"
+                                                    referrerPolicy="no-referrer"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {sketches.length > 0 && (
                         <div className="w-full flex flex-col items-center justify-center px-2 sm:px-4 py-4 sm:py-6">
                             <h4 className="text-base sm:text-lg md:text-xl font-bold mb-4 sm:mb-6" style={{ color: "var(--fg)" }}>
                                 Sketches
                             </h4>
                             <div className="w-full max-w-4xl flex justify-center items-center">
-                                <div className="flex md:grid md:grid-cols-3 gap-2 sm:gap-4 md:gap-6 w-full overflow-x-auto md:overflow-visible pr-2 md:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                                    {sketches.map((src, i) => (
-                                        <div
-                                            key={`${src}-${i}`}
-                                            className="relative aspect-square flex-shrink-0 w-32 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 shadow-lg"
-                                            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                                        >
-                                            <img
-                                                src={src}
-                                                alt={`Sketch ${i + 1}`}
-                                                className="h-full w-full object-cover"
-                                                loading={i < 6 ? "eager" : "lazy"}
-                                                decoding="async"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                        </div>
-                                    ))}
+                                <div className="w-full max-w-4xl">
+                                    <div className="flex md:grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 overflow-x-auto md:overflow-visible justify-center md:justify-start" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                        {sketches.map((src, i) => (
+                                            <div
+                                                key={`${src}-${i}`}
+                                                className="relative aspect-square flex-shrink-0 w-28 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 shadow-lg md:first:ml-0 md:last:mr-0"
+                                                style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                                            >
+                                                <img
+                                                    src={src}
+                                                    alt={`Sketch ${i + 1}`}
+                                                    className="h-full w-full object-cover"
+                                                    loading={i < 6 ? "eager" : "lazy"}
+                                                    decoding="async"
+                                                    referrerPolicy="no-referrer"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
