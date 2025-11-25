@@ -119,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
-    await signOut({ redirectUrl: "/login" });
+    await signOut({ fallbackRedirectUrl: "/login" });
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
