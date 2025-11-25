@@ -15,6 +15,9 @@ export type ArtistWithGroups = {
     healedWorks?: string[];
     sketches?: string[];
     avatarUrl?: string;
+    coverImage?: string;
+    profileImage?: string;
+    avatar?: { url?: string; publicId?: string };
 };
 
 export type PortfolioProps = {
@@ -25,8 +28,20 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
     const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
-    const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
+    const initials = useMemo(() => (artist?.username || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join(""), [artist.username]);
     const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }>(null);
+    
+    const profileImageUrl = artist.profileImage || artist.avatar?.url || artist.avatarUrl || "";
+    const coverImageUrl = artist.coverImage || "";
+    const [avatarOk, setAvatarOk] = useState(Boolean(profileImageUrl));
+    const [bgOk, setBgOk] = useState(Boolean(coverImageUrl));
+
+    useEffect(() => {
+        const newProfileImageUrl = artist.profileImage || artist.avatar?.url || artist.avatarUrl || "";
+        const newCoverImageUrl = artist.coverImage || "";
+        setAvatarOk(Boolean(newProfileImageUrl));
+        setBgOk(Boolean(newCoverImageUrl));
+    }, [artist.profileImage, artist.avatar?.url, artist.avatarUrl, artist.coverImage]);
 
     const openZoom = (items: string[], index: number, label: "Past Works" | "Healed Works" | "Upcoming Sketches") => setZoom({ items, index, label });
     const closeZoom = () => setZoom(null);
@@ -107,7 +122,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                             <Maximize2 className="h-3.5 w-3.5" /> View
                         </div>
                     </div>
-                    <div className="flex justify-center gap-2 py-4">abs
+                    <div className="flex justify-center gap-2 py-4">
                         {images.map((_, i) => (
                             <button
                                 key={i}
@@ -147,34 +162,50 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
-                <section className="w-full mt-1">
+            <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 space-y-10 sm:space-y-12">
+                <section className="w-full overflow-hidden rounded-3xl border" style={{ borderColor: "var(--border)" }}>
+                    <div className="relative w-full h-[15rem] sm:h-[18rem] md:h-[20rem] overflow-hidden" style={{ background: "var(--elevated)" }}>
+                        {bgOk && coverImageUrl ? (
+                            <img
+                                src={coverImageUrl}
+                                alt={`${artist.username} background`}
+                                className="absolute inset-0 h-full w-full object-cover"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                onError={() => setBgOk(false)}
+                            />
+                        ) : (
+                            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+                        )}
+                        <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 grid place-items-center gap-2">
+                            <div className="relative rounded-full overflow-hidden h-32 w-32 sm:h-36 sm:w-36 md:h-40 md:w-40 ring-2 ring-[color:var(--card)]" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+                                {avatarOk && profileImageUrl ? (
+                                    <img
+                                        src={profileImageUrl}
+                                        alt={`${artist.username} profile`}
+                                        className="h-full w-full object-cover"
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer"
+                                        onError={() => setAvatarOk(false)}
+                                    />
+                                ) : (
+                                    <span className="absolute inset-0 grid place-items-center text-3xl sm:text-4xl font-semibold" style={{ color: "var(--fg)" }}>
+                                        {initials}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section className="w-full -mt-4">
                     <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
                         <CardHeader className="text-center space-y-1 px-3 sm:px-6">
                             <CardTitle className="text-base sm:text-lg break-words">About {artist.username}</CardTitle>
                         </CardHeader>
                         <CardContent className="px-5 sm:px-9">
-                            <div className="flex flex-col items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
-                                {artist.avatarUrl ? (
-                                    <img
-                                        src={artist.avatarUrl}
-                                        alt={`${artist.username} profile picture`}
-                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover border shadow"
-                                        style={{ borderColor: "var(--border)" }}
-                                        loading="eager"
-                                        decoding="async"
-                                        referrerPolicy="no-referrer"
-                                    />
-                                ) : (
-                                    <div
-                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-full grid place-items-center border shadow text-2xl sm:text-3xl font-semibold"
-                                        style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
-                                        aria-label={`${artist.username} profile placeholder`}
-                                    >
-                                        {initials}
-                                    </div>
-                                )}
-                            </div>
                             <Separator className="my-4 sm:my-5 opacity-60" />
                             <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7 text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                 {bioText}
