@@ -189,8 +189,12 @@ export default function FloatingBar({
           }
           .ink-solid-controls :is(button, [role="button"], .btn) { padding: 0.5rem 0.75rem; }
         `}</style>
-        <div className={`relative w-full ${isMdUp ? "px-4" : ""}`} style={{ height: Math.max(wrapperH, collapsedHeight) }}>
-          <div className="grid items-center justify-items-center gap-4" style={{ gridTemplateColumns: "auto 1fr auto" }}>
+        <div className={`relative w-full ${isMdUp ? "px-4" : ""}`} style={{ 
+          height: Math.max(wrapperH, collapsedHeight)
+        }}>
+          <div className="grid items-center justify-items-center gap-4" style={{ 
+            gridTemplateColumns: "auto 1fr auto"
+          }}>
             <Button
               type="button"
               onClick={assistantLocked ? undefined : onAssistantOpen}
@@ -228,40 +232,70 @@ export default function FloatingBar({
             >
               {rightContent}
             </div>
-            <div
-              ref={btnRef}
-              className={`ink-solid-controls flex items-center justify-center pointer-events-auto ${!isMdUp && open ? "fixed inset-0 z-[9999]" : ""}`}
-              style={{
-                ...(isMdUp ? {
-                  position: "relative",
+            {isMdUp && (
+              <div
+                style={{
+                  width: DESKTOP_CLOSED_W,
                   height: collapsedHeight,
-                } : open ? {
-                  width: vp.w,
-                  height: MOBILE_OPEN_H,
-                  top: 96 + MOBILE_HEADER_PADDING,
-                } : {
-                  position: "relative",
-                  height: collapsedHeight,
-                }),
-                ...(!isMdUp && open ? {} : {
-                  width: isMdUp ? convW : Math.max(0, convW - 50),
-                  height: isMdUp ? convH : convH,
-                })
-              }}
-            >
-              <InkConversations
-                role={role}
-                isMdUp={isMdUp}
-                width={isMdUp ? convW : (open ? vp.w : Math.max(0, convW - 50))}
-                height={isMdUp ? convH : (open ? MOBILE_OPEN_H : convH)}
-                open={open}
-                setOpen={setOpen}
-                unreadConvoCount={unreadConvoCount}
-                requestCount={requestCount}
-                derivedTotal={derivedTotal}
-                messagesContent={messagesContent}
-              />
-            </div>
+                }}
+              >
+                <div
+                  ref={btnRef}
+                  className="ink-solid-controls flex items-center justify-center pointer-events-auto"
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    right: "1rem",
+                    width: convW,
+                    height: open ? convH : collapsedHeight,
+                    transition: "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1)"
+                  }}
+                >
+                  <InkConversations
+                    role={role}
+                    isMdUp={isMdUp}
+                    width={convW}
+                    height={convH}
+                    open={open}
+                    setOpen={setOpen}
+                    unreadConvoCount={unreadConvoCount}
+                    requestCount={requestCount}
+                    derivedTotal={derivedTotal}
+                    messagesContent={messagesContent}
+                  />
+                </div>
+              </div>
+            )}
+            {!isMdUp && (
+              <div
+                ref={btnRef}
+                className={`ink-solid-controls flex items-center justify-center pointer-events-auto ${!isMdUp && open ? "fixed inset-0 z-[9999]" : ""}`}
+                style={{
+                  ...(open ? {
+                    width: vp.w,
+                    height: MOBILE_OPEN_H,
+                    top: 96 + MOBILE_HEADER_PADDING,
+                  } : {
+                    position: "relative",
+                    width: Math.max(0, convW - 50),
+                    height: collapsedHeight,
+                  })
+                }}
+              >
+                <InkConversations
+                  role={role}
+                  isMdUp={isMdUp}
+                  width={open ? vp.w : Math.max(0, convW - 50)}
+                  height={open ? MOBILE_OPEN_H : convH}
+                  open={open}
+                  setOpen={setOpen}
+                  unreadConvoCount={unreadConvoCount}
+                  requestCount={requestCount}
+                  derivedTotal={derivedTotal}
+                  messagesContent={messagesContent}
+                />
+              </div>
+            )}
           </div>
         </div>
     </div>

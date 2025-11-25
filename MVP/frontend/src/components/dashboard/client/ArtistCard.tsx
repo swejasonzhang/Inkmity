@@ -117,9 +117,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           : undefined
       }
     >
-      <div className={shellClass} style={{ borderColor: "var(--border)" }} data-artist-card="true">
-        <div className="relative w-full">
-          <div className={`relative w-full ${fullScreen ? "flex-1 md:h-[15rem] md:flex-none" : "h-[18.125rem]"} sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem]`} style={{ background: "var(--elevated)", ...(fullScreen ? { minHeight: "200px" } : {}) }}>
+      <div className={shellClass} style={{ borderColor: "var(--border)", overflow: "hidden" }} data-artist-card="true">
+        <div className="relative w-full overflow-hidden">
+          <div className={`relative w-full ${fullScreen ? "flex-1 md:h-[15rem] md:flex-none" : "h-[18.125rem]"} sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden`} style={{ background: "var(--elevated)", ...(fullScreen ? { minHeight: "200px" } : {}) }}>
             {bgOk && coverImageUrl ? (
               <img
                 src={coverImageUrl}
@@ -135,7 +135,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
             <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
-              <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-32 w-32" : "h-36 w-36"} sm:h-40 sm:w-40 md:h-44 md:w-44 shadow-2xl ring-2 ring-[color:var(--card)]`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+              <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-32 w-32" : "h-36 w-36"} sm:h-40 sm:w-40 md:h-44 md:w-44 ring-2 ring-[color:var(--card)]`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
                 {avatarOk && profileImageUrl ? (
                   <img
                     src={profileImageUrl}
