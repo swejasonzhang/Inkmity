@@ -71,6 +71,23 @@ export default function Profile() {
 
   useDashboardScope(scopeRef.current, theme);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isMobile = window.innerWidth < 640;
+    if (isMobile && isLoaded) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.position = originalPosition;
+        document.body.style.width = "";
+      };
+    }
+  }, [isLoaded]);
+
   const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
   const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
@@ -91,18 +108,22 @@ export default function Profile() {
     <div
       ref={scopeRef}
       id="dashboard-scope"
-      className="ink-scope min-h-dvh overflow-y-hidden flex flex-col"
-      style={{ background: shellBg, color: shellFg }}
+      className="ink-scope overflow-y-hidden flex flex-col"
+      style={{ background: shellBg, color: shellFg, height: "100vh", maxHeight: "100vh", overflow: "hidden" }}
     >
       <Header />
       <main 
-        className="flex-1 min-h-0 overflow-y-auto"
+        className="flex-1 min-h-0 overflow-hidden flex items-center justify-center sm:overflow-auto"
         style={{ 
           opacity: fadeIn ? 1 : 0, 
-          transition: `opacity ${FADE_MS}ms ease-in-out` 
+          transition: `opacity ${FADE_MS}ms ease-in-out`,
+          overscrollBehavior: "none",
+          height: "calc(100vh - 96px)",
+          maxHeight: "calc(100vh - 96px)",
+          touchAction: "none"
         }}
       >
-        <div className="container mx-auto px-4 py-8 h-full">
+        <div className="w-full max-w-3xl px-2 sm:px-4 flex items-center justify-center h-full max-h-full overflow-hidden sm:overflow-visible">
           <Suspense fallback={null}>
             {role === "artist" ? <ArtistProfile /> : <ClientProfile />}
           </Suspense>

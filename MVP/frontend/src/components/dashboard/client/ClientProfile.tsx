@@ -308,7 +308,7 @@ export default function ClientProfile() {
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto py-6 sm:py-8 px-4 sm:px-6">
+        <div className="w-full max-w-2xl mx-auto border-2 rounded-xl p-4 sm:p-6 h-full sm:h-auto overflow-y-hidden sm:overflow-visible" style={{ borderColor: "var(--fg)", maxHeight: "100%", minHeight: 0 }}>
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -328,7 +328,7 @@ export default function ClientProfile() {
                 }}
             />
 
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-6 sm:space-y-8 overflow-y-hidden sm:overflow-visible" style={{ maxHeight: "100%", minHeight: 0 }}>
                 <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 sm:mb-8">
                     <h1 className="text-2xl sm:text-3xl font-bold text-center" style={{ color: "var(--fg)" }}>Profile Settings</h1>
                     {hasChanges && (
@@ -525,16 +525,16 @@ export default function ClientProfile() {
                     </div>
 
                     <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-xl p-4 sm:p-6 space-y-4">
-                        <h2 className="text-lg sm:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
-                            <ImageIcon className="h-5 w-5" />
+                        <h2 className="text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
+                            <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                             Reference Images
-                            <span className="text-sm font-normal" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            <span className="text-xs sm:text-sm font-normal" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                                 (up to 3)
                             </span>
                         </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                        <div className="flex sm:grid sm:grid-cols-3 gap-2 sm:gap-4 max-w-2xl mx-auto overflow-x-auto sm:overflow-visible justify-center items-center pr-2 sm:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                             {references.map((src, i) => (
-                                <div key={i} className="relative aspect-square group">
+                                <div key={i} className="relative aspect-square flex-shrink-0 w-32 sm:w-full group">
                                     <div className="absolute inset-0 rounded-lg overflow-hidden border border-[color:var(--border)]">
                                         <img
                                             src={src}
@@ -556,10 +556,10 @@ export default function ClientProfile() {
                                 <button
                                     onClick={() => referenceInputRef.current?.click()}
                                     disabled={uploading}
-                                    className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-[color:var(--elevated)] transition-colors disabled:opacity-50"
+                                    className="aspect-square flex-shrink-0 w-32 sm:w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-[color:var(--elevated)] transition-colors disabled:opacity-50"
                                     style={{ borderColor: "var(--border)", color: "var(--fg)" }}
                                 >
-                                    <ImageIcon className="h-6 w-6" />
+                                    <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                                     <span className="text-xs">Add Image</span>
                                 </button>
                             )}

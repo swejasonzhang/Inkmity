@@ -291,7 +291,7 @@ export default function ArtistProfile() {
     const LoadingComponent = () => {
         const fg = "var(--fg)";
         return (
-            <div className="flex items-center justify-center h-full">
+            <div className="absolute inset-0 flex items-center justify-center">
                 <style>{`
                     @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
                     @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
@@ -309,12 +309,16 @@ export default function ArtistProfile() {
     };
 
     if (loading) {
-        return <LoadingComponent />;
+        return (
+            <div className="relative w-full" style={{ minHeight: "calc(100vh - 200px)" }}>
+                <LoadingComponent />
+            </div>
+        );
     }
 
 
     return (
-        <div className="h-full min-h-0 w-full overflow-hidden flex items-center justify-center py-4 px-4">
+        <div className="w-full flex items-center justify-center">
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -340,8 +344,8 @@ export default function ArtistProfile() {
                     files.forEach(file => handleImageUpload(file, "portfolio"));
                 }}
             />
-            <div className="group w-full max-w-4xl h-full flex flex-col rounded-3xl transition relative overflow-hidden" data-artist-card="true" style={{ background: "var(--bg)" }}>
-                <div className="relative w-full h-64 flex items-center justify-center overflow-hidden rounded-t-3xl" style={{ background: "var(--bg)" }}>
+            <div className="group w-full max-w-2xl flex flex-col rounded-2xl sm:rounded-3xl transition relative overflow-hidden border-2 h-full sm:h-auto overflow-y-hidden sm:overflow-visible" data-artist-card="true" style={{ background: "var(--bg)", borderColor: "var(--fg)", maxHeight: "100%", minHeight: 0 }}>
+                <div className="relative w-full h-48 sm:h-64 flex items-center justify-center overflow-hidden rounded-t-2xl sm:rounded-t-3xl" style={{ background: "var(--bg)" }}>
                     {currentCoverImage && (
                         <div className="absolute inset-0 z-0">
                             <img
@@ -385,9 +389,9 @@ export default function ArtistProfile() {
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center text-center gap-6 w-full relative px-8 py-12 rounded-b-3xl" style={{ background: "linear-gradient(to bottom, var(--bg), color-mix(in oklab, var(--bg) 85%, var(--fg) 15%))" }}>
+                <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 sm:gap-6 w-full relative px-4 sm:px-8 py-6 sm:py-12 rounded-b-2xl sm:rounded-b-3xl overflow-y-hidden sm:overflow-visible" style={{ background: "linear-gradient(to bottom, var(--bg), color-mix(in oklab, var(--bg) 85%, var(--fg) 15%))", minHeight: 0, maxHeight: "100%" }}>
                     <div className="flex flex-col items-center justify-center w-full">
-                        <h2 className="font-extrabold tracking-tight text-xl md:text-2xl" style={{ color: "var(--fg)" }}>
+                        <h2 className="font-extrabold tracking-tight text-lg sm:text-xl md:text-2xl" style={{ color: "var(--fg)" }}>
                             {currentUsername}
                         </h2>
                     </div>
@@ -405,10 +409,9 @@ export default function ArtistProfile() {
                         }
                     }}>
                         <DialogContent
-                            className="max-w-3xl max-h-[90vh] overflow-y-auto z-[9999]"
+                            className="max-w-3xl overflow-y-auto z-[9999] fixed inset-0 h-screen w-screen rounded-none border-0 sm:inset-auto sm:h-auto sm:w-auto sm:max-h-[90vh] sm:rounded-lg sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:border"
                             style={{
                                 background: "var(--card)",
-                                borderColor: "var(--border)",
                                 color: "var(--fg)"
                             }}
                             showCloseButton={true}
@@ -656,18 +659,18 @@ export default function ArtistProfile() {
                     )}
 
                     {portfolio.length > 0 && (
-                        <div className="w-full flex justify-center px-4 py-6">
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-4xl">
+                        <div className="w-full flex justify-center items-center px-2 sm:px-4 py-4 sm:py-6">
+                            <div className="flex md:grid md:grid-cols-3 gap-2 sm:gap-4 md:gap-6 w-full max-w-4xl overflow-x-auto md:overflow-visible pr-2 md:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                                 {portfolio.map((src, i) => (
                                     <div
                                         key={`${src}-${i}`}
-                                        className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 group shadow-lg transition-transform hover:scale-[1.02]"
+                                        className="relative aspect-square flex-shrink-0 w-32 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 group shadow-lg"
                                         style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                     >
                                         <img
                                             src={src}
                                             alt={`Work ${i + 1}`}
-                                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                            className="h-full w-full object-cover"
                                             loading={i < 6 ? "eager" : "lazy"}
                                             decoding="async"
                                             referrerPolicy="no-referrer"
@@ -679,16 +682,16 @@ export default function ArtistProfile() {
                     )}
 
                     {healedWorks.length > 0 && (
-                        <div className="w-full flex flex-col items-center px-4 py-6">
-                            <h4 className="text-lg md:text-xl font-bold mb-6" style={{ color: "var(--fg)" }}>
+                        <div className="w-full flex flex-col items-center justify-center px-2 sm:px-4 py-4 sm:py-6">
+                            <h4 className="text-base sm:text-lg md:text-xl font-bold mb-4 sm:mb-6" style={{ color: "var(--fg)" }}>
                                 Healed Works
                             </h4>
-                            <div className="w-full max-w-4xl">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full">
+                            <div className="w-full max-w-4xl flex justify-center items-center">
+                                <div className="flex md:grid md:grid-cols-3 gap-2 sm:gap-4 md:gap-6 w-full overflow-x-auto md:overflow-visible pr-2 md:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                                     {healedWorks.map((src, i) => (
                                         <div
                                             key={`${src}-${i}`}
-                                            className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 shadow-lg transition-transform hover:scale-[1.02]"
+                                            className="relative aspect-square flex-shrink-0 w-32 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 shadow-lg"
                                             style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                         >
                                             <img
@@ -707,16 +710,16 @@ export default function ArtistProfile() {
                     )}
 
                     {sketches.length > 0 && (
-                        <div className="w-full flex flex-col items-center px-4 py-6">
-                            <h4 className="text-lg md:text-xl font-bold mb-6" style={{ color: "var(--fg)" }}>
+                        <div className="w-full flex flex-col items-center justify-center px-2 sm:px-4 py-4 sm:py-6">
+                            <h4 className="text-base sm:text-lg md:text-xl font-bold mb-4 sm:mb-6" style={{ color: "var(--fg)" }}>
                                 Sketches
                             </h4>
-                            <div className="w-full max-w-4xl">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full">
+                            <div className="w-full max-w-4xl flex justify-center items-center">
+                                <div className="flex md:grid md:grid-cols-3 gap-2 sm:gap-4 md:gap-6 w-full overflow-x-auto md:overflow-visible pr-2 md:pr-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                                     {sketches.map((src, i) => (
                                         <div
                                             key={`${src}-${i}`}
-                                            className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 shadow-lg transition-transform hover:scale-[1.02]"
+                                            className="relative aspect-square flex-shrink-0 w-32 sm:w-40 md:w-full overflow-hidden rounded-xl sm:rounded-2xl border-2 shadow-lg"
                                             style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                         >
                                             <img

@@ -264,7 +264,11 @@ export default function ClientDashboard() {
                             bio: (selectedArtist as any).bio,
                             pastWorks: ((selectedArtist as any).pastWorks ?? (selectedArtist as any).portfolioImages ?? []).filter(Boolean),
                             healedWorks: ((selectedArtist as any).healedWorks ?? []).filter(Boolean),
-                            sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean)
+                            sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean),
+                            avatarUrl: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url,
+                            coverImage: (selectedArtist as any).coverImage,
+                            profileImage: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url,
+                            avatar: (selectedArtist as any).avatar
                         }}
                         onClose={() => setSelectedArtist(null)}
                         onMessage={async a => {
