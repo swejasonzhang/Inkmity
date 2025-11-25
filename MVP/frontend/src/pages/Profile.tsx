@@ -118,12 +118,12 @@ export default function Profile() {
           opacity: fadeIn ? 1 : 0, 
           transition: `opacity ${FADE_MS}ms ease-in-out`,
           overscrollBehavior: "none",
+          touchAction: "none",
           height: "calc(100vh - 96px)",
-          maxHeight: "calc(100vh - 96px)",
-          touchAction: "none"
+          maxHeight: "calc(100vh - 96px)"
         }}
       >
-        <div className="w-full max-w-3xl px-2 sm:px-4 flex items-center justify-center h-full max-h-full overflow-hidden sm:overflow-visible">
+        <div className="w-full max-w-3xl px-2 sm:px-4 flex items-stretch sm:items-center justify-center h-full overflow-hidden sm:overflow-visible pb-2 sm:pb-0">
           <Suspense fallback={null}>
             {role === "artist" ? <ArtistProfile /> : <ClientProfile />}
           </Suspense>
