@@ -128,6 +128,14 @@ const ChatWindow: FC<ChatWindowProps> = ({
       setLoading(true);
       try {
         const res = await authFetch(`/messages/user/${currentUserId}`, { method: "GET" });
+        if (!mounted) return;
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            setConversations([]);
+            setUnreadMap({});
+            return;
+          }
+        }
         const data = res.ok ? await res.json() : null;
         const arr: Conversation[] = Array.isArray(data) ? data : Array.isArray(data?.conversations) ? data.conversations : [];
         if (mounted) setConversations(arr);
@@ -135,6 +143,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
           const next: Record<string, number> = {};
           for (const c of arr) next[c.participantId] = next[c.participantId] ?? 0;
           setUnreadMap(m => ({ ...next, ...m }));
+        }
+      } catch (error) {
+        if (mounted) {
+          setConversations([]);
+          setUnreadMap({});
         }
       } finally {
         if (mounted) setLoading(false);

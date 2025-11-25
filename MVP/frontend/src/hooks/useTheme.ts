@@ -128,8 +128,9 @@ export function useTheme() {
       getStoredTheme(storageKey) ??
       (user?.id ? getStoredTheme(LEGACY_STORAGE_KEY) : getStoredTheme(LEGACY_STORAGE_KEY));
     
-    if (stored && stored !== theme) {
+    if (stored && stored !== theme && !userLoadedRef.current) {
       setTheme(stored);
+      userLoadedRef.current = true;
       return;
     }
     
@@ -142,7 +143,11 @@ export function useTheme() {
         }
       }
     }
-  }, [isUserLoaded, storageKey, user?.id, isDashboard, theme]);
+  }, [isUserLoaded, storageKey, user?.id, isDashboard]);
+  
+  useEffect(() => {
+    userLoadedRef.current = false;
+  }, [user?.id]);
 
   useEffect(() => {
     if (!isDashboard && theme !== "dark") {
