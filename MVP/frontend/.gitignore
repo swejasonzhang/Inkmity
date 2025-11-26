@@ -7,35 +7,27 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Node
-node_modules/
-dist/
-dist-ssr/
+node_modules
+dist
+dist-ssr
 *.local
 
-# Env files (ignore ALL)
-.env
-.env.*
-# …but allow examples/templates
-!.env.example
-!.env.*.example
-!.env.template
-!.env.*.template
-
-# TypeScript
-*.tsbuildinfo
-**/*.tsbuildinfo
-vite.config.d.ts
-*.d.ts
-!src/**/*.d.ts
-
-# Common local files
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea/
+.idea
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.*
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

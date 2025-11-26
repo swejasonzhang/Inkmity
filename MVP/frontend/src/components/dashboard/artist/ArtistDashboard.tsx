@@ -92,7 +92,7 @@ export default function ArtistDashboard() {
             <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 gap-4 overflow-hidden">
               <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
                 <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0">
-                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Appointment History</CardTitle>
+                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Upcoming Appointments</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
                   <AppointmentHistory />

@@ -26,20 +26,31 @@ const REQUIRED = [
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
   "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "APP_URL",
 ];
+const logger = (await import("./utils/logger.js")).default;
+
 for (const k of REQUIRED) {
   if (!process.env[k]) {
-    console.error(`Missing required env var: ${k}`);
+    logger.error(`Missing required env var: ${k}`);
     process.exit(1);
   }
 }
+
+const logger = (await import("./utils/logger.js")).default;
 
 const { default: express } = await import("express");
 const { default: cors } = await import("cors");
 const { default: http } = await import("http");
 const { Server } = await import("socket.io");
-const { connectDB } = await import("./config/db.js");
+const { default: helmet } = await import("helmet");
+const { connectDB, checkDBHealth } = await import("./config/db.js");
 const { initSocket } = await import("./services/socketService.js");
+const { requestIdMiddleware } = await import("./middleware/requestId.js");
+const { apiLimiter, authLimiter } = await import("./middleware/rateLimiter.js");
+const { errorHandler } = await import("./middleware/errorHandler.js");
+const { requestTimeout } = await import("./middleware/timeout.js");
 const { default: userRoutes } = await import("./routes/users.js");
 const { default: reviewRoutes } = await import("./routes/reviews.js");
 const { default: dashboardRoutes } = await import("./routes/dashboard.js");
@@ -71,6 +82,21 @@ const allowed = new Set([
 app.set("trust proxy", 1);
 
 app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:", "http:"],
+        connectSrc: ["'self'", "https:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
+app.use(
   cors({
     origin(origin, cb) {
       if (!origin) return cb(null, true);
@@ -82,6 +108,12 @@ app.use(
   })
 );
 
+app.use(requestIdMiddleware);
+
+app.use(requestTimeout(30000));
+
+app.use("/api/", apiLimiter);
+
 app.post(
   "/api/billing/webhook",
   express.raw({ type: "application/json" }),
@@ -91,16 +123,35 @@ app.post(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-app.get("/health", (_req, res) =>
-  res.json({
-    ok: true,
-    env: ENV,
-    mongo: Boolean(process.env.MONGO_URI),
-    time: new Date().toISOString(),
-  })
-);
+app.get("/health", async (_req, res) => {
+  try {
+    const dbHealth = await checkDBHealth();
+    const health = {
+      ok: dbHealth.healthy,
+      env: ENV,
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      },
+      database: dbHealth,
+    };
 
-app.use("/api/auth", authRoutes);
+    const statusCode = health.ok ? 200 : 503;
+    res.status(statusCode).json(health);
+  } catch (error) {
+    res.status(503).json({
+      ok: false,
+      env: ENV,
+      timestamp: new Date().toISOString(),
+      error: error.message,
+    });
+  }
+});
+
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/availability", availabilityRoutes);
@@ -115,11 +166,7 @@ app.use((req, res) => {
   res.status(404).json({ error: "Not found", path: req.originalUrl });
 });
 
-app.use((err, _req, res, _next) => {
-  console.error("[unhandled]", err?.stack || err);
-  const status = Number(err?.status || 500);
-  res.status(status).json({ error: err?.message || "Internal Server Error" });
-});
+app.use(errorHandler);
 
 const io = new Server(server, {
   cors: { origin: [...allowed], methods: ["GET", "POST"], credentials: true },
@@ -130,9 +177,11 @@ initSocket(io);
 (async () => {
   try {
     await connectDB();
-    server.listen(PORT);
+    server.listen(PORT, () => {
+      logger.info(`Server started on port ${PORT}`, { env: ENV, port: PORT });
+    });
   } catch (e) {
-    console.error("Failed to start server:", e);
+    logger.error("Failed to start server", { error: e.message, stack: e.stack });
     process.exit(1);
   }
 })();

@@ -1,6 +1,8 @@
 import Billing from "../models/Billing.js";
 import Booking from "../models/Booking.js";
 import { stripe } from "../lib/stripe.js";
+import logger from "../utils/logger.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
 
 const PLATFORM_FEE_CENTS = 1000;
 const CURRENCY = "usd";
@@ -13,9 +15,11 @@ function requireBooking(booking) {
   }
 }
 
-export async function checkoutPlatformFee(req, res) {
+export const checkoutPlatformFee = asyncHandler(async (req, res) => {
   const { bookingId } = req.body || {};
-  if (!bookingId) return res.status(400).json({ error: "bookingId required" });
+  if (!bookingId) {
+    return res.status(400).json({ error: "bookingId required" });
+  }
 
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
@@ -62,19 +66,29 @@ export async function checkoutPlatformFee(req, res) {
   bill.stripeCheckoutSessionId = session.id;
   await bill.save();
 
-  res.json({ url: session.url, id: session.id });
-}
+  logger.info("Platform fee checkout session created", {
+    billingId: bill._id,
+    bookingId,
+    sessionId: session.id,
+    requestId: req.requestId,
+  });
 
-export async function checkoutDeposit(req, res) {
+  res.json({ url: session.url, id: session.id });
+});
+
+export const checkoutDeposit = asyncHandler(async (req, res) => {
   const { bookingId } = req.body || {};
-  if (!bookingId) return res.status(400).json({ error: "bookingId required" });
+  if (!bookingId) {
+    return res.status(400).json({ error: "bookingId required" });
+  }
 
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
 
   const amount = Number(booking.depositRequiredCents || 0);
-  if (amount <= 0)
+  if (amount <= 0) {
     return res.status(400).json({ error: "no_deposit_required" });
+  }
 
   const customer = await stripe.customers.create({
     metadata: { clientId: String(booking.clientId) },
@@ -118,10 +132,18 @@ export async function checkoutDeposit(req, res) {
   bill.stripeCheckoutSessionId = session.id;
   await bill.save();
 
-  res.json({ url: session.url, id: session.id });
-}
+  logger.info("Deposit checkout session created", {
+    billingId: bill._id,
+    bookingId,
+    amountCents: amount,
+    sessionId: session.id,
+    requestId: req.requestId,
+  });
 
-export async function refundBilling(req, res) {
+  res.json({ url: session.url, id: session.id });
+});
+
+export const refundBilling = asyncHandler(async (req, res) => {
   const { billingId, bookingId } = req.body || {};
   const byId = billingId ? await Billing.findById(billingId) : null;
   const list = byId
@@ -139,28 +161,45 @@ export async function refundBilling(req, res) {
     b.refundedAt = new Date();
     await b.save();
     refunds.push({ billingId: String(b._id), refundId: rr.id });
+    
+    logger.info("Billing refunded", {
+      billingId: b._id,
+      refundId: rr.id,
+      bookingId,
+      requestId: req.requestId,
+    });
   }
   res.json({ ok: true, refunds });
-}
+});
 
-export async function createPortalSession(req, res) {
+export const createPortalSession = asyncHandler(async (req, res) => {
   const { customerId } = req.body || {};
-  if (!customerId)
+  if (!customerId) {
     return res.status(400).json({ error: "customerId required" });
+  }
+  
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: process.env.APP_URL,
   });
+  
+  logger.info("Billing portal session created", {
+    customerId,
+    sessionId: session.id,
+    requestId: req.requestId,
+  });
+  
   res.json({ url: session.url });
-}
+});
 
-export async function scheduleCancel(_req, res) {
+export const scheduleCancel = asyncHandler(async (_req, res) => {
   res.json({ ok: true });
-}
+});
 
-export async function stripeWebhook(req, res) {
+export const stripeWebhook = asyncHandler(async (req, res) => {
   const sig = req.headers["stripe-signature"];
   let event;
+  
   try {
     event = stripe.webhooks.constructEvent(
       req.rawBody,
@@ -168,6 +207,10 @@ export async function stripeWebhook(req, res) {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
+    logger.error("Stripe webhook signature verification failed", {
+      error: err.message,
+      requestId: req.requestId,
+    });
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -179,9 +222,7 @@ export async function stripeWebhook(req, res) {
         const paymentIntent = s.payment_intent;
 
         if (billingId) {
-          const bill = await (
-            await import("../models/Billing.js")
-          ).default.findById(billingId);
+          const bill = await Billing.findById(billingId);
           if (bill) {
             bill.status = "paid";
             bill.stripePaymentIntentId =
@@ -191,24 +232,46 @@ export async function stripeWebhook(req, res) {
             bill.paidAt = new Date();
             bill.receiptUrl = s.invoice || bill.receiptUrl || "";
             await bill.save();
+            
+            logger.info("Billing marked as paid", {
+              billingId,
+              bookingId,
+              type,
+              requestId: req.requestId,
+            });
           }
         }
+        
         if (type === "deposit" && bookingId) {
-          const book = await (
-            await import("../models/Booking.js")
-          ).default.findById(bookingId);
+          const book = await Booking.findById(bookingId);
           if (book) {
             book.depositPaidCents = book.depositRequiredCents;
             await book.save();
+            
+            logger.info("Booking deposit marked as paid", {
+              bookingId,
+              depositPaidCents: book.depositPaidCents,
+              requestId: req.requestId,
+            });
           }
         }
         break;
       }
       default:
+        logger.debug("Unhandled webhook event type", {
+          type: event.type,
+          requestId: req.requestId,
+        });
         break;
     }
     res.json({ received: true });
-  } catch {
-    res.status(500).json({ error: "webhook_handler_failed" });
+  } catch (error) {
+    logger.error("Webhook handler failed", {
+      error: error.message,
+      stack: error.stack,
+      eventType: event.type,
+      requestId: req.requestId,
+    });
+    throw error;
   }
-}
+});
