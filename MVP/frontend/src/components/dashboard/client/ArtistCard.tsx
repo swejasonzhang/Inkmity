@@ -23,6 +23,7 @@ interface Artist {
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
   shop?: string;
   shopName?: string;
+  wontTattoo?: string[];
 }
 
 interface ArtistCardProps {
@@ -186,6 +187,30 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               {years && chip(years, "years")}
               {loc && chip(loc, "loc")}
             </div>
+            {wontTattooClean.length > 0 && (
+              <div className={`mt-3 ${fullScreen ? "px-4" : "px-4 sm:px-0"}`}>
+                <div className="text-center mb-2">
+                  <span className={`${fullScreen ? "text-sm" : "text-xs"} font-medium`} style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                    Won't Tattoo:
+                  </span>
+                </div>
+                <div className={`flex flex-wrap items-center justify-center gap-2 ${fullScreen ? "text-sm" : "text-xs"}`}>
+                  {wontTattooClean.map((item, i) => (
+                    <span
+                      key={`wont-${i}`}
+                      className="inline-flex items-center rounded-full px-2.5 py-1 border"
+                      style={{
+                        borderColor: "color-mix(in oklab, var(--border) 80%, red 20%)",
+                        background: "color-mix(in oklab, var(--elevated) 60%, red 5%)",
+                        color: "color-mix(in oklab, var(--fg) 90%, red 10%)"
+                      }}
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {portfolio.length > 0 && (

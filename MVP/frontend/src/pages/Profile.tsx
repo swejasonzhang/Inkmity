@@ -72,20 +72,8 @@ export default function Profile() {
   useDashboardScope(scopeRef.current, theme);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const isMobile = window.innerWidth < 640;
-    if (isMobile && isLoaded) {
-      const originalOverflow = document.body.style.overflow;
-      const originalPosition = document.body.style.position;
-      document.body.style.overflow = "hidden";
-      document.body.style.position = "fixed";
-      document.body.style.width = "100%";
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        document.body.style.position = originalPosition;
-        document.body.style.width = "";
-      };
-    }
+    // Allow scrolling on all devices
+    return () => {};
   }, [isLoaded]);
 
   const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
@@ -108,12 +96,12 @@ export default function Profile() {
     <div
       ref={scopeRef}
       id="dashboard-scope"
-      className="ink-scope overflow-y-hidden flex flex-col"
-      style={{ background: shellBg, color: shellFg, height: "100vh", maxHeight: "100vh", overflow: "hidden" }}
+      className="ink-scope flex flex-col min-h-screen"
+      style={{ background: shellBg, color: shellFg }}
     >
       <Header />
       <main 
-        className="flex-1 min-h-0 overflow-y-auto flex items-start sm:items-center justify-center"
+        className="flex-1 flex items-start sm:items-center justify-center"
         style={{ 
           opacity: fadeIn ? 1 : 0, 
           transition: `opacity ${FADE_MS}ms ease-in-out`,

@@ -18,6 +18,7 @@ export type ArtistWithGroups = {
     coverImage?: string;
     profileImage?: string;
     avatar?: { url?: string; publicId?: string };
+    wontTattoo?: string[];
 };
 
 export type PortfolioProps = {
@@ -148,6 +149,12 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
     const bioText = (artist.bio || "").trim() || `Nice to meet you, I'm ${artist.username || "this artist"}, let's talk about your next tattoo.`;
 
+    const wontTattooClean = useMemo(() => {
+        const raw = artist.wontTattoo ?? [];
+        const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[;,/]+/) : [];
+        return arr.map(s => String(s).trim()).filter(Boolean);
+    }, [artist]);
+
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") return closeZoom();
@@ -210,6 +217,28 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                             <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7 text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                 {bioText}
                             </p>
+                            {wontTattooClean.length > 0 && (
+                                <div className="mt-6 pt-6 border-t" style={{ borderColor: "var(--border)" }}>
+                                    <div className="text-sm font-medium mb-3 text-center" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                        Won't Tattoo:
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 justify-center">
+                                        {wontTattooClean.map((item, i) => (
+                                            <span
+                                                key={`wont-${i}`}
+                                                className="inline-flex items-center rounded-full px-3 py-1.5 text-sm border"
+                                                style={{
+                                                    borderColor: "color-mix(in oklab, var(--border) 80%, red 20%)",
+                                                    background: "color-mix(in oklab, var(--elevated) 60%, red 5%)",
+                                                    color: "color-mix(in oklab, var(--fg) 90%, red 10%)"
+                                                }}
+                                            >
+                                                {item}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </section>
