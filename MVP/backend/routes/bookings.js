@@ -7,11 +7,15 @@ import {
   completeBooking,
   startVerification,
   verifyBookingCode,
+  getBookingsForArtist,
+  getBookingsForClient,
 } from "../controllers/bookingController.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 router.get("/", getBookingsForDay);
+router.get("/artist", requireAuth(), getBookingsForArtist);
+router.get("/client", requireAuth(), getBookingsForClient);
 router.get("/:id", getBooking);
 router.post("/", requireAuth(), createBooking);
 router.post("/:id/cancel", requireAuth(), cancelBooking);

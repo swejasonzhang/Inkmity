@@ -10,8 +10,8 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { API_URL } from "@/lib/http";
 import { useMessaging } from "@/hooks/useMessaging";
-import ArtistProfile from "@/components/dashboard/artist/ArtistProfile";
 import { AnimatePresence, motion } from "framer-motion";
+import AppointmentHistory from "@/components/dashboard/artist/AppointmentHistory";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
 const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
@@ -85,17 +85,17 @@ export default function ArtistDashboard() {
                     </div>
                   }
                 >
-                  <CalendarView />
+                  <CalendarView artistId={user?.id} />
                 </Suspense>
               </CardContent>
             </Card>
             <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 gap-4 overflow-hidden">
               <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
                 <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0">
-                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Profile</CardTitle>
+                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Appointment History</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                  <ArtistProfile />
+                  <AppointmentHistory />
                 </CardContent>
               </Card>
               <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">

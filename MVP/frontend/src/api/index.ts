@@ -196,7 +196,10 @@ export type Booking = {
   startAt: string;
   endAt: string;
   note?: string;
-  status: "booked" | "cancelled" | "completed" | "pending";
+  status: "booked" | "matched" | "cancelled" | "completed" | "pending";
+  priceCents?: number;
+  depositRequiredCents?: number;
+  depositPaidCents?: number;
 };
 
 export type Me = {
@@ -290,6 +293,32 @@ export async function listBookingsForDay(
   );
 }
 
+export async function getBookingsForArtist(
+  artistId?: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<Booking[]>(
+    "/bookings/artist",
+    artistId ? { artistId } : {},
+    token,
+    signal
+  );
+}
+
+export async function getBookingsForClient(
+  clientId?: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<Booking[]>(
+    "/bookings/client",
+    clientId ? { clientId } : {},
+    token,
+    signal
+  );
+}
+
 export async function createBooking(
   input: {
     artistId: string;
@@ -308,8 +337,8 @@ export async function createBooking(
       artistId: input.artistId,
       clientId: input.clientId,
       serviceId: input.serviceId,
-      startAt: input.startISO,
-      endAt: input.endISO,
+      startISO: input.startISO,
+      endISO: input.endISO,
       note: input.note,
     },
     token,

@@ -81,6 +81,46 @@ export async function getBooking(req, res) {
   res.json(doc);
 }
 
+export async function getBookingsForArtist(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { artistId } = req.query;
+    const targetArtistId = artistId || userId;
+    
+    const docs = await Booking.find({
+      artistId: targetArtistId,
+      status: { $in: ["booked", "matched", "completed"] },
+    })
+      .sort({ startAt: 1 })
+      .lean();
+    
+    res.json(docs);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch bookings" });
+  }
+}
+
+export async function getBookingsForClient(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { clientId } = req.query;
+    const targetClientId = clientId || userId;
+    
+    const docs = await Booking.find({
+      clientId: targetClientId,
+      status: { $in: ["booked", "matched", "completed", "cancelled"] },
+    })
+      .sort({ startAt: -1 })
+      .lean();
+    
+    res.json(docs);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch bookings" });
+  }
+}
+
 export async function createBooking(req, res) {
   try {
     const userId = getActorId(req);

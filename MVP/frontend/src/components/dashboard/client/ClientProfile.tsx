@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
-import { Save, Camera, X, User, MapPin, DollarSign, Image as ImageIcon } from "lucide-react";
+import { Save, Camera, X, User, MapPin, DollarSign, Image as ImageIcon, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { getBookingsForClient, type Booking } from "@/api";
 
 interface Client {
     _id: string;
@@ -66,6 +67,8 @@ export default function ClientProfile() {
     const [editedClient, setEditedClient] = useState<Partial<Client>>({});
     const [uploading, setUploading] = useState(false);
     const [cities, setCities] = useState<string[]>([]);
+    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [loadingBookings, setLoadingBookings] = useState(false);
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const referenceInputRef = useRef<HTMLInputElement>(null);
 
@@ -150,6 +153,23 @@ export default function ClientProfile() {
         };
         load();
     }, [loadProfile]);
+
+    useEffect(() => {
+        const loadBookings = async () => {
+            if (!user) return;
+            try {
+                setLoadingBookings(true);
+                const token = await getToken();
+                const clientBookings = await getBookingsForClient(undefined, token);
+                setBookings(clientBookings);
+            } catch (error) {
+                console.error("Failed to load bookings:", error);
+            } finally {
+                setLoadingBookings(false);
+            }
+        };
+        loadBookings();
+    }, [user, getToken]);
 
     useEffect(() => {
         let active = true;
@@ -308,8 +328,7 @@ export default function ClientProfile() {
     };
 
     return (
-        <div className="w-full flex items-stretch sm:items-center justify-center h-full">
-            <div className="w-full max-w-2xl mx-auto border-2 rounded-xl p-4 sm:p-6 overflow-y-hidden sm:overflow-visible h-[calc(100%-8px)] sm:h-auto" style={{ borderColor: "var(--fg)" }}>
+        <div className="w-full h-full flex flex-col md:flex-row gap-6 md:gap-8 overflow-y-auto md:overflow-hidden">
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -329,7 +348,9 @@ export default function ClientProfile() {
                 }}
             />
 
-            <div className="space-y-6 sm:space-y-8 overflow-y-hidden sm:overflow-visible" style={{ maxHeight: "100%", minHeight: 0 }}>
+            {/* Profile Section */}
+            <div className="w-full md:w-[48%] flex-shrink-0 rounded-xl p-4 md:p-6 overflow-y-auto md:overflow-y-visible md:overflow-x-hidden" style={{ maxHeight: "100%" }}>
+                <div className="space-y-6 md:space-y-6">
                 <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 sm:mb-8">
                     <h1 className="text-2xl sm:text-3xl font-bold text-center" style={{ color: "var(--fg)" }}>Profile Settings</h1>
                     {hasChanges && (
@@ -576,20 +597,103 @@ export default function ClientProfile() {
                 </div>
 
                 {hasChanges && (
-                    <div className="sticky bottom-4 flex justify-center sm:justify-end">
+                    <div className="sticky bottom-4 flex justify-center md:justify-end pt-4">
                         <Button
                             onClick={saveProfile}
                             disabled={saving || uploading}
                             size="lg"
                             style={{ background: "var(--fg)", color: "var(--bg)" }}
-                            className="hover:opacity-90 shadow-lg w-full sm:w-auto"
+                            className="hover:opacity-90 shadow-lg w-full md:w-auto"
                         >
                             <Save className="h-4 w-4 mr-2" />
                             {saving ? "Saving..." : "Save All Changes"}
                         </Button>
                     </div>
                 )}
+                </div>
             </div>
+
+            {/* Appointment History Section */}
+            <div className="w-full md:w-[48%] flex-shrink-0 rounded-xl p-4 md:p-6 flex flex-col overflow-hidden" style={{ maxHeight: "100%" }}>
+                <h2 className="text-lg md:text-xl font-semibold flex items-center justify-center gap-2 mb-4 flex-shrink-0" style={{ color: "var(--fg)" }}>
+                    <Calendar className="h-5 w-5" />
+                    Appointment History
+                </h2>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                    {loadingBookings ? (
+                        <div className="text-center py-8" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            Loading appointments...
+                        </div>
+                    ) : bookings.length === 0 ? (
+                        <div className="text-center py-8" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            No appointments yet. Book your first appointment with an artist!
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {bookings.map((booking) => {
+                                const startDate = new Date(booking.startAt);
+                                const endDate = new Date(booking.endAt);
+                                const isPast = endDate < new Date();
+                                const statusColors: Record<string, string> = {
+                                    booked: "bg-blue-500/15 text-blue-300 border-blue-600/30",
+                                    matched: "bg-green-500/15 text-green-300 border-green-600/30",
+                                    completed: "bg-green-500/15 text-green-300 border-green-600/30",
+                                    cancelled: "bg-red-500/15 text-red-300 border-red-600/30",
+                                };
+                                
+                                return (
+                                    <div
+                                        key={booking._id}
+                                        className="rounded-lg border p-4"
+                                        style={{
+                                            borderColor: "var(--border)",
+                                            background: "color-mix(in oklab, var(--elevated) 50%, transparent)",
+                                        }}
+                                    >
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Clock className="h-4 w-4" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }} />
+                                                    <span className="text-sm font-medium" style={{ color: "var(--fg)" }}>
+                                                        {startDate.toLocaleDateString(undefined, {
+                                                            weekday: "short",
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            year: "numeric",
+                                                        })}
+                                                    </span>
+                                                    <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                                                        {startDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {endDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                                    </span>
+                                                </div>
+                                                {booking.note && (
+                                                    <p className="text-sm mb-2" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                                        {booking.note}
+                                                    </p>
+                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className="px-2 py-1 rounded text-xs font-medium border"
+                                                        style={{
+                                                            ...(statusColors[booking.status] ? {} : { background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }),
+                                                        }}
+                                                    >
+                                                        {booking.status === "booked" ? "Scheduled" : booking.status === "matched" ? "Confirmed" : booking.status === "completed" ? "Completed" : booking.status === "cancelled" ? "Cancelled" : booking.status}
+                                                    </span>
+                                                    {isPast && booking.status !== "cancelled" && booking.status !== "completed" && (
+                                                        <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                                                            Past
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
