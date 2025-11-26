@@ -328,7 +328,7 @@ export default function ClientProfile() {
     };
 
     return (
-        <div className="w-full h-full flex flex-col md:flex-row gap-6 md:gap-8 overflow-y-auto md:overflow-hidden">
+        <div className="w-full flex flex-col md:flex-row gap-6 md:gap-8">
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -348,8 +348,7 @@ export default function ClientProfile() {
                 }}
             />
 
-            {/* Profile Section */}
-            <div className="w-full md:w-[48%] flex-shrink-0 rounded-xl p-4 md:p-6 overflow-y-auto md:overflow-y-visible md:overflow-x-hidden" style={{ maxHeight: "100%" }}>
+            <div className="w-full md:w-[48%] flex-shrink-0 rounded-xl p-4 md:p-6">
                 <div className="space-y-6 md:space-y-6">
                 <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 sm:mb-8">
                     <h1 className="text-2xl sm:text-3xl font-bold text-center" style={{ color: "var(--fg)" }}>Profile Settings</h1>
@@ -487,9 +486,9 @@ export default function ClientProfile() {
                                     <span>${MAX_BUDGET}</span>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 max-w-2xl mx-auto">
                                 <div className="flex flex-col items-center">
-                                    <Label htmlFor="placement" className="text-sm font-medium mb-2 block text-center" style={{ color: "var(--fg)" }}>
+                                    <Label htmlFor="placement" className="text-sm font-medium mb-3 block text-center" style={{ color: "var(--fg)" }}>
                                         Preferred Placement
                                     </Label>
                                     <Select value={placement} onValueChange={(v) => setEditedClient({ ...editedClient, placement: v })}>
@@ -516,7 +515,7 @@ export default function ClientProfile() {
                                     </Select>
                                 </div>
                                 <div className="flex flex-col items-center">
-                                    <Label htmlFor="size" className="text-sm font-medium mb-2 block text-center" style={{ color: "var(--fg)" }}>
+                                    <Label htmlFor="size" className="text-sm font-medium mb-3 block text-center" style={{ color: "var(--fg)" }}>
                                         Preferred Size
                                     </Label>
                                     <Select value={size} onValueChange={(v) => setEditedClient({ ...editedClient, size: v })}>
@@ -613,7 +612,6 @@ export default function ClientProfile() {
                 </div>
             </div>
 
-            {/* Appointment History Section */}
             <div className="w-full md:w-[48%] flex-shrink-0 rounded-xl p-4 md:p-6 flex flex-col overflow-hidden" style={{ maxHeight: "100%" }}>
                 <h2 className="text-lg md:text-xl font-semibold flex items-center justify-center gap-2 mb-4 flex-shrink-0" style={{ color: "var(--fg)" }}>
                     <Calendar className="h-5 w-5" />
