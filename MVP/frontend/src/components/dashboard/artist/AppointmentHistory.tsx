@@ -40,7 +40,7 @@ export default function AppointmentHistory() {
     return (
         <div className="h-full overflow-y-auto p-4">
             {bookings.length === 0 ? (
-                <div className="text-center py-12" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                <div className="h-full flex flex-col items-center justify-center text-center" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
                     <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="text-sm">No appointments yet.</p>
                 </div>
