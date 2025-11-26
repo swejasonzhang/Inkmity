@@ -123,7 +123,7 @@ export default function Profile() {
           maxHeight: "calc(100vh - 96px)"
         }}
       >
-        <div className="w-full max-w-3xl px-2 sm:px-4 flex items-stretch sm:items-center justify-center h-full overflow-hidden sm:overflow-visible pb-2 sm:pb-0">
+        <div className="w-full max-w-7xl px-4 sm:px-6 md:px-8 flex items-stretch sm:items-center justify-center h-full overflow-hidden sm:overflow-visible pb-2 sm:pb-0">
           <Suspense fallback={null}>
             {role === "artist" ? <ArtistProfile /> : <ClientProfile />}
           </Suspense>

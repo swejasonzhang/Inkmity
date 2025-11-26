@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import {
     Pagination,
     PaginationContent,
@@ -14,6 +15,8 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
+import { getBookingsForArtist, type Booking as ApiBooking } from "@/api";
+import { API_URL } from "@/lib/http";
 
 type Booking = {
     id: string | number;
@@ -21,20 +24,64 @@ type Booking = {
     clientName?: string;
     start: string | number | Date;
     end: string | number | Date;
-    status?: "confirmed" | "pending" | "cancelled" | string;
+    status?: "confirmed" | "pending" | "cancelled" | "booked" | "matched" | "completed" | string;
 };
 
 type CalendarViewProps = {
     bookings?: Booking[];
     onSelectBooking?: (b: Booking) => void;
     rowMinHeight?: number;
+    artistId?: string;
 };
 
 export default function CalendarView({
-    bookings = [],
+    bookings: propBookings,
     onSelectBooking = () => { },
     rowMinHeight = 140,
+    artistId,
 }: CalendarViewProps) {
+    const { user } = useUser();
+    const { getToken } = useAuth();
+    const [bookings, setBookings] = useState<Booking[]>(propBookings || []);
+    const [loading, setLoading] = useState(!propBookings);
+
+    useEffect(() => {
+        if (propBookings) {
+            setBookings(propBookings);
+            return;
+        }
+
+        const fetchBookings = async () => {
+            try {
+                setLoading(true);
+                const token = await getToken();
+                const targetArtistId = artistId || user?.id;
+                if (!targetArtistId) return;
+
+                const apiBookings = await getBookingsForArtist(targetArtistId, token);
+                
+                // Transform API bookings to calendar format
+                // Note: Client names can be enhanced later by populating in backend
+                const transformed: Booking[] = apiBookings.map((b: ApiBooking) => ({
+                    id: b._id,
+                    title: b.note || "Appointment",
+                    clientName: "Client", // Can be enhanced with client info from backend
+                    start: b.startAt,
+                    end: b.endAt,
+                    status: b.status,
+                }));
+                setBookings(transformed);
+            } catch (error) {
+                console.error("Failed to fetch bookings:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchBookings();
+        }
+    }, [user, artistId, getToken, propBookings]);
     const [cursor, setCursor] = useState(() => {
         const d = new Date();
         return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -107,6 +154,14 @@ export default function CalendarView({
         if (!selectedDate) return [];
         return bookingsByDay.get(dateKey(selectedDate)) ?? [];
     }, [selectedDate, bookingsByDay]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full min-h-[55vh]">
+                <div className="text-muted-foreground">Loading bookings...</div>
+            </div>
+        );
+    }
 
     return (
         <>
