@@ -218,7 +218,7 @@ export async function getArtists(req, res) {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .select(
-        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages avatar coverImage"
+        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages avatar coverImage wontTattoo"
       )
       .lean(),
   ]);
@@ -344,6 +344,11 @@ export async function syncUser(req, res) {
         .map((u) => String(u || "").trim())
         .filter(Boolean)
         .slice(0, 3);
+      const wontTattoo = (
+        Array.isArray(profile.wontTattoo) ? profile.wontTattoo : []
+      )
+        .map((s) => String(s || "").trim())
+        .filter(Boolean);
       Object.assign(setDoc, {
         location: profile.location ?? "",
         shop,
@@ -351,6 +356,7 @@ export async function syncUser(req, res) {
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
         bookingPreference,
         travelFrequency,
+        ...(wontTattoo.length ? { wontTattoo } : {}),
         ...(coverImage ? { coverImage } : {}),
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
       });
