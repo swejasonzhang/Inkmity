@@ -38,8 +38,6 @@ for (const k of REQUIRED) {
   }
 }
 
-const logger = (await import("./utils/logger.js")).default;
-
 const { default: express } = await import("express");
 const { default: cors } = await import("cors");
 const { default: http } = await import("http");

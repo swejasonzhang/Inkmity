@@ -1,14 +1,8 @@
 import ioClient from "socket.io-client";
+import { env } from "@/utils/env";
 
-const SOCKET_URL =
-  (import.meta as any)?.env?.VITE_SOCKET_URL ||
-  import.meta.env?.VITE_SOCKET_URL ||
-  "http://localhost:5005";
-
-const SOCKET_PATH =
-  (import.meta as any)?.env?.VITE_SOCKET_PATH ||
-  import.meta.env?.VITE_SOCKET_PATH ||
-  "/socket.io";
+const SOCKET_URL = env.socketUrl;
+const SOCKET_PATH = env.socketPath;
 
 type AuthSocket = ReturnType<typeof ioClient> & {
   auth?: Record<string, unknown>;
