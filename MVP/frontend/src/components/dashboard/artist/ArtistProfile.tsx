@@ -416,7 +416,7 @@ export default function ArtistProfile() {
 
 
     return (
-        <div className="w-full flex flex-col md:flex-row gap-6 md:gap-8 overflow-y-visible">
+        <div className="w-full flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 overflow-y-visible">
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -443,16 +443,16 @@ export default function ArtistProfile() {
                 }}
             />
 
-            <div className="w-full md:w-[48%] flex-shrink-0 rounded-xl p-4 md:p-6">
-                <div className="space-y-6 md:space-y-6">
-                <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 sm:mb-8">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-center" style={{ color: "var(--fg)" }}>Profile Settings</h1>
+            <div className="w-full md:w-[48%] flex-shrink-0 rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6">
+                <div className="space-y-4 md:space-y-6">
+                <div className="relative flex flex-col items-center justify-center gap-3 md:gap-4 mb-4 md:mb-6 lg:mb-8">
+                    <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center" style={{ color: "var(--fg)" }}>Profile Settings</h1>
                     {hasChanges && (
                         <Button
                             onClick={saveProfile}
                             disabled={saving || uploading}
                             style={{ background: "var(--fg)", color: "var(--bg)" }}
-                            className="hover:opacity-90 w-full sm:w-auto sm:absolute sm:right-0"
+                            className="active:opacity-90 md:hover:opacity-90 w-full md:w-auto md:absolute md:right-0"
                         >
                             <Save className="h-4 w-4 mr-2" />
                             {saving ? "Saving..." : "Save Changes"}
@@ -460,10 +460,10 @@ export default function ArtistProfile() {
                     )}
                 </div>
 
-                <div className="space-y-6">
-                    <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-xl p-4 sm:p-6">
+                <div className="space-y-4 md:space-y-6">
+                    <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6">
                         <div className="flex flex-col items-center">
-                            <div className="relative w-full max-w-md h-32 sm:h-40 mb-[5px]">
+                            <div className="relative w-full max-w-md h-28 md:h-32 lg:h-40 mb-[5px]">
                                 {coverImage ? (
                                     <div className="relative w-full h-full rounded-lg overflow-hidden border border-[color:var(--border)]">
                                         <img
@@ -498,7 +498,7 @@ export default function ArtistProfile() {
                                 )}
                                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                                     <div className="relative">
-                                        <div className="relative rounded-full overflow-hidden w-24 h-24 sm:w-32 sm:h-32 ring-2 ring-[color:var(--card)] border-2 border-[color:var(--border)]" style={{ background: "var(--card)" }}>
+                                        <div className="relative rounded-full overflow-hidden w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 ring-2 ring-[color:var(--card)] border-2 border-[color:var(--border)]" style={{ background: "var(--card)" }}>
                                             {profileImage ? (
                                                 <img
                                                     src={profileImage}
@@ -541,9 +541,9 @@ export default function ArtistProfile() {
                         </div>
                     </div>
 
-                    <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-xl p-4 sm:p-6 space-y-4">
-                        <h2 className="text-lg sm:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
-                            <Briefcase className="h-5 w-5" />
+                    <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4">
+                        <h2 className="text-base md:text-lg lg:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
+                            <Briefcase className="h-4 w-4 md:h-5 md:w-5" />
                             Personal Information
                         </h2>
                         <div className="space-y-4">
@@ -845,8 +845,8 @@ export default function ArtistProfile() {
                     </div>
 
                     {portfolio.length > 0 && (
-                        <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-xl p-4 sm:p-6 space-y-4">
-                            <h2 className="text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
+                        <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4">
+                            <h2 className="text-base md:text-lg lg:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
                                 Portfolio Images
                             </h2>
                             <div className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible justify-center items-center" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -890,8 +890,8 @@ export default function ArtistProfile() {
                     )}
 
                     {healedWorks.length > 0 && (
-                        <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-xl p-4 sm:p-6 space-y-4">
-                            <h2 className="text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
+                        <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4">
+                            <h2 className="text-base md:text-lg lg:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
                                 Healed Works
                             </h2>
                             <div className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible justify-center items-center" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -913,8 +913,8 @@ export default function ArtistProfile() {
                     )}
 
                     {sketches.length > 0 && (
-                        <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-xl p-4 sm:p-6 space-y-4">
-                            <h2 className="text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
+                        <div className="bg-[color:var(--card)] border border-[color:var(--border)] rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 space-y-3 md:space-y-4">
+                            <h2 className="text-base md:text-lg lg:text-xl font-semibold flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
                                 Sketches
                             </h2>
                             <div className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible justify-center items-center" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -937,13 +937,13 @@ export default function ArtistProfile() {
                 </div>
 
                 {hasChanges && (
-                    <div className="sticky bottom-4 flex justify-center md:justify-end pt-4">
+                    <div className="sticky bottom-4 flex justify-center md:justify-end pt-3 md:pt-4">
                         <Button
                             onClick={saveProfile}
                             disabled={saving || uploading}
                             size="lg"
                             style={{ background: "var(--fg)", color: "var(--bg)" }}
-                            className="hover:opacity-90 shadow-lg w-full md:w-auto"
+                            className="active:opacity-90 md:hover:opacity-90 shadow-lg w-full md:w-auto"
                         >
                             <Save className="h-4 w-4 mr-2" />
                             {saving ? "Saving..." : "Save All Changes"}
@@ -953,9 +953,9 @@ export default function ArtistProfile() {
                 </div>
             </div>
 
-            <div className="w-full md:w-[48%] flex-shrink-0 rounded-xl p-4 md:p-6 flex flex-col overflow-y-auto">
-                <h2 className="text-lg md:text-xl font-semibold flex items-center justify-center gap-2 mb-4 flex-shrink-0" style={{ color: "var(--fg)" }}>
-                    <Calendar className="h-5 w-5" />
+            <div className="w-full md:w-[48%] flex-shrink-0 rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 flex flex-col overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-none">
+                <h2 className="text-base md:text-lg lg:text-xl font-semibold flex items-center justify-center gap-2 mb-3 md:mb-4 flex-shrink-0" style={{ color: "var(--fg)" }}>
+                    <Calendar className="h-4 w-4 md:h-5 md:w-5" />
                     Appointment History
                 </h2>
                 <div className="flex-1 min-h-0 pb-4">
