@@ -318,6 +318,7 @@ export default function ClientProfile() {
 
     const handleBudgetChange = (vals: number[]) => {
         let [l, h] = vals;
+        if (l === undefined || h === undefined) return;
         l = Math.round(l / STEP) * STEP;
         h = Math.round(h / STEP) * STEP;
         if (h - l < MIN_GAP) {
@@ -633,10 +634,21 @@ export default function ClientProfile() {
                                 const endDate = new Date(booking.endAt);
                                 const isPast = endDate < new Date();
                                 const statusColors: Record<string, string> = {
-                                    booked: "bg-blue-500/15 text-blue-300 border-blue-600/30",
-                                    matched: "bg-green-500/15 text-green-300 border-green-600/30",
+                                    pending: "bg-yellow-500/15 text-yellow-300 border-yellow-600/30",
+                                    confirmed: "bg-green-500/15 text-green-300 border-green-600/30",
+                                    "in-progress": "bg-blue-500/15 text-blue-300 border-blue-600/30",
                                     completed: "bg-green-500/15 text-green-300 border-green-600/30",
                                     cancelled: "bg-red-500/15 text-red-300 border-red-600/30",
+                                    "no-show": "bg-gray-500/15 text-gray-300 border-gray-600/30",
+                                };
+                                
+                                const statusLabels: Record<string, string> = {
+                                    pending: "Pending",
+                                    confirmed: "Confirmed",
+                                    "in-progress": "In Progress",
+                                    completed: "Completed",
+                                    cancelled: "Cancelled",
+                                    "no-show": "No Show",
                                 };
                                 
                                 return (
@@ -676,7 +688,7 @@ export default function ClientProfile() {
                                                             ...(statusColors[booking.status] ? {} : { background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }),
                                                         }}
                                                     >
-                                                        {booking.status === "booked" ? "Scheduled" : booking.status === "matched" ? "Confirmed" : booking.status === "completed" ? "Completed" : booking.status === "cancelled" ? "Cancelled" : booking.status}
+                                                        {statusLabels[booking.status] || booking.status}
                                                     </span>
                                                     {isPast && booking.status !== "cancelled" && booking.status !== "completed" && (
                                                         <span className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>

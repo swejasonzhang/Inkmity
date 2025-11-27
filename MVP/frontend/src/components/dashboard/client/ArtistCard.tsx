@@ -60,6 +60,12 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
     return arr.map(s => String(s).trim()).filter(Boolean);
   }, [artist]);
 
+  const wontTattooClean = useMemo(() => {
+    const raw = artist.wontTattoo ?? [];
+    const arr = Array.isArray(raw) ? raw : (typeof raw === "string" ? raw.split(/[;,/]+/) : []);
+    return arr.map((s: string) => String(s).trim()).filter(Boolean);
+  }, [artist]);
+
   const stylesPrimary = stylesClean.slice(0, 3);
   const stylesOverflow = Math.max(0, stylesClean.length - stylesPrimary.length);
 
@@ -195,7 +201,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
                   </span>
                 </div>
                 <div className={`flex flex-wrap items-center justify-center gap-2 ${fullScreen ? "text-sm" : "text-xs"}`}>
-                  {wontTattooClean.map((item, i) => (
+                  {wontTattooClean.map((item: string, i: number) => (
                     <span
                       key={`wont-${i}`}
                       className="inline-flex items-center rounded-full px-2.5 py-1 border"

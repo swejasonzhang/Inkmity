@@ -119,7 +119,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
-    await signOut({ fallbackRedirectUrl: "/login" });
+    await signOut();
+    navigate("/login");
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
@@ -222,9 +223,9 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
 
   return (
     <>
-      <header className="flex w-full relative items-center z-50 px-6 md:px-10 py-4 text-app bg-transparent">
+      <header className="flex w-full relative items-center z-50 px-4 md:px-6 py-4 text-app bg-transparent">
         <div className="w-full flex justify-between items-center md:grid md:grid-cols-[1fr_auto_1fr]">
-          <div className="justify-self-start -ml-2 md:-ml-6 pl-2 md:pl-0 flex-shrink-0">
+          <div className="justify-self-start flex-shrink-0">
             <Link to={homeHref} className="flex items-center md:gap-4 gap-3">
               <img src={resolvedLogo} alt="Inkmity Logo" className="h-20 md:h-24 lg:h-28 w-auto object-contain" draggable={false} />
               <span className="sr-only">Inkmity</span>
@@ -235,7 +236,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
             <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[19px]" />
           </div>
 
-          <div className="flex items-center gap-4 pr-2 md:pr-0 justify-self-end">
+          <div className="flex items-center gap-4 justify-self-end">
             {isDashboard && (
               <>
                 <div className="hidden md:block mt-[5px]">
