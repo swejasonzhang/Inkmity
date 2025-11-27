@@ -64,3 +64,4 @@ class PerformanceMonitor {
 
 export const performanceMonitor = new PerformanceMonitor();
 export default performanceMonitor;
+

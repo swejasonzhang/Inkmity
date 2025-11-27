@@ -150,9 +150,9 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
     const bioText = (artist.bio || "").trim() || `Nice to meet you, I'm ${artist.username || "this artist"}, let's talk about your next tattoo.`;
 
     const wontTattooClean = useMemo(() => {
-        const raw = artist.wontTattoo ?? [];
-        const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[;,/]+/) : [];
-        return arr.map(s => String(s).trim()).filter(Boolean);
+        const raw = artist.wontTattoo;
+        if (!raw) return [];
+        return raw.map((s: string) => String(s).trim()).filter(Boolean);
     }, [artist]);
 
     useEffect(() => {
@@ -223,7 +223,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                                         Won't Tattoo:
                                     </div>
                                     <div className="flex flex-wrap gap-2 justify-center">
-                                        {wontTattooClean.map((item, i) => (
+                                        {wontTattooClean.map((item: string, i: number) => (
                                             <span
                                                 key={`wont-${i}`}
                                                 className="inline-flex items-center rounded-full px-3 py-1.5 text-sm border"
@@ -289,7 +289,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                 )}
             </div>
 
-            {zoom && <FullscreenZoom src={zoom.items[zoom.index]} count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`} onPrev={goPrev} onNext={goNext} onClose={closeZoom} />}
+            {zoom && zoom.items[zoom.index] && <FullscreenZoom src={zoom.items[zoom.index]!} count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`} onPrev={goPrev} onNext={goNext} onClose={closeZoom} />}
         </div>
     );
 };

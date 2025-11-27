@@ -35,9 +35,19 @@ export const InkConversations: React.FC<Props> = ({
   const badgePadX = isMdUp ? 6 : 4;
   const badgeFont = isMdUp ? 12 : 10;
 
+  const buttonPadding = isMdUp ? "px-4" : "px-3";
+  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border";
+  const messagesBtnClass = [
+    buttonPadding,
+    "bg-app text-[color:var(--fg)] border-app shadow-lg",
+    "focus:ring-2 focus:ring-app/50 focus:ring-offset-2 focus:ring-offset-[color:var(--bg)]",
+    "hover:brightness-[1.08] active:scale-[0.99]",
+    btnCommon
+  ].join(" ");
+
   return (
     <div
-      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex w-full" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} pointer-events-auto border border-app/40 shadow-md transition`}
+      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex w-full" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} pointer-events-auto border border-app shadow-lg transition`}
       aria-label={open ? "Messages" : "Open messages"}
       aria-expanded={open}
       style={{
@@ -52,6 +62,7 @@ export const InkConversations: React.FC<Props> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        boxShadow: open ? undefined : "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)",
         ...(!isMdUp && open ? { maxWidth: "100%", minWidth: "100%" } : {})
       }}
     >
@@ -59,13 +70,16 @@ export const InkConversations: React.FC<Props> = ({
         <Button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex h-full w-full items-center justify-center gap-1.5 px-2.5 md:px-3 py-1.5 leading-none text-center focus:outline-none"
+          className={`${messagesBtnClass} h-full w-full leading-none text-center`}
           title="Open messages"
           aria-label="Open messages"
-          variant="ghost"
+          variant="outline"
+          style={{
+            boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)"
+          }}
         >
           <MessageSquare size={18} className="shrink-0" />
-          <span className="hidden md:inline text-sm font-medium leading-none whitespace-nowrap">Messages</span>
+          <span className="hidden md:inline text-sm leading-none whitespace-nowrap">Messages</span>
           {derivedTotal > 0 && (
             <span
               className="inline-grid place-items-center rounded-full ml-1"

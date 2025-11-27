@@ -16,7 +16,6 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { getBookingsForArtist, type Booking as ApiBooking } from "@/api";
-import { API_URL } from "@/lib/http";
 
 type Booking = {
     id: string | number;
@@ -165,10 +164,10 @@ export default function CalendarView({
 
     return (
         <>
-            <div className="flex flex-col h-full min-h-[55vh] p-3 gap-2">
-                <div className="px-3 py-3 rounded-xl bg-card">
-                    <div className="flex flex-col items-center gap-2">
-                        <div className="text-sm md:text-base font-medium text-muted-foreground">
+            <div className="flex flex-col h-full min-h-[55vh] max-md:min-h-[300px] p-3 max-md:p-2 gap-2">
+                <div className="px-3 py-3 max-md:px-2 max-md:py-2 rounded-xl bg-card">
+                    <div className="flex flex-col items-center gap-2 max-md:gap-1.5">
+                        <div className="text-sm md:text-base max-md:text-xs font-medium text-muted-foreground max-md:text-center">
                             Click a date to view all booked slots
                         </div>
                         <div className="flex items-center justify-center">
@@ -209,16 +208,16 @@ export default function CalendarView({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-7 text-[11px] text-muted-foreground px-2 sm:px-3 text-center">
+                <div className="grid grid-cols-7 text-[11px] max-md:text-[10px] text-muted-foreground px-2 sm:px-3 max-md:px-1 text-center">
                     {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                        <div key={d} className="font-medium tracking-wide py-1.5">
+                        <div key={d} className="font-medium tracking-wide py-1.5 max-md:py-1">
                             {d}
                         </div>
                     ))}
                 </div>
 
                 <div
-                    className="grid grid-cols-7 gap-1.5 sm:gap-2 flex-1"
+                    className="grid grid-cols-7 gap-1.5 sm:gap-2 max-md:gap-1 flex-1"
                     style={{ gridAutoRows: "minmax(0,1fr)" }}
                 >
                     {cells.map((c, i) => {
@@ -237,7 +236,7 @@ export default function CalendarView({
                             <div
                                 key={i}
                                 className={[
-                                    "rounded-lg border border-app bg-card p-2 flex flex-col relative",
+                                    "rounded-lg max-md:rounded-md border border-app bg-card p-2 max-md:p-1 flex flex-col relative",
                                     !c.inMonth ? "opacity-40" : "cursor-pointer hover:bg-white/5",
                                 ].join(" ")}
                                 style={{ minHeight: rowMinHeight }}
@@ -254,28 +253,28 @@ export default function CalendarView({
                                 }}
                             >
                                 <div className="flex items-center justify-between">
-                                    <div className="text-[11px] text-muted-foreground">{c.dayNum ?? ""}</div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="text-[11px] max-md:text-[10px] text-muted-foreground">{c.dayNum ?? ""}</div>
+                                    <div className="flex items-center gap-1 max-md:gap-0.5">
                                         {count > 0 && (
                                             <div
-                                                className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-500/20 text-red-300 border border-red-500/30"
+                                                className="px-1.5 max-md:px-1 py-0.5 rounded-full text-[10px] max-md:text-[9px] font-medium bg-red-500/20 text-red-300 border border-red-500/30"
                                                 title={`${count} booking${count > 1 ? "s" : ""}`}
                                             >
                                                 {count}
                                             </div>
                                         )}
                                         {isToday && (
-                                            <div className="text-[10px] px-1 py-0.5 rounded bg-white/10">Today</div>
+                                            <div className="text-[10px] max-md:text-[9px] px-1 py-0.5 rounded bg-white/10">Today</div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="mt-2 flex flex-col gap-1">
+                                <div className="mt-2 max-md:mt-1 flex flex-col gap-1 max-md:gap-0.5">
                                     {dayBookings.slice(0, 3).map((b) => (
                                         <button
                                             key={b.id}
                                             className={[
-                                                "w-full text-[11px] rounded border px-2 py-1 text-left hover:bg-white/10",
+                                                "w-full text-[11px] max-md:text-[9px] rounded border px-2 max-md:px-1 py-1 max-md:py-0.5 text-left hover:bg-white/10",
                                                 statusChip[b.status ?? ""] ?? "border-white/10 text-white/90",
                                             ].join(" ")}
                                             title={`${b.title}${b.clientName ? " • " + b.clientName : ""}`}
@@ -285,14 +284,14 @@ export default function CalendarView({
                                             }}
                                         >
                                             <div className="truncate font-medium">{b.title}</div>
-                                            <div className="opacity-80 truncate">
+                                            <div className="opacity-80 truncate max-md:text-[8px]">
                                                 {fmtTime(b.start)} – {fmtTime(b.end)}
                                                 {b.clientName ? ` • ${b.clientName}` : ""}
                                             </div>
                                         </button>
                                     ))}
                                     {dayBookings.length > 3 && (
-                                        <div className="text-[10px] text-muted-foreground">
+                                        <div className="text-[10px] max-md:text-[8px] text-muted-foreground">
                                             +{dayBookings.length - 3} more
                                         </div>
                                     )}

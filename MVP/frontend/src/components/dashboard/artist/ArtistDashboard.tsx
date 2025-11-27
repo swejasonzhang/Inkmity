@@ -50,60 +50,77 @@ export default function ArtistDashboard() {
 
   return (
     <>
-        <style>{`
-            @media (max-width: 767px) {
-                html, body {
-                    overflow: hidden !important;
-                    height: 100vh !important;
-                }
-            }
-            #middle-content::-webkit-scrollbar { display: none; }
-        `}</style>
-        <div>
-      <div className="min-h-dvh h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto">
-        <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
+      <style>{`
+        @media (max-width: 767px) {
+          html, body {
+            overflow: hidden !important;
+            height: 100vh !important;
+          }
+        }
+        #middle-content::-webkit-scrollbar { display: none; }
+        @media (max-width: 767px) {
+          .booking-card::-webkit-scrollbar {
+            width: 6px;
+          }
+          .booking-card::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .booking-card::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+          }
+          .booking-card::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+          }
+        }
+      `}</style>
+      <div className="min-h-dvh h-dvh bg-app text-app flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 sm:px-6 lg:px-8 pb-24">
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-3 px-4 md:px-6 pb-24 md:pb-20">
           <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
+            <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0 md:min-h-0 max-md:min-h-[400px]">
               <CardHeader className="px-4 py-5 border-b border-app">
-                <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">
+                <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl max-md:text-lg">
                   {isArtist ? "Bookings Calendar" : "Read-only Calendar"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0 flex-1 min-h-0">
-                <Suspense
-                  fallback={
-                    <div className="p-4 space-y-3">
-                      <Skeleton className="h-6 w-40" />
-                      <Skeleton className="h-8 w-full" />
-                      <div className="grid grid-cols-7 gap-2">
-                        {Array.from({ length: 14 }).map((_, i) => (
-                          <Skeleton key={i} className="h-24 w-full" />
-                        ))}
+                <div className="h-full overflow-y-auto max-md:booking-card">
+                  <Suspense
+                    fallback={
+                      <div className="p-4 space-y-3">
+                        <Skeleton className="h-6 w-40" />
+                        <Skeleton className="h-8 w-full" />
+                        <div className="grid grid-cols-7 gap-2">
+                          {Array.from({ length: 14 }).map((_, i) => (
+                            <Skeleton key={i} className="h-24 w-full" />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  }
-                >
-                  <CalendarView artistId={user?.id} />
-                </Suspense>
+                    }
+                  >
+                    <CalendarView artistId={user?.id} />
+                  </Suspense>
+                </div>
               </CardContent>
             </Card>
             <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 gap-4 overflow-hidden">
-              <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
-                <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0">
-                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Upcoming Appointments</CardTitle>
+              <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0 md:min-h-0 max-md:min-h-[300px]">
+                <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0 max-md:px-3 max-md:py-3">
+                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl max-md:text-lg">Upcoming Appointments</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                  <AppointmentHistory />
+                  <div className="h-full overflow-y-auto max-md:booking-card">
+                    <AppointmentHistory />
+                  </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
-                <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0">
-                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Analytics</CardTitle>
+              <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0 md:min-h-0 max-md:min-h-[300px]">
+                <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0 max-md:px-3 max-md:py-3">
+                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl max-md:text-lg">Analytics</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                  <div className="h-full overflow-y-auto p-4">
+                  <div className="h-full overflow-y-auto max-md:booking-card p-4 max-md:p-3">
                     <Suspense
                       fallback={
                         <div className="space-y-3">
@@ -140,7 +157,7 @@ export default function ArtistDashboard() {
           {assistantOpen && (
             <>
               <motion.div
-                className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+                className="fixed inset-0 z-50 bg-black/50 md:hidden"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -151,9 +168,12 @@ export default function ArtistDashboard() {
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-4 lg:right-4 z-50"
+                className="fixed inset-x-0 bottom-0 md:inset-auto md:bottom-0 md:left-0 z-50"
+                style={{
+                  left: "1.5rem",
+                }}
               >
-                <div className="w-full h-[90dvh] lg:w-[88vw] lg:h-auto lg:max-w-[400px] bg-card border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+                <div className="w-full h-[90dvh] md:w-[1200px] md:h-[860px] bg-card border-t border-app md:border md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-app">
                     <div className="flex items-center gap-2 font-semibold">
                       <Bot size={18} />
@@ -172,7 +192,6 @@ export default function ArtistDashboard() {
           )}
         </AnimatePresence>
       </div>
-    </div>
     </>
   );
 } 

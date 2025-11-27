@@ -32,3 +32,4 @@ export function hasProperty<K extends string>(
 ): obj is Record<K, unknown> {
   return isObject(obj) && prop in obj;
 }
+

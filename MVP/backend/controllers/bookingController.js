@@ -75,7 +75,7 @@ export const getBookingsForDay = asyncHandler(async (req, res) => {
     artistId,
     startAt: { $lt: end },
     endAt: { $gt: start },
-    status: { $in: ["booked", "matched", "completed"] },
+    status: { $in: ["pending", "confirmed", "in-progress", "completed"] },
   }).sort({ startAt: 1 });
   
   res.json(docs);
@@ -93,13 +93,28 @@ export const getBookingsForArtist = asyncHandler(async (req, res) => {
   const userId = getActorId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   
-  const { artistId } = req.query;
+  const { artistId, status, startDate, endDate } = req.query;
   const targetArtistId = artistId || userId;
   
-  const docs = await Booking.find({
-    artistId: targetArtistId,
-    status: { $in: ["booked", "matched", "completed"] },
-  })
+  const query = { artistId: targetArtistId };
+  
+  if (status) {
+    query.status = status;
+  } else {
+    query.status = { $in: ["pending", "confirmed", "in-progress", "completed"] };
+  }
+  
+  if (startDate || endDate) {
+    query.startAt = {};
+    if (startDate) {
+      query.startAt.$gte = new Date(String(startDate));
+    }
+    if (endDate) {
+      query.startAt.$lte = new Date(String(endDate));
+    }
+  }
+  
+  const docs = await Booking.find(query)
     .sort({ startAt: 1 })
     .lean();
   
@@ -110,13 +125,28 @@ export const getBookingsForClient = asyncHandler(async (req, res) => {
   const userId = getActorId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   
-  const { clientId } = req.query;
+  const { clientId, status, startDate, endDate } = req.query;
   const targetClientId = clientId || userId;
   
-  const docs = await Booking.find({
-    clientId: targetClientId,
-    status: { $in: ["booked", "matched", "completed", "cancelled"] },
-  })
+  const query = { clientId: targetClientId };
+  
+  if (status) {
+    query.status = status;
+  } else {
+    query.status = { $in: ["pending", "confirmed", "in-progress", "completed", "cancelled", "no-show"] };
+  }
+  
+  if (startDate || endDate) {
+    query.startAt = {};
+    if (startDate) {
+      query.startAt.$gte = new Date(String(startDate));
+    }
+    if (endDate) {
+      query.startAt.$lte = new Date(String(endDate));
+    }
+  }
+  
+  const docs = await Booking.find(query)
     .sort({ startAt: -1 })
     .lean();
   
@@ -173,7 +203,7 @@ export const createBooking = asyncHandler(async (req, res) => {
       artistId,
       startAt: { $lt: endAt },
       endAt: { $gt: startAt },
-      status: { $in: ["booked", "matched", "completed"] },
+      status: { $in: ["pending", "confirmed", "in-progress", "completed"] },
     }).session(session);
 
     if (conflict) {
@@ -196,8 +226,15 @@ export const createBooking = asyncHandler(async (req, res) => {
       serviceId,
       startAt,
       endAt,
-      note,
-      status: "booked",
+      note: body.note || "",
+      serviceName: body.serviceName || "",
+      serviceDescription: body.serviceDescription || "",
+      requirements: body.requirements || "",
+      estimatedDuration: body.estimatedDuration || null,
+      location: body.location || "",
+      contactPhone: body.contactPhone || "",
+      contactEmail: body.contactEmail || "",
+      status: "pending",
       priceCents,
       depositRequiredCents,
       depositPaidCents: 0,
@@ -209,6 +246,10 @@ export const createBooking = asyncHandler(async (req, res) => {
       artistVerifiedAt: null,
       matchedAt: null,
       completedAt: null,
+      confirmedAt: null,
+      reminderSentAt: null,
+      reminderSent24h: false,
+      reminderSent1h: false,
     }], { session });
 
     await session.commitTransaction();
@@ -221,6 +262,23 @@ export const createBooking = asyncHandler(async (req, res) => {
       endAt,
       requestId: req.requestId,
     });
+
+    try {
+      await Message.create({
+        senderId: String(artistId),
+        receiverId: String(userId),
+        text: `New booking request for ${new Date(startAt).toLocaleDateString()} at ${new Date(startAt).toLocaleTimeString()}`,
+        meta: {
+          kind: "booking_created",
+          bookingId: String(created[0]._id),
+        },
+      });
+    } catch (error) {
+      logger.warn("Failed to create booking notification message", {
+        error: error.message,
+        bookingId: created[0]._id,
+      });
+    }
 
     return res.status(201).json(created[0]);
   } catch (error) {
@@ -256,6 +314,54 @@ export const createBooking = asyncHandler(async (req, res) => {
   } finally {
     session.endSession();
   }
+});
+
+export const confirmBooking = asyncHandler(async (req, res) => {
+  const userId = getActorId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  
+  const { id } = req.params;
+  const booking = await Booking.findById(id);
+  
+  if (!booking) {
+    return res.status(404).json({ error: "not_found" });
+  }
+  
+  if (String(booking.artistId) !== userId) {
+    return res.status(403).json({ error: "Only the artist can confirm bookings" });
+  }
+  
+  if (booking.status !== "pending") {
+    return res.status(400).json({ error: `Cannot confirm booking with status: ${booking.status}` });
+  }
+  
+  booking.status = "confirmed";
+  booking.confirmedAt = new Date();
+  await booking.save();
+  
+  try {
+    await Message.create({
+      senderId: String(booking.artistId),
+      receiverId: String(booking.clientId),
+      text: `Your booking for ${new Date(booking.startAt).toLocaleDateString()} at ${new Date(booking.startAt).toLocaleTimeString()} has been confirmed!`,
+      meta: {
+        kind: "booking_confirmed",
+        bookingId: String(booking._id),
+      },
+    });
+  } catch (error) {
+    logger.warn("Failed to create confirmation message", {
+      error: error.message,
+      bookingId: booking._id,
+    });
+  }
+  
+  logger.info("Booking confirmed", {
+    bookingId: booking._id,
+    requestId: req.requestId,
+  });
+  
+  res.json(booking);
 });
 
 export const startVerification = asyncHandler(async (req, res) => {
@@ -320,6 +426,9 @@ export const startVerification = asyncHandler(async (req, res) => {
 
 export const cancelBooking = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const userId = getActorId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  
   const booking = await Booking.findById(id);
   if (!booking) {
     return res.status(404).json({ error: "not_found" });
@@ -328,7 +437,11 @@ export const cancelBooking = asyncHandler(async (req, res) => {
     return res.json(booking);
   }
   
+  const cancelledBy = String(booking.artistId) === userId ? "artist" : "client";
   booking.status = "cancelled";
+  booking.cancelledAt = new Date();
+  booking.cancelledBy = cancelledBy;
+  booking.cancellationReason = req.body.reason || "";
   await booking.save();
   
   try {
@@ -356,10 +469,29 @@ export const cancelBooking = asyncHandler(async (req, res) => {
     });
   }
   
+  try {
+    await Message.create({
+      senderId: String(booking.artistId),
+      receiverId: String(booking.clientId),
+      text: `Booking for ${new Date(booking.startAt).toLocaleDateString()} has been cancelled${req.body.reason ? `: ${req.body.reason}` : ""}`,
+      meta: {
+        kind: "booking_cancelled",
+        bookingId: String(booking._id),
+        cancelledBy,
+      },
+    });
+  } catch (error) {
+    logger.warn("Failed to create cancellation message", {
+      error: error.message,
+      bookingId: booking._id,
+    });
+  }
+  
   logger.info("Booking cancelled", {
     bookingId: booking._id,
     artistId: booking.artistId,
     clientId: booking.clientId,
+    cancelledBy,
     requestId: req.requestId,
   });
   
@@ -429,10 +561,10 @@ export const verifyBookingCode = asyncHandler(async (req, res) => {
   
   if (doc.clientVerifiedAt && doc.artistVerifiedAt) {
     doc.matchedAt = new Date();
-    doc.status = "completed";
-    doc.completedAt = new Date();
+    doc.status = "confirmed";
+    doc.confirmedAt = new Date();
     
-    logger.info("Booking verified and matched", {
+    logger.info("Booking verified and confirmed", {
       bookingId: doc._id,
       requestId: req.requestId,
     });
@@ -446,6 +578,125 @@ export const verifyBookingCode = asyncHandler(async (req, res) => {
   
   await doc.save();
   res.json(doc);
+});
+
+export const rescheduleBooking = asyncHandler(async (req, res) => {
+  const userId = getActorId(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  
+  const { id } = req.params;
+  const { startISO, endISO, reason } = req.body || {};
+  
+  if (!startISO || !endISO) {
+    return res.status(400).json({ error: "startISO and endISO required" });
+  }
+  
+  const booking = await Booking.findById(id);
+  if (!booking) {
+    return res.status(404).json({ error: "not_found" });
+  }
+  
+  const isArtist = String(booking.artistId) === userId;
+  const isClient = String(booking.clientId) === userId;
+  
+  if (!isArtist && !isClient) {
+    return res.status(403).json({ error: "Unauthorized to reschedule this booking" });
+  }
+  
+  if (booking.status === "cancelled" || booking.status === "completed") {
+    return res.status(400).json({ error: `Cannot reschedule ${booking.status} booking` });
+  }
+  
+  const startAt = new Date(startISO);
+  const endAt = new Date(endISO);
+  
+  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()) || endAt <= startAt) {
+    return res.status(400).json({ error: "Invalid dates" });
+  }
+  
+  const av = (await Availability.findOne({ artistId: booking.artistId })) || {
+    timezone: DEFAULT_TIMEZONE,
+    weekly: {
+      sun: DEFAULT_OPEN_RANGES,
+      mon: DEFAULT_OPEN_RANGES,
+      tue: DEFAULT_OPEN_RANGES,
+      wed: DEFAULT_OPEN_RANGES,
+      thu: DEFAULT_OPEN_RANGES,
+      fri: DEFAULT_OPEN_RANGES,
+      sat: DEFAULT_OPEN_RANGES,
+    },
+    exceptions: {},
+  };
+  
+  const tz = av.timezone || DEFAULT_TIMEZONE;
+  const dayStr = DateTime.fromJSDate(startAt, { zone: tz }).toISODate();
+  const weekdayKey = WEEKDAY_KEYS[DateTime.fromISO(dayStr, { zone: tz }).weekday % 7];
+  const ranges = (av.exceptions?.[dayStr]?.length
+    ? av.exceptions[dayStr]
+    : av.weekly?.[weekdayKey]) || DEFAULT_OPEN_RANGES;
+  const dayIntervals = buildDayIntervals({ dateISO: dayStr, tz, ranges });
+  const proposed = Interval.fromDateTimes(
+    DateTime.fromJSDate(startAt, { zone: tz }),
+    DateTime.fromJSDate(endAt, { zone: tz })
+  );
+  const withinAvail = dayIntervals.some(
+    (iv) => proposed.start >= iv.start && proposed.end <= iv.end
+  );
+  
+  if (!withinAvail) {
+    return res.status(409).json({ error: "outside_availability" });
+  }
+  
+  const conflict = await Booking.findOne({
+    _id: { $ne: booking._id },
+    artistId: booking.artistId,
+    startAt: { $lt: endAt },
+    endAt: { $gt: startAt },
+    status: { $in: ["pending", "confirmed", "in-progress", "completed"] },
+  });
+  
+  if (conflict) {
+    return res.status(409).json({ error: "conflict" });
+  }
+  
+  const oldStartAt = booking.startAt;
+  const oldEndAt = booking.endAt;
+  
+  booking.startAt = startAt;
+  booking.endAt = endAt;
+  booking.rescheduledAt = new Date();
+  booking.rescheduledFrom = oldStartAt;
+  booking.rescheduledBy = isArtist ? "artist" : "client";
+  await booking.save();
+  
+  try {
+    await Message.create({
+      senderId: String(booking.artistId),
+      receiverId: String(booking.clientId),
+      text: `Booking rescheduled to ${new Date(startAt).toLocaleDateString()} at ${new Date(startAt).toLocaleTimeString()}${reason ? `. Reason: ${reason}` : ""}`,
+      meta: {
+        kind: "booking_rescheduled",
+        bookingId: String(booking._id),
+        rescheduledBy: booking.rescheduledBy,
+      },
+    });
+  } catch (error) {
+    logger.warn("Failed to create reschedule message", {
+      error: error.message,
+      bookingId: booking._id,
+      requestId: req.requestId,
+    });
+  }
+  
+  logger.info("Booking rescheduled", {
+    bookingId: booking._id,
+    oldStartAt,
+    newStartAt: startAt,
+    rescheduledBy: booking.rescheduledBy,
+    requestId: req.requestId,
+  });
+  
+  res.json(booking);
 });
 
 export const updateBookingTime = asyncHandler(async (req, res) => {
@@ -516,7 +767,7 @@ export const updateBookingTime = asyncHandler(async (req, res) => {
     artistId: booking.artistId,
     startAt: { $lt: endAt },
     endAt: { $gt: startAt },
-    status: { $in: ["booked", "matched", "completed"] },
+    status: { $in: ["pending", "confirmed", "in-progress", "completed"] },
   });
   
   if (conflict) {
@@ -551,3 +802,4 @@ export const updateBookingTime = asyncHandler(async (req, res) => {
   
   res.json(booking);
 });
+
