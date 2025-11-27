@@ -3,18 +3,18 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, useNavigate } from "react-router-dom";
 import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { env } from "./utils/env";
+import { logger } from "./utils/logger";
 import "./global.css";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Publishable Key! Did you forget to add it in .env?");
-}
+logger.info("Application starting", { env: import.meta.env.MODE });
 
 function ClerkWithRouter({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   return (
     <ClerkProvider
-      publishableKey={PUBLISHABLE_KEY}
+      publishableKey={env.clerkPublishableKey}
       signInUrl="/login"
       signUpUrl="/signup"
       fallbackRedirectUrl="/dashboard"
@@ -29,10 +29,20 @@ function ClerkWithRouter({ children }: { children: React.ReactNode }) {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <ClerkWithRouter>
-        <App />
-      </ClerkWithRouter>
-    </BrowserRouter>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        logger.error("Unhandled React error", {
+          error: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+        });
+      }}
+    >
+      <BrowserRouter>
+        <ClerkWithRouter>
+          <App />
+        </ClerkWithRouter>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );

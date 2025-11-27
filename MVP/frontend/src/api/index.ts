@@ -1,9 +1,8 @@
 import { useAuth } from "@clerk/clerk-react";
+import { env } from "@/utils/env";
+import { logger } from "@/utils/logger";
 
-export const API_URL: string =
-  (import.meta as any)?.env?.VITE_API_URL ||
-  import.meta.env?.VITE_API_URL ||
-  "http://localhost:5005";
+export const API_URL: string = env.apiUrl;
 
 export function isAbortError(
   e: unknown
@@ -62,7 +61,7 @@ export async function apiRequest<T = any>(
     res = await fetch(url, req);
   } catch (e) {
     if (isAbortError(e)) throw e;
-    console.error("[apiRequest] fetch failed", { url, init: req, error: e });
+    logger.error("API request fetch failed", { url, error: e });
     throw e;
   }
 
@@ -85,11 +84,10 @@ export async function apiRequest<T = any>(
     (err as any).url = url;
     (err as any).headers = headersObj;
     (err as any).requestId = requestId;
-    console.error("[apiRequest] http error", {
+    logger.error("API request http error", {
       url,
       status: res.status,
       body,
-      headers: headersObj,
       requestId,
     });
     throw err;
