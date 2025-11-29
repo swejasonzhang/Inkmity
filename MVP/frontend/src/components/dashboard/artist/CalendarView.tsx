@@ -1,5 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
-import { useUser, useAuth } from "@clerk/clerk-react";
+import { useMemo, useState } from "react";
 import {
     Pagination,
     PaginationContent,
@@ -15,7 +14,6 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { getBookingsForArtist, type Booking as ApiBooking } from "@/api";
 
 type Booking = {
     id: string | number;
@@ -23,63 +21,20 @@ type Booking = {
     clientName?: string;
     start: string | number | Date;
     end: string | number | Date;
-    status?: "confirmed" | "pending" | "cancelled" | "booked" | "matched" | "completed" | string;
+    status?: "confirmed" | "pending" | "cancelled" | string;
 };
 
 type CalendarViewProps = {
     bookings?: Booking[];
     onSelectBooking?: (b: Booking) => void;
     rowMinHeight?: number;
-    artistId?: string;
 };
 
 export default function CalendarView({
-    bookings: propBookings,
+    bookings = [],
     onSelectBooking = () => { },
-    artistId,
+    rowMinHeight = 140,
 }: CalendarViewProps) {
-    const { user } = useUser();
-    const { getToken } = useAuth();
-    const [bookings, setBookings] = useState<Booking[]>(propBookings || []);
-    const [loading, setLoading] = useState(!propBookings);
-
-    useEffect(() => {
-        if (propBookings) {
-            setBookings(propBookings);
-            return;
-        }
-
-        const fetchBookings = async () => {
-            try {
-                setLoading(true);
-                const token = await getToken();
-                const targetArtistId = artistId || user?.id;
-                if (!targetArtistId) return;
-
-                const apiBookings = await getBookingsForArtist(targetArtistId, token);
-                
-                // Transform API bookings to calendar format
-                // Note: Client names can be enhanced later by populating in backend
-                const transformed: Booking[] = apiBookings.map((b: ApiBooking) => ({
-                    id: b._id,
-                    title: b.note || "Appointment",
-                    clientName: "Client", // Can be enhanced with client info from backend
-                    start: b.startAt,
-                    end: b.endAt,
-                    status: b.status,
-                }));
-                setBookings(transformed);
-            } catch (error) {
-                console.error("Failed to fetch bookings:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (user) {
-            fetchBookings();
-        }
-    }, [user, artistId, getToken, propBookings]);
     const [cursor, setCursor] = useState(() => {
         const d = new Date();
         return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -153,29 +108,20 @@ export default function CalendarView({
         return bookingsByDay.get(dateKey(selectedDate)) ?? [];
     }, [selectedDate, bookingsByDay]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full min-h-[55vh]">
-                <div className="text-muted-foreground">Loading bookings...</div>
-            </div>
-        );
-    }
-
     return (
         <>
-            <div className="flex flex-col h-full w-full min-h-[300px] md:min-h-[55vh] p-2 md:p-3 gap-2">
-                <div className="px-2 py-2 md:px-3 md:py-3 rounded-lg md:rounded-xl bg-card flex-shrink-0">
-                    <div className="flex flex-col items-center gap-1.5 md:gap-2">
-                        <div className="text-xs md:text-sm lg:text-base font-medium text-muted-foreground text-center">
+            <div className="flex flex-col h-full min-h-[55vh] p-3 gap-2">
+                <div className="px-3 py-3 rounded-xl bg-card">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="text-sm md:text-base font-medium text-muted-foreground">
                             Click a date to view all booked slots
                         </div>
-                        <div className="flex items-center justify-center w-full">
+                        <div className="flex items-center justify-center">
                             <Pagination>
-                                <PaginationContent className="gap-1">
+                                <PaginationContent>
                                     <PaginationItem>
                                         <PaginationPrevious
                                             href="#"
-                                            className="h-8 w-8 md:h-10 md:w-10"
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 changeMonth(-1);
@@ -185,7 +131,6 @@ export default function CalendarView({
                                     <PaginationItem>
                                         <PaginationLink
                                             href="#"
-                                            className="h-8 px-3 md:h-10 md:px-4 text-xs md:text-sm"
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 goToday();
@@ -197,7 +142,6 @@ export default function CalendarView({
                                     <PaginationItem>
                                         <PaginationNext
                                             href="#"
-                                            className="h-8 w-8 md:h-10 md:w-10"
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 changeMonth(1);
@@ -210,17 +154,17 @@ export default function CalendarView({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-7 text-[9px] md:text-[11px] text-muted-foreground px-1 md:px-2 text-center flex-shrink-0">
+                <div className="grid grid-cols-7 text-[11px] text-muted-foreground px-2 sm:px-3 text-center">
                     {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                        <div key={d} className="font-medium tracking-wide py-1 md:py-1.5">
+                        <div key={d} className="font-medium tracking-wide py-1.5">
                             {d}
                         </div>
                     ))}
                 </div>
 
                 <div
-                    className="grid grid-cols-7 gap-1 md:gap-1.5 lg:gap-2 flex-1 min-h-0"
-                    style={{ gridAutoRows: "minmax(60px, 1fr)" }}
+                    className="grid grid-cols-7 gap-1.5 sm:gap-2 flex-1"
+                    style={{ gridAutoRows: "minmax(0,1fr)" }}
                 >
                     {cells.map((c, i) => {
                         const key =
@@ -238,9 +182,10 @@ export default function CalendarView({
                             <div
                                 key={i}
                                 className={[
-                                    "rounded-md md:rounded-lg border border-app bg-card p-1 md:p-2 flex flex-col relative min-h-[60px]",
-                                    !c.inMonth ? "opacity-40" : "cursor-pointer active:bg-white/5 md:hover:bg-white/5",
+                                    "rounded-lg border border-app bg-card p-2 flex flex-col relative",
+                                    !c.inMonth ? "opacity-40" : "cursor-pointer hover:bg-white/5",
                                 ].join(" ")}
+                                style={{ minHeight: rowMinHeight }}
                                 onClick={() => c.date && c.inMonth && openDayModal(c.date)}
                                 aria-label={c.date ? `Open bookings for ${c.date.toDateString()}` : undefined}
                                 role={c.date ? "button" : undefined}
@@ -253,29 +198,29 @@ export default function CalendarView({
                                     }
                                 }}
                             >
-                                <div className="flex items-center justify-between mb-1">
-                                    <div className="text-[9px] md:text-[11px] text-muted-foreground font-medium">{c.dayNum ?? ""}</div>
-                                    <div className="flex items-center gap-0.5 md:gap-1">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-[11px] text-muted-foreground">{c.dayNum ?? ""}</div>
+                                    <div className="flex items-center gap-1">
                                         {count > 0 && (
                                             <div
-                                                className="px-1 md:px-1.5 py-0.5 rounded-full text-[8px] md:text-[10px] font-medium bg-red-500/20 text-red-300 border border-red-500/30"
+                                                className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-500/20 text-red-300 border border-red-500/30"
                                                 title={`${count} booking${count > 1 ? "s" : ""}`}
                                             >
                                                 {count}
                                             </div>
                                         )}
                                         {isToday && (
-                                            <div className="text-[8px] md:text-[10px] px-1 py-0.5 rounded bg-white/10">Today</div>
+                                            <div className="text-[10px] px-1 py-0.5 rounded bg-white/10">Today</div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="mt-auto flex flex-col gap-0.5 md:gap-1 overflow-hidden">
-                                    {dayBookings.slice(0, 2).map((b) => (
+                                <div className="mt-2 flex flex-col gap-1">
+                                    {dayBookings.slice(0, 3).map((b) => (
                                         <button
                                             key={b.id}
                                             className={[
-                                                "w-full text-[8px] md:text-[11px] rounded border px-1 md:px-2 py-0.5 md:py-1 text-left active:bg-white/10 md:hover:bg-white/10 transition-colors",
+                                                "w-full text-[11px] rounded border px-2 py-1 text-left hover:bg-white/10",
                                                 statusChip[b.status ?? ""] ?? "border-white/10 text-white/90",
                                             ].join(" ")}
                                             title={`${b.title}${b.clientName ? " • " + b.clientName : ""}`}
@@ -284,15 +229,16 @@ export default function CalendarView({
                                                 onSelectBooking(b);
                                             }}
                                         >
-                                            <div className="truncate font-medium text-[8px] md:text-[10px]">{b.title}</div>
-                                            <div className="opacity-80 truncate text-[7px] md:text-[9px]">
-                                                {fmtTime(b.start)}–{fmtTime(b.end)}
+                                            <div className="truncate font-medium">{b.title}</div>
+                                            <div className="opacity-80 truncate">
+                                                {fmtTime(b.start)} – {fmtTime(b.end)}
+                                                {b.clientName ? ` • ${b.clientName}` : ""}
                                             </div>
                                         </button>
                                     ))}
-                                    {dayBookings.length > 2 && (
-                                        <div className="text-[7px] md:text-[10px] text-muted-foreground">
-                                            +{dayBookings.length - 2}
+                                    {dayBookings.length > 3 && (
+                                        <div className="text-[10px] text-muted-foreground">
+                                            +{dayBookings.length - 3} more
                                         </div>
                                     )}
                                 </div>
@@ -303,9 +249,9 @@ export default function CalendarView({
             </div>
 
             <Dialog open={dayModalOpen} onOpenChange={setDayModalOpen}>
-                <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle className="text-base md:text-lg lg:text-xl">
+                        <DialogTitle className="text-lg md:text-xl">
                             {selectedDate
                                 ? selectedDate.toLocaleDateString(undefined, {
                                     weekday: "long",
@@ -315,14 +261,14 @@ export default function CalendarView({
                                 })
                                 : "Selected Day"}
                         </DialogTitle>
-                        <DialogDescription className="text-sm md:text-base lg:text-lg">
+                        <DialogDescription className="text-base md:text-lg">
                             Booked slots for this day
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="mt-3 space-y-2 md:space-y-3">
+                    <div className="mt-3 space-y-3">
                         {selectedDayBookings.length === 0 && (
-                            <div className="text-sm md:text-base lg:text-lg text-muted-foreground text-center py-4">
+                            <div className="text-base md:text-lg text-muted-foreground">
                                 No bookings on this day.
                             </div>
                         )}
@@ -330,10 +276,10 @@ export default function CalendarView({
                         {selectedDayBookings.map((b) => (
                             <div
                                 key={b.id}
-                                className="flex items-center justify-between rounded-md border border-app bg-card px-3 py-2 md:px-4 md:py-3"
+                                className="flex items-center justify-between rounded-md border border-app bg-card px-4 py-3"
                             >
-                                <div className="min-w-0 flex-1">
-                                    <div className="text-xs md:text-sm lg:text-base font-semibold truncate">
+                                <div className="min-w-0">
+                                    <div className="text-sm md:text-base font-semibold truncate">
                                         {fmtTime(b.start)} – {fmtTime(b.end)}
                                     </div>
                                     <div className="text-xs md:text-sm text-muted-foreground truncate">
@@ -342,7 +288,7 @@ export default function CalendarView({
                                     </div>
                                 </div>
                                 <button
-                                    className="text-xs md:text-sm px-3 py-1.5 md:px-4 md:py-2 rounded border border-app active:bg-white/5 md:hover:bg-white/5 transition-colors ml-2 flex-shrink-0"
+                                    className="text-xs px-2 py-1 rounded border border-app hover:bg-white/5"
                                     onClick={() => {
                                         onSelectBooking(b);
                                         setDayModalOpen(false);

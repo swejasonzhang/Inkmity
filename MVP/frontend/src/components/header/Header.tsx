@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon, LogOut, User } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
@@ -26,7 +26,7 @@ type ThemeSwitchProps = {
 
 const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
   const { pathname } = useLocation();
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
+  const isDashboard = pathname.startsWith("/dashboard");
   if (!isDashboard) return null;
   const isLight = theme === "light";
   const dims =
@@ -65,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
+  const isDashboard = pathname.startsWith("/dashboard");
 
   const [userLabel, setUserLabel] = useState<string>("");
   const [labelLoaded, setLabelLoaded] = useState<boolean>(false);
@@ -119,8 +119,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
-    await signOut();
-    navigate("/login");
+    await signOut({ redirectUrl: "/login" });
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
@@ -223,9 +222,9 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
 
   return (
     <>
-      <header className="flex w-full relative items-center z-50 px-4 md:px-6 py-4 text-app bg-transparent">
+      <header className="flex w-full relative items-center z-50 px-6 md:px-10 py-4 text-app bg-transparent">
         <div className="w-full flex justify-between items-center md:grid md:grid-cols-[1fr_auto_1fr]">
-          <div className="justify-self-start flex-shrink-0">
+          <div className="justify-self-start -ml-2 md:-ml-6 pl-2 md:pl-0 flex-shrink-0">
             <Link to={homeHref} className="flex items-center md:gap-4 gap-3">
               <img src={resolvedLogo} alt="Inkmity Logo" className="h-20 md:h-24 lg:h-28 w-auto object-contain" draggable={false} />
               <span className="sr-only">Inkmity</span>
@@ -236,7 +235,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
             <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[19px]" />
           </div>
 
-          <div className="flex items-center gap-4 justify-self-end">
+          <div className="flex items-center gap-4 pr-2 md:pr-0 justify-self-end">
             {isDashboard && (
               <>
                 <div className="hidden md:block mt-[5px]">
@@ -252,7 +251,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
               <Menu size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
 
-            {isSignedIn && isLoaded && labelLoaded && userLabel && userLabel !== "User" && (
+            {isSignedIn && isLoaded && labelLoaded && (
               <div
                 className="relative hidden md:inline-block align-top text-app [&_*]:text-app [&_*]:border-app"
                 onMouseEnter={() => setShowDropdown(true)}
@@ -268,7 +267,7 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
                   <span className="mr-2 font-semibold text-xl leading-none">✦</span>
                   <span className="inline-flex items-center leading-none">
                     <span className="mr-1">Hello,</span>
-                    <span className="font-bold max-w-[14rem] truncate">{userLabel}</span>
+                    <span className="font-bold max-w-[14rem] truncate">{userLabel || "User"}</span>
                   </span>
                 </div>
 
@@ -282,13 +281,8 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
                 >
                   <div className="px-4 py-3 text-center">
                     <div className="text-xs subtle">Signed in as</div>
-                    <div className="text-lg font-semibold truncate">{userLabel}</div>
+                    <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
                   </div>
-                  <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-                  <Link to="/profile" className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">
-                    <User size={18} />
-                    <span>Profile</span>
-                  </Link>
                   <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
                   <button onClick={handleLogout} className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">
                     <LogOut size={18} />

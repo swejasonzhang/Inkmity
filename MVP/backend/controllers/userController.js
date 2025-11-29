@@ -4,7 +4,6 @@ import "../models/Client.js";
 import "../models/Artist.js";
 import cloudinary from "../lib/cloudinary.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
-import { getIO } from "../services/socketService.js";
 
 const SAFE_ROLES = new Set(["client", "artist"]);
 
@@ -106,16 +105,6 @@ export async function updateMyAvatar(req, res) {
     { new: true }
   ).lean();
   if (!user) return res.status(404).json({ error: "User not found" });
-  
-  if (user.role === "artist") {
-    try {
-      const io = getIO();
-      io.emit("artist:profile:updated", { clerkId, artistId: user._id });
-    } catch (e) {
-      console.error("[updateMyAvatar] Failed to emit profile update event:", e);
-    }
-  }
-  
   res.json(user);
 }
 
@@ -218,7 +207,7 @@ export async function getArtists(req, res) {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .select(
-        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages avatar coverImage wontTattoo"
+        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages"
       )
       .lean(),
   ]);
@@ -344,11 +333,6 @@ export async function syncUser(req, res) {
         .map((u) => String(u || "").trim())
         .filter(Boolean)
         .slice(0, 3);
-      const wontTattoo = (
-        Array.isArray(profile.wontTattoo) ? profile.wontTattoo : []
-      )
-        .map((s) => String(s || "").trim())
-        .filter(Boolean);
       Object.assign(setDoc, {
         location: profile.location ?? "",
         shop,
@@ -356,7 +340,6 @@ export async function syncUser(req, res) {
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
         bookingPreference,
         travelFrequency,
-        ...(wontTattoo.length ? { wontTattoo } : {}),
         ...(coverImage ? { coverImage } : {}),
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
       });
@@ -373,20 +356,6 @@ export async function syncUser(req, res) {
         setDefaultsOnInsert: true,
       }
     ).lean();
-    
-    if (user) {
-      try {
-        const io = getIO();
-        if (role === "artist") {
-          io.emit("artist:profile:updated", { clerkId, artistId: user._id });
-        } else if (role === "client") {
-          io.emit("client:profile:updated", { clerkId, clientId: user._id });
-        }
-      } catch (e) {
-        console.error("[syncUser] Failed to emit profile update event:", e);
-      }
-    }
-    
     res.status(200).json(user);
   } catch (e) {
     console.error("[syncUser] failed:", e);
@@ -432,14 +401,6 @@ export async function saveMyPortfolio(req, res) {
       { new: true }
     ).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
-    
-    try {
-      const io = getIO();
-      io.emit("artist:profile:updated", { clerkId, artistId: user._id });
-    } catch (e) {
-      console.error("[saveMyPortfolio] Failed to emit profile update event:", e);
-    }
-    
     res.json({ ok: true, portfolioImages: user.portfolioImages || [] });
   } catch {
     res.status(500).json({ error: "save_portfolio_failed" });

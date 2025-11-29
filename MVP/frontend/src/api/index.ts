@@ -1,8 +1,9 @@
 import { useAuth } from "@clerk/clerk-react";
-import { env } from "@/utils/env";
-import { logger } from "@/utils/logger";
 
-export const API_URL: string = env.apiUrl;
+export const API_URL: string =
+  (import.meta as any)?.env?.VITE_API_URL ||
+  import.meta.env?.VITE_API_URL ||
+  "http://localhost:5005";
 
 export function isAbortError(
   e: unknown
@@ -61,7 +62,7 @@ export async function apiRequest<T = any>(
     res = await fetch(url, req);
   } catch (e) {
     if (isAbortError(e)) throw e;
-    logger.error("API request fetch failed", { url, error: e });
+    console.error("[apiRequest] fetch failed", { url, init: req, error: e });
     throw e;
   }
 
@@ -84,10 +85,11 @@ export async function apiRequest<T = any>(
     (err as any).url = url;
     (err as any).headers = headersObj;
     (err as any).requestId = requestId;
-    logger.error("API request http error", {
+    console.error("[apiRequest] http error", {
       url,
       status: res.status,
       body,
+      headers: headersObj,
       requestId,
     });
     throw err;
@@ -194,37 +196,7 @@ export type Booking = {
   startAt: string;
   endAt: string;
   note?: string;
-  serviceName?: string;
-  serviceDescription?: string;
-  requirements?: string;
-  estimatedDuration?: number;
-  location?: string;
-  contactPhone?: string;
-  contactEmail?: string;
-  status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show";
-  priceCents?: number;
-  depositRequiredCents?: number;
-  depositPaidCents?: number;
-  clientCode?: string;
-  artistCode?: string;
-  codeIssuedAt?: string;
-  codeExpiresAt?: string;
-  clientVerifiedAt?: string;
-  artistVerifiedAt?: string;
-  matchedAt?: string;
-  completedAt?: string;
-  confirmedAt?: string;
-  reminderSentAt?: string;
-  reminderSent24h?: boolean;
-  reminderSent1h?: boolean;
-  cancelledAt?: string;
-  cancelledBy?: "client" | "artist" | "system";
-  cancellationReason?: string;
-  rescheduledAt?: string;
-  rescheduledFrom?: string;
-  rescheduledBy?: "client" | "artist";
-  createdAt?: string;
-  updatedAt?: string;
+  status: "booked" | "cancelled" | "completed" | "pending";
 };
 
 export type Me = {
@@ -318,48 +290,6 @@ export async function listBookingsForDay(
   );
 }
 
-export async function getBookingsForArtist(
-  artistId?: string,
-  token?: string,
-  signal?: AbortSignal,
-  filters?: {
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  }
-) {
-  return apiGet<Booking[]>(
-    "/bookings/artist",
-    {
-      ...(artistId ? { artistId } : {}),
-      ...(filters || {}),
-    },
-    token,
-    signal
-  );
-}
-
-export async function getBookingsForClient(
-  clientId?: string,
-  token?: string,
-  signal?: AbortSignal,
-  filters?: {
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  }
-) {
-  return apiGet<Booking[]>(
-    "/bookings/client",
-    {
-      ...(clientId ? { clientId } : {}),
-      ...(filters || {}),
-    },
-    token,
-    signal
-  );
-}
-
 export async function createBooking(
   input: {
     artistId: string;
@@ -368,14 +298,6 @@ export async function createBooking(
     startISO: string;
     endISO: string;
     note?: string;
-    serviceName?: string;
-    serviceDescription?: string;
-    requirements?: string;
-    estimatedDuration?: number;
-    location?: string;
-    contactPhone?: string;
-    contactEmail?: string;
-    priceCents?: number;
   },
   token?: string,
   signal?: AbortSignal
@@ -386,59 +308,21 @@ export async function createBooking(
       artistId: input.artistId,
       clientId: input.clientId,
       serviceId: input.serviceId,
-      startISO: input.startISO,
-      endISO: input.endISO,
+      startAt: input.startISO,
+      endAt: input.endISO,
       note: input.note,
-      serviceName: input.serviceName,
-      serviceDescription: input.serviceDescription,
-      requirements: input.requirements,
-      estimatedDuration: input.estimatedDuration,
-      location: input.location,
-      contactPhone: input.contactPhone,
-      contactEmail: input.contactEmail,
-      priceCents: input.priceCents || 0,
     },
     token,
     signal
   );
 }
 
-export async function confirmBooking(
-  id: string,
-  token?: string,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>(`/bookings/${id}/confirm`, undefined, token, signal);
-}
-
 export async function cancelBooking(
   id: string,
-  reason?: string,
   token?: string,
   signal?: AbortSignal
 ) {
-  return apiPost<Booking>(
-    `/bookings/${id}/cancel`,
-    reason ? { reason } : undefined,
-    token,
-    signal
-  );
-}
-
-export async function rescheduleBooking(
-  id: string,
-  startISO: string,
-  endISO: string,
-  reason?: string,
-  token?: string,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>(
-    `/bookings/${id}/reschedule`,
-    { startISO, endISO, reason },
-    token,
-    signal
-  );
+  return apiPost<Booking>(`/bookings/${id}/cancel`, undefined, token, signal);
 }
 
 export async function completeBooking(

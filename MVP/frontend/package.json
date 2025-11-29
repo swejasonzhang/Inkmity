@@ -6,14 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:analyze": "tsc -b && vite build --mode production && npx vite-bundle-visualizer",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css,md}\"",
-    "type-check": "tsc --noEmit",
-    "preview": "vite preview",
-    "prepare": "husky install || true"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.50.0",

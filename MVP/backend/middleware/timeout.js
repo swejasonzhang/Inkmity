@@ -1,25 +1,28 @@
-export const requestTimeout = (timeoutMs = 30000) => {
+export const requestTimeout = (ms) => {
   return (req, res, next) => {
-    const timeout = setTimeout(() => {
+    let timeoutId;
+
+    const clearRequestTimeout = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    timeoutId = setTimeout(() => {
       if (!res.headersSent) {
-        res.status(504).json({
-          error: "Request Timeout",
-          message: "The request took too long to process",
-          requestId: req.requestId,
+        clearRequestTimeout();
+        res.status(408).json({
+          error: "Request timeout",
+          message: `Request exceeded ${ms}ms timeout`,
         });
       }
-    }, timeoutMs);
+    }, ms);
 
-    const originalEnd = res.end;
-    res.end = function (...args) {
-      clearTimeout(timeout);
-      originalEnd.apply(this, args);
-    };
+    res.once("finish", clearRequestTimeout);
+    res.once("close", clearRequestTimeout);
+    res.once("error", clearRequestTimeout);
 
     next();
   };
 };
-
-
-
-

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
@@ -8,9 +8,6 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
 import { useTheme } from "@/hooks/useTheme";
-import { logger } from "@/utils/logger";
-
-const Profile = lazy(() => import("./pages/Profile"));
 
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
@@ -36,20 +33,10 @@ const DashboardScope: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  useEffect(() => {
-    logger.info("App mounted");
-    return () => {
-      logger.info("App unmounting");
-    };
-  }, []);
-
   return (
     <Routes>
       <Route path="/dashboard" element={<DashboardScope />}>
         <Route index element={<Dashboard />} />
-      </Route>
-      <Route path="/profile" element={<DashboardScope />}>
-        <Route index element={<Suspense fallback={null}><Profile /></Suspense>} />
       </Route>
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />

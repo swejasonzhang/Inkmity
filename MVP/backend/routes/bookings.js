@@ -7,25 +7,15 @@ import {
   completeBooking,
   startVerification,
   verifyBookingCode,
-  getBookingsForArtist,
-  getBookingsForClient,
-  confirmBooking,
-  rescheduleBooking,
-  updateBookingTime,
 } from "../controllers/bookingController.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 router.get("/", getBookingsForDay);
-router.get("/artist", requireAuth(), getBookingsForArtist);
-router.get("/client", requireAuth(), getBookingsForClient);
 router.get("/:id", getBooking);
 router.post("/", requireAuth(), createBooking);
-router.post("/:id/confirm", requireAuth(), confirmBooking);
 router.post("/:id/cancel", requireAuth(), cancelBooking);
 router.post("/:id/complete", requireAuth(), completeBooking);
-router.post("/:id/reschedule", requireAuth(), rescheduleBooking);
-router.put("/:id/time", requireAuth(), updateBookingTime);
 router.post("/:id/verify/start", requireAuth(), startVerification);
 router.post("/:id/verify", requireAuth(), verifyBookingCode);
 export default router;
