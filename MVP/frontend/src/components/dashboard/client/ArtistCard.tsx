@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 
 interface Artist {
   _id: string;
@@ -12,7 +12,6 @@ interface Artist {
   reviewsCount?: number;
   yearsExperience?: number;
   profileImage?: string;
-  avatar?: { url?: string; publicId?: string };
   coverImage?: string;
   portfolioImages?: string[];
   pastWorks?: string[];
@@ -23,7 +22,6 @@ interface Artist {
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
   shop?: string;
   shopName?: string;
-  wontTattoo?: string[];
 }
 
 interface ArtistCardProps {
@@ -33,17 +31,8 @@ interface ArtistCardProps {
 }
 
 const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = false }) => {
-  const profileImageUrl = artist.profileImage || artist.avatar?.url || "";
-  const coverImageUrl = artist.coverImage || "";
-  const [avatarOk, setAvatarOk] = useState(Boolean(profileImageUrl));
-  const [bgOk, setBgOk] = useState(Boolean(coverImageUrl));
-
-  useEffect(() => {
-    const newProfileImageUrl = artist.profileImage || artist.avatar?.url || "";
-    const newCoverImageUrl = artist.coverImage || "";
-    setAvatarOk(Boolean(newProfileImageUrl));
-    setBgOk(Boolean(newCoverImageUrl));
-  }, [artist.profileImage, artist.avatar?.url, artist.coverImage]);
+  const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
+  const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
 
   const portfolio = useMemo(() => (artist.portfolioImages || []).filter(Boolean), [artist.portfolioImages]);
   const pastWorks = artist.pastWorks?.length ? artist.pastWorks : portfolio;
@@ -58,12 +47,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
     const raw = (artist as any).styles ?? artist.style ?? [];
     const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[;,/]+/) : [];
     return arr.map(s => String(s).trim()).filter(Boolean);
-  }, [artist]);
-
-  const wontTattooClean = useMemo(() => {
-    const raw = artist.wontTattoo ?? [];
-    const arr = Array.isArray(raw) ? raw : (typeof raw === "string" ? raw.split(/[;,/]+/) : []);
-    return arr.map((s: string) => String(s).trim()).filter(Boolean);
   }, [artist]);
 
   const stylesPrimary = stylesClean.slice(0, 3);
@@ -107,29 +90,28 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   );
 
   const shopLabel = artist.shopName || artist.shop || "";
-  const currentYearsExperience = typeof artist.yearsExperience === "number" ? artist.yearsExperience : 0;
-  const years = currentYearsExperience === 0 ? "<1 yr exp" : currentYearsExperience === 1 ? "1 yr exp" : `${currentYearsExperience} yrs exp`;
+  const years = typeof artist.yearsExperience === "number" && artist.yearsExperience >= 0 ? `${artist.yearsExperience} yr${artist.yearsExperience === 1 ? "" : "s"} exp` : "";
   const loc = artist.location?.trim() || "";
 
   const shellClass = fullScreen
-    ? "group w-full h-full min-h-0 flex flex-col items-center justify-center rounded-3xl border bg-card/90 transition"
-    : "group w-full h-full flex flex-col rounded-3xl border bg-card/90 transition";
+    ? "group w-full h-full min-h-0 flex flex-col items-center justify-center overflow-hidden rounded-3xl border bg-card/90 transition"
+    : "group w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition";
 
   return (
     <div
-      className={fullScreen ? "h-full min-h-0 px-3 sm:px-0 flex items-center justify-center" : undefined}
+      className={fullScreen ? "h-full min-h-0 px-3 sm:px-0" : undefined}
       style={
         fullScreen
           ? ({ paddingBottom: "10px" } as React.CSSProperties)
           : undefined
       }
     >
-      <div className={shellClass} style={{ borderColor: "var(--border)", overflow: "hidden" }} data-artist-card="true">
-        <div className="relative w-full overflow-hidden">
-          <div className={`relative w-full ${fullScreen ? "flex-1 md:h-[15rem] md:flex-none" : "h-[18.125rem]"} sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden`} style={{ background: "var(--elevated)", ...(fullScreen ? { minHeight: "200px" } : {}) }}>
-            {bgOk && coverImageUrl ? (
+      <div className={shellClass} style={{ borderColor: "var(--border)" }} data-artist-card="true">
+        <div className="relative w-full">
+          <div className={`relative w-full ${fullScreen ? "h-[15rem]" : "h-[18.125rem]"} sm:h-[14.375rem] md:h-[21.125rem] lg:h-[23.3125rem] overflow-hidden`} style={{ background: "var(--elevated)" }}>
+            {bgOk && artist.coverImage ? (
               <img
-                src={coverImageUrl}
+                src={artist.coverImage}
                 alt={`${artist.username} background`}
                 className="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"
@@ -142,10 +124,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
             <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
-              <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-32 w-32" : "h-36 w-36"} sm:h-40 sm:w-40 md:h-44 md:w-44 ring-2 ring-[color:var(--card)]`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                {avatarOk && profileImageUrl ? (
+              <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-32 w-32" : "h-36 w-36"} sm:h-40 sm:w-40 md:h-44 md:w-44 shadow-2xl ring-2 ring-[color:var(--card)]`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+                {avatarOk && artist.profileImage ? (
                   <img
-                    src={profileImageUrl}
+                    src={artist.profileImage}
                     alt={`${artist.username} profile`}
                     className="h-full w-full object-cover"
                     loading="lazy"
@@ -163,7 +145,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         </div>
 
         <div
-          className={`${fullScreen ? "px-5 py-8 sm:py-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col items-center justify-center ${fullScreen ? "gap-4" : "gap-7"}`}
+          className={`${fullScreen ? "px-5 pt-4 pb-8 sm:pb-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col ${fullScreen ? "gap-4" : "gap-7"}`}
           style={fullScreen ? undefined : undefined}
         >
           <div className={`flex flex-col items-center text-center ${fullScreen ? "gap-4" : "gap-4 sm:gap-5"}`}>
@@ -193,30 +175,6 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               {years && chip(years, "years")}
               {loc && chip(loc, "loc")}
             </div>
-            {wontTattooClean.length > 0 && (
-              <div className={`mt-3 ${fullScreen ? "px-4" : "px-4 sm:px-0"}`}>
-                <div className="text-center mb-2">
-                  <span className={`${fullScreen ? "text-sm" : "text-xs"} font-medium`} style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
-                    Won't Tattoo:
-                  </span>
-                </div>
-                <div className={`flex flex-wrap items-center justify-center gap-2 ${fullScreen ? "text-sm" : "text-xs"}`}>
-                  {wontTattooClean.map((item: string, i: number) => (
-                    <span
-                      key={`wont-${i}`}
-                      className="inline-flex items-center rounded-full px-2.5 py-1 border"
-                      style={{
-                        borderColor: "color-mix(in oklab, var(--border) 80%, red 20%)",
-                        background: "color-mix(in oklab, var(--elevated) 60%, red 5%)",
-                        color: "color-mix(in oklab, var(--fg) 90%, red 10%)"
-                      }}
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {portfolio.length > 0 && (

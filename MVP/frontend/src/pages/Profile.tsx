@@ -72,7 +72,6 @@ export default function Profile() {
   useDashboardScope(scopeRef.current, theme);
 
   useEffect(() => {
-    // Allow scrolling on all devices
     return () => {};
   }, [isLoaded]);
 
