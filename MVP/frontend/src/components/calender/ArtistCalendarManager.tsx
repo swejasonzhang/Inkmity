@@ -1,12 +1,11 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
-import { Calendar as CalendarIcon, X, Plus, Clock, Ban } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getSocket } from "@/lib/socket";
 
-type Weekday = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 type TimeRange = { start: string; end: string };
 type Booking = {
     _id: string;
@@ -16,16 +15,6 @@ type Booking = {
     status: string;
     note?: string;
 };
-
-const WEEKDAYS: { key: Weekday; label: string }[] = [
-    { key: "mon", label: "Monday" },
-    { key: "tue", label: "Tuesday" },
-    { key: "wed", label: "Wednesday" },
-    { key: "thu", label: "Thursday" },
-    { key: "fri", label: "Friday" },
-    { key: "sat", label: "Saturday" },
-    { key: "sun", label: "Sunday" },
-];
 
 export default function ArtistCalendarManager({ artistId }: { artistId: string }) {
     const { getToken } = useAuth();
@@ -65,7 +54,6 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
         try {
             const token = await getToken();
             const startOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-            const endOfMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
             
             const response = await fetch(
                 `${API_URL}/bookings?artistId=${artistId}&date=${startOfMonth.toISOString().slice(0, 10)}`,
@@ -319,7 +307,8 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                     return (
                         <div
                             key={i}
-                            className={`rounded-lg border p-2 min-h-[100px] cursor-pointer transition-colors ${
+                            data-calendar-cell
+                            className={`rounded-lg border p-2 min-h-[100px] cursor-pointer outline-none focus:outline-none select-none ${
                                 !cell.inMonth
                                     ? "opacity-40"
                                     : isBlocked
@@ -328,11 +317,38 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                     ? "bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/20"
                                     : "hover:bg-white/5"
                             }`}
-                            style={{ borderColor: "var(--border)", background: cell.inMonth ? "var(--card)" : undefined }}
+                            style={{ 
+                                borderColor: "var(--border)", 
+                                background: cell.inMonth ? "var(--card)" : undefined,
+                                filter: "none !important",
+                                transform: "none !important",
+                                willChange: "auto",
+                                backfaceVisibility: "visible",
+                                WebkitFontSmoothing: "antialiased",
+                                MozOsxFontSmoothing: "grayscale",
+                                textRendering: "optimizeLegibility",
+                                WebkitTextSizeAdjust: "100%"
+                            }}
                             onClick={() => cell.date && cell.inMonth && openDayModal(cell.date)}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }}
+                            tabIndex={-1}
                         >
                             <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium" style={{ color: "var(--fg)" }}>
+                                <span 
+                                    className="text-sm font-medium" 
+                                    style={{ 
+                                        color: "var(--fg)",
+                                        filter: "none !important",
+                                        transform: "none !important",
+                                        willChange: "auto",
+                                        WebkitFontSmoothing: "antialiased",
+                                        MozOsxFontSmoothing: "grayscale",
+                                        textRendering: "optimizeLegibility"
+                                    }}
+                                >
                                     {cell.dayNum}
                                 </span>
                                 {isToday && (
@@ -348,7 +364,18 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                 </div>
                             )}
                             {dayBookings.length > 0 && (
-                                <div className="text-xs" style={{ color: "var(--fg)" }}>
+                                <div 
+                                    className="text-xs" 
+                                    style={{ 
+                                        color: "var(--fg)",
+                                        filter: "none !important",
+                                        transform: "none !important",
+                                        willChange: "auto",
+                                        WebkitFontSmoothing: "antialiased",
+                                        MozOsxFontSmoothing: "grayscale",
+                                        textRendering: "optimizeLegibility"
+                                    }}
+                                >
                                     {dayBookings.length} booking{dayBookings.length > 1 ? "s" : ""}
                                 </div>
                             )}
