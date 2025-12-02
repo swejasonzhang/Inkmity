@@ -5,8 +5,34 @@ import { useRole } from "@/hooks/useRole";
 import { useSyncOnAuth } from "@/hooks/useSyncOnAuth";
 import { useTheme } from "@/hooks/useTheme";
 
-const ClientDashboard = lazy(() => import("@/components/dashboard/client/ClientDashboard"));
-const ArtistDashboard = lazy(() => import("@/components/dashboard/artist/ArtistDashboard"));
+const loadClientDashboard = () => {
+  return import("@/components/dashboard/client/ClientDashboard").catch((error) => {
+    console.error("Failed to load ClientDashboard, retrying...", error);
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        import("@/components/dashboard/client/ClientDashboard")
+          .then(resolve)
+          .catch(reject);
+      }, 1000);
+    });
+  });
+};
+
+const loadArtistDashboard = () => {
+  return import("@/components/dashboard/artist/ArtistDashboard").catch((error) => {
+    console.error("Failed to load ArtistDashboard, retrying...", error);
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        import("@/components/dashboard/artist/ArtistDashboard")
+          .then(resolve)
+          .catch(reject);
+      }, 1000);
+    });
+  });
+};
+
+const ClientDashboard = lazy(loadClientDashboard);
+const ArtistDashboard = lazy(loadArtistDashboard);
 
 const LOAD_MS = 400;
 const FADE_MS = 160;
@@ -140,7 +166,31 @@ const Dashboard: React.FC = () => {
         className="flex-1 min-h-0 w-full"
         style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
       >
-        <Suspense fallback={null}>
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-4">
+              <div 
+                className="rounded-full border-4"
+                style={{ 
+                  width: "48px", 
+                  height: "48px", 
+                  borderColor: "color-mix(in oklab, var(--fg) 15%, transparent)",
+                  borderTopColor: "var(--fg)",
+                  animation: "spin 1s linear infinite"
+                }} 
+              />
+              <div className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+                Loading dashboard...
+              </div>
+            </div>
+            <style>{`
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        }>
           {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}
         </Suspense>
       </div>

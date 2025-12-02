@@ -4,6 +4,7 @@ import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
@@ -37,6 +38,9 @@ const App: React.FC = () => {
     <Routes>
       <Route path="/dashboard" element={<DashboardScope />}>
         <Route index element={<Dashboard />} />
+      </Route>
+      <Route path="/profile" element={<DashboardScope />}>
+        <Route index element={<Profile />} />
       </Route>
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
