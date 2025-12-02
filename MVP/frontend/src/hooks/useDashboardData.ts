@@ -52,7 +52,7 @@ export function useDashboardData() {
     reqRef.current?.abort();
     reqRef.current = new AbortController();
 
-    return fetchArtists(params);
+    return fetchArtists(params, reqRef.current.signal);
   }
 
   const loadFirst = useCallback(async (filters: ArtistFilters = {}) => {
