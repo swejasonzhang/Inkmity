@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { fetchArtists, type Artist } from "@/api";
 import { toast } from "react-toastify";
-import { connectSocket, disconnectSocket, getSocket } from "@/lib/socket";
+import { connectSocket, getSocket } from "@/lib/socket";
 
 type ArtistFilters = {
   search?: string;

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon, LogOut } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
@@ -283,6 +283,15 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
                     <div className="text-xs subtle">Signed in as</div>
                     <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
                   </div>
+                  <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+                  <Link 
+                    to="/profile" 
+                    onClick={() => setShowDropdown(false)}
+                    className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2"
+                  >
+                    <User size={18} />
+                    <span>Profile</span>
+                  </Link>
                   <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
                   <button onClick={handleLogout} className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">
                     <LogOut size={18} />

@@ -11,6 +11,7 @@ export type ArtistWithGroups = {
     clerkId: string;
     username: string;
     bio?: string;
+    portfolioImages?: string[];
     pastWorks?: string[];
     healedWorks?: string[];
     sketches?: string[];
@@ -22,6 +23,7 @@ export type PortfolioProps = {
 };
 
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
+    const recent = useMemo(() => (artist?.portfolioImages ?? []).filter(Boolean), [artist]);
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
     const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
@@ -191,16 +193,31 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                     </div>
                 </section>
 
-                <section className="w-full">
-                    <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                        <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Past Works</h3>
-                        <span className="text-xs portfolio-section-count">
-                            {past.length ? `${past.length} image${past.length === 1 ? "" : "s"}` : "—"}
-                        </span>
-                    </header>
-                    <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
-                    <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
-                </section>
+                {recent.length > 0 && (
+                    <section className="w-full">
+                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Recent Works</h3>
+                            <span className="text-xs portfolio-section-count">
+                                {recent.length} image{recent.length === 1 ? "" : "s"}
+                            </span>
+                        </header>
+                        <MobileCarousel images={recent} imgAltPrefix="Recent work" label="Recent Works" />
+                        <ImageGrid images={recent} imgAltPrefix="Recent work" label="Recent Works" />
+                    </section>
+                )}
+
+                {past.length > 0 && (
+                    <section className="w-full">
+                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Past Works</h3>
+                            <span className="text-xs portfolio-section-count">
+                                {past.length} image{past.length === 1 ? "" : "s"}
+                            </span>
+                        </header>
+                        <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
+                        <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
+                    </section>
+                )}
 
                 {healed.length > 0 && (
                     <section className="w-full">

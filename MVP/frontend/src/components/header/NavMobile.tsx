@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { NavItem as BuildNavItem } from "./buildNavItems";
 import { InkAccentMobile } from "@/components/header/InkBar";
-import { Lock } from "lucide-react";
+import { Lock, User } from "lucide-react";
 
 export type NavItem = BuildNavItem;
 
@@ -84,19 +84,32 @@ export function NavMobile({
             })}
 
             {isSignedIn && (
-                <button
-                    type="button"
-                    onClick={() => {
-                        setMobileMenuOpen(false);
-                        handleLogout();
-                    }}
-                    className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide"
-                >
-                    <span className="inline-flex items-center justify-center scale-125">
-                        <InkAccentMobile active={false} />
-                    </span>
-                    <span>Logout</span>
-                </button>
+                <>
+                    <Link
+                        to="/profile"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide"
+                    >
+                        <span className="inline-flex items-center justify-center scale-125">
+                            <InkAccentMobile active={isActive("/profile")} />
+                        </span>
+                        <User size={20} />
+                        <span>Profile</span>
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setMobileMenuOpen(false);
+                            handleLogout();
+                        }}
+                        className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide"
+                    >
+                        <span className="inline-flex items-center justify-center scale-125">
+                            <InkAccentMobile active={false} />
+                        </span>
+                        <span>Logout</span>
+                    </button>
+                </>
             )}
         </nav>
     );

@@ -35,9 +35,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
 
   const portfolio = useMemo(() => (artist.portfolioImages || []).filter(Boolean), [artist.portfolioImages]);
-  const pastWorks = artist.pastWorks?.length ? artist.pastWorks : portfolio;
-  const healedWorks = artist.healedWorks?.length ? artist.healedWorks : [];
-  const sketches = artist.sketches?.length ? artist.sketches : [];
+  const recentWorks = portfolio.slice(0, 3);
+  const pastWorks = (artist.pastWorks || []).filter(Boolean);
+  const healedWorks = (artist.healedWorks || []).filter(Boolean);
+  const sketches = (artist.sketches || []).filter(Boolean);
 
   const initials = useMemo(() => (artist.username || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join(""), [artist.username]);
 
@@ -54,7 +55,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
 
   const openProfile = () => {
     if ((window as any).__INK_MODAL_JUST_CLOSED_AT__ && Date.now() - (window as any).__INK_MODAL_JUST_CLOSED_AT__ < 350) return;
-    onClick?.({ ...artist, pastWorks, healedWorks, sketches });
+    onClick?.({ ...artist, portfolioImages: portfolio, pastWorks, healedWorks, sketches });
   };
 
   const Grid: React.FC<{ images: string[]; eager?: number }> = ({ images, eager = 6 }) =>
@@ -177,9 +178,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             </div>
           </div>
 
-          {portfolio.length > 0 && (
+          {recentWorks.length > 0 && (
             <div className={`mt-3 ${fullScreen ? "w-full max-w-full mx-auto px-4 sm:px-0" : "px-4 sm:px-0"}`}>
-              <Grid images={portfolio} />
+              <Grid images={recentWorks} />
             </div>
           )}
 
