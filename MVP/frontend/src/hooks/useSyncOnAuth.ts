@@ -7,19 +7,35 @@ type Role = "client" | "artist";
 export function useSyncOnAuth() {
   const { isSignedIn, user } = useUser();
   const { getToken } = useAuth();
-  const ranRef = useRef(false);
+  const ranRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!isSignedIn || ranRef.current) return;
-    ranRef.current = true;
+    if (!isSignedIn || !user?.id) return;
+    
+    if (ranRef.current === user.id) return;
+    
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+    const ac = abortControllerRef.current;
+    
+    ranRef.current = user.id;
+    let cancelled = false;
+    
     (async () => {
       try {
         const token = await getToken();
+        if (cancelled || ac.signal.aborted) return;
+        
         try {
-          await getMe({ token: token ?? undefined });
+          await getMe({ token: token ?? undefined, signal: ac.signal });
           return;
-        } catch {}
-        if (!user) return;
+        } catch (e: any) {
+          if (cancelled || ac.signal.aborted || e?.name === "AbortError") return;
+        }
+        
+        if (cancelled || ac.signal.aborted || !user) return;
+        
         const email =
           user.primaryEmailAddress?.emailAddress ||
           user.emailAddresses?.[0]?.emailAddress ||
@@ -50,6 +66,9 @@ export function useSyncOnAuth() {
                 placement: "",
                 size: "",
               };
+        
+        if (cancelled || ac.signal.aborted) return;
+        
         try {
           await syncUser(token ?? "", {
             clerkId: user.id,
@@ -60,11 +79,28 @@ export function useSyncOnAuth() {
             lastName: ln,
             profile,
           });
-        } catch {}
+        } catch (e: any) {
+          if (cancelled || ac.signal.aborted || e?.name === "AbortError") return;
+        }
+        
+        if (cancelled || ac.signal.aborted) return;
+        
         try {
-          await getMe({ token: token ?? undefined });
-        } catch {}
-      } catch {}
+          await getMe({ token: token ?? undefined, signal: ac.signal });
+        } catch (e: any) {
+          if (cancelled || ac.signal.aborted || e?.name === "AbortError") return;
+        }
+      } catch (e: any) {
+        if (cancelled || ac.signal.aborted || e?.name === "AbortError") return;
+        if (ranRef.current === user.id) {
+          ranRef.current = null;
+        }
+      }
     })();
-  }, [isSignedIn, getToken, user]);
+    
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [isSignedIn, user?.id]);
 }

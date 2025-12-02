@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useRole } from "@/hooks/useRole";
@@ -37,7 +37,7 @@ const ArtistDashboard = lazy(loadArtistDashboard);
 const LOAD_MS = 400;
 const FADE_MS = 160;
 
-const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
+const Loading = ({ theme }: { theme: "light" | "dark" }) => {
   const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
   const fg = theme === "light" ? "#111111" : "#f5f5f5";
   return (
@@ -83,11 +83,11 @@ function useDashboardScope(scopeEl: HTMLElement | null, initialTheme: "light" | 
   }, [scopeEl, initialTheme]);
 }
 
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   useSyncOnAuth();
   const { role, isLoaded, isSignedIn } = useRole();
   const navigate = useNavigate();
-  const warnedRef = useRef(false as boolean);
+  const warnedRef = useRef(false);
   const { override } = useDevOverride();
   const { theme } = useTheme();
 

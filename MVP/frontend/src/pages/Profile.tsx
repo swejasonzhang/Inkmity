@@ -71,10 +71,6 @@ export default function Profile() {
 
   useDashboardScope(scopeRef.current, theme);
 
-  useEffect(() => {
-    return () => {};
-  }, [isLoaded]);
-
   const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
   const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 

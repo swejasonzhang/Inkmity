@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
 import { Menu, X, Sun, Moon, LogOut, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -24,9 +24,9 @@ type ThemeSwitchProps = {
   size?: "lg" | "md" | "sm";
 };
 
-const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "md" }) => {
+const ThemeSwitch = ({ theme, toggleTheme, size = "md" }: ThemeSwitchProps) => {
   const { pathname } = useLocation();
-  const isDashboard = pathname.startsWith("/dashboard");
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
   if (!isDashboard) return null;
   const isLight = theme === "light";
   const dims =
@@ -57,7 +57,7 @@ const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ theme, toggleTheme, size = "m
   );
 };
 
-const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: logoSrcProp }) => {
+const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderProps) => {
   const { signOut } = useClerk();
   const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
@@ -65,14 +65,26 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  const isDashboard = pathname.startsWith("/dashboard");
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
 
   const [userLabel, setUserLabel] = useState<string>("");
   const [labelLoaded, setLabelLoaded] = useState<boolean>(false);
   const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
 
+  const userLabelRef = useRef<string>("");
   useEffect(() => {
     if (!isLoaded) return;
+    if (!isSignedIn) {
+      setUserLabel("");
+      setLabelLoaded(false);
+      userLabelRef.current = "";
+      return;
+    }
+    if (userLabelRef.current) {
+      setUserLabel(userLabelRef.current);
+      setLabelLoaded(true);
+      return;
+    }
     let cancelled = false;
     let resolved = false;
     setLabelLoaded(false);
@@ -82,27 +94,34 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
       setUserLabel("User");
       setLabelLoaded(true);
     }, FALLBACK_MS);
+    const ac = new AbortController();
     async function run() {
       if (!isSignedIn || !API_BASE) return;
       try {
         const token = await getToken();
+        if (cancelled || ac.signal.aborted) return;
         const res = await fetch(`${API_BASE}/users/me`, {
           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           credentials: "include",
+          signal: ac.signal,
         });
+        if (cancelled || ac.signal.aborted) return;
         if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         const name =
           (data?.username && String(data.username).trim()) ||
           (data?.handle && String(data.handle).replace(/^@/, "")) ||
           "";
-        if (cancelled) return;
+        if (cancelled || ac.signal.aborted) return;
         resolved = true;
         window.clearTimeout(fallbackTimer);
-        setUserLabel(name || "User");
+        const finalName = name || "User";
+        userLabelRef.current = finalName;
+        setUserLabel(finalName);
         setLabelLoaded(true);
-      } catch {
-        if (cancelled) return;
+      } catch (e: any) {
+        if (cancelled || ac.signal.aborted) return;
+        if (e?.name === "AbortError") return;
         resolved = true;
         window.clearTimeout(fallbackTimer);
         setUserLabel("User");
@@ -112,9 +131,10 @@ const Header: React.FC<HeaderProps> = ({ disableDashboardLink = false, logoSrc: 
     run();
     return () => {
       cancelled = true;
+      ac.abort();
       window.clearTimeout(fallbackTimer);
     };
-  }, [isLoaded, isSignedIn, getToken, API_BASE]);
+  }, [isLoaded, isSignedIn]);
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
