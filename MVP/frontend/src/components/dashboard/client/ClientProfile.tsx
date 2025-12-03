@@ -478,7 +478,7 @@ export default function ClientProfile() {
                 className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], "reference")}
             />
-            <div className="group w-full max-w-4xl flex flex-col rounded-3xl transition relative p-8 items-center overflow-y-auto" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 95%, var(--fg) 5%), color-mix(in oklab, var(--bg) 75%, var(--fg) 25%))", maxHeight: "100%" }}>
+            <div className="group w-full max-w-4xl flex flex-col rounded-3xl transition relative p-8 items-center overflow-y-auto" style={{ background: "var(--card)", color: "var(--fg)", maxHeight: "100%" }}>
                 <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative" style={{ overflow: "visible" }}>
 
                     <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
@@ -546,9 +546,9 @@ export default function ClientProfile() {
                         <textarea
                             value={currentBio}
                             onChange={(e) => setEditedClient({ ...editedClient, bio: e.target.value })}
-                            className="w-full max-w-prose bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-xs md:text-sm text-center"
+                            className="w-full max-w-prose backdrop-blur-sm border rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-xs md:text-sm text-center"
                             rows={3}
-                            style={{ color: "var(--fg)" }}
+                            style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
                             placeholder="Tell us about yourself..."
                         />
                     </div>
@@ -684,9 +684,9 @@ export default function ClientProfile() {
                             <textarea
                                 value={currentMessage}
                                 onChange={(e) => setEditedClient({ ...editedClient, messageToArtists: e.target.value })}
-                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm"
+                                className="w-full backdrop-blur-sm border rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm"
                                 rows={4}
-                                style={{ color: "var(--fg)" }}
+                                style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
                                 placeholder={defaultMessage}
                             />
                             
