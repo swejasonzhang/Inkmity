@@ -205,7 +205,7 @@ export default function ClientProfile() {
                 budgetMax: data.budgetMax ?? 200,
                 placement: data.placement || "",
                 size: data.size || "",
-                messageToArtists: data.messageToArtists || "",
+                messageToArtists: data.messageToArtists ?? "",
             };
             setClient(clientData);
             setEditedClient({});
@@ -311,6 +311,30 @@ export default function ClientProfile() {
             const budgetMin = Math.max(MIN, Math.min(MAX, Number(editedClient.budgetMin ?? client.budgetMin ?? 100)));
             const budgetMax = Math.max(budgetMin + MIN_GAP, Math.min(MAX, Number(editedClient.budgetMax ?? client.budgetMax ?? 200)));
             const refs = (editedClient.references || client.references || []).slice(0, 3);
+            const messageToArtists = editedClient.messageToArtists ?? client.messageToArtists ?? "";
+
+            console.log("[ClientProfile] Saving profile with messageToArtists:", messageToArtists);
+            console.log("[ClientProfile] editedClient.messageToArtists:", editedClient.messageToArtists);
+            console.log("[ClientProfile] client.messageToArtists:", client.messageToArtists);
+
+            const payload = {
+                clerkId: user.id,
+                email,
+                role: "client",
+                username,
+                profile: {
+                    location: editedClient.location ?? client.location,
+                    coverImage: editedClient.coverImage ?? client.coverImage,
+                    budgetMin,
+                    budgetMax,
+                    placement: editedClient.placement ?? client.placement,
+                    size: editedClient.size ?? client.size,
+                    referenceImages: refs,
+                    messageToArtists: messageToArtists,
+                },
+                bio: editedClient.bio ?? client.bio,
+            };
+            console.log("[ClientProfile] Saving payload:", JSON.stringify(payload, null, 2));
 
             const response = await fetch(`${API_URL}/users/sync`, {
                 method: "POST",
@@ -318,25 +342,16 @@ export default function ClientProfile() {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    clerkId: user.id,
-                    email,
-                    role: "client",
-                    username,
-                    profile: {
-                        location: editedClient.location ?? client.location,
-                        coverImage: editedClient.coverImage ?? client.coverImage,
-                        budgetMin,
-                        budgetMax,
-                        placement: editedClient.placement ?? client.placement,
-                        size: editedClient.size ?? client.size,
-                        referenceImages: refs,
-                        messageToArtists: editedClient.messageToArtists ?? client.messageToArtists ?? "",
-                    },
-                    bio: editedClient.bio ?? client.bio,
-                }),
+                body: JSON.stringify(payload),
             });
-            if (!response.ok) throw new Error("Failed to save profile");
+            console.log("[ClientProfile] Save response status:", response.status);
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("[ClientProfile] Save failed - Status:", response.status, "Response:", errorText);
+                throw new Error("Failed to save profile");
+            }
+            const responseData = await response.json();
+            console.log("[ClientProfile] Save response data:", responseData);
 
             await loadProfile();
             setEditedClient({});
@@ -683,7 +698,11 @@ export default function ClientProfile() {
                             </p>
                             <textarea
                                 value={currentMessage}
-                                onChange={(e) => setEditedClient({ ...editedClient, messageToArtists: e.target.value })}
+                                onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    console.log("[ClientProfile] messageToArtists onChange:", newValue);
+                                    setEditedClient({ ...editedClient, messageToArtists: newValue });
+                                }}
                                 className="w-full backdrop-blur-sm border rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm"
                                 rows={4}
                                 style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}

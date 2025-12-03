@@ -146,19 +146,27 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     (async () => {
       try {
         const token = await getToken();
+        console.log("[ArtistBooking] Fetching client profile from:", `${API_URL}/users/me`);
         const res = await fetch(`${API_URL}/users/me`, {
           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), "Content-Type": "application/json" },
           credentials: "include",
         });
+        console.log("[ArtistBooking] Response status:", res.status, res.ok);
         if (!cancelled && res.ok) {
           const data = await res.json();
+          console.log("[ArtistBooking] Client profile data:", data);
+          console.log("[ArtistBooking] messageToArtists:", data.messageToArtists);
+          console.log("[ArtistBooking] references:", data.references);
           setClientProfile({
             messageToArtists: data.messageToArtists || "",
             references: data.references || [],
           });
+        } else if (!cancelled) {
+          const errorText = await res.text();
+          console.error("[ArtistBooking] Failed to fetch client profile - Status:", res.status, "Response:", errorText);
         }
       } catch (e) {
-        console.error("Failed to fetch client profile:", e);
+        console.error("[ArtistBooking] Failed to fetch client profile - Error:", e);
       }
     })();
     return () => {
@@ -167,19 +175,15 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   }, [getToken]);
 
   const preloadedMessage = useMemo(() => {
+    console.log("[ArtistBooking] Computing preloadedMessage, clientProfile:", clientProfile);
     if (clientProfile?.messageToArtists?.trim()) {
-      return clientProfile.messageToArtists.trim();
+      const msg = clientProfile.messageToArtists.trim();
+      console.log("[ArtistBooking] Using profile message:", msg);
+      return msg;
     }
-    const parts = [
-      `Hi ${artist.username}, I've looked through your work and I'm interested.`,
-      "I'm flexible on size and placement.",
-      "I'm flexible on style.",
-      "Are you interested in this project?"
-    ]
-      .filter(Boolean)
-      .join(" ");
-    return parts.replace(/\s+/g, " ").trim();
-  }, [artist.username, clientProfile?.messageToArtists]);
+    console.log("[ArtistBooking] No message found in profile, returning empty string");
+    return "";
+  }, [clientProfile?.messageToArtists]);
 
   function mapError(status: number | undefined, body: any): string {
     const code = typeof body?.error === "string" ? body.error : "";
@@ -206,7 +210,11 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       return;
     }
     const preMsg = preloadedMessage.trim();
+    console.log("[ArtistBooking] handleSendMessage - preloadedMessage:", preloadedMessage);
+    console.log("[ArtistBooking] handleSendMessage - preMsg (trimmed):", preMsg);
+    console.log("[ArtistBooking] handleSendMessage - clientProfile:", clientProfile);
     if (!preMsg) {
+      console.error("[ArtistBooking] Message is empty, cannot send");
       setStatus("error");
       setErrorMsg("Message is empty.");
       return;
@@ -235,11 +243,14 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           stylesSnapshot: []
         }
       };
+      console.log("[ArtistBooking] Sending request to:", `${apiOrigin}/messages/request`);
+      console.log("[ArtistBooking] Request payload:", payload);
       const res: any = await request(`${apiOrigin}/messages/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload)
       });
+      console.log("[ArtistBooking] Request response:", res);
       const ok = typeof res?.ok === "boolean" ? res.ok : true;
       if (!ok) throw Object.assign(new Error(res?.error || `HTTP ${res?.status || 500}`), { status: res?.status, body: res });
       sentRef.current = true;

@@ -69,8 +69,53 @@ export const bioText = (username, bio) =>
 export async function getMe(req, res) {
   const clerkId = getClerkId(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+  console.log("[getMe] Fetching user with clerkId:", clerkId);
   const me = await User.findOne({ clerkId }).lean();
-  if (!me) return res.status(404).json({ error: "Not found" });
+  if (!me) {
+    console.error("[getMe] User not found for clerkId:", clerkId);
+    return res.status(404).json({ error: "Not found" });
+  }
+  console.log("[getMe] User found, role:", me.role);
+  if (me.role === "client") {
+    const Client = mongoose.model("client");
+    const client = await Client.findOne({ clerkId }).select("messageToArtists references budgetMin budgetMax location placement size").lean();
+    console.log("[getMe] Client data:", client);
+    if (client) {
+      console.log("[getMe] Client messageToArtists:", client.messageToArtists);
+      console.log("[getMe] Client references:", client.references);
+      let messageToArtists = client.messageToArtists || "";
+      
+      if (!messageToArtists || !messageToArtists.trim()) {
+        const budgetMin = client.budgetMin ?? 100;
+        const budgetMax = client.budgetMax ?? 200;
+        const location = client.location ?? "";
+        const placement = client.placement ?? "";
+        const size = client.size ?? "";
+        
+        const sizeOptions = [
+          { value: "tiny", label: "Tiny (≤ 2 in)" },
+          { value: "small", label: "Small (2–4 in)" },
+          { value: "medium", label: "Medium (4–6 in)" },
+          { value: "large", label: "Large (6–10 in)" },
+          { value: "xl", label: "XL (10–14 in)" },
+          { value: "xxl", label: "XXL (≥ 14 in)" },
+        ];
+        const sizeLabel = sizeOptions.find(s => s.value === size)?.label || size;
+        
+        messageToArtists = `Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $${budgetMin}-$${budgetMax}.${location ? ` I'm located in ${location}.` : ""}${placement ? ` I'm looking for something on my ${placement.toLowerCase()}.` : ""}${size ? ` Size preference: ${sizeLabel}.` : ""} Let me know if you're available and interested!`;
+        console.log("[getMe] Generated default messageToArtists:", messageToArtists);
+        
+        await Client.updateOne({ clerkId }, { $set: { messageToArtists } });
+        console.log("[getMe] Saved generated messageToArtists to database");
+      }
+      
+      me.messageToArtists = messageToArtists;
+      me.references = client.references || [];
+    } else {
+      console.warn("[getMe] Client model not found for clerkId:", clerkId);
+    }
+  }
+  console.log("[getMe] Returning user data with messageToArtists:", me.messageToArtists);
   res.json(me);
 }
 
@@ -312,14 +357,39 @@ export async function syncUser(req, res) {
         .map((u) => String(u || "").trim())
         .filter(Boolean)
         .slice(0, 3);
+      let messageToArtists = profile.messageToArtists ?? "";
+      console.log("[syncUser] Client profile messageToArtists:", messageToArtists);
+      console.log("[syncUser] profile.messageToArtists from request:", profile.messageToArtists);
+      
+      if (!messageToArtists || !messageToArtists.trim()) {
+        const location = profile.location ?? "";
+        const placement = profile.placement ?? "";
+        const size = profile.size ?? "";
+        
+        const sizeOptions = [
+          { value: "tiny", label: "Tiny (≤ 2 in)" },
+          { value: "small", label: "Small (2–4 in)" },
+          { value: "medium", label: "Medium (4–6 in)" },
+          { value: "large", label: "Large (6–10 in)" },
+          { value: "xl", label: "XL (10–14 in)" },
+          { value: "xxl", label: "XXL (≥ 14 in)" },
+        ];
+        const sizeLabel = sizeOptions.find(s => s.value === size)?.label || size;
+        
+        messageToArtists = `Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $${budgetMin}-$${budgetMax}.${location ? ` I'm located in ${location}.` : ""}${placement ? ` I'm looking for something on my ${placement.toLowerCase()}.` : ""}${size ? ` Size preference: ${sizeLabel}.` : ""} Let me know if you're available and interested!`;
+        console.log("[syncUser] Generated default messageToArtists:", messageToArtists);
+      }
+      
       Object.assign(setDoc, {
         budgetMin,
         budgetMax,
         location: profile.location ?? "",
         placement: profile.placement ?? "",
         size: profile.size ?? "",
+        messageToArtists: messageToArtists,
         ...(refs.length ? { references: refs } : {}),
       });
+      console.log("[syncUser] setDoc after assign:", JSON.stringify(setDoc, null, 2));
     } else {
       const years = Number(profile.years ?? profile.yearsExperience ?? 0);
       const baseRate = Number(profile.baseRate ?? 0);
