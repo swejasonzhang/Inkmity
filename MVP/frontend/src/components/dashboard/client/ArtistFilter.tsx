@@ -381,7 +381,7 @@ const ArtistFilter: React.FC<Props> = ({
       className={clsx(
         "w-full bg-card border-b border-app mb-3",
         "sm:border sm:rounded-xl sm:shadow-sm sm:mb-0",
-        "mx-auto",
+        "mx-auto overflow-visible",
         className
       )}
       role="region"
@@ -389,9 +389,9 @@ const ArtistFilter: React.FC<Props> = ({
       style={inlineTheme}
     >
       <div className="sm:hidden border-t border-app" aria-hidden="true" />
-      <div className="w-full mx-auto">
-        <div className="p-2 sm:p-3">
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3 w-full">
+      <div className="w-full mx-auto overflow-visible">
+        <div className="p-2 sm:p-3 overflow-visible">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-3 w-full overflow-visible">
             <div className={clsx("relative col-span-2 sm:col-span-1", SEARCH_W, "sm:mr-2")}>
               <Input
                 value={localSearch}
@@ -424,7 +424,7 @@ const ArtistFilter: React.FC<Props> = ({
               </button>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={priceFilter}
                 onValueChange={(value) => {
@@ -445,7 +445,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={locationFilter}
                 onValueChange={(value) => {
@@ -469,7 +469,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={styleFilter}
                 onValueChange={(value) => {
@@ -493,7 +493,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={availabilityFilter}
                 onValueChange={(v) => {
@@ -514,7 +514,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={experienceFilter}
                 onValueChange={(v) => {
@@ -535,7 +535,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={bookingFilter}
                 onValueChange={(v) => {
@@ -556,7 +556,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={travelFilter}
                 onValueChange={(v) => {
@@ -577,7 +577,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1 overflow-visible", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
               <Select
                 value={sort}
                 onValueChange={(v) => {

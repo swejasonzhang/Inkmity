@@ -5,10 +5,10 @@ import { useRole } from "@/hooks/useRole";
 import { useSyncOnAuth } from "@/hooks/useSyncOnAuth";
 import { useTheme } from "@/hooks/useTheme";
 
-const loadClientDashboard = () => {
+const loadClientDashboard = (): Promise<{ default: React.ComponentType<any> }> => {
   return import("@/components/dashboard/client/ClientDashboard").catch((error) => {
     console.error("Failed to load ClientDashboard, retrying...", error);
-    return new Promise((resolve, reject) => {
+    return new Promise<{ default: React.ComponentType<any> }>((resolve, reject) => {
       setTimeout(() => {
         import("@/components/dashboard/client/ClientDashboard")
           .then(resolve)
@@ -18,10 +18,10 @@ const loadClientDashboard = () => {
   });
 };
 
-const loadArtistDashboard = () => {
+const loadArtistDashboard = (): Promise<{ default: React.ComponentType<any> }> => {
   return import("@/components/dashboard/artist/ArtistDashboard").catch((error) => {
     console.error("Failed to load ArtistDashboard, retrying...", error);
-    return new Promise((resolve, reject) => {
+    return new Promise<{ default: React.ComponentType<any> }>((resolve, reject) => {
       setTimeout(() => {
         import("@/components/dashboard/artist/ArtistDashboard")
           .then(resolve)
