@@ -308,6 +308,7 @@ export const createMessageRequest = async (req, res) => {
       ])
     );
     const works = toUrlList(workRefs);
+    const finalText = (me?.messageToArtists && me.messageToArtists.trim()) ? me.messageToArtists.trim() : (text && text.trim() ? text.trim() : "");
     const metaPayload = {
       ...meta,
       referenceUrls: mergedRefs,
@@ -316,7 +317,7 @@ export const createMessageRequest = async (req, res) => {
     const reqMsg = await Message.create({
       senderId: clientId,
       receiverId: artistId,
-      text,
+      text: finalText,
       type: "request",
       requestStatus: "pending",
       meta: metaPayload,
@@ -340,7 +341,7 @@ export const createMessageRequest = async (req, res) => {
         from: clientId,
         to: artistId,
         requestId: String(reqMsg._id),
-        text,
+        text: finalText,
         createdAt: reqMsg.createdAt.toISOString(),
         message: initialMessage,
       });

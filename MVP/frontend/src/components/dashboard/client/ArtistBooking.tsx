@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useApi, isAbortError } from "@/api";
+import { useApi, isAbortError, API_URL } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -25,6 +26,7 @@ type Gate = {
 
 export default function ArtistBooking({ artist, onBack, onClose }: BookingProps) {
   const { request } = useApi();
+  const { getToken } = useAuth();
   const apiOrigin =
     (import.meta as any)?.env?.VITE_API_URL ||
     import.meta.env?.VITE_API_URL ||
@@ -34,6 +36,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   const [errorMsg, setErrorMsg] = useState("");
   const [gate, setGate] = useState<Gate | null>(null);
   const [gateReady, setGateReady] = useState(true);
+  const [clientProfile, setClientProfile] = useState<{ messageToArtists?: string; references?: string[] } | null>(null);
   const sentRef = useRef(false);
   const fetchingRef = useRef(false);
   const lastArtistIdRef = useRef<string | undefined>(undefined);
@@ -138,7 +141,35 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     );
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_URL}/users/me`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), "Content-Type": "application/json" },
+          credentials: "include",
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setClientProfile({
+            messageToArtists: data.messageToArtists || "",
+            references: data.references || [],
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch client profile:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken]);
+
   const preloadedMessage = useMemo(() => {
+    if (clientProfile?.messageToArtists?.trim()) {
+      return clientProfile.messageToArtists.trim();
+    }
     const parts = [
       `Hi ${artist.username}, I've looked through your work and I'm interested.`,
       "I'm flexible on size and placement.",
@@ -148,7 +179,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       .filter(Boolean)
       .join(" ");
     return parts.replace(/\s+/g, " ").trim();
-  }, [artist.username]);
+  }, [artist.username, clientProfile?.messageToArtists]);
 
   function mapError(status: number | undefined, body: any): string {
     const code = typeof body?.error === "string" ? body.error : "";
@@ -183,12 +214,13 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     setStatus("sending");
     setErrorMsg("");
     try {
+      const profileRefs = clientProfile?.references || [];
       const payload = {
         artistId: artist.clerkId,
         text: preMsg,
-        references: [],
-        referenceUrls: [],
-        workRefs: [],
+        references: profileRefs,
+        referenceUrls: profileRefs,
+        workRefs: profileRefs,
         type: "request",
         meta: {
           style: null,
@@ -197,9 +229,9 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           budgetMin: null,
           budgetMax: null,
           targetDate: date ? date.toISOString() : null,
-          referenceUrls: [],
-          workRefs: [],
-          refs: [],
+          referenceUrls: profileRefs,
+          workRefs: profileRefs,
+          refs: profileRefs,
           stylesSnapshot: []
         }
       };
