@@ -246,15 +246,19 @@ export default function FloatingBar({
                 style={{
                   width: DESKTOP_CLOSED_W,
                   height: collapsedHeight,
+                  position: "relative",
                 }}
               >
                 <div
                   ref={btnRef}
                   className="ink-solid-controls flex items-center justify-center pointer-events-auto"
                   style={{
-                    position: "relative",
+                    position: "absolute",
+                    right: 0,
+                    bottom: 0,
                     width: convW,
                     height: open ? convH : collapsedHeight,
+                    transformOrigin: "bottom right",
                     transition: "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1)"
                   }}
                 >
