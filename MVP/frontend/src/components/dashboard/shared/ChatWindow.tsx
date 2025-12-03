@@ -498,10 +498,32 @@ const ChatWindow: FC<ChatWindowProps> = ({
       .map(ch => ch[0]?.toUpperCase())
       .join("");
     const withBorder = opts?.border !== false;
+    const avatarClass = `h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold ${withBorder ? "border border-app" : ""}`;
+    
+    if (c.avatarUrl) {
+      return (
+        <div className="relative h-7 w-7">
+          <img
+            src={c.avatarUrl}
+            alt={name}
+            className={`h-7 w-7 rounded-full object-cover ${withBorder ? "border border-app" : ""}`}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const img = e.currentTarget;
+              img.style.display = "none";
+              const fallback = img.parentElement?.querySelector(".avatar-fallback") as HTMLElement;
+              if (fallback) fallback.style.display = "grid";
+            }}
+          />
+          <span className={`avatar-fallback ${avatarClass}`} style={{ display: "none", position: "absolute", inset: 0 }}>
+            {initials || "?"}
+          </span>
+        </div>
+      );
+    }
     return (
-      <span
-        className={`h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold ${withBorder ? "border border-app" : ""}`}
-      >
+      <span className={avatarClass}>
         {initials || "?"}
       </span>
     );
