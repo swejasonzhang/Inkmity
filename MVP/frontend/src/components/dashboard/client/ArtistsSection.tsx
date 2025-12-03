@@ -405,6 +405,9 @@ export default function ArtistsSection({
                                             ...artistData,
                                             profileImage: artistData.profileImage || artistData.avatar?.url || undefined,
                                             avatarUrl: artistData.avatarUrl || artistData.avatar?.url || undefined,
+                                            pastWorks: artistData.pastWorks || [],
+                                            healedWorks: artistData.healedWorks || [],
+                                            sketches: artistData.sketches || [],
                                         };
                                         return (
                                             <div
@@ -474,6 +477,9 @@ export default function ArtistsSection({
                                         images: artistData.portfolioImages || [],
                                         profileImage: artistData.profileImage || artistData.avatar?.url || undefined,
                                         avatarUrl: artistData.avatarUrl || artistData.avatar?.url || undefined,
+                                        pastWorks: artistData.pastWorks || [],
+                                        healedWorks: artistData.healedWorks || [],
+                                        sketches: artistData.sketches || [],
                                     };
                                     return (
                                         <motion.div
