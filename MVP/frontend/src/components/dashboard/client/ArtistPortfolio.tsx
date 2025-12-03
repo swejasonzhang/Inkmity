@@ -72,11 +72,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                     ))}
                 </div>
             </div>
-        ) : (
-            <p className="hidden sm:block text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                No items to show yet.
-            </p>
-        );
+        ) : null;
 
     const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
         const [index, setIndex] = useState(0);
@@ -112,7 +108,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                             <Maximize2 className="h-3.5 w-3.5" /> View
                         </div>
                     </div>
-                    <div className="flex justify-center gap-2 py-4">abs
+                    <div className="flex justify-center gap-2 py-4">
                         {images.map((_, i) => (
                             <button
                                 key={i}
@@ -152,7 +148,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
+            <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12 w-full">
                 <section className="w-full mt-1">
                     <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
                         <CardHeader className="text-center space-y-1 px-3 sm:px-6">
@@ -189,64 +185,96 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                 </section>
 
                 <section className="w-full -mt-2">
-                    <div className="mx-auto max-w-4xl text-center px-4">
+                    <div className="mx-auto max-w-4xl text-center px-4 w-full">
                         <p className="text-lg sm:text-xl font-bold leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>
                             View the gallery below and click any image to zoom. Press and hold while zoomed for magnification.
                         </p>
                     </div>
                 </section>
 
-                {recent.length > 0 && (
-                    <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Recent Works</h3>
-                            <span className="text-xs portfolio-section-count">
+                <section className="w-full">
+                    <header className="mb-4 sm:mb-5 flex flex-col items-center justify-center gap-1 w-full">
+                        <h3 className="text-base sm:text-lg font-semibold portfolio-section-title text-center w-full">Recent Works</h3>
+                        {recent.length > 0 && (
+                            <span className="text-xs portfolio-section-count text-center">
                                 {recent.length} image{recent.length === 1 ? "" : "s"}
                             </span>
-                        </header>
-                        <MobileCarousel images={recent} imgAltPrefix="Recent work" label="Recent Works" />
-                        <ImageGrid images={recent} imgAltPrefix="Recent work" label="Recent Works" />
-                    </section>
-                )}
+                        )}
+                    </header>
+                    {recent.length > 0 ? (
+                        <div className="w-full">
+                            <MobileCarousel images={recent} imgAltPrefix="Recent work" label="Recent Works" />
+                            <ImageGrid images={recent} imgAltPrefix="Recent work" label="Recent Works" />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-center py-8 w-full" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            This artist doesn't have any images in this category. Stay tuned!
+                        </p>
+                    )}
+                </section>
 
-                {past.length > 0 && (
-                    <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Past Works</h3>
-                            <span className="text-xs portfolio-section-count">
+                <section className="w-full">
+                    <header className="mb-4 sm:mb-5 flex flex-col items-center justify-center gap-1 w-full">
+                        <h3 className="text-base sm:text-lg font-semibold portfolio-section-title text-center w-full">Past Works</h3>
+                        {past.length > 0 && (
+                            <span className="text-xs portfolio-section-count text-center">
                                 {past.length} image{past.length === 1 ? "" : "s"}
                             </span>
-                        </header>
-                        <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
-                        <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
-                    </section>
-                )}
+                        )}
+                    </header>
+                    {past.length > 0 ? (
+                        <div className="w-full">
+                            <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
+                            <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-center py-8 w-full" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            This artist doesn't have any images in this category. Stay tuned!
+                        </p>
+                    )}
+                </section>
 
-                {healed.length > 0 && (
-                    <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Healed Works</h3>
-                            <span className="text-xs portfolio-section-count">
+                <section className="w-full">
+                    <header className="mb-4 sm:mb-5 flex flex-col items-center justify-center gap-1 w-full">
+                        <h3 className="text-base sm:text-lg font-semibold portfolio-section-title text-center w-full">Healed Works</h3>
+                        {healed.length > 0 && (
+                            <span className="text-xs portfolio-section-count text-center">
                                 {healed.length} image{healed.length === 1 ? "" : "s"}
                             </span>
-                        </header>
-                        <MobileCarousel images={healed} imgAltPrefix="Healed work" label="Healed Works" />
-                        <ImageGrid images={healed} imgAltPrefix="Healed work" label="Healed Works" />
-                    </section>
-                )}
+                        )}
+                    </header>
+                    {healed.length > 0 ? (
+                        <div className="w-full">
+                            <MobileCarousel images={healed} imgAltPrefix="Healed work" label="Healed Works" />
+                            <ImageGrid images={healed} imgAltPrefix="Healed work" label="Healed Works" />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-center py-8 w-full" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            This artist doesn't have any images in this category. Stay tuned!
+                        </p>
+                    )}
+                </section>
 
-                {sketches.length > 0 && (
-                    <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Upcoming Sketches & Ideas</h3>
-                            <span className="text-xs portfolio-section-count">
+                <section className="w-full">
+                    <header className="mb-4 sm:mb-5 flex flex-col items-center justify-center gap-1 w-full">
+                        <h3 className="text-base sm:text-lg font-semibold portfolio-section-title text-center w-full">Upcoming Sketches & Ideas</h3>
+                        {sketches.length > 0 && (
+                            <span className="text-xs portfolio-section-count text-center">
                                 {sketches.length} image{sketches.length === 1 ? "" : "s"}
                             </span>
-                        </header>
-                        <MobileCarousel images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
-                        <ImageGrid images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
-                    </section>
-                )}
+                        )}
+                    </header>
+                    {sketches.length > 0 ? (
+                        <div className="w-full">
+                            <MobileCarousel images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
+                            <ImageGrid images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-center py-8 w-full" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            This artist doesn't have any images in this category. Stay tuned!
+                        </p>
+                    )}
+                </section>
             </div>
 
             {zoom && <FullscreenZoom src={zoom.items[zoom.index]} count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`} onPrev={goPrev} onNext={goNext} onClose={closeZoom} />}
