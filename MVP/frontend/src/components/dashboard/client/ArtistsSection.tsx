@@ -399,15 +399,23 @@ export default function ArtistsSection({
                                     onTouchStart={handleTouchStart}
                                     onTouchMove={handleTouchMove}
                                 >
-                                    {listItems.map((artist, index) => (
-                                        <div
-                                            key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                            className="snap-start h-full flex items-center justify-center"
-                                            style={{ height: snapHeight, scrollSnapStop: "always" }}
-                                        >
-                                            <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} fullScreen />
-                                        </div>
-                                    ))}
+                                    {listItems.map((artist, index) => {
+                                        const artistData = artist as any;
+                                        const transformedArtist = {
+                                            ...artistData,
+                                            profileImage: artistData.profileImage || artistData.avatar?.url || undefined,
+                                            avatarUrl: artistData.avatarUrl || artistData.avatar?.url || undefined,
+                                        };
+                                        return (
+                                            <div
+                                                key={`${artistData.clerkId ?? artistData._id}:${index}`}
+                                                className="snap-start h-full flex items-center justify-center"
+                                                style={{ height: snapHeight, scrollSnapStop: "always" }}
+                                            >
+                                                <ArtistCard artist={transformedArtist} onClick={() => onSelectArtist(artist)} fullScreen />
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                                 {listItems.length > 1 && (
                                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-10 pointer-events-none">
@@ -459,19 +467,28 @@ export default function ArtistsSection({
                     <div className={`hidden md:block h-full min-h-0 ${listItems.length >= 4 ? "overflow-y-auto" : "overflow-hidden"}`}>
                         {listItems.length > 0 ? (
                             <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-1 p-0 md:gap-5 md:p-3 ${listItems.length >= 4 ? "md:pb-20" : ""}`} style={{ minHeight: listItems.length >= 4 ? `${minGridPx}px` : "auto" }}>
-                                {listItems.map((artist, index) => (
-                                    <motion.div
-                                        key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="h-full flex"
-                                    >
-                                        <div className="h-full w-full flex" data-artist-card="true">
-                                            <ArtistCard artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any} onClick={() => onSelectArtist(artist)} />
-                                        </div>
-                                    </motion.div>
-                                ))}
+                                {listItems.map((artist, index) => {
+                                    const artistData = artist as any;
+                                    const transformedArtist = {
+                                        ...artistData,
+                                        images: artistData.portfolioImages || [],
+                                        profileImage: artistData.profileImage || artistData.avatar?.url || undefined,
+                                        avatarUrl: artistData.avatarUrl || artistData.avatar?.url || undefined,
+                                    };
+                                    return (
+                                        <motion.div
+                                            key={`${artistData.clerkId ?? artistData._id}:${index}`}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="h-full flex"
+                                        >
+                                            <div className="h-full w-full flex" data-artist-card="true">
+                                                <ArtistCard artist={transformedArtist} onClick={() => onSelectArtist(artist)} />
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="min-h-full p-0 md:p-3" style={{ minHeight: `${minGridPx}px`, height: `${minGridPx}px` }}>

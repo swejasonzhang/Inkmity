@@ -175,6 +175,8 @@ export type Artist = {
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
   avatarUrl?: string;
+  profileImage?: string;
+  avatar?: { url?: string; publicId?: string; alt?: string; width?: number; height?: number };
   createdAt?: string;
 };
 
