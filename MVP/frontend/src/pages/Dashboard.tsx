@@ -1,14 +1,14 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useRole } from "@/hooks/useRole";
 import { useSyncOnAuth } from "@/hooks/useSyncOnAuth";
 import { useTheme } from "@/hooks/useTheme";
 
-const loadClientDashboard = (): Promise<{ default: React.ComponentType<any> }> => {
+const loadClientDashboard = () => {
   return import("@/components/dashboard/client/ClientDashboard").catch((error) => {
     console.error("Failed to load ClientDashboard, retrying...", error);
-    return new Promise<{ default: React.ComponentType<any> }>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       setTimeout(() => {
         import("@/components/dashboard/client/ClientDashboard")
           .then(resolve)
@@ -18,10 +18,10 @@ const loadClientDashboard = (): Promise<{ default: React.ComponentType<any> }> =
   });
 };
 
-const loadArtistDashboard = (): Promise<{ default: React.ComponentType<any> }> => {
+const loadArtistDashboard = () => {
   return import("@/components/dashboard/artist/ArtistDashboard").catch((error) => {
     console.error("Failed to load ArtistDashboard, retrying...", error);
-    return new Promise<{ default: React.ComponentType<any> }>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       setTimeout(() => {
         import("@/components/dashboard/artist/ArtistDashboard")
           .then(resolve)
@@ -37,7 +37,7 @@ const ArtistDashboard = lazy(loadArtistDashboard);
 const LOAD_MS = 400;
 const FADE_MS = 160;
 
-const Loading = ({ theme }: { theme: "light" | "dark" }) => {
+const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
   const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
   const fg = theme === "light" ? "#111111" : "#f5f5f5";
   return (
@@ -83,11 +83,11 @@ function useDashboardScope(scopeEl: HTMLElement | null, initialTheme: "light" | 
   }, [scopeEl, initialTheme]);
 }
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   useSyncOnAuth();
   const { role, isLoaded, isSignedIn } = useRole();
   const navigate = useNavigate();
-  const warnedRef = useRef(false);
+  const warnedRef = useRef(false as boolean);
   const { override } = useDevOverride();
   const { theme } = useTheme();
 

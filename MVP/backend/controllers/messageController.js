@@ -1,6 +1,5 @@
 import Message from "../models/Message.js";
 import User from "../models/UserBase.js";
-import mongoose from "mongoose";
 import { getIO, userRoom, threadRoom } from "../services/socketService.js";
 
 const MAX_DECLINES = 99;
@@ -113,9 +112,9 @@ export const getAllMessagesForUser = async (req, res) => {
     const participantIds = [...buckets.keys()];
     const users = await User.find({ clerkId: { $in: participantIds } }).select(
       "clerkId username avatar"
-    ).lean();
+    );
     const userMap = Object.fromEntries(
-      users.map((u) => [u.clerkId, { username: u.username, avatarUrl: u.avatar?.url || undefined }])
+      users.map((u) => [u.clerkId, { username: u.username, avatarUrl: u.avatar?.url || null }])
     );
     const convs = [];
     for (const pid of participantIds) {
@@ -136,7 +135,7 @@ export const getAllMessagesForUser = async (req, res) => {
       convs.push({
         participantId: pid,
         username: userMap[pid]?.username || "Unknown",
-        avatarUrl: userMap[pid]?.avatarUrl,
+        avatarUrl: userMap[pid]?.avatarUrl || null,
         messages: buckets.get(pid).messages,
         meta: {
           allowed,
@@ -296,16 +295,7 @@ export const createMessageRequest = async (req, res) => {
       receiverId: artistId,
     });
     if (pending) return res.status(409).json({ error: "already_pending" });
-    const Client = mongoose.model("client");
-    console.log("[createMessageRequest] Fetching client with clerkId:", clientId);
-    const me = await Client.findOne({ clerkId: clientId }).select("messageToArtists references").lean();
-    console.log("[createMessageRequest] Client data:", me);
-    if (!me) {
-      console.error("[createMessageRequest] Client not found for clerkId:", clientId);
-      return res.status(404).json({ error: "client_not_found" });
-    }
-    console.log("[createMessageRequest] Client messageToArtists:", me?.messageToArtists);
-    console.log("[createMessageRequest] Request body text:", text);
+    const me = await User.findOne({ clerkId: clientId }).lean();
     const refsFromProfile = toUrlList(me?.references);
     const refsFromBody = toUrlList(referenceUrls);
     const refsFromMeta = toUrlList(meta?.referenceUrls);
@@ -319,14 +309,6 @@ export const createMessageRequest = async (req, res) => {
       ])
     );
     const works = toUrlList(workRefs);
-    const profileMessage = me?.messageToArtists ? String(me.messageToArtists).trim() : "";
-    console.log("[createMessageRequest] Profile message (trimmed):", profileMessage);
-    if (!profileMessage) {
-      console.error("[createMessageRequest] Profile message is empty, rejecting request");
-      return res.status(400).json({ error: "message_required", message: "Please set a message in your profile before sending requests." });
-    }
-    const finalText = profileMessage;
-    console.log("[createMessageRequest] Using finalText:", finalText);
     const metaPayload = {
       ...meta,
       referenceUrls: mergedRefs,
@@ -335,7 +317,7 @@ export const createMessageRequest = async (req, res) => {
     const reqMsg = await Message.create({
       senderId: clientId,
       receiverId: artistId,
-      text: finalText,
+      text,
       type: "request",
       requestStatus: "pending",
       meta: metaPayload,
@@ -359,7 +341,7 @@ export const createMessageRequest = async (req, res) => {
         from: clientId,
         to: artistId,
         requestId: String(reqMsg._id),
-        text: finalText,
+        text,
         createdAt: reqMsg.createdAt.toISOString(),
         message: initialMessage,
       });

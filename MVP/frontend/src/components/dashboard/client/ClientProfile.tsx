@@ -134,7 +134,6 @@ export default function ClientProfile() {
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const referenceInputRef = useRef<HTMLInputElement>(null);
-    const replaceInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
         loadStartTimeRef.current = Date.now();
@@ -205,7 +204,7 @@ export default function ClientProfile() {
                 budgetMax: data.budgetMax ?? 200,
                 placement: data.placement || "",
                 size: data.size || "",
-                messageToArtists: data.messageToArtists ?? "",
+                messageToArtists: data.messageToArtists || "",
             };
             setClient(clientData);
             setEditedClient({});
@@ -276,30 +275,6 @@ export default function ClientProfile() {
         setEditedClient(prev => ({ ...prev, references: newRefs }));
     };
 
-    const handleReplaceReference = async (index: number, file: File) => {
-        try {
-            setUploading(true);
-            const token = await getToken();
-
-            const sigResponse = await fetch(`${API_URL}/images/sign?kind=client_ref`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!sigResponse.ok) throw new Error("Failed to get upload signature");
-            const signature = await sigResponse.json();
-
-            const uploadData = await uploadToCloudinary(file, signature);
-            const currentRefs = editedClient.references || client?.references || [];
-            const newRefs = [...currentRefs];
-            newRefs[index] = uploadData.secure_url || uploadData.url;
-            setEditedClient(prev => ({ ...prev, references: newRefs }));
-        } catch (error) {
-            console.error("Failed to replace image:", error);
-            alert("Failed to replace image. Please try again.");
-        } finally {
-            setUploading(false);
-        }
-    };
-
     const saveProfile = async () => {
         if (!user || !client) return;
         try {
@@ -311,30 +286,6 @@ export default function ClientProfile() {
             const budgetMin = Math.max(MIN, Math.min(MAX, Number(editedClient.budgetMin ?? client.budgetMin ?? 100)));
             const budgetMax = Math.max(budgetMin + MIN_GAP, Math.min(MAX, Number(editedClient.budgetMax ?? client.budgetMax ?? 200)));
             const refs = (editedClient.references || client.references || []).slice(0, 3);
-            const messageToArtists = editedClient.messageToArtists ?? client.messageToArtists ?? "";
-
-            console.log("[ClientProfile] Saving profile with messageToArtists:", messageToArtists);
-            console.log("[ClientProfile] editedClient.messageToArtists:", editedClient.messageToArtists);
-            console.log("[ClientProfile] client.messageToArtists:", client.messageToArtists);
-
-            const payload = {
-                clerkId: user.id,
-                email,
-                role: "client",
-                username,
-                profile: {
-                    location: editedClient.location ?? client.location,
-                    coverImage: editedClient.coverImage ?? client.coverImage,
-                    budgetMin,
-                    budgetMax,
-                    placement: editedClient.placement ?? client.placement,
-                    size: editedClient.size ?? client.size,
-                    referenceImages: refs,
-                    messageToArtists: messageToArtists,
-                },
-                bio: editedClient.bio ?? client.bio,
-            };
-            console.log("[ClientProfile] Saving payload:", JSON.stringify(payload, null, 2));
 
             const response = await fetch(`${API_URL}/users/sync`, {
                 method: "POST",
@@ -342,16 +293,25 @@ export default function ClientProfile() {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({
+                    clerkId: user.id,
+                    email,
+                    role: "client",
+                    username,
+                    profile: {
+                        location: editedClient.location ?? client.location,
+                        coverImage: editedClient.coverImage ?? client.coverImage,
+                        budgetMin,
+                        budgetMax,
+                        placement: editedClient.placement ?? client.placement,
+                        size: editedClient.size ?? client.size,
+                        referenceImages: refs,
+                        messageToArtists: editedClient.messageToArtists ?? client.messageToArtists ?? "",
+                    },
+                    bio: editedClient.bio ?? client.bio,
+                }),
             });
-            console.log("[ClientProfile] Save response status:", response.status);
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("[ClientProfile] Save failed - Status:", response.status, "Response:", errorText);
-                throw new Error("Failed to save profile");
-            }
-            const responseData = await response.json();
-            console.log("[ClientProfile] Save response data:", responseData);
+            if (!response.ok) throw new Error("Failed to save profile");
 
             await loadProfile();
             setEditedClient({});
@@ -493,8 +453,8 @@ export default function ClientProfile() {
                 className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], "reference")}
             />
-            <div className="group w-full max-w-4xl flex flex-col rounded-3xl transition relative p-8 items-center overflow-y-auto" style={{ background: "var(--card)", color: "var(--fg)", maxHeight: "100%" }}>
-                <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative" style={{ overflow: "visible" }}>
+            <div className="group w-full max-w-4xl flex flex-col rounded-3xl transition relative p-8 items-center overflow-y-auto" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 95%, var(--fg) 5%), color-mix(in oklab, var(--bg) 75%, var(--fg) 25%))", maxHeight: "100%" }}>
+                <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative">
 
                     <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
                         {currentCoverImage && (
@@ -561,9 +521,9 @@ export default function ClientProfile() {
                         <textarea
                             value={currentBio}
                             onChange={(e) => setEditedClient({ ...editedClient, bio: e.target.value })}
-                            className="w-full max-w-prose backdrop-blur-sm border rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-xs md:text-sm text-center"
+                            className="w-full max-w-prose bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-xs md:text-sm text-center"
                             rows={3}
-                            style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
+                            style={{ color: "var(--fg)" }}
                             placeholder="Tell us about yourself..."
                         />
                     </div>
@@ -579,25 +539,21 @@ export default function ClientProfile() {
                         </div>
                     )}
 
-                    <div className="w-full mt-8 space-y-6" style={{ overflow: "visible" }}>
-                        <div className="rounded-2xl p-6 border backdrop-blur-sm w-full" 
+                    <div className="w-full mt-8 space-y-6">
+                        <div className="rounded-2xl p-6 border backdrop-blur-sm w-full"
                             style={{
                                 background: "color-mix(in oklab, var(--card) 80%, transparent)",
-                                borderColor: "var(--border)",
-                                overflow: "visible"
+                                borderColor: "var(--border)"
                             }}>
                             <h3 className="text-sm font-semibold mb-4 text-center" style={{ color: "var(--fg)" }}>
                                 Base Filters
                             </h3>
                             
-                            <div className="flex flex-col items-center justify-center space-y-4 w-full" style={{ overflow: "visible" }}>
+                            <div className="flex flex-col items-center justify-center space-y-4 w-full">
                                 <div className="w-full max-w-md">
                                     <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                         Budget Range: ${budgetMin} - ${budgetMax}
                                     </Label>
-                                    <p className="text-xs text-center mb-3" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                                        Adjust the slider to set your preferred budget range
-                                    </p>
                                     <Slider
                                         value={[budgetMin, budgetMax]}
                                         min={MIN}
@@ -612,14 +568,11 @@ export default function ClientProfile() {
                                     />
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-2xl" style={{ overflow: "visible", position: "relative" }}>
-                                    <div className="w-full sm:flex-1" style={{ position: "relative", overflow: "visible", zIndex: 10 }}>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-2xl">
+                                    <div className="w-full sm:w-[260px] sm:shrink-0">
                                         <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             City
                                         </Label>
-                                        <p className="text-xs text-center mb-2" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                                            Select your location
-                                        </p>
                                         <Select
                                             value={currentLocation || "none"}
                                             onValueChange={(v) => setEditedClient({ ...editedClient, location: v === "none" ? "" : v })}
@@ -627,7 +580,7 @@ export default function ClientProfile() {
                                             <SelectTrigger className="h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-4">
                                                 <SelectValue placeholder="No preference" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto z-[100]" position="popper" side="bottom" align="start" sideOffset={4}>
+                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
                                                 <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
                                                 {cities.map((city) => (
                                                     <SelectItem key={city} value={city} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{city}</SelectItem>
@@ -636,13 +589,10 @@ export default function ClientProfile() {
                                         </Select>
                                     </div>
 
-                                    <div className="w-full sm:flex-1" style={{ position: "relative", overflow: "visible", zIndex: 10 }}>
+                                    <div className="w-full sm:w-[260px] sm:shrink-0">
                                         <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Placement
                                         </Label>
-                                        <p className="text-xs text-center mb-2" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                                            Choose preferred body placement
-                                        </p>
                                         <Select
                                             value={currentPlacement || "none"}
                                             onValueChange={(v) => setEditedClient({ ...editedClient, placement: v === "none" ? "" : v })}
@@ -650,7 +600,7 @@ export default function ClientProfile() {
                                             <SelectTrigger className="h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-4">
                                                 <SelectValue placeholder="No preference" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto z-[100]" position="popper" side="bottom" align="start" sideOffset={4}>
+                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
                                                 <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
                                                 {PLACEMENT_OPTIONS.map((p) => (
                                                     <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
@@ -659,13 +609,10 @@ export default function ClientProfile() {
                                         </Select>
                                     </div>
 
-                                    <div className="w-full sm:flex-1" style={{ position: "relative", overflow: "visible", zIndex: 10 }}>
+                                    <div className="w-full sm:w-[260px] sm:shrink-0">
                                         <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Size
                                         </Label>
-                                        <p className="text-xs text-center mb-2" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
-                                            Select your preferred size
-                                        </p>
                                         <Select
                                             value={currentSize || "none"}
                                             onValueChange={(v) => setEditedClient({ ...editedClient, size: v === "none" ? "" : v })}
@@ -673,7 +620,7 @@ export default function ClientProfile() {
                                             <SelectTrigger className="h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-4">
                                                 <SelectValue placeholder="No preference" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto z-[100]" position="popper" side="bottom" align="start" sideOffset={4}>
+                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
                                                 <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
                                                 {SIZE_OPTIONS.map((s) => (
                                                     <SelectItem key={s.value} value={s.value} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{s.label}</SelectItem>
@@ -690,27 +637,20 @@ export default function ClientProfile() {
                                 background: "color-mix(in oklab, var(--card) 80%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
-                            <h3 className="text-sm font-semibold mb-2" style={{ color: "var(--fg)" }}>
+                            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--fg)" }}>
                                 Message to Artists
                             </h3>
-                            <p className="text-xs mb-4" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>
-                                Customize your message to artists. This will be included when you reach out to them.
-                            </p>
                             <textarea
                                 value={currentMessage}
-                                onChange={(e) => {
-                                    const newValue = e.target.value;
-                                    console.log("[ClientProfile] messageToArtists onChange:", newValue);
-                                    setEditedClient({ ...editedClient, messageToArtists: newValue });
-                                }}
-                                className="w-full backdrop-blur-sm border rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm"
+                                onChange={(e) => setEditedClient({ ...editedClient, messageToArtists: e.target.value })}
+                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm"
                                 rows={4}
-                                style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
+                                style={{ color: "var(--fg)" }}
                                 placeholder={defaultMessage}
                             />
                             
-                            <div className="flex flex-col items-center mt-6 mb-2">
-                                <h3 className="text-sm font-semibold text-center mb-4" style={{ color: "var(--fg)" }}>
+                            <div className="flex items-center justify-between mt-6 mb-4">
+                                <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
                                     Reference Images {currentReferences.length > 0 && `(${currentReferences.length}/3)`}
                                 </h3>
                                 {currentReferences.length < 3 && (
@@ -726,57 +666,26 @@ export default function ClientProfile() {
                                     </Button>
                                 )}
                             </div>
-                            <p className="text-xs mb-4" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>
-                                Add up to 3 reference images to show artists the style and vibe you're looking for
-                            </p>
                             <div className="grid grid-cols-3 gap-3">
                                 {currentReferences.map((url, index) => (
-                                    <div key={index} className="relative">
-                                        <input
-                                            ref={(el) => {
-                                                if (replaceInputRefs.current) {
-                                                    replaceInputRefs.current[index] = el;
-                                                }
-                                            }}
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            onChange={(e) => {
-                                                if (e.target.files?.[0]) {
-                                                    handleReplaceReference(index, e.target.files[0]);
-                                                }
-                                            }}
+                                    <div
+                                        key={index}
+                                        className="relative aspect-square rounded-xl border overflow-hidden group"
+                                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                                    >
+                                        <img
+                                            src={url}
+                                            alt={`Reference ${index + 1}`}
+                                            className="h-full w-full object-cover"
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer"
                                         />
-                                        <div
-                                            className="relative aspect-square rounded-xl border overflow-hidden"
-                                            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                                        <button
+                                            onClick={() => handleRemoveReference(index)}
+                                            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
-                                            <img
-                                                src={url}
-                                                alt={`Reference ${index + 1}`}
-                                                className="h-full w-full object-cover"
-                                                loading="lazy"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                            <div className="absolute top-2 right-2 flex gap-2">
-                                                <button
-                                                    onClick={() => replaceInputRefs.current[index]?.click()}
-                                                    disabled={uploading}
-                                                    className="bg-blue-500/80 hover:bg-blue-500 rounded-full p-1.5 transition-opacity"
-                                                    title="Replace image"
-                                                >
-                                                    <Camera className="h-4 w-4 text-white" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleRemoveReference(index)}
-                                                    disabled={uploading}
-                                                    className="bg-red-500/80 hover:bg-red-500 rounded-full p-1.5 transition-opacity"
-                                                    title="Delete image"
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-white" />
-                                                </button>
-                                            </div>
-                                        </div>
+                                            <Trash2 className="h-4 w-4 text-white" />
+                                        </button>
                                     </div>
                                 ))}
                                 {currentReferences.length < 3 && (

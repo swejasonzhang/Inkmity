@@ -128,14 +128,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
       setLoading(true);
       try {
         const res = await authFetch(`/messages/user/${currentUserId}`, { method: "GET" });
-        if (!mounted) return;
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
-            setConversations([]);
-            setUnreadMap({});
-            return;
-          }
-        }
         const data = res.ok ? await res.json() : null;
         const arr: Conversation[] = Array.isArray(data) ? data : Array.isArray(data?.conversations) ? data.conversations : [];
         if (mounted) setConversations(arr);
@@ -143,11 +135,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
           const next: Record<string, number> = {};
           for (const c of arr) next[c.participantId] = next[c.participantId] ?? 0;
           setUnreadMap(m => ({ ...next, ...m }));
-        }
-      } catch (error) {
-        if (mounted) {
-          setConversations([]);
-          setUnreadMap({});
         }
       } finally {
         if (mounted) setLoading(false);
@@ -489,44 +476,40 @@ const ChatWindow: FC<ChatWindowProps> = ({
     if (prevExpandedRef.current) setExpandedId(prevExpandedRef.current);
   };
 
-  const avatarFor = (c: Conversation, opts?: { border?: boolean }) => {
-    const name = displayNameFromUsername(c.username || "");
+  const AvatarComponent: FC<{ conversation: Conversation; border?: boolean }> = ({ conversation, border = true }) => {
+    const [imgError, setImgError] = useState(false);
+    const name = displayNameFromUsername(conversation.username || "");
     const initials = name
       .split(" ")
       .filter(Boolean)
       .slice(0, 2)
       .map(ch => ch[0]?.toUpperCase())
       .join("");
-    const withBorder = opts?.border !== false;
-    const avatarClass = `h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold ${withBorder ? "border border-app" : ""}`;
+    const avatarUrl = conversation.avatarUrl;
+    const withBorder = border !== false;
     
-    if (c.avatarUrl) {
+    if (avatarUrl && !imgError) {
       return (
-        <div className="relative h-7 w-7">
-          <img
-            src={c.avatarUrl}
-            alt={name}
-            className={`h-7 w-7 rounded-full object-cover ${withBorder ? "border border-app" : ""}`}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              const img = e.currentTarget;
-              img.style.display = "none";
-              const fallback = img.parentElement?.querySelector(".avatar-fallback") as HTMLElement;
-              if (fallback) fallback.style.display = "grid";
-            }}
-          />
-          <span className={`avatar-fallback ${avatarClass}`} style={{ display: "none", position: "absolute", inset: 0 }}>
-            {initials || "?"}
-          </span>
-        </div>
+        <img
+          src={avatarUrl}
+          alt={name}
+          className={`h-7 w-7 rounded-full object-cover ${withBorder ? "border border-app" : ""}`}
+          onError={() => setImgError(true)}
+        />
       );
     }
+    
     return (
-      <span className={avatarClass}>
+      <span
+        className={`h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold ${withBorder ? "border border-app" : ""}`}
+      >
         {initials || "?"}
       </span>
     );
+  };
+
+  const avatarFor = (c: Conversation, opts?: { border?: boolean }) => {
+    return <AvatarComponent conversation={c} border={opts?.border} />;
   };
 
   const modal = (

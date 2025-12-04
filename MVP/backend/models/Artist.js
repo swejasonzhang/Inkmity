@@ -23,9 +23,6 @@ const ArtistSchema = new Schema(
     },
     baseRate: { type: Number, default: 0 },
     portfolioImages: { type: [String], default: [] },
-    pastWorks: { type: [String], default: [] },
-    healedWorks: { type: [String], default: [] },
-    sketches: { type: [String], default: [] },
     coverImage: { type: String, default: "" },
   },
   { timestamps: true }

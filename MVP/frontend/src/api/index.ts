@@ -50,18 +50,14 @@ function buildUrl(path: string, params?: Record<string, any>) {
   return qs ? `${url}?${qs}` : url;
 }
 
-const isDev = import.meta.env.MODE === "development" || import.meta.env.DEV;
-
-async function apiRequestWithRetry<T = any>(
+export async function apiRequest<T = any>(
   path: string,
   init: RequestInit = {},
-  token?: string,
-  retryCount = 0
+  token?: string
 ): Promise<T> {
   const req = await withAuthHeaders(init, token);
   let res: Response;
   const url = buildUrl(path);
-  
   try {
     res = await fetch(url, req);
   } catch (e) {
@@ -77,12 +73,6 @@ async function apiRequestWithRetry<T = any>(
   const parsed = ct.includes("application/json") ? safeParse(text) : undefined;
 
   if (!res.ok) {
-    if (res.status === 429 && isDev && retryCount < 3) {
-      const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-      await new Promise((resolve) => setTimeout(resolve, retryDelay));
-      return apiRequestWithRetry<T>(path, init, token, retryCount + 1);
-    }
-    
     const body = parsed ?? (text ? { message: text } : undefined);
     const message =
       (body as any)?.message ||
@@ -95,36 +85,18 @@ async function apiRequestWithRetry<T = any>(
     (err as any).url = url;
     (err as any).headers = headersObj;
     (err as any).requestId = requestId;
-    
-    if (res.status === 429) {
-      if (!isDev || retryCount >= 3) {
-        console.warn(`[apiRequest] Rate limited (429) - ${url}. Too many requests to this endpoint.`);
-      }
-    } else {
-      const errorDetails = {
-        url,
-        status: res.status,
-        statusText: res.statusText,
-        body,
-        headers: headersObj,
-        requestId,
-      };
-      console.error("[apiRequest] http error", errorDetails);
-      console.error(`[apiRequest] ${res.status} ${res.statusText} - ${url}`, body || "(no body)");
-    }
+    console.error("[apiRequest] http error", {
+      url,
+      status: res.status,
+      body,
+      headers: headersObj,
+      requestId,
+    });
     throw err;
   }
 
   if (parsed !== undefined) return parsed as T;
   return text as unknown as T;
-}
-
-export async function apiRequest<T = any>(
-  path: string,
-  init: RequestInit = {},
-  token?: string
-): Promise<T> {
-  return apiRequestWithRetry<T>(path, init, token, 0);
 }
 
 export async function apiGet<T = any>(
@@ -175,8 +147,6 @@ export type Artist = {
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
   avatarUrl?: string;
-  profileImage?: string;
-  avatar?: { url?: string; publicId?: string; alt?: string; width?: number; height?: number };
   createdAt?: string;
 };
 
