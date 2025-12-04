@@ -92,15 +92,14 @@ export default function FloatingBar({
   const pad = {
     left: isMdUp ? "calc(25px + env(safe-area-inset-left, 0px))" : "calc(13px + env(safe-area-inset-left, 0px))",
     right: isMdUp ? "calc(25px + env(safe-area-inset-right, 0px))" : "calc(13px + env(safe-area-inset-right, 0px))",
-    bottom: `calc(max(${vvBottom}px, ${isMdUp ? 24 : 8}px) + env(safe-area-inset-bottom, 0px))`,
+    bottom: `calc(max(${vvBottom}px, 20px) + env(safe-area-inset-bottom, 0px))`,
   };
 
-  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border";
-  const collapsedHeight = isMdUp ? 44 : 36;
-  const buttonPadding = isMdUp ? "px-4" : "px-3";
+  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border-2";
+  const collapsedHeight = 44;
   const assistantBtnClass = [
     "ink-assistant-btn",
-    buttonPadding,
+    "px-3 md:px-4",
     "bg-app text-[color:var(--fg)] border-app shadow-lg",
     "focus:ring-2 focus:ring-app/50 focus:ring-offset-2 focus:ring-offset-[color:var(--bg)]",
     "hover:brightness-[1.08] active:scale-[0.99]",
@@ -169,13 +168,45 @@ export default function FloatingBar({
   portalRootRef.current = targetEl;
 
   const ui = (
-    <div
-      className="fixed inset-x-0 pointer-events-none z-[200]"
-      style={{
-        bottom: pad.bottom,
-        zIndex: !isMdUp && open ? 9999 : 200
-      }}
-    >
+    <>
+      <div className="fixed z-[200]" style={{ left: pad.left, bottom: pad.bottom, height: collapsedHeight }}>
+        <Button
+          type="button"
+          onClick={assistantLocked ? undefined : onAssistantOpen}
+          className={assistantBtnClass}
+          aria-label={assistantLocked ? "Assistant locked" : "Open assistant"}
+          aria-disabled={assistantLocked}
+          disabled={assistantLocked}
+          title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
+          style={{
+            height: collapsedHeight,
+            boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)"
+          }}
+          variant="outline"
+        >
+          <Bot size={18} aria-hidden />
+          <span className="text-sm hidden md:inline">Assistant</span>
+          {assistantLocked && (
+            <>
+              <span className="hidden md:inline-block ml-1 opacity-90">
+                <Lock size={14} aria-hidden />
+              </span>
+              <span className="md:hidden ml-1">
+                <Lock size={14} aria-hidden />
+              </span>
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div
+        className="fixed inset-x-0 pointer-events-none"
+        style={{ 
+          bottom: pad.bottom, 
+          marginTop: isMdUp ? 0 : 8,
+          zIndex: !isMdUp && open ? 9999 : 190
+        }}
+      >
         <style>{`
           .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
           .ink-assistant-btn { backdrop-filter: none; }
@@ -190,83 +221,63 @@ export default function FloatingBar({
           }
           .ink-solid-controls :is(button, [role="button"], .btn) { padding: 0.5rem 0.75rem; }
         `}</style>
-        <div className="relative w-full px-4 md:px-6" style={{ 
-          height: Math.max(wrapperH, collapsedHeight)
-        }}>
-          <div className="grid items-center justify-items-center gap-4" style={{ 
-            gridTemplateColumns: "auto 1fr auto"
-          }}>
-            <div
-              style={{
-                width: isMdUp ? DESKTOP_CLOSED_W : "auto",
-                height: collapsedHeight,
-              }}
-            >
-              <Button
-                type="button"
-                onClick={assistantLocked ? undefined : onAssistantOpen}
-                className={`${assistantBtnClass} pointer-events-auto`}
-                aria-label={assistantLocked ? "Assistant locked" : "Open assistant"}
-                aria-disabled={assistantLocked}
-                disabled={assistantLocked}
-                title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
-                style={{
-                  height: collapsedHeight,
-                  width: isMdUp ? DESKTOP_CLOSED_W : "auto",
-                  boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)"
-                }}
-                variant="outline"
-              >
-                <Bot size={18} aria-hidden />
-                <span className="text-sm hidden md:inline">Assistant</span>
-                {assistantLocked && (
-                  <>
-                    <span className="hidden md:inline-block ml-1 opacity-90">
-                      <Lock size={14} aria-hidden />
-                    </span>
-                    <span className="md:hidden ml-1">
-                      <Lock size={14} aria-hidden />
-                    </span>
-                  </>
-                )}
-              </Button>
-            </div>
+        <div className="relative w-full" style={{ height: Math.max(wrapperH, collapsedHeight) }}>
+          <div className="grid items-center" style={{ gridTemplateColumns: "auto 1fr auto" }}>
+            <div style={{ width: 0, height: collapsedHeight }} />
             <div
               ref={centerRef}
-              className="ink-solid-controls flex items-center justify-center pointer-events-auto"
-              style={{
+              className="ink-solid-controls flex items-center justify-center"
+              style={{ 
+                paddingInline: 8, 
+                pointerEvents: rightContent && (!open || isMdUp) ? "auto" : "none",
                 opacity: !isMdUp && open ? 0 : 1,
                 visibility: !isMdUp && open ? "hidden" : "visible"
               }}
             >
               {rightContent}
             </div>
-            {isMdUp && (
+            <div
+              className="pointer-events-none"
+              style={{
+                height: collapsedHeight,
+                position: "relative"
+              }}
+            >
               <div
+                className="pointer-events-auto flex items-center justify-center"
                 style={{
-                  width: DESKTOP_CLOSED_W,
-                  height: collapsedHeight,
-                  position: "relative",
-                }}
-              >
-                <div
-                  ref={btnRef}
-                  className="ink-solid-controls flex items-center justify-center pointer-events-auto"
-                  style={{
-                    position: "absolute",
+                  position: isMdUp ? "absolute" : (open ? "fixed" : "absolute"),
+                  ...(isMdUp ? {
+                    right: pad.right,
+                    bottom: 0,
+                  } : open ? {
+                    top: 96 + MOBILE_HEADER_PADDING,
+                    left: 0,
                     right: 0,
                     bottom: 0,
-                    width: convW,
-                    height: open ? convH : collapsedHeight,
-                    transformOrigin: "bottom right",
-                    transition: "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1)"
-                  }}
+                    width: "100vw",
+                    height: MOBILE_OPEN_H,
+                  } : {
+                    right: "17px",
+                    bottom: 0,
+                  }),
+                  ...(isMdUp || !open ? {
+                    width: isMdUp ? convW : Math.max(0, convW - 50),
+                    height: isMdUp ? convH : convH,
+                  } : {}),
+                  zIndex: !isMdUp && open ? 9999 : undefined
+                }}
+              >
+                <div 
+                  ref={btnRef} 
+                  className={`ink-solid-controls flex items-center justify-center ${!isMdUp && open ? "w-full h-full" : ""}`}
+                  style={!isMdUp && open ? { width: "100%", height: "100%" } : undefined}
                 >
                   <InkConversations
                     role={role}
                     isMdUp={isMdUp}
-                    width={convW}
-                    height={convH}
+                    width={isMdUp ? convW : (open ? vp.w : Math.max(0, convW - 50))}
+                    height={isMdUp ? convH : (open ? MOBILE_OPEN_H : convH)}
                     open={open}
                     setOpen={setOpen}
                     unreadConvoCount={unreadConvoCount}
@@ -276,40 +287,11 @@ export default function FloatingBar({
                   />
                 </div>
               </div>
-            )}
-            {!isMdUp && (
-              <div
-                ref={btnRef}
-                className={`ink-solid-controls flex items-center justify-center pointer-events-auto ${!isMdUp && open ? "fixed inset-0 z-[9999]" : ""}`}
-                style={{
-                  ...(open ? {
-                    width: vp.w,
-                    height: MOBILE_OPEN_H,
-                    top: 96 + MOBILE_HEADER_PADDING,
-                  } : {
-                    position: "relative",
-                    width: Math.max(0, convW - 50),
-                    height: collapsedHeight,
-                  })
-                }}
-              >
-                <InkConversations
-                  role={role}
-                  isMdUp={isMdUp}
-                  width={open ? vp.w : Math.max(0, convW - 50)}
-                  height={open ? MOBILE_OPEN_H : convH}
-                  open={open}
-                  setOpen={setOpen}
-                  unreadConvoCount={unreadConvoCount}
-                  requestCount={requestCount}
-                  derivedTotal={derivedTotal}
-                  messagesContent={messagesContent}
-                />
-              </div>
-            )}
+            </div>
           </div>
         </div>
-    </div>
+      </div>
+    </>
   );
 
   if (typeof document === "undefined") return null;

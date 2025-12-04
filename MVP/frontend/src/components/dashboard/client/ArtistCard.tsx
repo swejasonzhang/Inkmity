@@ -31,7 +31,8 @@ interface ArtistCardProps {
 }
 
 const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = false }) => {
-  const [avatarOk, setAvatarOk] = useState(Boolean(artist.profileImage));
+  const profileImageUrl = artist.profileImage || (artist as any).avatar?.url || (artist as any).avatarUrl || null;
+  const [avatarOk, setAvatarOk] = useState(Boolean(profileImageUrl));
   const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
 
   const portfolio = useMemo(() => (artist.portfolioImages || []).filter(Boolean), [artist.portfolioImages]);
@@ -126,9 +127,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] sm:-translate-y-1/2 grid place-items-center gap-2">
               <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-32 w-32" : "h-36 w-36"} sm:h-40 sm:w-40 md:h-44 md:w-44 shadow-2xl ring-2 ring-[color:var(--card)]`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                {avatarOk && artist.profileImage ? (
+                {avatarOk && profileImageUrl ? (
                   <img
-                    src={artist.profileImage}
+                    src={profileImageUrl}
                     alt={`${artist.username} profile`}
                     className="h-full w-full object-cover"
                     loading="lazy"

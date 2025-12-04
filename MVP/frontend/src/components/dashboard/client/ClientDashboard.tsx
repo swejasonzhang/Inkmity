@@ -266,9 +266,9 @@ export default function ClientDashboard() {
                             pastWorks: ((selectedArtist as any).pastWorks ?? []).filter(Boolean),
                             healedWorks: ((selectedArtist as any).healedWorks ?? []).filter(Boolean),
                             sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean),
-                            avatarUrl: (selectedArtist as any).avatar?.url || (selectedArtist as any).profileImage || (selectedArtist as any).avatarUrl,
+                            avatarUrl: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url,
                             coverImage: (selectedArtist as any).coverImage,
-                            profileImage: (selectedArtist as any).avatar?.url || (selectedArtist as any).profileImage,
+                            profileImage: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url,
                             avatar: (selectedArtist as any).avatar
                         }}
                         onClose={() => setSelectedArtist(null)}
