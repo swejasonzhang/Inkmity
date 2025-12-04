@@ -16,6 +16,7 @@ export type ArtistWithGroups = {
     healedWorks?: string[];
     sketches?: string[];
     avatarUrl?: string;
+    coverImage?: string;
 };
 
 export type PortfolioProps = {
@@ -28,14 +29,15 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
     const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
     const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
-    const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }>(null);
+    const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }>(null);
+    const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
 
-    const openZoom = (items: string[], index: number, label: "Past Works" | "Healed Works" | "Upcoming Sketches") => setZoom({ items, index, label });
+    const openZoom = (items: string[], index: number, label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches") => setZoom({ items, index, label });
     const closeZoom = () => setZoom(null);
     const goPrev = () => setZoom(z => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
     const goNext = () => setZoom(z => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
 
-    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) =>
+    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) =>
         images.length ? (
             <div className="w-full hidden sm:flex justify-center">
                 <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
@@ -75,7 +77,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
             </p>
         );
 
-    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
+    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
         const [index, setIndex] = useState(0);
         const swipeTo = (dir: "prev" | "next") => setIndex(i => (dir === "prev" ? (i + images.length - 1) % images.length : (i + 1) % images.length));
         const onDragEnd = (_: any, info: { offset: { x: number } }) => {
@@ -151,17 +153,33 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
                 <section className="w-full mt-1">
-                    <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                        <CardHeader className="text-center space-y-1 px-3 sm:px-6">
+                    <Card className="w-full shadow-none relative overflow-hidden" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ background: "var(--elevated)" }}>
+                            {bgOk && artist.coverImage ? (
+                                <img
+                                    src={artist.coverImage}
+                                    alt={`${artist.username} background`}
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                    onError={() => setBgOk(false)}
+                                />
+                            ) : (
+                                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+                            )}
+                            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
+                        </div>
+                        <CardHeader className="text-center space-y-1 px-3 sm:px-6 relative z-10">
                             <CardTitle className="text-base sm:text-lg break-words">About {artist.username}</CardTitle>
                         </CardHeader>
-                        <CardContent className="px-5 sm:px-9">
+                        <CardContent className="px-5 sm:px-9 relative z-10">
                             <div className="flex flex-col items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
                                 {artist.avatarUrl ? (
                                     <img
                                         src={artist.avatarUrl}
                                         alt={`${artist.username} profile picture`}
-                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover border shadow"
+                                        className="h-32 w-32 sm:h-40 sm:w-40 rounded-full object-cover border shadow"
                                         style={{ borderColor: "var(--border)" }}
                                         loading="eager"
                                         decoding="async"
@@ -169,7 +187,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                                     />
                                 ) : (
                                     <div
-                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-full grid place-items-center border shadow text-2xl sm:text-3xl font-semibold"
+                                        className="h-32 w-32 sm:h-40 sm:w-40 rounded-full grid place-items-center border shadow text-3xl sm:text-4xl font-semibold"
                                         style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
                                         aria-label={`${artist.username} profile placeholder`}
                                     >

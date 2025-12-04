@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Calendar as UIPicker } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,8 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
     const currentYear = startOfToday.getFullYear();
     const currentMonth = startOfToday.getMonth();
     const todayNumber = String(startOfToday.getDate());
+    const [monthOpen, setMonthOpen] = useState(false);
+    const [yearOpen, setYearOpen] = useState(false);
 
     const years = useMemo(() => {
         const toYear = currentYear + 5;
@@ -57,6 +59,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
         let next = new Date(month.getFullYear(), m, 1);
         if (next < new Date(currentYear, currentMonth, 1)) next = new Date(currentYear, currentMonth, 1);
         onMonthChange(next);
+        setMonthOpen(false);
     };
 
     const handleYearSelect = (v: string) => {
@@ -64,6 +67,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
         if (y < currentYear) y = currentYear;
         const safeMonth = month.getMonth() < currentMonth && y === currentYear ? currentMonth : month.getMonth();
         onMonthChange(new Date(y, safeMonth, 1));
+        setYearOpen(false);
     };
 
     return (
@@ -82,7 +86,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                 </div>
 
                 <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:justify-center sm:gap-2">
-                    <Select value={String(month.getMonth())} onValueChange={handleMonthSelect}>
+                    <Select value={String(month.getMonth())} onValueChange={handleMonthSelect} open={monthOpen} onOpenChange={setMonthOpen}>
                         <SelectTrigger
                             className="h-10 w-full sm:w-36 border-0 rounded-xl px-3 text-base sm:text-lg font-semibold shadow-sm"
                             style={{ background: "var(--card)", color: "var(--fg)" }}
@@ -109,7 +113,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                         </SelectContent>
                     </Select>
 
-                    <Select value={String(month.getFullYear())} onValueChange={handleYearSelect}>
+                    <Select value={String(month.getFullYear())} onValueChange={handleYearSelect} open={yearOpen} onOpenChange={setYearOpen}>
                         <SelectTrigger
                             className="h-10 w-full sm:w-28 border-0 rounded-xl px-3 text-base sm:text-lg font-semibold shadow-sm"
                             style={{ background: "var(--card)", color: "var(--fg)" }}
