@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import ClientAppointmentHistory from "./ClientAppointmentHistory";
 
 interface Client {
     _id: string;
     username: string;
+    handle?: string;
     bio?: string;
     location?: string;
     profileImage?: string;
@@ -130,10 +132,13 @@ export default function ClientProfile() {
     const [uploading, setUploading] = useState(false);
     const [cities, setCities] = useState<string[]>(fallbackCities);
     const [profileLoaded, setProfileLoaded] = useState(false);
+    const [bgOk, setBgOk] = useState(false);
+    const [isEditingUsername, setIsEditingUsername] = useState(false);
     const loadStartTimeRef = useRef<number>(Date.now());
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const referenceInputRef = useRef<HTMLInputElement>(null);
+    const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
 
     useEffect(() => {
         loadStartTimeRef.current = Date.now();
@@ -194,6 +199,7 @@ export default function ClientProfile() {
             const clientData: Client = {
                 _id: data._id || "",
                 username: data.username || "",
+                handle: data.handle || "",
                 bio: data.bio || "",
                 location: data.location || "",
                 profileImage: data.avatar?.url || data.profileImage || data.avatarUrl || "",
@@ -208,6 +214,7 @@ export default function ClientProfile() {
             };
             setClient(clientData);
             setEditedClient({});
+            setBgOk(Boolean(clientData.coverImage));
             setProfileLoaded(true);
         } catch (error) {
             console.error("Failed to load profile:", error);
@@ -215,7 +222,7 @@ export default function ClientProfile() {
         }
     };
 
-    const handleImageUpload = async (file: File, type: "avatar" | "cover" | "reference") => {
+    const handleImageUpload = async (file: File, type: "avatar" | "cover" | "reference", replaceIndex?: number) => {
         try {
             setUploading(true);
             const token = await getToken();
@@ -254,9 +261,18 @@ export default function ClientProfile() {
             } else if (type === "cover") {
                 const newCoverUrl = uploadData.secure_url || uploadData.url;
                 setEditedClient(prev => ({ ...prev, coverImage: newCoverUrl }));
+                if (client) {
+                    setClient(prev => prev ? { ...prev, coverImage: newCoverUrl } : null);
+                }
+                setBgOk(true);
             } else if (type === "reference") {
                 const currentRefs = editedClient.references || client?.references || [];
-                if (currentRefs.length < 3) {
+                if (replaceIndex !== undefined && replaceIndex >= 0 && replaceIndex < currentRefs.length) {
+                    const newRefs = [...currentRefs];
+                    newRefs[replaceIndex] = uploadData.secure_url || uploadData.url;
+                    setEditedClient(prev => ({ ...prev, references: newRefs }));
+                    setReplacingIndex(null);
+                } else if (currentRefs.length < 3) {
                     const newRefs = [...currentRefs, uploadData.secure_url || uploadData.url];
                     setEditedClient(prev => ({ ...prev, references: newRefs }));
                 }
@@ -431,7 +447,7 @@ export default function ClientProfile() {
     const defaultMessage = `Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $${budgetMin}-$${budgetMax}. ${currentLocation ? `I'm located in ${currentLocation}.` : ""} ${currentPlacement ? `I'm looking for something on my ${currentPlacement.toLowerCase()}.` : ""} ${currentSize ? `Size preference: ${SIZE_OPTIONS.find(s => s.value === currentSize)?.label || currentSize}.` : ""} Let me know if you're available and interested!`;
 
     return (
-        <div className="h-full min-h-0 w-full overflow-y-auto flex items-start justify-center py-4 px-4" style={{ maxHeight: "100%" }}>
+        <div className="h-full min-h-0 w-full overflow-hidden flex items-center justify-center p-4">
             <input
                 ref={avatarInputRef}
                 type="file"
@@ -451,87 +467,135 @@ export default function ClientProfile() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], "reference")}
+                onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                        handleImageUpload(e.target.files[0], "reference", replacingIndex ?? undefined);
+                        e.target.value = "";
+                    }
+                }}
             />
-            <div className="group w-full max-w-4xl flex flex-col rounded-3xl transition relative p-8 items-center overflow-y-auto" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 95%, var(--fg) 5%), color-mix(in oklab, var(--bg) 75%, var(--fg) 25%))", maxHeight: "100%" }}>
-                <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative">
-
-                    <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 mb-4 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
-                        {currentCoverImage && (
-                            <img
-                                src={currentCoverImage}
-                                alt="Background"
-                                className="absolute inset-0 h-full w-full object-cover"
-                                style={{ opacity: 0.4, filter: 'blur(3px)', zIndex: 1 }}
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                            />
-                        )}
-                        {currentProfileImage ? (
-                            <img
-                                src={currentProfileImage}
-                                alt={`${currentUsername} profile`}
-                                className="absolute inset-0 h-full w-full object-cover"
-                                style={{ zIndex: 2 }}
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                            />
-                        ) : (
-                            <span className="absolute inset-0 grid place-items-center font-semibold text-2xl sm:text-3xl md:text-4xl" style={{ color: "var(--fg)", zIndex: 2 }}>
-                                {initials}
-                            </span>
-                        )}
-                        <button
-                            onClick={() => avatarInputRef.current?.click()}
-                            disabled={uploading}
-                            className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 group"
-                            style={{ zIndex: 20 }}
-                        >
-                            <Camera className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
-                            <span className="text-xs text-white/80">Change</span>
-                        </button>
-                    </div>
-
-                    <Button
-                        onClick={() => coverInputRef.current?.click()}
-                        disabled={uploading}
-                        size="sm"
-                        variant="outline"
-                        className="mb-4 border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                    >
-                        <Camera className="h-4 w-4 mr-2" />
-                        {uploading ? "Uploading..." : (currentCoverImage ? "Change Background" : "Add Background")}
-                    </Button>
-
-                    <div className="flex flex-col items-center w-full mt-2 min-h-[2.5rem]">
-                        <div className="relative inline-flex items-center gap-2 group">
-                            <Input
-                                type="text"
-                                value={currentUsername}
-                                onChange={(e) => setEditedClient({ ...editedClient, username: e.target.value })}
-                                className="text-xl md:text-2xl font-extrabold tracking-tight text-center border-none bg-transparent focus:ring-0 focus:outline-none shadow-none px-2"
-                                style={{ color: "var(--fg)" }}
-                                placeholder="Your name"
-                            />
-                            <Pencil className="h-4 w-4 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: "var(--fg)" }} />
+            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0">
+                <div className="group w-full h-full flex flex-col rounded-3xl transition relative p-6 lg:p-8 items-center overflow-hidden" style={{ background: "var(--card)" }}>
+                    <div className="flex flex-col items-center justify-center text-center gap-2 w-full max-w-2xl relative z-10 flex-1 min-h-0">
+                        <div className="relative mb-8 w-full flex items-center justify-center">
+                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
+                                {bgOk && currentCoverImage ? (
+                                    <img
+                                        src={currentCoverImage}
+                                        alt="Background"
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer"
+                                        onError={() => setBgOk(false)}
+                                    />
+                                ) : (
+                                    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+                                )}
+                                <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
+                            </div>
+                            <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
+                            {currentProfileImage ? (
+                                <img
+                                    src={currentProfileImage}
+                                    alt={`${currentUsername} profile`}
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                    style={{ zIndex: 2 }}
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <span className="absolute inset-0 grid place-items-center font-semibold text-2xl sm:text-3xl md:text-4xl" style={{ color: "var(--fg)", zIndex: 2 }}>
+                                    {initials}
+                                </span>
+                            )}
+                            <button
+                                onClick={() => avatarInputRef.current?.click()}
+                                disabled={uploading}
+                                className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-60 hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 group"
+                                style={{ zIndex: 20 }}
+                            >
+                                <Camera className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                                <span className="text-xs text-white/80">Change</span>
+                            </button>
                         </div>
+                        </div>
+
+                        <Button
+                            onClick={() => coverInputRef.current?.click()}
+                            disabled={uploading}
+                            size="sm"
+                            variant="outline"
+                            className="mb-4 border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                        >
+                            <Camera className="h-3 w-3 mr-2" />
+                            {uploading ? "Uploading..." : (currentCoverImage ? "Change Background" : "Add Background")}
+                        </Button>
+
+                        <div className="flex flex-col items-center w-full min-h-[2.5rem] px-4">
+                        <div className="relative inline-flex items-center gap-2 flex-wrap justify-center">
+                            {isEditingUsername ? (
+                                <Input
+                                    type="text"
+                                    value={currentUsername}
+                                    onChange={(e) => setEditedClient({ ...editedClient, username: e.target.value })}
+                                    onBlur={() => setIsEditingUsername(false)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            setIsEditingUsername(false);
+                                        }
+                                        if (e.key === 'Escape') {
+                                            setEditedClient(prev => {
+                                                const { username, ...rest } = prev;
+                                                return rest;
+                                            });
+                                            setIsEditingUsername(false);
+                                        }
+                                    }}
+                                    autoFocus
+                                    className="text-lg md:text-xl font-extrabold tracking-tight text-center border border-[color:var(--border)] bg-[color:var(--elevated)] rounded-md focus:ring-2 focus:ring-[color:var(--fg)]/20 focus:outline-none px-3 py-1"
+                                    style={{ color: "var(--fg)" }}
+                                    placeholder="Your name"
+                                />
+                            ) : (
+                                <>
+                                    <span className="text-lg md:text-xl font-extrabold tracking-tight" style={{ color: "var(--fg)" }}>
+                                        {currentUsername || "Your name"}
+                                    </span>
+                                    <button
+                                        onClick={() => setIsEditingUsername(true)}
+                                        className="opacity-60 hover:opacity-100 transition-opacity"
+                                        style={{ color: "var(--fg)" }}
+                                        title="Edit username"
+                                    >
+                                        <Pencil className="h-3 w-3" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                        {client?.handle && (
+                            <div className="mt-1">
+                                <span className="text-sm opacity-70 font-medium" style={{ color: "var(--fg)" }}>
+                                    {client.handle.startsWith('@') ? client.handle : `@${client.handle}`}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="w-full flex justify-center mt-2 min-h-[3rem]">
+                        <div className="w-full flex justify-center min-h-[3rem] px-4">
                         <textarea
                             value={currentBio}
                             onChange={(e) => setEditedClient({ ...editedClient, bio: e.target.value })}
-                            className="w-full max-w-prose bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-xs md:text-sm text-center"
-                            rows={3}
+                            className="w-full max-w-prose bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-xs text-center"
+                            rows={2}
                             style={{ color: "var(--fg)" }}
                             placeholder="Tell us about yourself..."
                         />
                     </div>
 
-                    {loc && (
-                        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm min-h-[2rem]">
+                        {loc && (
+                            <div className="flex flex-wrap items-center justify-center gap-2 text-xs min-h-[2rem] px-4">
                             <span
-                                className="rounded-full px-2.5 py-1 border"
+                                className="rounded-full px-3 py-1 border"
                                 style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
                             >
                                 {loc}
@@ -539,8 +603,8 @@ export default function ClientProfile() {
                         </div>
                     )}
 
-                    <div className="w-full mt-8 space-y-6">
-                        <div className="rounded-2xl p-6 border backdrop-blur-sm w-full"
+                        <div className="w-full mt-4 space-y-4 flex-1 min-h-0 overflow-y-auto px-4">
+                        <div className="rounded-xl p-4 border backdrop-blur-sm w-full"
                             style={{
                                 background: "color-mix(in oklab, var(--card) 80%, transparent)",
                                 borderColor: "var(--border)"
@@ -568,8 +632,8 @@ export default function ClientProfile() {
                                     />
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-2xl">
-                                    <div className="w-full sm:w-[260px] sm:shrink-0">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                                    <div className="w-full">
                                         <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             City
                                         </Label>
@@ -577,7 +641,7 @@ export default function ClientProfile() {
                                             value={currentLocation || "none"}
                                             onValueChange={(v) => setEditedClient({ ...editedClient, location: v === "none" ? "" : v })}
                                         >
-                                            <SelectTrigger className="h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-4">
+                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
                                                 <SelectValue placeholder="No preference" />
                                             </SelectTrigger>
                                             <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
@@ -589,7 +653,7 @@ export default function ClientProfile() {
                                         </Select>
                                     </div>
 
-                                    <div className="w-full sm:w-[260px] sm:shrink-0">
+                                    <div className="w-full">
                                         <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Placement
                                         </Label>
@@ -597,7 +661,7 @@ export default function ClientProfile() {
                                             value={currentPlacement || "none"}
                                             onValueChange={(v) => setEditedClient({ ...editedClient, placement: v === "none" ? "" : v })}
                                         >
-                                            <SelectTrigger className="h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-4">
+                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
                                                 <SelectValue placeholder="No preference" />
                                             </SelectTrigger>
                                             <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
@@ -609,7 +673,7 @@ export default function ClientProfile() {
                                         </Select>
                                     </div>
 
-                                    <div className="w-full sm:w-[260px] sm:shrink-0">
+                                    <div className="w-full">
                                         <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Size
                                         </Label>
@@ -617,7 +681,7 @@ export default function ClientProfile() {
                                             value={currentSize || "none"}
                                             onValueChange={(v) => setEditedClient({ ...editedClient, size: v === "none" ? "" : v })}
                                         >
-                                            <SelectTrigger className="h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-4">
+                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
                                                 <SelectValue placeholder="No preference" />
                                             </SelectTrigger>
                                             <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
@@ -632,24 +696,23 @@ export default function ClientProfile() {
                             </div>
                         </div>
 
-                        <div className="rounded-2xl p-6 border backdrop-blur-sm w-full"
+                        <div className="rounded-xl p-4 border backdrop-blur-sm w-full"
                             style={{
                                 background: "color-mix(in oklab, var(--card) 80%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
-                            <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--fg)" }}>
+                            <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
                                 Message to Artists
                             </h3>
                             <textarea
                                 value={currentMessage}
                                 onChange={(e) => setEditedClient({ ...editedClient, messageToArtists: e.target.value })}
-                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm"
-                                rows={4}
+                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-y text-xs min-h-[80px]"
                                 style={{ color: "var(--fg)" }}
                                 placeholder={defaultMessage}
                             />
                             
-                            <div className="flex items-center justify-between mt-6 mb-4">
+                            <div className="flex items-center justify-between mt-4 mb-3">
                                 <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
                                     Reference Images {currentReferences.length > 0 && `(${currentReferences.length}/3)`}
                                 </h3>
@@ -670,22 +733,44 @@ export default function ClientProfile() {
                                 {currentReferences.map((url, index) => (
                                     <div
                                         key={index}
-                                        className="relative aspect-square rounded-xl border overflow-hidden group"
+                                        className="relative aspect-square rounded-xl border overflow-hidden"
                                         style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
+                                        onMouseEnter={(e) => {
+                                            const overlay = e.currentTarget.querySelector('.image-overlay') as HTMLElement;
+                                            if (overlay) overlay.style.opacity = '1';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            const overlay = e.currentTarget.querySelector('.image-overlay') as HTMLElement;
+                                            if (overlay) overlay.style.opacity = '0';
+                                        }}
                                     >
                                         <img
                                             src={url}
                                             alt={`Reference ${index + 1}`}
-                                            className="h-full w-full object-cover"
+                                            className="h-full w-full object-cover pointer-events-none"
                                             loading="lazy"
                                             referrerPolicy="no-referrer"
                                         />
-                                        <button
-                                            onClick={() => handleRemoveReference(index)}
-                                            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <Trash2 className="h-4 w-4 text-white" />
-                                        </button>
+                                        <div className="image-overlay absolute inset-0 bg-black/60 transition-opacity duration-200 flex items-center justify-center gap-2" style={{ opacity: 0 }}>
+                                            <button
+                                                onClick={() => {
+                                                    setReplacingIndex(index);
+                                                    referenceInputRef.current?.click();
+                                                }}
+                                                disabled={uploading}
+                                                className="bg-blue-500/80 hover:bg-blue-500 rounded-full p-2 transition-colors"
+                                                title="Replace image"
+                                            >
+                                                <Camera className="h-4 w-4 text-white" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleRemoveReference(index)}
+                                                className="bg-red-500/80 hover:bg-red-500 rounded-full p-2 transition-colors"
+                                                title="Delete image"
+                                            >
+                                                <Trash2 className="h-4 w-4 text-white" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                                 {currentReferences.length < 3 && (
@@ -701,37 +786,40 @@ export default function ClientProfile() {
                                 )}
                             </div>
                             {currentReferences.length === 0 && (
-                                <div className="text-sm text-center mt-4" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                <div className="text-xs text-center mt-3" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
                                     No reference images added
                                 </div>
                             )}
-                            {hasChanges && (
-                                <div className="flex gap-2 justify-end mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-                                    <Button
-                                        onClick={() => {
-                                            setEditedClient({});
-                                        }}
-                                        size="sm"
-                                        variant="outline"
-                                        className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                                    >
-                                        <X className="h-4 w-4 mr-2" />
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        onClick={saveProfile}
-                                        disabled={saving || uploading}
-                                        size="sm"
-                                        style={{ background: "var(--fg)", color: "var(--bg)" }}
-                                        className="hover:opacity-90 font-semibold"
-                                    >
-                                        <Save className="h-4 w-4 mr-2" />
-                                        {saving ? "Saving..." : "Save Changes"}
-                                    </Button>
-                                </div>
-                            )}
+                        </div>
+                        <div className="flex gap-3 justify-end mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+                            <Button
+                                onClick={() => {
+                                    setEditedClient({});
+                                }}
+                                disabled={!hasChanges}
+                                size="sm"
+                                variant="outline"
+                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={saveProfile}
+                                disabled={!hasChanges || saving || uploading}
+                                size="sm"
+                                style={{ background: "var(--fg)", color: "var(--bg)" }}
+                                className="hover:opacity-90 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Save className="h-4 w-4 mr-2" />
+                                {saving ? "Saving..." : "Save Changes"}
+                            </Button>
                         </div>
                     </div>
+                    </div>
+                </div>
+                <div className="w-full h-full flex flex-col">
+                    <ClientAppointmentHistory />
                 </div>
             </div>
         </div>
