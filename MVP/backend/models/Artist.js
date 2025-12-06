@@ -24,6 +24,10 @@ const ArtistSchema = new Schema(
     baseRate: { type: Number, default: 0 },
     portfolioImages: { type: [String], default: [] },
     coverImage: { type: String, default: "" },
+    restrictedPlacements: { type: [String], default: [] },
+    shopAddress: { type: String, default: "" },
+    shopLat: { type: Number },
+    shopLng: { type: Number },
   },
   { timestamps: true }
 );

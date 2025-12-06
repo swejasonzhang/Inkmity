@@ -9,7 +9,6 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { API_URL } from "@/lib/http";
 import { useMessaging } from "@/hooks/useMessaging";
-import ArtistProfile from "@/components/dashboard/artist/ArtistProfile";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
 const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
@@ -77,39 +76,29 @@ export default function ArtistDashboard() {
                 </Suspense>
               </CardContent>
             </Card>
-            <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 gap-4 overflow-hidden">
-              <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
-                <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0">
-                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Profile</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                  <ArtistProfile />
-                </CardContent>
-              </Card>
-              <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
-                <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0">
-                  <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Analytics</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                  <div className="h-full overflow-y-auto p-4">
-                    <Suspense
-                      fallback={
-                        <div className="space-y-3">
-                          <Skeleton className="h-6 w-32" />
-                          <Skeleton className="h-40 w-full" />
-                          <div className="grid grid-cols-2 gap-3">
-                            <Skeleton className="h-24 w-full" />
-                            <Skeleton className="h-24 w-full" />
-                          </div>
+            <Card className="rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
+              <CardHeader className="px-4 py-5 border-b border-app flex-shrink-0">
+                <CardTitle className="w-full text-center font-extrabold text-2xl sm:text-3xl">Analytics</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
+                <div className="h-full overflow-y-auto p-4">
+                  <Suspense
+                    fallback={
+                      <div className="space-y-3">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-40 w-full" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <Skeleton className="h-24 w-full" />
+                          <Skeleton className="h-24 w-full" />
                         </div>
-                      }
-                    >
-                      {isArtist ? <AnalyticsPanel /> : <div className="text-sm opacity-70">Analytics available to artist accounts only.</div>}
-                    </Suspense>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                      </div>
+                    }
+                  >
+                    {isArtist ? <AnalyticsPanel /> : <div className="text-sm opacity-70">Analytics available to artist accounts only.</div>}
+                  </Suspense>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </main>
         <div ref={setPortalEl} id="dashboard-portal-root" className="contents" />
