@@ -137,6 +137,61 @@ export async function getClientBookings(req, res) {
   }
 }
 
+export async function getArtistBookings(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const docs = await Booking.find({ artistId: userId })
+      .sort({ startAt: -1 })
+      .limit(100)
+      .lean();
+    
+    const User = (await import("../models/UserBase.js")).default;
+    
+    const bookingsWithClients = await Promise.all(
+      docs.map(async (booking) => {
+        try {
+          const user = await User.findOne({ clerkId: booking.clientId }).lean();
+          if (user) {
+            return {
+              ...booking,
+              client: {
+                username: user.username || "Unknown",
+                profileImage: user.avatar?.url || "",
+                avatar: user.avatar || null,
+              },
+            };
+          }
+          return {
+            ...booking,
+            client: {
+              username: "Unknown Client",
+              profileImage: "",
+              avatar: null,
+            },
+          };
+        } catch (err) {
+          console.error("Error fetching client for booking:", err);
+          return {
+            ...booking,
+            client: {
+              username: "Unknown Client",
+              profileImage: "",
+              avatar: null,
+            },
+          };
+        }
+      })
+    );
+    
+    res.json(bookingsWithClients);
+  } catch (error) {
+    console.error("Error fetching artist bookings:", error);
+    res.status(500).json({ error: "Failed to fetch artist bookings" });
+  }
+}
+
 export async function createBooking(req, res) {
   try {
     const userId = getActorId(req);

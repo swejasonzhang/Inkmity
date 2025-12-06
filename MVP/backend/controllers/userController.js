@@ -336,6 +336,9 @@ export async function syncUser(req, res) {
       const bookingPreference = profile.bookingPreference || "open";
       const travelFrequency = profile.travelFrequency || "rare";
       const shop = profile.shop || "";
+      const shopAddress = profile.shopAddress || "";
+      const shopLat = Number.isFinite(profile.shopLat) ? Number(profile.shopLat) : undefined;
+      const shopLng = Number.isFinite(profile.shopLng) ? Number(profile.shopLng) : undefined;
       const coverImage = profile.coverImage || "";
       const portfolio = (
         Array.isArray(profile.portfolioImages) ? profile.portfolioImages : []
@@ -343,15 +346,24 @@ export async function syncUser(req, res) {
         .map((u) => String(u || "").trim())
         .filter(Boolean)
         .slice(0, 3);
+      const restrictedPlacements = Array.isArray(profile.restrictedPlacements)
+        ? profile.restrictedPlacements
+            .map((p) => String(p || "").trim())
+            .filter(Boolean)
+        : [];
       Object.assign(setDoc, {
         location: profile.location ?? "",
         shop,
+        shopAddress,
+        ...(shopLat !== undefined ? { shopLat } : {}),
+        ...(shopLng !== undefined ? { shopLng } : {}),
         yearsExperience: Number.isFinite(years) ? Math.max(0, years) : 0,
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
         bookingPreference,
         travelFrequency,
         ...(coverImage ? { coverImage } : {}),
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
+        ...(restrictedPlacements.length ? { restrictedPlacements } : {}),
       });
     }
     const Model =

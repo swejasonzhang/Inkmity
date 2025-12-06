@@ -141,7 +141,7 @@ function SelectScrollUpButton({
     <SelectPrimitive.ScrollUpButton
       data-slot="select-scroll-up-button"
       className={cn(
-        "flex cursor-default items-center justify-center py-1",
+        "flex cursor-pointer items-center justify-center py-1.5 hover:bg-accent/50 transition-colors sticky top-0 z-10 bg-popover border-b",
         className
       )}
       {...props}
@@ -159,7 +159,7 @@ function SelectScrollDownButton({
     <SelectPrimitive.ScrollDownButton
       data-slot="select-scroll-down-button"
       className={cn(
-        "flex cursor-default items-center justify-center py-1",
+        "flex cursor-pointer items-center justify-center py-1.5 hover:bg-accent/50 transition-colors sticky bottom-0 z-10 bg-popover border-t",
         className
       )}
       {...props}
