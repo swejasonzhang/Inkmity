@@ -800,5 +800,3 @@ The backend API is available at `http://localhost:5005/api`:
 ## 📄 License
 
 ISC
-
-

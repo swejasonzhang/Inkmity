@@ -81,6 +81,62 @@ export async function getBooking(req, res) {
   res.json(doc);
 }
 
+export async function getClientBookings(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const docs = await Booking.find({ clientId: userId })
+      .sort({ startAt: -1 })
+      .limit(100)
+      .lean();
+    
+    const Artist = (await import("../models/Artist.js")).default;
+    const User = (await import("../models/UserBase.js")).default;
+    
+    const bookingsWithArtists = await Promise.all(
+      docs.map(async (booking) => {
+        try {
+          const user = await User.findOne({ clerkId: booking.artistId }).lean();
+          if (user) {
+            return {
+              ...booking,
+              artist: {
+                username: user.username || "Unknown",
+                profileImage: user.avatar?.url || "",
+                avatar: user.avatar || null,
+              },
+            };
+          }
+          return {
+            ...booking,
+            artist: {
+              username: "Unknown Artist",
+              profileImage: "",
+              avatar: null,
+            },
+          };
+        } catch (err) {
+          console.error("Error fetching artist for booking:", err);
+          return {
+            ...booking,
+            artist: {
+              username: "Unknown Artist",
+              profileImage: "",
+              avatar: null,
+            },
+          };
+        }
+      })
+    );
+    
+    res.json(bookingsWithArtists);
+  } catch (error) {
+    console.error("Error fetching client bookings:", error);
+    res.status(500).json({ error: "Failed to fetch bookings" });
+  }
+}
+
 export async function createBooking(req, res) {
   try {
     const userId = getActorId(req);
