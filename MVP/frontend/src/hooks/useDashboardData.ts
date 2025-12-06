@@ -24,6 +24,7 @@ export function useDashboardData() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -61,9 +62,11 @@ export function useDashboardData() {
       setTotal(0);
       setHasMore(false);
       setInitialized(true);
+      setError(null);
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       lastFilters.current = filters;
       const res = await query(filters, 1);
@@ -72,11 +75,18 @@ export function useDashboardData() {
       setPage(1);
       setHasMore(res.items.length < res.total);
       setInitialized(true);
+      setError(null);
       toast.dismiss();
     } catch (e: any) {
-      toast.error(e?.message || "Error loading artists", {
+      const errorMessage = e?.body?.message || e?.message || "Error loading artists";
+      setError(errorMessage);
+      toast.error(errorMessage, {
         position: "bottom-right",
       });
+      setArtists([]);
+      setTotal(0);
+      setHasMore(false);
+      setInitialized(true);
     } finally {
       setLoading(false);
     }
@@ -85,6 +95,7 @@ export function useDashboardData() {
   async function loadMore() {
     if (loading || !hasMore) return;
     setLoading(true);
+    setError(null);
     try {
       const next = page + 1;
       const res = await query(lastFilters.current, next);
@@ -92,8 +103,11 @@ export function useDashboardData() {
       setPage(next);
       const loaded = (next - 1) * PAGE_SIZE + res.items.length;
       setHasMore(loaded < res.total);
+      setError(null);
     } catch (e: any) {
-      toast.error(e?.message || "Error loading more artists", {
+      const errorMessage = e?.body?.message || e?.message || "Error loading more artists";
+      setError(errorMessage);
+      toast.error(errorMessage, {
         position: "bottom-right",
       });
     } finally {
@@ -153,6 +167,7 @@ export function useDashboardData() {
     total,
     loading,
     initialized,
+    error,
     hasMore,
     loadFirst,
     loadMore,
