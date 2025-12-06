@@ -117,7 +117,7 @@ export default function CalendarView({
 
     return (
         <>
-            <div className="flex flex-col h-full min-h-[55vh] p-1.5 sm:p-2 md:p-3 gap-1.5 sm:gap-2">
+            <div className="flex flex-col h-full min-h-[500px] md:min-h-[55vh] p-1.5 sm:p-2 md:p-3 gap-1.5 sm:gap-2">
                 <div className="px-2 sm:px-3 py-2 sm:py-3 rounded-lg sm:rounded-xl bg-card">
                     <div className="flex flex-col items-center gap-1.5 sm:gap-2">
                         <div className="text-xs sm:text-sm md:text-base font-medium text-muted-foreground text-center px-2">
