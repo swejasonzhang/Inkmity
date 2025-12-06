@@ -55,7 +55,7 @@ export default function ClientDashboard() {
     );
 
     const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(user?.id ?? "", authFetch);
-    const { artists, loading, initialized } = useDashboardData();
+    const { artists, loading, initialized, error, loadFirst } = useDashboardData();
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -124,7 +124,7 @@ export default function ClientDashboard() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    if (!isLoaded || !initialized || !user) {
+    if (!isLoaded || !user) {
         return null;
     }
 
@@ -166,35 +166,98 @@ export default function ClientDashboard() {
                 />
             </div>
             <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-                <div className="flex-1 min-h-0 flex">
-                    <div className="w-full h-full my-0 md:my-0 px-0 md:px-3">
-                        <Suspense
-                            fallback={
-                                <div className="p-4 space-y-4">
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {Array.from({ length: 8 }).map((_, i) => (
-                                            <Skeleton key={i} className="h-48 w-full rounded-xl" />
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Skeleton className="h-8 w-20 rounded" />
-                                        <Skeleton className="h-8 w-20 rounded" />
-                                    </div>
+                {error && !initialized ? (
+                    <div className="flex-1 min-h-0 w-full flex items-center justify-center p-4">
+                        <div className="w-full max-w-2xl p-6 md:p-8 rounded-lg border border-red-500/30 bg-red-500/10">
+                            <div className="flex flex-col items-center text-center gap-4 md:gap-6">
+                                <div className="w-full">
+                                    <h2 className="text-lg md:text-xl font-semibold text-red-300 mb-2">Error Loading Dashboard</h2>
+                                    <p className="text-sm md:text-base text-red-200/90">{error}</p>
+                                    {error.includes("Too many requests") && (
+                                        <p className="text-xs md:text-sm text-red-200/70 mt-2">Please wait a moment and try again later.</p>
+                                    )}
                                 </div>
-                            }
-                        >
-                            <ArtistsSection
-                                artists={filtered.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
-                                loading={loading}
-                                showArtists
-                                onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
-                                page={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                            />
-                        </Suspense>
+                                <div className="flex gap-2 flex-wrap justify-center">
+                                    <button
+                                        onClick={() => {
+                                            setPage(1);
+                                            loadFirst({});
+                                        }}
+                                        className="px-4 py-2 text-sm font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
+                                    >
+                                        Retry
+                                    </button>
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="px-4 py-2 text-sm font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
+                                    >
+                                        Reload Page
+                                    </button>
+                                    <button
+                                        onClick={() => navigate("/landing")}
+                                        className="px-4 py-2 text-sm font-medium rounded border border-app bg-card text-app hover:bg-elevated transition-colors"
+                                    >
+                                        Go to Home
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <>
+                        {error && initialized && (
+                            <div className="mx-2 md:mx-3 mt-2 mb-2 p-4 rounded-lg border border-red-500/30 bg-red-500/10 flex-shrink-0">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-1">
+                                        <h3 className="text-sm font-semibold text-red-300 mb-1">Error Loading Artists</h3>
+                                        <p className="text-sm text-red-200/90">{error}</p>
+                                        {error.includes("Too many requests") && (
+                                            <p className="text-xs text-red-200/70 mt-2">Please wait a moment and try again later.</p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setPage(1);
+                                            loadFirst({});
+                                        }}
+                                        className="px-3 py-1.5 text-xs font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors flex-shrink-0"
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="flex-1 min-h-0 flex">
+                            <div className="w-full h-full my-0 md:my-0 px-0 md:px-3">
+                                <Suspense
+                                    fallback={
+                                        <div className="p-4 space-y-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                                {Array.from({ length: 8 }).map((_, i) => (
+                                                    <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                                                ))}
+                                            </div>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Skeleton className="h-8 w-20 rounded" />
+                                                <Skeleton className="h-8 w-20 rounded" />
+                                            </div>
+                                        </div>
+                                    }
+                                >
+                                    <ArtistsSection
+                                        artists={filtered.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                                        loading={loading}
+                                        showArtists
+                                        onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+                                        page={page}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                    />
+                                </Suspense>
+                            </div>
+                        </div>
+                    </>
+                )}
             </main>
             <div className="shrink-0 px-2 md:px-3">
                 <FloatingBar
