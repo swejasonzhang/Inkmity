@@ -47,18 +47,18 @@ export default function ArtistDashboard() {
 
   return (
     <div>
-      <div className="min-h-dvh h-dvh bg-app text-app flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-app text-app flex flex-col overflow-y-auto md:overflow-hidden md:h-dvh">
         <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
         <Header />
-        <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-2 sm:gap-3 md:gap-4 pt-2 sm:pt-3 px-2 sm:px-4 md:px-6 lg:px-8 pb-20 sm:pb-24">
-          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
-              <CardHeader className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5 border-b border-app">
+        <main className="flex-1 flex flex-col gap-2 sm:gap-3 md:gap-4 pt-2 sm:pt-3 px-2 sm:px-4 md:px-6 lg:px-8 pb-20 sm:pb-24 md:pb-24 md:min-h-0 md:overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 md:gap-4 md:flex-1 md:min-h-0">
+            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[400px] md:min-h-0 md:flex-1">
+              <CardHeader className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5 border-b border-app flex-shrink-0">
                 <CardTitle className="w-full text-center font-extrabold text-lg sm:text-xl md:text-2xl lg:text-3xl">
                   {isArtist ? "Bookings Calendar" : "Read-only Calendar"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0 flex-1 min-h-0">
+              <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
                 <Suspense
                   fallback={
                     <div className="p-4 space-y-3">
@@ -76,12 +76,12 @@ export default function ArtistDashboard() {
                 </Suspense>
               </CardContent>
             </Card>
-            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
+            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[300px] md:min-h-0 md:flex-1">
               <CardHeader className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5 border-b border-app flex-shrink-0">
                 <CardTitle className="w-full text-center font-extrabold text-lg sm:text-xl md:text-2xl lg:text-3xl">Analytics</CardTitle>
               </CardHeader>
-              <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                <div className="h-full overflow-y-auto p-2 sm:p-3 md:p-4">
+              <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
+                <div className="h-full p-2 sm:p-3 md:p-4">
                   <Suspense
                     fallback={
                       <div className="space-y-3">
