@@ -50,32 +50,32 @@ const About: React.FC = () => {
           </defs>
         </svg>
 
-        <main className="relative z-10 min-h-dvh grid place-items-center sm:min-h-0 sm:h-full sm:flex-1" style={{ padding: 'clamp(2rem, 3vmin + 2vw, 5rem) clamp(1rem, 2vmin + 1vw, 3rem)' }}>
+        <main className="relative z-10 flex items-center justify-center sm:min-h-0 sm:h-full sm:flex-1" style={{ padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem) clamp(1rem, 2vmin + 1vw, 3rem)', maxHeight: '100%', overflow: 'auto' }}>
           <motion.section
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 220, damping: 24 }}
             className="w-full"
-            style={{ maxWidth: 'clamp(20rem, 50vw, 42rem)', padding: '0 clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}
+            style={{ maxWidth: 'clamp(18rem, 45vw, 38rem)', padding: '0 clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}
           >
             <Card className="mx-auto ink-card overflow-hidden border border-app bg-card text-app">
               <div className="ink-gloss" />
-              <CardHeader style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem) clamp(0.5rem, 0.7vmin + 0.4vw, 1rem) clamp(0.5rem, 0.7vmin + 0.4vw, 1rem)' }}>
-                <div className="flex items-center justify-center" style={{ gap: 'clamp(0.5rem, 0.7vmin + 0.4vw, 1rem)' }}>
-                  <span className="inline-grid place-items-center rounded-xl border border-app/40 bg-elevated" style={{ padding: 'clamp(0.375rem, 0.5vmin + 0.3vw, 0.75rem)' }}>
-                    <Sparkles style={{ width: 'clamp(1rem, 1.2vmin + 0.6vw, 1.5rem)', height: 'clamp(1rem, 1.2vmin + 0.6vw, 1.5rem)' }} />
+              <CardHeader style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem) clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem) clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+                <div className="flex items-center justify-center" style={{ gap: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)' }}>
+                  <span className="inline-grid place-items-center rounded-xl border border-app/40 bg-elevated" style={{ padding: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+                    <Sparkles style={{ width: 'clamp(0.875rem, 1.1vmin + 0.5vw, 1.25rem)', height: 'clamp(0.875rem, 1.1vmin + 0.5vw, 1.25rem)' }} />
                   </span>
-                  <CardTitle className="leading-none font-extrabold tracking-tight" style={{ fontSize: 'clamp(1.375rem, 2vmin + 1vw, 1.75rem)' }}>
+                  <CardTitle className="leading-none font-extrabold tracking-tight" style={{ fontSize: 'clamp(1.125rem, 1.6vmin + 0.8vw, 1.5rem)' }}>
                     Inkmity's Story
                   </CardTitle>
                 </div>
-                <div className="mx-auto rounded-full bg-elevated" style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', height: '2px', width: 'clamp(6rem, 8vmin + 4vw, 8rem)' }} />
+                <div className="mx-auto rounded-full bg-elevated" style={{ marginTop: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)', height: '2px', width: 'clamp(5rem, 7vmin + 3.5vw, 7rem)' }} />
               </CardHeader>
 
-              <CardContent className="text-center text-subtle" style={{ padding: '0 clamp(1rem, 1.5vmin + 0.8vw, 2rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
+              <CardContent className="text-center text-subtle" style={{ padding: '0 clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                 <motion.p
                   className="leading-relaxed font-medium"
-                  style={{ marginTop: 'clamp(0.5rem, 0.7vmin + 0.4vw, 1rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
+                  style={{ marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 }}
@@ -90,7 +90,7 @@ const About: React.FC = () => {
 
                 <motion.p
                   className="leading-relaxed font-medium"
-                  style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
+                  style={{ marginTop: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 }}
@@ -102,7 +102,7 @@ const About: React.FC = () => {
 
                 <motion.p
                   className="leading-relaxed font-medium"
-                  style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
+                  style={{ marginTop: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.25 }}
@@ -114,34 +114,34 @@ const About: React.FC = () => {
                 <motion.div
                   className="rounded-2xl bg-elevated/70 border border-app"
                   style={{ 
-                    marginTop: 'clamp(1.25rem, 1.8vmin + 0.9vw, 2rem)',
-                    padding: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)'
+                    marginTop: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)',
+                    padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)'
                   }}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35 }}
                 >
-                  <h2 className="font-bold text-app text-center" style={{ fontSize: 'clamp(1.125rem, 1.5vmin + 0.8vw, 1.5rem)' }}>Principles</h2>
-                  <ul className="text-center font-semibold space-y-1.5 sm:space-y-2" style={{ marginTop: 'clamp(0.5rem, 0.7vmin + 0.4vw, 1rem)' }}>
-                    <li className="text-subtle" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>• <span className="text-app font-bold">Clarity</span> over noise.</li>
-                    <li className="text-subtle" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>• <span className="text-app font-bold">Respect</span> for artists' time.</li>
-                    <li className="text-subtle" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>• <span className="text-app font-bold">Feedback loops</span> over guesswork.</li>
-                    <li className="text-subtle" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>• <span className="text-app font-bold">Trust</span> through transparency.</li>
+                  <h2 className="font-bold text-app text-center" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.25rem)' }}>Principles</h2>
+                  <ul className="text-center font-semibold space-y-1.5 sm:space-y-2" style={{ marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+                    <li className="text-subtle" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>• <span className="text-app font-bold">Clarity</span> over noise.</li>
+                    <li className="text-subtle" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>• <span className="text-app font-bold">Respect</span> for artists' time.</li>
+                    <li className="text-subtle" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>• <span className="text-app font-bold">Feedback loops</span> over guesswork.</li>
+                    <li className="text-subtle" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>• <span className="text-app font-bold">Trust</span> through transparency.</li>
                   </ul>
                 </motion.div>
 
                 <motion.div
                   className="rounded-2xl bg-elevated/70 border border-app"
                   style={{ 
-                    marginTop: 'clamp(1rem, 1.5vmin + 0.8vw, 1.75rem)',
-                    padding: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)'
+                    marginTop: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)',
+                    padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)'
                   }}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.45 }}
                 >
-                  <h2 className="font-bold text-app text-center" style={{ fontSize: 'clamp(1.125rem, 1.5vmin + 0.8vw, 1.5rem)' }}>Where we're going</h2>
-                  <p className="leading-relaxed font-medium text-center text-subtle" style={{ marginTop: 'clamp(0.5rem, 0.7vmin + 0.4vw, 1rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>
+                  <h2 className="font-bold text-app text-center" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.25rem)' }}>Where we're going</h2>
+                  <p className="leading-relaxed font-medium text-center text-subtle" style={{ marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>
                     A platform that helps you <span className="font-bold text-app">find the right artist</span>, share{" "}
                     <span className="font-bold text-app">clean briefs</span>, and book with{" "}
                     <span className="font-bold text-app">confidence</span>. If an idea would help the community, tell us—we'll{" "}

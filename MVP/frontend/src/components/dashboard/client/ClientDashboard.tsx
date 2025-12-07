@@ -140,7 +140,7 @@ export default function ClientDashboard() {
             `}</style>
             <div className="h-dvh md:min-h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root">
             <Header />
-            <div className="sm:hidden px-3 mt-2">
+            <div className="sm:hidden" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)', marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={setPriceFilter}
@@ -165,37 +165,40 @@ export default function ClientDashboard() {
                     className="mb-3"
                 />
             </div>
-            <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) 0' }}>
                 {error && !initialized ? (
-                    <div className="flex-1 min-h-0 w-full flex items-center justify-center p-4">
-                        <div className="w-full max-w-2xl p-6 md:p-8 rounded-lg border border-red-500/30 bg-red-500/10">
-                            <div className="flex flex-col items-center text-center gap-4 md:gap-6">
+                    <div className="flex-1 min-h-0 w-full flex items-center justify-center" style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
+                        <div className="w-full max-w-2xl rounded-lg border border-red-500/30 bg-red-500/10" style={{ padding: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
+                            <div className="flex flex-col items-center text-center" style={{ gap: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
                                 <div className="w-full">
-                                    <h2 className="text-lg md:text-xl font-semibold text-red-300 mb-2">Error Loading Dashboard</h2>
-                                    <p className="text-sm md:text-base text-red-200/90">{error}</p>
+                                    <h2 className="font-semibold text-red-300 mb-2" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.25rem)' }}>Error Loading Dashboard</h2>
+                                    <p className="text-red-200/90" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>{error}</p>
                                     {error.includes("Too many requests") && (
-                                        <p className="text-xs md:text-sm text-red-200/70 mt-2">Please wait a moment and try again later.</p>
+                                        <p className="text-red-200/70 mt-2" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>Please wait a moment and try again later.</p>
                                     )}
                                 </div>
-                                <div className="flex gap-2 flex-wrap justify-center">
+                                <div className="flex flex-wrap justify-center" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                                     <button
                                         onClick={() => {
                                             setPage(1);
                                             loadFirst({});
                                         }}
-                                        className="px-4 py-2 text-sm font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
+                                        className="font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
+                                        style={{ padding: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.875rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
                                     >
                                         Retry
                                     </button>
                                     <button
                                         onClick={() => window.location.reload()}
-                                        className="px-4 py-2 text-sm font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
+                                        className="font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
+                                        style={{ padding: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.875rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
                                     >
                                         Reload Page
                                     </button>
                                     <button
                                         onClick={() => navigate("/landing")}
-                                        className="px-4 py-2 text-sm font-medium rounded border border-app bg-card text-app hover:bg-elevated transition-colors"
+                                        className="font-medium rounded border border-app bg-card text-app hover:bg-elevated transition-colors"
+                                        style={{ padding: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.875rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
                                     >
                                         Go to Home
                                     </button>
@@ -206,13 +209,13 @@ export default function ClientDashboard() {
                 ) : (
                     <>
                         {error && initialized && (
-                            <div className="mx-2 md:mx-3 mt-2 mb-2 p-4 rounded-lg border border-red-500/30 bg-red-500/10 flex-shrink-0">
-                                <div className="flex items-start gap-3">
+                            <div className="rounded-lg border border-red-500/30 bg-red-500/10 flex-shrink-0" style={{ margin: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)', padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
+                                <div className="flex items-start" style={{ gap: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                                     <div className="flex-1">
-                                        <h3 className="text-sm font-semibold text-red-300 mb-1">Error Loading Artists</h3>
-                                        <p className="text-sm text-red-200/90">{error}</p>
+                                        <h3 className="font-semibold text-red-300 mb-1" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>Error Loading Artists</h3>
+                                        <p className="text-red-200/90" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>{error}</p>
                                         {error.includes("Too many requests") && (
-                                            <p className="text-xs text-red-200/70 mt-2">Please wait a moment and try again later.</p>
+                                            <p className="text-red-200/70 mt-2" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>Please wait a moment and try again later.</p>
                                         )}
                                     </div>
                                     <button
@@ -220,7 +223,8 @@ export default function ClientDashboard() {
                                             setPage(1);
                                             loadFirst({});
                                         }}
-                                        className="px-3 py-1.5 text-xs font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors flex-shrink-0"
+                                        className="font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors flex-shrink-0"
+                                        style={{ padding: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}
                                     >
                                         Retry
                                     </button>
@@ -228,16 +232,16 @@ export default function ClientDashboard() {
                             </div>
                         )}
                         <div className="flex-1 min-h-0 flex">
-                            <div className="w-full h-full my-0 md:my-0 px-0 md:px-3">
+                            <div className="w-full h-full" style={{ padding: '0 clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                                 <Suspense
                                     fallback={
-                                        <div className="p-4 space-y-4">
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        <div style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }} className="space-y-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.5rem)' }}>
                                                 {Array.from({ length: 8 }).map((_, i) => (
                                                     <Skeleton key={i} className="h-48 w-full rounded-xl" />
                                                 ))}
                                             </div>
-                                            <div className="flex items-center justify-center gap-2">
+                                            <div className="flex items-center justify-center" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                                                 <Skeleton className="h-8 w-20 rounded" />
                                                 <Skeleton className="h-8 w-20 rounded" />
                                             </div>
@@ -259,7 +263,7 @@ export default function ClientDashboard() {
                     </>
                 )}
             </main>
-            <div className="shrink-0 px-2 md:px-3">
+            <div className="shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}

@@ -327,7 +327,7 @@ export default function ArtistsSection({
 
     return (
         <div className="grid grid-rows-[auto,1fr] h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
-            <div ref={filterRef} className="w-full bg-card px-0 pb-3 md:px-3 md:pb-4 shrink-0 hidden md:block">
+            <div ref={filterRef} className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0 clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={(v) => {
@@ -458,7 +458,7 @@ export default function ArtistsSection({
 
                     <div className="hidden md:block h-full min-h-0">
                         {listItems.length > 0 ? (
-                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-2 p-0 md:gap-5 md:p-3 md:pb-20" style={{ minHeight: `${minGridPx}px` }}>
+                            <div className="min-h-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-[minmax(0,1fr)]" style={{ minHeight: `${minGridPx}px`, gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1.25rem)', padding: '0 clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(5rem, 6vmin + 3vw, 6rem)' }}>
                                 {listItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
@@ -474,11 +474,11 @@ export default function ArtistsSection({
                                 ))}
                             </div>
                         ) : (
-                            <div className="min-h-full p-0 md:p-3" style={{ minHeight: `${minGridPx}px`, height: `${minGridPx}px` }}>
+                            <div className="min-h-full" style={{ minHeight: `${minGridPx}px`, height: `${minGridPx}px`, padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                                 <div className="w-full h-full grid place-items-center">
                                     <div className="text-center max-w-prose">
-                                        <p className="text-lg font-semibold" style={{ color: "var(--fg)" }}>No artists match your filters.</p>
-                                        <p className="text-sm mt-1.5" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                        <p className="font-semibold" style={{ color: "var(--fg)", fontSize: 'clamp(1rem, 1.2vmin + 0.6vw, 1.125rem)' }}>No artists match your filters.</p>
+                                        <p className="mt-1.5" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)", fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>
                                             Try adjusting filters or keywords to broaden your search.
                                         </p>
                                     </div>
