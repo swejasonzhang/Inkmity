@@ -79,34 +79,34 @@ const Landing: React.FC = () => {
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
                     <div className="relative z-10 text-app flex flex-col min-h-[100svh]">
-                        <div className="sticky top-0 z-50 bg-app/80 backdrop-blur border-b border-app">
+                        <div className="sticky top-0 z-50 bg-app/80 backdrop-blur-sm sm:backdrop-blur-md border-b border-app">
                             <Header />
                         </div>
 
                         <main className="flex-1">
-                            <section className="relative pt-4 md:pt-10">
-                                <div className="mx-auto max-w-6xl px-4">
+                            <section className="relative pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12">
+                                <div className="mx-auto max-w-6xl px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12">
                                     <m.div
                                         variants={introStagger}
                                         initial="hidden"
                                         whileInView="visible"
                                         viewport={{ once: true, amount: 0.4 }}
-                                        className="space-y-4 md:space-y-6"
+                                        className="space-y-4 xs:space-y-5 sm:space-y-6 md:space-y-7 lg:space-y-8"
                                     >
                                         <Hero prefersReduced={!!prefersReduced} wc={wc} textFadeUp={textFadeUp} onReveal={handleRevealButton} />
                                     </m.div>
                                 </div>
                             </section>
 
-                            <div ref={dividerWrapRef} className="mt-2 md:mt-3 mb-1 md:mb-2">
+                            <div ref={dividerWrapRef} className="mt-2 xs:mt-2.5 sm:mt-3 md:mt-3.5 lg:mt-4 mb-1 xs:mb-1.5 sm:mb-2 md:mb-2.5">
                                 <Divider />
                             </div>
 
                             <div ref={sentinelRef} style={{ height: 10 }} />
 
                             {!revealed && didMount && (
-                                <div aria-hidden className="mx-auto max-w-6xl px-4">
-                                    <div className="h-[40vh] md:h-[70vh]" />
+                                <div aria-hidden className="mx-auto max-w-6xl px-4 xs:px-5 sm:px-6 md:px-8">
+                                    <div className="h-[40vh] xs:h-[45vh] sm:h-[55vh] md:h-[65vh] lg:h-[70vh] xl:h-[75vh]" />
                                 </div>
                             )}
 
@@ -114,24 +114,24 @@ const Landing: React.FC = () => {
                                 initial="hidden"
                                 animate={revealed ? "show" : "hidden"}
                                 variants={featuresFade}
-                                className="mx-auto max-w-6xl px-4 py-1 md:py-2"
+                                className="mx-auto max-w-6xl px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-1 xs:py-1.5 sm:py-2 md:py-2.5 lg:py-3"
                                 style={{ willChange: "opacity, transform" }}
                             >
                                 {revealed && (
                                     <>
                                         <div id="features-title" />
                                         <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
-                                        <Divider className="my-2 md:my-3" />
+                                        <Divider className="my-2 xs:my-2.5 sm:my-3 md:my-3.5 lg:my-4" />
                                         <Differentiators textFadeUp={textFadeUp} wc={wc} />
                                         <BottomCTA textFadeUp={textFadeUp} wc={wc} />
-                                        <Divider className="mt-1 md:mt-2 mb-0" />
+                                        <Divider className="mt-1 xs:mt-1.5 sm:mt-2 md:mt-2.5 lg:mt-3 mb-0" />
                                     </>
                                 )}
                             </m.div>
                         </main>
 
-                        <footer className="pt-1 md:pt-2 pb-3 md:pb-4 px-3 md:px-4">
-                            <div className="mx-auto max-w-6xl text-center text-xs md:text-sm text-subtle">© {new Date().getFullYear()} Inkmity. All rights reserved.</div>
+                        <footer className="pt-1 xs:pt-1.5 sm:pt-2 md:pt-2.5 lg:pt-3 pb-3 xs:pb-3.5 sm:pb-4 md:pb-5 lg:pb-6 px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8">
+                            <div className="mx-auto max-w-6xl text-center text-xs xs:text-[0.8125rem] sm:text-sm md:text-base text-subtle">© {new Date().getFullYear()} Inkmity. All rights reserved.</div>
                         </footer>
                     </div>
                 </LazyMotion>
@@ -147,8 +147,8 @@ const Landing: React.FC = () => {
                     "fixed top-0 left-1/2 -translate-x-1/2 z-[999]",
                     "w-auto max-w-none",
                     "h-[100svh]",
-                    "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
-                    "object-contain md:object-cover",
+                    "sm:inset-0 sm:left-0 sm:translate-x-0 sm:w-full sm:h-full",
+                    "object-contain sm:object-cover",
                     "pointer-events-none opacity-20 mix-blend-screen",
                 ].join(" ")}
                 aria-hidden
