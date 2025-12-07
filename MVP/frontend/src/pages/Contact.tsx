@@ -221,24 +221,26 @@ export default function Contact() {
 
     return (
         <div className="relative h-dvh bg-app text-app flex flex-col overflow-hidden">
-            <Header />
-            <main className="relative z-10 flex items-center justify-center flex-1 overflow-y-auto sm:overflow-y-visible" style={{ padding: 'clamp(2rem, 3vmin + 2vw, 5rem) clamp(1rem, 2vmin + 1vw, 3rem)' }}>
+            <div style={{ marginBottom: 0, paddingBottom: 0 }}>
+                <Header />
+            </div>
+            <main className="relative z-10 flex items-center justify-center flex-1 overflow-y-auto sm:overflow-y-visible" style={{ padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem) clamp(1rem, 2vmin + 1vw, 3rem)', minHeight: 0, marginTop: 0, maxHeight: '100%' }}>
                 <motion.section
                     initial={{ opacity: 0, y: 18, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ type: "spring", stiffness: 220, damping: 24 }}
-                    className="w-full flex items-center justify-center"
-                    style={{ maxWidth: 'clamp(20rem, 50vw, 42rem)' }}
+                    className="flex items-center justify-center w-full"
+                    style={{ maxWidth: 'clamp(20rem, 50vw, 42rem)', margin: '0 auto' }}
                 >
                     <div
-                        className="ink-card overflow-hidden w-full"
+                        className="ink-card overflow-hidden w-full mx-auto"
                         style={{
                             background:
                                 "linear-gradient(180deg, color-mix(in oklab, var(--card), transparent 0%) 0%, color-mix(in oklab, var(--card), black 8%) 100%), radial-gradient(1200px 400px at 50% -10%, color-mix(in oklab, var(--elevated), white 4%) 0%, transparent 60%)",
                         }}
                     >
                         <div className="ink-gloss" />
-                        <div className="flex flex-col items-center" style={{ padding: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
+                        <div className="flex flex-col items-center" style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
                             <div className="flex items-center justify-center w-full" style={{ gap: 'clamp(0.5rem, 0.7vmin + 0.4vw, 1rem)' }}>
                                 <span className="inline-grid place-items-center rounded-xl border border-app/40 bg-elevated" style={{ padding: 'clamp(0.375rem, 0.5vmin + 0.3vw, 0.75rem)' }}>
                                     <Mail style={{ width: 'clamp(1rem, 1.2vmin + 0.6vw, 1.5rem)', height: 'clamp(1rem, 1.2vmin + 0.6vw, 1.5rem)' }} />
@@ -251,10 +253,10 @@ export default function Contact() {
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="flex flex-col items-center w-full" style={{ padding: '0 clamp(1.5rem, 2vmin + 1vw, 2.5rem) clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 w-full" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                        <form onSubmit={handleSubmit} className="flex flex-col items-center w-full" style={{ padding: '0 clamp(1rem, 1.5vmin + 0.8vw, 2rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 w-full" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                                 <div className="flex flex-col items-center">
-                                    <Label className="text-subtle w-full block text-center" htmlFor="name" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
+                                    <Label className="text-subtle w-full block text-center" htmlFor="name" style={{ marginBottom: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
                                         Name
                                     </Label>
                                     <div className="relative w-full">
@@ -274,7 +276,7 @@ export default function Contact() {
                                 </div>
 
                                 <div className="flex flex-col items-center">
-                                    <Label className="text-subtle w-full block text-center" htmlFor="email" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
+                                    <Label className="text-subtle w-full block text-center" htmlFor="email" style={{ marginBottom: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
                                         Email
                                     </Label>
                                     <div className="relative w-full">
@@ -295,8 +297,8 @@ export default function Contact() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
-                                <Label className="text-subtle w-full block text-center" htmlFor="subject" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
+                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+                                <Label className="text-subtle w-full block text-center" htmlFor="subject" style={{ marginBottom: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
                                     Subject
                                 </Label>
                                 <InputClearPlaceholder
@@ -310,8 +312,8 @@ export default function Contact() {
                                 />
                             </div>
 
-                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
-                                <Label className="text-subtle w-full block text-center" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>Message</Label>
+                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+                                <Label className="text-subtle w-full block text-center" style={{ marginBottom: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>Message</Label>
                                 <div className="relative w-full">
                                     <span className="pointer-events-none absolute opacity-60" style={{ right: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', top: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
                                         <MessageSquareText style={{ width: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)', height: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }} />
@@ -320,7 +322,7 @@ export default function Contact() {
                                         value={form.message}
                                         onChange={(v) => setForm((f) => ({ ...f, message: v }))}
                                         placeholder="Share bugs, feature ideas, or anything that would make Inkmity better."
-                                        rows={8}
+                                        rows={5}
                                     />
                                 </div>
                             </div>
@@ -335,7 +337,7 @@ export default function Contact() {
                                 name="website"
                             />
 
-                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)', gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)', gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                                 <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="w-full flex justify-center">
                                     <Button
                                         type="submit"

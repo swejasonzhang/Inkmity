@@ -50,51 +50,53 @@ export default function ArtistDashboard() {
       <div className="min-h-screen bg-app text-app flex flex-col overflow-y-auto md:overflow-hidden md:h-dvh">
         <style>{`#middle-content::-webkit-scrollbar { display: none; }`}</style>
         <Header />
-        <main className="flex-1 flex flex-col gap-2 sm:gap-3 md:gap-4 pt-2 sm:pt-3 px-2 sm:px-4 md:px-6 lg:px-8 pb-20 sm:pb-24 md:pb-24 md:min-h-0 md:overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 md:gap-4 md:flex-1 md:min-h-0">
+        <main className="flex-1 flex flex-col md:min-h-0 md:overflow-hidden" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)', paddingBottom: 'clamp(5rem, 6vmin + 3vw, 6rem)', gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 md:flex-1 md:min-h-0" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
             <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[400px] md:min-h-0 md:flex-1">
-              <CardHeader className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5 border-b border-app flex-shrink-0">
-                <CardTitle className="w-full text-center font-extrabold text-lg sm:text-xl md:text-2xl lg:text-3xl">
+              <CardHeader className="border-b border-app flex-shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
+                <CardTitle className="w-full text-center font-extrabold" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.5rem)' }}>
                   {isArtist ? "Bookings Calendar" : "Read-only Calendar"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
-                <Suspense
-                  fallback={
-                    <div className="p-4 space-y-3">
-                      <Skeleton className="h-6 w-40" />
-                      <Skeleton className="h-8 w-full" />
-                      <div className="grid grid-cols-7 gap-2">
-                        {Array.from({ length: 14 }).map((_, i) => (
-                          <Skeleton key={i} className="h-24 w-full" />
-                        ))}
+                <div style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+                  <Suspense
+                    fallback={
+                      <div style={{ padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }} className="space-y-3">
+                        <Skeleton className="h-6 w-40" />
+                        <Skeleton className="h-8 w-full" />
+                        <div className="grid grid-cols-7" style={{ gap: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+                          {Array.from({ length: 14 }).map((_, i) => (
+                            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  }
-                >
-                  <CalendarView />
-                </Suspense>
+                    }
+                  >
+                    <CalendarView />
+                  </Suspense>
+                </div>
               </CardContent>
             </Card>
             <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[300px] md:min-h-0 md:flex-1">
-              <CardHeader className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5 border-b border-app flex-shrink-0">
-                <CardTitle className="w-full text-center font-extrabold text-lg sm:text-xl md:text-2xl lg:text-3xl">Analytics</CardTitle>
+              <CardHeader className="border-b border-app flex-shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
+                <CardTitle className="w-full text-center font-extrabold" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.5rem)' }}>Analytics</CardTitle>
               </CardHeader>
               <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
-                <div className="h-full p-2 sm:p-3 md:p-4">
+                <div className="h-full" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                   <Suspense
                     fallback={
                       <div className="space-y-3">
                         <Skeleton className="h-6 w-32" />
                         <Skeleton className="h-40 w-full" />
-                        <div className="grid grid-cols-2 gap-3">
-                          <Skeleton className="h-24 w-full" />
-                          <Skeleton className="h-24 w-full" />
+                        <div className="grid grid-cols-2" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+                          <Skeleton className="h-24 w-full rounded-xl" />
+                          <Skeleton className="h-24 w-full rounded-xl" />
                         </div>
                       </div>
                     }
                   >
-                    {isArtist ? <AnalyticsPanel /> : <div className="text-sm opacity-70">Analytics available to artist accounts only.</div>}
+                    {isArtist ? <AnalyticsPanel /> : <div className="text-sm opacity-70" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>Analytics available to artist accounts only.</div>}
                   </Suspense>
                 </div>
               </CardContent>
