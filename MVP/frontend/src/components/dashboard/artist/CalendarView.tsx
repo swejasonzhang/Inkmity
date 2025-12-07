@@ -107,7 +107,6 @@ export default function CalendarView({
         if (!selectedDate) return [];
         const dayKey = dateKey(selectedDate);
         const bookings = bookingsByDay.get(dayKey) ?? [];
-        // Ensure appointments are sorted by time (chronological order)
         return [...bookings].sort((a, b) => {
             const timeA = new Date(a.start).getTime();
             const timeB = new Date(b.start).getTime();
@@ -125,7 +124,7 @@ export default function CalendarView({
                         </div>
                         <div className="flex items-center justify-center w-full">
                             <Pagination>
-                                <PaginationContent className="flex-wrap">
+                                <PaginationContent className="flex-wrap gap-4 sm:gap-6 md:gap-8">
                                     <PaginationItem>
                                         <PaginationPrevious
                                             href="#"

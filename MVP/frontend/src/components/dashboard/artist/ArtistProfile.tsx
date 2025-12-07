@@ -765,7 +765,6 @@ export default function ArtistProfile() {
                                 onChange={(e) => {
                                     const address = e.target.value;
                                     setEditedArtist({ ...editedArtist, shopAddress: address });
-                                    // Geocode address when user stops typing (debounced)
                                     if (address.trim()) {
                                         clearTimeout((window as any).geocodeTimeout);
                                         (window as any).geocodeTimeout = setTimeout(() => {
