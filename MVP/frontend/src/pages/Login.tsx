@@ -364,27 +364,27 @@ export default function Login() {
       <div ref={headerRef} className="sticky top-0 z-30 bg-black/20 border-b border-white/10">
         <Header />
       </div>
-      <main className="z-10 grid place-items-center px-3 md:px-0 overflow-hidden" style={{ height: `calc(100svh - ${headerH}px)`, maxHeight: `calc(100svh - ${headerH}px)` }}>
-        <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 md:px-0" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
+      <main className="z-10 grid place-items-center px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-0 overflow-hidden" style={{ height: `calc(100svh - ${headerH}px)`, maxHeight: `calc(100svh - ${headerH}px)` }}>
+        <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 xs:px-2 sm:px-3 md:px-4 lg:px-0" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
           <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full" style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
-            <div className={`relative flex w-full h-full flex-col md:flex-row md:items-center md:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !isSignedIn ? "" : "justify-center"}`} style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
+            <div className={`relative flex w-full h-full flex-col sm:flex-row sm:items-center sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !isSignedIn ? "" : "justify-center"}`} style={{ maxHeight: `calc(100svh - ${headerH}px)` }}>
               {showInfo && !showSuccess && authLoaded && !isSignedIn && (
-                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full md:w-1/2 md:flex-none mt-4 md:mt-0" style={{ height: isMdUp && cardH ? `${cardH}px` : undefined }}>
+                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="flex-1 w-full sm:w-1/2 lg:w-2/5 sm:flex-none mt-4 xs:mt-5 sm:mt-0" style={{ height: isMdUp && cardH ? `${cardH}px` : undefined }}>
                   <div className="h-full w-full" style={{ height: isMdUp && cardH ? `${cardH}px` : undefined }}>
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                   </div>
                 </motion.div>
               )}
               {!authLoaded ? null : isSignedIn ? (
-                <motion.div ref={cardRef} layout={false} className="w-full max-w-2xl p-0 mb-4 md:mb-0">
-                  <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 sm:p-5 h-full mx-auto flex flex-col overflow-hidden">
-                    <div className="w-full min-h-[560px] md:min-h-[680px] flex flex-col items-center justify-center gap-8 py-16">
-                      <div className="ink-ring scale-125 md:scale-150" aria-hidden="true">
+                <motion.div ref={cardRef} layout={false} className="w-full max-w-2xl p-0 mb-4 xs:mb-5 sm:mb-6 md:mb-0">
+                  <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 xs:p-5 sm:p-6 md:p-7 lg:p-8 h-full mx-auto flex flex-col overflow-hidden">
+                    <div className="w-full min-h-[560px] xs:min-h-[580px] sm:min-h-[620px] md:min-h-[660px] lg:min-h-[680px] xl:min-h-[700px] flex flex-col items-center justify-center gap-6 xs:gap-7 sm:gap-8 md:gap-9 lg:gap-10 py-12 xs:py-14 sm:py-16 md:py-18">
+                      <div className="ink-ring scale-110 xs:scale-115 sm:scale-125 md:scale-135 lg:scale-150" aria-hidden="true">
                         <div className="ink-ring__inner" />
                       </div>
-                      <div className="text-center">
-                        <p className="text-white text-2xl md:text-3xl font-semibold">{successTitle}</p>
-                        <p className="text-white/80 mt-2 text-base md:text-lg">
+                      <div className="text-center px-4">
+                        <p className="text-white text-xl xs:text-2xl sm:text-2xl md:text-3xl lg:text-3xl font-semibold">{successTitle}</p>
+                        <p className="text-white/80 mt-2 text-sm xs:text-base sm:text-base md:text-lg lg:text-lg">
                           {successSubtitle}
                           <span className="ink-dots" aria-hidden="true">
                             <span className="ink-dot" />
@@ -398,7 +398,7 @@ export default function Login() {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && (!authLoaded || !isSignedIn) ? "flex-1 w-full md:w-1/2 md:flex-none" : "w-full max-w-lg"} p-0 mb-4 md:mb-0`}>
+                <motion.div ref={cardRef} layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && (!authLoaded || !isSignedIn) ? "flex-1 w-full sm:w-1/2 lg:w-3/5 sm:flex-none" : "w-full max-w-lg"} p-0 mb-4 xs:mb-5 sm:mb-6 md:mb-0`}>
                   <LoginFormCard
                     showInfo={showInfo}
                     hasError={mascotError}
@@ -408,13 +408,13 @@ export default function Login() {
                     hideHeader={showSuccess}
                   >
                     {showSuccess ? (
-                      <div className="w-full min-h-[560px] md:min-h-[680px] flex flex-col items-center justify-center gap-8 py-16">
-                        <div className="ink-ring scale-125 md:scale-150" aria-hidden="true">
+                      <div className="w-full min-h-[560px] xs:min-h-[580px] sm:min-h-[620px] md:min-h-[660px] lg:min-h-[680px] xl:min-h-[700px] flex flex-col items-center justify-center gap-6 xs:gap-7 sm:gap-8 md:gap-9 lg:gap-10 py-12 xs:py-14 sm:py-16 md:py-18">
+                        <div className="ink-ring scale-110 xs:scale-115 sm:scale-125 md:scale-135 lg:scale-150" aria-hidden="true">
                           <div className="ink-ring__inner" />
                         </div>
-                        <div className="text-center">
-                          <p className="text-white text-2xl md:text-3xl font-semibold">{successTitle}</p>
-                          <p className="text-white/80 mt-2 text-base md:text-lg">
+                        <div className="text-center px-4">
+                          <p className="text-white text-xl xs:text-2xl sm:text-2xl md:text-3xl lg:text-3xl font-semibold">{successTitle}</p>
+                          <p className="text-white/80 mt-2 text-sm xs:text-base sm:text-base md:text-lg lg:text-lg">
                             {successSubtitle}
                             <span className="ink-dots" aria-hidden="true">
                               <span className="ink-dot" />
@@ -426,9 +426,9 @@ export default function Login() {
                         </div>
                       </div>
                     ) : (
-                      <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-sm mx-auto text-center">
+                      <form onSubmit={handleSubmit} className="flex flex-col gap-3 xs:gap-3.5 sm:gap-4 w-full max-w-sm mx-auto text-center px-4 xs:px-5 sm:px-6">
                         <div className="text-left w-full">
-                          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="email">Email</label>
+                          <label className="block text-xs xs:text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="email">Email</label>
                           <div className="relative">
                             <input
                               key={invalid.email ? `email-invalid-${flashToken}` : "email"}
@@ -442,15 +442,15 @@ export default function Login() {
                                 if (authError) setAuthError("");
                                 if (invalid.email) setInvalid((p) => ({ ...p, email: false }));
                               }}
-                              className={`w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-3 outline-none focus:ring-2 focus:ring-white/30 text-center border border-white/10 ${invalid.email ? "ink-flash" : ""}`}
+                              className={`w-full h-10 xs:h-11 sm:h-12 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs xs:placeholder:text-sm sm:placeholder:text-sm px-3 xs:px-3.5 sm:px-4 outline-none focus:ring-2 focus:ring-white/30 text-center border border-white/10 text-sm xs:text-base ${invalid.email ? "ink-flash" : ""}`}
                               autoComplete="email"
                               aria-describedby="email-help"
                             />
                           </div>
-                          <p id="email-help" className={`mt-1 text-xs text-center ${emailOk ? "text-white/60" : "text-red-400"}`}>{emailHelp}</p>
+                          <p id="email-help" className={`mt-1 text-xs xs:text-xs sm:text-sm text-center ${emailOk ? "text-white/60" : "text-red-400"}`}>{emailHelp}</p>
                         </div>
                         <div className="text-left w-full">
-                          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="password">Password</label>
+                          <label className="block text-xs xs:text-sm sm:text-base font-semibold text-white mb-1.5 text-center" htmlFor="password">Password</label>
                           <div className="relative">
                             <input
                               key={invalid.password ? `pwd-invalid-${flashToken}` : "pwd"}
@@ -465,7 +465,7 @@ export default function Login() {
                                 if (authError) setAuthError("");
                                 if (invalid.password) setInvalid((p) => ({ ...p, password: false }));
                               }}
-                              className={`w-full h-11 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-3 pr-10 outline-none focus:ring-2 focus:ring-white/30 text-center border border-white/10 ${invalid.password ? "ink-flash" : ""}`}
+                              className={`w-full h-10 xs:h-11 sm:h-12 rounded-xl bg-white/10 text-white placeholder:text-white/40 placeholder:text-xs xs:placeholder:text-sm sm:placeholder:text-sm px-3 xs:px-3.5 sm:px-4 pr-10 outline-none focus:ring-2 focus:ring-white/30 text-center border border-white/10 text-sm xs:text-base ${invalid.password ? "ink-flash" : ""}`}
                               autoComplete="current-password"
                               aria-describedby="password-help auth-help"
                             />
@@ -473,16 +473,16 @@ export default function Login() {
                               type="button"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={togglePwd}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
+                              className="absolute right-2 xs:right-2.5 sm:right-3 top-1/2 -translate-y-1/2 inline-flex h-6 xs:h-7 sm:h-8 w-6 xs:w-7 sm:w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
                               aria-label={showPassword ? "Hide password" : "Show password"}
                             >
                               {showPassword ? (
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <svg className="h-3.5 xs:h-4 sm:h-4 w-3.5 xs:w-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                   <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5 0-9.27-3.11-11-8 0-1.26.31-2.45.86-3.5M6.1 6.1C7.94 4.8 9.94 4 12 4c5 0 9.27 3.11 11 8-.39 1.01-.93 1.96-1.58 2.81M1 1l22 22" />
                                   <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
                                 </svg>
                               ) : (
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <svg className="h-3.5 xs:h-4 sm:h-4 w-3.5 xs:w-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
                                   <circle cx="12" cy="12" r="3" />
                                 </svg>
@@ -490,10 +490,10 @@ export default function Login() {
                               <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
                             </button>
                           </div>
-                          <p id="password-help" className={`mt-1 text-xs text-center ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
-                          {authError ? <p id="auth-help" className="mt-1 text-xs text-center text-red-400">{authError}</p> : null}
+                          <p id="password-help" className={`mt-1 text-xs xs:text-xs sm:text-sm text-center ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
+                          {authError ? <p id="auth-help" className="mt-1 text-xs xs:text-xs sm:text-sm text-center text-red-400">{authError}</p> : null}
                         </div>
-                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-11 text-sm rounded-xl w-full mt-2" disabled={loading || !signInLoaded || !signIn}>
+                        <Button type="submit" className="bg-white/15 hover:bg-white/25 text-white flex-1 h-10 xs:h-11 sm:h-12 text-xs xs:text-sm sm:text-base rounded-xl w-full mt-2 xs:mt-2.5 sm:mt-3" disabled={loading || !signInLoaded || !signIn}>
                           {loading ? "Signing In..." : "Sign In"}
                         </Button>
                       </form>

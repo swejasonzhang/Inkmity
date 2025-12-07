@@ -222,14 +222,14 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const mobileSheet = mobileMenuOpen
     ? createPortal(
-      <div className="md:hidden fixed inset-0 z-[2147483647]">
+      <div className="sm:hidden fixed inset-0 z-[2147483647]">
         <div className="absolute inset-0 bg-overlay" onClick={() => setMobileMenuOpen(false)} aria-hidden />
         <div className="absolute inset-0 bg-app flex flex-col text-app [&_*]:text-app [&_*]:border-app">
-          <div className={`flex items-center justify-between px-6 ${MOBILE_HEADER_H}`}>
-            <div className="flex items-center gap-4">
+          <div className={`flex items-center justify-between px-4 xs:px-5 sm:px-6 ${MOBILE_HEADER_H}`}>
+            <div className="flex items-center gap-3 xs:gap-3.5 sm:gap-4">
               <img src={resolvedLogo} alt="Inkmity Logo" className={`${MOBILE_LOGO_H} w-auto object-contain`} />
             </div>
-            <Button aria-label="Close menu" variant="ghost" className="p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
+            <Button aria-label="Close menu" variant="ghost" className="p-2 xs:p-2.5 sm:p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
               <X size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
           </div>
@@ -242,32 +242,32 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="flex w-full relative items-center z-50 px-6 md:px-10 py-4 text-app bg-transparent">
-        <div className="w-full flex justify-between items-center md:grid md:grid-cols-[1fr_auto_1fr]">
-          <div className="justify-self-start -ml-2 md:-ml-6 pl-2 md:pl-0 flex-shrink-0">
-            <Link to={homeHref} className="flex items-center md:gap-4 gap-3">
-              <img src={resolvedLogo} alt="Inkmity Logo" className="h-20 md:h-24 lg:h-28 w-auto object-contain" draggable={false} />
+      <header className="flex w-full relative items-center z-50 px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10 py-3 xs:py-3.5 sm:py-4 md:py-4.5 lg:py-5 text-app bg-transparent">
+        <div className="w-full flex justify-between items-center sm:grid sm:grid-cols-[1fr_auto_1fr]">
+          <div className="justify-self-start -ml-1 xs:-ml-1.5 sm:-ml-2 md:-ml-4 lg:-ml-6 pl-1 xs:pl-1.5 sm:pl-2 md:pl-0 flex-shrink-0">
+            <Link to={homeHref} className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 md:gap-3.5 lg:gap-4">
+              <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 xs:h-[4.5rem] sm:h-20 md:h-24 lg:h-[6.5rem] xl:h-28 w-auto object-contain" draggable={false} />
               <span className="sr-only">Inkmity</span>
             </Link>
           </div>
 
-          <div className="hidden md:block justify-self-center">
-            <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[19px]" />
+          <div className="hidden sm:block justify-self-center">
+            <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[17px] xs:text-[18px] sm:text-[19px] md:text-[20px]" />
           </div>
 
-          <div className="flex items-center gap-4 pr-2 md:pr-0 justify-self-end">
+          <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 md:gap-4 pr-1 xs:pr-1.5 sm:pr-2 md:pr-0 justify-self-end">
             {isDashboard && (
               <>
-                <div className="hidden md:block mt-[5px]">
+                <div className="hidden sm:block mt-[5px]">
                   <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
                 </div>
-                <div className="md:hidden mt-[5px]">
-                  <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
+                <div className="sm:hidden mt-[5px]">
+                  <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />
                 </div>
               </>
             )}
 
-            <Button aria-label="Open menu" variant="ghost" className="md:hidden p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app ml-1" onClick={() => setMobileMenuOpen(true)}>
+            <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-2 xs:p-2.5 rounded-lg hover:bg-elevated active:scale-[0.98] text-app ml-0.5 xs:ml-1" onClick={() => setMobileMenuOpen(true)}>
               <Menu size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
 

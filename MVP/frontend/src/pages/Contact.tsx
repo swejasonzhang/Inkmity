@@ -220,50 +220,52 @@ export default function Contact() {
     };
 
     return (
-        <div className="relative min-h-dvh bg-app text-app flex flex-col overflow-hidden">
+        <div className="relative h-dvh bg-app text-app flex flex-col overflow-hidden">
             <Header />
-            <main className="relative z-10 grid place-items-center flex-1 px-4 py-8">
+            <main className="relative z-10 flex items-center justify-center flex-1 overflow-y-auto sm:overflow-y-visible" style={{ padding: 'clamp(2rem, 3vmin + 2vw, 5rem) clamp(1rem, 2vmin + 1vw, 3rem)' }}>
                 <motion.section
                     initial={{ opacity: 0, y: 18, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ type: "spring", stiffness: 220, damping: 24 }}
-                    className="w-full max-w-3xl"
+                    className="w-full flex items-center justify-center"
+                    style={{ maxWidth: 'clamp(20rem, 50vw, 42rem)' }}
                 >
                     <div
-                        className="ink-card overflow-hidden"
+                        className="ink-card overflow-hidden w-full"
                         style={{
                             background:
                                 "linear-gradient(180deg, color-mix(in oklab, var(--card), transparent 0%) 0%, color-mix(in oklab, var(--card), black 8%) 100%), radial-gradient(1200px 400px at 50% -10%, color-mix(in oklab, var(--elevated), white 4%) 0%, transparent 60%)",
                         }}
                     >
                         <div className="ink-gloss" />
-                        <div className="px-6 sm:px-10 pt-8 pb-3">
-                            <div className="flex items-center justify-center gap-3">
-                                <span className="inline-grid place-items-center rounded-xl border border-app/40 bg-elevated p-2">
-                                    <Mail size={18} />
+                        <div className="flex flex-col items-center" style={{ padding: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
+                            <div className="flex items-center justify-center w-full" style={{ gap: 'clamp(0.5rem, 0.7vmin + 0.4vw, 1rem)' }}>
+                                <span className="inline-grid place-items-center rounded-xl border border-app/40 bg-elevated" style={{ padding: 'clamp(0.375rem, 0.5vmin + 0.3vw, 0.75rem)' }}>
+                                    <Mail style={{ width: 'clamp(1rem, 1.2vmin + 0.6vw, 1.5rem)', height: 'clamp(1rem, 1.2vmin + 0.6vw, 1.5rem)' }} />
                                 </span>
-                                <h1 className="text-[28px] sm:text-[32px] leading-none font-extrabold tracking-tight">Contact</h1>
+                                <h1 className="leading-none font-extrabold tracking-tight" style={{ fontSize: 'clamp(1.375rem, 2vmin + 1vw, 1.75rem)' }}>Contact</h1>
                             </div>
-                            <div className="mx-auto mt-4 h-[2px] w-28 rounded-full bg-elevated" />
-                            <p className="mt-4 text-subtle text-sm sm:text-base leading-relaxed text-center">
+                            <div className="mx-auto rounded-full bg-elevated" style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', height: '2px', width: 'clamp(6rem, 8vmin + 4vw, 8rem)' }} />
+                            <p className="text-subtle leading-relaxed text-center w-full" style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>
                                 Share feedback, ideas, or issues. <span className="font-bold text-app">Jason</span> reads every message.
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="px-6 sm:px-10 pb-9">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="mb-1 block text-xs text-subtle text-center" htmlFor="name">
+                        <form onSubmit={handleSubmit} className="flex flex-col items-center w-full" style={{ padding: '0 clamp(1.5rem, 2vmin + 1vw, 2.5rem) clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 w-full" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                                <div className="flex flex-col items-center">
+                                    <Label className="text-subtle w-full block text-center" htmlFor="name" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
                                         Name
                                     </Label>
-                                    <div className="relative">
-                                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 opacity-70">
-                                            <User size={16} />
+                                    <div className="relative w-full">
+                                        <span className="pointer-events-none absolute top-1/2 -translate-y-1/2 opacity-70" style={{ left: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                                            <User style={{ width: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)', height: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }} />
                                         </span>
                                         <InputClearPlaceholder
                                             id="name"
                                             keepCenter
-                                            className="pl-9"
+                                            className="text-sm w-full"
+                                            style={{ paddingLeft: 'clamp(2.25rem, 2.8vmin + 1.3vw, 3rem)', paddingRight: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}
                                             value={form.name}
                                             onChange={onChange("name")}
                                             placeholder="Your name"
@@ -271,19 +273,20 @@ export default function Contact() {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <Label className="mb-1 block text-xs text-subtle text-center" htmlFor="email">
+                                <div className="flex flex-col items-center">
+                                    <Label className="text-subtle w-full block text-center" htmlFor="email" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
                                         Email
                                     </Label>
-                                    <div className="relative">
-                                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 opacity-70">
-                                            <Mail size={16} />
+                                    <div className="relative w-full">
+                                        <span className="pointer-events-none absolute top-1/2 -translate-y-1/2 opacity-70" style={{ left: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                                            <Mail style={{ width: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)', height: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }} />
                                         </span>
                                         <InputClearPlaceholder
                                             id="email"
                                             type="email"
                                             keepCenter
-                                            className="pl-9"
+                                            className="text-sm w-full"
+                                            style={{ paddingLeft: 'clamp(2.25rem, 2.8vmin + 1.3vw, 3rem)', paddingRight: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}
                                             value={form.email}
                                             onChange={onChange("email")}
                                             placeholder="you@example.com"
@@ -292,24 +295,26 @@ export default function Contact() {
                                 </div>
                             </div>
 
-                            <div className="mt-4">
-                                <Label className="mb-1 block text-xs text-subtle text-center" htmlFor="subject">
+                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                                <Label className="text-subtle w-full block text-center" htmlFor="subject" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>
                                     Subject
                                 </Label>
                                 <InputClearPlaceholder
                                     id="subject"
                                     keepCenter
+                                    className="text-sm w-full"
+                                    style={{ paddingLeft: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', paddingRight: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}
                                     value={form.subject}
                                     onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-                                    placeholder="What’s this about?"
+                                    placeholder="What's this about?"
                                 />
                             </div>
 
-                            <div className="mt-4">
-                                <Label className="mb-1 block text-xs text-subtle text-center">Message</Label>
-                                <div className="relative">
-                                    <span className="pointer-events-none absolute right-3 top-3 opacity-60">
-                                        <MessageSquareText size={16} />
+                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                                <Label className="text-subtle w-full block text-center" style={{ marginBottom: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.75rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)', textAlign: 'center' }}>Message</Label>
+                                <div className="relative w-full">
+                                    <span className="pointer-events-none absolute opacity-60" style={{ right: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)', top: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                                        <MessageSquareText style={{ width: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)', height: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }} />
                                     </span>
                                     <AutoCenterTextarea
                                         value={form.message}
@@ -330,32 +335,36 @@ export default function Contact() {
                                 name="website"
                             />
 
-                            <div className="mt-6 flex flex-col items-center gap-3">
-                                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                            <div className="flex flex-col items-center w-full" style={{ marginTop: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)', gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.25rem)' }}>
+                                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="w-full flex justify-center">
                                     <Button
                                         type="submit"
                                         disabled={loading}
-                                        className="group relative w-full sm:w-auto rounded-2xl border border-app/70 bg-elevated px-5 py-2 hover:-translate-y-[1px] active:translate-y-0 transition"
+                                        className="group relative rounded-2xl border border-app/70 bg-elevated hover:-translate-y-[1px] active:translate-y-0 transition"
+                                        style={{ 
+                                            padding: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.875rem) clamp(1.5rem, 2vmin + 1vw, 2.5rem)',
+                                            fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)'
+                                        }}
                                     >
-                                        <span className="inline-flex items-center gap-2">
+                                        <span className="inline-flex items-center justify-center" style={{ gap: 'clamp(0.5rem, 0.6vmin + 0.3vw, 0.75rem)' }}>
                                             {loading ? (
-                                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-app/40 border-t-transparent" />
+                                                <span className="inline-block animate-spin rounded-full border-2 border-app/40 border-t-transparent" style={{ width: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)', height: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }} />
                                             ) : (
-                                                <Send size={16} className="transition group-hover:translate-x-[2px]" />
+                                                <Send style={{ width: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)', height: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }} className="transition group-hover:translate-x-[2px]" />
                                             )}
                                             {loading ? "Sending..." : "Send message"}
                                         </span>
                                     </Button>
                                 </motion.div>
 
-                                <p className="text-xs text-muted">
+                                <p className="text-muted text-center" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>
                                     Prefer email?{" "}
                                     <a href="mailto:jason@inkmity.com" className="underline">
                                         jason@inkmity.com
                                     </a>
                                 </p>
 
-                                <div className="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-subtle">
+                                <div className="flex flex-wrap items-center justify-center text-subtle w-full" style={{ gap: 'clamp(0.625rem, 0.8vmin + 0.4vw, 1rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>
                                     <a
                                         href="https://www.linkedin.com/in/swejasonzhang"
                                         target="_blank"
@@ -402,8 +411,8 @@ export default function Contact() {
                     "fixed top-0 left-1/2 -translate-x-1/2 z-[1]",
                     "w-auto max-w-none",
                     "h-[100svh]",
-                    "md:inset-0 md:left-0 md:translate-x-0 md:w-full md:h-full",
-                    "object-contain md:object-cover",
+                    "sm:inset-0 sm:left-0 sm:translate-x-0 sm:w-full sm:h-full",
+                    "object-contain sm:object-cover",
                     "pointer-events-none video-bg",
                 ].join(" ")}
                 aria-hidden
