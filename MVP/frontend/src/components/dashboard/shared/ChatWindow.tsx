@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { Send, Image as ImageIcon } from "lucide-react";
+import { Send, Image as ImageIcon, X } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -103,6 +103,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [uploading, setUploading] = useState(false);
   const [pendingImages, setPendingImages] = useState<Record<string, string[]>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [mobileView, setMobileView] = useState<"conversations" | "requests">("conversations");
+  const [requestCount, setRequestCount] = useState(0);
 
   const appRef = useRef<HTMLDivElement | null>(null);
   const overlayActive = confirmOpen || !!viewerUrl;
@@ -153,6 +155,24 @@ const ChatWindow: FC<ChatWindowProps> = ({
       }
     }
   }, [conversations, expandedId, collapsedMap]);
+
+  useEffect(() => {
+    if (!isArtist || isClient) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await authFetch("/api/messages/requests", { method: "GET" });
+        const data = res.ok ? await res.json() : null;
+        const list = Array.isArray(data?.requests) ? data.requests : Array.isArray(data) ? data : [];
+        if (mounted) setRequestCount(list.length);
+      } catch {
+        if (mounted) setRequestCount(0);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [authFetch, isArtist, isClient]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -683,7 +703,308 @@ const ChatWindow: FC<ChatWindowProps> = ({
             </aside>
           )}
           <div className="flex-1 min-w-0 flex min-h-0">
-            <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] h-full min-h-0 flex-1">
+            <div className="w-full h-full flex flex-col md:hidden gap-3 overflow-y-auto">
+              {isArtist && (
+                <div className="flex-shrink-0 rounded-xl border border-app bg-card flex flex-col" style={{ maxHeight: "min(40vh, 300px)" }}>
+                  <div className="px-3 py-2.5 border-b border-app flex items-center justify-between flex-shrink-0">
+                    <div>
+                      <div className="text-sm font-semibold">Message Requests</div>
+                      <div className="text-xs text-muted-foreground">Review new requests</div>
+                    </div>
+                    {requestCount > 0 && (
+                      <span className="rounded-full bg-primary text-primary-foreground text-[10px] px-2 py-0.5 font-semibold">
+                        {requestCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                    <RequestPanel
+                      authFetch={authFetch}
+                      onOpenConversation={(clerkId) => {
+                        setExpandedId(clerkId);
+                        try {
+                          window.dispatchEvent(new CustomEvent("ink:set-expanded-conversation", { detail: clerkId }));
+                        } catch { }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              <aside className="flex-shrink-0 rounded-xl border border-app bg-card overflow-x-auto">
+                <ul className="flex gap-2 p-2">
+                  {conversations.map(c => {
+                    const isActive = c.participantId === activeConv?.participantId;
+                    return (
+                      <li key={c.participantId} className="relative group flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            if (expandedId !== c.participantId) setExpandedId(c.participantId);
+                            onMarkRead(c.participantId);
+                          }}
+                          className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
+                        >
+                          <div className="relative">
+                            {avatarFor(c, { border: false })}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                requestDelete(c.participantId);
+                              }}
+                              className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 text-xs"
+                              aria-label="Delete conversation"
+                              title="Delete conversation"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                          <span className="text-xs whitespace-nowrap">{displayNameFromUsername(c.username)}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </aside>
+              <div className="flex-1 min-h-0 w-full">
+                  <section className="h-full rounded-xl border border-app bg-card flex flex-col min-h-0">
+                    <header className="px-3 py-2.5 border-b border-app flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {conversations.length > 0 ? (
+                          <Select
+                            value={activeConv?.participantId || conversations[0]?.participantId || ""}
+                            onValueChange={(val) => {
+                              setExpandedId(val);
+                              onMarkRead(val);
+                            }}
+                          >
+                            <SelectTrigger className="h-9 focus:outline-none flex-1 max-w-full">
+                              <SelectValue placeholder="Select conversation">
+                                {activeConv ? displayNameFromUsername(activeConv.username) : "Select conversation"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[50vh]">
+                              {conversations.map(c => (
+                                <SelectItem key={c.participantId} value={c.participantId}>
+                                  {displayNameFromUsername(c.username)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">No conversations yet</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {isClient && activeConv && (
+                          <button
+                            type="button"
+                            onClick={openBooking}
+                            title="Open booking"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 border-primary/90 bg-primary text-primary-foreground font-semibold text-xs shadow-sm hover:shadow focus:outline-none"
+                          >
+                            Ready to Book?
+                          </button>
+                        )}
+                        {role === "artist" && activeConv && (() => {
+                          const raw = activeConv?.meta?.lastStatus ?? null;
+                          const ov = gateOverride[activeConv?.participantId || ""];
+                          const v = (ov ?? raw) as GateStatus | null;
+                          const needs = v === "pending" && !(ov === "accepted" || !!activeConv?.meta?.allowed);
+                          if (!needs) return null;
+                          return (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDecline(activeConv.participantId)}
+                                className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
+                              >
+                                Decline
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAccept(activeConv.participantId)}
+                                className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
+                              >
+                                Accept
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </header>
+                    <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
+                      {!activeConv ? (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-sm text-muted-foreground text-center">
+                            {conversations.length > 0 
+                              ? "Select a conversation from the list above"
+                              : "No conversations yet"}
+                          </p>
+                        </div>
+                      ) : (!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
+                        <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
+                      ) : activeConv?.messages && activeConv.messages.length > 0 ? (
+                        activeConv.messages.map((msg, idx) => {
+                          const isMe = msg.senderId === currentUserId;
+                          const fromMetaRef = ([] as string[])
+                            .concat(msg.meta?.referenceUrls ?? [])
+                            .concat(msg.meta?.workRefs ?? [])
+                            .concat(msg.meta?.refs ?? []);
+                          const fromText = getUrlsFromText(msg.text);
+                          const merged = Array.from(new Set([...fromMetaRef, ...fromText])).slice(0, 3);
+                          
+                          let timestampText = "";
+                          let statusText = "";
+                          if (isMe) {
+                            if (msg.seen) {
+                              const seenTimestamp = msg.seenAt || (msg.deliveredAt && msg.seen ? msg.deliveredAt : msg.timestamp);
+                              timestampText = fmtDateTime(seenTimestamp);
+                              statusText = " · Seen";
+                            } else if (msg.delivered) {
+                              const deliveredTimestamp = msg.deliveredAt || msg.timestamp;
+                              timestampText = fmtDateTime(deliveredTimestamp);
+                              statusText = " · Delivered";
+                            } else {
+                              timestampText = fmtDateTime(msg.timestamp);
+                              statusText = " · Sending";
+                            }
+                          } else {
+                            timestampText = fmtDateTime(msg.timestamp);
+                          }
+
+                          return (
+                            <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
+                              <div
+                                className={`px-3 py-3 rounded-2xl max-w-[85%] w-fit break-words whitespace-pre-wrap border text-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                              >
+                                <div>{msg.text}</div>
+                                {!!merged.length && (
+                                  <div className="mt-2 flex gap-2 items-center flex-nowrap">
+                                    {merged.map(u => (
+                                      <button
+                                        key={u}
+                                        type="button"
+                                        onClick={() => setViewerUrl(u)}
+                                        className="flex-shrink-0 ink-conv-image-button"
+                                        title="Open"
+                                        style={{ minWidth: 0 }}
+                                      >
+                                        <img
+                                          src={u}
+                                          alt="reference"
+                                          className="ink-conv-chat-thumb w-full h-auto max-w-[70px] sm:max-w-[90px] md:max-w-[110px] object-cover rounded-lg"
+                                          loading="lazy"
+                                          referrerPolicy="no-referrer"
+                                          style={{ width: 'auto', height: 'auto' }}
+                                        />
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className={`mt-1 text-xs ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                                  {timestampText}{statusText}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-sm text-muted-foreground text-center">No messages yet. Start the conversation!</p>
+                        </div>
+                      )}
+                    </div>
+                    {sendError && <div className="px-3 pb-2 text-xs text-destructive">{sendError}</div>}
+                    {activeConv && pendingImages[activeConv.participantId] && pendingImages[activeConv.participantId].length > 0 && (
+                      <div className="px-3 py-2 border-t border-app bg-elevated/50">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {pendingImages[activeConv.participantId].map((url, idx) => (
+                            <div key={idx} className="relative group">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPendingImages(prev => ({
+                                    ...prev,
+                                    [activeConv.participantId]: prev[activeConv.participantId].filter((_, i) => i !== idx)
+                                  }));
+                                }}
+                                className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove image"
+                              >
+                                ×
+                              </button>
+                              <img
+                                src={url}
+                                alt={`Preview ${idx + 1}`}
+                                className="w-14 h-14 object-cover rounded-lg border border-app"
+                                loading="lazy"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <footer className="p-2 border-t border-app flex-shrink-0">
+                      <div className="flex items-stretch gap-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          disabled={needsApproval && !isClient || uploading}
+                        />
+                        <button
+                          type="button"
+                          onClick={openUpload}
+                          disabled={needsApproval && !isClient || uploading}
+                          className="w-9 h-9 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60 rounded-lg"
+                          aria-label="Add images"
+                          title="Add images"
+                        >
+                          {uploading ? (
+                            <CircularProgress size={16} className="text-app" />
+                          ) : (
+                            <ImageIcon size={16} />
+                          )}
+                        </button>
+                        <div className="flex-1 flex rounded-lg overflow-hidden border border-app bg-card">
+                          <input
+                            type="text"
+                            value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
+                            onChange={e =>
+                              activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
+                            }
+                            className="flex-1 p-2 text-sm bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
+                            placeholder={
+                              needsApproval && !isClient
+                                ? "Approve to enable messaging"
+                                : status === "declined" && !isClient
+                                  ? "Messaging locked"
+                                  : "Type a message"
+                            }
+                            disabled={needsApproval && !isClient}
+                            onKeyDown={e => {
+                              if (needsApproval && !isClient) return;
+                              if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => activeConv && (!needsApproval || isClient) && handleSend(activeConv.participantId)}
+                            disabled={needsApproval && !isClient}
+                            className="w-9 h-9 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                            aria-label="Send message"
+                          >
+                            <Send size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </footer>
+                  </section>
+              </div>
+            </div>
+            <div className={`hidden md:grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] h-full min-h-0 flex-1 w-full`}>
               <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto">
                 <ul className="divide-y divide-app/60">
                   {conversations.map(c => {
@@ -844,21 +1165,23 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           >
                             <div>{msg.text}</div>
                             {!!merged.length && (
-                              <div className="mt-2 grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                              <div className="mt-2 flex gap-2 items-center flex-nowrap">
                                 {merged.map(u => (
                                   <button
                                     key={u}
                                     type="button"
                                     onClick={() => setViewerUrl(u)}
-                                    className="w-full ink-conv-image-button"
+                                    className="flex-shrink-0 ink-conv-image-button"
                                     title="Open"
+                                    style={{ minWidth: 0 }}
                                   >
                                     <img
                                       src={u}
                                       alt="reference"
-                                      className="ink-conv-chat-thumb"
+                                      className="ink-conv-chat-thumb w-full h-auto max-w-[70px] sm:max-w-[90px] md:max-w-[110px] object-cover rounded-lg"
                                       loading="lazy"
                                       referrerPolicy="no-referrer"
+                                      style={{ width: 'auto', height: 'auto' }}
                                     />
                                   </button>
                                 ))}
