@@ -140,7 +140,7 @@ export default function ClientDashboard() {
             `}</style>
             <div className="h-dvh md:min-h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root">
             <Header />
-            <div className="sm:hidden" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)', marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+            <div className="sm:hidden" style={{ padding: '0 16px', marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={setPriceFilter}
@@ -165,7 +165,7 @@ export default function ClientDashboard() {
                     className="mb-3"
                 />
             </div>
-            <main className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) 0' }}>
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ padding: '0 16px' }}>
                 {error && !initialized ? (
                     <div className="flex-1 min-h-0 w-full flex items-center justify-center" style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
                         <div className="w-full max-w-2xl rounded-lg border border-red-500/30 bg-red-500/10" style={{ padding: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
@@ -209,7 +209,7 @@ export default function ClientDashboard() {
                 ) : (
                     <>
                         {error && initialized && (
-                            <div className="rounded-lg border border-red-500/30 bg-red-500/10 flex-shrink-0" style={{ margin: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)', padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
+                            <div className="rounded-lg border border-red-500/30 bg-red-500/10 flex-shrink-0" style={{ margin: '16px 0', padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                                 <div className="flex items-start" style={{ gap: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                                     <div className="flex-1">
                                         <h3 className="font-semibold text-red-300 mb-1" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>Error Loading Artists</h3>
@@ -232,7 +232,7 @@ export default function ClientDashboard() {
                             </div>
                         )}
                         <div className="flex-1 min-h-0 flex">
-                            <div className="w-full h-full" style={{ padding: '0 clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+                            <div className="w-full h-full" style={{ padding: '0' }}>
                                 <Suspense
                                     fallback={
                                         <div style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }} className="space-y-4">
@@ -263,7 +263,7 @@ export default function ClientDashboard() {
                     </>
                 )}
             </main>
-            <div className="shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+            <div className="shrink-0" style={{ padding: '16px' }}>
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
@@ -333,10 +333,8 @@ export default function ClientDashboard() {
                             pastWorks: ((selectedArtist as any).pastWorks ?? []).filter(Boolean),
                             healedWorks: ((selectedArtist as any).healedWorks ?? []).filter(Boolean),
                             sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean),
-                            avatarUrl: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url,
-                            coverImage: (selectedArtist as any).coverImage,
-                            profileImage: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url,
-                            avatar: (selectedArtist as any).avatar
+                            avatarUrl: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url || (selectedArtist as any).avatarUrl,
+                            coverImage: (selectedArtist as any).coverImage
                         }}
                         onClose={() => setSelectedArtist(null)}
                         onMessage={async a => {

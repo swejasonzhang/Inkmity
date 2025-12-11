@@ -63,7 +63,7 @@ export default function ArtistDashboard() {
           }
         `}</style>
         <Header />
-        <main className="artist-dashboard-main flex-1 flex flex-col md:min-h-0 md:overflow-hidden" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)', paddingBottom: 'clamp(3.5rem, 4.5vmin + 2.5vw, 6rem)', gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+        <main className="artist-dashboard-main flex-1 flex flex-col md:min-h-0 md:overflow-hidden" style={{ padding: '0 16px', paddingBottom: 'clamp(3.5rem, 4.5vmin + 2.5vw, 6rem)', gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 md:flex-1 md:min-h-0" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
             <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[400px] md:min-h-0 md:flex-1">
               <CardHeader className="border-b border-app flex-shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>

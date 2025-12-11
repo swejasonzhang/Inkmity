@@ -97,7 +97,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
 
   const shellClass = fullScreen
     ? "group w-full h-full min-h-0 flex flex-col items-center justify-center overflow-hidden rounded-3xl border bg-card/90 transition"
-    : "group w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition";
+    : "group w-full flex flex-col rounded-3xl border bg-card/90 transition";
 
   return (
     <div
@@ -147,7 +147,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         </div>
 
         <div
-          className={`${fullScreen ? "px-5 pt-4 pb-8 sm:pb-5" : "px-7 pt-6 pb-8"} flex-1 min-h-0 flex flex-col ${fullScreen ? "gap-4" : "gap-7"}`}
+          className={`${fullScreen ? "px-5 pt-4 pb-8 sm:pb-5" : "px-7 pt-6 pb-8"} ${fullScreen ? "flex-1 min-h-0" : ""} flex flex-col ${fullScreen ? "gap-4" : "gap-7"}`}
           style={fullScreen ? undefined : undefined}
         >
           <div className={`flex flex-col items-center text-center ${fullScreen ? "gap-4" : "gap-4 sm:gap-5"}`}>
