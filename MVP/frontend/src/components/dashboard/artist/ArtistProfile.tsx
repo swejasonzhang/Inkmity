@@ -598,7 +598,7 @@ export default function ArtistProfile() {
                 <div className="group w-full h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8 items-center justify-center" style={{ background: "var(--card)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 overflow-y-auto">
 
-                    <div className="relative mb-8 w-full flex items-center justify-center">
+                    <div className="relative mb-8 w-full flex items-center justify-center group">
                         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                             {bgOk && currentCoverImage ? (
                                 <img
@@ -632,10 +632,10 @@ export default function ArtistProfile() {
                             <button
                                 onClick={() => avatarInputRef.current?.click()}
                                 disabled={uploading}
-                                className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 group"
+                                className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1"
                                 style={{ zIndex: 20 }}
                             >
-                                <Camera className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                                <Camera className="h-5 w-5 text-white hover:scale-110 transition-transform" />
                                 <span className="text-xs text-white/80">Change</span>
                             </button>
                         </div>

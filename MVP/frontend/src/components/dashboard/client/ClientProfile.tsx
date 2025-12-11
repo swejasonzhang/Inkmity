@@ -477,7 +477,7 @@ export default function ClientProfile() {
             <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0">
                 <div className="group w-full h-full flex flex-col rounded-3xl transition relative p-6 lg:p-8 items-center overflow-hidden" style={{ background: "var(--card)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-2 w-full max-w-2xl relative z-10 flex-1 min-h-0">
-                        <div className="relative mb-8 w-full flex items-center justify-center">
+                        <div className="relative mb-8 w-full flex items-center justify-center group">
                             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                                 {bgOk && currentCoverImage ? (
                                     <img
@@ -494,27 +494,27 @@ export default function ClientProfile() {
                                 <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
                             </div>
                             <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
-                            {currentProfileImage ? (
-                                <img
-                                    src={currentProfileImage}
-                                    alt={`${currentUsername} profile`}
-                                    className="absolute inset-0 h-full w-full object-cover"
-                                    style={{ zIndex: 2 }}
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer"
-                                />
-                            ) : (
-                                <span className="absolute inset-0 grid place-items-center font-semibold text-2xl sm:text-3xl md:text-4xl" style={{ color: "var(--fg)", zIndex: 2 }}>
-                                    {initials}
-                                </span>
-                            )}
+                                {currentProfileImage ? (
+                                    <img
+                                        src={currentProfileImage}
+                                        alt={`${currentUsername} profile`}
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                        style={{ zIndex: 2 }}
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer"
+                                    />
+                                ) : (
+                                    <span className="absolute inset-0 grid place-items-center font-semibold text-2xl sm:text-3xl md:text-4xl" style={{ color: "var(--fg)", zIndex: 2 }}>
+                                        {initials}
+                                    </span>
+                                )}
                             <button
                                 onClick={() => avatarInputRef.current?.click()}
                                 disabled={uploading}
-                                className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-60 hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 group"
+                                className="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-1 hover:group"
                                 style={{ zIndex: 20 }}
                             >
-                                <Camera className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                                <Camera className="h-5 w-5 text-white hover:scale-110 transition-transform" />
                                 <span className="text-xs text-white/80">Change</span>
                             </button>
                         </div>
