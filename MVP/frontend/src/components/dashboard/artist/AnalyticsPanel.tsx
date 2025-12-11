@@ -140,7 +140,7 @@ export default function AnalyticsPanel(props: Props) {
   return (
     <div className="w-full h-full overflow-hidden flex items-center justify-center p-4">
       <div className="w-full h-full max-w-full mx-auto flex flex-col gap-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 flex-shrink-0">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 flex-shrink-0 analytics-kpi-grid">
           {kpis.map((k, i) => (
             <div key={i} className="rounded-xl border border-app bg-elevated px-4 py-5 flex flex-col items-center justify-center text-center">
               <div className="text-xs text-muted">
