@@ -262,7 +262,6 @@ export default function ArtistsSection({
     const sectionMinPx = (isMdUp ? filterH : 0) + cardMinPx + gridVPadPx;
     const minGridPx = cardMinPx + gridVPadPx;
 
-    const snapHeight = "100%";
     const mobileListRef = useRef<HTMLDivElement | null>(null);
     const lastTouchYRef = useRef<number | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -326,7 +325,7 @@ export default function ArtistsSection({
     const atEnd = currentIndex >= lastIndex;
 
     return (
-        <div className="grid grid-rows-[auto,1fr] h-full min-h-0 w-full" style={{ minHeight: `${sectionMinPx}px` }}>
+        <div className={`${isMdUp ? "grid grid-rows-[auto,1fr]" : "flex flex-col"} h-full min-h-0 w-full`} style={{ minHeight: `${sectionMinPx}px` }}>
             <div ref={filterRef} className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
@@ -385,16 +384,16 @@ export default function ArtistsSection({
                 )}
 
                 <div
-                    className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full min-h-0`}
-                    style={{ minHeight: `${isMdUp ? minGridPx : 0}px` }}
+                    className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full`}
+                    style={{ minHeight: `${isMdUp ? minGridPx : 0}px`, height: "100%" }}
                 >
-                    <div className="md:hidden h-full min-h-0 relative">
+                    <div className="md:hidden h-full w-full relative" style={{ height: "100%" }}>
                         {listItems.length > 0 ? (
                             <>
                                 <div
                                     ref={mobileListRef}
-                                    className={`h-full min-h-0 ${listItems.length <= 1 ? "overflow-hidden" : "overflow-y-auto"} snap-y snap-mandatory overscroll-contain`}
-                                    style={{ scrollSnapType: "y mandatory" }}
+                                    className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
+                                    style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}
                                     onScroll={handleMobileScroll}
                                     onTouchStart={handleTouchStart}
                                     onTouchMove={handleTouchMove}
@@ -402,8 +401,8 @@ export default function ArtistsSection({
                                     {listItems.map((artist, index) => (
                                         <div
                                             key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                            className="snap-start h-full flex items-center justify-center"
-                                            style={{ height: snapHeight, scrollSnapStop: "always" }}
+                                            className="snap-start snap-always h-full w-full flex items-center justify-center"
+                                            style={{ height: "100%", minHeight: "100%", scrollSnapStop: "always", scrollSnapAlign: "center" }}
                                         >
                                             <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} fullScreen />
                                         </div>
@@ -445,8 +444,8 @@ export default function ArtistsSection({
                                 )}
                             </>
                         ) : (
-                            <div className="h-full min-h-0 overflow-y-auto snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory" }}>
-                                <div className="snap-start flex items-center justify-center" style={{ height: snapHeight, scrollSnapStop: "always", padding: '0' }}>
+                            <div className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}>
+                                <div className="snap-start snap-always h-full w-full flex items-center justify-center" style={{ height: "100%", minHeight: "100%", scrollSnapStop: "always", scrollSnapAlign: "center", padding: '0' }}>
                                     <div className="text-center px-4">
                                         <p className="text-base font-medium" style={{ color: "var(--fg)" }}>No artists match your filters.</p>
                                         <p className="text-sm mt-1" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Try adjusting filters or keywords.</p>
