@@ -90,9 +90,9 @@ export default function FloatingBar({
   });
 
   const pad = {
-    left: isMdUp ? "calc(25px + env(safe-area-inset-left, 0px))" : "calc(13px + env(safe-area-inset-left, 0px))",
-    right: isMdUp ? "calc(25px + env(safe-area-inset-right, 0px))" : "calc(13px + env(safe-area-inset-right, 0px))",
-    bottom: `calc(max(${vvBottom}px, 20px) + env(safe-area-inset-bottom, 0px))`,
+    left: isMdUp ? "calc(12px + env(safe-area-inset-left, 0px))" : "calc(6px + env(safe-area-inset-left, 0px))",
+    right: isMdUp ? "calc(12px + env(safe-area-inset-right, 0px))" : "calc(6px + env(safe-area-inset-right, 0px))",
+    bottom: `calc(max(${vvBottom}px, ${isMdUp ? 20 : 10}px) + env(safe-area-inset-bottom, 0px))`,
   };
 
   const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border-2";
@@ -109,8 +109,8 @@ export default function FloatingBar({
 
   const MOBILE_CLOSED_W = 112;
   const MOBILE_OPEN_W = isMdUp ? Math.min(Math.max(240, vp.w - 48), 360) : vp.w;
-  const MOBILE_HEADER_PADDING = 16;
-  const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - 96 - MOBILE_HEADER_PADDING;
+  const MOBILE_HEADER_HEIGHT = 96;
+  const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - MOBILE_HEADER_HEIGHT;
 
   const PANEL_W = 320;
   const DESKTOP_OPEN_W = 1200;
@@ -203,7 +203,7 @@ export default function FloatingBar({
         className="fixed inset-x-0 pointer-events-none"
         style={{ 
           bottom: pad.bottom, 
-          marginTop: isMdUp ? 0 : 8,
+          marginTop: isMdUp ? 0 : 2,
           zIndex: !isMdUp && open ? 9999 : 190
         }}
       >
@@ -228,7 +228,7 @@ export default function FloatingBar({
               ref={centerRef}
               className="ink-solid-controls flex items-center justify-center"
               style={{ 
-                paddingInline: 8, 
+                paddingInline: 4, 
                 pointerEvents: rightContent && (!open || isMdUp) ? "auto" : "none",
                 opacity: !isMdUp && open ? 0 : 1,
                 visibility: !isMdUp && open ? "hidden" : "visible"
@@ -251,14 +251,13 @@ export default function FloatingBar({
                     right: pad.right,
                     bottom: 0,
                   } : open ? {
-                    top: 96 + MOBILE_HEADER_PADDING,
+                    top: MOBILE_HEADER_HEIGHT,
                     left: 0,
                     right: 0,
-                    bottom: 0,
                     width: "100vw",
                     height: MOBILE_OPEN_H,
                   } : {
-                    right: "17px",
+                    right: pad.right,
                     bottom: 0,
                   }),
                   ...(isMdUp || !open ? {
