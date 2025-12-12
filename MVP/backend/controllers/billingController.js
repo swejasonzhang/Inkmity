@@ -72,13 +72,40 @@ export async function checkoutDeposit(req, res) {
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
 
+  // Check if deposit already paid
+  if (booking.depositPaidCents >= booking.depositRequiredCents) {
+    return res.status(400).json({ error: "deposit_already_paid" });
+  }
+
   const amount = Number(booking.depositRequiredCents || 0);
   if (amount <= 0)
     return res.status(400).json({ error: "no_deposit_required" });
 
-  const customer = await stripe.customers.create({
-    metadata: { clientId: String(booking.clientId) },
-  });
+  // Get or create customer
+  let customer;
+  try {
+    const existingBills = await Billing.find({
+      clientId: booking.clientId,
+      stripeCustomerId: { $exists: true, $ne: null },
+    }).limit(1);
+    if (existingBills.length > 0 && existingBills[0].stripeCustomerId) {
+      customer = await stripe.customers.retrieve(existingBills[0].stripeCustomerId);
+    } else {
+      customer = await stripe.customers.create({
+        metadata: { clientId: String(booking.clientId) },
+      });
+    }
+  } catch {
+    customer = await stripe.customers.create({
+      metadata: { clientId: String(booking.clientId) },
+    });
+  }
+
+  const appointmentType = booking.appointmentType || "tattoo_session";
+  const productName =
+    appointmentType === "consultation"
+      ? "Consultation deposit"
+      : "Tattoo appointment deposit";
 
   const bill = await Billing.create({
     bookingId,
@@ -89,7 +116,10 @@ export async function checkoutDeposit(req, res) {
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
-    metadata: {},
+    metadata: {
+      appointmentType,
+      nonRefundable: true, // Deposits are typically non-refundable
+    },
   });
 
   const session = await stripe.checkout.sessions.create({
@@ -100,7 +130,10 @@ export async function checkoutDeposit(req, res) {
       {
         price_data: {
           currency: CURRENCY,
-          product_data: { name: "Tattoo appointment deposit" },
+          product_data: {
+            name: productName,
+            description: `Deposit for appointment on ${new Date(booking.startAt).toLocaleDateString()}. This deposit is non-refundable and will be applied to your final cost.`,
+          },
           unit_amount: amount,
         },
         quantity: 1,
@@ -110,15 +143,101 @@ export async function checkoutDeposit(req, res) {
       billingId: String(bill._id),
       bookingId: String(booking._id),
       type: "deposit",
+      appointmentType,
     },
-    success_url: `${process.env.APP_URL}/booking/${bookingId}?paid=deposit`,
-    cancel_url: `${process.env.APP_URL}/booking/${bookingId}?cancelled=deposit`,
+    success_url: `${process.env.APP_URL}/appointments/${bookingId}?paid=deposit`,
+    cancel_url: `${process.env.APP_URL}/appointments/${bookingId}?cancelled=deposit`,
   });
 
   bill.stripeCheckoutSessionId = session.id;
   await bill.save();
 
-  res.json({ url: session.url, id: session.id });
+  res.json({ url: session.url, id: session.id, clientSecret: null });
+}
+
+export async function createDepositPaymentIntent(req, res) {
+  const { bookingId } = req.body || {};
+  if (!bookingId) return res.status(400).json({ error: "bookingId required" });
+
+  const booking = await Booking.findById(bookingId);
+  requireBooking(booking);
+
+  // Check if deposit already paid
+  if (booking.depositPaidCents >= booking.depositRequiredCents) {
+    return res.status(400).json({ error: "deposit_already_paid" });
+  }
+
+  const amount = Number(booking.depositRequiredCents || 0);
+  if (amount <= 0)
+    return res.status(400).json({ error: "no_deposit_required" });
+
+  // Get or create customer
+  let customer;
+  try {
+    const existingBills = await Billing.find({
+      clientId: booking.clientId,
+      stripeCustomerId: { $exists: true, $ne: null },
+    }).limit(1);
+    if (existingBills.length > 0 && existingBills[0].stripeCustomerId) {
+      customer = await stripe.customers.retrieve(existingBills[0].stripeCustomerId);
+    } else {
+      customer = await stripe.customers.create({
+        metadata: { clientId: String(booking.clientId) },
+      });
+    }
+  } catch {
+    customer = await stripe.customers.create({
+      metadata: { clientId: String(booking.clientId) },
+    });
+  }
+
+  const appointmentType = booking.appointmentType || "tattoo_session";
+  const productName =
+    appointmentType === "consultation"
+      ? "Consultation deposit"
+      : "Tattoo appointment deposit";
+
+  // Create billing record
+  const bill = await Billing.create({
+    bookingId,
+    artistId: booking.artistId,
+    clientId: booking.clientId,
+    type: "deposit",
+    amountCents: amount,
+    currency: CURRENCY,
+    stripeCustomerId: customer.id,
+    status: "pending",
+    metadata: {
+      appointmentType,
+      nonRefundable: true,
+    },
+  });
+
+  // Create PaymentIntent
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount,
+    currency: CURRENCY,
+    customer: customer.id,
+    metadata: {
+      billingId: String(bill._id),
+      bookingId: String(booking._id),
+      type: "deposit",
+      appointmentType,
+    },
+    description: productName,
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+
+  bill.stripePaymentIntentId = paymentIntent.id;
+  await bill.save();
+
+  res.json({
+    clientSecret: paymentIntent.client_secret,
+    paymentIntentId: paymentIntent.id,
+    billingId: String(bill._id),
+  });
 }
 
 export async function refundBilling(req, res) {
@@ -199,6 +318,37 @@ export async function stripeWebhook(req, res) {
           ).default.findById(bookingId);
           if (book) {
             book.depositPaidCents = book.depositRequiredCents;
+            book.status = "confirmed";
+            book.confirmedAt = new Date();
+            await book.save();
+          }
+        }
+        break;
+      }
+      case "payment_intent.succeeded": {
+        const pi = event.data.object;
+        const { billingId, bookingId, type } = pi.metadata || {};
+
+        if (billingId) {
+          const bill = await (
+            await import("../models/Billing.js")
+          ).default.findById(billingId);
+          if (bill && bill.status !== "paid") {
+            bill.status = "paid";
+            bill.stripePaymentIntentId = pi.id;
+            bill.stripeChargeId = pi.latest_charge || null;
+            bill.paidAt = new Date();
+            await bill.save();
+          }
+        }
+        if (type === "deposit" && bookingId) {
+          const book = await (
+            await import("../models/Booking.js")
+          ).default.findById(bookingId);
+          if (book) {
+            book.depositPaidCents = book.depositRequiredCents;
+            book.status = "confirmed";
+            book.confirmedAt = new Date();
             await book.save();
           }
         }

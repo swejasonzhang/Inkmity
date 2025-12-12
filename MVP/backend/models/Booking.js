@@ -42,6 +42,20 @@ const BookingSchema = new mongoose.Schema(
     artistVerifiedAt: { type: Date },
     matchedAt: { type: Date },
     completedAt: { type: Date },
+    // Appointment-specific fields
+    appointmentType: {
+      type: String,
+      enum: ["consultation", "tattoo_session"],
+      default: "tattoo_session",
+      index: true,
+    },
+    projectId: { type: mongoose.Types.ObjectId, ref: "Project", index: true },
+    sessionNumber: { type: Number, default: 1, min: 1 },
+    intakeFormId: { type: mongoose.Types.ObjectId, ref: "IntakeForm" },
+    referenceImageIds: [{ type: mongoose.Types.ObjectId, ref: "Image" }],
+    rescheduleNoticeHours: { type: Number },
+    noShowMarkedAt: { type: Date },
+    noShowMarkedBy: { type: String, enum: ["client", "artist", "system"] },
   },
   { timestamps: true }
 );

@@ -2,6 +2,8 @@ import Booking from "../models/Booking.js";
 import ArtistPolicy from "../models/ArtistPolicy.js";
 import Message from "../models/Message.js";
 import Availability from "../models/Availability.js";
+import IntakeForm from "../models/IntakeForm.js";
+import Project from "../models/Project.js";
 import { dayBoundsUTC } from "../utils/date.js";
 import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
@@ -498,5 +500,458 @@ export async function updateBookingTime(req, res) {
     return res.json(booking);
   } catch {
     return res.status(500).json({ error: "update_time_failed" });
+  }
+}
+
+// Appointment-specific functions
+
+const CONSULTATION_DURATION_MINUTES = 30; // Default 30 minutes, can be 15-60
+const MIN_RESCHEDULE_NOTICE_HOURS = 48; // 48-72 hours notice required
+
+function getAppointmentDuration(appointmentType, customDuration) {
+  if (appointmentType === "consultation") {
+    return customDuration || CONSULTATION_DURATION_MINUTES;
+  }
+  return customDuration || DEFAULT_SLOT_MINUTES;
+}
+
+export async function createConsultation(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const body = req.body || {};
+    const artistId = String(body.artistId || "").trim();
+    const startISO = String(body.startISO || "").trim();
+    const durationMinutes = Math.max(15, Math.min(60, Number(body.durationMinutes || CONSULTATION_DURATION_MINUTES)));
+    const note = body.note ?? "";
+
+    if (!artistId || !startISO) {
+      return res.status(400).json({ error: "artistId and startISO required" });
+    }
+
+    const startAt = new Date(startISO);
+    if (Number.isNaN(startAt.getTime())) {
+      return res.status(400).json({ error: "Invalid start date" });
+    }
+
+    const av = (await Availability.findOne({ artistId })) || {
+      timezone: DEFAULT_TIMEZONE,
+    };
+    const tz = av.timezone || DEFAULT_TIMEZONE;
+    const endAt = new Date(
+      DateTime.fromJSDate(startAt, { zone: tz })
+        .plus({ minutes: durationMinutes })
+        .toISO()
+    );
+
+    // Check for conflicts
+    const conflict = await Booking.findOne({
+      artistId,
+      startAt: { $lt: endAt },
+      endAt: { $gt: startAt },
+      status: { $nin: ["cancelled"] },
+    });
+
+    if (conflict) {
+      return res.status(409).json({ error: "Slot already booked" });
+    }
+
+    // Get artist policy for deposit calculation
+    let policy = null;
+    try {
+      policy = await ArtistPolicy.findOne({ artistId });
+    } catch {}
+
+    // Consultations typically have lower or no deposit
+    const consultationPriceCents = Math.max(0, Number(body.priceCents || 0));
+    const depositRequiredCents = computeDepositCents(policy, consultationPriceCents);
+
+    const booking = await Booking.create({
+      artistId,
+      clientId: String(userId),
+      startAt,
+      endAt,
+      note,
+      status: "pending",
+      appointmentType: "consultation",
+      priceCents: consultationPriceCents,
+      depositRequiredCents,
+      depositPaidCents: 0,
+      sessionNumber: 1,
+      clientCode: genCode(),
+      artistCode: genCode(),
+    });
+
+    res.status(201).json(booking);
+  } catch (error) {
+    console.error("Error creating consultation:", error);
+    return res.status(500).json({ error: "Failed to create consultation" });
+  }
+}
+
+export async function createTattooSession(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const body = req.body || {};
+    const artistId = String(body.artistId || "").trim();
+    const startISO = String(body.startISO || "").trim();
+    const durationMinutes = Math.max(30, Math.min(480, Number(body.durationMinutes || DEFAULT_SLOT_MINUTES)));
+    const projectId = body.projectId ? String(body.projectId).trim() : null;
+    const sessionNumber = Math.max(1, Number(body.sessionNumber || 1));
+    const note = body.note ?? "";
+    const referenceImageIds = Array.isArray(body.referenceImageIds) ? body.referenceImageIds : [];
+
+    if (!artistId || !startISO) {
+      return res.status(400).json({ error: "artistId and startISO required" });
+    }
+
+    const startAt = new Date(startISO);
+    if (Number.isNaN(startAt.getTime())) {
+      return res.status(400).json({ error: "Invalid start date" });
+    }
+
+    const av = (await Availability.findOne({ artistId })) || {
+      timezone: DEFAULT_TIMEZONE,
+    };
+    const tz = av.timezone || DEFAULT_TIMEZONE;
+    const endAt = new Date(
+      DateTime.fromJSDate(startAt, { zone: tz })
+        .plus({ minutes: durationMinutes })
+        .toISO()
+    );
+
+    // Check for conflicts
+    const conflict = await Booking.findOne({
+      artistId,
+      startAt: { $lt: endAt },
+      endAt: { $gt: startAt },
+      status: { $nin: ["cancelled"] },
+    });
+
+    if (conflict) {
+      return res.status(409).json({ error: "Slot already booked" });
+    }
+
+    // If projectId provided, verify it exists and belongs to client
+    let project = null;
+    if (projectId) {
+      project = await Project.findById(projectId);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      if (String(project.clientId) !== userId || String(project.artistId) !== artistId) {
+        return res.status(403).json({ error: "Project access denied" });
+      }
+    }
+
+    // Get artist policy for deposit calculation
+    let policy = null;
+    try {
+      policy = await ArtistPolicy.findOne({ artistId });
+    } catch {}
+
+    const priceCents = Math.max(0, Number(body.priceCents || 0));
+    const depositRequiredCents = computeDepositCents(policy, priceCents);
+
+    const booking = await Booking.create({
+      artistId,
+      clientId: String(userId),
+      startAt,
+      endAt,
+      note,
+      status: "pending",
+      appointmentType: "tattoo_session",
+      projectId: projectId || undefined,
+      sessionNumber,
+      referenceImageIds,
+      priceCents,
+      depositRequiredCents,
+      depositPaidCents: 0,
+      clientCode: genCode(),
+      artistCode: genCode(),
+    });
+
+    // Update project if linked
+    if (project) {
+      project.completedSessions = Math.max(project.completedSessions || 0, sessionNumber);
+      if (sessionNumber >= project.estimatedSessions) {
+        project.status = "completed";
+        project.completedAt = new Date();
+      }
+      await project.save();
+    }
+
+    res.status(201).json(booking);
+  } catch (error) {
+    console.error("Error creating tattoo session:", error);
+    return res.status(500).json({ error: "Failed to create tattoo session" });
+  }
+}
+
+export async function rescheduleAppointment(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const { startISO, endISO, reason } = req.body || {};
+
+    if (!startISO || !endISO) {
+      return res.status(400).json({ error: "startISO and endISO required" });
+    }
+
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+
+    // Verify authorization
+    const isClient = String(booking.clientId) === actorId;
+    const isArtist = String(booking.artistId) === actorId;
+    if (!isClient && !isArtist) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    // Check if booking can be rescheduled
+    if (booking.status === "cancelled" || booking.status === "completed") {
+      return res.status(400).json({ error: "Cannot reschedule cancelled or completed appointment" });
+    }
+
+    // Check notice requirement (48-72 hours)
+    const newStartAt = new Date(startISO);
+    const now = new Date();
+    const hoursUntilAppointment = (newStartAt.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    if (hoursUntilAppointment < MIN_RESCHEDULE_NOTICE_HOURS) {
+      return res.status(400).json({
+        error: "insufficient_notice",
+        message: `Rescheduling requires at least ${MIN_RESCHEDULE_NOTICE_HOURS} hours notice`,
+        hoursUntilAppointment: Math.round(hoursUntilAppointment * 10) / 10,
+      });
+    }
+
+    // Validate new time slot
+    const newEndAt = new Date(endISO);
+    if (Number.isNaN(newStartAt.getTime()) || Number.isNaN(newEndAt.getTime()) || newEndAt <= newStartAt) {
+      return res.status(400).json({ error: "Invalid dates" });
+    }
+
+    // Check for conflicts
+    const conflict = await Booking.findOne({
+      _id: { $ne: booking._id },
+      artistId: booking.artistId,
+      startAt: { $lt: newEndAt },
+      endAt: { $gt: newStartAt },
+      status: { $nin: ["cancelled"] },
+    });
+
+    if (conflict) {
+      return res.status(409).json({ error: "Slot already booked" });
+    }
+
+    // Update booking
+    booking.rescheduledFrom = booking.startAt;
+    booking.rescheduledAt = new Date();
+    booking.rescheduledBy = isClient ? "client" : "artist";
+    booking.rescheduleNoticeHours = hoursUntilAppointment;
+    booking.startAt = newStartAt;
+    booking.endAt = newEndAt;
+
+    await booking.save();
+
+    // Send notification message
+    try {
+      await Message.create({
+        senderId: actorId,
+        receiverId: isClient ? String(booking.artistId) : String(booking.clientId),
+        text: `Appointment rescheduled to ${newStartAt.toLocaleString()}. ${reason ? `Reason: ${reason}` : ""}`,
+        meta: {
+          kind: "appointment_rescheduled",
+          bookingId: String(booking._id),
+          oldStartAt: booking.rescheduledFrom?.toISOString(),
+          newStartAt: newStartAt.toISOString(),
+        },
+      });
+    } catch {}
+
+    res.json(booking);
+  } catch (error) {
+    console.error("Error rescheduling appointment:", error);
+    return res.status(500).json({ error: "Failed to reschedule appointment" });
+  }
+}
+
+export async function markNoShow(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const { reason } = req.body || {};
+
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+
+    // Only artist or system can mark no-show
+    const isArtist = String(booking.artistId) === actorId;
+    if (!isArtist) {
+      return res.status(403).json({ error: "Only artist can mark no-show" });
+    }
+
+    // Can only mark no-show for past appointments
+    if (new Date(booking.startAt) > new Date()) {
+      return res.status(400).json({ error: "Cannot mark no-show for future appointments" });
+    }
+
+    if (booking.status === "no-show") {
+      return res.json(booking);
+    }
+
+    booking.status = "no-show";
+    booking.noShowMarkedAt = new Date();
+    booking.noShowMarkedBy = "artist";
+    await booking.save();
+
+    // Send notification
+    try {
+      await Message.create({
+        senderId: actorId,
+        receiverId: String(booking.clientId),
+        text: `No-show marked for appointment on ${new Date(booking.startAt).toLocaleString()}. ${reason ? `Reason: ${reason}` : ""}`,
+        meta: {
+          kind: "no_show_marked",
+          bookingId: String(booking._id),
+        },
+      });
+    } catch {}
+
+    res.json(booking);
+  } catch (error) {
+    console.error("Error marking no-show:", error);
+    return res.status(500).json({ error: "Failed to mark no-show" });
+  }
+}
+
+export async function submitIntakeForm(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { bookingId } = req.params;
+    const body = req.body || {};
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    // Verify client owns this booking
+    if (String(booking.clientId) !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    // Validate required consent fields
+    const consent = body.consent || {};
+    if (!consent.ageVerification || !consent.healthDisclosure || !consent.aftercareInstructions) {
+      return res.status(400).json({
+        error: "Missing required consent fields",
+        required: ["ageVerification", "healthDisclosure", "aftercareInstructions"],
+      });
+    }
+
+    // Create or update intake form
+    const intakeForm = await IntakeForm.findOneAndUpdate(
+      { bookingId },
+      {
+        bookingId,
+        clientId: userId,
+        artistId: booking.artistId,
+        healthInfo: body.healthInfo || {},
+        tattooDetails: body.tattooDetails || {},
+        consent,
+        emergencyContact: body.emergencyContact || {},
+        additionalNotes: body.additionalNotes || "",
+        submittedAt: new Date(),
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || "",
+      },
+      { new: true, upsert: true }
+    );
+
+    // Link intake form to booking
+    booking.intakeFormId = intakeForm._id;
+    await booking.save();
+
+    res.json(intakeForm);
+  } catch (error) {
+    console.error("Error submitting intake form:", error);
+    return res.status(500).json({ error: "Failed to submit intake form" });
+  }
+}
+
+export async function getIntakeForm(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    // Verify user has access (client or artist)
+    const isClient = String(booking.clientId) === userId;
+    const isArtist = String(booking.artistId) === userId;
+    if (!isClient && !isArtist) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const intakeForm = await IntakeForm.findOne({ bookingId });
+    if (!intakeForm) {
+      return res.status(404).json({ error: "Intake form not found" });
+    }
+
+    res.json(intakeForm);
+  } catch (error) {
+    console.error("Error fetching intake form:", error);
+    return res.status(500).json({ error: "Failed to fetch intake form" });
+  }
+}
+
+export async function getAppointmentDetails(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id)
+      .populate("intakeFormId")
+      .populate("projectId")
+      .populate("referenceImageIds");
+
+    if (!booking) return res.status(404).json({ error: "not_found" });
+
+    // Verify user has access
+    const isClient = String(booking.clientId) === userId;
+    const isArtist = String(booking.artistId) === userId;
+    if (!isClient && !isArtist) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    // Populate user info
+    const User = (await import("../models/UserBase.js")).default;
+    const [client, artist] = await Promise.all([
+      User.findOne({ clerkId: booking.clientId }).lean(),
+      User.findOne({ clerkId: booking.artistId }).lean(),
+    ]);
+
+    res.json({
+      ...booking.toObject(),
+      client: client ? { username: client.username, avatar: client.avatar } : null,
+      artist: artist ? { username: artist.username, avatar: artist.avatar } : null,
+    });
+  } catch (error) {
+    console.error("Error fetching appointment details:", error);
+    return res.status(500).json({ error: "Failed to fetch appointment details" });
   }
 }
