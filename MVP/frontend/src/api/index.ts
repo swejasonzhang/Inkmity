@@ -196,7 +196,80 @@ export type Booking = {
   startAt: string;
   endAt: string;
   note?: string;
-  status: "booked" | "cancelled" | "completed" | "pending";
+  status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show";
+  appointmentType?: "consultation" | "tattoo_session";
+  projectId?: string;
+  sessionNumber?: number;
+  intakeFormId?: string;
+  referenceImageIds?: string[];
+  rescheduleNoticeHours?: number;
+  noShowMarkedAt?: string;
+  noShowMarkedBy?: "client" | "artist" | "system";
+  priceCents?: number;
+  depositRequiredCents?: number;
+  depositPaidCents?: number;
+  rescheduledFrom?: string;
+  rescheduledAt?: string;
+  rescheduledBy?: "client" | "artist";
+};
+
+export type IntakeForm = {
+  _id: string;
+  bookingId: string;
+  clientId: string;
+  artistId: string;
+  healthInfo: {
+    allergies?: string;
+    medications?: string;
+    medicalConditions?: string;
+    skinConditions?: string;
+    bloodThinners?: boolean;
+    pregnant?: boolean;
+    recentSurgery?: boolean;
+    recentSurgeryDetails?: string;
+  };
+  tattooDetails: {
+    placement?: string;
+    size?: string;
+    style?: string;
+    description?: string;
+    isCoverUp?: boolean;
+    isTouchUp?: boolean;
+  };
+  consent: {
+    ageVerification: boolean;
+    healthDisclosure: boolean;
+    aftercareInstructions: boolean;
+    photoRelease?: boolean;
+    depositPolicy: boolean;
+    cancellationPolicy: boolean;
+  };
+  emergencyContact: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
+  additionalNotes?: string;
+  submittedAt: string;
+};
+
+export type Project = {
+  _id: string;
+  artistId: string;
+  clientId: string;
+  name: string;
+  description?: string;
+  placement?: string;
+  estimatedSessions: number;
+  completedSessions: number;
+  totalPriceCents?: number;
+  depositPaidCents?: number;
+  status: "active" | "completed" | "cancelled" | "on_hold";
+  startedAt?: string;
+  completedAt?: string;
+  referenceImageIds?: string[];
+  artistNotes?: string;
+  clientNotes?: string;
 };
 
 export type Me = {
@@ -386,4 +459,100 @@ export async function syncUser(
   signal?: AbortSignal
 ) {
   return apiPost("/users/sync", payload, token, signal);
+}
+
+// Appointment-specific API functions
+export async function createConsultation(
+  input: {
+    artistId: string;
+    startISO: string;
+    durationMinutes?: number;
+    priceCents?: number;
+    note?: string;
+  },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>("/bookings/consultation", input, token, signal);
+}
+
+export async function createTattooSession(
+  input: {
+    artistId: string;
+    startISO: string;
+    durationMinutes?: number;
+    priceCents?: number;
+    projectId?: string;
+    sessionNumber?: number;
+    referenceImageIds?: string[];
+    note?: string;
+  },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>("/bookings/session", input, token, signal);
+}
+
+export async function rescheduleAppointment(
+  id: string,
+  input: {
+    startISO: string;
+    endISO: string;
+    reason?: string;
+  },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/reschedule`, input, token, signal);
+}
+
+export async function markNoShow(
+  id: string,
+  input?: { reason?: string },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/no-show`, input, token, signal);
+}
+
+export async function submitIntakeForm(
+  bookingId: string,
+  form: Partial<IntakeForm>,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<IntakeForm>(`/bookings/${bookingId}/intake`, form, token, signal);
+}
+
+export async function getIntakeForm(
+  bookingId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<IntakeForm>(`/bookings/${bookingId}/intake`, undefined, token, signal);
+}
+
+export async function getAppointmentDetails(
+  id: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<Booking & { client?: any; artist?: any }>(
+    `/bookings/${id}/details`,
+    undefined,
+    token,
+    signal
+  );
+}
+
+export async function createDepositPaymentIntent(
+  bookingId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<{
+    clientSecret: string;
+    paymentIntentId: string;
+    billingId: string;
+  }>("/billing/deposit/intent", { bookingId }, token, signal);
 }
