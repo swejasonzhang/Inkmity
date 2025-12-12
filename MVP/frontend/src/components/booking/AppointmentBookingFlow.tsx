@@ -86,9 +86,9 @@ export default function AppointmentBookingFlow({
       case 2:
         return bookingData.intakeForm !== null;
       case 3:
-        return true; // References are optional
+        return true;
       case 4:
-        return true; // Payment handled separately
+        return true;
       default:
         return false;
     }
@@ -142,7 +142,6 @@ export default function AppointmentBookingFlow({
         );
       }
 
-      // Submit intake form if provided
       if (bookingData.intakeForm && booking._id) {
         try {
           await request(`/bookings/${booking._id}/intake`, {
@@ -151,11 +150,9 @@ export default function AppointmentBookingFlow({
           });
         } catch (err) {
           console.error("Failed to submit intake form:", err);
-          // Don't fail the booking if intake form fails
         }
       }
 
-      // Handle deposit payment
       if (booking.depositRequiredCents && booking.depositRequiredCents > 0) {
         try {
           const paymentData = await createDepositPaymentIntent(booking._id, token);
@@ -311,4 +308,5 @@ export default function AppointmentBookingFlow({
     </Card>
   );
 }
+
 

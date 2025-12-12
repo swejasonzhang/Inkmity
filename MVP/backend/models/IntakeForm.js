@@ -10,7 +10,6 @@ const IntakeFormSchema = new mongoose.Schema(
     },
     clientId: { type: String, required: true, index: true },
     artistId: { type: String, required: true, index: true },
-    // Health information
     healthInfo: {
       allergies: { type: String, default: "" },
       medications: { type: String, default: "" },
@@ -21,7 +20,6 @@ const IntakeFormSchema = new mongoose.Schema(
       recentSurgery: { type: Boolean, default: false },
       recentSurgeryDetails: { type: String, default: "" },
     },
-    // Tattoo details
     tattooDetails: {
       placement: { type: String, default: "" },
       size: { type: String, default: "" },
@@ -30,7 +28,6 @@ const IntakeFormSchema = new mongoose.Schema(
       isCoverUp: { type: Boolean, default: false },
       isTouchUp: { type: Boolean, default: false },
     },
-    // Consent and agreements
     consent: {
       ageVerification: { type: Boolean, default: false, required: true },
       healthDisclosure: { type: Boolean, default: false, required: true },
@@ -39,15 +36,12 @@ const IntakeFormSchema = new mongoose.Schema(
       depositPolicy: { type: Boolean, default: false, required: true },
       cancellationPolicy: { type: Boolean, default: false, required: true },
     },
-    // Emergency contact
     emergencyContact: {
       name: { type: String, default: "" },
       phone: { type: String, default: "" },
       relationship: { type: String, default: "" },
     },
-    // Additional notes
     additionalNotes: { type: String, default: "" },
-    // Submission tracking
     submittedAt: { type: Date, default: Date.now },
     ipAddress: { type: String },
     userAgent: { type: String },
@@ -57,4 +51,5 @@ const IntakeFormSchema = new mongoose.Schema(
 
 export default mongoose.models.IntakeForm ||
   mongoose.model("IntakeForm", IntakeFormSchema);
+
 

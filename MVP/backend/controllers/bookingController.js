@@ -503,10 +503,8 @@ export async function updateBookingTime(req, res) {
   }
 }
 
-// Appointment-specific functions
-
-const CONSULTATION_DURATION_MINUTES = 30; // Default 30 minutes, can be 15-60
-const MIN_RESCHEDULE_NOTICE_HOURS = 48; // 48-72 hours notice required
+const CONSULTATION_DURATION_MINUTES = 30;
+const MIN_RESCHEDULE_NOTICE_HOURS = 48;
 
 function getAppointmentDuration(appointmentType, customDuration) {
   if (appointmentType === "consultation") {
@@ -545,7 +543,6 @@ export async function createConsultation(req, res) {
         .toISO()
     );
 
-    // Check for conflicts
     const conflict = await Booking.findOne({
       artistId,
       startAt: { $lt: endAt },
@@ -557,13 +554,11 @@ export async function createConsultation(req, res) {
       return res.status(409).json({ error: "Slot already booked" });
     }
 
-    // Get artist policy for deposit calculation
     let policy = null;
     try {
       policy = await ArtistPolicy.findOne({ artistId });
     } catch {}
 
-    // Consultations typically have lower or no deposit
     const consultationPriceCents = Math.max(0, Number(body.priceCents || 0));
     const depositRequiredCents = computeDepositCents(policy, consultationPriceCents);
 
@@ -623,7 +618,6 @@ export async function createTattooSession(req, res) {
         .toISO()
     );
 
-    // Check for conflicts
     const conflict = await Booking.findOne({
       artistId,
       startAt: { $lt: endAt },
@@ -635,7 +629,6 @@ export async function createTattooSession(req, res) {
       return res.status(409).json({ error: "Slot already booked" });
     }
 
-    // If projectId provided, verify it exists and belongs to client
     let project = null;
     if (projectId) {
       project = await Project.findById(projectId);
@@ -647,7 +640,6 @@ export async function createTattooSession(req, res) {
       }
     }
 
-    // Get artist policy for deposit calculation
     let policy = null;
     try {
       policy = await ArtistPolicy.findOne({ artistId });
@@ -674,7 +666,6 @@ export async function createTattooSession(req, res) {
       artistCode: genCode(),
     });
 
-    // Update project if linked
     if (project) {
       project.completedSessions = Math.max(project.completedSessions || 0, sessionNumber);
       if (sessionNumber >= project.estimatedSessions) {
@@ -706,19 +697,16 @@ export async function rescheduleAppointment(req, res) {
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ error: "not_found" });
 
-    // Verify authorization
     const isClient = String(booking.clientId) === actorId;
     const isArtist = String(booking.artistId) === actorId;
     if (!isClient && !isArtist) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    // Check if booking can be rescheduled
     if (booking.status === "cancelled" || booking.status === "completed") {
       return res.status(400).json({ error: "Cannot reschedule cancelled or completed appointment" });
     }
 
-    // Check notice requirement (48-72 hours)
     const newStartAt = new Date(startISO);
     const now = new Date();
     const hoursUntilAppointment = (newStartAt.getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -731,13 +719,11 @@ export async function rescheduleAppointment(req, res) {
       });
     }
 
-    // Validate new time slot
     const newEndAt = new Date(endISO);
     if (Number.isNaN(newStartAt.getTime()) || Number.isNaN(newEndAt.getTime()) || newEndAt <= newStartAt) {
       return res.status(400).json({ error: "Invalid dates" });
     }
 
-    // Check for conflicts
     const conflict = await Booking.findOne({
       _id: { $ne: booking._id },
       artistId: booking.artistId,
@@ -750,7 +736,6 @@ export async function rescheduleAppointment(req, res) {
       return res.status(409).json({ error: "Slot already booked" });
     }
 
-    // Update booking
     booking.rescheduledFrom = booking.startAt;
     booking.rescheduledAt = new Date();
     booking.rescheduledBy = isClient ? "client" : "artist";
@@ -760,7 +745,6 @@ export async function rescheduleAppointment(req, res) {
 
     await booking.save();
 
-    // Send notification message
     try {
       await Message.create({
         senderId: actorId,
@@ -793,13 +777,11 @@ export async function markNoShow(req, res) {
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ error: "not_found" });
 
-    // Only artist or system can mark no-show
     const isArtist = String(booking.artistId) === actorId;
     if (!isArtist) {
       return res.status(403).json({ error: "Only artist can mark no-show" });
     }
 
-    // Can only mark no-show for past appointments
     if (new Date(booking.startAt) > new Date()) {
       return res.status(400).json({ error: "Cannot mark no-show for future appointments" });
     }
@@ -813,7 +795,6 @@ export async function markNoShow(req, res) {
     booking.noShowMarkedBy = "artist";
     await booking.save();
 
-    // Send notification
     try {
       await Message.create({
         senderId: actorId,
@@ -844,12 +825,10 @@ export async function submitIntakeForm(req, res) {
     const booking = await Booking.findById(bookingId);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
 
-    // Verify client owns this booking
     if (String(booking.clientId) !== userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    // Validate required consent fields
     const consent = body.consent || {};
     if (!consent.ageVerification || !consent.healthDisclosure || !consent.aftercareInstructions) {
       return res.status(400).json({
@@ -858,7 +837,6 @@ export async function submitIntakeForm(req, res) {
       });
     }
 
-    // Create or update intake form
     const intakeForm = await IntakeForm.findOneAndUpdate(
       { bookingId },
       {
@@ -877,7 +855,6 @@ export async function submitIntakeForm(req, res) {
       { new: true, upsert: true }
     );
 
-    // Link intake form to booking
     booking.intakeFormId = intakeForm._id;
     await booking.save();
 
@@ -898,7 +875,6 @@ export async function getIntakeForm(req, res) {
     const booking = await Booking.findById(bookingId);
     if (!booking) return res.status(404).json({ error: "Booking not found" });
 
-    // Verify user has access (client or artist)
     const isClient = String(booking.clientId) === userId;
     const isArtist = String(booking.artistId) === userId;
     if (!isClient && !isArtist) {
@@ -931,14 +907,12 @@ export async function getAppointmentDetails(req, res) {
 
     if (!booking) return res.status(404).json({ error: "not_found" });
 
-    // Verify user has access
     const isClient = String(booking.clientId) === userId;
     const isArtist = String(booking.artistId) === userId;
     if (!isClient && !isArtist) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    // Populate user info
     const User = (await import("../models/UserBase.js")).default;
     const [client, artist] = await Promise.all([
       User.findOne({ clerkId: booking.clientId }).lean(),
