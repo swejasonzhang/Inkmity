@@ -72,7 +72,6 @@ export async function checkoutDeposit(req, res) {
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
 
-  // Check if deposit already paid
   if (booking.depositPaidCents >= booking.depositRequiredCents) {
     return res.status(400).json({ error: "deposit_already_paid" });
   }
@@ -81,7 +80,6 @@ export async function checkoutDeposit(req, res) {
   if (amount <= 0)
     return res.status(400).json({ error: "no_deposit_required" });
 
-  // Get or create customer
   let customer;
   try {
     const existingBills = await Billing.find({
@@ -116,10 +114,10 @@ export async function checkoutDeposit(req, res) {
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
-    metadata: {
-      appointmentType,
-      nonRefundable: true, // Deposits are typically non-refundable
-    },
+      metadata: {
+        appointmentType,
+        nonRefundable: true,
+      },
   });
 
   const session = await stripe.checkout.sessions.create({
@@ -162,7 +160,6 @@ export async function createDepositPaymentIntent(req, res) {
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
 
-  // Check if deposit already paid
   if (booking.depositPaidCents >= booking.depositRequiredCents) {
     return res.status(400).json({ error: "deposit_already_paid" });
   }
@@ -171,7 +168,6 @@ export async function createDepositPaymentIntent(req, res) {
   if (amount <= 0)
     return res.status(400).json({ error: "no_deposit_required" });
 
-  // Get or create customer
   let customer;
   try {
     const existingBills = await Billing.find({
@@ -197,7 +193,6 @@ export async function createDepositPaymentIntent(req, res) {
       ? "Consultation deposit"
       : "Tattoo appointment deposit";
 
-  // Create billing record
   const bill = await Billing.create({
     bookingId,
     artistId: booking.artistId,
@@ -213,7 +208,6 @@ export async function createDepositPaymentIntent(req, res) {
     },
   });
 
-  // Create PaymentIntent
   const paymentIntent = await stripe.paymentIntents.create({
     amount,
     currency: CURRENCY,

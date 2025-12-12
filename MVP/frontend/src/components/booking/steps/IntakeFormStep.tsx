@@ -59,7 +59,6 @@ export default function IntakeFormStep({
       </div>
 
       <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
-        {/* Health Information */}
         <Card className="p-4">
           <h4 className="font-semibold mb-4">Health Information</h4>
           <div className="space-y-4">
@@ -142,7 +141,6 @@ export default function IntakeFormStep({
           </div>
         </Card>
 
-        {/* Tattoo Details */}
         {appointmentType === "tattoo_session" && (
           <Card className="p-4">
             <h4 className="font-semibold mb-4">Tattoo Details</h4>
@@ -205,7 +203,6 @@ export default function IntakeFormStep({
           </Card>
         )}
 
-        {/* Emergency Contact */}
         <Card className="p-4">
           <h4 className="font-semibold mb-4">Emergency Contact</h4>
           <div className="space-y-4">
@@ -245,7 +242,6 @@ export default function IntakeFormStep({
 
         <Separator />
 
-        {/* Consent */}
         <Card className="p-4">
           <h4 className="font-semibold mb-4">Required Consents</h4>
           <div className="space-y-4">

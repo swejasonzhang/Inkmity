@@ -45,7 +45,6 @@ export default function PaymentStep({
       </div>
 
       <Card className="p-6 space-y-4">
-        {/* Appointment Summary */}
         <div>
           <h4 className="font-semibold mb-3">Appointment Summary</h4>
           <div className="space-y-2 text-sm">
@@ -84,7 +83,6 @@ export default function PaymentStep({
 
         <Separator />
 
-        {/* Payment Information */}
         {requiresDeposit ? (
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
@@ -138,4 +136,5 @@ export default function PaymentStep({
     </div>
   );
 }
+
 

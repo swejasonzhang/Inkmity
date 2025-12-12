@@ -49,7 +49,6 @@ export default function TimeSlotStep({
         `/availability/${artistId}/slots?date=${dateStr}`
       );
       
-      // Filter slots that match or exceed the required duration
       const filteredSlots = availableSlots.filter((slot) => {
         const start = new Date(slot.startISO);
         const end = new Date(slot.endISO);
@@ -150,4 +149,5 @@ export default function TimeSlotStep({
     </div>
   );
 }
+
 

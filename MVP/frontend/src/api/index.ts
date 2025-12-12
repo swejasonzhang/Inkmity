@@ -461,7 +461,6 @@ export async function syncUser(
   return apiPost("/users/sync", payload, token, signal);
 }
 
-// Appointment-specific API functions
 export async function createConsultation(
   input: {
     artistId: string;

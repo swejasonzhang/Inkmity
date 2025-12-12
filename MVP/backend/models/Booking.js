@@ -42,7 +42,6 @@ const BookingSchema = new mongoose.Schema(
     artistVerifiedAt: { type: Date },
     matchedAt: { type: Date },
     completedAt: { type: Date },
-    // Appointment-specific fields
     appointmentType: {
       type: String,
       enum: ["consultation", "tattoo_session"],
