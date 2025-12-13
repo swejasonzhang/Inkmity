@@ -9,6 +9,8 @@ export type Message = {
   meta?: any;
   delivered?: boolean;
   seen?: boolean;
+  deliveredAt?: number | string;
+  seenAt?: number | string;
 };
 
 export type ConversationMeta = {
