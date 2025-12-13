@@ -356,3 +356,18 @@ export async function stripeWebhook(req, res) {
     res.status(500).json({ error: "webhook_handler_failed" });
   }
 }
+
+export function mountStripeWebhook(app) {
+  app.post(
+    "/api/billing/webhook",
+    (req, _res, next) => {
+      let data = Buffer.alloc(0);
+      req.on("data", (chunk) => (data = Buffer.concat([data, chunk])));
+      req.on("end", () => {
+        req.rawBody = data;
+        next();
+      });
+    },
+    stripeWebhook
+  );
+}
