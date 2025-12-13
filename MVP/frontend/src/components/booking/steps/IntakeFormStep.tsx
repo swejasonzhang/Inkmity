@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import type { IntakeForm } from "@/api";
 
 type Props = {
@@ -311,4 +310,3 @@ export default function IntakeFormStep({
     </div>
   );
 }
-

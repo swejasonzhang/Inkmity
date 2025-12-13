@@ -51,5 +51,3 @@ const IntakeFormSchema = new mongoose.Schema(
 
 export default mongoose.models.IntakeForm ||
   mongoose.model("IntakeForm", IntakeFormSchema);
-
-

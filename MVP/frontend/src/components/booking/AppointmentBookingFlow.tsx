@@ -1,26 +1,14 @@
 import { useState, useMemo, useCallback } from "react";
-import { useAuth } from "@clerk/clerk-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ProgressDots from "@/components/access/ProgressDots";
-import { toast } from "react-toastify";
-import {
-  createConsultation,
-  createTattooSession,
-  createDepositPaymentIntent,
-  type Artist,
-  type Booking,
-} from "@/api";
-import { useApi } from "@/api";
+import type { Artist, Booking } from "@/api";
 import AppointmentTypeStep from "./steps/AppointmentTypeStep";
 import TimeSlotStep from "./steps/TimeSlotStep";
 import IntakeFormStep from "./steps/IntakeFormStep";
 import ReferenceImagesStep from "./steps/ReferenceImagesStep";
 import PaymentStep from "./steps/PaymentStep";
-import { loadStripe } from "@stripe/stripe-js";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 type BookingFlowData = {
   appointmentType: "consultation" | "tattoo_session" | null;
@@ -56,8 +44,6 @@ export default function AppointmentBookingFlow({
   onCancel,
   initialDate,
 }: Props) {
-  const { getToken } = useAuth();
-  const { request } = useApi();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [bookingData, setBookingData] = useState<BookingFlowData>({
@@ -106,91 +92,22 @@ export default function AppointmentBookingFlow({
     }
   }, [step]);
 
-  const handleSubmit = useCallback(async () => {
-    if (!bookingData.startISO || !bookingData.endISO || !bookingData.appointmentType) {
-      toast.error("Please complete all required steps");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const token = await getToken();
-      let booking: Booking;
-
-      if (bookingData.appointmentType === "consultation") {
-        booking = await createConsultation(
-          {
-            artistId: bookingData.artistId,
-            startISO: bookingData.startISO,
-            durationMinutes: bookingData.durationMinutes,
-            priceCents: bookingData.priceCents,
-          },
-          token
-        );
-      } else {
-        booking = await createTattooSession(
-          {
-            artistId: bookingData.artistId,
-            startISO: bookingData.startISO,
-            durationMinutes: bookingData.durationMinutes,
-            priceCents: bookingData.priceCents,
-            projectId: bookingData.projectId || undefined,
-            sessionNumber: bookingData.sessionNumber,
-            referenceImageIds: bookingData.referenceImageIds,
-          },
-          token
-        );
-      }
-
-      if (bookingData.intakeForm && booking._id) {
-        try {
-          await request(`/bookings/${booking._id}/intake`, {
-            method: "POST",
-            body: JSON.stringify(bookingData.intakeForm),
-          });
-        } catch (err) {
-          console.error("Failed to submit intake form:", err);
-        }
-      }
-
-      if (booking.depositRequiredCents && booking.depositRequiredCents > 0) {
-        try {
-          const paymentData = await createDepositPaymentIntent(booking._id, token);
-          const stripe = await stripePromise;
-          if (stripe && paymentData.clientSecret) {
-            const { error } = await stripe.confirmCardPayment(paymentData.clientSecret);
-            if (error) {
-              toast.error(`Payment failed: ${error.message}`);
-              return;
-            }
-          }
-        } catch (err: any) {
-          console.error("Payment error:", err);
-          toast.error("Payment processing failed. Please try again.");
-          return;
-        }
-      }
-
-      toast.success("Appointment booked successfully!");
-      onComplete?.(booking);
-    } catch (error: any) {
-      console.error("Booking error:", error);
-      toast.error(error?.message || "Failed to create appointment");
-    } finally {
-      setSubmitting(false);
-    }
-  }, [bookingData, getToken, request, onComplete]);
+  const handleBookingComplete = useCallback((booking: Booking) => {
+    setSubmitting(false);
+    onComplete?.(booking);
+  }, [onComplete]);
 
   return (
     <Card className="w-full max-w-2xl mx-auto p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">Book Appointment</h2>
         <p className="text-muted-foreground">Book an appointment with {artist.username}</p>
-        <ProgressDots
-          total={STEPS.length}
-          current={step}
-          className="mt-4"
-        />
+        <div className="mt-4">
+          <ProgressDots
+            total={STEPS.length}
+            current={step}
+          />
+        </div>
       </div>
 
       <div className="min-h-[400px]">
@@ -279,7 +196,7 @@ export default function AppointmentBookingFlow({
               <PaymentStep
                 bookingData={bookingData}
                 artist={artist}
-                onSubmit={handleSubmit}
+                onSubmit={handleBookingComplete}
                 submitting={submitting}
               />
             </motion.div>
@@ -287,24 +204,20 @@ export default function AppointmentBookingFlow({
         </AnimatePresence>
       </div>
 
-      <div className="flex justify-between mt-6 gap-4">
-        <Button
-          variant="outline"
-          onClick={step === 0 ? onCancel : handleBack}
-          disabled={submitting}
-        >
-          {step === 0 ? "Cancel" : "Back"}
-        </Button>
-        {step < STEPS.length - 1 ? (
+      {step < STEPS.length - 1 && (
+        <div className="flex justify-between mt-6 gap-4">
+          <Button
+            variant="outline"
+            onClick={step === 0 ? onCancel : handleBack}
+            disabled={submitting}
+          >
+            {step === 0 ? "Cancel" : "Back"}
+          </Button>
           <Button onClick={handleNext} disabled={!canProceed || submitting}>
             Next
           </Button>
-        ) : (
-          <Button onClick={handleSubmit} disabled={submitting || !canProceed}>
-            {submitting ? "Processing..." : "Complete Booking"}
-          </Button>
-        )}
-      </div>
+        </div>
+      )}
     </Card>
   );
 }

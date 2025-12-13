@@ -142,4 +142,3 @@ export default function AppointmentTypeStep({ value, onChange }: Props) {
     </div>
   );
 }
-

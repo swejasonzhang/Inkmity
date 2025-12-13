@@ -64,7 +64,7 @@ const { default: artistPolicyRoutes } = await import(
 const { default: billingRoutes } = await import("./routes/billing.js");
 const { default: imagesRoutes } = await import("./routes/images.js");
 const { requireAuth } = await import("./middleware/auth.js");
-const { stripeWebhook } = await import("./controllers/billingController.js");
+const { mountStripeWebhook } = await import("./controllers/billingController.js");
 
 const app = express();
 const server = http.createServer(app);
@@ -112,11 +112,7 @@ app.use(requestTimeout(30000));
 
 app.use("/api/", apiLimiter);
 
-app.post(
-  "/api/billing/webhook",
-  express.raw({ type: "application/json" }),
-  stripeWebhook
-);
+mountStripeWebhook(app);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));

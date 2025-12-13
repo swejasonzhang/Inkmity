@@ -28,4 +28,3 @@ RevokedTokenSchema.index({ revokedAt: 1 }, { expireAfterSeconds: 86400 * 7 });
 
 export default mongoose.models.RevokedToken ||
   mongoose.model("RevokedToken", RevokedTokenSchema);
-
