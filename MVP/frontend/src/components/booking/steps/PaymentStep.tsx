@@ -96,37 +96,31 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
         );
       }
 
-      // Submit intake form if provided
       if (bookingData.intakeForm && booking._id) {
         try {
           await submitIntakeForm(booking._id, bookingData.intakeForm, token);
         } catch (err) {
           console.error("Failed to submit intake form:", err);
-          // Don't fail the booking if intake form fails
         }
       }
 
-      // Handle deposit payment if required
       if (requiresDeposit && booking.depositRequiredCents && booking.depositRequiredCents > 0) {
         try {
           if (!stripe || !elements) {
             throw new Error("Payment system is not ready. Please refresh and try again.");
           }
 
-          // Create payment intent
           const paymentData = await createDepositPaymentIntent(booking._id, token);
 
           if (!paymentData.clientSecret) {
             throw new Error("No payment intent received");
           }
 
-          // Get card element
           const cardElement = elements.getElement(CardElement);
           if (!cardElement) {
             throw new Error("Card element not found");
           }
 
-          // Confirm payment
           const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
             paymentData.clientSecret,
             {
@@ -330,7 +324,6 @@ export default function PaymentStep(props: Props) {
     : 0;
   const requiresDeposit = props.bookingData.appointmentType === "tattoo_session" && depositAmount > 0;
 
-  // Only wrap with Elements if deposit is required
   if (requiresDeposit) {
     return (
       <Elements stripe={stripePromise}>

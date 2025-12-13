@@ -7,7 +7,7 @@ import { Send, Image as ImageIcon, X } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import RequestPanel from "./messages/RequestPanel";
+import RequestPanel from "./messages/requestPanel";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import { socket } from "@/lib/socket";
@@ -103,7 +103,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [uploading, setUploading] = useState(false);
   const [pendingImages, setPendingImages] = useState<Record<string, string[]>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [mobileView, setMobileView] = useState<"conversations" | "requests">("conversations");
   const [requestCount, setRequestCount] = useState(0);
 
   const appRef = useRef<HTMLDivElement | null>(null);
