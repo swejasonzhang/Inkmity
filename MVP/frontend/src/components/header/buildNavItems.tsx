@@ -24,6 +24,7 @@ export function buildNavItems(
     dashboardDisabled
       ? { label: "Dashboard", to: "/dashboard", disabled: true, onClick: onDashboardGate }
       : { label: "Dashboard", to: "/dashboard", onClick: onDashboardGate },
+    { label: "Appointments", to: "/appointments" },
     { label: "Gallery", to: "#", disabled: true, badge: galleryBadge },
     { label: "Contact", to: "/contact" },
     { label: "About Inkmity", to: "/about" },

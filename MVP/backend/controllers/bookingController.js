@@ -624,21 +624,37 @@ export async function createConsultation(req, res) {
       consultationPriceCents
     );
 
-    const booking = await Booking.create({
-      artistId,
-      clientId: String(userId),
-      startAt,
-      endAt,
-      note,
-      status: "pending",
-      appointmentType: "consultation",
-      priceCents: consultationPriceCents,
-      depositRequiredCents,
-      depositPaidCents: 0,
-      sessionNumber: 1,
-      clientCode: genCode(),
-      artistCode: genCode(),
-    });
+    let booking;
+    try {
+      booking = await Booking.create({
+        artistId,
+        clientId: String(userId),
+        startAt,
+        endAt,
+        note,
+        status: "pending",
+        appointmentType: "consultation",
+        priceCents: consultationPriceCents,
+        depositRequiredCents,
+        depositPaidCents: 0,
+        sessionNumber: 1,
+        clientCode: genCode(),
+        artistCode: genCode(),
+      });
+    } catch (e) {
+      if (e?.name === "ValidationError") {
+        return res.status(400).json({
+          error: "validation_error",
+          details: Object.fromEntries(
+            Object.entries(e.errors || {}).map(([k, v]) => [
+              k,
+              v?.message || "invalid",
+            ])
+          ),
+        });
+      }
+      throw e;
+    }
 
     res.status(201).json(booking);
   } catch (error) {
@@ -718,23 +734,39 @@ export async function createTattooSession(req, res) {
     const priceCents = Math.max(0, Number(body.priceCents || 0));
     const depositRequiredCents = computeDepositCents(policy, priceCents);
 
-    const booking = await Booking.create({
-      artistId,
-      clientId: String(userId),
-      startAt,
-      endAt,
-      note,
-      status: "pending",
-      appointmentType: "tattoo_session",
-      projectId: projectId || undefined,
-      sessionNumber,
-      referenceImageIds,
-      priceCents,
-      depositRequiredCents,
-      depositPaidCents: 0,
-      clientCode: genCode(),
-      artistCode: genCode(),
-    });
+    let booking;
+    try {
+      booking = await Booking.create({
+        artistId,
+        clientId: String(userId),
+        startAt,
+        endAt,
+        note,
+        status: "pending",
+        appointmentType: "tattoo_session",
+        projectId: projectId || undefined,
+        sessionNumber,
+        referenceImageIds,
+        priceCents,
+        depositRequiredCents,
+        depositPaidCents: 0,
+        clientCode: genCode(),
+        artistCode: genCode(),
+      });
+    } catch (e) {
+      if (e?.name === "ValidationError") {
+        return res.status(400).json({
+          error: "validation_error",
+          details: Object.fromEntries(
+            Object.entries(e.errors || {}).map(([k, v]) => [
+              k,
+              v?.message || "invalid",
+            ])
+          ),
+        });
+      }
+      throw e;
+    }
 
     if (project) {
       project.completedSessions = Math.max(
@@ -1048,5 +1080,161 @@ export async function getAppointmentDetails(req, res) {
     return res
       .status(500)
       .json({ error: "Failed to fetch appointment details" });
+  }
+}
+
+export async function acceptAppointment(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+
+    const isArtist = String(booking.artistId) === userId;
+    if (!isArtist) {
+      return res.status(403).json({ error: "Only the artist can accept appointments" });
+    }
+
+    if (booking.status !== "pending") {
+      return res.status(400).json({ 
+        error: "Appointment is not pending",
+        currentStatus: booking.status 
+      });
+    }
+
+    booking.status = "accepted";
+    booking.confirmedAt = new Date();
+    await booking.save();
+
+    try {
+      await Message.create({
+        senderId: String(booking.artistId),
+        receiverId: String(booking.clientId),
+        text: `Your ${booking.appointmentType === "consultation" ? "consultation" : "appointment"} request has been accepted.`,
+        meta: {
+          kind: "appointment_accepted",
+          bookingId: String(booking._id),
+        },
+      });
+    } catch {}
+
+    res.json(booking);
+  } catch (error) {
+    console.error("Error accepting appointment:", error);
+    return res.status(500).json({ error: "Failed to accept appointment" });
+  }
+}
+
+export async function denyAppointment(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const { reason } = req.body || {};
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+
+    const isClient = String(booking.clientId) === userId;
+    const isArtist = String(booking.artistId) === userId;
+    
+    if (!isClient && !isArtist) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    if (booking.status !== "pending") {
+      return res.status(400).json({ 
+        error: "Appointment is not pending",
+        currentStatus: booking.status 
+      });
+    }
+
+    booking.status = "denied";
+    booking.cancelledAt = new Date();
+    booking.cancelledBy = isClient ? "client" : "artist";
+    booking.cancellationReason = reason || "";
+    await booking.save();
+
+    try {
+      await Message.create({
+        senderId: userId,
+        receiverId: isClient ? String(booking.artistId) : String(booking.clientId),
+        text: `The ${booking.appointmentType === "consultation" ? "consultation" : "appointment"} request has been denied.${reason ? ` Reason: ${reason}` : ""}`,
+        meta: {
+          kind: "appointment_denied",
+          bookingId: String(booking._id),
+          deniedBy: isClient ? "client" : "artist",
+        },
+      });
+    } catch {}
+
+    res.json(booking);
+  } catch (error) {
+    console.error("Error denying appointment:", error);
+    return res.status(500).json({ error: "Failed to deny appointment" });
+  }
+}
+
+export async function getAppointments(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { role } = req.query;
+    let bookings;
+
+    if (role === "client") {
+      bookings = await Booking.find({ clientId: userId })
+        .sort({ startAt: -1 })
+        .limit(100)
+        .lean();
+    } else if (role === "artist") {
+      bookings = await Booking.find({ artistId: userId })
+        .sort({ startAt: -1 })
+        .limit(100)
+        .lean();
+    } else {
+      // Get both client and artist appointments
+      bookings = await Booking.find({
+        $or: [{ clientId: userId }, { artistId: userId }]
+      })
+        .sort({ startAt: -1 })
+        .limit(100)
+        .lean();
+    }
+
+    const User = (await import("../models/UserBase.js")).default;
+
+    const appointmentsWithUsers = await Promise.all(
+      bookings.map(async (booking) => {
+        const [client, artist] = await Promise.all([
+          User.findOne({ clerkId: booking.clientId }).lean(),
+          User.findOne({ clerkId: booking.artistId }).lean(),
+        ]);
+
+        return {
+          ...booking,
+          client: client
+            ? {
+                username: client.username || "Unknown",
+                avatar: client.avatar || null,
+              }
+            : null,
+          artist: artist
+            ? {
+                username: artist.username || "Unknown",
+                avatar: artist.avatar || null,
+              }
+            : null,
+        };
+      })
+    );
+
+    res.json(appointmentsWithUsers);
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    return res.status(500).json({ error: "Failed to fetch appointments" });
   }
 }
