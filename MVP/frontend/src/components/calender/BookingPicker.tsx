@@ -11,7 +11,8 @@ import {
   DialogDescription as RDialogDescription,
   DialogOverlay as RDialogOverlay
 } from "@/components/ui/dialog"
-import { toast } from "react-toastify"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
 
 type Kind = "consultation" | "appointment"
@@ -139,19 +140,40 @@ export default function BookingPicker({ artistId, date }: Props) {
     setSubmitting(true)
     const { startISO, endISO } = selected
     try {
-      const booking = await apiPost("/bookings", {
-        artistId,
-        startISO,
-        endISO,
-        serviceId: null,
-        priceCents: 0
-      })
+      let booking
+      if (kind === "consultation") {
+        const durationMinutes = Math.round((new Date(endISO).getTime() - new Date(startISO).getTime()) / 60000)
+        booking = await apiPost("/bookings/consultation", {
+          artistId,
+          startISO,
+          durationMinutes,
+          priceCents: 0
+        })
+      } else {
+        const durationMinutes = Math.round((new Date(endISO).getTime() - new Date(startISO).getTime()) / 60000)
+        booking = await apiPost("/bookings/session", {
+          artistId,
+          startISO,
+          durationMinutes,
+          priceCents: 0
+        })
+      }
       window.dispatchEvent(new CustomEvent("ink:booking-created", { detail: booking }))
       swallowGestureTail()
       setSelected(null)
       setConfirmOpen(false)
       toast.success(
-        `${new Date(startISO).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} • ${new Date(startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${new Date(endISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+        `${new Date(startISO).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} • ${new Date(startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${new Date(endISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+        {
+          position: "top-center",
+          hideProgressBar: true,
+          style: {
+            background: isLightTheme ? "#ffffff" : "var(--card)",
+            color: isLightTheme ? "#000000" : "var(--fg)",
+            border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
+            boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+          }
+        }
       )
       await refreshSlots()
     } catch (err: any) {
@@ -325,11 +347,15 @@ export default function BookingPicker({ artistId, date }: Props) {
           />
           <RDialogContent
             showCloseButton={false}
-            className="z-[2147483646] max-w-md sm:max-w-lg w-[min(92vw,640px)] border rounded-2xl p-5 sm:p-6 text-center flex flex-col items-center justify-items-center"
+            className="z-[2147483646] max-w-md sm:max-w-lg w-[min(92vw,640px)] border rounded-2xl p-5 sm:p-6 text-center flex flex-col items-center justify-items-center !fixed !top-4 !left-1/2 !-translate-x-1/2 !-translate-y-0"
+            aria-describedby="confirm-desc"
             style={{
               background: isLightTheme ? "#ffffff" : "var(--card)",
               color: isLightTheme ? "#000000" : "var(--fg)",
-              borderColor: isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"
+              borderColor: isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)",
+              margin: 0,
+              maxHeight: "calc(100vh - 2rem)",
+              overflowY: "auto"
             }}
             onPointerDownCapture={(ev) => ev.stopPropagation()}
           >
@@ -424,6 +450,23 @@ export default function BookingPicker({ artistId, date }: Props) {
           </RDialogContent>
         </RDialogPortal>
       </RDialog>
+
+      <ToastContainer
+        position="top-center"
+        newestOnTop
+        closeOnClick
+        draggable
+        pauseOnHover
+        hideProgressBar
+        toastStyle={{
+          background: isLightTheme ? "#ffffff" : "var(--card)",
+          color: isLightTheme ? "#000000" : "var(--fg)",
+          border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
+          boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+        }}
+        className="text-sm"
+        style={{ zIndex: 2147483647 }}
+      />
     </div>
   )
 }

@@ -17,7 +17,7 @@ const BookingSchema = new mongoose.Schema(
     contactEmail: { type: String },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "in-progress", "completed", "cancelled", "no-show"],
+      enum: ["pending", "confirmed", "in-progress", "completed", "cancelled", "no-show", "booked", "matched", "accepted", "denied"],
       default: "pending",
       index: true,
     },

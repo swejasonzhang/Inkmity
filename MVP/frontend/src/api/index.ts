@@ -196,7 +196,7 @@ export type Booking = {
   startAt: string;
   endAt: string;
   note?: string;
-  status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show";
+  status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show" | "booked" | "matched" | "accepted" | "denied";
   appointmentType?: "consultation" | "tattoo_session";
   projectId?: string;
   sessionNumber?: number;
@@ -503,6 +503,32 @@ export async function rescheduleAppointment(
   signal?: AbortSignal
 ) {
   return apiPost<Booking>(`/bookings/${id}/reschedule`, input, token, signal);
+}
+
+export async function getAppointments(
+  role?: "client" | "artist",
+  token?: string,
+  signal?: AbortSignal
+) {
+  const params = role ? { role } : {};
+  return apiGet<Booking[]>("/bookings/appointments", params, token, signal);
+}
+
+export async function acceptAppointment(
+  id: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/accept`, undefined, token, signal);
+}
+
+export async function denyAppointment(
+  id: string,
+  reason?: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
 }
 
 export async function markNoShow(

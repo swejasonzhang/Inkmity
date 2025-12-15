@@ -26,7 +26,7 @@ type ThemeSwitchProps = {
 
 const ThemeSwitch = ({ theme, toggleTheme, size = "md" }: ThemeSwitchProps) => {
   const { pathname } = useLocation();
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/appointments");
   if (!isDashboard) return null;
   const isLight = theme === "light";
   const dims =
@@ -65,7 +65,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/appointments");
 
   const [userLabel, setUserLabel] = useState<string>("");
   const [labelLoaded, setLabelLoaded] = useState<boolean>(false);
