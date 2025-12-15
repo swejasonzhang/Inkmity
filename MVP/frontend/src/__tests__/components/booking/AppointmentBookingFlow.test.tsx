@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "../../setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import AppointmentBookingFlow from "@/components/booking/AppointmentBookingFlow";
@@ -22,8 +21,8 @@ describe("AppointmentBookingFlow", () => {
     render(
       <AppointmentBookingFlow
         artist={mockArtist}
-        onComplete={() => { }}
-        onCancel={() => { }}
+        onComplete={() => {}}
+        onCancel={() => {}}
       />
     );
 
@@ -35,8 +34,8 @@ describe("AppointmentBookingFlow", () => {
     render(
       <AppointmentBookingFlow
         artist={mockArtist}
-        onComplete={() => { }}
-        onCancel={() => { }}
+        onComplete={() => {}}
+        onCancel={() => {}}
       />
     );
 
@@ -49,8 +48,8 @@ describe("AppointmentBookingFlow", () => {
     render(
       <AppointmentBookingFlow
         artist={mockArtist}
-        onComplete={() => { }}
-        onCancel={() => { }}
+        onComplete={() => {}}
+        onCancel={() => {}}
       />
     );
 
@@ -70,7 +69,7 @@ describe("AppointmentBookingFlow", () => {
     render(
       <AppointmentBookingFlow
         artist={mockArtist}
-        onComplete={() => { }}
+        onComplete={() => {}}
         onCancel={onCancel}
       />
     );
@@ -100,7 +99,7 @@ describe("AppointmentBookingFlow", () => {
       <AppointmentBookingFlow
         artist={mockArtist}
         onComplete={onComplete}
-        onCancel={() => { }}
+        onCancel={() => {}}
       />
     );
 
@@ -115,4 +114,3 @@ describe("AppointmentBookingFlow", () => {
     });
   });
 });
-

@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "../../../setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import PaymentStep from "@/components/booking/steps/PaymentStep";
@@ -158,4 +157,3 @@ describe("PaymentStep", () => {
     });
   });
 });
-
