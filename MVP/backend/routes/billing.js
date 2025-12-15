@@ -3,6 +3,7 @@ import {
   checkoutPlatformFee,
   checkoutDeposit,
   createDepositPaymentIntent,
+  createFinalPaymentIntent,
   refundBilling,
   createPortalSession,
   scheduleCancel,
@@ -13,6 +14,7 @@ const router = Router();
 router.post("/checkout", requireAuth(), checkoutPlatformFee);
 router.post("/deposit", requireAuth(), checkoutDeposit);
 router.post("/deposit/intent", requireAuth(), createDepositPaymentIntent);
+router.post("/final-payment/intent", requireAuth(), createFinalPaymentIntent);
 router.post("/refund", requireAuth(), refundBilling);
 router.post("/portal", requireAuth(), createPortalSession);
 router.post("/schedule-cancel", requireAuth(), scheduleCancel);
