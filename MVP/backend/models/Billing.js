@@ -6,7 +6,7 @@ const BillingSchema = new mongoose.Schema({
   clientId: { type: mongoose.Types.ObjectId, index: true },
   type: {
     type: String,
-    enum: ["platform_fee", "deposit"],
+    enum: ["platform_fee", "deposit", "final_payment"],
     default: "platform_fee",
     index: true,
   },

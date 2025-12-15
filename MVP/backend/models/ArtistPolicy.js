@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const ArtistPolicySchema = new mongoose.Schema(
   {
     artistId: {
-      type: mongoose.Types.ObjectId,
+      type: String,
       required: true,
       index: true,
       unique: true,
