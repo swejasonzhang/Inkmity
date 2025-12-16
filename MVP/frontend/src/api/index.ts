@@ -211,6 +211,12 @@ export type Booking = {
   rescheduledFrom?: string;
   rescheduledAt?: string;
   rescheduledBy?: "client" | "artist";
+  confirmedAt?: string;
+  cancelledAt?: string;
+  cancelledBy?: "client" | "artist" | "system";
+  cancellationReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type IntakeForm = {

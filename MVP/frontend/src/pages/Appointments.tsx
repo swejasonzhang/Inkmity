@@ -45,6 +45,35 @@ function formatTime(date: string | Date): string {
   });
 }
 
+function calculateDuration(start: string | Date, end: string | Date): number {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  return Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (mins === 0) {
+    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  }
+  return `${hours}h ${mins}m`;
+}
+
+function formatDateTime(date: string | Date): string {
+  const d = new Date(date);
+  return d.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 type AppointmentWithUsers = Booking & {
   client?: { username: string; avatar?: any } | null;
   artist?: { username: string; avatar?: any } | null;
@@ -124,11 +153,12 @@ export default function Appointments() {
     try {
       const token = await getToken();
       await denyAppointment(id, reason, token ?? undefined);
-      toast.success("Appointment denied");
+      toast.success(isClient ? "Appointment cancelled" : "Appointment denied");
+      window.dispatchEvent(new CustomEvent(isClient ? "ink:booking-cancelled" : "ink:booking-denied"));
       await loadAppointments();
     } catch (error: any) {
       console.error("Error denying appointment:", error);
-      toast.error(error?.body?.error || "Failed to deny appointment");
+      toast.error(error?.body?.error || (isClient ? "Failed to cancel appointment" : "Failed to deny appointment"));
     } finally {
       setProcessing(null);
     }
@@ -155,99 +185,155 @@ export default function Appointments() {
     const isTattooSession = appointment.appointmentType === "tattoo_session";
     
     const otherUser = isClient ? appointment.artist : appointment.client;
-    const isMyRequest = isClient;
+    const duration = calculateDuration(appointment.startAt, appointment.endAt);
     const canAccept = isArtist && isPending;
-    const canDeny = isPending && (isArtist || isClient);
+    const canCancel = isClient && isPending;
+    const canDeny = isArtist && isPending;
+
+    const getStatusBadgeStyle = (): React.CSSProperties => {
+      return {
+        background: isLightTheme 
+          ? "#ffffff" 
+          : "#000000",
+        color: isLightTheme 
+          ? "#000000"
+          : "#ffffff",
+        border: `1px solid ${isLightTheme ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)"}`
+      };
+    };
 
     return (
       <Card
-        className={`border rounded-xl p-4 ${
-          isLightTheme 
-            ? "bg-white border-black/20" 
-            : "bg-card border-white/20"
-        }`}
+        className="border rounded-xl p-6 bg-card border-app"
+        style={{
+          borderColor: "var(--border)"
+        }}
       >
-        <CardHeader className="p-0 pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className={`text-lg font-semibold ${
-                isLightTheme ? "text-black" : "text-app"
-              }`}>
+        <CardHeader className="p-0 pb-4">
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className="w-full flex items-center justify-between">
+              <div className="flex-1"></div>
+              <div 
+                className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide"
+                style={getStatusBadgeStyle()}
+              >
+                {appointment.status}
+              </div>
+              <div className="flex-1"></div>
+            </div>
+            
+            <div className="w-full text-center">
+              <CardTitle className="text-2xl font-bold mb-1 text-app">
                 {otherUser?.username || "Unknown"}
               </CardTitle>
-              <div className={`text-sm mt-1 ${
-                isLightTheme ? "text-black/70" : "text-app/70"
-              }`}>
+              <div className="text-base font-medium text-subtle">
                 {isConsultation ? "Consultation" : "Tattoo Session"}
               </div>
             </div>
-            <div className={`px-2 py-1 rounded-md text-xs font-medium ${
-              isPending 
-                ? isLightTheme 
-                  ? "bg-yellow-100 text-yellow-800" 
-                  : "bg-yellow-900/30 text-yellow-400"
-                : isAccepted
-                ? isLightTheme
-                  ? "bg-green-100 text-green-800"
-                  : "bg-green-900/30 text-green-400"
-                : isDenied
-                ? isLightTheme
-                  ? "bg-red-100 text-red-800"
-                  : "bg-red-900/30 text-red-400"
-                : isLightTheme
-                ? "bg-gray-100 text-gray-800"
-                : "bg-gray-900/30 text-gray-400"
-            }`}>
-              {appointment.status}
-            </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0 pt-3 space-y-2">
-          <div className={`text-sm ${isLightTheme ? "text-black/80" : "text-app/80"}`}>
-            <div className="font-medium">
+        
+        <CardContent className="p-0 space-y-4">
+          <div className="text-center space-y-2 text-app">
+            <div className="text-lg font-semibold">
               {formatDate(appointment.startAt)}
             </div>
-            <div>
+            <div className="text-base font-medium">
               {formatTime(appointment.startAt)} – {formatTime(appointment.endAt)}
             </div>
+            <div className="text-sm text-muted">
+              Duration: {formatDuration(duration)}
+            </div>
           </div>
-          
-          {appointment.note && (
-            <div className={`text-sm ${isLightTheme ? "text-black/60" : "text-app/60"}`}>
-              <span className="font-medium">Note: </span>
-              {appointment.note}
-            </div>
-          )}
 
-          {isTattooSession && appointment.priceCents > 0 && (
-            <div className={`text-sm font-medium ${
-              isLightTheme ? "text-black" : "text-app"
-            }`}>
-              Price: {formatCurrency(appointment.priceCents)}
-              {appointment.depositRequiredCents > 0 && (
-                <span className={`ml-2 ${isLightTheme ? "text-black/70" : "text-app/70"}`}>
-                  (Deposit: {formatCurrency(appointment.depositRequiredCents)})
-                </span>
-              )}
-            </div>
-          )}
+          <div 
+            className="border-t pt-4 space-y-3"
+            style={{ borderColor: "var(--border)" }}
+          >
+            {isTattooSession && appointment.priceCents !== undefined && appointment.priceCents > 0 && (
+              <div className="text-center space-y-1 text-app">
+                <div className="text-sm font-medium">
+                  Total Price: {formatCurrency(appointment.priceCents)}
+                </div>
+                {appointment.depositRequiredCents !== undefined && appointment.depositRequiredCents > 0 && (
+                  <div className="text-xs text-muted">
+                    Deposit Required: {formatCurrency(appointment.depositRequiredCents)}
+                    {appointment.depositPaidCents !== undefined && appointment.depositPaidCents > 0 && (
+                      <span className="ml-2">
+                        (Paid: {formatCurrency(appointment.depositPaidCents)})
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
-          {isConsultation && (
-            <div className={`text-sm ${isLightTheme ? "text-black/70" : "text-app/70"}`}>
-              No charge for consultations
-            </div>
-          )}
+            {isConsultation && (
+              <div 
+                className="text-center text-sm font-medium"
+                style={{
+                  color: isLightTheme 
+                    ? "#000000"
+                    : "#ffffff",
+                  backgroundColor: isLightTheme 
+                    ? "#ffffff"
+                    : "#000000",
+                  border: `1px solid ${isLightTheme ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)"}`,
+                  padding: "0.5rem",
+                  borderRadius: "0.5rem"
+                }}
+              >
+                ✓ No charge for consultations
+              </div>
+            )}
 
-          {(canAccept || canDeny) && (
-            <div className="flex gap-2 pt-2">
+            {appointment.note && (
+              <div className="text-center text-sm text-muted">
+                <div className="font-medium mb-1">Note:</div>
+                <div className="italic">{appointment.note}</div>
+              </div>
+            )}
+
+            {appointment.sessionNumber && isTattooSession && (
+              <div className="text-center text-sm text-muted">
+                Session #{appointment.sessionNumber}
+              </div>
+            )}
+
+            {appointment.createdAt && (
+              <div className="text-center text-xs text-muted">
+                Requested: {formatDateTime(appointment.createdAt)}
+              </div>
+            )}
+
+            {isAccepted && appointment.confirmedAt && (
+              <div className="text-center text-xs text-muted">
+                Confirmed: {formatDateTime(appointment.confirmedAt)}
+              </div>
+            )}
+
+            {isDenied && appointment.cancelledAt && (
+              <div className="text-center text-xs text-muted">
+                {appointment.cancelledBy === "client" ? "Cancelled" : "Denied"}: {formatDateTime(appointment.cancelledAt)}
+                {appointment.cancellationReason && (
+                  <div className="mt-1 italic">
+                    Reason: {appointment.cancellationReason}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {(canAccept || canDeny || canCancel) && (
+            <div className="flex gap-3 pt-4">
               {canAccept && (
                 <Button
                   onClick={() => handleAccept(appointment._id)}
                   disabled={processing === appointment._id}
-                  className="flex-1"
+                  className="flex-1 h-11 text-base font-semibold"
                   style={{
-                    background: isLightTheme ? "#000000" : "var(--fg)",
-                    color: isLightTheme ? "#ffffff" : "var(--card)",
+                    background: "var(--fg)",
+                    color: "var(--card)",
                   }}
                 >
                   {processing === appointment._id ? "Processing..." : "Accept"}
@@ -258,13 +344,34 @@ export default function Appointments() {
                   onClick={() => handleDeny(appointment._id)}
                   disabled={processing === appointment._id}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-11 text-base font-semibold"
                   style={{
-                    borderColor: isLightTheme ? "rgba(0,0,0,0.35)" : "var(--border)",
-                    color: isLightTheme ? "#000" : "var(--fg)",
+                    borderColor: "var(--border)",
+                    color: "var(--fg)",
                   }}
                 >
                   {processing === appointment._id ? "Processing..." : "Deny"}
+                </Button>
+              )}
+              {canCancel && (
+                <Button
+                  onClick={() => handleDeny(appointment._id)}
+                  disabled={processing === appointment._id}
+                  variant="outline"
+                  className="flex-1 h-11 text-base font-semibold"
+                  style={{
+                    borderColor: isLightTheme 
+                      ? "rgba(0, 0, 0, 0.2)"
+                      : "rgba(255, 255, 255, 0.2)",
+                    color: isLightTheme 
+                      ? "#000000"
+                      : "#ffffff",
+                    backgroundColor: isLightTheme 
+                      ? "#ffffff" 
+                      : "#000000",
+                  }}
+                >
+                  {processing === appointment._id ? "Processing..." : "Cancel"}
                 </Button>
               )}
             </div>
@@ -302,41 +409,31 @@ export default function Appointments() {
     >
       <Header />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className={`text-3xl font-bold mb-2 ${
-            isLightTheme ? "text-black" : "text-app"
-          }`}>
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-3 text-app">
             Appointments
           </h1>
-          <p className={`text-sm ${
-            isLightTheme ? "text-black/70" : "text-app/70"
-          }`}>
+          <p className="text-base text-muted">
             Manage your consultation and tattoo session requests
           </p>
         </div>
 
         {loading ? (
-          <div className={`text-center py-12 ${
-            isLightTheme ? "text-black/60" : "text-app/60"
-          }`}>
+          <div className="text-center py-12 text-muted">
             Loading appointments...
           </div>
         ) : appointments.length === 0 ? (
-          <div className={`text-center py-12 ${
-            isLightTheme ? "text-black/60" : "text-app/60"
-          }`}>
+          <div className="text-center py-12 text-muted">
             No appointments found
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {pendingAppointments.length > 0 && (
-              <div>
-                <h2 className={`text-xl font-semibold mb-4 ${
-                  isLightTheme ? "text-black" : "text-app"
-                }`}>
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-6 text-app">
                   Pending ({pendingAppointments.length})
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid gap-6 max-w-2xl mx-auto">
                   {pendingAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -345,13 +442,11 @@ export default function Appointments() {
             )}
 
             {acceptedAppointments.length > 0 && (
-              <div>
-                <h2 className={`text-xl font-semibold mb-4 ${
-                  isLightTheme ? "text-black" : "text-app"
-                }`}>
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-6 text-app">
                   Accepted ({acceptedAppointments.length})
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid gap-6 max-w-2xl mx-auto">
                   {acceptedAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -360,13 +455,11 @@ export default function Appointments() {
             )}
 
             {deniedAppointments.length > 0 && (
-              <div>
-                <h2 className={`text-xl font-semibold mb-4 ${
-                  isLightTheme ? "text-black" : "text-app"
-                }`}>
-                  Denied ({deniedAppointments.length})
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-6 text-app">
+                  {isClient ? "Cancelled" : "Denied"} ({deniedAppointments.length})
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid gap-6 max-w-2xl mx-auto">
                   {deniedAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -375,13 +468,11 @@ export default function Appointments() {
             )}
 
             {otherAppointments.length > 0 && (
-              <div>
-                <h2 className={`text-xl font-semibold mb-4 ${
-                  isLightTheme ? "text-black" : "text-app"
-                }`}>
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-6 text-app">
                   Other ({otherAppointments.length})
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid gap-6 max-w-2xl mx-auto">
                   {otherAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -400,9 +491,9 @@ export default function Appointments() {
         pauseOnHover
         hideProgressBar
         toastStyle={{
-          background: isLightTheme ? "#ffffff" : "var(--card)",
-          color: isLightTheme ? "#000000" : "var(--fg)",
-          border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
+          background: "var(--card)",
+          color: "var(--fg)",
+          border: "1px solid var(--border)",
           boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
         }}
         className="text-sm"

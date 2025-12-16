@@ -163,7 +163,7 @@ export async function getSlotsForDate(req, res) {
       artistId,
       startAt: { $lt: dayEnd },
       endAt: { $gt: dayStart },
-      status: { $in: ["booked", "matched", "completed"] },
+      status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
     }).lean();
     const busyIntervals = bookings.map((b) =>
       Interval.fromDateTimes(

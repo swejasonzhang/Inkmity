@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
+import { useAuth } from "@clerk/clerk-react"
 import { apiGet, apiPost } from "@/api/index.ts"
 import { Button } from "@/components/ui/button"
+import { socket, connectSocket } from "@/lib/socket"
 import {
   Dialog as RDialog,
   DialogContent as RDialogContent,
@@ -71,6 +73,7 @@ export default function BookingPicker({ artistId, date }: Props) {
   const scopeRef = useRef<HTMLDivElement>(null)
   const portalRef = useRef<HTMLDivElement>(null)
   const { theme } = useTheme()
+  const { getToken, userId } = useAuth()
   const isLightTheme = theme === "light"
 
   const [kind, setKind] = useState<Kind>("consultation")
@@ -110,10 +113,44 @@ export default function BookingPicker({ artistId, date }: Props) {
   }, [refreshSlots])
 
   useEffect(() => {
+    if (userId) {
+      connectSocket(getToken, userId)
+    }
+  }, [userId, getToken])
+
+  useEffect(() => {
     const onBooked = () => refreshSlots()
+    const onCancelled = () => refreshSlots()
+    const onDenied = () => refreshSlots()
     window.addEventListener("ink:booking-created", onBooked as EventListener)
-    return () => window.removeEventListener("ink:booking-created", onBooked as EventListener)
-  }, [refreshSlots])
+    window.addEventListener("ink:booking-cancelled", onCancelled as EventListener)
+    window.addEventListener("ink:booking-denied", onDenied as EventListener)
+    
+    const handleSocketCancelled = (data: { artistId: string; date: string }) => {
+      if (data.artistId === artistId && date && data.date === date.toISOString().slice(0, 10)) {
+        window.dispatchEvent(new CustomEvent("ink:booking-cancelled"))
+        refreshSlots()
+      }
+    }
+    
+    const handleSocketDenied = (data: { artistId: string; date: string }) => {
+      if (data.artistId === artistId && date && data.date === date.toISOString().slice(0, 10)) {
+        window.dispatchEvent(new CustomEvent("ink:booking-denied"))
+        refreshSlots()
+      }
+    }
+    
+    socket.on("booking:cancelled", handleSocketCancelled)
+    socket.on("booking:denied", handleSocketDenied)
+    
+    return () => {
+      window.removeEventListener("ink:booking-created", onBooked as EventListener)
+      window.removeEventListener("ink:booking-cancelled", onCancelled as EventListener)
+      window.removeEventListener("ink:booking-denied", onDenied as EventListener)
+      socket.off("booking:cancelled", handleSocketCancelled)
+      socket.off("booking:denied", handleSocketDenied)
+    }
+  }, [refreshSlots, artistId, date])
 
   const availableStartsByKey = useMemo(() => {
     const map = new Map<string, Slot>()
@@ -347,13 +384,12 @@ export default function BookingPicker({ artistId, date }: Props) {
           />
           <RDialogContent
             showCloseButton={false}
-            className="z-[2147483646] max-w-md sm:max-w-lg w-[min(92vw,640px)] border rounded-2xl p-5 sm:p-6 text-center flex flex-col items-center justify-items-center !fixed !top-4 !left-1/2 !-translate-x-1/2 !-translate-y-0"
+            className="z-[2147483646] max-w-md sm:max-w-lg w-[min(92vw,640px)] border rounded-2xl p-5 sm:p-6 text-center flex flex-col items-center justify-items-center"
             aria-describedby="confirm-desc"
             style={{
               background: isLightTheme ? "#ffffff" : "var(--card)",
               color: isLightTheme ? "#000000" : "var(--fg)",
               borderColor: isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)",
-              margin: 0,
               maxHeight: "calc(100vh - 2rem)",
               overflowY: "auto"
             }}
