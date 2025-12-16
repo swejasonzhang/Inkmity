@@ -4,9 +4,11 @@ import Message from "../models/Message.js";
 import Availability from "../models/Availability.js";
 import IntakeForm from "../models/IntakeForm.js";
 import Project from "../models/Project.js";
+import BookingCooldown from "../models/BookingCooldown.js";
 import { dayBoundsUTC } from "../utils/date.js";
 import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
+import { getIO } from "../services/socketService.js";
 
 const DEFAULT_TIMEZONE = "America/New_York";
 const DEFAULT_SLOT_MINUTES = 30;
@@ -72,7 +74,7 @@ export async function getBookingsForDay(req, res) {
     artistId,
     startAt: { $lt: end },
     endAt: { $gt: start },
-    status: { $in: ["booked", "matched", "completed"] },
+    status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
   }).sort({ startAt: 1 });
   res.json(docs);
 }
@@ -231,7 +233,7 @@ export async function createBooking(req, res) {
       artistId,
       startAt: { $lt: endAt },
       endAt: { $gt: startAt },
-      status: { $in: ["booked", "matched", "completed"] },
+      status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
     });
     if (conflict) return res.status(409).json({ error: "Slot already booked" });
     let policy = null;
@@ -372,6 +374,33 @@ export async function cancelBooking(req, res) {
     }
 
     await booking.save();
+
+    if (isClient) {
+      const cooldownExpiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      await BookingCooldown.findOneAndUpdate(
+        { userId: String(booking.clientId), artistId: String(booking.artistId) },
+        {
+          userId: String(booking.clientId),
+          artistId: String(booking.artistId),
+          cancelledAt: now,
+          expiresAt: cooldownExpiresAt,
+          bookingId: booking._id,
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    try {
+      const io = getIO();
+      if (io) {
+        const dateStr = new Date(booking.startAt).toISOString().slice(0, 10);
+        io.emit("booking:cancelled", {
+          artistId: String(booking.artistId),
+          date: dateStr,
+          bookingId: String(booking._id),
+        });
+      }
+    } catch {}
 
     try {
       if (
@@ -536,7 +565,7 @@ export async function updateBookingTime(req, res) {
       artistId: booking.artistId,
       startAt: { $lt: endAt },
       endAt: { $gt: startAt },
-      status: { $in: ["booked", "matched", "completed"] },
+      status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
     });
     if (conflict) return res.status(409).json({ error: "conflict" });
     booking.startAt = startAt;
@@ -606,11 +635,26 @@ export async function createConsultation(req, res) {
       artistId,
       startAt: { $lt: endAt },
       endAt: { $gt: startAt },
-      status: { $nin: ["cancelled"] },
+      status: { $nin: ["cancelled", "denied"] },
     });
 
     if (conflict) {
       return res.status(409).json({ error: "Slot already booked" });
+    }
+
+    const activeCooldown = await BookingCooldown.findOne({
+      userId: String(userId),
+      artistId,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (activeCooldown) {
+      const hoursRemaining = (activeCooldown.expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60);
+      return res.status(429).json({ 
+        error: "cooldown_active",
+        message: `You must wait ${Math.ceil(hoursRemaining)} hours before booking with this artist again after cancelling or denying an appointment.`,
+        expiresAt: activeCooldown.expiresAt
+      });
     }
 
     let policy = null;
@@ -843,7 +887,7 @@ export async function rescheduleAppointment(req, res) {
       artistId: booking.artistId,
       startAt: { $lt: newEndAt },
       endAt: { $gt: newStartAt },
-      status: { $nin: ["cancelled"] },
+      status: { $nin: ["cancelled", "denied"] },
     });
 
     if (conflict) {
@@ -1156,6 +1200,34 @@ export async function denyAppointment(req, res) {
     booking.cancelledBy = isClient ? "client" : "artist";
     booking.cancellationReason = reason || "";
     await booking.save();
+
+    if (isClient) {
+      const now = new Date();
+      const cooldownExpiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      await BookingCooldown.findOneAndUpdate(
+        { userId: String(booking.clientId), artistId: String(booking.artistId) },
+        {
+          userId: String(booking.clientId),
+          artistId: String(booking.artistId),
+          cancelledAt: now,
+          expiresAt: cooldownExpiresAt,
+          bookingId: booking._id,
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    try {
+      const io = getIO();
+      if (io) {
+        const dateStr = new Date(booking.startAt).toISOString().slice(0, 10);
+        io.emit("booking:denied", {
+          artistId: String(booking.artistId),
+          date: dateStr,
+          bookingId: String(booking._id),
+        });
+      }
+    } catch {}
 
     try {
       await Message.create({
