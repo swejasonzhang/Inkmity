@@ -412,7 +412,7 @@ export default function ClientProfile() {
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
 
     if (loading) {
-        const LOAD_MS = 400;
+        const LOAD_MS = 500;
         const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
         const fg = theme === "light" ? "#111111" : "#f5f5f5";
         return (

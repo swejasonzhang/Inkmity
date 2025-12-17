@@ -9,6 +9,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const LOAD_MS = 500;
+const FADE_MS = 160;
+
+const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
+  const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
+  const fg = theme === "light" ? "#111111" : "#f5f5f5";
+  return (
+    <div
+      className="fixed inset-0 grid place-items-center"
+      style={{ zIndex: 2147483640, background: bg, color: fg }}
+    >
+      <style>{`
+        @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+        @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
+      `}</style>
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
+          <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: `ink-fill ${LOAD_MS}ms linear forwards` }} />
+        </div>
+        <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite" }}>
+          Loading
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function applyTheme(el: HTMLElement, theme: "light" | "dark") {
   el.classList.toggle("ink-light", theme === "light");
   el.setAttribute("data-ink", theme);
@@ -85,6 +112,7 @@ export default function Appointments() {
   const { role, isLoaded: roleLoaded } = useRole();
   const { theme } = useTheme();
   const scopeRef = useRef<HTMLDivElement | null>(null);
+  const [bootDone, setBootDone] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
   const [appointments, setAppointments] = useState<AppointmentWithUsers[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,16 +128,19 @@ export default function Appointments() {
 
   useEffect(() => {
     if (!roleLoaded) {
+      setBootDone(false);
       setFadeIn(false);
       return;
     }
     
+    setBootDone(false);
     setFadeIn(false);
-    const timer = setTimeout(() => {
-      setFadeIn(true);
-    }, 50);
-    
-    return () => clearTimeout(timer);
+    const t1 = window.setTimeout(() => {
+      setBootDone(true);
+      const t2 = window.setTimeout(() => setFadeIn(true), 0);
+      return () => window.clearTimeout(t2);
+    }, LOAD_MS);
+    return () => window.clearTimeout(t1);
   }, [roleLoaded]);
 
   useEffect(() => {
@@ -381,32 +412,20 @@ export default function Appointments() {
     );
   };
 
-  if (!roleLoaded) {
-    return (
-      <div
-        className="fixed inset-0 grid place-items-center"
-        style={{
-          zIndex: 2147483640,
-          background: theme === "light" ? "#ffffff" : "#0b0b0b",
-          color: theme === "light" ? "#111111" : "#f5f5f5",
-        }}
-      >
-        <div>Loading...</div>
-      </div>
-    );
-  }
+  const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
+  const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
   return (
     <div
       ref={scopeRef}
-      className={`min-h-screen transition-opacity duration-300 ${
-        fadeIn ? "opacity-100" : "opacity-0"
-      }`}
-      style={{
-        background: theme === "light" ? "#ffffff" : "#0b0b0b",
-        color: theme === "light" ? "#111111" : "#f5f5f5",
-      }}
+      className="ink-scope min-h-screen flex flex-col"
+      style={{ background: shellBg, color: shellFg }}
     >
+      {!bootDone && <Loading theme={theme} />}
+      <div
+        className="flex-1 min-h-0 w-full"
+        style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
+      >
       <Header />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-8 text-center">
@@ -419,8 +438,8 @@ export default function Appointments() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-muted">
-            Loading appointments...
+          <div className="fixed inset-0 grid place-items-center" style={{ zIndex: 2147483639 }}>
+            <Loading theme={theme} />
           </div>
         ) : appointments.length === 0 ? (
           <div className="text-center py-12 text-muted">
@@ -481,6 +500,7 @@ export default function Appointments() {
             )}
           </div>
         )}
+      </div>
       </div>
 
       <ToastContainer
