@@ -147,8 +147,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         </div>
 
         <div
-          className={`${fullScreen ? "px-3 pt-2 pb-2 flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center" : "px-7 pt-6 pb-8 flex flex-col items-center"} ${fullScreen ? "gap-3" : "gap-7"}`}
-          style={fullScreen ? { scrollbarWidth: "thin" } : undefined}
+          className={`${fullScreen ? "px-3 pt-2 pb-2 flex-1 min-h-0 flex flex-col items-center justify-center" : "px-7 pt-6 pb-8 flex flex-col items-center"} ${fullScreen ? "gap-3" : "gap-7"}`}
         >
           <div className={`flex flex-col items-center text-center w-full ${fullScreen ? "gap-3" : "gap-4 sm:gap-5"}`}>
             <h2 className={`font-extrabold tracking-tight ${fullScreen ? "text-3xl" : "text-2xl md:text-3xl"}`} style={{ color: "var(--fg)" }}>

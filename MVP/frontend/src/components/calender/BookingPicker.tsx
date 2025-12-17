@@ -234,9 +234,9 @@ export default function BookingPicker({ artistId, date }: Props) {
   }, [selected])
 
   return (
-    <div ref={scopeRef} className="w-full grid place-items-center">
+    <div ref={scopeRef} className="grid place-items-center">
       <div ref={portalRef} />
-      <div className="w-full max-w-3xl grid place-items-center text-center rounded-2xl p-4 sm:p-5 gap-4">
+      <div className="grid place-items-center text-center rounded-2xl p-4 sm:p-5 gap-4">
         <div className="grid gap-2 place-items-center">
           <h2 className="text-lg sm:text-xl font-semibold">Book a Time</h2>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -255,7 +255,7 @@ export default function BookingPicker({ artistId, date }: Props) {
           </div>
         </div>
 
-        <div className="w-full grid place-items-center gap-1.5">
+        <div className="grid place-items-center gap-1.5">
           <span className={isLightTheme ? "text-sm text-black/80" : "text-sm text-app/80"}>Type</span>
           <div
             className={`inline-flex items-center gap-2 bg-transparent p-1 rounded-lg border ${isLightTheme ? "border-black/30" : "border-white/40"}`}
@@ -282,7 +282,7 @@ export default function BookingPicker({ artistId, date }: Props) {
         </div>
 
         <div
-          className={`w-full max-w-3xl grid gap-2 rounded-lg border p-3 sm:p-3.5 text-left ${isLightTheme ? "border-black/30 bg-white" : "border-white/40 bg-card"}`}
+          className={`grid gap-2 rounded-lg border p-3 sm:p-3.5 text-left ${isLightTheme ? "border-black/30 bg-white" : "border-white/40 bg-card"}`}
           aria-live="polite"
         >
           {kind === "consultation" ? (
@@ -306,9 +306,9 @@ export default function BookingPicker({ artistId, date }: Props) {
           )}
         </div>
 
-        <div className="w-full">
+        <div>
           <div
-            className={`rounded-lg border w-full max-w-3xl p-2 sm:p-2.5 mx-auto bg-transparent ${isLightTheme ? "border-black/30" : "border-white/40"}`}
+            className={`rounded-lg border p-2 sm:p-2.5 mx-auto bg-transparent ${isLightTheme ? "border-black/30" : "border-white/40"}`}
           >
             <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
               {combinedTimes.map((t) => {
@@ -317,7 +317,7 @@ export default function BookingPicker({ artistId, date }: Props) {
                 const isDisabled = !avail
                 const isActive = !!avail && selected?.startISO === avail.startISO
 
-                const slotBase = "px-2.5 py-[2.5px] rounded-lg min-w-[88px] text-sm sm:text-base text-center outline-none"
+                const slotBase = "px-2.5 py-[2.5px] rounded-lg text-sm sm:text-base text-center outline-none"
                 const slotEnabled = isLightTheme
                   ? "bg-transparent text-black border border-black/30 focus-visible:ring-2"
                   : "bg-transparent text-app border border-white/40 focus-visible:ring-2"
@@ -340,7 +340,7 @@ export default function BookingPicker({ artistId, date }: Props) {
                 )
               })}
               {combinedTimes.length === 0 && (
-                <div className={isLightTheme ? "w-full text-center text-sm sm:text-base py-2 text-black/70" : "w-full text-center text-sm sm:text-base py-2 text-app/70"}>
+                <div className={isLightTheme ? "text-center text-sm sm:text-base py-2 text-black/70" : "text-center text-sm sm:text-base py-2 text-app/70"}>
                   No times for this day.
                 </div>
               )}
@@ -365,7 +365,7 @@ export default function BookingPicker({ artistId, date }: Props) {
         <Button
           disabled={!canConfirm}
           onClick={() => setConfirmOpen(true)}
-          className="px-4 py-2 rounded-xl font-medium outline-none focus-visible:ring-2 min-w-[160px] text-sm sm:text-base"
+          className="px-4 py-2 rounded-xl font-medium outline-none focus-visible:ring-2 text-sm sm:text-base"
           style={{
             background: canConfirm ? "var(--fg)" : "color-mix(in oklab, var(--elevated) 80%, transparent)",
             color: canConfirm ? "var(--card)" : (isLightTheme ? "rgba(0,0,0,0.6)" : "color-mix(in oklab, var(--fg) 60%, transparent)"),
@@ -384,18 +384,17 @@ export default function BookingPicker({ artistId, date }: Props) {
           />
           <RDialogContent
             showCloseButton={false}
-            className="z-[2147483646] max-w-md sm:max-w-lg w-[min(92vw,640px)] border rounded-2xl p-5 sm:p-6 text-center flex flex-col items-center justify-items-center"
+            className="z-[2147483646] border rounded-2xl p-5 sm:p-6 text-center flex flex-col items-center justify-items-center"
             aria-describedby="confirm-desc"
             style={{
               background: isLightTheme ? "#ffffff" : "var(--card)",
               color: isLightTheme ? "#000000" : "var(--fg)",
               borderColor: isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)",
-              maxHeight: "calc(100vh - 2rem)",
               overflowY: "auto"
             }}
             onPointerDownCapture={(ev) => ev.stopPropagation()}
           >
-            <div className="w-full relative">
+            <div className="relative">
               <button
                 aria-label="Close"
                 className="absolute right-2 top-2 rounded-md px-2 py-1 text-sm"
@@ -408,7 +407,7 @@ export default function BookingPicker({ artistId, date }: Props) {
               </button>
             </div>
 
-            <RDialogHeader className="space-y-2 w-full flex flex-col items-center text-center">
+            <RDialogHeader className="space-y-2 flex flex-col items-center text-center">
               <RDialogTitle className="text-xl sm:text-2xl font-semibold">
                 Confirm your {kind}
               </RDialogTitle>
@@ -420,7 +419,7 @@ export default function BookingPicker({ artistId, date }: Props) {
               </RDialogDescription>
             </RDialogHeader>
 
-            <div className="mt-4 grid place-items-center gap-3 w-full" aria-describedby="confirm-desc">
+            <div className="mt-4 grid place-items-center gap-3" aria-describedby="confirm-desc">
               {selected && (
                 <>
                   <div className="text-lg sm:text-xl font-semibold">
@@ -458,14 +457,14 @@ export default function BookingPicker({ artistId, date }: Props) {
               )}
             </div>
 
-            <RDialogFooter className="mt-8 w-full flex flex-col sm:flex-row items-center justify-center gap-3">
+            <RDialogFooter className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button
                 variant="outline"
                 onClick={() => {
                   swallowGestureTail()
                   setConfirmOpen(false)
                 }}
-                className="min-w-[200px] h-12 text-base sm:text-lg rounded-xl bg-transparent"
+                className="text-base sm:text-lg rounded-xl bg-transparent"
                 style={{ borderColor: isLightTheme ? "rgba(0,0,0,0.35)" : "var(--border)", color: isLightTheme ? "#000" : "var(--fg)" }}
                 disabled={submitting}
               >
@@ -476,7 +475,7 @@ export default function BookingPicker({ artistId, date }: Props) {
                   ev.stopPropagation()
                   handleAccept()
                 }}
-                className="min-w-[200px] h-12 text-base sm:text-lg rounded-xl"
+                className="text-base sm:text-lg rounded-xl"
                 style={{ background: "#000000", color: "#ffffff", border: "1px solid #ffffff" }}
                 disabled={submitting}
               >

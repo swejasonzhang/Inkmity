@@ -34,7 +34,7 @@ const loadArtistDashboard = (): Promise<{ default: React.ComponentType<any> }> =
 const ClientDashboard = lazy(loadClientDashboard);
 const ArtistDashboard = lazy(loadArtistDashboard);
 
-const LOAD_MS = 400;
+const LOAD_MS = 500;
 const FADE_MS = 160;
 
 const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {

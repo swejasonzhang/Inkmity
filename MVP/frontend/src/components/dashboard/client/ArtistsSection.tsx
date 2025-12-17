@@ -392,7 +392,7 @@ export default function ArtistsSection({
                             <>
                                 <div
                                     ref={mobileListRef}
-                                    className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
+                                    className="h-full w-full snap-y snap-mandatory overscroll-contain"
                                     style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}
                                     onScroll={handleMobileScroll}
                                     onTouchStart={handleTouchStart}
@@ -444,7 +444,7 @@ export default function ArtistsSection({
                                 )}
                             </>
                         ) : (
-                            <div className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}>
+                            <div className="h-full w-full snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}>
                                 <div className="snap-start snap-always h-full w-full flex items-center justify-center" style={{ height: "100%", minHeight: "100%", scrollSnapStop: "always", scrollSnapAlign: "center", padding: '0' }}>
                                     <div className="text-center px-4">
                                         <p className="text-base font-medium" style={{ color: "var(--fg)" }}>No artists match your filters.</p>
@@ -455,7 +455,7 @@ export default function ArtistsSection({
                         )}
                     </div>
 
-                    <div className="hidden md:block h-full min-h-0 overflow-y-auto">
+                    <div className="hidden md:block h-full min-h-0">
                         {listItems.length > 0 ? (
                             <div className="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.5rem)', padding: '16px 0', alignContent: 'start' }}>
                                 {listItems.map((artist, index) => (
