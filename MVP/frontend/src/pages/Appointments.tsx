@@ -185,12 +185,13 @@ export default function Appointments() {
   const isClient = role === "client";
   const isArtist = role === "artist";
 
-  const pendingAppointments = appointments.filter(a => a.status === "pending");
-  const acceptedAppointments = appointments.filter(a => a.status === "accepted");
-  const deniedAppointments = appointments.filter(a => a.status === "denied");
-  const otherAppointments = appointments.filter(
-    a => !["pending", "accepted", "denied"].includes(a.status)
-  );
+  const pendingAppointments = appointments
+    .filter((a) => a.status === "pending")
+    .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+
+  const pastAppointments = appointments
+    .filter((a) => a.status !== "pending")
+    .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime());
 
   const AppointmentCard = ({ appointment }: { appointment: AppointmentWithUsers }) => {
     const isPending = appointment.status === "pending";
@@ -425,58 +426,40 @@ export default function Appointments() {
             No appointments found
           </div>
         ) : (
-          <div className="space-y-8">
-            {pendingAppointments.length > 0 && (
-              <div className="text-center">
-                <h2 className="text-2xl font-bold mb-6 text-app">
-                  Pending ({pendingAppointments.length})
-                </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-6 text-app">
+                Pending ({pendingAppointments.length})
+              </h2>
+              {pendingAppointments.length === 0 ? (
+                <div className="text-center py-10 text-muted">
+                  No pending appointments
+                </div>
+              ) : (
                 <div className="grid gap-6 max-w-2xl mx-auto">
                   {pendingAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {acceptedAppointments.length > 0 && (
-              <div className="text-center">
-                <h2 className="text-2xl font-bold mb-6 text-app">
-                  Accepted ({acceptedAppointments.length})
-                </h2>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-6 text-app">
+                Past ({pastAppointments.length})
+              </h2>
+              {pastAppointments.length === 0 ? (
+                <div className="text-center py-10 text-muted">
+                  No past appointments
+                </div>
+              ) : (
                 <div className="grid gap-6 max-w-2xl mx-auto">
-                  {acceptedAppointments.map((appointment) => (
+                  {pastAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {deniedAppointments.length > 0 && (
-              <div className="text-center">
-                <h2 className="text-2xl font-bold mb-6 text-app">
-                  {isClient ? "Cancelled" : "Denied"} ({deniedAppointments.length})
-                </h2>
-                <div className="grid gap-6 max-w-2xl mx-auto">
-                  {deniedAppointments.map((appointment) => (
-                    <AppointmentCard key={appointment._id} appointment={appointment} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {otherAppointments.length > 0 && (
-              <div className="text-center">
-                <h2 className="text-2xl font-bold mb-6 text-app">
-                  Other ({otherAppointments.length})
-                </h2>
-                <div className="grid gap-6 max-w-2xl mx-auto">
-                  {otherAppointments.map((appointment) => (
-                    <AppointmentCard key={appointment._id} appointment={appointment} />
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
