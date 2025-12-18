@@ -53,7 +53,10 @@ function setStoredTheme(key: string, value: Theme) {
 export function useTheme() {
   const { pathname } = useLocation();
   const { user, isLoaded: isUserLoaded } = useUser();
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile");
+  const isDashboard =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/appointments");
 
   const [theme, setTheme] = useState<Theme>(() => {
     if (isDashboard) {
@@ -254,6 +257,22 @@ export function useTheme() {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, [storageKey]);
+
+  useEffect(() => {
+    if (!isDashboard) return;
+    const onThemeChange = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      const next = detail?.value;
+      if (next !== "light" && next !== "dark") return;
+      setTheme((prev) => (prev === next ? prev : next));
+    };
+    window.addEventListener("ink:theme-change", onThemeChange as EventListener);
+    return () =>
+      window.removeEventListener(
+        "ink:theme-change",
+        onThemeChange as EventListener
+      );
+  }, [isDashboard]);
 
   const toggleTheme = useCallback(() => {
     if (!isDashboard) return;
