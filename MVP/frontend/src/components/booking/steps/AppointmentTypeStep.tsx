@@ -58,7 +58,7 @@ export default function AppointmentTypeStep({ value, onChange }: Props) {
               </div>
               <p className="text-sm text-muted-foreground">
                 Initial meeting to discuss your tattoo idea, placement, size, and design.
-                Typically 15-60 minutes. No deposit required for consultations.
+                Typically 15-60 minutes. Some artists may require a deposit.
               </p>
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function AppointmentTypeStep({ value, onChange }: Props) {
               </div>
               <p className="text-sm text-muted-foreground">
                 Actual tattoo appointment. Duration varies based on piece size and complexity.
-                Deposit required to secure your appointment.
+                A deposit is required to secure your appointment (amount set by the artist).
               </p>
             </div>
           </div>

@@ -96,13 +96,13 @@ export default function Profile() {
     >
       <Header />
       <main 
-        className="flex-1 flex items-start xs:items-center justify-center"
+        className="flex-1 flex items-start justify-center"
         style={{ 
           opacity: fadeIn ? 1 : 0, 
           transition: `opacity ${FADE_MS}ms ease-in-out`,
         }}
       >
-        <div className="w-full max-w-7xl px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10 flex items-stretch xs:items-center justify-center py-3 xs:py-4 sm:py-5 md:py-6 lg:py-7 mt-3 xs:mt-4 sm:mt-5 md:mt-6 lg:mt-8 pb-6 xs:pb-7 sm:pb-8 md:pb-9 lg:pb-10">
+        <div className="w-full max-w-7xl px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10 flex items-stretch justify-center py-3 xs:py-4 sm:py-5 md:py-6 lg:py-7 mt-3 xs:mt-4 sm:mt-5 md:mt-6 lg:mt-8 pb-6 xs:pb-7 sm:pb-8 md:pb-9 lg:pb-10">
           <Suspense fallback={null}>
             {role === "artist" ? <ArtistProfile /> : <ClientProfile />}
           </Suspense>

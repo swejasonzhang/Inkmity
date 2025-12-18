@@ -14,6 +14,8 @@ const ArtistPolicySchema = new mongoose.Schema(
       amountCents: { type: Number, default: 0, min: 0 },
       minCents: { type: Number, default: 0, min: 0 },
       maxCents: { type: Number, default: 1000000, min: 0 },
+      nonRefundable: { type: Boolean, default: true },
+      cutoffHours: { type: Number, default: 48, min: 0 },
     },
   },
   { timestamps: true }
