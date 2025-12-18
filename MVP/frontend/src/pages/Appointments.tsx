@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useLayoutEffect } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
@@ -35,20 +35,6 @@ const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
     </div>
   );
 };
-
-function applyTheme(el: HTMLElement, theme: "light" | "dark") {
-  el.classList.toggle("ink-light", theme === "light");
-  el.setAttribute("data-ink", theme);
-}
-
-function useDashboardScope(scopeEl: HTMLElement | null, theme: "light" | "dark") {
-  useLayoutEffect(() => {
-    if (!scopeEl) return;
-    scopeEl.classList.add("ink-scope", "ink-no-anim");
-    applyTheme(scopeEl, theme);
-    requestAnimationFrame(() => scopeEl.classList.remove("ink-no-anim"));
-  }, [scopeEl, theme]);
-}
 
 function formatCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -111,7 +97,6 @@ export default function Appointments() {
   const { getToken } = useAuth();
   const { role, isLoaded: roleLoaded } = useRole();
   const { theme } = useTheme();
-  const scopeRef = useRef<HTMLDivElement | null>(null);
   const [bootDone, setBootDone] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
   const [appointments, setAppointments] = useState<AppointmentWithUsers[]>([]);
@@ -195,7 +180,6 @@ export default function Appointments() {
     }
   };
 
-  useDashboardScope(scopeRef.current, theme);
   const isLightTheme = theme === "light";
 
   const isClient = role === "client";
@@ -412,14 +396,9 @@ export default function Appointments() {
     );
   };
 
-  const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
-  const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
-
   return (
     <div
-      ref={scopeRef}
-      className="ink-scope min-h-screen flex flex-col"
-      style={{ background: shellBg, color: shellFg }}
+      className="min-h-screen flex flex-col bg-app text-app"
     >
       {!bootDone && <Loading theme={theme} />}
       <div
