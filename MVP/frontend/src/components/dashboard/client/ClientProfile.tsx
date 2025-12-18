@@ -447,7 +447,7 @@ export default function ClientProfile() {
     const defaultMessage = `Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $${budgetMin}-$${budgetMax}. ${currentLocation ? `I'm located in ${currentLocation}.` : ""} ${currentPlacement ? `I'm looking for something on my ${currentPlacement.toLowerCase()}.` : ""} ${currentSize ? `Size preference: ${SIZE_OPTIONS.find(s => s.value === currentSize)?.label || currentSize}.` : ""} Let me know if you're available and interested!`;
 
     return (
-        <div className="h-full min-h-0 w-full overflow-hidden flex items-center justify-center p-4">
+        <div className="h-full min-h-0 w-full overflow-hidden flex items-start justify-center p-4">
             <input
                 ref={avatarInputRef}
                 type="file"

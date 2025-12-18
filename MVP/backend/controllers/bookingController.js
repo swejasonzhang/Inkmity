@@ -29,12 +29,22 @@ function genCode() {
   return s;
 }
 
-function computeDepositCents(policy, priceCents) {
+function computeDepositCents(policy, priceCents, appointmentType) {
   const p = policy?.deposit || {};
   const mode = p.mode || "percent";
-  if (mode === "flat") return Math.max(0, Number(p.amountCents || 0));
+  if (mode === "flat") {
+    const base = Math.max(0, Number(p.amountCents || 0));
+    if (appointmentType === "tattoo_session") {
+      return Math.max(base, 5000);
+    }
+    return base;
+  }
   const percent = Math.max(0, Math.min(1, Number(p.percent || 0.2)));
-  const minCents = Math.max(0, Number(p.minCents || 0));
+  const minCents = Math.max(
+    0,
+    Number(p.minCents || 0),
+    appointmentType === "tattoo_session" ? 5000 : 0
+  );
   const maxCents = Math.max(0, Number(p.maxCents || Infinity));
   const base = Math.max(0, Number(priceCents || 0));
   const raw = Math.round(base * percent);
@@ -245,7 +255,11 @@ export async function createBooking(req, res) {
     } catch {
       policy = null;
     }
-    const depositRequiredCents = computeDepositCents(policy, priceCents);
+    const depositRequiredCents = computeDepositCents(
+      policy,
+      priceCents,
+      "tattoo_session"
+    );
     let created;
     try {
       created = await Booking.create({
@@ -665,7 +679,8 @@ export async function createConsultation(req, res) {
     const consultationPriceCents = Math.max(0, Number(body.priceCents || 0));
     const depositRequiredCents = computeDepositCents(
       policy,
-      consultationPriceCents
+      consultationPriceCents,
+      "consultation"
     );
 
     let booking;
@@ -776,7 +791,11 @@ export async function createTattooSession(req, res) {
     } catch {}
 
     const priceCents = Math.max(0, Number(body.priceCents || 0));
-    const depositRequiredCents = computeDepositCents(policy, priceCents);
+    const depositRequiredCents = computeDepositCents(
+      policy,
+      priceCents,
+      "tattoo_session"
+    );
 
     let booking;
     try {

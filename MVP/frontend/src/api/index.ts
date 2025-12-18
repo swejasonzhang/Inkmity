@@ -587,3 +587,36 @@ export async function createDepositPaymentIntent(
     billingId: string;
   }>("/billing/deposit/intent", { bookingId }, token, signal);
 }
+
+export type ArtistPolicy = {
+  _id?: string;
+  artistId: string;
+  deposit?: {
+    mode?: "percent" | "flat";
+    percent?: number;
+    amountCents?: number;
+    minCents?: number;
+    maxCents?: number;
+    nonRefundable?: boolean;
+    cutoffHours?: number;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export async function getArtistPolicy(artistId: string, signal?: AbortSignal) {
+  return apiGet<ArtistPolicy>(`/artist-policy/${artistId}`, undefined, undefined, signal);
+}
+
+export async function updateArtistPolicy(
+  artistId: string,
+  deposit: NonNullable<ArtistPolicy["deposit"]>,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiRequest<ArtistPolicy>(
+    `/artist-policy/${artistId}`,
+    { method: "PUT", body: JSON.stringify({ deposit }), signal },
+    token
+  );
+}

@@ -209,6 +209,69 @@ export default function ArtistProfile() {
     const coverInputRef = useRef<HTMLInputElement>(null);
     const portfolioInputRef = useRef<HTMLInputElement>(null);
 
+    const [depositDollars, setDepositDollars] = useState<string>("50.00");
+    const [depositPolicySaving, setDepositPolicySaving] = useState(false);
+
+    useEffect(() => {
+        let active = true;
+        if (!user?.id) return;
+        (async () => {
+            try {
+                const res = await fetch(`${API_URL}/artist-policy/${user.id}`, { cache: "no-store" });
+                if (!res.ok) throw new Error(String(res.status));
+                const json = await res.json();
+                const deposit = json?.deposit || {};
+                const mode = deposit?.mode;
+                const amountCents = Number(deposit?.amountCents || 0);
+                const minCents = Number(deposit?.minCents || 0);
+                const fallbackCents = Math.max(5000, minCents || 0);
+                const centsToShow = mode === "flat" && amountCents > 0 ? amountCents : fallbackCents;
+                if (active) setDepositDollars((centsToShow / 100).toFixed(2));
+            } catch {
+                // keep default
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [user?.id]);
+
+    const saveDepositPolicy = async () => {
+        if (!user?.id) return;
+        if (depositPolicySaving) return;
+        const parsed = Number(depositDollars);
+        const cents = Math.round((isNaN(parsed) ? 0 : parsed) * 100);
+        const enforced = Math.max(5000, cents); // tattoo-session deposits are never optional
+        try {
+            setDepositPolicySaving(true);
+            const token = await getToken();
+            const res = await fetch(`${API_URL}/artist-policy/${user.id}`, {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    deposit: {
+                        mode: "flat",
+                        amountCents: enforced,
+                        minCents: enforced,
+                        maxCents: enforced,
+                        nonRefundable: true,
+                        cutoffHours: 48,
+                    },
+                }),
+            });
+            if (!res.ok) throw new Error("Failed to save deposit policy");
+            setDepositDollars((enforced / 100).toFixed(2));
+        } catch (e) {
+            console.error("Failed to save deposit policy:", e);
+            alert("Failed to save deposit. Please try again.");
+        } finally {
+            setDepositPolicySaving(false);
+        }
+    };
+
     useEffect(() => {
         loadProfile();
     }, []);
@@ -790,6 +853,45 @@ export default function ArtistProfile() {
                                     />
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    <div
+                        className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
+                        style={{
+                            background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                            borderColor: "var(--border)"
+                        }}
+                    >
+                        <h3 className="text-sm font-semibold mb-4 text-center" style={{ color: "var(--fg)" }}>
+                            Deposit Settings
+                        </h3>
+                        <div className="space-y-2">
+                            <Label className="text-xs text-center block w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                Required Deposit (USD)
+                            </Label>
+                            <Input
+                                inputMode="decimal"
+                                value={depositDollars}
+                                onChange={(e) => setDepositDollars(e.target.value)}
+                                className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
+                                placeholder="50.00"
+                            />
+                            <p className="text-xs text-center" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                                Clients must pay this deposit to book a tattoo session. Minimum $50.00.
+                            </p>
+                            <div className="pt-2 flex justify-center">
+                                <Button
+                                    onClick={saveDepositPolicy}
+                                    disabled={depositPolicySaving}
+                                    size="sm"
+                                    style={{ background: "var(--fg)", color: "var(--bg)" }}
+                                    className="hover:opacity-90 font-semibold"
+                                >
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {depositPolicySaving ? "Saving..." : "Save Deposit"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
 

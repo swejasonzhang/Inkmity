@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -14,6 +14,7 @@ import {
   createTattooSession,
   createDepositPaymentIntent,
   submitIntakeForm,
+  getArtistPolicy,
 } from "@/api";
 import { useApi } from "@/api";
 
@@ -39,6 +40,39 @@ type Props = {
   submitting: boolean;
 };
 
+type DepositPolicy = {
+  mode?: "percent" | "flat";
+  percent?: number;
+  amountCents?: number;
+  minCents?: number;
+  maxCents?: number;
+  nonRefundable?: boolean;
+  cutoffHours?: number;
+};
+
+function computeDepositPreviewCents(
+  deposit: DepositPolicy | undefined,
+  priceCents: number,
+  appointmentType: BookingFlowData["appointmentType"]
+) {
+  const p = deposit || {};
+  const mode = p.mode || "percent";
+
+  if (mode === "flat") {
+    const base = Math.max(0, Number(p.amountCents || 0));
+    if (appointmentType === "tattoo_session") return Math.max(base, 5000);
+    return base;
+  }
+
+  const percent = Math.max(0, Math.min(1, Number(p.percent ?? 0.2)));
+  const enforcedMin = appointmentType === "tattoo_session" ? 5000 : 0;
+  const minCents = Math.max(0, Number(p.minCents || 0), enforcedMin);
+  const maxCents = Math.max(0, Number(p.maxCents || Infinity));
+  const base = Math.max(0, Number(priceCents || 0));
+  const raw = Math.round(base * percent);
+  return Math.min(Math.max(raw, minCents), maxCents);
+}
+
 function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitting }: Props) {
   const { getToken } = useAuth();
   const { request } = useApi();
@@ -47,10 +81,30 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
   const [submitting, setSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  const depositAmount = bookingData.priceCents
-    ? Math.round(bookingData.priceCents * 0.2)
-    : 0;
-  const requiresDeposit = bookingData.appointmentType === "tattoo_session" && depositAmount > 0;
+  const [depositPolicy, setDepositPolicy] = useState<DepositPolicy | null>(null);
+  useEffect(() => {
+    if (!bookingData.artistId) return;
+    const ac = new AbortController();
+    getArtistPolicy(bookingData.artistId, ac.signal)
+      .then((p) => setDepositPolicy(p?.deposit || null))
+      .catch(() => setDepositPolicy(null));
+    return () => ac.abort();
+  }, [bookingData.artistId]);
+
+  const depositPreviewCents = useMemo(() => {
+    if (!bookingData.appointmentType) return 0;
+    return computeDepositPreviewCents(
+      depositPolicy || undefined,
+      bookingData.priceCents || 0,
+      bookingData.appointmentType
+    );
+  }, [depositPolicy, bookingData.priceCents, bookingData.appointmentType]);
+
+  const willRequireDeposit = useMemo(() => {
+    if (!bookingData.appointmentType) return false;
+    if (bookingData.appointmentType === "tattoo_session") return true;
+    return depositPreviewCents > 0;
+  }, [bookingData.appointmentType, depositPreviewCents]);
 
   const handleSubmit = useCallback(async () => {
     if (!bookingData.startISO || !bookingData.endISO || !bookingData.appointmentType) {
@@ -58,7 +112,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       return;
     }
 
-    if (requiresDeposit && (!stripe || !elements)) {
+    if (willRequireDeposit && (!stripe || !elements)) {
       toast.error("Payment system is not ready. Please refresh and try again.");
       return;
     }
@@ -104,7 +158,8 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
         }
       }
 
-      if (requiresDeposit && booking.depositRequiredCents && booking.depositRequiredCents > 0) {
+      const depositToPay = Number(booking.depositRequiredCents || 0);
+      if (depositToPay > 0) {
         try {
           if (!stripe || !elements) {
             throw new Error("Payment system is not ready. Please refresh and try again.");
@@ -137,7 +192,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
           }
 
           if (paymentIntent?.status === "succeeded") {
-            toast.success("Deposit paid successfully!");
+            toast.success(`Deposit paid successfully! ($${(depositToPay / 100).toFixed(2)})`);
           } else {
             throw new Error("Payment did not complete successfully");
           }
@@ -160,7 +215,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
     } finally {
       setSubmitting(false);
     }
-  }, [bookingData, artist, onSubmit, stripe, elements, getToken, request, requiresDeposit]);
+  }, [bookingData, artist, onSubmit, stripe, elements, getToken, request, willRequireDeposit]);
 
   const isSubmitting = submitting || parentSubmitting;
   const canSubmit = !isSubmitting && !!bookingData.startISO && !!bookingData.endISO && !!bookingData.appointmentType;
@@ -213,7 +268,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
 
         <Separator />
 
-        {requiresDeposit ? (
+        {willRequireDeposit ? (
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -221,15 +276,17 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
             </h4>
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Deposit (20%):</span>
-                <span className="font-medium">${(depositAmount / 100).toFixed(2)}</span>
+                <span className="text-muted-foreground">Deposit (artist-set):</span>
+                <span className="font-medium">${(depositPreviewCents / 100).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Remaining balance:</span>
-                <span>
-                  ${((bookingData.priceCents - depositAmount) / 100).toFixed(2)}
-                </span>
-              </div>
+              {bookingData.priceCents > 0 && (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Estimated remaining balance:</span>
+                  <span>
+                    ${(Math.max(0, bookingData.priceCents - depositPreviewCents) / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -303,7 +360,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Processing...
               </>
-            ) : requiresDeposit ? (
+            ) : willRequireDeposit ? (
               <>
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pay Deposit & Complete Booking
@@ -319,18 +376,9 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
 }
 
 export default function PaymentStep(props: Props) {
-  const depositAmount = props.bookingData.priceCents
-    ? Math.round(props.bookingData.priceCents * 0.2)
-    : 0;
-  const requiresDeposit = props.bookingData.appointmentType === "tattoo_session" && depositAmount > 0;
-
-  if (requiresDeposit) {
-    return (
-      <Elements stripe={stripePromise}>
-        <PaymentForm {...props} />
-      </Elements>
-    );
-  }
-
-  return <PaymentForm {...props} />;
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentForm {...props} />
+    </Elements>
+  );
 }
