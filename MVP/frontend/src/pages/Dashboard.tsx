@@ -158,7 +158,7 @@ const Dashboard: React.FC = () => {
     <div
       ref={scopeRef}
       id="dashboard-scope"
-      className="ink-scope min-h-dvh overflow-y-hidden flex flex-col"
+      className="ink-scope h-dvh overflow-y-hidden flex flex-col"
       style={{ background: shellBg, color: shellFg }}
     >
       {!bootDone && <Loading theme={theme} />}
