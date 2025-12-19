@@ -91,18 +91,27 @@ export default function Profile() {
     <div
       ref={scopeRef}
       id="dashboard-scope"
-      className="ink-scope flex flex-col min-h-screen"
+      className="ink-scope flex flex-col h-screen md:h-dvh"
       style={{ background: shellBg, color: shellFg }}
     >
       <Header />
       <main 
-        className="flex-1 flex items-start justify-center"
+        className="flex-1 flex items-start justify-center min-h-0"
         style={{ 
           opacity: fadeIn ? 1 : 0, 
           transition: `opacity ${FADE_MS}ms ease-in-out`,
         }}
       >
-        <div className="w-full max-w-7xl px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10 flex items-stretch justify-center py-3 xs:py-4 sm:py-5 md:py-6 lg:py-7 mt-3 xs:mt-4 sm:mt-5 md:mt-6 lg:mt-8 pb-6 xs:pb-7 sm:pb-8 md:pb-9 lg:pb-10">
+        <div 
+          className="w-full max-w-7xl flex items-stretch justify-center h-full"
+          style={{
+            paddingLeft: 'clamp(0.75rem, 2vw, 2.5rem)',
+            paddingRight: 'clamp(0.75rem, 2vw, 2.5rem)',
+            paddingTop: 'clamp(0.75rem, 2vh + 0.5vw, 2.5rem)',
+            paddingBottom: 'clamp(1.5rem, 3vh + 0.8vw, 3rem)',
+            marginTop: 'clamp(0.75rem, 1.5vh + 0.5vw, 2rem)'
+          } as React.CSSProperties}
+        >
           <Suspense fallback={null}>
             {role === "artist" ? <ArtistProfile /> : <ClientProfile />}
           </Suspense>

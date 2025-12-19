@@ -84,8 +84,18 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   const chip = (text: string, key?: string | number) => (
     <span
       key={key ?? text}
-      className={`rounded-full border ${fullScreen ? "px-3 py-1.5" : "px-1.5 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1"} ${fullScreen ? "text-sm" : "text-xs"}`}
-      style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
+      className={`rounded-full border ${fullScreen ? "px-3 py-1.5 text-sm" : ""}`}
+      style={fullScreen ? {
+        borderColor: "var(--border)", 
+        background: "color-mix(in oklab, var(--elevated) 92%, transparent)", 
+        color: "var(--fg)"
+      } : {
+        borderColor: "var(--border)", 
+        background: "color-mix(in oklab, var(--elevated) 92%, transparent)", 
+        color: "var(--fg)",
+        padding: 'clamp(0.25rem, 0.4vh + 0.1vw, 0.5rem) clamp(0.375rem, 0.6vh + 0.15vw, 0.75rem)',
+        fontSize: 'clamp(0.625rem, 0.9vh + 0.2vw, 0.75rem)'
+      } as React.CSSProperties}
     >
       {text}
     </span>
@@ -97,20 +107,29 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
 
   const shellClass = fullScreen
     ? "group w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition"
-    : "group w-full flex flex-col rounded-3xl border bg-card/90 transition";
+    : "group w-full h-full flex flex-col rounded-3xl border bg-card/90 transition";
 
   return (
     <div
-      className={fullScreen ? "h-full w-full min-h-0 flex items-center justify-center" : undefined}
+      className={fullScreen ? "h-full w-full min-h-0 flex items-center justify-center" : "h-full w-full"}
       style={
         fullScreen
           ? ({ padding: "6px" } as React.CSSProperties)
-          : undefined
+          : ({ minHeight: 0 } as React.CSSProperties)
       }
     >
-      <div className={shellClass} style={{ borderColor: "var(--border)" }} data-artist-card="true">
+      <div className={shellClass} style={{ borderColor: "var(--border)", minHeight: 0 }} data-artist-card="true">
         <div className={`relative w-full flex-shrink-0 flex items-center justify-center ${fullScreen ? "px-3 pt-2" : ""}`}>
-          <div className={`relative flex-shrink-0 ${fullScreen ? "h-[16rem] w-full rounded-2xl" : "h-[10rem] w-full"} sm:h-[11rem] md:h-[12rem] lg:h-[13rem] overflow-hidden`} style={{ background: "var(--elevated)" }}>
+          <div 
+            className={`relative flex-shrink-0 w-full rounded-2xl overflow-hidden ${fullScreen ? "" : ""}`} 
+            style={fullScreen ? {
+              height: "16rem",
+              background: "var(--elevated)"
+            } : {
+              height: 'clamp(10rem, 12vh + 1.5vw, 16rem)',
+              background: "var(--elevated)"
+            } as React.CSSProperties}
+          >
             {bgOk && artist.coverImage ? (
               <img
                 src={artist.coverImage}
@@ -126,7 +145,20 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
             <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "clamp(2.5rem, 3vw, 3.5rem)", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
             <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 ${fullScreen ? "-translate-y-1/2" : "-translate-y-[60%] sm:-translate-y-1/2"} grid place-items-center gap-2`}>
-              <div className={`relative rounded-full overflow-hidden ${fullScreen ? "h-40 w-40" : "h-24 w-24"} sm:h-28 sm:w-28 md:h-28 md:w-28 lg:h-32 lg:w-32 shadow-2xl ring-2 ring-[color:var(--card)]`} style={{ border: `1px solid var(--border)`, background: "var(--card)" }}>
+              <div 
+                className={`relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] ${fullScreen ? "" : ""}`} 
+                style={fullScreen ? {
+                  width: "10rem",
+                  height: "10rem",
+                  border: `1px solid var(--border)`, 
+                  background: "var(--card)"
+                } : {
+                  width: 'clamp(6rem, 7vh + 1.2vw, 9rem)',
+                  height: 'clamp(6rem, 7vh + 1.2vw, 9rem)',
+                  border: `1px solid var(--border)`, 
+                  background: "var(--card)"
+                } as React.CSSProperties}
+              >
                 {avatarOk && profileImageUrl ? (
                   <img
                     src={profileImageUrl}
@@ -137,7 +169,16 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
                     onError={() => setAvatarOk(false)}
                   />
                 ) : (
-                  <span className={`absolute inset-0 grid place-items-center font-semibold ${fullScreen ? "text-4xl" : "text-xl sm:text-xl md:text-2xl lg:text-2xl"}`} style={{ color: "var(--fg)" }}>
+                  <span 
+                    className="absolute inset-0 grid place-items-center font-semibold" 
+                    style={fullScreen ? {
+                      color: "var(--fg)",
+                      fontSize: "2.25rem"
+                    } : {
+                      color: "var(--fg)",
+                      fontSize: 'clamp(1.25rem, 2vh + 0.5vw, 2rem)'
+                    } as React.CSSProperties}
+                  >
                     {initials}
                   </span>
                 )}
@@ -147,29 +188,82 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         </div>
 
         <div
-          className={`${fullScreen ? "px-3 pt-2 pb-2 flex-1 min-h-0 flex flex-col items-center justify-center" : "px-3 pt-2.5 pb-3 sm:px-3.5 sm:pt-3 sm:pb-3.5 md:px-4 md:pt-3.5 md:pb-4 flex flex-col items-center"} ${fullScreen ? "gap-3" : "gap-2 sm:gap-2.5 md:gap-3"}`}
+          className={`${fullScreen ? "px-3 pt-2 pb-2 flex-1 min-h-0 flex flex-col items-center justify-center" : "flex flex-col items-center flex-1 min-h-0"}`}
+          style={fullScreen ? {} : {
+            padding: 'clamp(0.75rem, 2vh + 0.5vw, 1.5rem) clamp(0.75rem, 1.5vh + 0.4vw, 1.25rem)',
+            gap: 'clamp(0.5rem, 1vh + 0.3vw, 1rem)'
+          } as React.CSSProperties}
         >
-          <div className={`flex flex-col items-center text-center w-full ${fullScreen ? "gap-3" : "gap-1.5 sm:gap-2 md:gap-2.5"}`}>
-            <h2 className={`font-extrabold tracking-tight ${fullScreen ? "text-3xl" : "text-base sm:text-lg md:text-xl"}`} style={{ color: "var(--fg)" }}>
+          <div 
+            className={`flex flex-col items-center text-center w-full ${fullScreen ? "gap-3" : ""}`}
+            style={fullScreen ? {} : {
+              gap: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)'
+            } as React.CSSProperties}
+          >
+            <h2 
+              className={`font-extrabold tracking-tight ${fullScreen ? "text-3xl" : ""}`} 
+              style={fullScreen ? { color: "var(--fg)" } : {
+                color: "var(--fg)",
+                fontSize: 'clamp(0.875rem, 1.5vh + 0.5vw, 1.5rem)'
+              } as React.CSSProperties}
+            >
               {artist.username}
             </h2>
             <button
               type="button"
               onClick={openProfile}
-              className={`inline-flex items-center gap-1 rounded-lg ${fullScreen ? "px-4 py-2 text-base" : "px-2 py-1 text-xs sm:text-xs md:text-sm"} font-medium transition border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30 hover:-translate-y-0.5`}
-              style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 88%, transparent)", color: "var(--fg)", whiteSpace: "nowrap" }}
+              className={`inline-flex items-center gap-1 rounded-lg ${fullScreen ? "px-4 py-2 text-base" : ""} font-medium transition border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30 hover:-translate-y-0.5`}
+              style={fullScreen ? {
+                borderColor: "var(--border)", 
+                background: "color-mix(in oklab, var(--elevated) 88%, transparent)", 
+                color: "var(--fg)", 
+                whiteSpace: "nowrap"
+              } : {
+                borderColor: "var(--border)", 
+                background: "color-mix(in oklab, var(--elevated) 88%, transparent)", 
+                color: "var(--fg)", 
+                whiteSpace: "nowrap",
+                padding: 'clamp(0.25rem, 0.6vh + 0.2vw, 0.625rem) clamp(0.5rem, 1vh + 0.3vw, 0.875rem)',
+                fontSize: 'clamp(0.625rem, 1vh + 0.3vw, 0.875rem)'
+              } as React.CSSProperties}
               aria-label="View Full Portfolio"
               title="View Full Portfolio"
             >
               View Full Portfolio
-              <svg className={`${fullScreen ? "h-5 w-5" : "h-3 w-3 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5"}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+              <svg 
+                className={fullScreen ? "h-5 w-5" : ""} 
+                style={fullScreen ? {} : {
+                  width: 'clamp(0.75rem, 1.2vh + 0.3vw, 1rem)',
+                  height: 'clamp(0.75rem, 1.2vh + 0.3vw, 1rem)'
+                } as React.CSSProperties}
+                viewBox="0 0 20 20" 
+                fill="currentColor" 
+                aria-hidden
+              >
                 <path d="M12.293 4.293a1 1 0 011.414 0L18 8.586a2 2 0 010 2.828l-4.293 4.293a1 1 0 01-1.414-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 010-1.414z" />
               </svg>
             </button>
-            <p className={`${fullScreen ? "text-base" : "text-xs"} leading-snug max-w-prose ${fullScreen ? "mt-1" : "mt-0.5 sm:mt-1 md:mt-1"}`} style={{ color: "color-mix(in oklab, var(--fg) 75%, transparent)" }}>
+            <p 
+              className={`${fullScreen ? "text-base" : ""} leading-snug max-w-prose`} 
+              style={fullScreen ? {
+                color: "color-mix(in oklab, var(--fg) 75%, transparent)",
+                marginTop: '0.25rem'
+              } : {
+                color: "color-mix(in oklab, var(--fg) 75%, transparent)",
+                marginTop: 'clamp(0.125rem, 0.4vh + 0.1vw, 0.5rem)',
+                fontSize: 'clamp(0.625rem, 1vh + 0.25vw, 0.875rem)'
+              } as React.CSSProperties}
+            >
               {bioText}
             </p>
-            <div className={`${fullScreen ? "mt-2" : "mt-0.5 sm:mt-1 md:mt-1"} flex flex-wrap items-center justify-center gap-1 sm:gap-1 md:gap-1.5 ${fullScreen ? "text-sm" : ""}`}>
+            <div 
+              className={`${fullScreen ? "mt-2" : ""} flex flex-wrap items-center justify-center ${fullScreen ? "text-sm" : ""}`}
+              style={fullScreen ? {} : {
+                marginTop: 'clamp(0.125rem, 0.4vh + 0.1vw, 0.5rem)',
+                gap: 'clamp(0.25rem, 0.5vh + 0.15vw, 0.5rem)',
+                fontSize: 'clamp(0.625rem, 0.9vh + 0.2vw, 0.75rem)'
+              } as React.CSSProperties}
+            >
               {stylesPrimary.map((s, i) => chip(s, `${s}-${i}`))}
               {stylesOverflow > 0 && chip(`+${stylesOverflow} more`, "styles-overflow")}
               {shopLabel && chip(shopLabel, "shop")}
@@ -179,14 +273,28 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           </div>
 
           {recentWorks.length > 0 && (
-            <div className={`${fullScreen ? "mt-2" : "mt-1.5 sm:mt-2 md:mt-2"} flex-shrink-0 ${fullScreen ? "w-full max-w-full mx-auto px-2" : "px-3 sm:px-3 md:px-4"}`}>
+            <div 
+              className={`${fullScreen ? "mt-2 w-full max-w-full mx-auto px-2" : "flex-shrink-0"}`}
+              style={fullScreen ? {} : {
+                marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)',
+                paddingLeft: 'clamp(0.75rem, 1.5vh + 0.4vw, 1.25rem)',
+                paddingRight: 'clamp(0.75rem, 1.5vh + 0.4vw, 1.25rem)'
+              } as React.CSSProperties}
+            >
               <Grid images={recentWorks} />
             </div>
           )}
 
           {!fullScreen && healedWorks.length > 0 && (
-            <div className="mt-1.5 sm:mt-2 md:mt-2">
-              <h4 className="text-xs font-semibold mb-1 sm:mb-1 md:mb-1.5" style={{ color: "var(--fg)" }}>
+            <div style={{ marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)' } as React.CSSProperties}>
+              <h4 
+                className="font-semibold" 
+                style={{ 
+                  color: "var(--fg)",
+                  fontSize: 'clamp(0.625rem, 0.9vh + 0.2vw, 0.75rem)',
+                  marginBottom: 'clamp(0.25rem, 0.5vh + 0.15vw, 0.5rem)'
+                } as React.CSSProperties}
+              >
                 Healed Works
               </h4>
               <Grid images={healedWorks} />
@@ -194,8 +302,15 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           )}
 
           {!fullScreen && sketches.length > 0 && (
-            <div className="mt-1.5 sm:mt-2 md:mt-2">
-              <h4 className="text-xs font-semibold mb-1 sm:mb-1 md:mb-1.5" style={{ color: "var(--fg)" }}>
+            <div style={{ marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)' } as React.CSSProperties}>
+              <h4 
+                className="font-semibold" 
+                style={{ 
+                  color: "var(--fg)",
+                  fontSize: 'clamp(0.625rem, 0.9vh + 0.2vw, 0.75rem)',
+                  marginBottom: 'clamp(0.25rem, 0.5vh + 0.15vw, 0.5rem)'
+                } as React.CSSProperties}
+              >
                 Sketches
               </h4>
               <Grid images={sketches} />

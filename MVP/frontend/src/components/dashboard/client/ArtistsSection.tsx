@@ -325,7 +325,7 @@ export default function ArtistsSection({
     const atEnd = currentIndex >= lastIndex;
 
     return (
-        <div className={`${isMdUp ? "grid grid-rows-[auto,1fr]" : "flex flex-col"} h-full min-h-0 w-full`} style={{ minHeight: `${sectionMinPx}px` }}>
+        <div className={`${isMdUp ? "grid grid-rows-[auto,1fr]" : "flex flex-col"} h-full min-h-0 w-full`}>
             <div ref={filterRef} className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
@@ -385,7 +385,7 @@ export default function ArtistsSection({
 
                 <div
                     className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full`}
-                    style={{ minHeight: `${isMdUp ? minGridPx : 0}px`, height: "100%" }}
+                    style={{ height: "100%" }}
                 >
                     <div className="md:hidden h-full w-full relative" style={{ height: "100%" }}>
                         {listItems.length > 0 ? (
@@ -455,25 +455,35 @@ export default function ArtistsSection({
                         )}
                     </div>
 
-                    <div className="hidden md:block h-full min-h-0">
+                    <div className="hidden md:block h-full min-h-0 overflow-hidden">
                         {listItems.length > 0 ? (
-                            <div className="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.5rem)', padding: '16px 0', alignContent: 'start' }}>
+                            <div 
+                                className="w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3" 
+                                style={{ 
+                                    gap: 'clamp(0.75rem, 1vmin + 0.5vw, 2rem)', 
+                                    padding: 'clamp(12px, 1.5vh + 0.5vw, 24px) 0',
+                                    gridAutoRows: '1fr',
+                                    alignContent: 'start',
+                                    height: '100%'
+                                }}
+                            >
                                 {listItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ duration: 0.2 }}
-                                        className="w-full"
+                                        className="w-full h-full"
+                                        style={{ minHeight: 0, display: 'flex' }}
                                     >
-                                        <div className="w-full" data-artist-card="true">
+                                        <div className="w-full h-full flex" data-artist-card="true" style={{ minHeight: 0 }}>
                                             <ArtistCard artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any} onClick={() => onSelectArtist(artist)} />
                                         </div>
                                     </motion.div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="min-h-full" style={{ minHeight: `${minGridPx}px`, height: `${minGridPx}px`, padding: '16px 0' }}>
+                            <div className="h-full" style={{ padding: '16px 0' }}>
                                 <div className="w-full h-full grid place-items-center">
                                     <div className="text-center max-w-prose">
                                         <p className="font-semibold" style={{ color: "var(--fg)", fontSize: 'clamp(1rem, 1.2vmin + 0.6vw, 1.125rem)' }}>No artists match your filters.</p>

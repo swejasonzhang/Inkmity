@@ -138,9 +138,9 @@ export default function ClientDashboard() {
                     }
                 }
             `}</style>
-            <div className="h-dvh md:min-h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root">
+            <div className="h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root">
             <Header />
-            <div className="sm:hidden" style={{ padding: '0 16px', marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+            <div className="sm:hidden" style={{ padding: '0 clamp(12px, 1.5vw, 24px)', marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={setPriceFilter}
@@ -165,7 +165,7 @@ export default function ClientDashboard() {
                     className="mb-3"
                 />
             </div>
-            <main className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ padding: '0 16px' }}>
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ padding: '0 clamp(12px, 1.5vw, 24px)' }}>
                 {error && !initialized ? (
                     <div className="flex-1 min-h-0 w-full flex items-center justify-center" style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
                         <div className="w-full max-w-2xl rounded-lg border border-red-500/30 bg-red-500/10" style={{ padding: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
@@ -263,7 +263,7 @@ export default function ClientDashboard() {
                     </>
                 )}
             </main>
-            <div className="shrink-0" style={{ padding: '16px' }}>
+            <div className="shrink-0" style={{ padding: 'clamp(12px, 1.5vw, 24px)' }}>
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
