@@ -426,17 +426,17 @@ export default function Appointments() {
             No appointments found
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-6 text-app">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            <div className="text-center flex flex-col min-h-0 w-full">
+              <h2 className="text-2xl font-bold mb-6 text-app flex-shrink-0">
                 Pending ({pendingAppointments.length})
               </h2>
               {pendingAppointments.length === 0 ? (
-                <div className="text-center py-10 text-muted">
+                <div className="text-center py-10 text-muted flex-1 flex items-center justify-center min-h-[200px]">
                   No pending appointments
                 </div>
               ) : (
-                <div className="grid gap-6 max-w-2xl mx-auto">
+                <div className="grid gap-6 max-w-2xl mx-auto w-full flex-1 min-h-0">
                   {pendingAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -444,16 +444,16 @@ export default function Appointments() {
               )}
             </div>
 
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-6 text-app">
+            <div className="text-center flex flex-col min-h-0 w-full">
+              <h2 className="text-2xl font-bold mb-6 text-app flex-shrink-0">
                 Past ({pastAppointments.length})
               </h2>
               {pastAppointments.length === 0 ? (
-                <div className="text-center py-10 text-muted">
+                <div className="text-center py-10 text-muted flex-1 flex items-center justify-center min-h-[200px]">
                   No past appointments
                 </div>
               ) : (
-                <div className="grid gap-6 max-w-2xl mx-auto">
+                <div className="grid gap-6 max-w-2xl mx-auto w-full flex-1 min-h-0">
                   {pastAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
