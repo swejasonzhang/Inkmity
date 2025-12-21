@@ -61,7 +61,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
 
   const Grid: React.FC<{ images: string[]; eager?: number }> = ({ images, eager = 6 }) =>
     images.length ? (
-      <div className={`grid ${fullScreen ? "grid-cols-3" : "grid-cols-3"} ${fullScreen ? "gap-1" : "gap-0.5 sm:gap-1 md:gap-1"}`}>
+      <div className={`grid ${fullScreen ? "grid-cols-3" : "grid-cols-3"} ${fullScreen ? "gap-1" : "gap-0.5 sm:gap-1 md:gap-1"} w-full max-w-full`}>
         {(fullScreen ? images.slice(0, 3) : images).map((src, i) => (
           <div
             key={`${src}-${i}`}
@@ -93,8 +93,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         borderColor: "var(--border)", 
         background: "color-mix(in oklab, var(--elevated) 92%, transparent)", 
         color: "var(--fg)",
-        padding: 'clamp(0.25rem, 0.4vh + 0.1vw, 0.5rem) clamp(0.375rem, 0.6vh + 0.15vw, 0.75rem)',
-        fontSize: 'clamp(0.625rem, 0.9vh + 0.2vw, 0.75rem)'
+        padding: 'clamp(0.375rem, 0.6vh + 0.15vw, 0.625rem) clamp(0.5rem, 0.8vh + 0.2vw, 0.875rem)',
+        fontSize: 'clamp(0.6875rem, 1vh + 0.25vw, 0.875rem)'
       } as React.CSSProperties}
     >
       {text}
@@ -107,7 +107,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
 
   const shellClass = fullScreen
     ? "group w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition"
-    : "group w-full h-full flex flex-col rounded-3xl border bg-card/90 transition";
+    : "group w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition";
 
   return (
     <div
@@ -126,7 +126,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               height: "16rem",
               background: "var(--elevated)"
             } : {
-              height: 'clamp(10rem, 12vh + 1.5vw, 16rem)',
+              height: 'clamp(10rem, 14vh + 2vw, 18rem)',
               background: "var(--elevated)"
             } as React.CSSProperties}
           >
@@ -143,7 +143,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
             )}
             <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "clamp(2.5rem, 3vw, 3.5rem)", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "clamp(3rem, 4vw, 4.5rem)", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
             <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 ${fullScreen ? "-translate-y-1/2" : "-translate-y-[60%] sm:-translate-y-1/2"} grid place-items-center gap-2`}>
               <div 
                 className={`relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] ${fullScreen ? "" : ""}`} 
@@ -153,8 +153,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
                   border: `1px solid var(--border)`, 
                   background: "var(--card)"
                 } : {
-                  width: 'clamp(6rem, 7vh + 1.2vw, 9rem)',
-                  height: 'clamp(6rem, 7vh + 1.2vw, 9rem)',
+                  width: 'clamp(7rem, 9vh + 1.5vw, 11rem)',
+                  height: 'clamp(7rem, 9vh + 1.5vw, 11rem)',
                   border: `1px solid var(--border)`, 
                   background: "var(--card)"
                 } as React.CSSProperties}
@@ -176,7 +176,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
                       fontSize: "2.25rem"
                     } : {
                       color: "var(--fg)",
-                      fontSize: 'clamp(1.25rem, 2vh + 0.5vw, 2rem)'
+                      fontSize: 'clamp(1.75rem, 2.5vh + 0.8vw, 2.75rem)'
                     } as React.CSSProperties}
                   >
                     {initials}
@@ -188,23 +188,26 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         </div>
 
         <div
-          className={`${fullScreen ? "px-3 pt-2 pb-2 flex-1 min-h-0 flex flex-col items-center justify-center" : "flex flex-col items-center flex-1 min-h-0"}`}
+          className={`${fullScreen ? "px-3 pt-2 pb-2 flex-1 min-h-0 flex flex-col items-center justify-center" : "flex flex-col items-center flex-1 min-h-0 w-full"}`}
           style={fullScreen ? {} : {
-            padding: 'clamp(0.75rem, 2vh + 0.5vw, 1.5rem) clamp(0.75rem, 1.5vh + 0.4vw, 1.25rem)',
-            gap: 'clamp(0.5rem, 1vh + 0.3vw, 1rem)'
+            padding: 'clamp(0.75rem, 1.8vh + 0.5vw, 1.5rem) clamp(0.875rem, 1.8vh + 0.5vw, 1.5rem)',
+            gap: 'clamp(0.5rem, 1.2vh + 0.3vw, 1rem)',
+            width: '100%'
           } as React.CSSProperties}
         >
           <div 
-            className={`flex flex-col items-center text-center w-full ${fullScreen ? "gap-3" : ""}`}
+            className={`flex flex-col items-center text-center w-full flex-1 ${fullScreen ? "gap-3" : ""}`}
             style={fullScreen ? {} : {
-              gap: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)'
+              gap: 'clamp(0.5rem, 1.2vh + 0.3vw, 1rem)',
+              width: '100%',
+              minWidth: 0
             } as React.CSSProperties}
           >
             <h2 
               className={`font-extrabold tracking-tight ${fullScreen ? "text-3xl" : ""}`} 
               style={fullScreen ? { color: "var(--fg)" } : {
                 color: "var(--fg)",
-                fontSize: 'clamp(0.875rem, 1.5vh + 0.5vw, 1.5rem)'
+                fontSize: 'clamp(1rem, 1.6vh + 0.6vw, 1.5rem)'
               } as React.CSSProperties}
             >
               {artist.username}
@@ -223,8 +226,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
                 background: "color-mix(in oklab, var(--elevated) 88%, transparent)", 
                 color: "var(--fg)", 
                 whiteSpace: "nowrap",
-                padding: 'clamp(0.25rem, 0.6vh + 0.2vw, 0.625rem) clamp(0.5rem, 1vh + 0.3vw, 0.875rem)',
-                fontSize: 'clamp(0.625rem, 1vh + 0.3vw, 0.875rem)'
+                padding: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem) clamp(0.625rem, 1.2vh + 0.3vw, 1rem)',
+                fontSize: 'clamp(0.6875rem, 1.1vh + 0.3vw, 0.9375rem)'
               } as React.CSSProperties}
               aria-label="View Full Portfolio"
               title="View Full Portfolio"
@@ -233,8 +236,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               <svg 
                 className={fullScreen ? "h-5 w-5" : ""} 
                 style={fullScreen ? {} : {
-                  width: 'clamp(0.75rem, 1.2vh + 0.3vw, 1rem)',
-                  height: 'clamp(0.75rem, 1.2vh + 0.3vw, 1rem)'
+                  width: 'clamp(0.875rem, 1.4vh + 0.35vw, 1.125rem)',
+                  height: 'clamp(0.875rem, 1.4vh + 0.35vw, 1.125rem)'
                 } as React.CSSProperties}
                 viewBox="0 0 20 20" 
                 fill="currentColor" 
@@ -244,14 +247,16 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               </svg>
             </button>
             <p 
-              className={`${fullScreen ? "text-base" : ""} leading-snug max-w-prose`} 
+              className={`${fullScreen ? "text-base" : ""} leading-snug w-full`} 
               style={fullScreen ? {
                 color: "color-mix(in oklab, var(--fg) 75%, transparent)",
                 marginTop: '0.25rem'
               } : {
                 color: "color-mix(in oklab, var(--fg) 75%, transparent)",
-                marginTop: 'clamp(0.125rem, 0.4vh + 0.1vw, 0.5rem)',
-                fontSize: 'clamp(0.625rem, 1vh + 0.25vw, 0.875rem)'
+                marginTop: 'clamp(0.125rem, 0.3vh + 0.1vw, 0.375rem)',
+                fontSize: 'clamp(0.5625rem, 0.85vh + 0.2vw, 0.8125rem)',
+                width: '100%',
+                maxWidth: '100%'
               } as React.CSSProperties}
             >
               {bioText}
@@ -259,9 +264,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             <div 
               className={`${fullScreen ? "mt-2" : ""} flex flex-wrap items-center justify-center ${fullScreen ? "text-sm" : ""}`}
               style={fullScreen ? {} : {
-                marginTop: 'clamp(0.125rem, 0.4vh + 0.1vw, 0.5rem)',
-                gap: 'clamp(0.25rem, 0.5vh + 0.15vw, 0.5rem)',
-                fontSize: 'clamp(0.625rem, 0.9vh + 0.2vw, 0.75rem)'
+                marginTop: 'clamp(0.25rem, 0.6vh + 0.15vw, 0.625rem)',
+                gap: 'clamp(0.375rem, 0.7vh + 0.2vw, 0.625rem)',
+                fontSize: 'clamp(0.6875rem, 1vh + 0.25vw, 0.875rem)'
               } as React.CSSProperties}
             >
               {stylesPrimary.map((s, i) => chip(s, `${s}-${i}`))}
@@ -274,11 +279,14 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
 
           {recentWorks.length > 0 && (
             <div 
-              className={`${fullScreen ? "mt-2 w-full max-w-full mx-auto px-2" : "flex-shrink-0"}`}
+              className={`${fullScreen ? "mt-2 w-full max-w-full mx-auto px-2" : "flex-shrink-0 w-full max-w-full mt-auto"}`}
               style={fullScreen ? {} : {
-                marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)',
-                paddingLeft: 'clamp(0.75rem, 1.5vh + 0.4vw, 1.25rem)',
-                paddingRight: 'clamp(0.75rem, 1.5vh + 0.4vw, 1.25rem)'
+                marginTop: 'auto',
+                paddingLeft: 'clamp(0.625rem, 1.2vh + 0.3vw, 1rem)',
+                paddingRight: 'clamp(0.625rem, 1.2vh + 0.3vw, 1rem)',
+                paddingTop: 'clamp(0.5rem, 0.8vh + 0.2vw, 0.75rem)',
+                paddingBottom: 'clamp(0.5rem, 0.8vh + 0.2vw, 0.75rem)',
+                width: '100%'
               } as React.CSSProperties}
             >
               <Grid images={recentWorks} />
@@ -286,7 +294,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           )}
 
           {!fullScreen && healedWorks.length > 0 && (
-            <div style={{ marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)' } as React.CSSProperties}>
+            <div className="w-full max-w-full flex-shrink-0" style={{ marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)', paddingLeft: 'clamp(0.625rem, 1.2vh + 0.3vw, 1rem)', paddingRight: 'clamp(0.625rem, 1.2vh + 0.3vw, 1rem)', paddingBottom: 'clamp(0.5rem, 0.8vh + 0.2vw, 0.75rem)', width: '100%' } as React.CSSProperties}>
               <h4 
                 className="font-semibold" 
                 style={{ 
@@ -302,7 +310,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           )}
 
           {!fullScreen && sketches.length > 0 && (
-            <div style={{ marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)' } as React.CSSProperties}>
+            <div className="w-full max-w-full flex-shrink-0" style={{ marginTop: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem)', paddingLeft: 'clamp(0.625rem, 1.2vh + 0.3vw, 1rem)', paddingRight: 'clamp(0.625rem, 1.2vh + 0.3vw, 1rem)', paddingBottom: 'clamp(0.5rem, 0.8vh + 0.2vw, 0.75rem)', width: '100%' } as React.CSSProperties}>
               <h4 
                 className="font-semibold" 
                 style={{ 
