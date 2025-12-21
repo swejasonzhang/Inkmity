@@ -184,8 +184,8 @@ export default function ClientAppointmentHistory() {
     );
 
     const Panel = ({ title, items }: { title: string; items: Booking[] }) => (
-        <Card className="w-full h-full min-h-0 flex flex-col shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-            <CardHeader className="text-center space-y-1 px-3 sm:px-6 flex-shrink-0">
+        <Card className="w-full h-full min-h-0 flex flex-col shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", minHeight: "100%" }}>
+            <CardHeader className="text-center space-y-1 px-3 sm:px-6 flex-shrink-0" style={{ minHeight: "auto" }}>
                 <CardTitle className="text-base sm:text-lg break-words">
                     {title} {typeof items?.length === "number" ? `(${items.length})` : ""}
                 </CardTitle>
@@ -195,6 +195,7 @@ export default function ClientAppointmentHistory() {
                     "px-4 sm:px-6 pb-6 flex-1 overflow-y-auto min-h-0",
                     items.length === 0 ? "flex items-center justify-center" : "",
                 ].join(" ")}
+                style={{ flex: "1 1 auto", minHeight: 0 }}
             >
                 {items.length === 0 ? (
                     <Empty title={`No ${title.toLowerCase()}`} subtitle="Your bookings will appear here" />
@@ -223,7 +224,7 @@ export default function ClientAppointmentHistory() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full min-h-0 items-stretch">
                     <Panel title="Pending" items={pendingBookings} />
                     <Panel title="Past" items={pastBookings} />
                 </div>
