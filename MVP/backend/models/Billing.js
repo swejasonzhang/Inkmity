@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const BillingSchema = new mongoose.Schema({
   bookingId: { type: mongoose.Types.ObjectId, ref: "Booking", index: true },
-  artistId: { type: mongoose.Types.ObjectId, index: true },
-  clientId: { type: mongoose.Types.ObjectId, index: true },
+  artistId: { type: String, required: true, index: true },
+  clientId: { type: String, required: true, index: true },
   type: {
     type: String,
     enum: ["platform_fee", "deposit", "final_payment"],
