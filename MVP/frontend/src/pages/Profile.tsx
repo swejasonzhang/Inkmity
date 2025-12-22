@@ -96,14 +96,14 @@ export default function Profile() {
     >
       <Header />
       <main 
-        className="flex-1 flex items-start justify-center min-h-0"
+        className="flex-1 flex items-start justify-center min-h-0 overflow-y-auto"
         style={{ 
           opacity: fadeIn ? 1 : 0, 
           transition: `opacity ${FADE_MS}ms ease-in-out`,
         }}
       >
         <div 
-          className="w-full max-w-7xl flex items-stretch justify-center h-full"
+          className="w-full max-w-7xl flex items-stretch justify-center"
           style={{
             paddingLeft: 'clamp(0.75rem, 2vw, 2.5rem)',
             paddingRight: 'clamp(0.75rem, 2vw, 2.5rem)',
