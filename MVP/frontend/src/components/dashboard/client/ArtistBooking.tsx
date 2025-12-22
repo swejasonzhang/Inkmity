@@ -3,10 +3,12 @@ import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useApi, isAbortError } from "@/api";
+import { useApi, isAbortError, getBookingGate, type BookingGate } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Lock } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 
 type BookingProps = {
   artist: ArtistWithGroups;
@@ -25,6 +27,7 @@ type Gate = {
 
 export default function ArtistBooking({ artist, onBack, onClose }: BookingProps) {
   const { request } = useApi();
+  const { user } = useUser();
   const apiOrigin =
     (import.meta as any)?.env?.VITE_API_URL ||
     import.meta.env?.VITE_API_URL ||
@@ -34,6 +37,8 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   const [errorMsg, setErrorMsg] = useState("");
   const [gate, setGate] = useState<Gate | null>(null);
   const [gateReady, setGateReady] = useState(true);
+  const [bookingGate, setBookingGate] = useState<BookingGate | null>(null);
+  const [bookingGateReady, setBookingGateReady] = useState(false);
   const sentRef = useRef(false);
   const fetchingRef = useRef(false);
   const lastArtistIdRef = useRef<string | undefined>(undefined);
@@ -115,6 +120,33 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     window.addEventListener("ink:open-booking", handler as EventListener);
     return () => window.removeEventListener("ink:open-booking", handler as EventListener);
   }, []);
+
+  useEffect(() => {
+    const artistId = artist?.clerkId;
+    const clientId = user?.id;
+    if (!artistId || !clientId || bookingGateReady) return;
+    
+    const ac = new AbortController();
+    let mounted = true;
+    
+    (async () => {
+      try {
+        const gate = await getBookingGate(artistId, clientId, ac.signal);
+        if (!mounted) return;
+        setBookingGate(gate);
+        setBookingGateReady(true);
+      } catch (e) {
+        if (!mounted || isAbortError(e)) return;
+        console.error("[ArtistBooking] booking gate fetch failed", { artistId, error: e });
+        setBookingGateReady(true);
+      }
+    })();
+    
+    return () => {
+      mounted = false;
+      ac.abort();
+    };
+  }, [artist?.clerkId, user?.id, bookingGateReady]);
 
   const isPending = gate === null ? false : (gate?.lastStatus === "pending" && !gate?.allowed) || status === "sent";
   const hasExistingChat = gate === null ? false : !!(gate?.allowed || gate?.lastStatus === "accepted");
@@ -305,16 +337,36 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
             <CardTitle className="text-base sm:text-lg ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>Book an appointment</CardTitle>
           </CardHeader>
           <CardContent className="p-2 sm:p-5 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 items-stretch ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-              <div className="min-h-[360px] sm:min-h-[420px] ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-                <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
+            {!bookingGateReady ? (
+              <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px]">
+                <p className="text-sm" style={{ color: "var(--fg)" }}>Loading...</p>
               </div>
-              <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2 ink-no-anim" style={{ background: "var(--elevated)", color: "var(--fg)", transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-                <div className="w-full max-w-[920px] p-2 sm:p-3 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-                  <BookingPicker artistId={artist.clerkId} date={date} />
+            ) : bookingGate?.enabled ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 items-stretch ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+                <div className="min-h-[360px] sm:min-h-[420px] ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+                  <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
+                </div>
+                <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2 ink-no-anim" style={{ background: "var(--elevated)", color: "var(--fg)", transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+                  <div className="w-full max-w-[920px] p-2 sm:p-3 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+                    <BookingPicker artistId={artist.clerkId} date={date} />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center min-h-[360px] sm:min-h-[480px] gap-4 px-4 text-center">
+                <div className="p-4 rounded-full" style={{ background: "var(--elevated)" }}>
+                  <Lock className="w-8 h-8" style={{ color: "var(--fg)" }} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold" style={{ color: "var(--fg)" }}>
+                    Appointments are currently locked
+                  </h3>
+                  <p className="text-sm max-w-md" style={{ color: "var(--fg)" }}>
+                    {bookingGate?.message || "The artist needs to enable appointments before you can book."}
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

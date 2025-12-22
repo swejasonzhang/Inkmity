@@ -612,6 +612,7 @@ export type ArtistPolicy = {
     nonRefundable?: boolean;
     cutoffHours?: number;
   };
+  bookingEnabled?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -623,12 +624,57 @@ export async function getArtistPolicy(artistId: string, signal?: AbortSignal) {
 export async function updateArtistPolicy(
   artistId: string,
   deposit: NonNullable<ArtistPolicy["deposit"]>,
+  bookingEnabled?: boolean,
   token?: string,
   signal?: AbortSignal
 ) {
   return apiRequest<ArtistPolicy>(
     `/artist-policy/${artistId}`,
-    { method: "PUT", body: JSON.stringify({ deposit }), signal },
+    { method: "PUT", body: JSON.stringify({ deposit, bookingEnabled }), signal },
     token
+  );
+}
+
+export type BookingGate = {
+  enabled: boolean;
+  depositConfigured: boolean;
+  message: string;
+};
+
+export async function getBookingGate(artistId: string, clientId?: string, signal?: AbortSignal) {
+  const params = clientId ? `?clientId=${encodeURIComponent(clientId)}` : "";
+  return apiGet<BookingGate>(`/artist-policy/${artistId}/booking-gate${params}`, undefined, undefined, signal);
+}
+
+export async function enableClientBookings(
+  artistId: string,
+  clientId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<{ ok: boolean; permission?: any; message?: string }>(
+    "/artist-policy/enable-client-bookings",
+    { artistId, clientId },
+    token,
+    signal
+  );
+}
+
+export type ConsultationStatus = {
+  hasCompletedConsultation: boolean;
+  consultationDate: string | null;
+};
+
+export async function checkConsultationStatus(
+  artistId: string,
+  clientId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<ConsultationStatus>(
+    `/bookings/consultation-status?artistId=${encodeURIComponent(artistId)}&clientId=${encodeURIComponent(clientId)}`,
+    undefined,
+    token,
+    signal
   );
 }

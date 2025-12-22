@@ -17,6 +17,7 @@ const ArtistPolicySchema = new mongoose.Schema(
       nonRefundable: { type: Boolean, default: true },
       cutoffHours: { type: Number, default: 48, min: 0 },
     },
+    bookingEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

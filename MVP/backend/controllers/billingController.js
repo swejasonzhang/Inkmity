@@ -11,6 +11,40 @@ let WebhookEvent;
 const PLATFORM_FEE_CENTS = 1000;
 const CURRENCY = "usd";
 
+const STRIPE_APPEARANCE = {
+  theme: "night",
+  variables: {
+    colorPrimary: "#000000",
+    colorBackground: "#0b0b0b",
+    colorText: "#f5f5f5",
+    colorDanger: "#ef4444",
+    fontFamily: "system-ui, -apple-system, sans-serif",
+    borderRadius: "12px",
+  },
+  rules: {
+    ".Input": {
+      backgroundColor: "#1a1a1a",
+      borderColor: "rgba(255, 255, 255, 0.2)",
+      color: "#f5f5f5",
+    },
+    ".Input:focus": {
+      borderColor: "#000000",
+      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.3)",
+    },
+    ".Label": {
+      color: "#f5f5f5",
+    },
+    ".Tab": {
+      backgroundColor: "#1a1a1a",
+      color: "#f5f5f5",
+    },
+    ".Tab--selected": {
+      backgroundColor: "#000000",
+      color: "#ffffff",
+    },
+  },
+};
+
 function requireBooking(booking) {
   if (!booking) {
     const e = new Error("booking_not_found");
@@ -56,6 +90,7 @@ export async function checkoutPlatformFee(req, res) {
         quantity: 1,
       },
     ],
+    appearance: STRIPE_APPEARANCE,
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
@@ -147,6 +182,7 @@ export async function checkoutDeposit(req, res) {
         quantity: 1,
       },
     ],
+    appearance: STRIPE_APPEARANCE,
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
