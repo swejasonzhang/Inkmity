@@ -89,7 +89,7 @@ export async function checkoutDeposit(req, res) {
   let customer;
   try {
     const existingBills = await Billing.find({
-      clientId: booking.clientId,
+      clientId: String(booking.clientId),
       stripeCustomerId: { $exists: true, $ne: null },
     }).limit(1);
     if (existingBills.length > 0 && existingBills[0].stripeCustomerId) {
@@ -181,7 +181,7 @@ export async function createDepositPaymentIntent(req, res) {
   let customer;
   try {
     const existingBills = await Billing.find({
-      clientId: booking.clientId,
+      clientId: String(booking.clientId),
       stripeCustomerId: { $exists: true, $ne: null },
     }).limit(1);
     if (existingBills.length > 0 && existingBills[0].stripeCustomerId) {
@@ -308,7 +308,7 @@ export async function createFinalPaymentIntent(req, res) {
   let customer;
   try {
     const existingBills = await Billing.find({
-      clientId: booking.clientId,
+      clientId: String(booking.clientId),
       stripeCustomerId: { $exists: true, $ne: null },
     }).limit(1);
     if (existingBills.length > 0 && existingBills[0].stripeCustomerId) {
