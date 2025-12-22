@@ -434,6 +434,18 @@ export async function startCheckout(
   }>("/billing/checkout", { bookingId, label }, token, signal);
 }
 
+export async function checkoutDeposit(
+  bookingId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<{
+    url?: string;
+    id?: string;
+    clientSecret?: string;
+  }>("/billing/deposit", { bookingId }, token, signal);
+}
+
 export async function refundByBooking(
   bookingId: string,
   token?: string,

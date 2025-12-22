@@ -16,6 +16,7 @@ import {
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
+import DepositStep from "./DepositStep"
 
 type Kind = "consultation" | "appointment"
 type Props = { artistId: string; date?: Date }
@@ -81,6 +82,8 @@ export default function BookingPicker({ artistId, date }: Props) {
   const [selected, setSelected] = useState<Slot | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [depositStepOpen, setDepositStepOpen] = useState(false)
+  const [pendingBooking, setPendingBooking] = useState<any>(null)
 
   const canConfirm = Boolean(selected && date)
 
@@ -186,6 +189,24 @@ export default function BookingPicker({ artistId, date }: Props) {
           durationMinutes,
           priceCents: 0
         })
+        window.dispatchEvent(new CustomEvent("ink:booking-created", { detail: booking }))
+        swallowGestureTail()
+        setSelected(null)
+        setConfirmOpen(false)
+        toast.success(
+          `${new Date(startISO).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} • ${new Date(startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${new Date(endISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+          {
+            position: "top-center",
+            hideProgressBar: true,
+            style: {
+              background: isLightTheme ? "#ffffff" : "var(--card)",
+              color: isLightTheme ? "#000000" : "var(--fg)",
+              border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
+              boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+            }
+          }
+        )
+        await refreshSlots()
       } else {
         const durationMinutes = Math.round((new Date(endISO).getTime() - new Date(startISO).getTime()) / 60000)
         booking = await apiPost("/bookings/session", {
@@ -194,25 +215,39 @@ export default function BookingPicker({ artistId, date }: Props) {
           durationMinutes,
           priceCents: 0
         })
-      }
-      window.dispatchEvent(new CustomEvent("ink:booking-created", { detail: booking }))
-      swallowGestureTail()
-      setSelected(null)
-      setConfirmOpen(false)
-      toast.success(
-        `${new Date(startISO).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} • ${new Date(startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${new Date(endISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
-        {
-          position: "top-center",
-          hideProgressBar: true,
-          style: {
-            background: isLightTheme ? "#ffffff" : "var(--card)",
-            color: isLightTheme ? "#000000" : "var(--fg)",
-            border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
-            boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
-          }
+        window.dispatchEvent(new CustomEvent("ink:booking-created", { detail: booking }))
+        
+        const depositRequired = booking?.depositRequiredCents && booking.depositRequiredCents > 0
+        const depositPaid = booking?.depositPaidCents && booking.depositPaidCents >= booking.depositRequiredCents
+        
+        if (depositRequired && !depositPaid) {
+          setPendingBooking(booking)
+          swallowGestureTail()
+          setSelected(null)
+          setConfirmOpen(false)
+          setDepositStepOpen(true)
+          setSubmitting(false)
+          return
         }
-      )
-      await refreshSlots()
+        
+        swallowGestureTail()
+        setSelected(null)
+        setConfirmOpen(false)
+        toast.success(
+          `${new Date(startISO).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} • ${new Date(startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${new Date(endISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+          {
+            position: "top-center",
+            hideProgressBar: true,
+            style: {
+              background: isLightTheme ? "#ffffff" : "var(--card)",
+              color: isLightTheme ? "#000000" : "var(--fg)",
+              border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
+              boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+            }
+          }
+        )
+        await refreshSlots()
+      }
     } catch (err: any) {
       const msg = err?.body?.error || err?.body?.message || err?.message || "Failed to book"
       toast.error(String(msg))
@@ -394,18 +429,20 @@ export default function BookingPicker({ artistId, date }: Props) {
             }}
             onPointerDownCapture={(ev) => ev.stopPropagation()}
           >
-            <div className="relative">
-              <button
-                aria-label="Close"
-                className="absolute right-2 top-2 rounded-md px-2 py-1 text-sm"
-                onClick={() => {
-                  swallowGestureTail()
-                  setConfirmOpen(false)
-                }}
-              >
-                ×
-              </button>
-            </div>
+            <button
+              aria-label="Close"
+              className="absolute top-4 right-4 rounded-md px-2 py-1 text-sm hover:bg-elevated/50 transition-colors"
+              onClick={() => {
+                swallowGestureTail()
+                setConfirmOpen(false)
+              }}
+              style={{ 
+                color: isLightTheme ? "#000000" : "var(--fg)",
+                zIndex: 10
+              }}
+            >
+              ×
+            </button>
 
             <RDialogHeader className="space-y-2 flex flex-col items-center text-center">
               <RDialogTitle className="text-xl sm:text-2xl font-semibold">
@@ -468,7 +505,7 @@ export default function BookingPicker({ artistId, date }: Props) {
                 style={{ borderColor: isLightTheme ? "rgba(0,0,0,0.35)" : "var(--border)", color: isLightTheme ? "#000" : "var(--fg)" }}
                 disabled={submitting}
               >
-                Deny
+                Cancel
               </Button>
               <Button
                 onClick={(ev) => {
@@ -479,9 +516,72 @@ export default function BookingPicker({ artistId, date }: Props) {
                 style={{ background: "#000000", color: "#ffffff", border: "1px solid #ffffff" }}
                 disabled={submitting}
               >
-                {submitting ? "Booking..." : "Accept"}
+                {submitting ? "Booking..." : "Confirm"}
               </Button>
             </RDialogFooter>
+          </RDialogContent>
+        </RDialogPortal>
+      </RDialog>
+
+      <RDialog open={depositStepOpen} onOpenChange={setDepositStepOpen}>
+        <RDialogPortal container={portalRef.current ?? scopeRef.current ?? (typeof document !== "undefined" ? document.body : undefined)}>
+          <RDialogOverlay
+            className="fixed inset-0 z-[2147483600] bg-overlay"
+            onPointerDownCapture={(ev) => ev.stopPropagation()}
+          />
+          <RDialogContent
+            showCloseButton={false}
+            className="z-[2147483646] border rounded-2xl p-5 sm:p-6"
+            style={{
+              background: isLightTheme ? "#ffffff" : "var(--card)",
+              color: isLightTheme ? "#000000" : "var(--fg)",
+              borderColor: isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)",
+              overflowY: "auto",
+              maxWidth: "600px"
+            }}
+            onPointerDownCapture={(ev) => ev.stopPropagation()}
+          >
+            <button
+              aria-label="Close"
+              className="absolute top-4 right-4 rounded-md px-2 py-1 text-sm hover:bg-elevated/50 transition-colors"
+              onClick={() => {
+                swallowGestureTail()
+                setDepositStepOpen(false)
+              }}
+              style={{ 
+                color: isLightTheme ? "#000000" : "var(--fg)",
+                zIndex: 10
+              }}
+            >
+              ×
+            </button>
+            {pendingBooking && (
+              <DepositStep
+                booking={pendingBooking}
+                onDepositPaid={async () => {
+                  setDepositStepOpen(false)
+                  setPendingBooking(null)
+                  await refreshSlots()
+                  toast.success(
+                    `Appointment booked successfully! Deposit paid.`,
+                    {
+                      position: "top-center",
+                      hideProgressBar: true,
+                      style: {
+                        background: isLightTheme ? "#ffffff" : "var(--card)",
+                        color: isLightTheme ? "#000000" : "var(--fg)",
+                        border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
+                        boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+                      }
+                    }
+                  )
+                }}
+                onCancel={() => {
+                  setDepositStepOpen(false)
+                  setPendingBooking(null)
+                }}
+              />
+            )}
           </RDialogContent>
         </RDialogPortal>
       </RDialog>
