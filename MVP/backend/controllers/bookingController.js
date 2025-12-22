@@ -255,6 +255,21 @@ export async function createBooking(req, res) {
     } catch {
       policy = null;
     }
+    
+    // Check per-client permission for appointments (not consultations)
+    const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
+    const permission = await ClientBookingPermission.findOne({
+      artistId,
+      clientId: String(userId),
+    });
+    
+    if (!permission || !permission.enabled) {
+      return res.status(403).json({ 
+        error: "bookings_disabled",
+        message: "Appointments are not enabled for you. Please contact the artist to enable appointments."
+      });
+    }
+    
     const depositRequiredCents = computeDepositCents(
       policy,
       priceCents,
@@ -676,6 +691,7 @@ export async function createConsultation(req, res) {
       policy = await ArtistPolicy.findOne({ artistId });
     } catch {}
 
+    // Consultations are always available - no permission check needed
     const consultationPriceCents = Math.max(0, Number(body.priceCents || 0));
     const depositRequiredCents = computeDepositCents(
       policy,
@@ -789,6 +805,20 @@ export async function createTattooSession(req, res) {
     try {
       policy = await ArtistPolicy.findOne({ artistId });
     } catch {}
+
+    // Check per-client permission for appointments
+    const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
+    const permission = await ClientBookingPermission.findOne({
+      artistId,
+      clientId: String(userId),
+    });
+    
+    if (!permission || !permission.enabled) {
+      return res.status(403).json({ 
+        error: "bookings_disabled",
+        message: "Appointments are not enabled for you. Please contact the artist to enable appointments."
+      });
+    }
 
     const priceCents = Math.max(0, Number(body.priceCents || 0));
     const depositRequiredCents = computeDepositCents(
@@ -1327,5 +1357,32 @@ export async function getAppointments(req, res) {
   } catch (error) {
     console.error("Error fetching appointments:", error);
     return res.status(500).json({ error: "Failed to fetch appointments" });
+  }
+}
+
+export async function checkConsultationStatus(req, res) {
+  try {
+    const { artistId, clientId } = req.query || {};
+    if (!artistId || !clientId) {
+      return res.status(400).json({ error: "artistId and clientId required" });
+    }
+
+    // Check if there's a completed consultation
+    const consultation = await Booking.findOne({
+      artistId: String(artistId),
+      clientId: String(clientId),
+      appointmentType: "consultation",
+      status: { $in: ["completed", "confirmed"] },
+    })
+      .sort({ completedAt: -1, createdAt: -1 })
+      .lean();
+
+    res.json({
+      hasCompletedConsultation: !!consultation,
+      consultationDate: consultation?.completedAt || consultation?.startAt || null,
+    });
+  } catch (error) {
+    console.error("Error checking consultation status:", error);
+    res.status(500).json({ error: "Failed to check consultation status" });
   }
 }

@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { Send, Image as ImageIcon, X } from "lucide-react";
+import { Send, Image as ImageIcon, X, Calendar, MessageSquare } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,8 @@ import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import { socket } from "@/lib/socket";
 import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
+import { enableClientBookings, checkConsultationStatus, getArtistPolicy, type ArtistPolicy } from "@/api";
+import DepositPolicyModal from "./DepositPolicyModal";
 import "@/styles/ink-conversations.css";
 
 export type Message = {
@@ -382,6 +384,96 @@ const ChatWindow: FC<ChatWindowProps> = ({
       );
     } catch (e: any) {
       setSendError(e?.message || "Failed to decline request.");
+    }
+  };
+
+  const [consultationStatus, setConsultationStatus] = useState<Record<string, { hasCompletedConsultation: boolean }>>({});
+  const [depositPolicyStatus, setDepositPolicyStatus] = useState<Record<string, boolean>>({});
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [depositModalClientId, setDepositModalClientId] = useState<string | null>(null);
+
+  const checkConsultationForClient = useCallback(async (clientId: string) => {
+    if (isClient) return;
+    try {
+      const token = await getToken();
+      const status = await checkConsultationStatus(currentUserId, clientId, token);
+      setConsultationStatus(prev => ({ ...prev, [clientId]: status }));
+    } catch (err) {
+      console.error("Failed to check consultation status:", err);
+    }
+  }, [currentUserId, isClient, getToken]);
+
+  const checkDepositPolicy = useCallback(async () => {
+    if (isClient) return;
+    try {
+      const token = await getToken();
+      const policy = await getArtistPolicy(currentUserId, undefined);
+      const deposit = policy?.deposit || {};
+      const configured = 
+        (deposit.mode === "flat" && deposit.amountCents > 0) ||
+        (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
+      setDepositPolicyStatus(prev => ({ ...prev, [currentUserId]: configured }));
+    } catch (err) {
+      console.error("Failed to check deposit policy:", err);
+    }
+  }, [currentUserId, isClient, getToken]);
+
+  useEffect(() => {
+    if (isClient || !currentUserId) return;
+    checkDepositPolicy();
+  }, [currentUserId, isClient, checkDepositPolicy]);
+
+  useEffect(() => {
+    if (!activeConv || isClient) return;
+    checkConsultationForClient(activeConv.participantId);
+  }, [activeConv?.participantId, isClient, checkConsultationForClient]);
+
+  const handleOfferConsultation = async (clientId: string) => {
+    if (isClient) return;
+    try {
+      const messageText = "I'd like to schedule a consultation with you. Please book a consultation time that works for you!";
+      await sendMessage(clientId, messageText, {});
+      setSendError(null);
+    } catch (e: any) {
+      setSendError(e?.message || "Failed to send message.");
+    }
+  };
+
+  const handleOfferAppointment = async (clientId: string) => {
+    if (isClient) return;
+    
+    // Check if deposit policy is configured
+    const hasPolicy = depositPolicyStatus[currentUserId];
+    if (!hasPolicy) {
+      setDepositModalClientId(clientId);
+      setDepositModalOpen(true);
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      const result = await enableClientBookings(currentUserId, clientId, token);
+      
+      if (!result?.ok) {
+        throw new Error(result?.message || "Failed to enable appointments");
+      }
+      
+      const messageText = "Great! I've enabled appointments for you. You can now book tattoo sessions with me!";
+      await sendMessage(clientId, messageText, {});
+      
+      setSendError(null);
+    } catch (e: any) {
+      setSendError(e?.message || "Failed to enable appointments.");
+    }
+  };
+
+  const handleDepositPolicySaved = () => {
+    checkDepositPolicy();
+    if (depositModalClientId) {
+      // Retry offering appointment after policy is saved
+      setTimeout(() => {
+        handleOfferAppointment(depositModalClientId);
+      }, 500);
     }
   };
 
@@ -808,23 +900,63 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           const ov = gateOverride[activeConv?.participantId || ""];
                           const v = (ov ?? raw) as GateStatus | null;
                           const needs = v === "pending" && !(ov === "accepted" || !!activeConv?.meta?.allowed);
-                          if (!needs) return null;
+                          const isAccepted = (ov === "accepted" || !!activeConv?.meta?.allowed) || v === "accepted";
+                          const hasConsultation = consultationStatus[activeConv.participantId]?.hasCompletedConsultation || false;
+                          
+                          if (!needs && !isAccepted) return null;
                           return (
                             <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleDecline(activeConv.participantId)}
-                                className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
-                              >
-                                Decline
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleAccept(activeConv.participantId)}
-                                className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
-                              >
-                                Accept
-                              </button>
+                              {needs && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDecline(activeConv.participantId)}
+                                    className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
+                                  >
+                                    Decline
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAccept(activeConv.participantId)}
+                                    className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
+                                  >
+                                    Accept
+                                  </button>
+                                </>
+                              )}
+                              {isAccepted && !hasConsultation && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOfferConsultation(activeConv.participantId)}
+                                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
+                                  title="Offer consultation to this client"
+                                >
+                                  <MessageSquare size={12} />
+                                  Offer Consultation
+                                </button>
+                              )}
+                              {isAccepted && hasConsultation && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOfferConsultation(activeConv.participantId)}
+                                    className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs flex items-center gap-1"
+                                    title="Offer another consultation"
+                                  >
+                                    <MessageSquare size={12} />
+                                    Consultation
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOfferAppointment(activeConv.participantId)}
+                                    className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
+                                    title="Enable appointments for this client"
+                                  >
+                                    <Calendar size={12} />
+                                    Offer Appointment
+                                  </button>
+                                </>
+                              )}
                             </div>
                           );
                         })()}
@@ -1103,23 +1235,39 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       const ov = gateOverride[activeConv?.participantId || ""];
                       const v = (ov ?? raw) as GateStatus | null;
                       const needs = v === "pending" && !(ov === "accepted" || !!activeConv?.meta?.allowed);
-                      if (!needs) return null;
+                      const isAccepted = (ov === "accepted" || !!activeConv?.meta?.allowed) || v === "accepted";
+                      if (!needs && !isAccepted) return null;
                       return (
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleDecline(activeConv.participantId)}
-                            className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
-                          >
-                            Decline
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleAccept(activeConv.participantId)}
-                            className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
-                          >
-                            Accept
-                          </button>
+                          {needs && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleDecline(activeConv.participantId)}
+                                className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
+                              >
+                                Decline
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAccept(activeConv.participantId)}
+                                className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs"
+                              >
+                                Accept
+                              </button>
+                            </>
+                          )}
+                          {isAccepted && (
+                            <button
+                              type="button"
+                              onClick={() => handleEnableAppointments(activeConv.participantId)}
+                              className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
+                              title="Enable appointments for this client"
+                            >
+                              <Calendar size={12} />
+                              Enable Appointments
+                            </button>
+                          )}
                         </div>
                       );
                     })()}
@@ -1318,6 +1466,17 @@ const ChatWindow: FC<ChatWindowProps> = ({
         artist={qbArtist ? ({ username: qbArtist.username, clerkId: qbArtist.clerkId } as any) : undefined}
         onClose={() => setQbOpen(false)}
       />
+      {role === "artist" && currentUserId && (
+        <DepositPolicyModal
+          artistId={currentUserId}
+          open={depositModalOpen}
+          onClose={() => {
+            setDepositModalOpen(false);
+            setDepositModalClientId(null);
+          }}
+          onSuccess={handleDepositPolicySaved}
+        />
+      )}
     </>
   );
 };

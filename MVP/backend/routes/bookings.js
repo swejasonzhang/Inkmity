@@ -19,6 +19,7 @@ import {
   acceptAppointment,
   denyAppointment,
   getAppointments,
+  checkConsultationStatus,
 } from "../controllers/bookingController.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -27,6 +28,7 @@ router.get("/", getBookingsForDay);
 router.get("/appointments", requireAuth(), getAppointments);
 router.get("/client", requireAuth(), getClientBookings);
 router.get("/artist", requireAuth(), getArtistBookings);
+router.get("/consultation-status", requireAuth(), checkConsultationStatus);
 router.get("/:id", getBooking);
 router.get("/:id/details", requireAuth(), getAppointmentDetails);
 router.post("/", requireAuth(), createBooking);
