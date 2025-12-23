@@ -220,12 +220,12 @@ export default function Appointments() {
 
     return (
       <Card
-        className="border rounded-xl p-6 bg-card border-app"
+        className="border rounded-xl p-6 bg-card border-app h-full flex flex-col"
         style={{
           borderColor: "var(--border)"
         }}
       >
-        <CardHeader className="p-0 pb-4">
+        <CardHeader className="p-0 pb-4 flex-shrink-0">
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="w-full flex items-center justify-between">
               <div className="flex-1"></div>
@@ -243,14 +243,14 @@ export default function Appointments() {
                 {otherUser?.username || "Unknown"}
               </CardTitle>
               <div className="text-base font-medium text-subtle">
-                {isConsultation ? "Consultation" : "Tattoo Session"}
+                {isConsultation ? "Consultation" : "Appointment"}
               </div>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="p-0 space-y-4">
-          <div className="text-center space-y-2 text-app">
+        <CardContent className="p-0 space-y-3 flex-1 flex flex-col items-center justify-center">
+          <div className="text-center space-y-1.5 text-app w-full">
             <div className="text-lg font-semibold">
               {formatDate(appointment.startAt)}
             </div>
@@ -263,7 +263,7 @@ export default function Appointments() {
           </div>
 
           <div 
-            className="border-t pt-4 space-y-3"
+            className="border-t pt-3 space-y-2"
             style={{ borderColor: "var(--border)" }}
           >
             {isTattooSession && appointment.priceCents !== undefined && appointment.priceCents > 0 && (
@@ -426,17 +426,17 @@ export default function Appointments() {
             No appointments found
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-            <div className="text-center flex flex-col min-h-0 w-full">
-              <h2 className="text-2xl font-bold mb-6 text-app flex-shrink-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="text-center w-full">
+              <h2 className="text-2xl font-bold mb-6 text-app">
                 Pending ({pendingAppointments.length})
               </h2>
               {pendingAppointments.length === 0 ? (
-                <div className="text-center py-10 text-muted flex-1 flex items-center justify-center min-h-[200px]">
+                <div className="text-center py-10 text-muted min-h-[200px]">
                   No pending appointments
                 </div>
               ) : (
-                <div className="grid gap-6 max-w-2xl mx-auto w-full flex-1 min-h-0">
+                <div className="grid gap-6 max-w-2xl mx-auto w-full">
                   {pendingAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -444,16 +444,16 @@ export default function Appointments() {
               )}
             </div>
 
-            <div className="text-center flex flex-col min-h-0 w-full">
-              <h2 className="text-2xl font-bold mb-6 text-app flex-shrink-0">
+            <div className="text-center w-full">
+              <h2 className="text-2xl font-bold mb-6 text-app">
                 Past ({pastAppointments.length})
               </h2>
               {pastAppointments.length === 0 ? (
-                <div className="text-center py-10 text-muted flex-1 flex items-center justify-center min-h-[200px]">
+                <div className="text-center py-10 text-muted min-h-[200px]">
                   No past appointments
                 </div>
               ) : (
-                <div className="grid gap-6 max-w-2xl mx-auto w-full flex-1 min-h-0">
+                <div className="grid gap-6 max-w-2xl mx-auto w-full">
                   {pastAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
