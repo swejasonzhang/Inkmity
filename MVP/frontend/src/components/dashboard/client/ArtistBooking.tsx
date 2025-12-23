@@ -338,26 +338,26 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           </CardHeader>
           <CardContent className="p-2 sm:p-5 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
             {!bookingGateReady ? (
-              <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px]">
+              <div className="min-h-[360px] sm:min-h-[480px] flex items-center justify-center">
                 <p className="text-sm" style={{ color: "var(--fg)" }}>Loading...</p>
               </div>
             ) : bookingGate?.enabled ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 items-stretch ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                 <div className="min-h-[360px] sm:min-h-[420px] ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                   <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
                 </div>
-                <div className="flex items-center justify-center min-h-[360px] sm:min-h-[480px] rounded-md px-2 ink-no-anim" style={{ background: "var(--elevated)", color: "var(--fg)", transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-                  <div className="w-full max-w-[920px] p-2 sm:p-3 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+                <div className="min-h-[360px] sm:min-h-[480px] rounded-md px-2 ink-no-anim" style={{ background: "var(--elevated)", color: "var(--fg)", transition: "none !important", animation: "none !important" } as React.CSSProperties}>
+                  <div className="w-full max-w-[920px] p-2 sm:p-3 mx-auto ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                     <BookingPicker artistId={artist.clerkId} date={date} />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center min-h-[360px] sm:min-h-[480px] gap-4 px-4 text-center">
-                <div className="p-4 rounded-full" style={{ background: "var(--elevated)" }}>
+              <div className="min-h-[360px] sm:min-h-[480px] gap-4 px-4 text-center">
+                <div className="p-4 rounded-full mx-auto mb-4" style={{ background: "var(--elevated)" }}>
                   <Lock className="w-8 h-8" style={{ color: "var(--fg)" }} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 max-w-md mx-auto">
                   <h3 className="text-lg font-semibold" style={{ color: "var(--fg)" }}>
                     Appointments are currently locked
                   </h3>
