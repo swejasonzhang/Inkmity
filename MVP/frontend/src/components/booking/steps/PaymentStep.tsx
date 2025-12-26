@@ -124,7 +124,6 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       const token = await getToken();
       let booking: Booking;
 
-      // Create the booking first
       if (bookingData.appointmentType === "consultation") {
         booking = await createConsultation(
           {

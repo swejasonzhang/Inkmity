@@ -28,7 +28,6 @@ export async function upsertArtistPolicy(req, res) {
     },
   };
   
-  // If trying to enable bookings, verify deposit is configured
   if (bookingEnabled === true) {
     const deposit = update.deposit;
     const hasDepositConfig = 
@@ -75,7 +74,6 @@ export async function getBookingGate(req, res) {
       (deposit.mode === "flat" && deposit.amountCents > 0) ||
       (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
     
-    // Check per-client permission if clientId is provided
     let clientEnabled = false;
     if (clientId) {
       const permission = await ClientBookingPermission.findOne({
@@ -108,12 +106,10 @@ export async function enableClientBookings(req, res) {
       return res.status(400).json({ error: "artistId and clientId required" });
     }
     
-    // Verify the actor is the artist
     if (String(actorId) !== String(artistId)) {
       return res.status(403).json({ error: "Only the artist can enable bookings for clients" });
     }
     
-    // Verify deposit is configured
     const policy = await ArtistPolicy.findOne({ artistId });
     if (!policy) {
       return res.status(400).json({ error: "Artist policy not found. Please configure deposit first." });
@@ -131,7 +127,6 @@ export async function enableClientBookings(req, res) {
       });
     }
     
-    // Create or update permission
     const permission = await ClientBookingPermission.findOneAndUpdate(
       { artistId, clientId },
       {

@@ -30,7 +30,6 @@ const ClientBookingPermissionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound index to ensure one permission per artist-client pair
 ClientBookingPermissionSchema.index({ artistId: 1, clientId: 1 }, { unique: true });
 
 export default mongoose.models.ClientBookingPermission ||

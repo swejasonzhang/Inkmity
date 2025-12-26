@@ -256,7 +256,6 @@ export async function createBooking(req, res) {
       policy = null;
     }
     
-    // Check per-client permission for appointments (not consultations)
     const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
     const permission = await ClientBookingPermission.findOne({
       artistId,
@@ -691,7 +690,6 @@ export async function createConsultation(req, res) {
       policy = await ArtistPolicy.findOne({ artistId });
     } catch {}
 
-    // Consultations are always available - no permission check needed
     const consultationPriceCents = Math.max(0, Number(body.priceCents || 0));
     const depositRequiredCents = computeDepositCents(
       policy,
@@ -806,7 +804,6 @@ export async function createTattooSession(req, res) {
       policy = await ArtistPolicy.findOne({ artistId });
     } catch {}
 
-    // Check per-client permission for appointments
     const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
     const permission = await ClientBookingPermission.findOne({
       artistId,
@@ -1317,7 +1314,6 @@ export async function getAppointments(req, res) {
         .limit(100)
         .lean();
     } else {
-      // Get both client and artist appointments
       bookings = await Booking.find({
         $or: [{ clientId: userId }, { artistId: userId }]
       })
@@ -1367,7 +1363,6 @@ export async function checkConsultationStatus(req, res) {
       return res.status(400).json({ error: "artistId and clientId required" });
     }
 
-    // Check if there's a completed consultation
     const consultation = await Booking.findOne({
       artistId: String(artistId),
       clientId: String(clientId),

@@ -442,7 +442,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const handleOfferAppointment = async (clientId: string) => {
     if (isClient) return;
     
-    // Check if deposit policy is configured
     const hasPolicy = depositPolicyStatus[currentUserId];
     if (!hasPolicy) {
       setDepositModalClientId(clientId);
@@ -470,7 +469,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const handleDepositPolicySaved = () => {
     checkDepositPolicy();
     if (depositModalClientId) {
-      // Retry offering appointment after policy is saved
       setTimeout(() => {
         handleOfferAppointment(depositModalClientId);
       }, 500);
