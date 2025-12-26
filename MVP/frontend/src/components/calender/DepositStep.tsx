@@ -63,7 +63,6 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
       checkBookingStatus()
       window.history.replaceState({}, "", window.location.pathname)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentBooking._id])
 
   const handlePayDeposit = async () => {

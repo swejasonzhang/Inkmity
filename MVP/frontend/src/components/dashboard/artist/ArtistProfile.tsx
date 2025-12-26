@@ -228,7 +228,6 @@ export default function ArtistProfile() {
                 const centsToShow = mode === "flat" && amountCents > 0 ? amountCents : fallbackCents;
                 if (active) setDepositDollars((centsToShow / 100).toFixed(2));
             } catch {
-                // keep default
             }
         })();
         return () => {
