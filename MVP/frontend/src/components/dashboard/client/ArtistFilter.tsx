@@ -373,8 +373,8 @@ const ArtistFilter: React.FC<Props> = ({
   const triggerBase = "h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
   const contentBase = "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
   const itemCentered = "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
-  const FILTER_W = "w-full sm:flex-1 sm:min-w-0 sm:max-w-[140px] md:max-w-[150px] lg:max-w-[160px] xl:max-w-[170px] 2xl:max-w-[190px]";
-  const SEARCH_W = "w-full sm:flex-[1.5] sm:min-w-[140px] sm:max-w-[220px] md:max-w-[240px] lg:max-w-[260px]";
+  const FILTER_W = "w-full sm:flex-1";
+  const SEARCH_W = "w-full sm:flex-[1.5]";
 
   return (
     <section
@@ -390,8 +390,8 @@ const ArtistFilter: React.FC<Props> = ({
     >
       <div className="sm:hidden border-t border-app" aria-hidden="true" />
       <div className="w-full mx-auto max-w-full overflow-hidden" style={{ maxWidth: '100%', width: '100%' }}>
-        <div className="p-2 sm:p-3" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap md:flex-nowrap sm:items-center sm:justify-start sm:gap-2 md:gap-2.5 lg:gap-3 w-full max-w-full min-w-0" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+        <div className="p-2 sm:p-3 md:p-4 lg:p-5 xl:p-6" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-start sm:gap-2 md:gap-3 lg:gap-4 xl:gap-5 2xl:gap-6 w-full max-w-full min-w-0" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
             <div className={clsx("relative col-span-2 sm:col-span-1 min-w-0", SEARCH_W)}>
               <Input
                 value={localSearch}

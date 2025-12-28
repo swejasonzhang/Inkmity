@@ -656,7 +656,7 @@ export default function ArtistProfile() {
                     files.forEach(file => handleImageUpload(file, "portfolio"));
                 }}
             />
-            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0">
+            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 items-stretch">
                 <div className="group w-full h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8 items-center justify-center" style={{ background: "var(--card)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 overflow-y-auto">
 
@@ -1401,7 +1401,7 @@ export default function ArtistProfile() {
                     )}
                     </div>
                 </div>
-                <div className="w-full h-full flex flex-col">
+                <div className="w-full h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8" style={{ background: "var(--card)" }}>
                     <ArtistAppointmentHistory />
                 </div>
             </div>
