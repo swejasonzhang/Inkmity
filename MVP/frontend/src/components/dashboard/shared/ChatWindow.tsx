@@ -58,7 +58,7 @@ const urlRegex = /\bhttps?:\/\/[^\s)]+/gi;
 const getUrlsFromText = (text: string) =>
   Array.from(new Set((text.match(urlRegex) || [])?.map(u => u.replace(/[),.]+$/, ""))));
 
-const PANEL_W = 320;
+// Panel width is now responsive via clamp()
 
 const ChatWindow: FC<ChatWindowProps> = ({
   currentUserId,
@@ -427,11 +427,29 @@ const ChatWindow: FC<ChatWindowProps> = ({
     checkConsultationForClient(activeConv.participantId);
   }, [activeConv?.participantId, isClient, checkConsultationForClient]);
 
+  const sendMessage = useCallback(async (participantId: string, text: string, imageUrls: string[] = []) => {
+    try {
+      const allImageUrls = [...new Set([...getUrlsFromText(text), ...imageUrls])];
+      const meta: Record<string, any> = {
+        ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
+      };
+      const res = await authFetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ receiverId: participantId, text, meta, referenceUrls: allImageUrls })
+      });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      onMarkRead(participantId);
+    } catch (err: any) {
+      throw new Error(err?.message || "Failed to send message.");
+    }
+  }, [authFetch, onMarkRead]);
+
   const handleOfferConsultation = async (clientId: string) => {
     if (isClient) return;
     try {
       const messageText = "I'd like to schedule a consultation with you. Please book a consultation time that works for you!";
-      await sendMessage(clientId, messageText, {});
+      await sendMessage(clientId, messageText, []);
       setSendError(null);
     } catch (e: any) {
       setSendError(e?.message || "Failed to send message.");
@@ -457,7 +475,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       }
       
       const messageText = "Great! I've enabled appointments for you. You can now book tattoo sessions with me!";
-      await sendMessage(clientId, messageText, {});
+      await sendMessage(clientId, messageText, []);
       
       setSendError(null);
     } catch (e: any) {
@@ -601,7 +619,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
         <img
           src={avatarUrl}
           alt={name}
-          className={`h-7 w-7 rounded-full object-cover ${withBorder ? "border border-app" : ""}`}
+          className={`rounded-full object-cover ${withBorder ? "border border-app" : ""}`}
+        style={{ width: 'clamp(1.5rem, 2vw, 1.75rem)', height: 'clamp(1.5rem, 2vw, 1.75rem)' }}
           onError={() => setImgError(true)}
         />
       );
@@ -609,7 +628,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
     
     return (
       <span
-        className={`h-7 w-7 rounded-full grid place-items-center bg-elevated text-app text-[10px] font-semibold ${withBorder ? "border border-app" : ""}`}
+        className={`rounded-full grid place-items-center bg-elevated text-app font-semibold ${withBorder ? "border border-app" : ""}`}
+        style={{ width: 'clamp(1.5rem, 2vw, 1.75rem)', height: 'clamp(1.5rem, 2vw, 1.75rem)', fontSize: 'clamp(0.5rem, 0.8vw, 0.625rem)' }}
       >
         {initials || "?"}
       </span>
@@ -634,7 +654,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
         >
           <button type="button" className="absolute inset-0 bg-black/60" aria-label="Close dialog" />
           <motion.div
-            className="relative bg-card text-app rounded-xl p-6 w-11/12 max-w-md shadow-2xl border border-app"
+            className="relative bg-card text-app rounded-xl shadow-2xl border border-app"
+          style={{ padding: 'clamp(1rem, 2vw, 1.5rem)', width: 'clamp(280px, 85vw, 448px)', maxWidth: '90vw' }}
             initial={{ scale: 0.94, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.94, opacity: 0 }}
@@ -688,7 +709,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
             type="button"
             onClick={() => setViewerUrl(null)}
             aria-label="Close"
-            className="fixed top-6 right-6 h-10 w-10 rounded-full grid place-items-center border border-app bg-elevated text-app hover:bg-elevated/80"
+                          className="fixed rounded-full grid place-items-center border border-app bg-elevated text-app hover:bg-elevated/80"
+                          style={{ top: 'clamp(0.75rem, 2vw, 1.5rem)', right: 'clamp(0.75rem, 2vw, 1.5rem)', width: 'clamp(2.25rem, 3vw, 2.75rem)', height: 'clamp(2.25rem, 3vw, 2.75rem)' }}
           >
             <span className="text-xl leading-none">×</span>
           </button>
@@ -771,7 +793,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           {isArtist && (
             <aside
               className="hidden md:flex flex-col border border-app bg-card h-full shrink-0 rounded-xl min-h-0"
-              style={{ width: PANEL_W }}
+              style={{ width: 'clamp(280px, 20vw, 360px)' }}
             >
               <div className="px-3 py-3 border-b border-app">
                 <div className="text-sm font-semibold">Message requests</div>
@@ -793,7 +815,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           <div className="flex-1 min-w-0 flex min-h-0">
             <div className="w-full h-full flex flex-col md:hidden gap-3 overflow-y-auto">
               {isArtist && (
-                <div className="flex-shrink-0 rounded-xl border border-app bg-card flex flex-col" style={{ maxHeight: "min(40vh, 300px)" }}>
+                <div className="flex-shrink-0 rounded-xl border border-app bg-card flex flex-col" style={{ maxHeight: "clamp(200px, 40vh, 400px)" }}>
                   <div className="px-3 py-2.5 border-b border-app flex items-center justify-between flex-shrink-0">
                     <div>
                       <div className="text-sm font-semibold">Message Requests</div>
@@ -838,11 +860,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 e.stopPropagation();
                                 requestDelete(c.participantId);
                               }}
-                              className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 text-xs"
+                              className="absolute opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90"
+                              style={{ top: 'clamp(-0.125rem, -0.5vw, -0.25rem)', right: 'clamp(-0.125rem, -0.5vw, -0.25rem)', width: 'clamp(1rem, 1.5vw, 1.25rem)', height: 'clamp(1rem, 1.5vw, 1.25rem)', fontSize: 'clamp(0.625rem, 0.9vw, 0.75rem)' }}
                               aria-label="Delete conversation"
                               title="Delete conversation"
                             >
-                              <X size={12} />
+                              <X size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                             </button>
                           </div>
                           <span className="text-xs whitespace-nowrap">{displayNameFromUsername(c.username)}</span>
@@ -928,7 +951,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                   className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
                                   title="Offer consultation to this client"
                                 >
-                                  <MessageSquare size={12} />
+                                  <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                                   Offer Consultation
                                 </button>
                               )}
@@ -940,7 +963,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs flex items-center gap-1"
                                     title="Offer another consultation"
                                   >
-                                    <MessageSquare size={12} />
+                                    <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                                     Consultation
                                   </button>
                                   <button
@@ -949,7 +972,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
                                     title="Enable appointments for this client"
                                   >
-                                    <Calendar size={12} />
+                                    <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                                     Offer Appointment
                                   </button>
                                 </>
@@ -1002,7 +1025,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           return (
                             <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                               <div
-                                className={`px-3 py-3 rounded-2xl max-w-[85%] w-fit break-words whitespace-pre-wrap border text-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                                className={`px-3 py-3 rounded-2xl w-fit break-words whitespace-pre-wrap border text-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                                style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
                               >
                                 <div>{msg.text}</div>
                                 {!!merged.length && (
@@ -1019,10 +1043,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                         <img
                                           src={u}
                                           alt="reference"
-                                          className="ink-conv-chat-thumb w-full h-auto max-w-[70px] sm:max-w-[90px] md:max-w-[110px] object-cover rounded-lg"
+                                          className="ink-conv-chat-thumb w-full h-auto object-cover rounded-lg"
+                                          style={{ maxWidth: 'clamp(60px, 8vw, 120px)', width: 'auto', height: 'auto' }}
                                           loading="lazy"
                                           referrerPolicy="no-referrer"
-                                          style={{ width: 'auto', height: 'auto' }}
                                         />
                                       </button>
                                     ))}
@@ -1063,7 +1087,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               <img
                                 src={url}
                                 alt={`Preview ${idx + 1}`}
-                                className="w-14 h-14 object-cover rounded-lg border border-app"
+                                className="object-cover rounded-lg border border-app"
+                                style={{ width: 'clamp(3rem, 4vw, 4.5rem)', height: 'clamp(3rem, 4vw, 4.5rem)' }}
                                 loading="lazy"
                               />
                             </div>
@@ -1086,14 +1111,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           type="button"
                           onClick={openUpload}
                           disabled={needsApproval && !isClient || uploading}
-                          className="w-9 h-9 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60 rounded-lg"
+                          className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60 rounded-lg"
+                          style={{ width: 'clamp(2rem, 2.5vw, 2.5rem)', height: 'clamp(2rem, 2.5vw, 2.5rem)' }}
                           aria-label="Add images"
                           title="Add images"
                         >
                           {uploading ? (
-                            <CircularProgress size={16} className="text-app" />
+                            <CircularProgress sx={{ color: "var(--fg)", width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
                           ) : (
-                            <ImageIcon size={16} />
+                            <ImageIcon size={undefined} style={{ width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
                           )}
                         </button>
                         <div className="flex-1 flex rounded-lg overflow-hidden border border-app bg-card">
@@ -1124,7 +1150,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             className="w-9 h-9 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
                             aria-label="Send message"
                           >
-                            <Send size={16} />
+                            <Send size={undefined} style={{ width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
                           </button>
                         </div>
                       </div>
@@ -1132,7 +1158,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   </section>
               </div>
             </div>
-            <div className={`hidden md:grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] h-full min-h-0 flex-1 w-full`}>
+            <div className="hidden md:grid gap-3 h-full min-h-0 flex-1 w-full" style={{ gridTemplateColumns: 'clamp(180px, 15vw, 260px) minmax(0, 1fr)' }}>
               <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto">
                 <ul className="divide-y divide-app/60">
                   {conversations.map(c => {
@@ -1189,7 +1215,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
               <section className="h-full rounded-xl border border-app bg-card flex flex-col min-h-0">
                 <header className="px-3 md:px-4 py-3 border-b border-app flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                    <div className="md:hidden min-w-[200px] max-w-[60vw]">
+                    <div className="md:hidden" style={{ minWidth: 'clamp(160px, 40vw, 240px)', maxWidth: '60vw' }}>
                       <Select
                         value={activeConv?.participantId}
                         onValueChange={(val) => {
@@ -1264,7 +1290,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                   className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
                                   title="Offer consultation to this client"
                                 >
-                                  <MessageSquare size={12} />
+                                  <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                                   Offer Consultation
                                 </button>
                               );
@@ -1277,7 +1303,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                   className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs flex items-center gap-1"
                                   title="Offer another consultation"
                                 >
-                                  <MessageSquare size={12} />
+                                  <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                                   Consultation
                                 </button>
                                 <button
@@ -1286,7 +1312,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                   className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
                                   title="Enable appointments for this client"
                                 >
-                                  <Calendar size={12} />
+                                  <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                                   Offer Appointment
                                 </button>
                               </>
@@ -1332,7 +1358,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       return (
                         <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`px-3 py-4 rounded-2xl max-w-[80%] sm:max-w-[66%] md:max-w-[50%] w-fit break-words whitespace-pre-wrap border leading-loose text-[15px] ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                            className={`px-3 py-4 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-loose ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                            style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.875rem, 1vw, 0.9375rem)' }}
                           >
                             <div>{msg.text}</div>
                             {!!merged.length && (
@@ -1349,10 +1376,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     <img
                                       src={u}
                                       alt="reference"
-                                      className="ink-conv-chat-thumb w-full h-auto max-w-[70px] sm:max-w-[90px] md:max-w-[110px] object-cover rounded-lg"
+                                      className="ink-conv-chat-thumb w-full h-auto object-cover rounded-lg"
+                                      style={{ maxWidth: 'clamp(60px, 8vw, 120px)', width: 'auto', height: 'auto' }}
                                       loading="lazy"
                                       referrerPolicy="no-referrer"
-                                      style={{ width: 'auto', height: 'auto' }}
                                     />
                                   </button>
                                 ))}
@@ -1389,7 +1416,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           <img
                             src={url}
                             alt={`Preview ${idx + 1}`}
-                            className="w-16 h-16 object-cover rounded-lg border border-app"
+                            className="object-cover rounded-lg border border-app"
+                          style={{ width: 'clamp(3.5rem, 5vw, 5rem)', height: 'clamp(3.5rem, 5vw, 5rem)' }}
                             loading="lazy"
                           />
                         </div>
@@ -1412,7 +1440,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       type="button"
                       onClick={openUpload}
                       disabled={needsApproval && !isClient || uploading}
-                      className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                      className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                      style={{ width: 'clamp(2.25rem, 3vw, 2.75rem)', height: 'clamp(2.25rem, 3vw, 2.75rem)' }}
                       aria-label="Add images"
                       title="Add images"
                     >
@@ -1449,7 +1478,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         type="button"
                         onClick={() => activeConv && (!needsApproval || isClient) && handleSend(activeConv.participantId)}
                         disabled={needsApproval && !isClient}
-                        className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                        className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
+                      style={{ width: 'clamp(2.25rem, 3vw, 2.75rem)', height: 'clamp(2.25rem, 3vw, 2.75rem)' }}
                         aria-label="Send message"
                       >
                         <Send size={18} />

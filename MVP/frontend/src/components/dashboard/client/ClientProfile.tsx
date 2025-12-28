@@ -474,7 +474,7 @@ export default function ClientProfile() {
                     }
                 }}
             />
-            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0">
+            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 items-stretch">
                 <div className="group w-full h-full flex flex-col rounded-3xl transition relative p-6 lg:p-8 items-center overflow-hidden" style={{ background: "var(--card)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-2 w-full max-w-2xl relative z-10 flex-1 min-h-0">
                         <div className="relative mb-8 w-full flex items-center justify-center group">
@@ -818,7 +818,7 @@ export default function ClientProfile() {
                     </div>
                     </div>
                 </div>
-                <div className="w-full h-full flex flex-col">
+                <div className="w-full h-full flex flex-col rounded-3xl transition relative p-6 lg:p-8 overflow-hidden" style={{ background: "var(--card)" }}>
                     <ClientAppointmentHistory />
                 </div>
             </div>
