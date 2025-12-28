@@ -12,7 +12,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import { socket } from "@/lib/socket";
 import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
-import { enableClientBookings, checkConsultationStatus, getArtistPolicy, type ArtistPolicy } from "@/api";
+import { enableClientBookings, checkConsultationStatus, getArtistPolicy } from "@/api";
 import DepositPolicyModal from "./DepositPolicyModal";
 import "@/styles/ink-conversations.css";
 
@@ -406,17 +406,16 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const checkDepositPolicy = useCallback(async () => {
     if (isClient) return;
     try {
-      const token = await getToken();
       const policy = await getArtistPolicy(currentUserId, undefined);
       const deposit = policy?.deposit || {};
       const configured = 
-        (deposit.mode === "flat" && deposit.amountCents > 0) ||
-        (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
+        (deposit.mode === "flat" && (deposit.amountCents ?? 0) > 0) ||
+        (deposit.mode === "percent" && (deposit.percent ?? 0) > 0 && (deposit.minCents ?? 0) > 0);
       setDepositPolicyStatus(prev => ({ ...prev, [currentUserId]: configured }));
     } catch (err) {
       console.error("Failed to check deposit policy:", err);
     }
-  }, [currentUserId, isClient, getToken]);
+  }, [currentUserId, isClient]);
 
   useEffect(() => {
     if (isClient || !currentUserId) return;
@@ -1255,17 +1254,44 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               </button>
                             </>
                           )}
-                          {isAccepted && (
-                            <button
-                              type="button"
-                              onClick={() => handleEnableAppointments(activeConv.participantId)}
-                              className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
-                              title="Enable appointments for this client"
-                            >
-                              <Calendar size={12} />
-                              Enable Appointments
-                            </button>
-                          )}
+                          {isAccepted && (() => {
+                            const hasConsultation = consultationStatus[activeConv.participantId]?.hasCompletedConsultation || false;
+                            if (!hasConsultation) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOfferConsultation(activeConv.participantId)}
+                                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
+                                  title="Offer consultation to this client"
+                                >
+                                  <MessageSquare size={12} />
+                                  Offer Consultation
+                                </button>
+                              );
+                            }
+                            return (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOfferConsultation(activeConv.participantId)}
+                                  className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs flex items-center gap-1"
+                                  title="Offer another consultation"
+                                >
+                                  <MessageSquare size={12} />
+                                  Consultation
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOfferAppointment(activeConv.participantId)}
+                                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
+                                  title="Enable appointments for this client"
+                                >
+                                  <Calendar size={12} />
+                                  Offer Appointment
+                                </button>
+                              </>
+                            );
+                          })()}
                         </div>
                       );
                     })()}
