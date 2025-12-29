@@ -2,10 +2,10 @@ import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useSt
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Star, X } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { displayNameFromUsername } from "@/lib/format";
-import { ChevronDown } from "lucide-react";
 
 export type Review = {
     _id: string;
@@ -266,23 +266,19 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                                     Sort:
                                 </label>
 
-                                <div className="relative">
-                                    <div className="text-sm rounded-md px-3 py-2 border w-auto sm:w-[180px] flex items-center justify-center" style={{ background: "var(--elevated)", color: "var(--fg)" }}>
-                                        <span className="truncate">{sort === "recent" ? "Most recent" : sort === "high" ? "Highest rating" : "Lowest rating"}</span>
-                                        <ChevronDown size={14} className="ml-2" />
-                                    </div>
-
-                                    <select
-                                        value={sort}
-                                        onChange={e => onChangeSort(e.target.value as typeof sort)}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        aria-label="Sort"
-                                    >
-                                        <option value="recent">Most recent</option>
-                                        <option value="high">Highest rating</option>
-                                        <option value="low">Lowest rating</option>
-                                    </select>
-                                </div>
+                                <Select
+                                    value={sort}
+                                    onValueChange={(v) => onChangeSort(v as typeof sort)}
+                                >
+                                    <SelectTrigger className="w-auto sm:w-[180px] text-sm" style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}>
+                                        <SelectValue placeholder="Sort by" />
+                                    </SelectTrigger>
+                                    <SelectContent style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}>
+                                        <SelectItem value="recent">Most recent</SelectItem>
+                                        <SelectItem value="high">Highest rating</SelectItem>
+                                        <SelectItem value="low">Lowest rating</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             {isSorting && (

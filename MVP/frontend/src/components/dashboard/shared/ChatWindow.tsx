@@ -58,8 +58,6 @@ const urlRegex = /\bhttps?:\/\/[^\s)]+/gi;
 const getUrlsFromText = (text: string) =>
   Array.from(new Set((text.match(urlRegex) || [])?.map(u => u.replace(/[),.]+$/, ""))));
 
-// Panel width is now responsive via clamp()
-
 const ChatWindow: FC<ChatWindowProps> = ({
   currentUserId,
   isArtist = false,
@@ -476,6 +474,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
       
       const messageText = "Great! I've enabled appointments for you. You can now book tattoo sessions with me!";
       await sendMessage(clientId, messageText, []);
+      
+      window.dispatchEvent(new CustomEvent("ink:booking-enabled", {
+        detail: { artistId: currentUserId, clientId }
+      }));
       
       setSendError(null);
     } catch (e: any) {
