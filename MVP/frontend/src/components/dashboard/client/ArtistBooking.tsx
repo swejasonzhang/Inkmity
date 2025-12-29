@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
@@ -121,32 +121,51 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     return () => window.removeEventListener("ink:open-booking", handler as EventListener);
   }, []);
 
+  const refreshBookingGate = useCallback(async () => {
+    const artistId = artist?.clerkId;
+    const clientId = user?.id;
+    if (!artistId || !clientId) return;
+    
+    try {
+      const gate = await getBookingGate(artistId, clientId);
+      setBookingGate(gate);
+      setBookingGateReady(true);
+    } catch (e) {
+      if (!isAbortError(e)) {
+        console.error("[ArtistBooking] booking gate fetch failed", { artistId, error: e });
+      }
+      setBookingGateReady(true);
+    }
+  }, [artist?.clerkId, user?.id]);
+
   useEffect(() => {
     const artistId = artist?.clerkId;
     const clientId = user?.id;
-    if (!artistId || !clientId || bookingGateReady) return;
+    if (!artistId || !clientId) return;
     
-    const ac = new AbortController();
-    let mounted = true;
+    refreshBookingGate();
+  }, [artist?.clerkId, user?.id, refreshBookingGate]);
+
+  useEffect(() => {
+    if (!bookingGateReady || bookingGate?.enabled) return;
     
-    (async () => {
-      try {
-        const gate = await getBookingGate(artistId, clientId, ac.signal);
-        if (!mounted) return;
-        setBookingGate(gate);
-        setBookingGateReady(true);
-      } catch (e) {
-        if (!mounted || isAbortError(e)) return;
-        console.error("[ArtistBooking] booking gate fetch failed", { artistId, error: e });
-        setBookingGateReady(true);
+    const interval = setInterval(() => {
+      refreshBookingGate();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [bookingGateReady, bookingGate?.enabled, refreshBookingGate]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ artistId?: string; clientId?: string }>).detail;
+      if (detail?.artistId === artist?.clerkId && detail?.clientId === user?.id) {
+        refreshBookingGate();
       }
-    })();
-    
-    return () => {
-      mounted = false;
-      ac.abort();
     };
-  }, [artist?.clerkId, user?.id, bookingGateReady]);
+    window.addEventListener("ink:booking-enabled", handler as EventListener);
+    return () => window.removeEventListener("ink:booking-enabled", handler as EventListener);
+  }, [artist?.clerkId, user?.id, refreshBookingGate]);
 
   const isPending = gate === null ? false : (gate?.lastStatus === "pending" && !gate?.allowed) || status === "sent";
   const hasExistingChat = gate === null ? false : !!(gate?.allowed || gate?.lastStatus === "accepted");
@@ -353,17 +372,22 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
                 </div>
               </div>
             ) : (
-              <div className="min-h-[360px] sm:min-h-[480px] gap-4 px-4 text-center">
-                <div className="p-4 rounded-full mx-auto mb-4" style={{ background: "var(--elevated)" }}>
+              <div className="min-h-[360px] sm:min-h-[480px] flex flex-col items-center justify-center gap-4 px-4 text-center">
+                <div className="flex items-center justify-center p-4 rounded-full mb-2" style={{ background: "var(--elevated)" }}>
                   <Lock className="w-8 h-8" style={{ color: "var(--fg)" }} />
                 </div>
-                <div className="space-y-2 max-w-md mx-auto">
+                <div className="space-y-3 max-w-md mx-auto">
                   <h3 className="text-lg font-semibold" style={{ color: "var(--fg)" }}>
                     Appointments are currently locked
                   </h3>
-                  <p className="text-sm max-w-md" style={{ color: "var(--fg)" }}>
-                    {bookingGate?.message || "The artist needs to enable appointments before you can book."}
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--fg)" }}>
+                    {bookingGate?.message || "To book an appointment, please message the artist first. Once they enable appointments for you, you'll be able to schedule here."}
                   </p>
+                  {hasExistingChat && (
+                    <p className="text-xs opacity-70" style={{ color: "var(--fg)" }}>
+                      You already have a conversation with this artist. Check your messages for updates.
+                    </p>
+                  )}
                 </div>
               </div>
             )}
