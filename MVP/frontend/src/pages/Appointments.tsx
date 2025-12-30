@@ -103,6 +103,8 @@ export default function Appointments() {
   const [appointments, setAppointments] = useState<AppointmentWithUsers[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [aftercareModalOpen, setAftercareModalOpen] = useState(false);
+  const [aftercareAppointment, setAftercareAppointment] = useState<AppointmentWithUsers | null>(null);
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
@@ -129,9 +131,24 @@ export default function Appointments() {
     return () => window.clearTimeout(t1);
   }, [roleLoaded]);
 
+  const isClient = role === "client";
+  const isArtist = role === "artist";
+
   useEffect(() => {
     loadAppointments();
   }, [roleLoaded, user?.id]);
+
+  useEffect(() => {
+    if (appointments.length > 0 && isClient) {
+      const completedTattooSession = appointments.find(
+        (a) => a.status === "completed" && a.appointmentType === "tattoo_session"
+      );
+      if (completedTattooSession && !aftercareAppointment) {
+        setAftercareAppointment(completedTattooSession);
+        setAftercareModalOpen(true);
+      }
+    }
+  }, [appointments, isClient]);
 
   const loadAppointments = async () => {
     if (!roleLoaded || !user?.id) return;
@@ -343,8 +360,18 @@ export default function Appointments() {
           </div>
 
           {isCompleted && isTattooSession && (
-            <div className="mt-6 w-full">
-              <AftercareInstructions appointmentDate={appointment.startAt} />
+            <div className="mt-4">
+              <Button
+                onClick={() => {
+                  setAftercareAppointment(appointment);
+                  setAftercareModalOpen(true);
+                }}
+                variant="outline"
+                className="w-full"
+                style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+              >
+                View Aftercare Instructions
+              </Button>
             </div>
           )}
 
@@ -472,6 +499,17 @@ export default function Appointments() {
         )}
       </div>
       </div>
+
+      {aftercareAppointment && (
+        <AftercareInstructions
+          open={aftercareModalOpen}
+          onClose={() => {
+            setAftercareModalOpen(false);
+            setAftercareAppointment(null);
+          }}
+          appointmentDate={aftercareAppointment.startAt}
+        />
+      )}
 
       <ToastContainer
         position="top-center"
