@@ -1,12 +1,14 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, XCircle, ShoppingBag } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, XCircle, ShoppingBag, X } from "lucide-react";
 
 type Props = {
+  open: boolean;
+  onClose: () => void;
   appointmentDate?: string | Date;
 };
 
-export default function AftercareInstructions({ appointmentDate }: Props) {
+export default function AftercareInstructions({ open, onClose, appointmentDate }: Props) {
   const aftercareSteps = [
     "Keep the bandage on for 2-4 hours after leaving the studio",
     "Gently wash with lukewarm water and mild, fragrance-free soap",
@@ -51,16 +53,34 @@ export default function AftercareInstructions({ appointmentDate }: Props) {
   ];
 
   return (
-    <Card className="w-full" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-      <CardHeader>
-        <CardTitle className="text-lg">Tattoo Aftercare Instructions</CardTitle>
-        {appointmentDate && (
-          <p className="text-sm opacity-70 mt-1">
-            Appointment Date: {new Date(appointmentDate).toLocaleDateString()}
-          </p>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent 
+        className="max-w-3xl max-h-[90vh] overflow-y-auto relative" 
+        showCloseButton={false}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
+      >
+        <button
+          aria-label="Close"
+          className="absolute top-4 right-4 rounded-md p-1 opacity-50 cursor-not-allowed"
+          disabled
+          style={{ color: "var(--fg)", zIndex: 10 }}
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <DialogHeader>
+          <DialogTitle>Tattoo Aftercare Instructions (Required)</DialogTitle>
+          <DialogDescription>
+            {appointmentDate && (
+              <span className="block mt-1">
+                Appointment Date: {new Date(appointmentDate).toLocaleDateString()}
+              </span>
+            )}
+            Please read these important aftercare instructions carefully
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-6">
         <div>
           <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -126,8 +146,15 @@ export default function AftercareInstructions({ appointmentDate }: Props) {
             <strong>Warning Signs:</strong> If you experience excessive redness, swelling, pus, fever, or signs of infection, contact your artist or seek medical attention immediately.
           </p>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="flex justify-end pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+          <Button onClick={onClose} className="w-full sm:w-auto">
+            I Understand
+          </Button>
+        </div>
+      </div>
+    </DialogContent>
+    </Dialog>
   );
 }
 

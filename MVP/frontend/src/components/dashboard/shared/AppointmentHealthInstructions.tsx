@@ -1,7 +1,6 @@
-import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, XCircle, X } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -30,12 +29,26 @@ export default function AppointmentHealthInstructions({ open, onClose, onContinu
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}>
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto relative" 
+        showCloseButton={false}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
+      >
+        <button
+          aria-label="Close"
+          className="absolute top-4 right-4 rounded-md p-1 opacity-50 cursor-not-allowed"
+          disabled
+          style={{ color: "var(--fg)", zIndex: 10 }}
+        >
+          <X className="h-5 w-5" />
+        </button>
         <DialogHeader>
-          <DialogTitle>Pre-Appointment Instructions</DialogTitle>
+          <DialogTitle>Pre-Appointment Instructions (Required)</DialogTitle>
           <DialogDescription>
-            Important information to ensure a safe and successful tattoo session
+            Please read and acknowledge these important instructions before proceeding
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
@@ -82,10 +95,7 @@ export default function AppointmentHealthInstructions({ open, onClose, onContinu
           </div>
 
           <div className="flex gap-2 justify-end pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-            <Button onClick={onContinue}>
+            <Button onClick={onContinue} className="w-full sm:w-auto">
               I Understand, Continue
             </Button>
           </div>

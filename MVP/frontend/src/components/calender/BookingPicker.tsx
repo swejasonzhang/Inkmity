@@ -233,6 +233,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           return
         }
         
+        setLastBooking(booking)
         swallowGestureTail()
         setSelected(null)
         setConfirmOpen(false)
@@ -249,6 +250,11 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
             }
           }
         )
+        if (kind === "appointment" && artistName) {
+          setTimeout(() => {
+            setReviewModalOpen(true)
+          }, 1000)
+        }
         await refreshSlots()
       }
     } catch (err: any) {

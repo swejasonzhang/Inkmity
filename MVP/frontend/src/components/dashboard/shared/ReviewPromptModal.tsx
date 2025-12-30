@@ -35,6 +35,7 @@ export default function ReviewPromptModal({ open, onClose, artistId, artistName,
         artistClerkId: artistId,
         rating,
         text: comment.trim(),
+        bookingId: bookingId || undefined,
       };
       await addReview(token, reviewData);
 
@@ -51,9 +52,13 @@ export default function ReviewPromptModal({ open, onClose, artistId, artistName,
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md" style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}>
+      <DialogContent 
+        className="max-w-md" 
+        showCloseButton={true}
+        style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
+      >
         <DialogHeader>
-          <DialogTitle>Write a Review</DialogTitle>
+          <DialogTitle>Write a Review (Optional)</DialogTitle>
           <DialogDescription>
             How was your experience with {artistName}?
           </DialogDescription>

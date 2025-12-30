@@ -163,6 +163,7 @@ export type ReviewInput = {
   artistClerkId: string;
   rating: number;
   text?: string;
+  bookingId?: string;
 };
 
 export type MessageDTO = {
