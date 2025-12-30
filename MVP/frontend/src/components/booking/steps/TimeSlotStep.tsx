@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CalendarPicker from "@/components/calender/CalendarPicker";
 import { format } from "date-fns";
+import AppointmentHealthInstructions from "@/components/dashboard/shared/AppointmentHealthInstructions";
 
 type Props = {
   artistId: string;
@@ -11,6 +12,7 @@ type Props = {
   selectedStart: string | null;
   selectedEnd: string | null;
   durationMinutes: number;
+  appointmentType?: "consultation" | "tattoo_session";
   onSelect: (startISO: string, endISO: string) => void;
 };
 
@@ -20,6 +22,7 @@ export default function TimeSlotStep({
   selectedStart,
   selectedEnd,
   durationMinutes,
+  appointmentType = "tattoo_session",
   onSelect,
 }: Props) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -28,6 +31,8 @@ export default function TimeSlotStep({
   const [month, setMonth] = useState(new Date());
   const [slots, setSlots] = useState<Array<{ startISO: string; endISO: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [healthModalOpen, setHealthModalOpen] = useState(false);
+  const [pendingSelection, setPendingSelection] = useState<{ startISO: string; endISO: string } | null>(null);
 
   const startOfToday = useMemo(() => {
     const d = new Date();
@@ -66,9 +71,24 @@ export default function TimeSlotStep({
   };
 
   const handleSlotSelect = (slot: { startISO: string; endISO: string }) => {
-    const start = new Date(slot.startISO);
-    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-    onSelect(start.toISOString(), end.toISOString());
+    if (appointmentType === "tattoo_session") {
+      setPendingSelection(slot);
+      setHealthModalOpen(true);
+    } else {
+      const start = new Date(slot.startISO);
+      const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+      onSelect(start.toISOString(), end.toISOString());
+    }
+  };
+
+  const handleContinueAfterHealth = () => {
+    if (pendingSelection) {
+      const start = new Date(pendingSelection.startISO);
+      const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+      onSelect(start.toISOString(), end.toISOString());
+      setPendingSelection(null);
+      setHealthModalOpen(false);
+    }
   };
 
   const isSlotSelected = (slot: { startISO: string; endISO: string }) => {
@@ -146,6 +166,15 @@ export default function TimeSlotStep({
           </p>
         </Card>
       )}
+
+      <AppointmentHealthInstructions
+        open={healthModalOpen}
+        onClose={() => {
+          setHealthModalOpen(false);
+          setPendingSelection(null);
+        }}
+        onContinue={handleContinueAfterHealth}
+      />
     </div>
   );
 }

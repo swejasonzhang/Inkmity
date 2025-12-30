@@ -145,6 +145,7 @@ export default function AppointmentBookingFlow({
                 selectedStart={bookingData.startISO}
                 selectedEnd={bookingData.endISO}
                 durationMinutes={bookingData.durationMinutes}
+                appointmentType={bookingData.appointmentType || "tattoo_session"}
                 onSelect={(startISO, endISO) => {
                   updateBookingData({ startISO, endISO });
                 }}
