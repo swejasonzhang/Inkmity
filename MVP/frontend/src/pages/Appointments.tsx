@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AftercareInstructions from "@/components/dashboard/shared/AftercareInstructions";
 
 const LOAD_MS = 500;
 const FADE_MS = 160;
@@ -197,6 +198,7 @@ export default function Appointments() {
     const isPending = appointment.status === "pending";
     const isAccepted = appointment.status === "accepted";
     const isDenied = appointment.status === "denied";
+    const isCompleted = appointment.status === "completed";
     const isConsultation = appointment.appointmentType === "consultation";
     const isTattooSession = appointment.appointmentType === "tattoo_session";
     
@@ -339,6 +341,12 @@ export default function Appointments() {
               </div>
             )}
           </div>
+
+          {isCompleted && isTattooSession && (
+            <div className="mt-6 w-full">
+              <AftercareInstructions appointmentDate={appointment.startAt} />
+            </div>
+          )}
 
           {(canAccept || canDeny || canCancel) && (
             <div className="flex gap-3 pt-4">

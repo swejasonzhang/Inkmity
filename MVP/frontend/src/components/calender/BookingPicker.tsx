@@ -17,9 +17,10 @@ import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
 import DepositStep from "./DepositStep"
+import ReviewPromptModal from "../dashboard/shared/ReviewPromptModal"
 
 type Kind = "consultation" | "appointment"
-type Props = { artistId: string; date?: Date }
+type Props = { artistId: string; date?: Date; artistName?: string }
 type Slot = { startISO: string; endISO: string }
 
 function toMinutes(hm: string) {
@@ -70,7 +71,7 @@ function swallowGestureTail(ms = 220) {
   }, ms)
 }
 
-export default function BookingPicker({ artistId, date }: Props) {
+export default function BookingPicker({ artistId, date, artistName }: Props) {
   const scopeRef = useRef<HTMLDivElement>(null)
   const portalRef = useRef<HTMLDivElement>(null)
   const { theme } = useTheme()
@@ -84,6 +85,8 @@ export default function BookingPicker({ artistId, date }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [depositStepOpen, setDepositStepOpen] = useState(false)
   const [pendingBooking, setPendingBooking] = useState<any>(null)
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
+  const [lastBooking, setLastBooking] = useState<any>(null)
 
   const canConfirm = Boolean(selected && date)
 
@@ -560,6 +563,7 @@ export default function BookingPicker({ artistId, date }: Props) {
                 booking={pendingBooking}
                 onDepositPaid={async () => {
                   setDepositStepOpen(false)
+                  setLastBooking(pendingBooking)
                   setPendingBooking(null)
                   await refreshSlots()
                   toast.success(
@@ -575,6 +579,11 @@ export default function BookingPicker({ artistId, date }: Props) {
                       }
                     }
                   )
+                  if (kind === "appointment" && artistName) {
+                    setTimeout(() => {
+                      setReviewModalOpen(true)
+                    }, 1000)
+                  }
                 }}
                 onCancel={() => {
                   setDepositStepOpen(false)
@@ -585,6 +594,14 @@ export default function BookingPicker({ artistId, date }: Props) {
           </RDialogContent>
         </RDialogPortal>
       </RDialog>
+
+      <ReviewPromptModal
+        open={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        artistId={artistId}
+        artistName={artistName || "the artist"}
+        bookingId={lastBooking?._id}
+      />
 
       <ToastContainer
         position="top-center"

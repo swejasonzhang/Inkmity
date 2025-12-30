@@ -262,7 +262,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                             </div>
 
                             <div className="flex items-center gap-2 mt-2 w-full justify-center">
-                                <label className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                <label className="text-sm text-center" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
                                     Sort:
                                 </label>
 
@@ -270,13 +270,25 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                                     value={sort}
                                     onValueChange={(v) => onChangeSort(v as typeof sort)}
                                 >
-                                    <SelectTrigger className="w-auto sm:w-[180px] text-sm" style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}>
-                                        <SelectValue placeholder="Sort by" />
+                                    <SelectTrigger className="w-auto sm:w-[180px] text-sm justify-center" style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}>
+                                        <SelectValue placeholder="Sort by" className="text-center" />
                                     </SelectTrigger>
-                                    <SelectContent style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}>
-                                        <SelectItem value="recent">Most recent</SelectItem>
-                                        <SelectItem value="high">Highest rating</SelectItem>
-                                        <SelectItem value="low">Lowest rating</SelectItem>
+                                    <SelectContent 
+                                        position="popper" 
+                                        align="center"
+                                        sideOffset={4}
+                                        className="z-[2000] p-1"
+                                        style={{ background: "#000000", color: "var(--fg)", borderColor: "var(--border)" }}
+                                    >
+                                        <SelectItem value="recent" className="text-center justify-center my-1 px-3 py-2 rounded-md border bg-black" style={{ background: "#000000", borderColor: "var(--border)" }}>
+                                            Most recent
+                                        </SelectItem>
+                                        <SelectItem value="high" className="text-center justify-center my-1 px-3 py-2 rounded-md border bg-black" style={{ background: "#000000", borderColor: "var(--border)" }}>
+                                            Highest rating
+                                        </SelectItem>
+                                        <SelectItem value="low" className="text-center justify-center my-1 px-3 py-2 rounded-md border bg-black" style={{ background: "#000000", borderColor: "var(--border)" }}>
+                                            Lowest rating
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

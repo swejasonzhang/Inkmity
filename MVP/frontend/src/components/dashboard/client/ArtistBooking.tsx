@@ -367,7 +367,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
                 </div>
                 <div className="min-h-[360px] sm:min-h-[480px] rounded-md px-2 ink-no-anim" style={{ background: "var(--elevated)", color: "var(--fg)", transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                   <div className="w-full max-w-[920px] p-2 sm:p-3 mx-auto ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-                    <BookingPicker artistId={artist.clerkId} date={date} />
+                    <BookingPicker artistId={artist.clerkId} date={date} artistName={artist.username} />
                   </div>
                 </div>
               </div>
