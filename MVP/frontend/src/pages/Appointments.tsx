@@ -200,9 +200,6 @@ export default function Appointments() {
 
   const isLightTheme = theme === "light";
 
-  const isClient = role === "client";
-  const isArtist = role === "artist";
-
   const pendingAppointments = appointments
     .filter((a) => a.status === "pending")
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());

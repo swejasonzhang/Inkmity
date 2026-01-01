@@ -95,6 +95,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [declineConfirmOpen, setDeclineConfirmOpen] = useState(false);
+  const [pendingDeclineId, setPendingDeclineId] = useState<string | null>(null);
+  const [declining, setDeclining] = useState(false);
+  const [declineError, setDeclineError] = useState<string | null>(null);
   const [gateOverride, setGateOverride] = useState<Record<string, GateStatus | undefined>>({});
   const prevExpandedRef = useRef<string | null>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
@@ -106,7 +110,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [requestCount, setRequestCount] = useState(0);
 
   const appRef = useRef<HTMLDivElement | null>(null);
-  const overlayActive = confirmOpen || !!viewerUrl;
+  const overlayActive = confirmOpen || declineConfirmOpen || !!viewerUrl;
 
   useEffect(() => {
     const el = appRef.current as any;
@@ -238,14 +242,64 @@ const ChatWindow: FC<ChatWindowProps> = ({
       }));
     };
 
+    const onMessageNew = (p: {
+      convoId: string;
+      message: Message;
+    }) => {
+      const msg = p.message;
+      const pid = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
+      setConversations(prev => {
+        const existing = prev.find(c => c.participantId === pid);
+        if (!existing) return prev;
+        const msgExists = existing.messages.some(
+          m => m.timestamp === msg.timestamp && m.senderId === msg.senderId
+        );
+        if (msgExists) return prev;
+        return prev.map(conv => {
+          if (conv.participantId !== pid) return conv;
+          return {
+            ...conv,
+            messages: [msg, ...conv.messages],
+          };
+        });
+      });
+    };
+
+    const onDeclined = (p: {
+      convoId: string;
+      declines: number;
+      blocked: boolean;
+      remainingRequests: number;
+    }) => {
+      setConversations(prev => prev.map(conv => {
+        if (conv.participantId && p.convoId.includes(conv.participantId)) {
+          return {
+            ...conv,
+            meta: {
+              ...(conv.meta || {}),
+              lastStatus: "declined",
+              allowed: false,
+              blocked: p.blocked,
+              declines: p.declines,
+            },
+          };
+        }
+        return conv;
+      }));
+    };
+
     const onUnreadUpdate = () => {
       window.dispatchEvent(new Event("ink:unread-update"));
     };
 
     socket.on("conversation:ack", onAck);
+    socket.on("message:new", onMessageNew);
+    socket.on("conversation:declined", onDeclined);
     socket.on("unread:update", onUnreadUpdate);
     return () => {
       socket.off("conversation:ack", onAck);
+      socket.off("message:new", onMessageNew);
+      socket.off("conversation:declined", onDeclined);
       socket.off("unread:update", onUnreadUpdate);
     };
   }, [currentUserId]);
@@ -261,13 +315,13 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!confirmOpen) return;
+    if (!confirmOpen && !declineConfirmOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [confirmOpen]);
+  }, [confirmOpen, declineConfirmOpen]);
 
   useEffect(() => {
     if (!viewerUrl) return;
@@ -364,24 +418,47 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   };
 
-  const handleDecline = async (participantId: string) => {
+  const handleDeclineClick = (participantId: string) => {
     if (isClient) return;
+    setPendingDeclineId(participantId);
+    setDeclineConfirmOpen(true);
+    setDeclineError(null);
+  };
+
+  const cancelDecline = () => {
+    setDeclineConfirmOpen(false);
+    setPendingDeclineId(null);
+    setDeclineError(null);
+  };
+
+  const confirmDecline = async () => {
+    if (!pendingDeclineId || isClient) return;
+    setDeclining(true);
+    setDeclineError(null);
     try {
-      const id = await fetchRequestsAndFindId(participantId);
+      const id = await fetchRequestsAndFindId(pendingDeclineId);
       if (!id) {
-        setSendError("No pending request found for this user.");
+        setDeclineError("No pending request found for this user.");
+        setDeclining(false);
         return;
       }
       const res = await authFetch(`/api/messages/requests/${id}/decline`, { method: "POST" });
-      if (!res.ok) throw new Error(`Decline failed ${res.status}`);
-      setGateOverride(m => ({ ...m, [participantId]: "declined" }));
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.error || `Decline failed ${res.status}`);
+      }
+      setGateOverride(m => ({ ...m, [pendingDeclineId]: "declined" }));
       setConversations(list =>
         list.map(c =>
-          c.participantId === participantId ? { ...c, meta: { ...(c.meta || {}), lastStatus: "declined", allowed: false } } : c
+          c.participantId === pendingDeclineId ? { ...c, meta: { ...(c.meta || {}), lastStatus: "declined", allowed: false, blocked: true } } : c
         )
       );
+      setDeclineConfirmOpen(false);
+      setPendingDeclineId(null);
     } catch (e: any) {
-      setSendError(e?.message || "Failed to decline request.");
+      setDeclineError(e?.message || "Failed to decline request.");
+    } finally {
+      setDeclining(false);
     }
   };
 
@@ -427,6 +504,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const sendMessage = useCallback(async (participantId: string, text: string, imageUrls: string[] = []) => {
     try {
+      const conv = conversations.find(c => c.participantId === participantId);
+      if (conv?.meta?.blocked) {
+        throw new Error("Messaging has been disabled for this artist. They have declined your request.");
+      }
+      
       const allImageUrls = [...new Set([...getUrlsFromText(text), ...imageUrls])];
       const meta: Record<string, any> = {
         ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
@@ -436,12 +518,18 @@ const ChatWindow: FC<ChatWindowProps> = ({
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ receiverId: participantId, text, meta, referenceUrls: allImageUrls })
       });
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 403 && errorData?.error === "blocked_by_declines") {
+          throw new Error("Messaging has been disabled for this artist. They have declined your request.");
+        }
+        throw new Error(`Server returned ${res.status}`);
+      }
       onMarkRead(participantId);
     } catch (err: any) {
       throw new Error(err?.message || "Failed to send message.");
     }
-  }, [authFetch, onMarkRead]);
+  }, [authFetch, onMarkRead, conversations]);
 
   const handleOfferConsultation = async (clientId: string) => {
     if (isClient) return;
@@ -508,7 +596,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const status: GateStatus | null = isClient ? null : computedStatus;
   const canSend = isClient ? true : status === "accepted" && (override === "accepted" || !!activeConv?.meta?.allowed);
+  const isBlocked = activeConv?.meta?.blocked || false;
   const needsApproval = isClient ? false : status === "pending" && !canSend;
+  const isMessagingDisabled = isClient && isBlocked;
 
   if (!currentUserId) {
     return (
@@ -543,6 +633,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
     
     if (!text && images.length === 0) return;
     
+    const conv = conversations.find(c => c.participantId === participantId);
+    if (conv?.meta?.blocked) {
+      setSendError("Messaging has been disabled for this artist. They have declined your request.");
+      return;
+    }
+    
     setSendError(null);
     setExpandedId(participantId);
     setMessageInput(prev => ({ ...prev, [participantId]: "" }));
@@ -559,7 +655,13 @@ const ChatWindow: FC<ChatWindowProps> = ({
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ receiverId: participantId, text, meta, referenceUrls: allImageUrls })
       });
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 403 && errorData?.error === "blocked_by_declines") {
+          throw new Error("Messaging has been disabled for this artist. They have declined your request.");
+        }
+        throw new Error(`Server returned ${res.status}`);
+      }
       onMarkRead(participantId);
     } catch (err: any) {
       setSendError(err?.message || "Failed to send message.");
@@ -643,56 +745,110 @@ const ChatWindow: FC<ChatWindowProps> = ({
   };
 
   const modal = (
-    <AnimatePresence>
-      {confirmOpen && (
-        <motion.div
-          className="fixed inset-0 z-[99999] flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          aria-modal="true"
-          role="dialog"
-          onClick={cancelDelete}
-        >
-          <button type="button" className="absolute inset-0 bg-black/60" aria-label="Close dialog" />
+    <>
+      <AnimatePresence>
+        {confirmOpen && (
           <motion.div
-            className="relative bg-card text-app rounded-xl shadow-2xl border border-app"
-          style={{ padding: 'clamp(1rem, 2vw, 1.5rem)', width: 'clamp(280px, 85vw, 448px)', maxWidth: '90vw' }}
-            initial={{ scale: 0.94, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.94, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 240, damping: 22 }}
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 z-[99999] flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            aria-modal="true"
+            role="dialog"
+            onClick={cancelDelete}
           >
-            <h3 className="text-base font-semibold mb-2">Delete conversation?</h3>
-            <p className="text-muted-foreground mb-4 text-sm">This removes the conversation for you.</p>
-            {deleteError && <div className="mb-3 text-sm text-destructive">{deleteError}</div>}
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  cancelDelete();
-                }}
-                disabled={deleting}
-                className="px-4 py-2 rounded-md bg-elevated hover:bg-elevated/80 text-app text-sm disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  confirmDelete();
-                }}
-                disabled={deleting}
-                className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm disabled:opacity-60"
-              >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
-            </div>
+            <button type="button" className="absolute inset-0 bg-black/60" aria-label="Close dialog" />
+            <motion.div
+              className="relative bg-card text-app rounded-xl shadow-2xl border border-app"
+            style={{ padding: 'clamp(1rem, 2vw, 1.5rem)', width: 'clamp(280px, 85vw, 448px)', maxWidth: '90vw' }}
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.94, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 240, damping: 22 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-base font-semibold mb-2">Delete conversation?</h3>
+              <p className="text-muted-foreground mb-4 text-sm">This removes the conversation for you.</p>
+              {deleteError && <div className="mb-3 text-sm text-destructive">{deleteError}</div>}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    cancelDelete();
+                  }}
+                  disabled={deleting}
+                  className="px-4 py-2 rounded-md bg-elevated hover:bg-elevated/80 text-app text-sm disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    confirmDelete();
+                  }}
+                  disabled={deleting}
+                  className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm disabled:opacity-60"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {declineConfirmOpen && (
+          <motion.div
+            className="fixed inset-0 z-[99999] flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            aria-modal="true"
+            role="dialog"
+            onClick={cancelDecline}
+          >
+            <button type="button" className="absolute inset-0 bg-black/60" aria-label="Close dialog" />
+            <motion.div
+              className="relative bg-card text-app rounded-xl shadow-2xl border border-app"
+              style={{ padding: 'clamp(1rem, 2vw, 1.5rem)', width: 'clamp(280px, 85vw, 448px)', maxWidth: '90vw' }}
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.94, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 240, damping: 22 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-base font-semibold mb-2">Decline Message Request?</h3>
+              <p className="text-muted-foreground mb-4 text-sm">
+                This action cannot be undone. You will permanently cut contact with this client and they will not be able to message you again. A respectful message will be sent to notify them.
+              </p>
+              {declineError && <div className="mb-3 text-sm text-destructive">{declineError}</div>}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    cancelDecline();
+                  }}
+                  disabled={declining}
+                  className="px-4 py-2 rounded-md bg-elevated hover:bg-elevated/80 text-app text-sm disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    confirmDecline();
+                  }}
+                  disabled={declining}
+                  className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm disabled:opacity-60"
+                >
+                  {declining ? "Declining..." : "Confirm Decline"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 
   const imageViewer = (
@@ -932,7 +1088,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handleDecline(activeConv.participantId)}
+                                    onClick={() => handleDeclineClick(activeConv.participantId)}
                                     className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
                                   >
                                     Decline
@@ -1107,12 +1263,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           multiple
                           onChange={handleFileUpload}
                           className="hidden"
-                          disabled={needsApproval && !isClient || uploading}
+                          disabled={(needsApproval && !isClient) || isMessagingDisabled || uploading}
                         />
                         <button
                           type="button"
                           onClick={openUpload}
-                          disabled={needsApproval && !isClient || uploading}
+                          disabled={(needsApproval && !isClient) || isMessagingDisabled || uploading}
                           className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60 rounded-lg"
                           style={{ width: 'clamp(2rem, 2.5vw, 2.5rem)', height: 'clamp(2rem, 2.5vw, 2.5rem)' }}
                           aria-label="Add images"
@@ -1133,22 +1289,24 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             }
                             className="flex-1 p-2 text-sm bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
                             placeholder={
-                              needsApproval && !isClient
-                                ? "Approve to enable messaging"
-                                : status === "declined" && !isClient
-                                  ? "Messaging locked"
-                                  : "Type a message"
+                              isMessagingDisabled
+                                ? "Messaging disabled - artist declined your request"
+                                : needsApproval && !isClient
+                                  ? "Approve to enable messaging"
+                                  : status === "declined" && !isClient
+                                    ? "Messaging locked"
+                                    : "Type a message"
                             }
-                            disabled={needsApproval && !isClient}
+                            disabled={(needsApproval && !isClient) || isMessagingDisabled}
                             onKeyDown={e => {
-                              if (needsApproval && !isClient) return;
+                              if ((needsApproval && !isClient) || isMessagingDisabled) return;
                               if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
                             }}
                           />
                           <button
                             type="button"
-                            onClick={() => activeConv && (!needsApproval || isClient) && handleSend(activeConv.participantId)}
-                            disabled={needsApproval && !isClient}
+                            onClick={() => activeConv && (!needsApproval || isClient) && !isMessagingDisabled && handleSend(activeConv.participantId)}
+                            disabled={(needsApproval && !isClient) || isMessagingDisabled}
                             className="w-9 h-9 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
                             aria-label="Send message"
                           >
@@ -1268,7 +1426,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             <>
                               <button
                                 type="button"
-                                onClick={() => handleDecline(activeConv.participantId)}
+                                onClick={() => handleDeclineClick(activeConv.participantId)}
                                 className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs"
                               >
                                 Decline
@@ -1436,12 +1594,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       multiple
                       onChange={handleFileUpload}
                       className="hidden"
-                      disabled={needsApproval && !isClient || uploading}
+                      disabled={(needsApproval && !isClient) || isMessagingDisabled || uploading}
                     />
                     <button
                       type="button"
                       onClick={openUpload}
-                      disabled={needsApproval && !isClient || uploading}
+                      disabled={(needsApproval && !isClient) || isMessagingDisabled || uploading}
                       className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
                       style={{ width: 'clamp(2.25rem, 3vw, 2.75rem)', height: 'clamp(2.25rem, 3vw, 2.75rem)' }}
                       aria-label="Add images"
@@ -1462,24 +1620,26 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         }
                         className="flex-1 p-3 md:p-3 bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
                         placeholder={
-                          needsApproval && !isClient
-                            ? isArtist
-                              ? "Approve to enable messaging"
-                              : "Waiting for approval"
-                            : status === "declined" && !isClient
-                              ? "Messaging locked"
-                              : "Type a message"
+                          isMessagingDisabled
+                            ? "Messaging disabled - artist declined your request"
+                            : needsApproval && !isClient
+                              ? isArtist
+                                ? "Approve to enable messaging"
+                                : "Waiting for approval"
+                              : status === "declined" && !isClient
+                                ? "Messaging locked"
+                                : "Type a message"
                         }
-                        disabled={needsApproval && !isClient}
+                        disabled={(needsApproval && !isClient) || isMessagingDisabled}
                         onKeyDown={e => {
-                          if (needsApproval && !isClient) return;
+                          if ((needsApproval && !isClient) || isMessagingDisabled) return;
                           if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
                         }}
                       />
                       <button
                         type="button"
-                        onClick={() => activeConv && (!needsApproval || isClient) && handleSend(activeConv.participantId)}
-                        disabled={needsApproval && !isClient}
+                        onClick={() => activeConv && (!needsApproval || isClient) && !isMessagingDisabled && handleSend(activeConv.participantId)}
+                        disabled={(needsApproval && !isClient) || isMessagingDisabled}
                         className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
                       style={{ width: 'clamp(2.25rem, 3vw, 2.75rem)', height: 'clamp(2.25rem, 3vw, 2.75rem)' }}
                         aria-label="Send message"
