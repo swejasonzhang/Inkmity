@@ -412,23 +412,81 @@ export const declineMessageRequest = async (req, res) => {
     if (!msg) return res.status(404).json({ error: "not_found" });
     msg.requestStatus = "declined";
     await msg.save();
-    const declines = await declineCount(msg.senderId, artistId);
+    
+    const existingDeclines = await declineCount(msg.senderId, artistId);
+    if (existingDeclines < MAX_DECLINES) {
+      const declinesToAdd = MAX_DECLINES - existingDeclines;
+      const declineRecords = [];
+      for (let i = 0; i < declinesToAdd; i++) {
+        declineRecords.push({
+          senderId: msg.senderId,
+          receiverId: artistId,
+          text: "Request declined",
+          type: "request",
+          requestStatus: "declined",
+          delivered: true,
+          deliveredAt: new Date(),
+          seen: false,
+          threadKey: msg.threadKey,
+        });
+      }
+      if (declineRecords.length > 0) {
+        await Message.insertMany(declineRecords);
+      }
+    }
+    
+    const clientId = msg.senderId;
+    const artist = await User.findOne({ clerkId: artistId }).lean();
+    const artistUsername = artist?.username || "the artist";
+    
+    const presetMessage = `Thank you for your interest. Unfortunately, ${artistUsername} is not able to take on this project at this time. We appreciate your understanding.`;
+    
+    const declineNotification = await Message.create({
+      senderId: artistId,
+      receiverId: clientId,
+      text: presetMessage,
+      type: "message",
+      seen: false,
+      delivered: true,
+      deliveredAt: new Date(),
+      meta: {
+        kind: "decline_notification",
+      },
+    });
+    
+    const declinePayload = {
+      senderId: declineNotification.senderId,
+      receiverId: declineNotification.receiverId,
+      text: declineNotification.text,
+      timestamp: declineNotification.createdAt.getTime(),
+      meta: declineNotification.meta || undefined,
+      delivered: true,
+      seen: false,
+    };
+    
+    const declines = await declineCount(clientId, artistId);
     const blocked = declines >= MAX_DECLINES;
     const io = getIO();
     if (io) {
-      io.to(userRoom(msg.senderId)).emit("conversation:declined", {
+      io.to(userRoom(clientId))
+        .to(threadRoom(msg.threadKey))
+        .emit("message:new", { convoId: msg.threadKey, message: declinePayload });
+      
+      io.to(userRoom(clientId)).emit("conversation:declined", {
         convoId: msg.threadKey,
         declines,
-        blocked,
-        remainingRequests: Math.max(0, MAX_DECLINES - declines),
+        blocked: true,
+        remainingRequests: 0,
       });
-      io.to(userRoom(msg.senderId))
+      
+      io.to(userRoom(clientId))
         .to(userRoom(artistId))
         .to(threadRoom(msg.threadKey))
         .emit("conversation:removed", { convoId: msg.threadKey });
     }
-    res.json({ ok: true, declines, blocked });
+    res.json({ ok: true, declines, blocked: true });
   } catch (e) {
+    console.error("Error declining message request:", e);
     res.status(500).json({ error: "Failed to decline request" });
   }
 };
