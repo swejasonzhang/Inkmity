@@ -315,6 +315,32 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!isClient) return;
+    const handleProfileUpdate = () => {
+      // Refresh conversations when client profile is updated
+      if (!currentUserId) return;
+      let mounted = true;
+      (async () => {
+        try {
+          const res = await authFetch(`/messages/user/${currentUserId}`, { method: "GET" });
+          const data = res.ok ? await res.json() : null;
+          const arr: Conversation[] = Array.isArray(data) ? data : Array.isArray(data?.conversations) ? data.conversations : [];
+          if (mounted) setConversations(arr);
+          if (mounted) {
+            const next: Record<string, number> = {};
+            for (const c of arr) next[c.participantId] = next[c.participantId] ?? 0;
+            setUnreadMap(m => ({ ...next, ...m }));
+          }
+        } catch (error) {
+          console.error("Failed to refresh conversations after profile update:", error);
+        }
+      })();
+    };
+    window.addEventListener("ink:client-profile-updated", handleProfileUpdate);
+    return () => window.removeEventListener("ink:client-profile-updated", handleProfileUpdate);
+  }, [isClient, currentUserId, authFetch]);
+
+  useEffect(() => {
     if (!confirmOpen && !declineConfirmOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
