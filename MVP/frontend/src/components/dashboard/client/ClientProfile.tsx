@@ -332,6 +332,10 @@ export default function ClientProfile() {
             await loadProfile();
             setEditedClient({});
             
+            if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("ink:client-profile-updated"));
+            }
+            
             try {
                 const savedLocation = editedClient.location ?? client.location;
                 const savedBudgetMin = budgetMin;
@@ -408,6 +412,21 @@ export default function ClientProfile() {
 
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
     const snap = (v: number) => Math.round(v / STEP) * STEP;
+    
+    const defaultMessage = useMemo(() => {
+        const budgetMinVal = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
+        const budgetMaxVal = clamp(snap(currentBudgetMax), budgetMinVal + MIN_GAP, MAX);
+        const parts: string[] = [
+            "Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for.",
+            `My budget is $${budgetMinVal}-$${budgetMaxVal}.`,
+            currentLocation ? `I'm located in ${currentLocation}.` : "",
+            currentPlacement ? `I'm looking for something on my ${currentPlacement.toLowerCase()}.` : "",
+            currentSize ? `Size preference: ${SIZE_OPTIONS.find(s => s.value === currentSize)?.label || currentSize}.` : "",
+            "Let me know if you're available and interested!"
+        ];
+        return parts.filter(Boolean).join(" ");
+    }, [currentBudgetMin, currentBudgetMax, currentLocation, currentPlacement, currentSize]);
+    
     const budgetMin = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
 
@@ -443,8 +462,6 @@ export default function ClientProfile() {
             </div>
         );
     }
-
-    const defaultMessage = `Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $${budgetMin}-$${budgetMax}. ${currentLocation ? `I'm located in ${currentLocation}.` : ""} ${currentPlacement ? `I'm looking for something on my ${currentPlacement.toLowerCase()}.` : ""} ${currentSize ? `Size preference: ${SIZE_OPTIONS.find(s => s.value === currentSize)?.label || currentSize}.` : ""} Let me know if you're available and interested!`;
 
     return (
         <div className="h-full min-h-0 w-full overflow-hidden flex items-start justify-center p-4">
