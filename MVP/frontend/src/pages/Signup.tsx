@@ -8,6 +8,7 @@ import InfoPanel from "@/components/access/InfoPanel";
 import SignupFormCard from "@/components/access/SignupFormCard";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
+import { resetActivityTimer } from "@/hooks/useInactivityLogout";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
@@ -390,6 +391,7 @@ export default function SignUp() {
       const result = await signUpAttempt.attemptEmailAddressVerification({ code: code.trim() });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
+        resetActivityTimer();
         try {
           const token = await getToken();
           const headers: Record<string, string> = { "Content-Type": "application/json" };
