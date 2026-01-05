@@ -10,6 +10,7 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
 import { useTheme } from "@/hooks/useTheme";
+import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
@@ -35,6 +36,8 @@ const DashboardScope: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  useInactivityLogout();
+
   return (
     <Routes>
       <Route path="/dashboard" element={<DashboardScope />}>

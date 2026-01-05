@@ -7,6 +7,7 @@ import InfoPanel from "@/components/access/InfoPanel";
 import LoginFormCard from "@/components/access/LoginFormCard";
 import { Button } from "@/components/ui/button";
 import { container } from "@/lib/animations";
+import { resetActivityTimer } from "@/hooks/useInactivityLogout";
 
 type TipState = { show: boolean; x: number; y: number };
 
@@ -241,6 +242,8 @@ export default function Login() {
           return;
         }
         
+        resetActivityTimer();
+        
         try {
           sessionStorage.setItem("authRedirect", "1");
         } catch { }
@@ -257,6 +260,7 @@ export default function Login() {
         if (result.createdSessionId) {
           try {
             await setActive({ session: result.createdSessionId });
+            resetActivityTimer();
             try {
               sessionStorage.setItem("authRedirect", "1");
             } catch { }
