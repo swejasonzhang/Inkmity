@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AftercareInstructions from "@/components/dashboard/shared/AftercareInstructions";
+import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
 
 const LOAD_MS = 500;
 const FADE_MS = 160;
@@ -221,6 +222,11 @@ export default function Appointments() {
     const canAccept = isArtist && isPending;
     const canCancel = isClient && isPending;
     const canDeny = isArtist && isPending;
+    const hasRescheduled = appointment.rescheduledAt && appointment.rescheduledFrom;
+    const hasReferenceImages = appointment.referenceImageIds && appointment.referenceImageIds.length > 0;
+    const remainingBalance = appointment.priceCents && appointment.depositPaidCents 
+      ? appointment.priceCents - appointment.depositPaidCents 
+      : undefined;
 
     const getStatusBadgeStyle = (): React.CSSProperties => {
       return {
@@ -234,19 +240,33 @@ export default function Appointments() {
       };
     };
 
+    const DetailRow = ({ icon: Icon, label, value, className = "" }: { icon: any; label: string; value: string | React.ReactNode; className?: string }) => (
+      <div className={`flex items-start gap-2 py-1 ${className}`}>
+        <Icon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }} />
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-medium mb-0.5" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+            {label}
+          </div>
+          <div className="text-xs" style={{ color: "var(--fg)" }}>
+            {value}
+          </div>
+        </div>
+      </div>
+    );
+
     return (
       <Card
-        className="border rounded-xl p-6 bg-card border-app h-full flex flex-col"
+        className="border rounded-lg p-4 bg-card border-app h-full flex flex-col"
         style={{
           borderColor: "var(--border)"
         }}
       >
-        <CardHeader className="p-0 pb-4 flex-shrink-0">
-          <div className="flex flex-col items-center text-center space-y-3">
+        <CardHeader className="p-0 pb-3 flex-shrink-0">
+          <div className="flex flex-col items-center text-center space-y-2">
             <div className="w-full flex items-center justify-between">
               <div className="flex-1"></div>
               <div 
-                className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide"
+                className="px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide"
                 style={getStatusBadgeStyle()}
               >
                 {appointment.status}
@@ -255,116 +275,195 @@ export default function Appointments() {
             </div>
             
             <div className="w-full text-center">
-              <CardTitle className="text-2xl font-bold mb-1 text-app">
+              <CardTitle className="text-xl font-bold mb-0.5 text-app">
                 {otherUser?.username || "Unknown"}
               </CardTitle>
-              <div className="text-base font-medium text-subtle">
-                {isConsultation ? "Consultation" : "Appointment"}
+              <div className="text-sm font-medium text-subtle">
+                {isConsultation ? "Consultation" : isTattooSession ? "Tattoo Session" : "Appointment"}
               </div>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="p-0 space-y-3 flex-1 flex flex-col items-center justify-center">
-          <div className="text-center space-y-1.5 text-app w-full">
-            <div className="text-lg font-semibold">
-              {formatDate(appointment.startAt)}
-            </div>
-            <div className="text-base font-medium">
-              {formatTime(appointment.startAt)} – {formatTime(appointment.endAt)}
-            </div>
-            <div className="text-sm text-muted">
-              Duration: {formatDuration(duration)}
-            </div>
-          </div>
-
+        <CardContent className="p-0 space-y-2 flex-1">
           <div 
-            className="border-t pt-3 space-y-2"
+            className="border-t pt-2 grid grid-cols-2 gap-x-3 gap-y-1"
             style={{ borderColor: "var(--border)" }}
           >
+            <DetailRow 
+              icon={Calendar} 
+              label="Date" 
+              value={formatDate(appointment.startAt)} 
+            />
+            <DetailRow 
+              icon={Clock} 
+              label="Time" 
+              value={`${formatTime(appointment.startAt)} – ${formatTime(appointment.endAt)}`} 
+            />
+            <DetailRow 
+              icon={Clock} 
+              label="Duration" 
+              value={formatDuration(duration)} 
+            />
+
+            {isTattooSession && appointment.sessionNumber && (
+              <DetailRow 
+                icon={Hash} 
+                label="Session Number" 
+                value={`#${appointment.sessionNumber}`} 
+              />
+            )}
+
             {isTattooSession && appointment.priceCents !== undefined && appointment.priceCents > 0 && (
-              <div className="text-center space-y-1 text-app">
-                <div className="text-sm font-medium">
-                  Total Price: {formatCurrency(appointment.priceCents)}
-                </div>
+              <>
+                <DetailRow 
+                  icon={DollarSign} 
+                  label="Total Price" 
+                  value={formatCurrency(appointment.priceCents)} 
+                />
                 {appointment.depositRequiredCents !== undefined && appointment.depositRequiredCents > 0 && (
-                  <div className="text-xs text-muted">
-                    Deposit Required: {formatCurrency(appointment.depositRequiredCents)}
-                    {appointment.depositPaidCents !== undefined && appointment.depositPaidCents > 0 && (
-                      <span className="ml-2">
-                        (Paid: {formatCurrency(appointment.depositPaidCents)})
-                      </span>
-                    )}
-                  </div>
+                  <DetailRow 
+                    icon={DollarSign} 
+                    label="Deposit" 
+                    value={
+                      <div className="space-y-0.5">
+                        <div>Required: {formatCurrency(appointment.depositRequiredCents)}</div>
+                        {appointment.depositPaidCents !== undefined && appointment.depositPaidCents > 0 && (
+                          <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                            Paid: {formatCurrency(appointment.depositPaidCents)}
+                            {remainingBalance !== undefined && remainingBalance > 0 && (
+                              <span className="ml-1.5">
+                                • Remaining: {formatCurrency(remainingBalance)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    } 
+                  />
                 )}
-              </div>
+              </>
             )}
 
             {isConsultation && (
-              <div 
-                className="text-center text-sm font-medium"
-                style={{
-                  color: isLightTheme 
-                    ? "#000000"
-                    : "#ffffff",
-                  backgroundColor: isLightTheme 
-                    ? "#ffffff"
-                    : "#000000",
-                  border: `1px solid ${isLightTheme ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)"}`,
-                  padding: "0.5rem",
-                  borderRadius: "0.5rem"
-                }}
-              >
-                ✓ No charge for consultations
-              </div>
+              <DetailRow 
+                icon={CheckCircle} 
+                label="Fee" 
+                value="No charge for consultations" 
+              />
             )}
 
-            {appointment.note && (
-              <div className="text-center text-sm text-muted">
-                <div className="font-medium mb-1">Note:</div>
-                <div className="italic">{appointment.note}</div>
-              </div>
+            {hasReferenceImages && (
+              <DetailRow 
+                icon={Image} 
+                label="Reference Images" 
+                value={`${appointment.referenceImageIds?.length || 0} image${(appointment.referenceImageIds?.length || 0) !== 1 ? 's' : ''} attached`} 
+              />
             )}
 
-            {appointment.sessionNumber && isTattooSession && (
-              <div className="text-center text-sm text-muted">
-                Session #{appointment.sessionNumber}
-              </div>
+            {appointment.projectId && (
+              <DetailRow 
+                icon={FileText} 
+                label="Project" 
+                value={`Project ID: ${appointment.projectId}`} 
+              />
             )}
 
             {appointment.createdAt && (
-              <div className="text-center text-xs text-muted">
-                Requested: {formatDateTime(appointment.createdAt)}
-              </div>
+              <DetailRow 
+                icon={Calendar} 
+                label="Requested" 
+                value={formatDateTime(appointment.createdAt)} 
+              />
             )}
 
             {isAccepted && appointment.confirmedAt && (
-              <div className="text-center text-xs text-muted">
-                Confirmed: {formatDateTime(appointment.confirmedAt)}
-              </div>
+              <DetailRow 
+                icon={CheckCircle} 
+                label="Confirmed" 
+                value={formatDateTime(appointment.confirmedAt)} 
+              />
+            )}
+
+            {isCompleted && (
+              <DetailRow 
+                icon={CheckCircle} 
+                label="Completed" 
+                value={formatDateTime(appointment.endAt)} 
+              />
+            )}
+
+            {appointment.note && (
+              <DetailRow 
+                icon={FileText} 
+                label="Note" 
+                value={<span className="italic">{appointment.note}</span>} 
+                className="col-span-2"
+              />
+            )}
+
+            {hasRescheduled && (
+              <DetailRow 
+                icon={RefreshCw} 
+                label="Rescheduled" 
+                value={
+                  <div className="space-y-0.5">
+                    <div>From: {formatDateTime(appointment.rescheduledFrom!)}</div>
+                    <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                      By: {appointment.rescheduledBy === "client" ? "Client" : "Artist"}
+                    </div>
+                  </div>
+                }
+                className="col-span-2"
+              />
             )}
 
             {isDenied && appointment.cancelledAt && (
-              <div className="text-center text-xs text-muted">
-                {appointment.cancelledBy === "client" ? "Cancelled" : "Denied"}: {formatDateTime(appointment.cancelledAt)}
-                {appointment.cancellationReason && (
-                  <div className="mt-1 italic">
-                    Reason: {appointment.cancellationReason}
+              <DetailRow 
+                icon={XCircle} 
+                label={appointment.cancelledBy === "client" ? "Cancelled" : "Denied"} 
+                value={
+                  <div className="space-y-0.5">
+                    <div>{formatDateTime(appointment.cancelledAt)}</div>
+                    {appointment.cancellationReason && (
+                      <div className="text-xs italic" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                        Reason: {appointment.cancellationReason}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                }
+                className="col-span-2"
+              />
+            )}
+
+            {appointment.status === "no-show" && appointment.noShowMarkedAt && (
+              <DetailRow 
+                icon={AlertCircle} 
+                label="No-Show" 
+                value={
+                  <div className="space-y-0.5">
+                    <div>Marked: {formatDateTime(appointment.noShowMarkedAt)}</div>
+                    {appointment.noShowMarkedBy && (
+                      <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                        By: {appointment.noShowMarkedBy === "client" ? "Client" : appointment.noShowMarkedBy === "artist" ? "Artist" : "System"}
+                      </div>
+                    )}
+                  </div>
+                }
+                className="col-span-2"
+              />
             )}
           </div>
 
           {isCompleted && isTattooSession && (
-            <div className="mt-4">
+            <div className="pt-1">
               <Button
                 onClick={() => {
                   setAftercareAppointment(appointment);
                   setAftercareModalOpen(true);
                 }}
                 variant="outline"
-                className="w-full"
+                className="w-full h-9 text-sm"
                 style={{ borderColor: "var(--border)", color: "var(--fg)" }}
               >
                 View Aftercare Instructions
@@ -373,12 +472,12 @@ export default function Appointments() {
           )}
 
           {(canAccept || canDeny || canCancel) && (
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-2 pt-1">
               {canAccept && (
                 <Button
                   onClick={() => handleAccept(appointment._id)}
                   disabled={processing === appointment._id}
-                  className="flex-1 h-11 text-base font-semibold"
+                  className="flex-1 h-9 text-sm font-semibold"
                   style={{
                     background: "var(--fg)",
                     color: "var(--card)",
@@ -392,7 +491,7 @@ export default function Appointments() {
                   onClick={() => handleDeny(appointment._id)}
                   disabled={processing === appointment._id}
                   variant="outline"
-                  className="flex-1 h-11 text-base font-semibold"
+                  className="flex-1 h-9 text-sm font-semibold"
                   style={{
                     borderColor: "var(--border)",
                     color: "var(--fg)",
@@ -406,7 +505,7 @@ export default function Appointments() {
                   onClick={() => handleDeny(appointment._id)}
                   disabled={processing === appointment._id}
                   variant="outline"
-                  className="flex-1 h-11 text-base font-semibold"
+                  className="flex-1 h-9 text-sm font-semibold"
                   style={{
                     borderColor: isLightTheme 
                       ? "rgba(0, 0, 0, 0.2)"
@@ -439,12 +538,12 @@ export default function Appointments() {
         style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
       >
       <Header />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-3 text-app">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold mb-2 text-app">
             Appointments
           </h1>
-          <p className="text-base text-muted">
+          <p className="text-sm text-muted">
             Manage your consultation and tattoo session requests
           </p>
         </div>
@@ -454,21 +553,21 @@ export default function Appointments() {
             <Loading theme={theme} />
           </div>
         ) : appointments.length === 0 ? (
-          <div className="text-center py-12 text-muted">
+          <div className="text-center py-8 text-muted">
             No appointments found
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="text-center w-full">
-              <h2 className="text-2xl font-bold mb-6 text-app">
+              <h2 className="text-xl font-bold mb-4 text-app">
                 Pending ({pendingAppointments.length})
               </h2>
               {pendingAppointments.length === 0 ? (
-                <div className="text-center py-10 text-muted min-h-[200px]">
+                <div className="text-center py-6 text-muted min-h-[150px]">
                   No pending appointments
                 </div>
               ) : (
-                <div className="grid gap-6 max-w-2xl mx-auto w-full">
+                <div className="grid gap-4 max-w-2xl mx-auto w-full">
                   {pendingAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -477,15 +576,15 @@ export default function Appointments() {
             </div>
 
             <div className="text-center w-full">
-              <h2 className="text-2xl font-bold mb-6 text-app">
+              <h2 className="text-xl font-bold mb-4 text-app">
                 Past ({pastAppointments.length})
               </h2>
               {pastAppointments.length === 0 ? (
-                <div className="text-center py-10 text-muted min-h-[200px]">
+                <div className="text-center py-6 text-muted min-h-[150px]">
                   No past appointments
                 </div>
               ) : (
-                <div className="grid gap-6 max-w-2xl mx-auto w-full">
+                <div className="grid gap-4 max-w-2xl mx-auto w-full">
                   {pastAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
