@@ -302,6 +302,7 @@ export default function ClientProfile() {
             const budgetMin = Math.max(MIN, Math.min(MAX, Number(editedClient.budgetMin ?? client.budgetMin ?? 100)));
             const budgetMax = Math.max(budgetMin + MIN_GAP, Math.min(MAX, Number(editedClient.budgetMax ?? client.budgetMax ?? 200)));
             const refs = (editedClient.references || client.references || []).slice(0, 3);
+            const userMessage = editedClient.messageToArtists ?? client.messageToArtists ?? "";
 
             const response = await fetch(`${API_URL}/users/sync`, {
                 method: "POST",
@@ -322,7 +323,7 @@ export default function ClientProfile() {
                         placement: editedClient.placement ?? client.placement,
                         size: editedClient.size ?? client.size,
                         referenceImages: refs,
-                        messageToArtists: editedClient.messageToArtists ?? client.messageToArtists ?? "",
+                        messageToArtists: userMessage,
                     },
                     bio: editedClient.bio ?? client.bio,
                 }),
