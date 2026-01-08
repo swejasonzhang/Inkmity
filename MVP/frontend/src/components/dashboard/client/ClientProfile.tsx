@@ -25,15 +25,29 @@ interface Client {
     budgetMin?: number;
     budgetMax?: number;
     placement?: string;
+    pieceType?: string;
     size?: string;
     messageToArtists?: string;
 }
 
+const PIECE_TYPE_OPTIONS = [
+    "Full sleeve",
+    "Half sleeve",
+    "Entire back piece",
+    "Leg piece",
+    "Chest piece",
+    "Rib piece",
+    "Stomach piece",
+    "Shoulder piece",
+    "Forearm piece",
+    "Thigh piece",
+    "Calf piece",
+    "Other",
+];
+
 const PLACEMENT_OPTIONS = [
     "Forearm",
     "Upper arm",
-    "Full arm sleeve",
-    "Half sleeve",
     "Wrist",
     "Hand",
     "Shoulder",
@@ -138,6 +152,15 @@ export default function ClientProfile() {
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const referenceInputRef = useRef<HTMLInputElement>(null);
+    const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const prevValuesRef = useRef<{ budgetMin: number; budgetMax: number; location: string; placement: string; pieceType: string; size: string }>({
+        budgetMin: 100,
+        budgetMax: 200,
+        location: "New York, NY",
+        placement: "",
+        pieceType: "",
+        size: ""
+    });
     const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
 
     useEffect(() => {
@@ -201,14 +224,15 @@ export default function ClientProfile() {
                 username: data.username || "",
                 handle: data.handle || "",
                 bio: data.bio || "",
-                location: data.location || "",
+                location: data.location || "New York, NY",
                 profileImage: data.avatar?.url || data.profileImage || data.avatarUrl || "",
                 coverImage: data.coverImage || "",
                 avatar: data.avatar,
                 references: Array.isArray(data.references) ? data.references : [],
                 budgetMin: data.budgetMin ?? 100,
                 budgetMax: data.budgetMax ?? 200,
-                placement: data.placement || "",
+                placement: data.placement ?? "",
+                pieceType: data.pieceType || "",
                 size: data.size || "",
                 messageToArtists: data.messageToArtists || "",
             };
@@ -216,6 +240,14 @@ export default function ClientProfile() {
             setEditedClient({});
             setBgOk(Boolean(clientData.coverImage));
             setProfileLoaded(true);
+            prevValuesRef.current = {
+                budgetMin: clientData.budgetMin ?? 100,
+                budgetMax: clientData.budgetMax ?? 200,
+                location: clientData.location ?? "New York, NY",
+                placement: clientData.placement ?? "",
+                pieceType: clientData.pieceType ?? "",
+                size: clientData.size ?? ""
+            };
         } catch (error) {
             console.error("Failed to load profile:", error);
             setProfileLoaded(true);
@@ -316,11 +348,12 @@ export default function ClientProfile() {
                     role: "client",
                     username,
                     profile: {
-                        location: editedClient.location ?? client.location,
+                        location: editedClient.location ?? client.location ?? "New York, NY",
                         coverImage: editedClient.coverImage ?? client.coverImage,
                         budgetMin,
                         budgetMax,
-                        placement: editedClient.placement ?? client.placement,
+                        placement: editedClient.placement ?? client.placement ?? "",
+                        pieceType: editedClient.pieceType ?? client.pieceType,
                         size: editedClient.size ?? client.size,
                         referenceImages: refs,
                         messageToArtists: userMessage,
@@ -382,13 +415,14 @@ export default function ClientProfile() {
 
     const currentUsername = editedClient.username ?? client?.username ?? "";
     const currentBio = editedClient.bio ?? client?.bio ?? "";
-    const currentLocation = editedClient.location ?? client?.location ?? "";
+    const currentLocation = editedClient.location ?? client?.location ?? "New York, NY";
     const currentProfileImage = editedClient.profileImage ?? client?.profileImage;
     const currentCoverImage = editedClient.coverImage ?? client?.coverImage;
     const currentReferences = editedClient.references ?? client?.references ?? [];
     const currentBudgetMin = editedClient.budgetMin ?? client?.budgetMin ?? 100;
     const currentBudgetMax = editedClient.budgetMax ?? client?.budgetMax ?? 200;
     const currentPlacement = editedClient.placement ?? client?.placement ?? "";
+    const currentPieceType = editedClient.pieceType ?? client?.pieceType ?? "";
     const currentSize = editedClient.size ?? client?.size ?? "";
     const currentMessage = editedClient.messageToArtists ?? client?.messageToArtists ?? "";
     
@@ -397,16 +431,17 @@ export default function ClientProfile() {
         return (
             currentUsername !== (client.username ?? "") ||
             currentBio !== (client.bio ?? "") ||
-            currentLocation !== (client.location ?? "") ||
+            currentLocation !== (client.location ?? "New York, NY") ||
             currentCoverImage !== (client.coverImage ?? "") ||
             currentBudgetMin !== (client.budgetMin ?? 100) ||
             currentBudgetMax !== (client.budgetMax ?? 200) ||
             currentPlacement !== (client.placement ?? "") ||
+            currentPieceType !== (client.pieceType ?? "") ||
             currentSize !== (client.size ?? "") ||
             currentMessage !== (client.messageToArtists ?? "") ||
             JSON.stringify(currentReferences) !== JSON.stringify(client.references ?? [])
         );
-    }, [currentUsername, currentBio, currentLocation, currentCoverImage, currentBudgetMin, currentBudgetMax, currentPlacement, currentSize, currentMessage, currentReferences, client]);
+    }, [currentUsername, currentBio, currentLocation, currentCoverImage, currentBudgetMin, currentBudgetMax, currentPlacement, currentPieceType, currentSize, currentMessage, currentReferences, client]);
 
     const initials = useMemo(() => (currentUsername || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join(""), [currentUsername]);
     const loc = currentLocation?.trim() || "";
@@ -414,22 +449,66 @@ export default function ClientProfile() {
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
     const snap = (v: number) => Math.round(v / STEP) * STEP;
     
-    const defaultMessage = useMemo(() => {
-        const budgetMinVal = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
-        const budgetMaxVal = clamp(snap(currentBudgetMax), budgetMinVal + MIN_GAP, MAX);
-        const parts: string[] = [
-            "Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for.",
-            `My budget is $${budgetMinVal}-$${budgetMaxVal}.`,
-            currentLocation ? `I'm located in ${currentLocation}.` : "",
-            currentPlacement ? `I'm looking for something on my ${currentPlacement.toLowerCase()}.` : "",
-            currentSize ? `Size preference: ${SIZE_OPTIONS.find(s => s.value === currentSize)?.label || currentSize}.` : "",
-            "Let me know if you're available and interested!"
-        ];
-        return parts.filter(Boolean).join(" ");
-    }, [currentBudgetMin, currentBudgetMax, currentLocation, currentPlacement, currentSize]);
-    
     const budgetMin = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
+
+    useEffect(() => {
+        if (!profileLoaded || !client) return;
+        
+        const hasChanged = 
+            currentBudgetMin !== (client.budgetMin ?? 100) ||
+            currentBudgetMax !== (client.budgetMax ?? 200) ||
+            currentLocation !== (client.location ?? "New York, NY") ||
+            currentPlacement !== (client.placement ?? "") ||
+            currentPieceType !== (client.pieceType ?? "") ||
+            currentSize !== (client.size ?? "");
+        
+        const isUserEditing = 
+            prevValuesRef.current.budgetMin !== currentBudgetMin ||
+            prevValuesRef.current.budgetMax !== currentBudgetMax ||
+            prevValuesRef.current.location !== currentLocation ||
+            prevValuesRef.current.placement !== currentPlacement ||
+            prevValuesRef.current.pieceType !== currentPieceType ||
+            prevValuesRef.current.size !== currentSize;
+        
+        if (hasChanged && isUserEditing) {
+            const budgetMinVal = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
+            const budgetMaxVal = clamp(snap(currentBudgetMax), budgetMinVal + MIN_GAP, MAX);
+            const parts: string[] = [
+                "Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for.",
+                `My budget is around $${budgetMinVal}-$${budgetMaxVal}.`,
+                currentLocation ? `I'm located in ${currentLocation}.` : "",
+            ];
+            
+            if (currentPieceType) {
+                parts.push(`I'm looking for a ${currentPieceType.toLowerCase()}.`);
+            } else if (currentPlacement) {
+                parts.push(`I'm looking for something on my ${currentPlacement.toLowerCase()}.`);
+            } else {
+                parts.push("I don't have a placement in mind.");
+            }
+            
+            if (currentSize) {
+                parts.push(`Size preference: ${SIZE_OPTIONS.find(s => s.value === currentSize)?.label || currentSize}.`);
+            } else {
+                parts.push("I'm still figuring out the size.");
+            }
+            
+            parts.push("Let me know if you're available and interested!");
+            const generatedMessage = parts.filter(Boolean).join(" ");
+            setEditedClient(prev => ({ ...prev, messageToArtists: generatedMessage }));
+        }
+        
+        prevValuesRef.current = { budgetMin: currentBudgetMin, budgetMax: currentBudgetMax, location: currentLocation, placement: currentPlacement, pieceType: currentPieceType, size: currentSize };
+    }, [currentBudgetMin, currentBudgetMax, currentLocation, currentPlacement, currentPieceType, currentSize, profileLoaded, client]);
+
+    useEffect(() => {
+        const textarea = messageTextareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [currentMessage]);
 
     if (loading) {
         const LOAD_MS = 500;
@@ -633,7 +712,7 @@ export default function ClientProfile() {
                             
                             <div className="flex flex-col items-center justify-center space-y-4 w-full">
                                 <div className="w-full max-w-md">
-                                    <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                         Budget Range: ${budgetMin} - ${budgetMax}
                                     </Label>
                                     <Slider
@@ -650,20 +729,19 @@ export default function ClientProfile() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-                                    <div className="w-full">
-                                        <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+                                    <div className="w-full min-w-0">
+                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             City
                                         </Label>
                                         <Select
-                                            value={currentLocation || "none"}
-                                            onValueChange={(v) => setEditedClient({ ...editedClient, location: v === "none" ? "" : v })}
+                                            value={currentLocation}
+                                            onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
                                         >
                                             <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
-                                                <SelectValue placeholder="No preference" />
+                                                <SelectValue placeholder="Select city" />
                                             </SelectTrigger>
                                             <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
                                                 {cities.map((city) => (
                                                     <SelectItem key={city} value={city} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{city}</SelectItem>
                                                 ))}
@@ -671,8 +749,28 @@ export default function ClientProfile() {
                                         </Select>
                                     </div>
 
-                                    <div className="w-full">
-                                        <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <div className="w-full min-w-0">
+                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                            Piece Type
+                                        </Label>
+                                        <Select
+                                            value={currentPieceType || "none"}
+                                            onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v === "none" ? "" : v })}
+                                        >
+                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
+                                                <SelectValue placeholder="No preference" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
+                                                <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
+                                                {PIECE_TYPE_OPTIONS.map((p) => (
+                                                    <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="w-full min-w-0">
+                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Placement
                                         </Label>
                                         <Select
@@ -691,8 +789,8 @@ export default function ClientProfile() {
                                         </Select>
                                     </div>
 
-                                    <div className="w-full">
-                                        <Label className="text-xs mb-2 block text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <div className="w-full min-w-0">
+                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Size
                                         </Label>
                                         <Select
@@ -723,11 +821,17 @@ export default function ClientProfile() {
                                 Message to Artists
                             </h3>
                             <textarea
+                                ref={messageTextareaRef}
                                 value={currentMessage}
-                                onChange={(e) => setEditedClient({ ...editedClient, messageToArtists: e.target.value })}
-                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-y text-xs min-h-[80px]"
+                                onChange={(e) => {
+                                    setEditedClient({ ...editedClient, messageToArtists: e.target.value });
+                                    const textarea = e.target;
+                                    textarea.style.height = 'auto';
+                                    textarea.style.height = `${textarea.scrollHeight}px`;
+                                }}
+                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden text-xs min-h-[80px]"
                                 style={{ color: "var(--fg)" }}
-                                placeholder={defaultMessage}
+                                placeholder="Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $100-$200. I'm located in New York, NY. I don't have a placement in mind. I'm still figuring out the size. Let me know if you're available and interested!"
                             />
                             
                             <div className="flex items-center justify-between mt-4 mb-3">
