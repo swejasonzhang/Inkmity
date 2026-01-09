@@ -157,9 +157,9 @@ export default function ClientProfile() {
         budgetMin: 100,
         budgetMax: 200,
         location: "New York, NY",
-        placement: "",
-        pieceType: "",
-        size: ""
+        placement: "none",
+        pieceType: "none",
+        size: "none"
     });
     const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
 
@@ -231,10 +231,10 @@ export default function ClientProfile() {
                 references: Array.isArray(data.references) ? data.references : [],
                 budgetMin: data.budgetMin ?? 100,
                 budgetMax: data.budgetMax ?? 200,
-                placement: data.placement ?? "",
-                pieceType: data.pieceType || "",
-                size: data.size || "",
-                messageToArtists: data.messageToArtists || "",
+                placement: data.placement ?? "none",
+                pieceType: data.pieceType ?? "none",
+                size: data.size ?? "none",
+                messageToArtists: "",
             };
             setClient(clientData);
             setEditedClient({});
@@ -244,9 +244,9 @@ export default function ClientProfile() {
                 budgetMin: clientData.budgetMin ?? 100,
                 budgetMax: clientData.budgetMax ?? 200,
                 location: clientData.location ?? "New York, NY",
-                placement: clientData.placement ?? "",
-                pieceType: clientData.pieceType ?? "",
-                size: clientData.size ?? ""
+                placement: clientData.placement ?? "none",
+                pieceType: clientData.pieceType ?? "none",
+                size: clientData.size ?? "none"
             };
         } catch (error) {
             console.error("Failed to load profile:", error);
@@ -334,7 +334,7 @@ export default function ClientProfile() {
             const budgetMin = Math.max(MIN, Math.min(MAX, Number(editedClient.budgetMin ?? client.budgetMin ?? 100)));
             const budgetMax = Math.max(budgetMin + MIN_GAP, Math.min(MAX, Number(editedClient.budgetMax ?? client.budgetMax ?? 200)));
             const refs = (editedClient.references || client.references || []).slice(0, 3);
-            const userMessage = editedClient.messageToArtists ?? client.messageToArtists ?? "";
+            const userMessage = editedClient.messageToArtists ?? "";
 
             const response = await fetch(`${API_URL}/users/sync`, {
                 method: "POST",
@@ -352,9 +352,9 @@ export default function ClientProfile() {
                         coverImage: editedClient.coverImage ?? client.coverImage,
                         budgetMin,
                         budgetMax,
-                        placement: editedClient.placement ?? client.placement ?? "",
-                        pieceType: editedClient.pieceType ?? client.pieceType,
-                        size: editedClient.size ?? client.size,
+                        placement: editedClient.placement ?? client.placement ?? "none",
+                        pieceType: editedClient.pieceType ?? client.pieceType ?? "none",
+                        size: editedClient.size ?? client.size ?? "none",
                         referenceImages: refs,
                         messageToArtists: userMessage,
                     },
@@ -421,10 +421,10 @@ export default function ClientProfile() {
     const currentReferences = editedClient.references ?? client?.references ?? [];
     const currentBudgetMin = editedClient.budgetMin ?? client?.budgetMin ?? 100;
     const currentBudgetMax = editedClient.budgetMax ?? client?.budgetMax ?? 200;
-    const currentPlacement = editedClient.placement ?? client?.placement ?? "";
-    const currentPieceType = editedClient.pieceType ?? client?.pieceType ?? "";
-    const currentSize = editedClient.size ?? client?.size ?? "";
-    const currentMessage = editedClient.messageToArtists ?? client?.messageToArtists ?? "";
+    const currentPlacement = editedClient.placement ?? client?.placement ?? "none";
+    const currentPieceType = editedClient.pieceType ?? client?.pieceType ?? "none";
+    const currentSize = editedClient.size ?? client?.size ?? "none";
+    const currentMessage = editedClient.messageToArtists ?? "";
     
     const hasChanges = useMemo(() => {
         if (!client) return false;
@@ -435,10 +435,10 @@ export default function ClientProfile() {
             currentCoverImage !== (client.coverImage ?? "") ||
             currentBudgetMin !== (client.budgetMin ?? 100) ||
             currentBudgetMax !== (client.budgetMax ?? 200) ||
-            currentPlacement !== (client.placement ?? "") ||
-            currentPieceType !== (client.pieceType ?? "") ||
-            currentSize !== (client.size ?? "") ||
-            currentMessage !== (client.messageToArtists ?? "") ||
+            currentPlacement !== (client.placement ?? "none") ||
+            currentPieceType !== (client.pieceType ?? "none") ||
+            currentSize !== (client.size ?? "none") ||
+            currentMessage !== "" ||
             JSON.stringify(currentReferences) !== JSON.stringify(client.references ?? [])
         );
     }, [currentUsername, currentBio, currentLocation, currentCoverImage, currentBudgetMin, currentBudgetMax, currentPlacement, currentPieceType, currentSize, currentMessage, currentReferences, client]);
@@ -453,60 +453,12 @@ export default function ClientProfile() {
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
 
     useEffect(() => {
-        if (!profileLoaded || !client) return;
-        
-        const hasChanged = 
-            currentBudgetMin !== (client.budgetMin ?? 100) ||
-            currentBudgetMax !== (client.budgetMax ?? 200) ||
-            currentLocation !== (client.location ?? "New York, NY") ||
-            currentPlacement !== (client.placement ?? "") ||
-            currentPieceType !== (client.pieceType ?? "") ||
-            currentSize !== (client.size ?? "");
-        
-        const isUserEditing = 
-            prevValuesRef.current.budgetMin !== currentBudgetMin ||
-            prevValuesRef.current.budgetMax !== currentBudgetMax ||
-            prevValuesRef.current.location !== currentLocation ||
-            prevValuesRef.current.placement !== currentPlacement ||
-            prevValuesRef.current.pieceType !== currentPieceType ||
-            prevValuesRef.current.size !== currentSize;
-        
-        if (hasChanged && isUserEditing) {
-            const budgetMinVal = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
-            const budgetMaxVal = clamp(snap(currentBudgetMax), budgetMinVal + MIN_GAP, MAX);
-            const parts: string[] = [
-                "Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for.",
-                `My budget is around $${budgetMinVal}-$${budgetMaxVal}.`,
-                currentLocation ? `I'm located in ${currentLocation}.` : "",
-            ];
-            
-            if (currentPieceType) {
-                parts.push(`I'm looking for a ${currentPieceType.toLowerCase()}.`);
-            } else if (currentPlacement) {
-                parts.push(`I'm looking for something on my ${currentPlacement.toLowerCase()}.`);
-            } else {
-                parts.push("I don't have a placement in mind.");
-            }
-            
-            if (currentSize) {
-                parts.push(`Size preference: ${SIZE_OPTIONS.find(s => s.value === currentSize)?.label || currentSize}.`);
-            } else {
-                parts.push("I'm still figuring out the size.");
-            }
-            
-            parts.push("Let me know if you're available and interested!");
-            const generatedMessage = parts.filter(Boolean).join(" ");
-            setEditedClient(prev => ({ ...prev, messageToArtists: generatedMessage }));
-        }
-        
-        prevValuesRef.current = { budgetMin: currentBudgetMin, budgetMax: currentBudgetMax, location: currentLocation, placement: currentPlacement, pieceType: currentPieceType, size: currentSize };
-    }, [currentBudgetMin, currentBudgetMax, currentLocation, currentPlacement, currentPieceType, currentSize, profileLoaded, client]);
-
-    useEffect(() => {
         const textarea = messageTextareaRef.current;
         if (textarea) {
             textarea.style.height = 'auto';
-            textarea.style.height = `${textarea.scrollHeight}px`;
+            const scrollHeight = textarea.scrollHeight;
+            const minHeight = 120;
+            textarea.style.height = `${Math.max(scrollHeight, minHeight)}px`;
         }
     }, [currentMessage]);
 
@@ -712,7 +664,7 @@ export default function ClientProfile() {
                             
                             <div className="flex flex-col items-center justify-center space-y-4 w-full">
                                 <div className="w-full max-w-md">
-                                    <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <Label className="text-xs mb-2 flex items-center justify-center w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                         Budget Range: ${budgetMin} - ${budgetMax}
                                     </Label>
                                     <Slider
@@ -730,83 +682,91 @@ export default function ClientProfile() {
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-                                    <div className="w-full min-w-0">
-                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <div className="w-full min-w-0 flex flex-col items-center">
+                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
                                             City
                                         </Label>
-                                        <Select
-                                            value={currentLocation}
-                                            onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
-                                        >
-                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
-                                                <SelectValue placeholder="Select city" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                {cities.map((city) => (
-                                                    <SelectItem key={city} value={city} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{city}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="w-full min-w-0 flex justify-center">
+                                            <Select
+                                                value={currentLocation}
+                                                onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
+                                            >
+                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
+                                                    <SelectValue placeholder="Select city" className="!text-center" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
+                                                    {cities.map((city) => (
+                                                        <SelectItem key={city} value={city} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{city}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
 
-                                    <div className="w-full min-w-0">
-                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <div className="w-full min-w-0 flex flex-col items-center">
+                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
                                             Piece Type
                                         </Label>
-                                        <Select
-                                            value={currentPieceType || "none"}
-                                            onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v === "none" ? "" : v })}
-                                        >
-                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
-                                                <SelectValue placeholder="No preference" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
-                                                {PIECE_TYPE_OPTIONS.map((p) => (
-                                                    <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="w-full min-w-0 flex justify-center">
+                                            <Select
+                                                value={currentPieceType || "none"}
+                                                onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v })}
+                                            >
+                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
+                                                    <SelectValue placeholder="No preference" className="!text-center" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
+                                                    <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
+                                                    {PIECE_TYPE_OPTIONS.map((p) => (
+                                                        <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
 
-                                    <div className="w-full min-w-0">
-                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <div className="w-full min-w-0 flex flex-col items-center">
+                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
                                             Placement
                                         </Label>
-                                        <Select
-                                            value={currentPlacement || "none"}
-                                            onValueChange={(v) => setEditedClient({ ...editedClient, placement: v === "none" ? "" : v })}
-                                        >
-                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
-                                                <SelectValue placeholder="No preference" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
-                                                {PLACEMENT_OPTIONS.map((p) => (
-                                                    <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="w-full min-w-0 flex justify-center">
+                                            <Select
+                                                value={currentPlacement || "none"}
+                                                onValueChange={(v) => setEditedClient({ ...editedClient, placement: v })}
+                                            >
+                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
+                                                    <SelectValue placeholder="No preference" className="!text-center" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
+                                                    <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
+                                                    {PLACEMENT_OPTIONS.map((p) => (
+                                                        <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
 
-                                    <div className="w-full min-w-0">
-                                        <Label className="text-xs mb-2 block text-center w-full overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <div className="w-full min-w-0 flex flex-col items-center">
+                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
                                             Size
                                         </Label>
-                                        <Select
-                                            value={currentSize || "none"}
-                                            onValueChange={(v) => setEditedClient({ ...editedClient, size: v === "none" ? "" : v })}
-                                        >
-                                            <SelectTrigger className="h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 w-full px-3">
-                                                <SelectValue placeholder="No preference" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
-                                                {SIZE_OPTIONS.map((s) => (
-                                                    <SelectItem key={s.value} value={s.value} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{s.label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="w-full min-w-0 flex justify-center">
+                                            <Select
+                                                value={currentSize || "none"}
+                                                onValueChange={(v) => setEditedClient({ ...editedClient, size: v })}
+                                            >
+                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
+                                                    <SelectValue placeholder="No preference" className="!text-center" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
+                                                    <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
+                                                    {SIZE_OPTIONS.map((s) => (
+                                                        <SelectItem key={s.value} value={s.value} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{s.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -827,10 +787,12 @@ export default function ClientProfile() {
                                     setEditedClient({ ...editedClient, messageToArtists: e.target.value });
                                     const textarea = e.target;
                                     textarea.style.height = 'auto';
-                                    textarea.style.height = `${textarea.scrollHeight}px`;
+                                    const scrollHeight = textarea.scrollHeight;
+                                    const minHeight = 120;
+                                    textarea.style.height = `${Math.max(scrollHeight, minHeight)}px`;
                                 }}
-                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden text-xs min-h-[80px]"
-                                style={{ color: "var(--fg)" }}
+                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md px-3 py-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden text-xs min-h-[120px] text-center"
+                                style={{ color: "var(--fg)", textAlign: "center" }}
                                 placeholder="Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $100-$200. I'm located in New York, NY. I don't have a placement in mind. I'm still figuring out the size. Let me know if you're available and interested!"
                             />
                             
