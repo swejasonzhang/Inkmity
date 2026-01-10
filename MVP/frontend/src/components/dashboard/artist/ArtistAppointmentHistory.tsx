@@ -113,21 +113,35 @@ export default function ArtistAppointmentHistory() {
         }
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "confirmed":
-            case "booked":
-            case "matched":
-                return "bg-green-500/20 text-green-500 border-green-500/30";
-            case "pending":
-                return "bg-yellow-500/20 text-yellow-500 border-yellow-500/30";
-            case "completed":
-                return "bg-blue-500/20 text-blue-500 border-blue-500/30";
-            case "cancelled":
-            case "no-show":
-                return "bg-red-500/20 text-red-500 border-red-500/30";
-            default:
-                return "bg-gray-500/20 text-gray-500 border-gray-500/30";
+    const getStatusColor = (status: string, isPast: boolean = false) => {
+        if (isPast) {
+            // Past appointments: use gray
+            switch (status) {
+                case "completed":
+                    return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+                case "cancelled":
+                case "no-show":
+                    return "bg-red-500/20 text-red-500 border-red-500/30";
+                default:
+                    return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+            }
+        } else {
+            // Upcoming appointments: use white
+            switch (status) {
+                case "confirmed":
+                case "booked":
+                case "matched":
+                    return "bg-white/20 text-white border-white/30";
+                case "pending":
+                    return "bg-white/20 text-white border-white/30";
+                case "in-progress":
+                    return "bg-white/20 text-white border-white/30";
+                case "cancelled":
+                case "no-show":
+                    return "bg-red-500/20 text-red-500 border-red-500/30";
+                default:
+                    return "bg-white/20 text-white border-white/30";
+            }
         }
     };
 
@@ -141,7 +155,7 @@ export default function ArtistAppointmentHistory() {
         );
     }
 
-    const BookingRow = ({ booking }: { booking: Booking }) => {
+    const BookingRow = ({ booking, isPast = false }: { booking: Booking; isPast?: boolean }) => {
         const isConsultation = booking.appointmentType === "consultation";
         const isAppointment = booking.appointmentType === "tattoo_session";
         const appointmentTypeLabel = isConsultation ? "Consultation" : isAppointment ? "Appointment" : "Booking";
@@ -180,13 +194,13 @@ export default function ArtistAppointmentHistory() {
                             </h4>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <span className="text-xs font-medium px-2 py-0.5 rounded border" style={{ 
-                                    color: isConsultation ? "#3b82f6" : isAppointment ? "#10b981" : "var(--fg)",
-                                    borderColor: isConsultation ? "rgba(59, 130, 246, 0.3)" : isAppointment ? "rgba(16, 185, 129, 0.3)" : "var(--border)",
-                                    background: isConsultation ? "rgba(59, 130, 246, 0.1)" : isAppointment ? "rgba(16, 185, 129, 0.1)" : "transparent"
+                                    color: isConsultation ? "rgba(255, 255, 255, 0.7)" : isAppointment ? "white" : "var(--fg)",
+                                    borderColor: isConsultation ? "rgba(255, 255, 255, 0.4)" : isAppointment ? "rgba(255, 255, 255, 0.6)" : "var(--border)",
+                                    background: "transparent"
                                 }}>
                                     {appointmentTypeLabel}
                                 </span>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(booking.status)}`}>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(booking.status, isPast)}`}>
                                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace("-", " ")}
                                 </span>
                             </div>
@@ -252,32 +266,35 @@ export default function ArtistAppointmentHistory() {
         </div>
     );
 
-    const Panel = ({ title, items }: { title: string; items: Booking[] }) => (
-        <Card className="w-full h-full min-h-0 flex flex-col shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", minHeight: "100%" }}>
-            <CardHeader className="text-center space-y-1 px-3 sm:px-6 flex-shrink-0" style={{ minHeight: "auto" }}>
-                <CardTitle className="text-base sm:text-lg break-words">
-                    {title} {typeof items?.length === "number" ? `(${items.length})` : ""}
-                </CardTitle>
-            </CardHeader>
-            <CardContent
-                className={[
-                    "px-4 sm:px-6 pb-6 flex-1 overflow-y-auto min-h-0",
-                    items.length === 0 ? "flex items-center justify-center" : "",
-                ].join(" ")}
-                style={{ flex: "1 1 auto", minHeight: 0 }}
-            >
-                {items.length === 0 ? (
-                    <Empty title={`No ${title.toLowerCase()} appointments`} subtitle="Your bookings will appear here" />
-                ) : (
-                    <div className="space-y-4 w-full">
-                        {items.map((b) => (
-                            <BookingRow key={b._id} booking={b} />
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
+    const Panel = ({ title, items }: { title: string; items: Booking[] }) => {
+        const isPast = title.toLowerCase() === "past";
+        return (
+            <Card className="w-full h-full min-h-0 flex flex-col shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", minHeight: "100%" }}>
+                <CardHeader className="text-center space-y-1 px-3 sm:px-6 flex-shrink-0" style={{ minHeight: "auto" }}>
+                    <CardTitle className="text-base sm:text-lg break-words">
+                        {title} {typeof items?.length === "number" ? `(${items.length})` : ""}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent
+                    className={[
+                        "px-4 sm:px-6 pb-6 flex-1 overflow-y-auto min-h-0",
+                        items.length === 0 ? "flex items-center justify-center" : "",
+                    ].join(" ")}
+                    style={{ flex: "1 1 auto", minHeight: 0 }}
+                >
+                    {items.length === 0 ? (
+                        <Empty title={`No ${title.toLowerCase()} appointments`} subtitle="Your bookings will appear here" />
+                    ) : (
+                        <div className="space-y-4 w-full">
+                            {items.map((b) => (
+                                <BookingRow key={b._id} booking={b} isPast={isPast} />
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        );
+    };
 
     const hasAny = pendingBookings.length + pastBookings.length > 0;
 

@@ -1133,23 +1133,25 @@ export default function ArtistProfile() {
                                 </TabsList>
 
                                 <TabsContent value="recentWorks" className="space-y-6">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex flex-col gap-3">
                                         <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
-                                            First 3 images will appear in your profile preview. Use arrows to reorder.
+                                            The first 3 images will appear in your profile preview to capture clients' attention. Use arrows to reorder. All images will be visible when clients click "View Portfolio".
                                         </p>
-                                        <Button
-                                            onClick={() => {
-                                                setPortfolioCategory("recentWorks");
-                                                portfolioInputRef.current?.click();
-                                            }}
-                                            disabled={uploading}
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            {uploading ? "Uploading..." : "Add Images"}
-                                        </Button>
+                                        <div className="flex justify-center">
+                                            <Button
+                                                onClick={() => {
+                                                    setPortfolioCategory("recentWorks");
+                                                    portfolioInputRef.current?.click();
+                                                }}
+                                                disabled={uploading}
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                {uploading ? "Uploading..." : "Add Images"}
+                                            </Button>
+                                        </div>
                                     </div>
                                     {editedRecentWorks.length > 0 ? (
                                         <div className="grid grid-cols-3 gap-3 w-full">
@@ -1160,7 +1162,7 @@ export default function ArtistProfile() {
                                                     style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                                 >
                                                     {i < 3 && (
-                                                        <div className="absolute top-2 left-2 z-10 bg-yellow-500/90 text-black text-xs font-bold px-2 py-0.5 rounded">
+                                                        <div className="absolute top-2 left-2 z-10 bg-white/90 text-black text-xs font-bold px-2 py-0.5 rounded">
                                                             Preview {i + 1}
                                                         </div>
                                                     )}
@@ -1210,23 +1212,25 @@ export default function ArtistProfile() {
                                 </TabsContent>
 
                                 <TabsContent value="pastWorks" className="space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                    <div className="flex flex-col gap-3">
+                                        <p className="text-sm whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
                                             Showcase your completed past works. Use arrows to reorder.
                                         </p>
-                                        <Button
-                                            onClick={() => {
-                                                setPortfolioCategory("pastWorks");
-                                                portfolioInputRef.current?.click();
-                                            }}
-                                            disabled={uploading}
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            {uploading ? "Uploading..." : "Add Images"}
-                                        </Button>
+                                        <div className="flex justify-center">
+                                            <Button
+                                                onClick={() => {
+                                                    setPortfolioCategory("pastWorks");
+                                                    portfolioInputRef.current?.click();
+                                                }}
+                                                disabled={uploading}
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                {uploading ? "Uploading..." : "Add Images"}
+                                            </Button>
+                                        </div>
                                     </div>
                                     {editedPastWorks.length > 0 ? (
                                         <div className="grid grid-cols-3 gap-3 w-full">
@@ -1282,23 +1286,25 @@ export default function ArtistProfile() {
                                 </TabsContent>
 
                                 <TabsContent value="sketches" className="space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                    <div className="flex flex-col gap-3">
+                                        <p className="text-sm whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
                                             Share your upcoming sketches and designs. Use arrows to reorder.
                                         </p>
-                                        <Button
-                                            onClick={() => {
-                                                setPortfolioCategory("sketches");
-                                                portfolioInputRef.current?.click();
-                                            }}
-                                            disabled={uploading}
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            {uploading ? "Uploading..." : "Add Images"}
-                                        </Button>
+                                        <div className="flex justify-center">
+                                            <Button
+                                                onClick={() => {
+                                                    setPortfolioCategory("sketches");
+                                                    portfolioInputRef.current?.click();
+                                                }}
+                                                disabled={uploading}
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                {uploading ? "Uploading..." : "Add Images"}
+                                            </Button>
+                                        </div>
                                     </div>
                                     {editedSketches.length > 0 ? (
                                         <div className="grid grid-cols-3 gap-3 w-full">
