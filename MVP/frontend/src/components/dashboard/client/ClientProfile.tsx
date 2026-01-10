@@ -457,7 +457,7 @@ export default function ClientProfile() {
         if (textarea) {
             textarea.style.height = 'auto';
             const scrollHeight = textarea.scrollHeight;
-            const minHeight = 120;
+            const minHeight = 100;
             textarea.style.height = `${Math.max(scrollHeight, minHeight)}px`;
         }
     }, [currentMessage]);
@@ -662,9 +662,9 @@ export default function ClientProfile() {
                                 Base Filters
                             </h3>
                             
-                            <div className="flex flex-col items-center justify-center space-y-4 w-full">
-                                <div className="w-full max-w-md">
-                                    <Label className="text-xs mb-2 flex items-center justify-center w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                            <div className="flex flex-col items-center justify-center space-y-4 w-full overflow-hidden">
+                                <div className="w-full max-w-lg">
+                                    <Label className="text-xs mb-2 block text-center w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                         Budget Range: ${budgetMin} - ${budgetMax}
                                     </Label>
                                     <Slider
@@ -681,92 +681,184 @@ export default function ClientProfile() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-                                    <div className="w-full min-w-0 flex flex-col items-center">
-                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-full overflow-hidden px-2">
+                                    <div className="w-full min-w-0 flex flex-col items-center overflow-hidden">
+                                        <Label className="text-xs mb-2 block text-center max-w-[100px] w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             City
                                         </Label>
-                                        <div className="w-full min-w-0 flex justify-center">
-                                            <Select
-                                                value={currentLocation}
-                                                onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
+                                        <Select
+                                            value={currentLocation}
+                                            onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
+                                        >
+                                            <SelectTrigger 
+                                                className="h-10 sm:h-12 bg-elevated border-app text-[9px] rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-2 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 !gap-0 w-full max-w-[100px] px-2" 
+                                                style={{ 
+                                                    display: "flex", 
+                                                    alignItems: "center", 
+                                                    position: "relative",
+                                                    padding: "0.5rem",
+                                                    fontSize: "9px",
+                                                    width: "100%",
+                                                    maxWidth: "100px"
+                                                }}
                                             >
-                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
-                                                    <SelectValue placeholder="Select city" className="!text-center" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
+                                                <SelectValue 
+                                                    placeholder="Select city" 
+                                                    className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-[9px]"
+                                                    style={{ 
+                                                        textAlign: "center",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        margin: 0,
+                                                        paddingLeft: 0,
+                                                        paddingRight: 0,
+                                                        width: "100%",
+                                                        fontSize: "9px"
+                                                    }}
+                                                />
+                                            </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-w-[100px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "var(--radix-select-trigger-width)", maxWidth: "100px" }}>
                                                     {cities.map((city) => (
-                                                        <SelectItem key={city} value={city} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{city}</SelectItem>
+                                                        <SelectItem key={city} value={city} className="!px-2 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{city}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
                                     </div>
 
-                                    <div className="w-full min-w-0 flex flex-col items-center">
-                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
+                                    <div className="w-full min-w-0 flex flex-col items-center overflow-hidden">
+                                        <Label className="text-xs mb-2 block text-center max-w-[100px] w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Piece Type
                                         </Label>
-                                        <div className="w-full min-w-0 flex justify-center">
-                                            <Select
-                                                value={currentPieceType || "none"}
-                                                onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v })}
+                                        <Select
+                                            value={currentPieceType || "none"}
+                                            onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v })}
+                                        >
+                                            <SelectTrigger 
+                                                className="h-10 sm:h-12 bg-elevated border-app text-[9px] rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-2 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 !gap-0 w-full max-w-[100px] px-2" 
+                                                style={{ 
+                                                    display: "flex", 
+                                                    alignItems: "center", 
+                                                    position: "relative",
+                                                    padding: "0.5rem",
+                                                    fontSize: "9px",
+                                                    width: "100%",
+                                                    maxWidth: "100px"
+                                                }}
                                             >
-                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
-                                                    <SelectValue placeholder="No preference" className="!text-center" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                    <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
+                                                <SelectValue 
+                                                    placeholder="No preference" 
+                                                    className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-[9px]"
+                                                    style={{ 
+                                                        textAlign: "center",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        margin: 0,
+                                                        paddingLeft: 0,
+                                                        paddingRight: 0,
+                                                        width: "100%",
+                                                        fontSize: "9px"
+                                                    }}
+                                                />
+                                            </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-w-[100px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "var(--radix-select-trigger-width)", maxWidth: "100px" }}>
+                                                    <SelectItem value="none" className="!px-2 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>No preference</SelectItem>
                                                     {PIECE_TYPE_OPTIONS.map((p) => (
-                                                        <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
+                                                        <SelectItem key={p} value={p} className="!px-2 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{p}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
                                     </div>
 
-                                    <div className="w-full min-w-0 flex flex-col items-center">
-                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
+                                    <div className="w-full min-w-0 flex flex-col items-center overflow-hidden">
+                                        <Label className="text-xs mb-2 block text-center max-w-[100px] w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Placement
                                         </Label>
-                                        <div className="w-full min-w-0 flex justify-center">
-                                            <Select
-                                                value={currentPlacement || "none"}
-                                                onValueChange={(v) => setEditedClient({ ...editedClient, placement: v })}
+                                        <Select
+                                            value={currentPlacement || "none"}
+                                            onValueChange={(v) => setEditedClient({ ...editedClient, placement: v })}
+                                        >
+                                            <SelectTrigger 
+                                                className="h-10 sm:h-12 bg-elevated border-app text-[9px] rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-2 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 !gap-0 w-full max-w-[100px] px-2" 
+                                                style={{ 
+                                                    display: "flex", 
+                                                    alignItems: "center", 
+                                                    position: "relative",
+                                                    padding: "0.5rem",
+                                                    fontSize: "9px",
+                                                    width: "100%",
+                                                    maxWidth: "100px"
+                                                }}
                                             >
-                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
-                                                    <SelectValue placeholder="No preference" className="!text-center" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                    <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
+                                                <SelectValue 
+                                                    placeholder="No preference" 
+                                                    className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-[9px]"
+                                                    style={{ 
+                                                        textAlign: "center",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        margin: 0,
+                                                        paddingLeft: 0,
+                                                        paddingRight: 0,
+                                                        width: "100%",
+                                                        fontSize: "9px"
+                                                    }}
+                                                />
+                                            </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-w-[100px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "var(--radix-select-trigger-width)", maxWidth: "100px" }}>
+                                                    <SelectItem value="none" className="!px-2 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>No preference</SelectItem>
                                                     {PLACEMENT_OPTIONS.map((p) => (
-                                                        <SelectItem key={p} value={p} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{p}</SelectItem>
+                                                        <SelectItem key={p} value={p} className="!px-2 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{p}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
                                     </div>
 
-                                    <div className="w-full min-w-0 flex flex-col items-center">
-                                        <Label className="text-xs mb-2 h-5 text-center m-0 p-0 block" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)", textAlign: "center", width: "fit-content", maxWidth: "100%" }}>
+                                    <div className="w-full min-w-0 flex flex-col items-center overflow-hidden">
+                                        <Label className="text-xs mb-2 block text-center max-w-[100px] w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
                                             Size
                                         </Label>
-                                        <div className="w-full min-w-0 flex justify-center">
-                                            <Select
-                                                value={currentSize || "none"}
-                                                onValueChange={(v) => setEditedClient({ ...editedClient, size: v })}
+                                        <Select
+                                            value={currentSize || "none"}
+                                            onValueChange={(v) => setEditedClient({ ...editedClient, size: v })}
+                                        >
+                                            <SelectTrigger 
+                                                className="h-10 sm:h-12 bg-elevated border-app text-[9px] rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-2 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 !gap-0 w-full max-w-[100px] px-2" 
+                                                style={{ 
+                                                    display: "flex", 
+                                                    alignItems: "center", 
+                                                    position: "relative",
+                                                    padding: "0.5rem",
+                                                    fontSize: "9px",
+                                                    width: "100%",
+                                                    maxWidth: "100px"
+                                                }}
                                             >
-                                                <SelectTrigger className="!flex !w-full h-10 sm:h-12 bg-elevated border-app text-xs rounded-lg text-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 px-3 !justify-center" style={{ maxWidth: "100%" }}>
-                                                    <SelectValue placeholder="No preference" className="!text-center" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start">
-                                                    <SelectItem value="none" className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">No preference</SelectItem>
+                                                <SelectValue 
+                                                    placeholder="No preference" 
+                                                    className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-[9px]"
+                                                    style={{ 
+                                                        textAlign: "center",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        margin: 0,
+                                                        paddingLeft: 0,
+                                                        paddingRight: 0,
+                                                        width: "100%",
+                                                        fontSize: "9px"
+                                                    }}
+                                                />
+                                            </SelectTrigger>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-w-[100px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "var(--radix-select-trigger-width)", maxWidth: "100px" }}>
+                                                    <SelectItem value="none" className="!px-2 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>No preference</SelectItem>
                                                     {SIZE_OPTIONS.map((s) => (
-                                                        <SelectItem key={s.value} value={s.value} className="justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0">{s.label}</SelectItem>
+                                                        <SelectItem key={s.value} value={s.value} className="!px-2 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{s.label}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -788,10 +880,10 @@ export default function ClientProfile() {
                                     const textarea = e.target;
                                     textarea.style.height = 'auto';
                                     const scrollHeight = textarea.scrollHeight;
-                                    const minHeight = 120;
+                                    const minHeight = 100;
                                     textarea.style.height = `${Math.max(scrollHeight, minHeight)}px`;
                                 }}
-                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md px-3 py-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden text-xs min-h-[120px] text-center"
+                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md px-3 py-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden text-xs min-h-[100px] text-center"
                                 style={{ color: "var(--fg)", textAlign: "center" }}
                                 placeholder="Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $100-$200. I'm located in New York, NY. I don't have a placement in mind. I'm still figuring out the size. Let me know if you're available and interested!"
                             />
