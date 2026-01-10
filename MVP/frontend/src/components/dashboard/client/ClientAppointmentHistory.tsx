@@ -91,7 +91,7 @@ export default function ClientAppointmentHistory() {
             case "confirmed":
                 return "bg-green-500/20 text-green-500 border-green-500/30";
             case "pending":
-                return "bg-yellow-500/20 text-yellow-500 border-yellow-500/30";
+                return "bg-white/20 text-white border-white/30";
             case "completed":
                 return "bg-blue-500/20 text-blue-500 border-blue-500/30";
             case "cancelled":

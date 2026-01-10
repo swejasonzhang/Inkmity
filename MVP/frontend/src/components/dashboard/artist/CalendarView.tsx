@@ -80,10 +80,21 @@ export default function CalendarView({
         return map;
     }, [bookings]);
 
-    const statusChip: Record<string, string> = {
-        confirmed: "bg-green-500/15 text-green-300 border border-green-600/30",
-        pending: "bg-yellow-500/15 text-yellow-300 border border-yellow-600/30",
-        cancelled: "bg-red-500/15 text-red-300 border border-red-600/30",
+    const getStatusChip = (status: string, startDate: Date): string => {
+        const now = new Date();
+        const isPast = startDate < now;
+        
+        if (status === "cancelled" || status === "no-show") {
+            return "bg-red-500/15 text-red-300 border border-red-600/30";
+        }
+        
+        if (isPast) {
+            // Past appointments: use gray
+            return "bg-gray-500/15 text-gray-400 border border-gray-500/30";
+        } else {
+            // Upcoming appointments: use white
+            return "bg-white/15 text-white border border-white/30";
+        }
     };
 
     const changeMonth = (delta: number) => {
@@ -230,7 +241,7 @@ export default function CalendarView({
                                             key={b.id}
                                             className={[
                                                 "w-full text-[9px] sm:text-[10px] md:text-[11px] rounded border px-1 sm:px-1.5 md:px-2 py-0.5 sm:py-1 text-left hover:bg-white/10",
-                                                statusChip[b.status ?? ""] ?? "border-white/10 text-white/90",
+                                                getStatusChip(b.status ?? "", new Date(b.start)),
                                             ].join(" ")}
                                             title={`${b.title}${b.clientName ? " • " + b.clientName : ""}`}
                                             onClick={(e) => {
@@ -305,7 +316,7 @@ export default function CalendarView({
                                             {b.status && (
                                                 <span
                                                     className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium ${
-                                                        statusChip[b.status] ?? "bg-gray-500/15 text-gray-300 border border-gray-600/30"
+                                                        getStatusChip(b.status, new Date(b.start))
                                                     }`}
                                                 >
                                                     {b.status}
