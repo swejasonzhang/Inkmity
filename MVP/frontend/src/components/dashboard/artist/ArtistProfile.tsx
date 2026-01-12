@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import ArtistAppointmentHistory from "./ArtistAppointmentHistory";
 
@@ -187,6 +188,7 @@ interface Artist {
     shopLng?: number;
     avatar?: { url?: string; publicId?: string };
     restrictedPlacements?: string[];
+    visible?: boolean;
 }
 
 export default function ArtistProfile() {
@@ -309,6 +311,7 @@ export default function ArtistProfile() {
                 shopLng: data.shopLng || undefined,
                 avatar: data.avatar,
                 restrictedPlacements: Array.isArray(data.restrictedPlacements) ? data.restrictedPlacements : [],
+                visible: data.visible !== undefined ? data.visible : true,
             };
             setArtist(artistData);
             setEditedArtist({});
@@ -537,6 +540,7 @@ export default function ArtistProfile() {
                     email,
                     role: "artist",
                     username,
+                    visible: editedArtist.visible !== undefined ? editedArtist.visible : (artist.visible !== undefined ? artist.visible : true),
                     profile: {
                         location: editedArtist.location ?? artist.location,
                         years: editedArtist.yearsExperience ?? artist.yearsExperience,
@@ -1080,25 +1084,38 @@ export default function ArtistProfile() {
                         )}
                     </div>
 
-                    <div className="flex gap-3 justify-center pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
-                        <Button
-                            onClick={() => setEditedArtist({})}
-                            disabled={saving || uploading}
-                            variant="outline"
-                            className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                        >
-                            <X className="h-4 w-4 mr-2" />
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={saveProfile}
-                            disabled={saving || uploading}
-                            style={{ background: "var(--fg)", color: "var(--bg)" }}
-                            className="hover:opacity-90 font-semibold"
-                        >
-                            <Save className="h-4 w-4 mr-2" />
-                            {saving ? "Saving..." : "Save Changes"}
-                        </Button>
+                    <div className="flex flex-col gap-4 pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
+                        <div className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border" style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 50%, transparent)", width: "100%" }}>
+                            <Label htmlFor="visible" className="text-sm font-medium cursor-pointer" style={{ color: "var(--fg)" }}>
+                                Visible to others
+                            </Label>
+                            <Switch
+                                id="visible"
+                                checked={editedArtist.visible !== undefined ? editedArtist.visible : (artist?.visible !== undefined ? artist.visible : true)}
+                                onCheckedChange={(checked: boolean) => setEditedArtist({ ...editedArtist, visible: checked })}
+                                disabled={saving}
+                            />
+                        </div>
+                        <div className="flex gap-3 justify-center">
+                            <Button
+                                onClick={() => setEditedArtist({})}
+                                disabled={saving || uploading}
+                                variant="outline"
+                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                            >
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={saveProfile}
+                                disabled={saving || uploading}
+                                style={{ background: "var(--fg)", color: "var(--bg)" }}
+                                className="hover:opacity-90 font-semibold"
+                            >
+                                <Save className="h-4 w-4 mr-2" />
+                                {saving ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </div>
                     </div>
 
                     <Dialog open={portfolioModalOpen} onOpenChange={(open) => {

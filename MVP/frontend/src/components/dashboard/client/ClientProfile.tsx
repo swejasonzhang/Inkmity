@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import ClientAppointmentHistory from "./ClientAppointmentHistory";
 
@@ -28,6 +29,7 @@ interface Client {
     pieceType?: string;
     size?: string;
     messageToArtists?: string;
+    visible?: boolean;
 }
 
 const PIECE_TYPE_OPTIONS = [
@@ -223,6 +225,7 @@ export default function ClientProfile() {
                 _id: data._id || "",
                 username: data.username || "",
                 handle: data.handle || "",
+                visible: data.visible !== undefined ? data.visible : true,
                 bio: data.bio || "",
                 location: data.location || "New York, NY",
                 profileImage: data.avatar?.url || data.profileImage || data.avatarUrl || "",
@@ -347,6 +350,7 @@ export default function ClientProfile() {
                     email,
                     role: "client",
                     username,
+                    visible: editedClient.visible !== undefined ? editedClient.visible : (client.visible !== undefined ? client.visible : true),
                     profile: {
                         location: editedClient.location ?? client.location ?? "New York, NY",
                         coverImage: editedClient.coverImage ?? client.coverImage,
@@ -983,29 +987,42 @@ export default function ClientProfile() {
                                 </div>
                             )}
                         </div>
-                        <div className="flex gap-3 justify-end mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-                            <Button
-                                onClick={() => {
-                                    setEditedClient({});
-                                }}
-                                disabled={!hasChanges}
-                                size="sm"
-                                variant="outline"
-                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)] disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <X className="h-4 w-4 mr-2" />
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={saveProfile}
-                                disabled={!hasChanges || saving || uploading}
-                                size="sm"
-                                style={{ background: "var(--fg)", color: "var(--bg)" }}
-                                className="hover:opacity-90 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Save className="h-4 w-4 mr-2" />
-                                {saving ? "Saving..." : "Save Changes"}
-                            </Button>
+                        <div className="flex flex-col gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+                            <div className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border" style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 50%, transparent)", width: "100%" }}>
+                                <Label htmlFor="visible" className="text-sm font-medium cursor-pointer" style={{ color: "var(--fg)" }}>
+                                    Visible to others
+                                </Label>
+                                <Switch
+                                    id="visible"
+                                    checked={editedClient.visible !== undefined ? editedClient.visible : (client?.visible !== undefined ? client.visible : true)}
+                                    onCheckedChange={(checked) => setEditedClient({ ...editedClient, visible: checked })}
+                                    disabled={saving}
+                                />
+                            </div>
+                            <div className="flex gap-3 justify-end">
+                                <Button
+                                    onClick={() => {
+                                        setEditedClient({});
+                                    }}
+                                    disabled={!hasChanges}
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-[color:var(--border)] hover:bg-[color:var(--elevated)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={saveProfile}
+                                    disabled={!hasChanges || saving || uploading}
+                                    size="sm"
+                                    style={{ background: "var(--fg)", color: "var(--bg)" }}
+                                    className="hover:opacity-90 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {saving ? "Saving..." : "Save Changes"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                     </div>

@@ -28,6 +28,7 @@ const UserBaseSchema = new Schema(
     },
     location: { type: String, default: "" },
     bio: { type: String, default: "", maxlength: 600, required: false },
+    visible: { type: Boolean, default: true, index: true },
   },
   { timestamps: true, discriminatorKey: "role", collection: "users" }
 );

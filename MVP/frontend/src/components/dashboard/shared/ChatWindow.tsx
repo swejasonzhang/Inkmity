@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -41,7 +41,10 @@ export type Conversation = {
   username: string;
   avatarUrl?: string;
   messages: Message[];
-  meta?: { lastStatus?: "pending" | "accepted" | "declined" | null; allowed?: boolean };
+  meta?: { lastStatus?: "pending" | "accepted" | "declined" | null; allowed?: boolean; blocked?: boolean };
+  isTyping?: boolean;
+  isOnline?: boolean;
+  lastSeen?: number;
 };
 
 type GateStatus = "pending" | "accepted" | "declined";
@@ -406,9 +409,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   }, [expandedId, activeConv, onMarkRead]);
 
+  useLayoutEffect(() => {
+    if (expandedId && (messagesContainerRefMobile.current || messagesContainerRefDesktop.current)) {
+      scrollToBottom();
+    }
+  }, [expandedId]);
+
   useEffect(() => {
     if (activeConv?.messages?.length) {
-      setTimeout(() => scrollToBottom(), 100);
+      setTimeout(() => scrollToBottom(), 0);
     }
   }, [activeConv?.messages?.length, activeConv?.participantId]);
 
@@ -608,8 +617,44 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const handleOfferConsultation = async (clientId: string) => {
     if (isClient) return;
     try {
-      const messageText = "I'd like to schedule a consultation with you. Please book a consultation time that works for you!";
-      await sendMessage(clientId, messageText, []);
+      const portfolioUrl = `${window.location.origin}/inkmity/artists/${currentUserId}/portfolio`;
+      const messageText = `I'd like to schedule a consultation with you. Please view my portfolio and book a consultation time that works for you: ${portfolioUrl}`;
+      
+      const allImageUrls = [...new Set(getUrlsFromText(messageText))];
+      const meta: Record<string, any> = {
+        ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
+      };
+      const res = await authFetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ receiverId: clientId, text: messageText, meta, referenceUrls: allImageUrls })
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 403 && errorData?.error === "blocked_by_declines") {
+          throw new Error("Messaging has been disabled for this artist. They have declined your request.");
+        }
+        throw new Error(`Server returned ${res.status}`);
+      }
+      
+      const newMessage: Message = await res.json();
+      setConversations(prev => {
+        return prev.map(conv => {
+          if (conv.participantId !== clientId) return conv;
+          const msgExists = conv.messages.some(
+            m => m.timestamp === newMessage.timestamp && m.senderId === newMessage.senderId
+          );
+          if (msgExists) return conv;
+          const updatedMessages = [...conv.messages, newMessage].sort((a, b) => a.timestamp - b.timestamp);
+          return {
+            ...conv,
+            messages: updatedMessages,
+          };
+        });
+      });
+      
+      setTimeout(() => scrollToBottom(), 0);
+      onMarkRead(clientId);
       setSendError(null);
     } catch (e: any) {
       setSendError(e?.message || "Failed to send message.");
@@ -1235,7 +1280,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         })()}
                       </div>
                     </header>
-                    <div ref={messagesContainerRefMobile} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
+                    <div 
+                      ref={(el) => {
+                        messagesContainerRefMobile.current = el;
+                        if (el && expandedId) {
+                          el.scrollTop = el.scrollHeight;
+                        }
+                      }} 
+                      className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 overscroll-contain min-h-0"
+                    >
                       {!activeConv ? (
                         <div className="flex items-center justify-center h-full">
                           <p className="text-sm text-muted-foreground text-center">
@@ -1281,23 +1334,42 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 className={`px-3 py-3 rounded-2xl w-fit break-words whitespace-pre-wrap border text-sm overflow-hidden ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
                                 style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
                               >
-                                <div>{msg.text}</div>
+                                <div className="whitespace-pre-wrap break-words">
+                                  {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => 
+                                    part.match(/^https?:\/\//) ? (
+                                      <a
+                                        key={i}
+                                        href={part}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline hover:opacity-80"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        {part}
+                                      </a>
+                                    ) : (
+                                      <span key={i}>{part}</span>
+                                    )
+                                  )}
+                                </div>
                                 {!!merged.length && (
-                                  <div className="mt-2 flex gap-2 items-center flex-wrap max-w-full">
+                                  <div className="mt-2 flex gap-2 items-center flex-nowrap" style={{ maxWidth: '100%', width: '100%' }}>
                                     {merged.map(u => (
                                       <button
                                         key={u}
                                         type="button"
                                         onClick={() => setViewerUrl(u)}
-                                        className="flex-shrink-0 ink-conv-image-button"
+                                        className="flex-shrink-1 ink-conv-image-button"
                                         title="Open"
-                                        style={{ minWidth: 0 }}
+                                        style={{ minWidth: 0, flex: '1 1 0%', maxWidth: `calc((100% - ${(merged.length - 1) * 8}px) / ${merged.length})` }}
                                       >
                                         <img
                                           src={u}
                                           alt="reference"
-                                          className="ink-conv-chat-thumb w-full h-auto object-cover rounded-lg"
-                                          style={{ maxWidth: 'clamp(60px, 8vw, 120px)', width: 'auto', height: 'auto' }}
+                                          className="ink-conv-chat-thumb w-full h-auto object-contain rounded-lg"
+                                          style={{ maxWidth: '100%', width: 'auto', height: 'auto', maxHeight: '120px' }}
                                           loading="lazy"
                                           referrerPolicy="no-referrer"
                                         />
@@ -1578,7 +1650,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     })()}
                   </div>
                 </header>
-                <div ref={messagesContainerRefDesktop} className="flex-1 overflow-y-auto px-3 md:px-4 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
+                <div 
+                  ref={(el) => {
+                    messagesContainerRefDesktop.current = el;
+                    if (el && expandedId) {
+                      el.scrollTop = el.scrollHeight;
+                    }
+                  }} 
+                  className="flex-1 overflow-y-auto px-3 md:px-4 py-3 flex flex-col gap-3 overscroll-contain min-h-0"
+                >
                   {(!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
                     <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
                   ) : (
@@ -1616,23 +1696,42 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             className={`px-3 py-4 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-loose overflow-hidden ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
                             style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.875rem, 1vw, 0.9375rem)' }}
                           >
-                            <div>{msg.text}</div>
+                            <div className="whitespace-pre-wrap break-words">
+                              {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => 
+                                part.match(/^https?:\/\//) ? (
+                                  <a
+                                    key={i}
+                                    href={part}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline hover:opacity-80"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                    }}
+                                  >
+                                    {part}
+                                  </a>
+                                ) : (
+                                  <span key={i}>{part}</span>
+                                )
+                              )}
+                            </div>
                             {!!merged.length && (
-                              <div className="mt-2 flex gap-2 items-center flex-wrap max-w-full">
+                              <div className="mt-2 flex gap-2 items-center flex-nowrap" style={{ maxWidth: '100%', width: '100%' }}>
                                 {merged.map(u => (
                                   <button
                                     key={u}
                                     type="button"
                                     onClick={() => setViewerUrl(u)}
-                                    className="flex-shrink-0 ink-conv-image-button"
+                                    className="flex-shrink-1 ink-conv-image-button"
                                     title="Open"
-                                    style={{ minWidth: 0 }}
+                                    style={{ minWidth: 0, flex: '1 1 0%', maxWidth: `calc((100% - ${(merged.length - 1) * 8}px) / ${merged.length})` }}
                                   >
                                     <img
                                       src={u}
                                       alt="reference"
-                                      className="ink-conv-chat-thumb w-full h-auto object-cover rounded-lg"
-                                      style={{ maxWidth: 'clamp(60px, 8vw, 120px)', width: 'auto', height: 'auto' }}
+                                      className="ink-conv-chat-thumb w-full h-auto object-contain rounded-lg"
+                                      style={{ maxWidth: '100%', width: 'auto', height: 'auto', maxHeight: '120px' }}
                                       loading="lazy"
                                       referrerPolicy="no-referrer"
                                     />

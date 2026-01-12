@@ -23,7 +23,7 @@ export function NavMobile({
             {items.map((item) => {
                 const active = isActive(item.to);
                 const base =
-                    "relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide";
+                    "relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[26px] md:text-[28px] font-extrabold uppercase tracking-wide";
                 const isDisabled = item.to === "#" || item.disabled;
 
                 if (isDisabled) {

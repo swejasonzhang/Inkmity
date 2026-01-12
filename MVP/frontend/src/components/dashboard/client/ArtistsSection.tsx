@@ -225,42 +225,20 @@ export default function ArtistsSection({
     };
 
     const filterRef = useRef<HTMLDivElement | null>(null);
-    const [filterH, setFilterH] = useState(0);
-    const [isSmUp, setIsSmUp] = useState(false);
     const [isMdUp, setIsMdUp] = useState(false);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const sm = window.matchMedia("(min-width: 640px)");
         const md = window.matchMedia("(min-width: 768px)");
         const onChange = () => {
-            setIsSmUp(sm.matches);
             setIsMdUp(md.matches);
         };
         onChange();
-        sm.addEventListener?.("change", onChange);
         md.addEventListener?.("change", onChange);
         return () => {
-            sm.removeEventListener?.("change", onChange);
             md.removeEventListener?.("change", onChange);
         };
     }, []);
-
-    useEffect(() => {
-        if (!filterRef.current) return;
-        const ro = new ResizeObserver(() => {
-            setFilterH(filterRef.current?.offsetHeight || 0);
-        });
-        ro.observe(filterRef.current);
-        setFilterH(filterRef.current.offsetHeight || 0);
-        return () => ro.disconnect();
-    }, []);
-
-    const cardMinRem = isMdUp ? 51.25 : isSmUp ? 46.25 : 38;
-    const cardMinPx = Math.round(cardMinRem * 16);
-    const gridVPadPx = isMdUp ? 24 : 0;
-    const sectionMinPx = (isMdUp ? filterH : 0) + cardMinPx + gridVPadPx;
-    const minGridPx = cardMinPx + gridVPadPx;
 
     const mobileListRef = useRef<HTMLDivElement | null>(null);
     const lastTouchYRef = useRef<number | null>(null);
