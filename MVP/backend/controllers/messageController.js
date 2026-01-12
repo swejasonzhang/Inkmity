@@ -116,10 +116,10 @@ export const getAllMessagesForUser = async (req, res) => {
     }
     const participantIds = [...buckets.keys()];
     const users = await User.find({ clerkId: { $in: participantIds } }).select(
-      "clerkId username avatar"
+      "clerkId username avatar handle"
     );
     const userMap = Object.fromEntries(
-      users.map((u) => [u.clerkId, { username: u.username, avatarUrl: u.avatar?.url || null }])
+      users.map((u) => [u.clerkId, { username: u.username, avatarUrl: u.avatar?.url || null, handle: u.handle || null }])
     );
     const convs = [];
     for (const pid of participantIds) {
@@ -142,6 +142,7 @@ export const getAllMessagesForUser = async (req, res) => {
         participantId: pid,
         username: userMap[pid]?.username || "Unknown",
         avatarUrl: userMap[pid]?.avatarUrl || null,
+        handle: userMap[pid]?.handle || null,
         messages: buckets.get(pid).messages,
         meta: {
           allowed,

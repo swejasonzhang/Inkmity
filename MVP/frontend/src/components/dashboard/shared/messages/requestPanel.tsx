@@ -52,31 +52,33 @@ export default function RequestPanel({ authFetch, onOpenConversation }: Props) {
     return (
         <div className="flex-1 overflow-y-auto p-2">
             {items.length === 0 ? (
-                <div className="text-xs text-muted-foreground px-2 py-3">No requests</div>
+                <div className="text-xs text-muted-foreground px-2 py-3 text-center">No requests</div>
             ) : (
-                <ul className="space-y-2">
-                    {items.map(it => (
-                        <li
-                            key={`${it.id}-${it.from.clerkId}`}
-                            className="flex items-center justify-between rounded-lg border border-app px-3 py-2 bg-elevated"
-                        >
-                            <div className="min-w-0">
-                                <div className="text-sm text-app truncate">{it.from.username}</div>
-                                <div className="text-xs text-muted-foreground truncate">{it.text || "Message request"}</div>
-                            </div>
-                            <div className="shrink-0 flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    className="text-xs px-2 py-1 rounded-md bg-primary text-primary-foreground"
-                                    onClick={() => onOpenConversation(it.from.clerkId)}
-                                    aria-label="View request"
-                                >
-                                    View
-                                </button>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+                <div className="flex flex-col items-center">
+                    <ul className="space-y-2 w-full max-w-md">
+                        {items.map(it => (
+                            <li
+                                key={`${it.id}-${it.from.clerkId}`}
+                                className="flex items-center justify-between rounded-lg border border-app px-3 py-2 bg-elevated"
+                            >
+                                <div className="min-w-0">
+                                    <div className="text-sm text-app truncate">{it.from.username}</div>
+                                    <div className="text-xs text-muted-foreground truncate">{it.text || "Message request"}</div>
+                                </div>
+                                <div className="shrink-0 flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        className="text-xs px-2 py-1 rounded-md bg-primary text-primary-foreground"
+                                        onClick={() => onOpenConversation(it.from.clerkId)}
+                                        aria-label="View request"
+                                    >
+                                        View
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </div>
     );

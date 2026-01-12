@@ -40,6 +40,7 @@ export type Conversation = {
   participantId: string;
   username: string;
   avatarUrl?: string;
+  handle?: string;
   messages: Message[];
   meta?: { lastStatus?: "pending" | "accepted" | "declined" | null; allowed?: boolean; blocked?: boolean };
   isTyping?: boolean;
@@ -60,6 +61,15 @@ interface ChatWindowProps {
 const urlRegex = /\bhttps?:\/\/[^\s)]+/gi;
 const getUrlsFromText = (text: string) =>
   Array.from(new Set((text.match(urlRegex) || [])?.map(u => u.replace(/[),.]+$/, ""))));
+
+const getFaviconUrl = (url: string): string | null => {
+  try {
+    const domain = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+  } catch {
+    return null;
+  }
+};
 
 const ChatWindow: FC<ChatWindowProps> = ({
   currentUserId,
@@ -617,7 +627,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const handleOfferConsultation = async (clientId: string) => {
     if (isClient) return;
     try {
-      const portfolioUrl = `${window.location.origin}/inkmity/artists/${currentUserId}/portfolio`;
+      const userRes = await authFetch("/api/users/me", { method: "GET" });
+      const userData = userRes.ok ? await userRes.json() : null;
+      const artistHandle = userData?.handle || currentUserId;
+      const portfolioUrl = `${window.location.origin}/artists/${artistHandle}/portfolio`;
       const messageText = `I'd like to schedule a consultation with you. Please view my portfolio and book a consultation time that works for you: ${portfolioUrl}`;
       
       const allImageUrls = [...new Set(getUrlsFromText(messageText))];
@@ -1093,7 +1106,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
               className="hidden md:flex flex-col border border-app bg-card h-full shrink-0 rounded-xl min-h-0"
               style={{ width: 'clamp(280px, 20vw, 360px)' }}
             >
-              <div className="px-3 py-3 border-b border-app">
+              <div className="px-3 py-3 border-b border-app text-center">
                 <div className="text-sm font-semibold">Message requests</div>
                 <div className="text-xs text-muted-foreground">Review new requests</div>
               </div>
@@ -1115,7 +1128,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
               {isArtist && (
                 <div className="flex-shrink-0 rounded-xl border border-app bg-card flex flex-col" style={{ maxHeight: "clamp(200px, 40vh, 400px)" }}>
                   <div className="px-3 py-2.5 border-b border-app flex items-center justify-between flex-shrink-0">
-                    <div>
+                    <div className="text-center flex-1">
                       <div className="text-sm font-semibold">Message Requests</div>
                       <div className="text-xs text-muted-foreground">Review new requests</div>
                     </div>
@@ -1342,12 +1355,22 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                         href={part}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="underline hover:opacity-80"
+                                        className="inline-flex items-center gap-1.5 underline hover:opacity-80"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                         }}
                                       >
-                                        {part}
+                                        {getFaviconUrl(part) && (
+                                          <img 
+                                            src={getFaviconUrl(part)!}
+                                            alt=""
+                                            className="w-4 h-4 flex-shrink-0"
+                                            onError={(e) => {
+                                              (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                          />
+                                        )}
+                                        <span>{part}</span>
                                       </a>
                                     ) : (
                                       <span key={i}>{part}</span>
@@ -1704,12 +1727,22 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     href={part}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="underline hover:opacity-80"
+                                    className="inline-flex items-center gap-1.5 underline hover:opacity-80"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                     }}
                                   >
-                                    {part}
+                                        {getFaviconUrl(part) && (
+                                          <img 
+                                            src={getFaviconUrl(part)!}
+                                            alt=""
+                                            className="w-4 h-4 flex-shrink-0"
+                                            onError={(e) => {
+                                              (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                          />
+                                        )}
+                                        <span>{part}</span>
                                   </a>
                                 ) : (
                                   <span key={i}>{part}</span>
