@@ -23,7 +23,7 @@ export function NavMobile({
             {items.map((item) => {
                 const active = isActive(item.to);
                 const base =
-                    "relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[26px] md:text-[28px] font-extrabold uppercase tracking-wide";
+                    "relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[24px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap";
                 const isDisabled = item.to === "#" || item.disabled;
 
                 if (isDisabled) {
@@ -40,10 +40,10 @@ export function NavMobile({
                                 className={base}
                                 aria-disabled="true"
                             >
-                                <span className="inline-flex items-center justify-center scale-125">
+                                <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
                                     <InkAccentMobile active={active} />
                                 </span>
-                                <span>{item.label}</span>
+                                <span className="whitespace-nowrap">{item.label}</span>
                             </button>
                         );
                     }
@@ -56,11 +56,11 @@ export function NavMobile({
                             aria-disabled="true"
                             title="In Development"
                         >
-                            <span className="inline-flex items-center justify-center scale-125">
+                            <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
                                 <InkAccentMobile active={active} />
                             </span>
-                            <Lock size={18} className="opacity-80" />
-                            <span>{item.label}</span>
+                            <Lock size={18} className="opacity-80 flex-shrink-0" />
+                            <span className="whitespace-nowrap">{item.label}</span>
                             <span className="rounded-md px-2 py-0.5 text-[12px] font-black uppercase tracking-wider bg-elevated border border-app text-app">
                                 In Development
                             </span>
@@ -88,13 +88,13 @@ export function NavMobile({
                     <Link
                         to="/profile"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide"
+                        className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[24px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap"
                     >
-                        <span className="inline-flex items-center justify-center scale-125">
+                        <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
                             <InkAccentMobile active={isActive("/profile")} />
                         </span>
-                        <User size={20} />
-                        <span>Profile</span>
+                        <User size={20} className="flex-shrink-0" />
+                        <span className="whitespace-nowrap">Profile</span>
                     </Link>
                     <button
                         type="button"
@@ -102,12 +102,12 @@ export function NavMobile({
                             setMobileMenuOpen(false);
                             handleLogout();
                         }}
-                        className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[22px] md:text-[24px] font-extrabold uppercase tracking-wide"
+                        className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[24px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap"
                     >
-                        <span className="inline-flex items-center justify-center scale-125">
+                        <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
                             <InkAccentMobile active={false} />
                         </span>
-                        <span>Logout</span>
+                        <span className="whitespace-nowrap">Logout</span>
                     </button>
                 </>
             )}
