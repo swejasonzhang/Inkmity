@@ -113,4 +113,3 @@ export default function ReviewPromptModal({ open, onClose, artistId, artistName,
     </Dialog>
   );
 }
-

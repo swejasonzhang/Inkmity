@@ -169,14 +169,8 @@ export default function TimeSlotStep({
 
       <AppointmentHealthInstructions
         open={healthModalOpen}
-        onClose={() => {
-          setHealthModalOpen(false);
-          setPendingSelection(null);
-        }}
         onContinue={handleContinueAfterHealth}
       />
     </div>
   );
 }
-
-

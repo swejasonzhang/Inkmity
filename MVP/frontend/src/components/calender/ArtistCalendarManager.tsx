@@ -559,4 +559,3 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
         </div>
     );
 }
-

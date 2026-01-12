@@ -115,9 +115,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         if (data?.role && (data.role === "client" || data.role === "artist")) {
           setUserRole(data.role);
         }
-        if (data?.role && (data.role === "client" || data.role === "artist")) {
-          setUserRole(data.role);
-        }
       } catch (e: any) {
         if (cancelled || ac.signal.aborted) return;
         if (e?.name === "AbortError") return;
@@ -130,7 +127,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       cancelled = true;
       ac.abort();
     };
-  }, [isLoaded, isSignedIn, getToken]);
+  }, [isLoaded, isSignedIn, getToken, API_BASE]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) {
@@ -142,14 +139,15 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     const updateOnlineStatus = () => {
       setIsOnline(socket.connected);
     };
+    const handleDisconnect = () => setIsOnline(false);
 
     updateOnlineStatus();
     socket.on("connect", updateOnlineStatus);
-    socket.on("disconnect", () => setIsOnline(false));
+    socket.on("disconnect", handleDisconnect);
 
     return () => {
       socket.off("connect", updateOnlineStatus);
-      socket.off("disconnect");
+      socket.off("disconnect", handleDisconnect);
     };
   }, [isLoaded, isSignedIn, user?.id]);
 
@@ -270,7 +268,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             </Link>
           </div>
 
-          <div className="hidden sm:block justify-self-stretch flex items-center justify-center">
+          <div className="hidden sm:flex justify-self-stretch items-center justify-center">
             <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[17px] xs:text-[18px] sm:text-[19px] md:text-[20px]" />
           </div>
 

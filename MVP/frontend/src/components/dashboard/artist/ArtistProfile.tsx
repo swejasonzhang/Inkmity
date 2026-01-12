@@ -3,7 +3,7 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/lib/http";
 import { Save, Edit2, X, Plus, Camera, Briefcase, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; 
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -189,6 +189,7 @@ interface Artist {
     avatar?: { url?: string; publicId?: string };
     restrictedPlacements?: string[];
     visible?: boolean;
+    visibility?: "online" | "away" | "invisible";
 }
 
 export default function ArtistProfile() {
@@ -291,6 +292,7 @@ export default function ArtistProfile() {
             const artistData: Artist = {
                 _id: data._id || "",
                 username: data.username || "",
+                visibility: data.visibility || "online",
                 bio: data.bio || "",
                 location: data.location || "",
                 styles: Array.isArray(data.styles) ? data.styles : [],
@@ -403,7 +405,7 @@ export default function ArtistProfile() {
     const handleMovePortfolioImage = (index: number, direction: "up" | "down", category: "pastWorks" | "recentWorks" | "sketches") => {
         let currentArray: string[] = [];
         let setter: (arr: string[]) => void;
-        
+
         if (category === "pastWorks") {
             currentArray = editedPastWorks;
             setter = setEditedPastWorks;
@@ -417,7 +419,7 @@ export default function ArtistProfile() {
 
         if (direction === "up" && index === 0) return;
         if (direction === "down" && index === currentArray.length - 1) return;
-        
+
         const newArray = [...currentArray];
         const targetIndex = direction === "up" ? index - 1 : index + 1;
         [newArray[index], newArray[targetIndex]] = [newArray[targetIndex], newArray[index]];
@@ -528,7 +530,6 @@ export default function ArtistProfile() {
             const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || "";
             const username = editedArtist.username || artist.username || user.firstName || email.split("@")[0] || "user";
 
-
             const response = await fetch(`${API_URL}/users/sync`, {
                 method: "POST",
                 headers: {
@@ -541,6 +542,7 @@ export default function ArtistProfile() {
                     role: "artist",
                     username,
                     visible: editedArtist.visible !== undefined ? editedArtist.visible : (artist.visible !== undefined ? artist.visible : true),
+                    visibility: editedArtist.visibility ?? artist?.visibility ?? "online",
                     profile: {
                         location: editedArtist.location ?? artist.location,
                         years: editedArtist.yearsExperience ?? artist.yearsExperience,

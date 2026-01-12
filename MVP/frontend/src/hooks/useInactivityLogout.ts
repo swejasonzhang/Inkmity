@@ -128,4 +128,3 @@ export function resetActivityTimer() {
     console.error("Failed to reset activity timer:", error);
   }
 }
-

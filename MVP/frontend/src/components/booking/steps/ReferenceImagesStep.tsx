@@ -116,4 +116,3 @@ export default function ReferenceImagesStep({ value, onChange }: Props) {
     </div>
   );
 }
-

@@ -34,4 +34,3 @@ ClientBookingPermissionSchema.index({ artistId: 1, clientId: 1 }, { unique: true
 
 export default mongoose.models.ClientBookingPermission ||
   mongoose.model("ClientBookingPermission", ClientBookingPermissionSchema);
-
