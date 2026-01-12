@@ -15,4 +15,3 @@ BookingCooldownSchema.index({ userId: 1, artistId: 1, expiresAt: 1 });
 
 export default mongoose.models.BookingCooldown ||
   mongoose.model("BookingCooldown", BookingCooldownSchema);
-

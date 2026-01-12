@@ -157,4 +157,3 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
     </Dialog>
   );
 }
-

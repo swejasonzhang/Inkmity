@@ -181,4 +181,3 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
     </Dialog>
   );
 }
-

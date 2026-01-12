@@ -4,7 +4,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { API_URL } from "@/lib/http";
 import { Save, X, Camera, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; 
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -30,6 +30,7 @@ interface Client {
     size?: string;
     messageToArtists?: string;
     visible?: boolean;
+    visibility?: "online" | "away" | "invisible";
 }
 
 const PIECE_TYPE_OPTIONS = [
@@ -226,6 +227,7 @@ export default function ClientProfile() {
                 username: data.username || "",
                 handle: data.handle || "",
                 visible: data.visible !== undefined ? data.visible : true,
+                visibility: data.visibility || "online",
                 bio: data.bio || "",
                 location: data.location || "New York, NY",
                 profileImage: data.avatar?.url || data.profileImage || data.avatarUrl || "",
@@ -369,17 +371,17 @@ export default function ClientProfile() {
 
             await loadProfile();
             setEditedClient({});
-            
+
             if (typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent("ink:client-profile-updated"));
             }
-            
+
             try {
                 const savedLocation = editedClient.location ?? client.location;
                 const savedBudgetMin = budgetMin;
                 const savedBudgetMax = budgetMax;
-                
-                const existingPreset = typeof window !== "undefined" 
+
+                const existingPreset = typeof window !== "undefined"
                     ? (() => {
                         try {
                             const raw = localStorage.getItem(PRESET_STORAGE_KEY);
@@ -389,18 +391,18 @@ export default function ClientProfile() {
                         }
                     })()
                     : {};
-                
+
                 const updatedPreset: Record<string, string> = { ...existingPreset };
-                
+
                 if (savedLocation && savedLocation.trim()) {
                     updatedPreset.locationFilter = savedLocation.trim();
                 }
-                
+
                 const priceBucket = priceBucketFromRange(savedBudgetMin, savedBudgetMax);
                 if (priceBucket !== "all") {
                     updatedPreset.priceFilter = priceBucket;
                 }
-                
+
                 if (typeof window !== "undefined") {
                     if (Object.keys(updatedPreset).length > 0) {
                         localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(updatedPreset));
@@ -429,7 +431,7 @@ export default function ClientProfile() {
     const currentPieceType = editedClient.pieceType ?? client?.pieceType ?? "none";
     const currentSize = editedClient.size ?? client?.size ?? "none";
     const currentMessage = editedClient.messageToArtists ?? "";
-    
+
     const hasChanges = useMemo(() => {
         if (!client) return false;
         return (
@@ -452,7 +454,7 @@ export default function ClientProfile() {
 
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
     const snap = (v: number) => Math.round(v / STEP) * STEP;
-    
+
     const budgetMin = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
 
@@ -665,7 +667,7 @@ export default function ClientProfile() {
                             <h3 className="text-sm font-semibold mb-4 text-center" style={{ color: "var(--fg)" }}>
                                 Base Filters
                             </h3>
-                            
+
                             <div className="flex flex-col items-center justify-center space-y-6 w-full">
                                 <div className="w-full max-w-lg">
                                     <Label className="text-sm font-medium mb-3 block text-center w-full" style={{ color: "var(--fg)" }}>
@@ -695,21 +697,21 @@ export default function ClientProfile() {
                                                 value={currentLocation}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
                                             >
-                                                <SelectTrigger 
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden" 
-                                                    style={{ 
-                                                        display: "flex", 
-                                                        alignItems: "center", 
+                                                <SelectTrigger
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
                                                         width: "110px",
                                                         overflow: "hidden"
                                                     }}
                                                 >
-                                                    <SelectValue 
-                                                        placeholder="Select city" 
+                                                    <SelectValue
+                                                        placeholder="Select city"
                                                         className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-xs !overflow-hidden !text-ellipsis"
-                                                        style={{ 
+                                                        style={{
                                                             textAlign: "center",
                                                             display: "flex",
                                                             alignItems: "center",
@@ -743,21 +745,21 @@ export default function ClientProfile() {
                                                 value={currentPieceType || "none"}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v })}
                                             >
-                                                <SelectTrigger 
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden" 
-                                                    style={{ 
-                                                        display: "flex", 
-                                                        alignItems: "center", 
+                                                <SelectTrigger
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
                                                         width: "110px",
                                                         overflow: "hidden"
                                                     }}
                                                 >
-                                                    <SelectValue 
-                                                        placeholder="No preference" 
+                                                    <SelectValue
+                                                        placeholder="No preference"
                                                         className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-xs !overflow-hidden !text-ellipsis"
-                                                        style={{ 
+                                                        style={{
                                                             textAlign: "center",
                                                             display: "flex",
                                                             alignItems: "center",
@@ -792,21 +794,21 @@ export default function ClientProfile() {
                                                 value={currentPlacement || "none"}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, placement: v })}
                                             >
-                                                <SelectTrigger 
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden" 
-                                                    style={{ 
-                                                        display: "flex", 
-                                                        alignItems: "center", 
+                                                <SelectTrigger
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
                                                         width: "110px",
                                                         overflow: "hidden"
                                                     }}
                                                 >
-                                                    <SelectValue 
-                                                        placeholder="No preference" 
+                                                    <SelectValue
+                                                        placeholder="No preference"
                                                         className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-xs !overflow-hidden !text-ellipsis"
-                                                        style={{ 
+                                                        style={{
                                                             textAlign: "center",
                                                             display: "flex",
                                                             alignItems: "center",
@@ -841,21 +843,21 @@ export default function ClientProfile() {
                                                 value={currentSize || "none"}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, size: v })}
                                             >
-                                                <SelectTrigger 
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden" 
-                                                    style={{ 
-                                                        display: "flex", 
-                                                        alignItems: "center", 
+                                                <SelectTrigger
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
                                                         width: "110px",
                                                         overflow: "hidden"
                                                     }}
                                                 >
-                                                    <SelectValue 
-                                                        placeholder="No preference" 
+                                                    <SelectValue
+                                                        placeholder="No preference"
                                                         className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-xs !overflow-hidden !text-ellipsis"
-                                                        style={{ 
+                                                        style={{
                                                             textAlign: "center",
                                                             display: "flex",
                                                             alignItems: "center",
@@ -907,7 +909,7 @@ export default function ClientProfile() {
                                 style={{ color: "var(--fg)", textAlign: "center" }}
                                 placeholder="Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $100-$200. I'm located in New York, NY. I don't have a placement in mind. I'm still figuring out the size. Let me know if you're available and interested!"
                             />
-                            
+
                             <div className="flex items-center justify-between mt-4 mb-3">
                                 <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
                                     Reference Images {currentReferences.length > 0 && `(${currentReferences.length}/3)`}
