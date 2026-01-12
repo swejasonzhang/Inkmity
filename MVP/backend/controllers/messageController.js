@@ -394,6 +394,7 @@ export const acceptMessageRequest = async (req, res) => {
           artistId: msg.receiverId,
           request: { timestamp: msg.createdAt.getTime(), status: "accepted" },
         });
+      io.to(userRoom(msg.receiverId)).emit("unread:update");
     }
     res.json({ ok: true });
   } catch (e) {

@@ -257,9 +257,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
         if (msgExists) return prev;
         return prev.map(conv => {
           if (conv.participantId !== pid) return conv;
+          const updatedMessages = [...conv.messages, msg].sort((a, b) => a.timestamp - b.timestamp);
           return {
             ...conv,
-            messages: [msg, ...conv.messages],
+            messages: updatedMessages,
           };
         });
       });
@@ -290,6 +291,18 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
     const onUnreadUpdate = () => {
       window.dispatchEvent(new Event("ink:unread-update"));
+      if (isArtist && !isClient) {
+        (async () => {
+          try {
+            const res = await authFetch("/api/messages/requests", { method: "GET" });
+            const data = res.ok ? await res.json() : null;
+            const list = Array.isArray(data?.requests) ? data.requests : Array.isArray(data) ? data : [];
+            setRequestCount(list.length);
+          } catch {
+            setRequestCount(0);
+          }
+        })();
+      }
     };
 
     socket.on("conversation:ack", onAck);
@@ -302,7 +315,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       socket.off("conversation:declined", onDeclined);
       socket.off("unread:update", onUnreadUpdate);
     };
-  }, [currentUserId]);
+  }, [currentUserId, authFetch, isArtist, isClient]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -317,7 +330,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
   useEffect(() => {
     if (!isClient) return;
     const handleProfileUpdate = () => {
-      // Refresh conversations when client profile is updated
       if (!currentUserId) return;
       let mounted = true;
       (async () => {
@@ -439,6 +451,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
           c.participantId === participantId ? { ...c, meta: { ...(c.meta || {}), lastStatus: "accepted", allowed: true } } : c
         )
       );
+      window.dispatchEvent(new Event("ink:requests-reset"));
+      try {
+        const reqRes = await authFetch("/api/messages/requests", { method: "GET" });
+        if (reqRes.ok) {
+          const reqData = reqRes.ok ? await reqRes.json() : null;
+          const reqList = Array.isArray(reqData?.requests) ? reqData.requests : Array.isArray(reqData) ? reqData : [];
+          setRequestCount(reqList.length);
+        }
+      } catch {}
     } catch (e: any) {
       setSendError(e?.message || "Failed to accept request.");
     }
@@ -479,6 +500,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
           c.participantId === pendingDeclineId ? { ...c, meta: { ...(c.meta || {}), lastStatus: "declined", allowed: false, blocked: true } } : c
         )
       );
+      window.dispatchEvent(new Event("ink:requests-reset"));
+      try {
+        const reqRes = await authFetch("/api/messages/requests", { method: "GET" });
+        if (reqRes.ok) {
+          const reqData = reqRes.ok ? await reqRes.json() : null;
+          const reqList = Array.isArray(reqData?.requests) ? reqData.requests : Array.isArray(reqData) ? reqData : [];
+          setRequestCount(reqList.length);
+        }
+      } catch {}
       setDeclineConfirmOpen(false);
       setPendingDeclineId(null);
     } catch (e: any) {
@@ -688,6 +718,23 @@ const ChatWindow: FC<ChatWindowProps> = ({
         }
         throw new Error(`Server returned ${res.status}`);
       }
+      
+      const newMessage: Message = await res.json();
+      setConversations(prev => {
+        return prev.map(conv => {
+          if (conv.participantId !== participantId) return conv;
+          const msgExists = conv.messages.some(
+            m => m.timestamp === newMessage.timestamp && m.senderId === newMessage.senderId
+          );
+          if (msgExists) return conv;
+          const updatedMessages = [...conv.messages, newMessage].sort((a, b) => a.timestamp - b.timestamp);
+          return {
+            ...conv,
+            messages: updatedMessages,
+          };
+        });
+      });
+      
       onMarkRead(participantId);
     } catch (err: any) {
       setSendError(err?.message || "Failed to send message.");
@@ -785,7 +832,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           >
             <button type="button" className="absolute inset-0 bg-black/60" aria-label="Close dialog" />
             <motion.div
-              className="relative bg-card text-app rounded-xl shadow-2xl border border-app"
+              className="relative bg-card text-app rounded-xl shadow-2xl border border-app flex flex-col items-center text-center"
             style={{ padding: 'clamp(1rem, 2vw, 1.5rem)', width: 'clamp(280px, 85vw, 448px)', maxWidth: '90vw' }}
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -794,9 +841,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
               onClick={e => e.stopPropagation()}
             >
               <h3 className="text-base font-semibold mb-2">Delete conversation?</h3>
-              <p className="text-muted-foreground mb-4 text-sm">This removes the conversation for you.</p>
+              <p className="text-muted-foreground mb-4 text-sm">
+                This action cannot be undone. The conversation and contact with this {isClient ? "artist" : "client"} will be removed, and all further communication will be deleted. You will only be able to reach out again if they initiate contact with you.
+              </p>
               {deleteError && <div className="mb-3 text-sm text-destructive">{deleteError}</div>}
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-center gap-3">
                 <button
                   onClick={e => {
                     e.stopPropagation();
@@ -1209,12 +1258,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           return (
                             <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                               <div
-                                className={`px-3 py-3 rounded-2xl w-fit break-words whitespace-pre-wrap border text-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                                className={`px-3 py-3 rounded-2xl w-fit break-words whitespace-pre-wrap border text-sm overflow-hidden ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
                                 style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
                               >
                                 <div>{msg.text}</div>
                                 {!!merged.length && (
-                                  <div className="mt-2 flex gap-2 items-center flex-nowrap">
+                                  <div className="mt-2 flex gap-2 items-center flex-wrap max-w-full">
                                     {merged.map(u => (
                                       <button
                                         key={u}
@@ -1544,12 +1593,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       return (
                         <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`px-3 py-4 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-loose ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                            className={`px-3 py-4 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-loose overflow-hidden ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
                             style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.875rem, 1vw, 0.9375rem)' }}
                           >
                             <div>{msg.text}</div>
                             {!!merged.length && (
-                              <div className="mt-2 flex gap-2 items-center flex-nowrap">
+                              <div className="mt-2 flex gap-2 items-center flex-wrap max-w-full">
                                 {merged.map(u => (
                                   <button
                                     key={u}
