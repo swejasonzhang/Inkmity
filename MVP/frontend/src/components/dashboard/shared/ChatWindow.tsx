@@ -108,8 +108,19 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [pendingImages, setPendingImages] = useState<Record<string, string[]>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [requestCount, setRequestCount] = useState(0);
+  const messagesContainerRefMobile = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRefDesktop = useRef<HTMLDivElement | null>(null);
 
   const appRef = useRef<HTMLDivElement | null>(null);
+  
+  const scrollToBottom = () => {
+    if (messagesContainerRefMobile.current) {
+      messagesContainerRefMobile.current.scrollTop = messagesContainerRefMobile.current.scrollHeight;
+    }
+    if (messagesContainerRefDesktop.current) {
+      messagesContainerRefDesktop.current.scrollTop = messagesContainerRefDesktop.current.scrollHeight;
+    }
+  };
   const overlayActive = confirmOpen || declineConfirmOpen || !!viewerUrl;
 
   useEffect(() => {
@@ -264,6 +275,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           };
         });
       });
+      setTimeout(() => scrollToBottom(), 0);
     };
 
     const onDeclined = (p: {
@@ -393,6 +405,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
       onMarkRead(expandedId);
     }
   }, [expandedId, activeConv, onMarkRead]);
+
+  useEffect(() => {
+    if (activeConv?.messages?.length) {
+      setTimeout(() => scrollToBottom(), 100);
+    }
+  }, [activeConv?.messages?.length, activeConv?.participantId]);
 
   const fmtTime = (ts: number) => {
     try {
@@ -734,6 +752,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
           };
         });
       });
+      
+      setTimeout(() => scrollToBottom(), 0);
       
       onMarkRead(participantId);
     } catch (err: any) {
@@ -1215,7 +1235,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         })()}
                       </div>
                     </header>
-                    <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
+                    <div ref={messagesContainerRefMobile} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
                       {!activeConv ? (
                         <div className="flex items-center justify-center h-full">
                           <p className="text-sm text-muted-foreground text-center">
@@ -1558,7 +1578,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     })()}
                   </div>
                 </header>
-                <div className="flex-1 overflow-y-auto px-3 md:px-4 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
+                <div ref={messagesContainerRefDesktop} className="flex-1 overflow-y-auto px-3 md:px-4 py-3 flex flex-col gap-3 overscroll-contain min-h-0">
                   {(!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
                     <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
                   ) : (

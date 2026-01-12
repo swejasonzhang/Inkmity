@@ -1,5 +1,6 @@
 import Message from "../models/Message.js";
 import User from "../models/UserBase.js";
+import DeletedConversation from "../models/DeletedConversation.js";
 import { getIO, userRoom, threadRoom } from "../services/socketService.js";
 
 const MAX_DECLINES = 99;
@@ -43,6 +44,9 @@ async function declineCount(clientId, artistId) {
 export const getAllMessagesForUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const deletedConvs = await DeletedConversation.find({ userId }).lean();
+    const deletedParticipantIds = new Set(deletedConvs.map(dc => dc.participantId));
+    
     const chats = await Message.find({
       type: "message",
       $or: [{ senderId: userId }, { receiverId: userId }],
@@ -53,6 +57,7 @@ export const getAllMessagesForUser = async (req, res) => {
     const unreadSet = new Set();
     for (const m of chats) {
       const pid = m.senderId === userId ? m.receiverId : m.senderId;
+      if (deletedParticipantIds.has(pid)) continue;
       if (!buckets.has(pid)) buckets.set(pid, { messages: [] });
       buckets.get(pid).messages.push({
         senderId: m.senderId,
@@ -118,6 +123,7 @@ export const getAllMessagesForUser = async (req, res) => {
     );
     const convs = [];
     for (const pid of participantIds) {
+      if (deletedParticipantIds.has(pid)) continue;
       const lastReq = await latestRequestBetween(userId, pid);
       let declines = 0;
       let lastStatus = null;
@@ -253,15 +259,53 @@ export const deleteConversationForUser = async (req, res) => {
     const authUserId = String(req.user?.clerkId || req.auth?.userId || "");
     if (authUserId && authUserId !== userId)
       return res.status(403).json({ error: "Forbidden" });
-    const { deletedCount } = await Message.deleteMany({
+    
+    await DeletedConversation.findOneAndUpdate(
+      { userId, participantId },
+      { userId, participantId },
+      { upsert: true, new: true }
+    );
+    
+    const user = await User.findOne({ clerkId: userId }).lean();
+    const userName = user?.username || "This user";
+    const threadKey = [userId, participantId].sort().join(":");
+    
+    const systemMessage = await Message.create({
+      senderId: userId,
+      receiverId: participantId,
+      text: `${userName} has cut contact. Further communication has been disabled.`,
       type: "message",
-      $or: [
-        { senderId: userId, receiverId: participantId },
-        { senderId: participantId, receiverId: userId },
-      ],
+      seen: false,
+      delivered: true,
+      deliveredAt: new Date(),
+      meta: {
+        kind: "contact_cut",
+        deletedBy: userId,
+      },
     });
-    res.status(200).json({ ok: true, deletedCount, userId, participantId });
+    
+    const payload = {
+      senderId: systemMessage.senderId,
+      receiverId: systemMessage.receiverId,
+      text: systemMessage.text,
+      timestamp: systemMessage.createdAt.getTime(),
+      meta: systemMessage.meta || undefined,
+      delivered: true,
+      seen: false,
+    };
+    
+    const io = getIO();
+    if (io) {
+      io.to(userRoom(participantId))
+        .to(threadRoom(threadKey))
+        .emit("message:new", { convoId: threadKey, message: payload });
+      
+      io.to(userRoom(participantId)).emit("unread:update");
+    }
+    
+    res.status(200).json({ ok: true, userId, participantId });
   } catch (e) {
+    console.error("Error deleting conversation:", e);
     res.status(500).json({ error: "Failed to delete conversation" });
   }
 };
