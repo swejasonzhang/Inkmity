@@ -297,6 +297,7 @@ export async function syncUser(req, res) {
     const styles = normalizedStyles
       .map((s) => String(s || "").trim())
       .filter(Boolean);
+    const visible = req.body?.visible !== undefined ? Boolean(req.body.visible) : (existing?.visible !== undefined ? existing.visible : true);
     const setDoc = {
       clerkId,
       email,
@@ -304,6 +305,7 @@ export async function syncUser(req, res) {
       handle: targetHandle,
       role,
       bio,
+      visible,
       ...(styles.length ? { styles } : {}),
     };
     if (role === "client") {

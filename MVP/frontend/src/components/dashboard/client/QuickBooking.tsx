@@ -137,7 +137,7 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
 
                                     <div className="min-h-[500px] sm:min-h-[480px] rounded-md px-2 overflow-x-hidden" style={{ background: "var(--elevated)" }}>
                                         <div className="w-full max-w-[920px] mx-auto p-2 sm:p-3">
-                                            {artistId ? <BookingPicker artistId={artistId} date={date} artistName={artist.username} /> : <p className="text-sm opacity-80">Loading availability…</p>}
+                                            {artistId && artist ? <BookingPicker artistId={artistId} date={date} artistName={artist.username} /> : <p className="text-sm opacity-80">Loading availability…</p>}
                                         </div>
                                     </div>
 

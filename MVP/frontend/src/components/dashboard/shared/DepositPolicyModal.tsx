@@ -22,7 +22,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
   const isLightTheme = theme === "light";
   
   const [loading, setLoading] = useState(false);
-  const [policy, setPolicy] = useState<ArtistPolicy["deposit"]>({
+  const [policy, setPolicy] = useState<NonNullable<ArtistPolicy["deposit"]>>({
     mode: "percent",
     percent: 0.2,
     amountCents: 5000,
@@ -36,7 +36,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
     try {
       const current = await getArtistPolicy(artistId);
       if (current?.deposit) {
-        setPolicy(current.deposit);
+        setPolicy(current.deposit as NonNullable<ArtistPolicy["deposit"]>);
       }
     } catch (err) {
       console.error("Failed to load policy:", err);
@@ -50,8 +50,6 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
   }, [open, loadPolicy]);
 
   const handleSave = async () => {
-    if (!policy) return;
-    
     setLoading(true);
     try {
       const token = await getToken();
@@ -67,8 +65,8 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
   };
 
   const depositConfigured = 
-    (policy.mode === "flat" && policy.amountCents > 0) ||
-    (policy.mode === "percent" && policy.percent > 0 && policy.minCents > 0);
+    (policy.mode === "flat" && (policy.amountCents ?? 0) > 0) ||
+    (policy.mode === "percent" && (policy.percent ?? 0) > 0 && (policy.minCents ?? 0) > 0);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

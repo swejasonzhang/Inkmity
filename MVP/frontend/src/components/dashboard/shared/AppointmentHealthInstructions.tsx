@@ -4,11 +4,10 @@ import { AlertCircle, CheckCircle2, XCircle, X } from "lucide-react";
 
 type Props = {
   open: boolean;
-  onClose: () => void;
   onContinue: () => void;
 };
 
-export default function AppointmentHealthInstructions({ open, onClose, onContinue }: Props) {
+export default function AppointmentHealthInstructions({ open, onContinue }: Props) {
   const doItems = [
     "Get a good night's sleep (8+ hours) before your appointment",
     "Eat a substantial meal 1-2 hours before your appointment",

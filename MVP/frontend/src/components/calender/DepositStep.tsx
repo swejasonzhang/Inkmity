@@ -11,8 +11,8 @@ type Booking = {
   artistId: string
   startAt: string
   endAt: string
-  depositRequiredCents: number
-  depositPaidCents: number
+  depositRequiredCents?: number
+  depositPaidCents?: number
 }
 
 type Props = {
@@ -49,7 +49,9 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
         const updated = await getBooking(currentBooking._id, token)
         if (updated) {
           setCurrentBooking(updated)
-          if (updated.depositPaidCents >= updated.depositRequiredCents) {
+          const paid = updated.depositPaidCents ?? 0;
+          const required = updated.depositRequiredCents ?? 0;
+          if (paid >= required && required > 0) {
             onDepositPaid()
           }
         }
@@ -245,4 +247,3 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
     </div>
   )
 }
-

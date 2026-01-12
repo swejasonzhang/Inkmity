@@ -10,6 +10,7 @@ import { NavDesktop } from "../header/NavDesktop";
 import { NavMobile } from "../header/NavMobile";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
+import { getSocket } from "@/lib/socket";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -31,10 +32,10 @@ const ThemeSwitch = ({ theme, toggleTheme, size = "md" }: ThemeSwitchProps) => {
   const isLight = theme === "light";
   const dims =
     size === "lg"
-      ? { h: "h-[45px]", w: "w-24", knob: "h-[35px] w-[35px]", icon: 22 }
+      ? { h: "h-[45px]", w: "w-28", knob: "h-[35px] w-[35px]", icon: 22 }
       : size === "md"
-        ? { h: "h-10", w: "w-20", knob: "h-8 w-8", icon: 20 }
-        : { h: "h-9", w: "w-16", knob: "h-7 w-7", icon: 18 };
+        ? { h: "h-10", w: "w-24", knob: "h-8 w-8", icon: 20 }
+        : { h: "h-9", w: "w-20", knob: "h-7 w-7", icon: 18 };
   const iconColorClass = isLight ? "text-black" : "text-white";
   return (
     <button
@@ -59,7 +60,7 @@ const ThemeSwitch = ({ theme, toggleTheme, size = "md" }: ThemeSwitchProps) => {
 
 const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderProps) => {
   const { signOut } = useClerk();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded, user } = useUser();
   const { getToken } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -67,33 +68,28 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/appointments");
 
-  const [userLabel, setUserLabel] = useState<string>("");
-  const [labelLoaded, setLabelLoaded] = useState<boolean>(false);
+  const [userLabel, setUserLabel] = useState<string>("User");
+  const [userRole, setUserRole] = useState<"client" | "artist" | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(false);
   const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
 
   const userLabelRef = useRef<string>("");
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      setUserLabel("User");
+      return;
+    }
     if (!isSignedIn) {
       setUserLabel("");
-      setLabelLoaded(false);
       userLabelRef.current = "";
       return;
     }
     if (userLabelRef.current) {
       setUserLabel(userLabelRef.current);
-      setLabelLoaded(true);
       return;
     }
+    setUserLabel("User");
     let cancelled = false;
-    let resolved = false;
-    setLabelLoaded(false);
-    const FALLBACK_MS = 450;
-    const fallbackTimer = window.setTimeout(() => {
-      if (cancelled || resolved) return;
-      setUserLabel("User");
-      setLabelLoaded(true);
-    }, FALLBACK_MS);
     const ac = new AbortController();
     async function run() {
       if (!isSignedIn || !API_BASE) return;
@@ -113,28 +109,49 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           (data?.handle && String(data.handle).replace(/^@/, "")) ||
           "";
         if (cancelled || ac.signal.aborted) return;
-        resolved = true;
-        window.clearTimeout(fallbackTimer);
         const finalName = name || "User";
         userLabelRef.current = finalName;
         setUserLabel(finalName);
-        setLabelLoaded(true);
+        if (data?.role && (data.role === "client" || data.role === "artist")) {
+          setUserRole(data.role);
+        }
+        if (data?.role && (data.role === "client" || data.role === "artist")) {
+          setUserRole(data.role);
+        }
       } catch (e: any) {
         if (cancelled || ac.signal.aborted) return;
         if (e?.name === "AbortError") return;
-        resolved = true;
-        window.clearTimeout(fallbackTimer);
         setUserLabel("User");
-        setLabelLoaded(true);
+        userLabelRef.current = "User";
       }
     }
     run();
     return () => {
       cancelled = true;
       ac.abort();
-      window.clearTimeout(fallbackTimer);
     };
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, getToken]);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user?.id) {
+      setIsOnline(false);
+      return;
+    }
+
+    const socket = getSocket();
+    const updateOnlineStatus = () => {
+      setIsOnline(socket.connected);
+    };
+
+    updateOnlineStatus();
+    socket.on("connect", updateOnlineStatus);
+    socket.on("disconnect", () => setIsOnline(false));
+
+    return () => {
+      socket.off("connect", updateOnlineStatus);
+      socket.off("disconnect");
+    };
+  }, [isLoaded, isSignedIn, user?.id]);
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -177,30 +194,24 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const [showDropdown, setShowDropdown] = useState(false);
   const triggerRef = useRef<HTMLDivElement | null>(null);
-  const [triggerWidth, setTriggerWidth] = useState<number>(0);
+  const [triggerWidth, setTriggerWidth] = useState<number>(220);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scheduleCloseDropdown = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setShowDropdown(false), 150);
+    closeTimer.current = setTimeout(() => setShowDropdown(false), 200);
   };
 
   useEffect(() => {
     const measure = () => {
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
-      setTriggerWidth(rect.width);
+      setTriggerWidth(Math.max(220, rect.width));
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
-
-  useEffect(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    setTriggerWidth(rect.width);
-  }, [labelLoaded, userLabel]);
 
   useEffect(() => {
     if (!showDropdown) return;
@@ -243,7 +254,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   return (
     <>
       <header className="flex w-full relative items-center z-50 px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10 py-3 xs:py-3.5 sm:py-4 md:py-4.5 lg:py-5 text-app bg-transparent">
-        <div className="w-full flex justify-between items-center sm:grid sm:grid-cols-[1fr_auto_1fr]">
+        <div className="w-full flex justify-between items-center sm:grid sm:grid-cols-[auto_1fr_auto]">
           <div className="justify-self-start -ml-1 xs:-ml-1.5 sm:-ml-2 md:-ml-4 lg:-ml-6 pl-1 xs:pl-1.5 sm:pl-2 md:pl-0 flex-shrink-0">
             <Link to={homeHref} className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 md:gap-3.5 lg:gap-4">
               <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 xs:h-[4.5rem] sm:h-20 md:h-24 lg:h-[6.5rem] xl:h-28 w-auto object-contain" draggable={false} />
@@ -251,27 +262,16 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             </Link>
           </div>
 
-          <div className="hidden sm:block justify-self-center">
+          <div className="hidden sm:block justify-self-stretch flex items-center justify-center">
             <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[17px] xs:text-[18px] sm:text-[19px] md:text-[20px]" />
           </div>
 
           <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 md:gap-4 pr-1 xs:pr-1.5 sm:pr-2 md:pr-0 justify-self-end">
-            {isDashboard && (
-              <>
-                <div className="hidden sm:block mt-[5px]">
-                  <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="lg" />
-                </div>
-                <div className="sm:hidden mt-[5px]">
-                  <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />
-                </div>
-              </>
-            )}
-
             <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-2 xs:p-2.5 rounded-lg hover:bg-elevated active:scale-[0.98] text-app ml-0.5 xs:ml-1" onClick={() => setMobileMenuOpen(true)}>
               <Menu size={MOBILE_ICON_SIZE} strokeWidth={MOBILE_ICON_STROKE} />
             </Button>
 
-            {isSignedIn && isLoaded && labelLoaded && (
+            {isLoaded && isSignedIn ? (
               <div
                 className="relative hidden md:inline-block align-top text-app [&_*]:text-app [&_*]:border-app"
                 onMouseEnter={() => setShowDropdown(true)}
@@ -280,14 +280,18 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                 <div
                   ref={triggerRef}
                   className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
+                  style={{ width: '220px', minWidth: '220px' }}
                   aria-haspopup="menu"
                   aria-expanded={showDropdown}
                   onClick={() => setShowDropdown((v) => !v)}
                 >
-                  <span className="mr-2 font-semibold text-xl leading-none">✦</span>
-                  <span className="inline-flex items-center leading-none">
-                    <span className="mr-1">Hello,</span>
-                    <span className="font-bold max-w-[14rem] truncate">{userLabel || "User"}</span>
+                  <span className="mr-2 font-semibold text-xl leading-none flex-shrink-0">✦</span>
+                  <span className="inline-flex items-center leading-none gap-2">
+                    <span className="font-bold">Welcome Back</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-medium opacity-70 flex-shrink-0" title={isOnline ? "Online" : "Offline"}>
+                      <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"}`}></span>
+                      <span className="hidden lg:inline">{isOnline ? "Online" : "Offline"}</span>
+                    </span>
                   </span>
                 </div>
 
@@ -297,11 +301,18 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   role="menu"
                   aria-label="User menu"
                   style={{ width: triggerWidth || undefined, marginTop: 6 }}
-                  className={`absolute right-0 top-full bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-200 z-[2147483000] overflow-hidden ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-1 invisible"}`}
+                  className={`absolute right-0 top-full bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out z-[2147483000] overflow-hidden ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
                 >
                   <div className="px-4 py-3 text-center">
-                    <div className="text-xs subtle">Signed in as</div>
+                    <div className="text-sm opacity-80 mb-2">
+                      {userRole === "artist" ? "Let's get ready to tattoo your next masterpiece" : userRole === "client" ? "Ready for your next tattoo?" : "Welcome"}
+                    </div>
                     <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
+                    {isDashboard && (
+                      <div className="mt-3 flex items-center justify-center">
+                        <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
+                      </div>
+                    )}
                   </div>
                   <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
                   <Link 
@@ -317,6 +328,19 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                     <LogOut size={18} />
                     <span>Logout</span>
                   </button>
+                </div>
+              </div>
+            ) : isLoaded && !isSignedIn ? null : (
+              <div className="relative hidden md:inline-block align-top">
+                <div
+                  className={`${dropdownBtnClasses} opacity-50 pointer-events-none`}
+                  style={{ minWidth: '140px' }}
+                >
+                  <span className="mr-2 font-semibold text-xl leading-none">✦</span>
+                  <span className="inline-flex items-center leading-none">
+                    <span className="mr-1">Hello,</span>
+                    <span className="font-bold">User</span>
+                  </span>
                 </div>
               </div>
             )}
