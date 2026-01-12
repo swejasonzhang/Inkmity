@@ -464,6 +464,18 @@ export async function getMe(opts?: { token?: string; signal?: AbortSignal }) {
   return apiGet<Me>("/users/me", undefined, opts?.token, opts?.signal);
 }
 
+export async function updateVisibility(
+  visibility: "online" | "away" | "invisible",
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiRequest<{ ok: boolean; visibility: string }>(
+    "/users/me/visibility",
+    { method: "PUT", body: JSON.stringify({ visibility }), signal },
+    token
+  );
+}
+
 export async function syncUser(
   token: string | undefined,
   payload: {

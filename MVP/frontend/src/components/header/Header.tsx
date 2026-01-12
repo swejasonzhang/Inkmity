@@ -11,6 +11,10 @@ import { NavMobile } from "../header/NavMobile";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { getSocket } from "@/lib/socket";
+import { VisibilityStatusDropdown } from "./VisibilityStatusDropdown";
+import { VisibilityStatus } from "./VisibilityDropdown";
+import { updateVisibility } from "@/api";
+import { Circle, Clock, EyeOff } from "lucide-react";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -71,6 +75,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const [userLabel, setUserLabel] = useState<string>("User");
   const [userRole, setUserRole] = useState<"client" | "artist" | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(false);
+  const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
   const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
 
   const userLabelRef = useRef<string>("");
@@ -115,6 +120,11 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         if (data?.role && (data.role === "client" || data.role === "artist")) {
           setUserRole(data.role);
         }
+        if (data?.visibility && ["online", "away", "invisible"].includes(data.visibility)) {
+          setUserVisibility(data.visibility as VisibilityStatus);
+        } else {
+          setUserVisibility("online");
+        }
       } catch (e: any) {
         if (cancelled || ac.signal.aborted) return;
         if (e?.name === "AbortError") return;
@@ -145,9 +155,19 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     socket.on("connect", updateOnlineStatus);
     socket.on("disconnect", handleDisconnect);
 
+    const handleVisibilityUpdate = (data: { userId: string; visibility: VisibilityStatus }) => {
+      if (data.userId === user.id) {
+        setUserVisibility(data.visibility);
+      }
+    };
+    socket.on("user:visibility:updated", handleVisibilityUpdate);
+    socket.on("user:visibility:changed", handleVisibilityUpdate);
+
     return () => {
       socket.off("connect", updateOnlineStatus);
       socket.off("disconnect", handleDisconnect);
+      socket.off("user:visibility:updated", handleVisibilityUpdate);
+      socket.off("user:visibility:changed", handleVisibilityUpdate);
     };
   }, [isLoaded, isSignedIn, user?.id]);
 
@@ -155,6 +175,24 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
     await signOut({ redirectUrl: "/login" });
+  };
+
+  const handleVisibilityChange = async (status: VisibilityStatus) => {
+    try {
+      const token = await getToken();
+      await updateVisibility(status, token || undefined);
+      setUserVisibility(status);
+    } catch (error) {
+      console.error("Failed to update visibility:", error);
+    }
+  };
+
+  const getVisibilityDisplay = () => {
+    const displayStatus = isOnline ? userVisibility : "invisible";
+    const isLight = theme === "light";
+    if (displayStatus === "online") return { icon: Circle, label: "Online", color: isLight ? "text-black" : "text-white" };
+    if (displayStatus === "away") return { icon: Clock, label: "Away", color: isLight ? "text-gray-500" : "text-gray-400" };
+    return { icon: EyeOff, label: "Invisible", color: isLight ? "text-gray-300" : "text-gray-600" };
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
@@ -190,7 +228,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   }, [mobileMenuOpen]);
 
   const dropdownBtnClasses =
-    "relative inline-flex h-11 md:h-12 items-center justify-center px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] bg-[color-mix(in_oklab,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_oklab,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shadow-[0_6px_24px_-8px_rgba(0,0,0,0.35)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--fg)_10%,transparent)]";
+    "relative inline-flex h-11 md:h-12 items-center justify-start px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] bg-[color-mix(in_oklab,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_oklab,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shadow-[0_6px_24px_-8px_rgba(0,0,0,0.35)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--fg)_10%,transparent)]";
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
@@ -201,13 +239,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const [showDropdown, setShowDropdown] = useState(false);
   const triggerRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [triggerWidth, setTriggerWidth] = useState<number>(220);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const scheduleCloseDropdown = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setShowDropdown(false), 200);
-  };
 
   useEffect(() => {
     const measure = () => {
@@ -225,8 +258,26 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setShowDropdown(false);
     };
+    const onClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const isInStatusDropdown = target.closest('[data-slot="dropdown-menu-content"]') || 
+                                  target.closest('[data-slot="dropdown-menu-trigger"]');
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        !isInStatusDropdown
+      ) {
+        setShowDropdown(false);
+      }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClickOutside);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onClickOutside);
+    };
   }, [showDropdown]);
 
   const portalTarget = document.getElementById("dashboard-portal-root") ?? document.getElementById("dashboard-scope") ?? document.body;
@@ -280,34 +331,39 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             {isLoaded && isSignedIn ? (
               <div
                 className="relative hidden md:inline-block align-top text-app [&_*]:text-app [&_*]:border-app"
-                onMouseEnter={() => setShowDropdown(true)}
-                onMouseLeave={scheduleCloseDropdown}
               >
                 <div
                   ref={triggerRef}
                   className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
-                  style={{ width: '220px', minWidth: '220px' }}
+                  style={{ minWidth: '220px' }}
                   aria-haspopup="menu"
                   aria-expanded={showDropdown}
                   onClick={() => setShowDropdown((v) => !v)}
                 >
                   <span className="mr-2 font-semibold text-xl leading-none flex-shrink-0">✦</span>
-                  <span className="inline-flex items-center leading-none gap-2">
-                    <span className="font-bold">Welcome Back</span>
-                    <span className="inline-flex items-center gap-1 text-xs font-medium opacity-70 flex-shrink-0" title={isOnline ? "Online" : "Offline"}>
-                      <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"}`}></span>
-                      <span className="hidden lg:inline">{isOnline ? "Online" : "Offline"}</span>
-                    </span>
-                  </span>
+                  <div className="flex items-center leading-none gap-2 justify-center">
+                    <span className="font-bold whitespace-nowrap flex-shrink-0">Welcome Back</span>
+                    {(() => {
+                      const visibility = getVisibilityDisplay();
+                      const Icon = visibility.icon;
+                      return (
+                        <span className="flex items-center gap-1.5 flex-shrink-0 opacity-70 text-xs">
+                          <Icon size={10} className={visibility.color} />
+                          <span>{visibility.label}</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <div className="absolute left-0 right-0 top-full h-2" />
 
                 <div
+                  ref={dropdownRef}
                   role="menu"
                   aria-label="User menu"
                   style={{ width: triggerWidth || undefined, marginTop: 6 }}
-                  className={`absolute right-0 top-full bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out z-[2147483000] overflow-hidden ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
+                  className={`absolute right-0 top-full bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out z-[2147483000] overflow-visible ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
                 >
                   <div className="px-4 py-3 text-center">
                     <div className="text-sm opacity-80 mb-2">
@@ -319,6 +375,15 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                         <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
                       </div>
                     )}
+                  </div>
+                  <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+                  <div className="px-4 py-3">
+                    <VisibilityStatusDropdown
+                      currentStatus={userVisibility}
+                      isOnline={isOnline}
+                      onStatusChange={handleVisibilityChange}
+                      triggerWidth={triggerWidth}
+                    />
                   </div>
                   <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
                   <Link 
