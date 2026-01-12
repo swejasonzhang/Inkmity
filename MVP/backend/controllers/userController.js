@@ -412,6 +412,43 @@ export async function getMyDefaultBio(req, res) {
   res.json({ text: bioText(user.username, user.bio) });
 }
 
+export async function updateMyVisibility(req, res) {
+  try {
+    const clerkId = getClerkId(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const { visibility } = req.body || {};
+    if (!visibility || !["online", "away", "invisible"].includes(visibility)) {
+      return res.status(400).json({ error: "Invalid visibility status" });
+    }
+    
+    const user = await User.findOneAndUpdate(
+      { clerkId },
+      { $set: { visibility } },
+      { new: true }
+    ).lean();
+    
+    if (!user) return res.status(404).json({ error: "User not found" });
+    
+    const { getIO, userRoom } = await import("../services/socketService.js");
+    const io = getIO();
+    if (io) {
+      io.to(userRoom(clerkId)).emit("user:visibility:updated", {
+        userId: clerkId,
+        visibility: user.visibility,
+      });
+      io.emit("user:visibility:changed", {
+        userId: clerkId,
+        visibility: user.visibility,
+      });
+    }
+    
+    res.json({ ok: true, visibility: user.visibility });
+  } catch (e) {
+    res.status(500).json({ error: "UPDATE_VISIBILITY_FAILED", message: e?.message || String(e) });
+  }
+}
+
 export async function saveMyPortfolio(req, res) {
   try {
     const clerkId = getClerkId(req);

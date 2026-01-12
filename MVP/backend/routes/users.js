@@ -14,6 +14,7 @@ import {
   checkHandleAvailability,
   updateMyBio,
   getMyDefaultBio,
+  updateMyVisibility,
 } from "../controllers/userController.js";
 
 const router = Router();
@@ -22,6 +23,7 @@ router.get("/me", requireAuth(), getMe);
 router.get("/handle-availability", checkHandleAvailability);
 router.put("/me/bio", requireAuth(), updateMyBio);
 router.get("/me/bio/default", requireAuth(), getMyDefaultBio);
+router.put("/me/visibility", requireAuth(), updateMyVisibility);
 router.post("/sync", requireAuth(), syncUser);
 router.get("/avatar/signature", requireAuth(), getAvatarSignature);
 router.put("/me/avatar", requireAuth(), updateMyAvatar);
