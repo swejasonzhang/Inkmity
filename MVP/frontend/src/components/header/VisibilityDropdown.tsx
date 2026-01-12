@@ -1,139 +1,192 @@
-import { useState, useRef, useEffect } from "react";
-import { Circle, Clock, EyeOff } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Circle, Clock, EyeOff, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useTheme } from "@/hooks/useTheme";
 
 export type VisibilityStatus = "online" | "away" | "invisible";
-
-type VisibilityOption = {
-  value: VisibilityStatus;
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-  description: string;
-};
-
-const visibilityOptions: VisibilityOption[] = [
-  {
-    value: "online",
-    label: "Online",
-    icon: <Circle size={10} className="fill-current" />,
-    color: "text-green-500",
-    description: "Visible to everyone",
-  },
-  {
-    value: "away",
-    label: "Away",
-    icon: <Clock size={10} className="fill-current" />,
-    color: "text-yellow-500",
-    description: "Away but visible",
-  },
-  {
-    value: "invisible",
-    label: "Invisible",
-    icon: <EyeOff size={10} className="fill-current" />,
-    color: "text-gray-400",
-    description: "Appear offline",
-  },
-];
 
 type VisibilityDropdownProps = {
   currentStatus: VisibilityStatus;
   isOnline: boolean;
   onStatusChange: (status: VisibilityStatus) => void;
   className?: string;
+  triggerWidth?: number;
 };
+
+const getVisibilityOptions = (theme: "light" | "dark") => [
+  {
+    value: "online" as VisibilityStatus,
+    label: "Online",
+    icon: Circle,
+    color: theme === "light" ? "text-black" : "text-white",
+    description: "Visible to everyone",
+  },
+  {
+    value: "away" as VisibilityStatus,
+    label: "Away",
+    icon: Clock,
+    color: theme === "light" ? "text-gray-600" : "text-gray-400",
+    description: "Away but visible",
+  },
+  {
+    value: "invisible" as VisibilityStatus,
+    label: "Invisible",
+    icon: EyeOff,
+    color: theme === "light" ? "text-gray-400" : "text-gray-500",
+    description: "Appear offline",
+  },
+];
 
 export const VisibilityDropdown = ({
   currentStatus,
   isOnline,
   onStatusChange,
   className = "",
+  triggerWidth,
 }: VisibilityDropdownProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const currentOption = visibilityOptions.find((opt) => opt.value === currentStatus) || visibilityOptions[0];
+  const { theme } = useTheme();
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [width, setWidth] = useState<number>(triggerWidth || 0);
+  const [currentTheme, setCurrentTheme] = useState<"light" | "dark">(theme);
 
   useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+    setCurrentTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const dash = document.getElementById("dashboard-scope");
+      const isLight = dash?.classList.contains("ink-light") || dash?.getAttribute("data-ink") === "light";
+      setCurrentTheme(isLight ? "light" : "dark");
     };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-    };
-    window.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("keydown", handleEscape);
+    
+    handleThemeChange();
+    window.addEventListener("ink:theme-change", handleThemeChange);
     return () => {
-      window.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("ink:theme-change", handleThemeChange);
     };
-  }, [isOpen]);
+  }, []);
 
-  const handleSelect = (status: VisibilityStatus) => {
-    onStatusChange(status);
-    setIsOpen(false);
-  };
+  const visibilityOptions = useMemo(() => getVisibilityOptions(currentTheme), [currentTheme]);
 
-  // If socket is disconnected, show offline regardless of visibility status
+  useEffect(() => {
+    if (triggerWidth) {
+      setWidth(triggerWidth);
+    } else if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setWidth(rect.width);
+    }
+  }, [open, triggerWidth, currentTheme]);
+
   const displayStatus = isOnline ? currentStatus : "invisible";
   const displayOption = visibilityOptions.find((opt) => opt.value === displayStatus) || visibilityOptions[0];
+  const Icon = displayOption.icon;
 
   return (
-    <div className={`relative inline-block ${className}`} ref={dropdownRef}>
-      <button
-        type="button"
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app transition-colors ${className}`}
+        >
+          <Icon size={14} className={displayOption.color} />
+          <span className="text-sm font-medium">{displayOption.label}</span>
+          <ChevronDown size={14} className="opacity-50" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent 
+        align="center" 
+        side="bottom"
+        style={{ width: width || undefined }}
+        className="bg-card border-[color-mix(in_oklab,var(--fg)_16%,transparent)] text-app"
         onClick={(e) => {
           e.stopPropagation();
-          setIsOpen(!isOpen);
         }}
-        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-[color-mix(in_oklab,var(--elevated)_30%,transparent)] transition-colors text-xs font-medium opacity-70 hover:opacity-100 whitespace-nowrap"
-        aria-label="Change visibility status"
-        aria-expanded={isOpen}
-        aria-haspopup="true"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+        onPointerDownOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[role="menu"]') || target.closest('[data-slot="dropdown-menu"]')) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[role="menu"]') || target.closest('[data-slot="dropdown-menu"]')) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
       >
-        <span className={`${displayOption.color} flex items-center`}>
-          {displayOption.icon}
-        </span>
-        <span className="hidden lg:inline">{displayOption.label}</span>
-      </button>
-
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-[2147482999]" onClick={() => setIsOpen(false)} aria-hidden />
-          <div
-            role="menu"
-            className="absolute right-0 top-full mt-2 w-48 bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-lg shadow-[0_12px_40px_-10px_rgba(0,0,0,0.5)] overflow-hidden z-[2147483001]"
-          >
-            {visibilityOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="menuitem"
+        <DropdownMenuRadioGroup
+          value={currentStatus}
+          onValueChange={(value) => {
+            const newStatus = value as VisibilityStatus;
+            if (newStatus !== currentStatus) {
+              onStatusChange(newStatus);
+            }
+            setTimeout(() => {
+              setOpen(false);
+            }, 0);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          {visibilityOptions.map((option) => {
+            const OptionIcon = option.icon;
+            return (
+              <DropdownMenuRadioItem
+                key={`${option.value}-${currentTheme}`}
+                value={option.value}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (option.value !== currentStatus) {
+                    onStatusChange(option.value);
+                  }
+                  setTimeout(() => {
+                    setOpen(false);
+                  }, 0);
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleSelect(option.value);
                 }}
-                className={`w-full px-4 py-3 text-left hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] transition-colors flex items-center gap-3 ${
-                  currentStatus === option.value ? "bg-[color-mix(in_oklab,var(--elevated)_30%,transparent)]" : ""
-                }`}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
+                className="flex items-center justify-center gap-2 text-app hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] whitespace-nowrap"
               >
-                <span className={`${option.color} flex items-center flex-shrink-0`}>
-                  {option.icon}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-app">{option.label}</div>
-                  <div className="text-xs opacity-70 text-app">{option.description}</div>
-                </div>
-                {currentStatus === option.value && (
-                  <span className="text-xs opacity-60">✓</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+                <OptionIcon size={12} className={option.color} />
+                <span className="text-sm font-medium whitespace-nowrap">{option.label}</span>
+                <span className="text-xs opacity-70 whitespace-nowrap">{option.description}</span>
+              </DropdownMenuRadioItem>
+            );
+          })}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };

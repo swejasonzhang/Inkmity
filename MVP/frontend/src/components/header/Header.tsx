@@ -11,8 +11,7 @@ import { NavMobile } from "../header/NavMobile";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { getSocket } from "@/lib/socket";
-import { VisibilityStatusDropdown } from "./VisibilityStatusDropdown";
-import { VisibilityStatus } from "./VisibilityDropdown";
+import { VisibilityDropdown, VisibilityStatus } from "./VisibilityDropdown";
 import { updateVisibility } from "@/api";
 import { Circle, Clock, EyeOff } from "lucide-react";
 
@@ -191,8 +190,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     const displayStatus = isOnline ? userVisibility : "invisible";
     const isLight = theme === "light";
     if (displayStatus === "online") return { icon: Circle, label: "Online", color: isLight ? "text-black" : "text-white" };
-    if (displayStatus === "away") return { icon: Clock, label: "Away", color: isLight ? "text-gray-500" : "text-gray-400" };
-    return { icon: EyeOff, label: "Invisible", color: isLight ? "text-gray-300" : "text-gray-600" };
+    if (displayStatus === "away") return { icon: Clock, label: "Away", color: isLight ? "text-gray-600" : "text-gray-400" };
+    return { icon: EyeOff, label: "Invisible", color: isLight ? "text-gray-400" : "text-gray-500" };
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
@@ -260,15 +259,25 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     };
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const isInStatusDropdown = target.closest('[data-slot="dropdown-menu-content"]') || 
-                                  target.closest('[data-slot="dropdown-menu-trigger"]');
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(target) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(target) &&
-        !isInStatusDropdown
-      ) {
+      
+      const isInStatusDropdown = target.closest('[data-slot="dropdown-menu"]') ||
+                                  target.closest('[data-slot="dropdown-menu-content"]') || 
+                                  target.closest('[data-slot="dropdown-menu-trigger"]') ||
+                                  target.closest('[data-slot="dropdown-menu-radio-group"]') ||
+                                  target.closest('[data-slot="dropdown-menu-radio-item"]') ||
+                                  target.closest('[data-slot="dropdown-menu-portal"]') ||
+                                  target.closest('[role="menu"]') ||
+                                  target.closest('[role="radiogroup"]') ||
+                                  target.closest('[role="radio"]') ||
+                                  target.closest('[data-radix-popper-content-wrapper]') ||
+                                  target.closest('[data-radix-portal]') ||
+                                  target.closest('[data-radix-dropdown-menu-content]') ||
+                                  target.closest('[data-radix-dropdown-menu-trigger]');
+      
+      const isInMainDropdown = dropdownRef.current && dropdownRef.current.contains(target);
+      const isInTrigger = triggerRef.current && triggerRef.current.contains(target);
+      
+      if (!isInMainDropdown && !isInTrigger && !isInStatusDropdown) {
         setShowDropdown(false);
       }
     };
@@ -363,6 +372,12 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   role="menu"
                   aria-label="User menu"
                   style={{ width: triggerWidth || undefined, marginTop: 6 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                  }}
                   className={`absolute right-0 top-full bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out z-[2147483000] overflow-visible ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
                 >
                   <div className="px-4 py-3 text-center">
@@ -377,8 +392,12 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                     )}
                   </div>
                   <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-                  <div className="px-4 py-3">
-                    <VisibilityStatusDropdown
+                  <div 
+                    className="px-4 py-3"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <VisibilityDropdown
                       currentStatus={userVisibility}
                       isOnline={isOnline}
                       onStatusChange={handleVisibilityChange}
@@ -408,10 +427,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   style={{ minWidth: '140px' }}
                 >
                   <span className="mr-2 font-semibold text-xl leading-none">✦</span>
-                  <span className="inline-flex items-center leading-none">
-                    <span className="mr-1">Hello,</span>
-                    <span className="font-bold">User</span>
-                  </span>
+                  <span className="font-bold whitespace-nowrap">Welcome User</span>
                 </div>
               </div>
             )}
