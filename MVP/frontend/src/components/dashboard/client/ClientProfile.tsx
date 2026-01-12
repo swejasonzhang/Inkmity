@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import ClientAppointmentHistory from "./ClientAppointmentHistory";
 
@@ -586,8 +585,8 @@ export default function ClientProfile() {
                             {uploading ? "Uploading..." : (currentCoverImage ? "Change Background" : "Add Background")}
                         </Button>
 
-                        <div className="flex flex-col items-center w-full min-h-[2.5rem] px-4">
-                        <div className="relative inline-flex items-center gap-2 flex-wrap justify-center">
+                        <div className="flex flex-col items-center justify-center w-full min-h-[2.5rem] px-4">
+                        <div className="relative flex items-center justify-center gap-2 flex-wrap">
                             {isEditingUsername ? (
                                 <Input
                                     type="text"
@@ -612,19 +611,19 @@ export default function ClientProfile() {
                                     placeholder="Your name"
                                 />
                             ) : (
-                                <>
+                                <div className="flex items-center justify-center gap-2">
                                     <span className="text-lg md:text-xl font-extrabold tracking-tight" style={{ color: "var(--fg)" }}>
                                         {currentUsername || "Your name"}
                                     </span>
                                     <button
                                         onClick={() => setIsEditingUsername(true)}
-                                        className="opacity-60 hover:opacity-100 transition-opacity"
+                                        className="opacity-60 hover:opacity-100 transition-opacity flex items-center justify-center"
                                         style={{ color: "var(--fg)" }}
                                         title="Edit username"
                                     >
                                         <Pencil className="h-3 w-3" />
                                     </button>
-                                </>
+                                </div>
                             )}
                         </div>
                         {client?.handle && (
@@ -990,17 +989,6 @@ export default function ClientProfile() {
                             )}
                         </div>
                         <div className="flex flex-col gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-                            <div className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border" style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 50%, transparent)", width: "100%" }}>
-                                <Label htmlFor="visible" className="text-sm font-medium cursor-pointer" style={{ color: "var(--fg)" }}>
-                                    Visible to others
-                                </Label>
-                                <Switch
-                                    id="visible"
-                                    checked={editedClient.visible !== undefined ? editedClient.visible : (client?.visible !== undefined ? client.visible : true)}
-                                    onCheckedChange={(checked) => setEditedClient({ ...editedClient, visible: checked })}
-                                    disabled={saving}
-                                />
-                            </div>
                             <div className="flex gap-3 justify-end">
                                 <Button
                                     onClick={() => {
