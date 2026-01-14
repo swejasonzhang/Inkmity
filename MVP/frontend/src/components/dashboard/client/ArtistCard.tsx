@@ -118,7 +118,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           : ({ minHeight: 0 } as React.CSSProperties)
       }
     >
-      <div className={shellClass} style={{ borderColor: "var(--border)", minHeight: 0 }} data-artist-card="true">
+      <div className={shellClass} style={{ borderColor: "var(--border)", minHeight: 0 }} data-artist-card="true" data-testid="artist-card">
         <div className={`relative w-full flex-shrink-0 flex items-center justify-center ${fullScreen ? "px-3 pt-2" : ""}`}>
           <div 
             className={`relative flex-shrink-0 w-full rounded-2xl overflow-hidden ${fullScreen ? "" : ""}`} 
@@ -215,6 +215,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             <button
               type="button"
               onClick={openProfile}
+              data-testid="view-portfolio-button"
               className={`inline-flex items-center gap-1 rounded-lg ${fullScreen ? "px-4 py-2 text-base" : ""} font-medium transition border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30 hover:-translate-y-0.5`}
               style={fullScreen ? {
                 borderColor: "var(--border)", 

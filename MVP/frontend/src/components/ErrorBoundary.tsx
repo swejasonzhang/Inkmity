@@ -58,7 +58,7 @@ class ErrorBoundary extends Component<Props, State> {
             <CardContent className="space-y-4">
               <div style={{ color: "var(--fg)" }}>
                 <p className="mb-2">An unexpected error occurred. Please try refreshing the page.</p>
-                {import.meta.env.DEV && this.state.error && (
+                {((import.meta?.env as any)?.DEV || (import.meta as any)?.env?.DEV) && this.state.error && (
                   <details className="mt-4">
                     <summary className="cursor-pointer text-sm font-medium mb-2" style={{ color: "var(--fg)" }}>
                       Error Details

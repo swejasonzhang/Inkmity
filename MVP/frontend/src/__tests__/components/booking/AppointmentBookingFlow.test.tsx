@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen } from "../../setup/test-utils";
+import { render, screen } from "@/__tests__/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import type { Booking } from "@/api";
 
