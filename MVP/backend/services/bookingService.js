@@ -1,21 +1,15 @@
-// Service layer for Booking business logic (DRY principle)
 import { bookingRepository, userRepository } from "../repositories/index.js";
 import { DateTime } from "luxon";
 
 export const bookingService = {
-  /**
-   * Create consultation booking
-   */
   async createConsultation(artistId, clientId, bookingData) {
     const { startISO, durationMinutes = 30, priceCents = 0 } = bookingData;
 
-    // Validate duration (15-60 minutes for consultations)
     const validDuration = Math.max(15, Math.min(60, durationMinutes || 30));
-    
+
     const startAt = new Date(startISO);
     const endAt = new Date(startAt.getTime() + validDuration * 60 * 1000);
 
-    // Check for time conflicts
     const conflicts = await bookingRepository.findOverlapping(
       artistId,
       startAt,
@@ -41,9 +35,6 @@ export const bookingService = {
     return booking;
   },
 
-  /**
-   * Create tattoo session booking
-   */
   async createTattooSession(artistId, clientId, bookingData) {
     const {
       startISO,
@@ -60,7 +51,6 @@ export const bookingService = {
     const startAt = new Date(startISO);
     const endAt = endISO ? new Date(endISO) : new Date(startAt.getTime() + (durationMinutes || 120) * 60 * 1000);
 
-    // Check for time conflicts
     const conflicts = await bookingRepository.findOverlapping(
       artistId,
       startAt,
@@ -90,17 +80,13 @@ export const bookingService = {
     return booking;
   },
 
-  /**
-   * Reschedule booking
-   */
   async reschedule(bookingId, actorId, newStartISO, newEndISO) {
     const booking = await bookingRepository.findById(bookingId);
-    
+
     if (!booking) {
       throw new Error("Booking not found");
     }
 
-    // Verify actor has permission
     if (booking.artistId !== actorId && booking.clientId !== actorId) {
       throw new Error("Unauthorized");
     }
@@ -108,7 +94,6 @@ export const bookingService = {
     const newStartAt = new Date(newStartISO);
     const newEndAt = newEndISO ? new Date(newEndISO) : new Date(newStartAt.getTime() + (new Date(booking.endAt) - new Date(booking.startAt)));
 
-    // Check for conflicts (excluding current booking)
     const conflicts = await bookingRepository.findOverlapping(
       booking.artistId,
       newStartAt,
@@ -131,23 +116,19 @@ export const bookingService = {
     return await bookingRepository.updateById(bookingId, updates);
   },
 
-  /**
-   * Cancel booking
-   */
   async cancel(bookingId, actorId, reason) {
     const booking = await bookingRepository.findById(bookingId);
-    
+
     if (!booking) {
       throw new Error("Booking not found");
     }
 
-    // Verify actor has permission
     if (booking.artistId !== actorId && booking.clientId !== actorId) {
       throw new Error("Unauthorized");
     }
 
     const cancelledBy = booking.artistId === actorId ? "artist" : "client";
-    
+
     const updates = {
       status: "cancelled",
       cancelledAt: new Date(),
@@ -158,9 +139,6 @@ export const bookingService = {
     return await bookingRepository.updateById(bookingId, updates);
   },
 
-  /**
-   * Get bookings for user
-   */
   async getBookingsForUser(userId, role, filters = {}) {
     if (role === "artist") {
       return await bookingRepository.findByArtistId(userId, filters);
@@ -169,9 +147,6 @@ export const bookingService = {
     }
   },
 
-  /**
-   * Get upcoming bookings
-   */
   async getUpcomingBookings(artistId, limit = 10) {
     return await bookingRepository.findUpcoming(artistId, limit);
   },
