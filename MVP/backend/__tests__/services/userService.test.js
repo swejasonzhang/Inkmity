@@ -1,7 +1,5 @@
-// TDD tests for User Service (Test-Driven Development)
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
-// Mock repositories before importing
 const mockUserRepository = {
   findByClerkId: jest.fn(),
   upsert: jest.fn(),
@@ -22,7 +20,6 @@ jest.unstable_mockModule("../../lib/handle.js", () => ({
   isValidHandle: mockIsValidHandle,
 }));
 
-// Import after mocking
 const { userService } = await import("../../services/userService.js");
 
 describe("User Service - TDD", () => {

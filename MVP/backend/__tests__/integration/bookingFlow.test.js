@@ -1,10 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
-import mongoose from "mongoose";
 import Booking from "../../models/Booking.js";
-import Billing from "../../models/Billing.js";
-import IntakeForm from "../../models/IntakeForm.js";
 import Project from "../../models/Project.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
 import {
@@ -303,4 +300,3 @@ describe("Integration - Deposit Application to Final Payment", () => {
     );
   });
 });
-

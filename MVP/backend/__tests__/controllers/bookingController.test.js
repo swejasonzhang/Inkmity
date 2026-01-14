@@ -1,12 +1,8 @@
 import request from "supertest";
 import express from "express";
-import mongoose from "mongoose";
 import Booking from "../../models/Booking.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
-import IntakeForm from "../../models/IntakeForm.js";
 import Project from "../../models/Project.js";
-import Availability from "../../models/Availability.js";
-import Message from "../../models/Message.js";
 import {
   createConsultation,
   createTattooSession,
@@ -492,4 +488,3 @@ describe("Booking Controller - Intake Form", () => {
     expect(booking.intakeFormId).toBeDefined();
   });
 });
-

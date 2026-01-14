@@ -1,11 +1,9 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
-import mongoose from "mongoose";
 import Booking from "../../models/Booking.js";
 import Billing from "../../models/Billing.js";
 import WebhookEvent from "../../models/WebhookEvent.js";
-import ArtistPolicy from "../../models/ArtistPolicy.js";
 import {
   createDepositPaymentIntent,
   createFinalPaymentIntent,
@@ -334,4 +332,3 @@ describe("Billing Controller - Stripe Webhook", () => {
     expect(depositPaid1).toBe(1000);
   });
 });
-

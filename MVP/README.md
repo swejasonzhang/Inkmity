@@ -35,9 +35,13 @@ A full-stack tattoo artist booking platform connecting clients with talented tat
 
 ## ⚙️ Environment Variables
 
+> **⚠️ SECURITY WARNING**: Never commit `.env` files or hardcode API keys in your code. All sensitive keys should be stored in environment variables. The `.env` files are already in `.gitignore` for your protection.
+
 ### Backend Environment Variables
 
 Create a `.env` or `.env.development` file in the `backend/` directory:
+
+> **Note**: Copy `.env.example` to `.env` and fill in your actual values. The example file shows the required variables without exposing real keys.
 
 ```env
 # Server Configuration

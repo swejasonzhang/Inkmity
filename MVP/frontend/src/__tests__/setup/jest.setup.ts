@@ -3,18 +3,65 @@ import "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { TextEncoder, TextDecoder } from "util";
+import React from "react";
 
-// Polyfills for Node.js environment
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+global.TextEncoder = TextEncoder as any;
+global.TextDecoder = TextDecoder as any;
+
+const importMetaEnv = {
+  VITE_STRIPE_PUBLISHABLE_KEY: process.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_MOCK_KEY_FOR_TESTING_ONLY",
+  VITE_API_URL: process.env.VITE_API_URL || "http://localhost:5005",
+  VITE_CLERK_PUBLISHABLE_KEY: process.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_MOCK_KEY_FOR_TESTING_ONLY",
+  MODE: "test",
+  DEV: false,
+  PROD: false,
+};
+
+Object.defineProperty(globalThis, "import", {
+  value: {
+    meta: {
+      env: importMetaEnv,
+    },
+  },
+  writable: true,
+  configurable: true,
+});
+
+global.fetch = jest.fn<typeof fetch>(() =>
+  Promise.resolve({
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    headers: new Headers(),
+    json: async () => ({}),
+    text: async () => "",
+  } as Response)
+) as jest.MockedFunction<typeof fetch>;
+
+jest.unstable_mockModule("@clerk/clerk-react", () => ({
+  ClerkProvider: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  useAuth: jest.fn(() => ({
+    getToken: jest.fn<() => Promise<string>>().mockResolvedValue("mock-token"),
+    userId: "user-123",
+    isLoaded: true,
+  })),
+  useUser: jest.fn(() => ({
+    user: { id: "user-123" },
+    isSignedIn: true,
+    isLoaded: true,
+  })),
+  SignedIn: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  SignedOut: () => null,
+  RedirectToSignIn: () => null,
+}));
 
 expect.extend(matchers);
 
 afterEach(() => {
   cleanup();
+  jest.clearAllMocks();
 });
 
-// Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: jest.fn().mockImplementation((query) => ({
@@ -29,7 +76,6 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
-// Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
   constructor() {}
   disconnect() {}
@@ -40,7 +86,6 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {}
 } as any;
 
-// Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
   constructor() {}
   disconnect() {}

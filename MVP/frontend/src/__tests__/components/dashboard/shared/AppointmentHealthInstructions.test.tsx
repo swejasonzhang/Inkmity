@@ -1,3 +1,4 @@
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import AppointmentHealthInstructions from "@/components/dashboard/shared/AppointmentHealthInstructions";

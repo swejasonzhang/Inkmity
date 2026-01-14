@@ -1,7 +1,5 @@
-// TDD tests for User Repository
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
-// Mock dependencies before importing
 const mockUser = {
   findOne: jest.fn(),
   find: jest.fn(),
@@ -30,7 +28,6 @@ jest.unstable_mockModule("../../utils/cache.js", () => ({
   },
 }));
 
-// Import after mocking
 const userRepository = await import("../../repositories/userRepository.js");
 
 describe("User Repository - TDD", () => {
@@ -125,7 +122,6 @@ describe("User Repository - TDD", () => {
         }),
       };
 
-      // Mock mongoose.model
       const mongoose = await import("mongoose");
       mongoose.default.model = jest.fn().mockReturnValue(mockModel);
 

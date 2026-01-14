@@ -45,4 +45,3 @@ export const resetStripeMocks = () => {
     if (typeof fn === "function" && fn.mockReset) fn.mockReset();
   });
 };
-
