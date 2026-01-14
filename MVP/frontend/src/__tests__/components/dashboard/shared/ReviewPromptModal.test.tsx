@@ -1,49 +1,48 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "../../../setup/test-utils";
+import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import ReviewPromptModal from "@/components/dashboard/shared/ReviewPromptModal";
 import * as api from "@/api";
 import { useAuth } from "@clerk/clerk-react";
 
-vi.mock("@/api");
-vi.mock("@clerk/clerk-react");
-vi.mock("react-toastify", () => ({
+jest.mock("@/api");
+jest.mock("@clerk/clerk-react");
+jest.mock("react-toastify", () => ({
   toast: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
-const mockGetToken = vi.fn();
-vi.mocked(useAuth).mockReturnValue({
+const mockGetToken = jest.fn();
+(useAuth as jest.Mock).mockReturnValue({
   getToken: mockGetToken,
 } as any);
 
 describe("ReviewPromptModal", () => {
   const defaultProps = {
     open: true,
-    onClose: vi.fn(),
+    onClose: jest.fn(),
     artistId: "artist-123",
     artistName: "Test Artist",
     bookingId: "booking-123",
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
-  it("should render when open", () => {
+  test("should render when open", () => {
     render(<ReviewPromptModal {...defaultProps} />);
     expect(screen.getByText("Write a Review (Optional)")).toBeInTheDocument();
     expect(screen.getByText(/How was your experience with Test Artist/i)).toBeInTheDocument();
   });
 
-  it("should not render when closed", () => {
+  test("should not render when closed", () => {
     render(<ReviewPromptModal {...defaultProps} open={false} />);
     expect(screen.queryByText("Write a Review (Optional)")).not.toBeInTheDocument();
   });
 
-  it("should display 5 star rating buttons", async () => {
+  test("should display 5 star rating buttons", async () => {
     render(<ReviewPromptModal {...defaultProps} />);
     await waitFor(() => {
       const starButtons = screen.getAllByLabelText(/Rate \d+ stars/i);
@@ -51,7 +50,7 @@ describe("ReviewPromptModal", () => {
     });
   });
 
-  it("should allow selecting star rating", async () => {
+  test("should allow selecting star rating", async () => {
     const user = userEvent.setup();
     render(<ReviewPromptModal {...defaultProps} />);
     
@@ -62,7 +61,7 @@ describe("ReviewPromptModal", () => {
     expect(stars[2].querySelector("svg")).toHaveClass("fill-yellow-400");
   });
 
-  it("should have textarea for review comment", async () => {
+  test("should have textarea for review comment", async () => {
     render(<ReviewPromptModal {...defaultProps} />);
     await waitFor(() => {
       const textarea = screen.getByPlaceholderText("Share your experience...");
@@ -70,7 +69,7 @@ describe("ReviewPromptModal", () => {
     });
   });
 
-  it("should disable submit button when comment is empty", async () => {
+  test("should disable submit button when comment is empty", async () => {
     render(<ReviewPromptModal {...defaultProps} />);
     await waitFor(() => {
       const submitButton = screen.getByRole("button", { name: /Submit Review/i });
@@ -78,7 +77,7 @@ describe("ReviewPromptModal", () => {
     });
   });
 
-  it("should enable submit button when comment has text", async () => {
+  test("should enable submit button when comment has text", async () => {
     const user = userEvent.setup();
     render(<ReviewPromptModal {...defaultProps} />);
     
@@ -95,9 +94,9 @@ describe("ReviewPromptModal", () => {
     });
   });
 
-  it("should call onClose when Skip button is clicked", async () => {
+  test("should call onClose when Skip button is clicked", async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
+    const onClose = jest.fn();
     render(<ReviewPromptModal {...defaultProps} onClose={onClose} />);
     
     await waitFor(() => {
@@ -110,10 +109,10 @@ describe("ReviewPromptModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("should submit review successfully", async () => {
+  test("should submit review successfully", async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
-    vi.mocked(api.addReview).mockResolvedValue({} as any);
+    const onClose = jest.fn();
+    (api.addReview as jest.Mock).mockResolvedValue({} as any);
     
     render(<ReviewPromptModal {...defaultProps} onClose={onClose} />);
     
@@ -141,9 +140,9 @@ describe("ReviewPromptModal", () => {
     });
   });
 
-  it("should handle submit error", async () => {
+  test("should handle submit error", async () => {
     const user = userEvent.setup();
-    vi.mocked(api.addReview).mockRejectedValue(new Error("API Error"));
+    (api.addReview as jest.Mock).mockRejectedValue(new Error("API Error"));
     
     render(<ReviewPromptModal {...defaultProps} />);
     

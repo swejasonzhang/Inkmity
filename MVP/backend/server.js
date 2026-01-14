@@ -49,6 +49,7 @@ const { requestIdMiddleware } = await import("./middleware/requestId.js");
 const { apiLimiter, authLimiter } = await import("./middleware/rateLimiter.js");
 const { errorHandler } = await import("./middleware/errorHandler.js");
 const { requestTimeout } = await import("./middleware/timeout.js");
+const { performanceMiddleware } = await import("./middleware/performance.js");
 const { default: userRoutes } = await import("./routes/users.js");
 const { default: reviewRoutes } = await import("./routes/reviews.js");
 const { default: dashboardRoutes } = await import("./routes/dashboard.js");
@@ -107,7 +108,7 @@ app.use(
 );
 
 app.use(requestIdMiddleware);
-
+app.use(performanceMiddleware);
 app.use(requestTimeout(30000));
 
 app.use("/api/", apiLimiter);

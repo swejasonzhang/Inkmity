@@ -1,31 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "../../../setup/test-utils";
+import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import AppointmentHealthInstructions from "@/components/dashboard/shared/AppointmentHealthInstructions";
 
 describe("AppointmentHealthInstructions", () => {
   const defaultProps = {
     open: true,
-    onContinue: vi.fn(),
+    onContinue: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
-  it("should render when open", async () => {
+  test("should render when open", async () => {
     render(<AppointmentHealthInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText("Pre-Appointment Instructions (Required)")).toBeInTheDocument();
     });
   });
 
-  it("should not render when closed", () => {
+  test("should not render when closed", () => {
     render(<AppointmentHealthInstructions {...defaultProps} open={false} />);
     expect(screen.queryByText("Pre-Appointment Instructions (Required)")).not.toBeInTheDocument();
   });
 
-  it("should display all 'What to Do' items", async () => {
+  test("should display all 'What to Do' items", async () => {
     render(<AppointmentHealthInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Get a good night's sleep/i)).toBeInTheDocument();
@@ -38,7 +37,7 @@ describe("AppointmentHealthInstructions", () => {
     });
   });
 
-  it("should display all 'What NOT to Do' items", async () => {
+  test("should display all 'What NOT to Do' items", async () => {
     render(<AppointmentHealthInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Don't drink alcohol/i)).toBeInTheDocument();
@@ -50,7 +49,7 @@ describe("AppointmentHealthInstructions", () => {
     });
   });
 
-  it("should display important reminder", async () => {
+  test("should display important reminder", async () => {
     render(<AppointmentHealthInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Important Reminder/i)).toBeInTheDocument();
@@ -58,9 +57,9 @@ describe("AppointmentHealthInstructions", () => {
     });
   });
 
-  it("should call onContinue when 'I Understand, Continue' is clicked", async () => {
+  test("should call onContinue when 'I Understand, Continue' is clicked", async () => {
     const user = userEvent.setup();
-    const onContinue = vi.fn();
+    const onContinue = jest.fn();
     render(<AppointmentHealthInstructions {...defaultProps} onContinue={onContinue} />);
     
     await waitFor(() => {
@@ -73,7 +72,7 @@ describe("AppointmentHealthInstructions", () => {
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
-  it("should have disabled X button", async () => {
+  test("should have disabled X button", async () => {
     render(<AppointmentHealthInstructions {...defaultProps} />);
     await waitFor(() => {
       const closeButtons = screen.getAllByLabelText("Close");
@@ -83,7 +82,7 @@ describe("AppointmentHealthInstructions", () => {
     });
   });
 
-  it("should not close when clicking outside", async () => {
+  test("should not close when clicking outside", async () => {
     render(<AppointmentHealthInstructions {...defaultProps} />);
     
     await waitFor(() => {

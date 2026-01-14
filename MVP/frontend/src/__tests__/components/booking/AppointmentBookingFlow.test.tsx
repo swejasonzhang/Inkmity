@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import AppointmentBookingFlow from "@/components/booking/AppointmentBookingFlow";
 import * as api from "@/api";
 
-vi.mock("@/api");
+jest.mock("@/api");
 
 const mockArtist = {
   _id: "artist-123",
@@ -14,10 +14,10 @@ const mockArtist = {
 
 describe("AppointmentBookingFlow", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
-  it("should render all 5 steps in correct order", () => {
+  test("should render all 5 steps in correct order", () => {
     render(
       <AppointmentBookingFlow
         artist={mockArtist}
@@ -30,7 +30,7 @@ describe("AppointmentBookingFlow", () => {
     expect(screen.getByText(/Appointment Type/i)).toBeInTheDocument();
   });
 
-  it("should disable Next button when step incomplete", () => {
+  test("should disable Next button when step incomplete", () => {
     render(
       <AppointmentBookingFlow
         artist={mockArtist}
@@ -43,7 +43,7 @@ describe("AppointmentBookingFlow", () => {
     expect(nextButton).toBeDisabled();
   });
 
-  it("should enable Next button when step complete", async () => {
+  test("should enable Next button when step complete", async () => {
     const user = userEvent.setup();
     render(
       <AppointmentBookingFlow
@@ -62,9 +62,9 @@ describe("AppointmentBookingFlow", () => {
     });
   });
 
-  it("should call onCancel when Cancel button is clicked", async () => {
+  test("should call onCancel when Cancel button is clicked", async () => {
     const user = userEvent.setup();
-    const onCancel = vi.fn();
+    const onCancel = jest.fn();
 
     render(
       <AppointmentBookingFlow
@@ -80,9 +80,9 @@ describe("AppointmentBookingFlow", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("should call onComplete with booking data on success", async () => {
+  test("should call onComplete with booking data on success", async () => {
     const user = userEvent.setup();
-    const onComplete = vi.fn();
+    const onComplete = jest.fn();
     const mockBooking = {
       _id: "booking-123",
       artistId: "artist-123",
@@ -93,7 +93,7 @@ describe("AppointmentBookingFlow", () => {
       appointmentType: "consultation" as const,
     };
 
-    vi.mocked(api.createConsultation).mockResolvedValue(mockBooking);
+    jest.mocked(api.createConsultation).mockResolvedValue(mockBooking);
 
     render(
       <AppointmentBookingFlow

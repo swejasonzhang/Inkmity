@@ -1,35 +1,34 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "../../../setup/test-utils";
+import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import BookingPicker from "@/components/calender/BookingPicker";
 import * as api from "@/api";
 
-vi.mock("@/api");
-vi.mock("@clerk/clerk-react", () => ({
+jest.mock("@/api");
+jest.mock("@clerk/clerk-react", () => ({
   useAuth: () => ({
-    getToken: vi.fn().mockResolvedValue("mock-token"),
+    getToken: jest.fn().mockResolvedValue("mock-token"),
     userId: "user-123",
   }),
 }));
-vi.mock("@/hooks/useTheme", () => ({
+jest.mock("@/hooks/useTheme", () => ({
   useTheme: () => ({
     theme: "dark",
   }),
 }));
-vi.mock("@/lib/socket", () => ({
+jest.mock("@/lib/socket", () => ({
   socket: {
-    on: vi.fn(),
-    off: vi.fn(),
-    emit: vi.fn(),
-    connect: vi.fn(),
+    on: jest.fn(),
+    off: jest.fn(),
+    emit: jest.fn(),
+    connect: jest.fn(),
     connected: true,
   },
-  connectSocket: vi.fn(),
+  connectSocket: jest.fn(),
 }));
-vi.mock("react-toastify", () => ({
+jest.mock("react-toastify", () => ({
   toast: {
-    success: vi.fn(),
-    error: vi.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
   },
   ToastContainer: () => null,
 }));
@@ -42,8 +41,8 @@ describe("BookingPicker", () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(api.apiGet).mockResolvedValue([
+    jest.clearAllMocks();
+    (api.apiGet as jest.Mock).mockResolvedValue([
       {
         startISO: "2024-01-15T10:00:00Z",
         endISO: "2024-01-15T11:00:00Z",
@@ -51,14 +50,14 @@ describe("BookingPicker", () => {
     ]);
   });
 
-  it("should render booking picker", () => {
+  test("should render booking picker", () => {
     render(<BookingPicker {...defaultProps} />);
     expect(screen.getByText(/Select a time above/i)).toBeInTheDocument();
   });
 
-  it("should show review modal after successful appointment booking", async () => {
+  test("should show review modal after successful appointment booking", async () => {
     const user = userEvent.setup();
-    vi.mocked(api.apiPost).mockResolvedValue({
+    (api.apiPost as jest.Mock).mockResolvedValue({
       _id: "booking-123",
       depositRequiredCents: 0,
       depositPaidCents: 0,
@@ -71,7 +70,7 @@ describe("BookingPicker", () => {
     });
     
     const timeButtons = screen.getAllByRole("button");
-    const timeButton = timeButtons.find((btn) => 
+    const timeButton = timeButtons.find((btn: HTMLElement) => 
       btn.textContent?.match(/\d{1,2}:\d{2}/)
     );
     
@@ -91,9 +90,9 @@ describe("BookingPicker", () => {
     }
   });
 
-  it("should not show review modal for consultations", async () => {
+  test("should not show review modal for consultations", async () => {
     const user = userEvent.setup();
-    vi.mocked(api.apiPost).mockResolvedValue({
+    (api.apiPost as jest.Mock).mockResolvedValue({
       _id: "booking-123",
     } as any);
     

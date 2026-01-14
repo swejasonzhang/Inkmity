@@ -34,6 +34,15 @@ const UserBaseSchema = new Schema(
   { timestamps: true, discriminatorKey: "role", collection: "users" }
 );
 
+// Compound indexes for common queries
+UserBaseSchema.index({ role: 1, visible: 1, rating: -1 }, { name: "role_visible_rating_idx" });
+UserBaseSchema.index({ role: 1, location: 1, rating: -1 }, { name: "role_location_rating_idx" });
+UserBaseSchema.index({ role: 1, styles: 1, rating: -1 }, { name: "role_styles_rating_idx" });
+UserBaseSchema.index({ role: 1, createdAt: -1 }, { name: "role_created_idx" });
+
+// Text search index for username, handle, bio, location
+UserBaseSchema.index({ username: "text", handle: "text", bio: "text", location: "text" });
+
 UserBaseSchema.pre("validate", function (next) {
   if (!this.username || !this.username.trim()) this.username = "user";
   next();

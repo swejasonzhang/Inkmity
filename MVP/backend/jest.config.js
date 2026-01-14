@@ -1,7 +1,6 @@
 export default {
   testEnvironment: "node",
   transform: {},
-  extensionsToTreatAsEsm: [".js"],
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
@@ -10,6 +9,9 @@ export default {
     "controllers/**/*.js",
     "models/**/*.js",
     "routes/**/*.js",
+    "services/**/*.js",
+    "repositories/**/*.js",
+    "utils/**/*.js",
     "!**/node_modules/**",
   ],
   coverageThreshold: {

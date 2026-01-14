@@ -1,10 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "../../../setup/test-utils";
+import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import TimeSlotStep from "@/components/booking/steps/TimeSlotStep";
 import * as api from "@/api";
 
-vi.mock("@/api");
+jest.mock("@/api");
 
 describe("TimeSlotStep", () => {
   const defaultProps = {
@@ -14,12 +13,12 @@ describe("TimeSlotStep", () => {
     selectedEnd: null,
     durationMinutes: 60,
     appointmentType: "tattoo_session" as const,
-    onSelect: vi.fn(),
+    onSelect: jest.fn(),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(api.apiGet).mockResolvedValue([
+    jest.clearAllMocks();
+    (api.apiGet as jest.Mock).mockResolvedValue([
       {
         startISO: "2024-01-15T10:00:00Z",
         endISO: "2024-01-15T11:00:00Z",
@@ -31,7 +30,7 @@ describe("TimeSlotStep", () => {
     ]);
   });
 
-  it("should render calendar and time slots", async () => {
+  test("should render calendar and time slots", async () => {
     render(<TimeSlotStep {...defaultProps} />);
     expect(screen.getByText(/Select Date & Time/i)).toBeInTheDocument();
     await waitFor(() => {
@@ -39,7 +38,7 @@ describe("TimeSlotStep", () => {
     });
   });
 
-  it("should show health instructions modal when selecting slot for tattoo_session", async () => {
+  test("should show health instructions modal when selecting slot for tattoo_session", async () => {
     const user = userEvent.setup();
     render(<TimeSlotStep {...defaultProps} appointmentType="tattoo_session" />);
     
@@ -59,7 +58,7 @@ describe("TimeSlotStep", () => {
     }
   });
 
-  it("should not show health instructions modal for consultation", async () => {
+  test("should not show health instructions modal for consultation", async () => {
     const user = userEvent.setup();
     render(<TimeSlotStep {...defaultProps} appointmentType="consultation" />);
     
@@ -79,9 +78,9 @@ describe("TimeSlotStep", () => {
     }
   });
 
-  it("should call onSelect after acknowledging health instructions", async () => {
+  test("should call onSelect after acknowledging health instructions", async () => {
     const user = userEvent.setup();
-    const onSelect = vi.fn();
+    const onSelect = jest.fn();
     render(<TimeSlotStep {...defaultProps} appointmentType="tattoo_session" onSelect={onSelect} />);
     
     await waitFor(() => {
