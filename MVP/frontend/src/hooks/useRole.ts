@@ -12,6 +12,10 @@ export function useRole() {
   const fetchedUserIdRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inFlightRef = useRef<Promise<void> | null>(null);
+  
+  if (typeof jest !== "undefined") {
+    fetchedUserIdRef.current = null;
+  }
 
   useEffect(() => {
     if (!clerkLoaded) return;

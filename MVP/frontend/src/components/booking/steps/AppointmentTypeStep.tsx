@@ -37,6 +37,7 @@ export default function AppointmentTypeStep({ value, onChange }: Props) {
 
       <div className="space-y-4">
         <Card
+          data-testid="consultation-card"
           className={cn(
             "p-4 cursor-pointer transition-colors",
             value === "consultation"
@@ -65,6 +66,7 @@ export default function AppointmentTypeStep({ value, onChange }: Props) {
         </Card>
 
         <Card
+          data-testid="tattoo-session-card"
           className={cn(
             "p-4 cursor-pointer transition-colors",
             value === "tattoo_session"

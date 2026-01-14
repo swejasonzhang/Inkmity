@@ -63,8 +63,9 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
 }));
 
 jest.unstable_mockModule("react-router-dom", () => ({
-  useNavigate: () => jest.fn(),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   useLocation: () => ({ pathname: "/dashboard" }),
+  useNavigate: () => jest.fn(),
   BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 

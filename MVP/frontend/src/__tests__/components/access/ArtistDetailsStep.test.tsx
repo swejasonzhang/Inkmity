@@ -32,19 +32,20 @@ describe("ArtistDetailsStep", () => {
   test("should call onChange when location is entered", async () => {
     const user = userEvent.setup();
     const onChange = jest.fn();
-    render(<ArtistDetailsStep {...defaultProps} onChange={onChange} />);
+    const { container } = render(<ArtistDetailsStep {...defaultProps} artist={{ ...defaultProps.artist, location: "__custom__" }} onChange={onChange} />);
 
-    const inputs = screen.getAllByRole("textbox");
-    if (inputs.length > 0) {
-      await user.type(inputs[0], "New York");
+    const customInput = container.querySelector('input[name="location"]');
+    if (customInput) {
+      await user.type(customInput, "New York");
       expect(onChange).toHaveBeenCalled();
     } else {
-      expect(true).toBe(true);
+      const select = container.querySelector('select');
+      expect(select || container.querySelector('[role="combobox"]')).toBeInTheDocument();
     }
   });
 
   test("should display styles selector", () => {
     render(<ArtistDetailsStep {...defaultProps} />);
-    expect(screen.getByText(/Select styles/i)).toBeInTheDocument();
+    expect(screen.getByText(/Specialty styles/i)).toBeInTheDocument();
   });
 });
