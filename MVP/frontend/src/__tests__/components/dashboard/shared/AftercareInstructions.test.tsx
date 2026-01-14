@@ -1,39 +1,38 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "../../../setup/test-utils";
+import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import AftercareInstructions from "@/components/dashboard/shared/AftercareInstructions";
 
 describe("AftercareInstructions", () => {
   const defaultProps = {
     open: true,
-    onClose: vi.fn(),
+    onClose: jest.fn(),
     appointmentDate: new Date("2024-01-15"),
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
-  it("should render when open", async () => {
+  test("should render when open", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText("Tattoo Aftercare Instructions (Required)")).toBeInTheDocument();
     });
   });
 
-  it("should not render when closed", () => {
+  test("should not render when closed", () => {
     render(<AftercareInstructions {...defaultProps} open={false} />);
     expect(screen.queryByText("Tattoo Aftercare Instructions (Required)")).not.toBeInTheDocument();
   });
 
-  it("should display appointment date when provided", async () => {
+  test("should display appointment date when provided", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Appointment Date:/i)).toBeInTheDocument();
     });
   });
 
-  it("should display all aftercare steps", async () => {
+  test("should display all aftercare steps", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Keep the bandage on/i)).toBeInTheDocument();
@@ -43,7 +42,7 @@ describe("AftercareInstructions", () => {
     });
   });
 
-  it("should display all 'What to Avoid' items", async () => {
+  test("should display all 'What to Avoid' items", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Don't pick, scratch, or peel/i)).toBeInTheDocument();
@@ -53,7 +52,7 @@ describe("AftercareInstructions", () => {
     });
   });
 
-  it("should display recommended products", async () => {
+  test("should display recommended products", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText("Second Skin / Tegaderm")).toBeInTheDocument();
@@ -64,7 +63,7 @@ describe("AftercareInstructions", () => {
     });
   });
 
-  it("should display healing timeline", async () => {
+  test("should display healing timeline", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Healing Timeline/i)).toBeInTheDocument();
@@ -74,7 +73,7 @@ describe("AftercareInstructions", () => {
     });
   });
 
-  it("should display warning signs", async () => {
+  test("should display warning signs", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       expect(screen.getByText(/Warning Signs:/i)).toBeInTheDocument();
@@ -82,9 +81,9 @@ describe("AftercareInstructions", () => {
     });
   });
 
-  it("should call onClose when 'I Understand' is clicked", async () => {
+  test("should call onClose when 'I Understand' is clicked", async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
+    const onClose = jest.fn();
     render(<AftercareInstructions {...defaultProps} onClose={onClose} />);
     
     await waitFor(() => {
@@ -97,7 +96,7 @@ describe("AftercareInstructions", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("should have disabled X button", async () => {
+  test("should have disabled X button", async () => {
     render(<AftercareInstructions {...defaultProps} />);
     await waitFor(() => {
       const closeButtons = screen.getAllByLabelText("Close");
@@ -107,9 +106,9 @@ describe("AftercareInstructions", () => {
     });
   });
 
-  it("should not close when clicking outside", async () => {
+  test("should not close when clicking outside", async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
+    const onClose = jest.fn();
     render(<AftercareInstructions {...defaultProps} onClose={onClose} />);
     
     await waitFor(() => {
