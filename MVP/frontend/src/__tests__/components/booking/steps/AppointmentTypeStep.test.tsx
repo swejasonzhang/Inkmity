@@ -50,26 +50,16 @@ describe("AppointmentTypeStep", () => {
   });
 
   test("should highlight selected consultation", () => {
-    const { container } = render(<AppointmentTypeStep {...defaultProps} value="consultation" />);
-    const consultationCards = screen.getAllByText(/Consultation/i);
-    const consultationCard = consultationCards[0].closest('[class*="Card"]');
+    render(<AppointmentTypeStep {...defaultProps} value="consultation" />);
+    const consultationCard = screen.getByTestId("consultation-card");
     expect(consultationCard).toBeInTheDocument();
-    if (consultationCard) {
-      const hasPrimary = consultationCard.className.includes("border-primary") || 
-                         consultationCard.className.includes("bg-primary");
-      expect(hasPrimary || container.querySelector('[class*="primary"]')).toBeTruthy();
-    }
+    expect(consultationCard.className).toMatch(/border-primary|bg-primary/);
   });
 
   test("should highlight selected tattoo session", () => {
-    const { container } = render(<AppointmentTypeStep {...defaultProps} value="tattoo_session" />);
-    const tattooCards = screen.getAllByText(/Tattoo Session/i);
-    const tattooCard = tattooCards[0].closest('[class*="Card"]');
+    render(<AppointmentTypeStep {...defaultProps} value="tattoo_session" />);
+    const tattooCard = screen.getByTestId("tattoo-session-card");
     expect(tattooCard).toBeInTheDocument();
-    if (tattooCard) {
-      const hasPrimary = tattooCard.className.includes("border-primary") || 
-                         tattooCard.className.includes("bg-primary");
-      expect(hasPrimary || container.querySelector('[class*="primary"]')).toBeTruthy();
-    }
+    expect(tattooCard.className).toMatch(/border-primary|bg-primary/);
   });
 });

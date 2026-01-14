@@ -25,17 +25,19 @@ describe("ClientDetailsStep", () => {
     const { container } = render(<ClientDetailsStep {...defaultProps} />);
     const budgetText = screen.queryByText(/Budget/i) || container.querySelector('label');
     expect(budgetText).toBeInTheDocument();
-    const locationText = screen.queryByText(/Location/i) || container.querySelector('input[placeholder*="location" i]') || container.querySelector('select');
+    const locationLabels = screen.queryAllByText(/Your city/i);
+    const locationText = locationLabels.length > 0 ? locationLabels[0] : container.querySelector('select');
     expect(locationText).toBeInTheDocument();
   });
 
   test("should display style selector", () => {
     render(<ClientDetailsStep {...defaultProps} />);
-    expect(screen.getByText(/Style preference/i)).toBeInTheDocument();
+    expect(screen.getByText(/Preferred style/i)).toBeInTheDocument();
   });
 
   test("should display placement selector", () => {
     render(<ClientDetailsStep {...defaultProps} />);
-    expect(screen.getByText(/Placement/i)).toBeInTheDocument();
+    const placementLabels = screen.getAllByText(/Placement/i);
+    expect(placementLabels.length).toBeGreaterThan(0);
   });
 });

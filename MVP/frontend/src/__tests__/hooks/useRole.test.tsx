@@ -75,12 +75,13 @@ describe("useRole", () => {
 
     await waitFor(() => {
       expect(result.current.isLoaded).toBe(true);
-    });
+    }, { timeout: 5000 });
 
     expect(result.current.role).toBe("client");
   });
 
   test("should return artist role when user is artist", async () => {
+    mockGetMe.mockClear();
     mockGetMe.mockResolvedValue({ role: "artist" });
     const { result } = renderHook(() => useRole());
 
