@@ -5,14 +5,17 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { ClerkProvider } from "@clerk/clerk-react";
 import { BrowserRouter } from "react-router-dom";
+
+const MockClerkProvider = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+};
 
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ClerkProvider publishableKey="pk_test_mock">
+    <MockClerkProvider>
       <BrowserRouter>{children}</BrowserRouter>
-    </ClerkProvider>
+    </MockClerkProvider>
   );
 };
 

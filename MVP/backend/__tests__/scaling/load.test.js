@@ -1,8 +1,6 @@
 import request from "supertest";
 import express from "express";
 import mongoose from "mongoose";
-import Booking from "../../models/Booking.js";
-import User from "../../models/UserBase.js";
 import "../../models/Client.js";
 import "../../models/Artist.js";
 import {
@@ -63,12 +61,10 @@ describe("Load Testing - Concurrent Requests", () => {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    // All requests should succeed
     responses.forEach((response) => {
       expect(response.status).toBe(200);
     });
 
-    // Should complete in reasonable time (less than 5 seconds)
     expect(duration).toBeLessThan(5000);
 
     console.log(`✓ Handled ${CONCURRENT_REQUESTS} concurrent requests in ${duration}ms`);
@@ -96,11 +92,9 @@ describe("Load Testing - Concurrent Requests", () => {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    // Most requests should succeed (some might fail due to duplicate times)
     const successCount = responses.filter((r) => r.status === 201).length;
     expect(successCount).toBeGreaterThan(CONCURRENT_REQUESTS * 0.8);
 
-    // Should complete in reasonable time
     expect(duration).toBeLessThan(10000);
 
     console.log(`✓ Handled ${CONCURRENT_REQUESTS} concurrent bookings: ${successCount} succeeded in ${duration}ms`);
@@ -121,12 +115,10 @@ describe("Load Testing - Concurrent Requests", () => {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    // All requests should succeed
     responses.forEach((response) => {
       expect(response.status).toBe(200);
     });
 
-    // Should complete in reasonable time
     expect(duration).toBeLessThan(10000);
 
     console.log(`✓ Handled ${SEQUENTIAL_REQUESTS} sequential requests in ${duration}ms`);
@@ -163,12 +155,10 @@ describe("Load Testing - Concurrent Requests", () => {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    // All read requests should succeed
     readResponses.forEach((response) => {
       expect(response.status).toBe(200);
     });
 
-    // Most write requests should succeed
     const writeSuccessCount = writeResponses.filter((r) => r.status === 201).length;
     expect(writeSuccessCount).toBeGreaterThan(WRITE_REQUESTS * 0.8);
 
@@ -180,7 +170,6 @@ describe("Load Testing - Concurrent Requests", () => {
 
 describe("Performance Testing - Response Times", () => {
   beforeEach(async () => {
-    // Create test data
     await mongoose.model("artist").create([
       {
         clerkId: "artist-1",
@@ -229,7 +218,6 @@ describe("Performance Testing - Response Times", () => {
 
 describe("Scalability Testing - Large Datasets", () => {
   test("should handle pagination with large result set", async () => {
-    // Create 100 artists
     const artists = Array.from({ length: 100 }, (_, i) => ({
       clerkId: `artist-${i}`,
       email: `artist${i}@example.com`,

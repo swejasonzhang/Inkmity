@@ -1,7 +1,6 @@
 import request from "supertest";
 import express from "express";
 import mongoose from "mongoose";
-import User from "../../models/UserBase.js";
 import "../../models/Client.js";
 import "../../models/Artist.js";
 import {
@@ -26,7 +25,6 @@ const mockAuth = (req, res, next) => {
   next();
 };
 
-// Create separate app instance for auth test
 const appWithAuth = express();
 appWithAuth.use(express.json());
 appWithAuth.get("/users/me", mockAuth, getMe);

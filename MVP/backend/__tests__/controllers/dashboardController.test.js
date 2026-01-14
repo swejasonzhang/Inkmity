@@ -1,7 +1,6 @@
 import request from "supertest";
 import express from "express";
 import mongoose from "mongoose";
-import User from "../../models/UserBase.js";
 import "../../models/Client.js";
 import "../../models/Artist.js";
 import { getDashboardData } from "../../controllers/dashboardController.js";
@@ -113,7 +112,6 @@ describe("Dashboard Controller - getDashboardData", () => {
     expect(response.status).toBe(200);
     expect(response.body.featuredArtists.length).toBeGreaterThan(0);
     
-    // Check that artists are sorted by rating (highest first)
     const ratings = response.body.featuredArtists.map((a) => a.rating);
     for (let i = 1; i < ratings.length; i++) {
       expect(ratings[i - 1]).toBeGreaterThanOrEqual(ratings[i]);
@@ -140,7 +138,6 @@ describe("Dashboard Controller - getDashboardData", () => {
       role: "client",
     });
 
-    // Create 10 artists
     const artists = Array.from({ length: 10 }, (_, i) => ({
       clerkId: `artist-${i}`,
       email: `artist${i}@example.com`,

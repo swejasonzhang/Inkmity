@@ -1,6 +1,5 @@
 import request from "supertest";
 import express from "express";
-import mongoose from "mongoose";
 import Availability from "../../models/Availability.js";
 import {
   getAvailability,
@@ -167,8 +166,6 @@ describe("Availability Controller - getSlotsForDate", () => {
       },
     });
 
-    // This would require Booking model integration
-    // For now, just test the endpoint exists and returns array
     const startDate = new Date();
     startDate.setDate(startDate.getDate() + 7);
     startDate.setHours(0, 0, 0, 0);

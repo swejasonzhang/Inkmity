@@ -10,4 +10,3 @@ export const mockRequireAuth = (req, res, next) => {
   req.auth = { userId: "test-user-id" };
   next();
 };
-

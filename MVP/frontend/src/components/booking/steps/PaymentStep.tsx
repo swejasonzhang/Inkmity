@@ -18,7 +18,14 @@ import {
 } from "@/api";
 import { useApi } from "@/api";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
+const getStripeKey = (): string => {
+  try {
+    return (import.meta?.env as any)?.VITE_STRIPE_PUBLISHABLE_KEY || "";
+  } catch {
+    return "";
+  }
+};
+const stripePromise = loadStripe(getStripeKey());
 
 type BookingFlowData = {
   appointmentType: "consultation" | "tattoo_session" | null;

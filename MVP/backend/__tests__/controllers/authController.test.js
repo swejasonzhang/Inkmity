@@ -2,7 +2,6 @@ import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
-// Mock @clerk/clerk-sdk-node before importing the controller
 const mockGetUserList = jest.fn();
 jest.unstable_mockModule("@clerk/clerk-sdk-node", () => ({
   clerkClient: {
@@ -12,7 +11,6 @@ jest.unstable_mockModule("@clerk/clerk-sdk-node", () => ({
   },
 }));
 
-// Import after mocking
 const { checkEmail } = await import("../../controllers/authController.js");
 
 const app = express();
