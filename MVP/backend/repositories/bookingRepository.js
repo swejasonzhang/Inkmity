@@ -1,35 +1,28 @@
-// Repository pattern for Booking data access (DRY principle)
 import Booking from "../models/Booking.js";
 import cache from "../utils/cache.js";
 import { cacheHelpers } from "../utils/cache.js";
 
-const CACHE_TTL = 180000; // 3 minutes (bookings change more frequently)
+const CACHE_TTL = 180000;
 const CACHE_KEY_PREFIX = "booking";
 
 class BookingRepository {
-  /**
-   * Find booking by ID with caching
-   */
   async findById(id, useCache = true) {
     const cacheKey = `${CACHE_KEY_PREFIX}:id:${id}`;
-    
+
     if (useCache) {
       const cached = cache.get(cacheKey);
       if (cached) return cached;
     }
 
     const booking = await Booking.findById(id).lean();
-    
+
     if (booking && useCache) {
       cache.set(cacheKey, booking, CACHE_TTL);
     }
-    
+
     return booking;
   }
 
-  /**
-   * Find bookings by artist ID
-   */
   async findByArtistId(artistId, filters = {}) {
     const { status, startDate, endDate, appointmentType } = filters;
     const query = { artistId };
@@ -53,9 +46,6 @@ class BookingRepository {
       .lean();
   }
 
-  /**
-   * Find bookings by client ID
-   */
   async findByClientId(clientId, filters = {}) {
     const { status, startDate, endDate, appointmentType } = filters;
     const query = { clientId };
@@ -79,9 +69,6 @@ class BookingRepository {
       .lean();
   }
 
-  /**
-   * Find overlapping bookings for time conflict detection
-   */
   async findOverlapping(artistId, startAt, endAt, excludeBookingId = null) {
     const query = {
       artistId,
@@ -98,22 +85,15 @@ class BookingRepository {
     return await Booking.find(query).lean();
   }
 
-  /**
-   * Create booking
-   */
   async create(bookingData) {
     const booking = await Booking.create(bookingData);
-    
-    // Invalidate relevant caches
+
     this.invalidateCacheByArtist(booking.artistId);
     this.invalidateCacheByClient(booking.clientId);
-    
+
     return booking.toObject();
   }
 
-  /**
-   * Update booking by ID
-   */
   async updateById(id, updates) {
     const booking = await Booking.findByIdAndUpdate(
       id,
@@ -128,31 +108,22 @@ class BookingRepository {
     return booking;
   }
 
-  /**
-   * Delete booking by ID
-   */
   async deleteById(id) {
     const booking = await Booking.findById(id).lean();
-    
+
     if (booking) {
       await Booking.deleteOne({ _id: id });
       this.invalidateCache(id, booking.artistId, booking.clientId);
       return true;
     }
-    
+
     return false;
   }
 
-  /**
-   * Get bookings count by status
-   */
   async countByStatus(artistId, status) {
     return await Booking.countDocuments({ artistId, status });
   }
 
-  /**
-   * Get upcoming bookings
-   */
   async findUpcoming(artistId, limit = 10) {
     const now = new Date();
     return await Booking.find({
@@ -165,9 +136,6 @@ class BookingRepository {
       .lean();
   }
 
-  /**
-   * Invalidate cache for booking
-   */
   invalidateCache(bookingId, artistId, clientId) {
     if (bookingId) {
       cache.delete(`${CACHE_KEY_PREFIX}:id:${bookingId}`);

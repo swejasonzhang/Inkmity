@@ -59,7 +59,6 @@ const BookingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Performance-optimized compound indexes for common queries
 BookingSchema.index({ artistId: 1, status: 1, startAt: -1 }, { name: "artist_status_date_idx" });
 BookingSchema.index({ clientId: 1, status: 1, startAt: -1 }, { name: "client_status_date_idx" });
 BookingSchema.index({ artistId: 1, startAt: 1, endAt: 1 }, { name: "artist_time_range_idx" });
@@ -67,7 +66,6 @@ BookingSchema.index({ clientId: 1, appointmentType: 1, status: 1 }, { name: "cli
 BookingSchema.index({ status: 1, startAt: 1 }, { name: "status_date_idx" });
 BookingSchema.index({ createdAt: -1 }, { name: "created_desc_idx" });
 
-// Text search index for note/requirements searching
 BookingSchema.index({ note: "text", requirements: "text", serviceDescription: "text" });
 
 export default mongoose.models.Booking ||

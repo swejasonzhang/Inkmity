@@ -1,4 +1,3 @@
-// Repository pattern for User data access (DRY principle)
 import mongoose from "mongoose";
 import User from "../models/UserBase.js";
 import "../models/Client.js";
@@ -6,48 +5,36 @@ import "../models/Artist.js";
 import cache from "../utils/cache.js";
 import { cacheHelpers } from "../utils/cache.js";
 
-const CACHE_TTL = 300000; // 5 minutes
+const CACHE_TTL = 300000;
 const CACHE_KEY_PREFIX = "user";
 
 class UserRepository {
-  /**
-   * Find user by Clerk ID with caching
-   */
   async findByClerkId(clerkId, useCache = true) {
     const cacheKey = `${CACHE_KEY_PREFIX}:clerkId:${clerkId}`;
-    
+
     if (useCache) {
       const cached = cache.get(cacheKey);
       if (cached) return cached;
     }
 
     const user = await User.findOne({ clerkId }).lean();
-    
+
     if (user && useCache) {
       cache.set(cacheKey, user, CACHE_TTL);
     }
-    
+
     return user;
   }
 
-  /**
-   * Find user by email
-   */
   async findByEmail(email) {
     return await User.findOne({ email: email.toLowerCase().trim() }).lean();
   }
 
-  /**
-   * Find user by handle
-   */
   async findByHandle(handle) {
     const normalizedHandle = handle.startsWith("@") ? handle : `@${handle}`;
     return await User.findOne({ handle: normalizedHandle }).lean();
   }
 
-  /**
-   * Find user by ID
-   */
   async findById(id) {
     const cacheKey = `${CACHE_KEY_PREFIX}:id:${id}`;
     const cached = cache.get(cacheKey);
@@ -60,12 +47,9 @@ class UserRepository {
     return user;
   }
 
-  /**
-   * Create or update user (upsert)
-   */
   async upsert(clerkId, data) {
-    const Model = data.role === "client" 
-      ? mongoose.model("client") 
+    const Model = data.role === "client"
+      ? mongoose.model("client")
       : mongoose.model("artist");
 
     const user = await Model.findOneAndUpdate(
@@ -74,15 +58,11 @@ class UserRepository {
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     ).lean();
 
-    // Invalidate cache
     this.invalidateCache(clerkId, user?._id?.toString());
-    
+
     return user;
   }
 
-  /**
-   * Update user by Clerk ID
-   */
   async updateByClerkId(clerkId, updates) {
     const user = await User.findOneAndUpdate(
       { clerkId },
@@ -97,9 +77,6 @@ class UserRepository {
     return user;
   }
 
-  /**
-   * Find artists with filtering and pagination
-   */
   async findArtists(filters = {}, pagination = {}) {
     const {
       search,
@@ -115,7 +92,6 @@ class UserRepository {
 
     const query = { role: "artist" };
 
-    // Build search filter
     if (search) {
       query.$text = { $search: search };
     }
@@ -140,7 +116,6 @@ class UserRepository {
       query.yearsExperience = experience;
     }
 
-    // Build sort
     let sortQuery = {};
     switch (sort) {
       case "experience_desc":
@@ -159,7 +134,6 @@ class UserRepository {
         sortQuery = { rating: -1, reviewsCount: -1, createdAt: -1 };
     }
 
-    // Use aggregation for text search scoring if searching
     if (search) {
       const pipeline = [
         { $match: query },
@@ -208,7 +182,6 @@ class UserRepository {
       };
     }
 
-    // Regular query for non-search
     const [total, items] = await Promise.all([
       User.countDocuments(query),
       User.find(query)
@@ -236,9 +209,6 @@ class UserRepository {
     };
   }
 
-  /**
-   * Find featured artists (top rated)
-   */
   async findFeaturedArtists(limit = 5) {
     const cacheKey = `${CACHE_KEY_PREFIX}:featured:${limit}`;
     const cached = cache.get(cacheKey);
@@ -254,18 +224,12 @@ class UserRepository {
     return artists;
   }
 
-  /**
-   * Check handle availability
-   */
   async isHandleAvailable(handle) {
     const normalizedHandle = handle.startsWith("@") ? handle : `@${handle}`;
     const exists = await User.findOne({ handle: normalizedHandle }, { _id: 1 }).lean();
     return !exists;
   }
 
-  /**
-   * Invalidate cache for user
-   */
   invalidateCache(clerkId, userId) {
     if (clerkId) {
       cache.delete(`${CACHE_KEY_PREFIX}:clerkId:${clerkId}`);
@@ -273,7 +237,6 @@ class UserRepository {
     if (userId) {
       cache.delete(`${CACHE_KEY_PREFIX}:id:${userId}`);
     }
-    // Invalidate featured artists cache
     cacheHelpers.invalidate(`${CACHE_KEY_PREFIX}:featured:*`);
   }
 }
