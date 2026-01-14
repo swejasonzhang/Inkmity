@@ -293,6 +293,6 @@ export default function FloatingBar({
     </>
   );
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === "undefined") return <div data-testid="floating-bar-placeholder" />;
   return createPortal(ui, targetEl);
 }

@@ -1,6 +1,6 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen, waitFor } from "../../../setup/test-utils";
-import type { Booking } from "@/api";
+import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
+import type { Artist, Booking } from "@/api";
 
 const mockCreateTattooSession = jest.fn<() => Promise<Booking>>();
 const mockCreateDepositPaymentIntent = jest.fn<() => Promise<any>>();
@@ -98,6 +98,21 @@ jest.unstable_mockModule("react-toastify", () => ({
 
 const { default: PaymentStep } = await import("@/components/booking/steps/PaymentStep");
 
+const mockArtist: Artist = {
+  _id: "artist-123",
+  clerkId: "artist-123",
+  username: "Test Artist",
+  location: "Test City",
+  styles: ["realism"],
+  yearsExperience: 5,
+  baseRate: 10000,
+  rating: 4.5,
+  reviewsCount: 10,
+  bookingPreference: "open",
+  travelFrequency: "rare",
+  createdAt: new Date().toISOString(),
+};
+
 const mockBookingData = {
   appointmentType: "tattoo_session" as const,
   artistId: "artist-123",
@@ -117,12 +132,6 @@ const mockBookingData = {
       cancellationPolicy: true,
     },
   },
-};
-
-const mockArtist = {
-  _id: "artist-123",
-  clerkId: "artist-123",
-  username: "Test Artist",
 };
 
 describe("PaymentStep", () => {
