@@ -4,6 +4,7 @@ import {
   createBooking,
   getBooking,
   cancelBooking,
+  cancelBookingViaLink,
   completeBooking,
   startVerification,
   verifyBookingCode,
@@ -37,6 +38,7 @@ router.post("/session", requireAuth(), createTattooSession);
 router.post("/:id/accept", requireAuth(), acceptAppointment);
 router.post("/:id/deny", requireAuth(), denyAppointment);
 router.post("/:id/cancel", requireAuth(), cancelBooking);
+router.get("/:id/cancel-link", cancelBookingViaLink);
 router.post("/:id/complete", requireAuth(), completeBooking);
 router.post("/:id/reschedule", requireAuth(), rescheduleAppointment);
 router.post("/:id/no-show", requireAuth(), markNoShow);

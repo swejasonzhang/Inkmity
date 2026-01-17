@@ -4,6 +4,7 @@ import express from "express";
 import Booking from "../../models/Booking.js";
 import Project from "../../models/Project.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
+import Client from "../../models/Client.js";
 import {
   createConsultation,
   createTattooSession,
@@ -18,6 +19,7 @@ import {
   stripeWebhook,
 } from "../../controllers/billingController.js";
 import { stripe } from "../../lib/stripe.js";
+import { sendAppointmentConfirmationEmail } from "../../services/emailService.js";
 
 const app = express();
 app.use(express.json());
@@ -58,7 +60,15 @@ jest.mock("../../lib/stripe.js", () => ({
   },
 }));
 
-describe("Integration - Complete Consultation Booking Flow", () => {
+jest.mock("../../services/emailService.js", () => ({
+  sendAppointmentConfirmationEmail: jest.fn(),
+  sendAppointmentCancellationEmail: jest.fn(),
+}));
+
+// Skip database-dependent tests when database is not available
+const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
+
+conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
   let artistId;
   let clientId;
   let bookingId;
@@ -151,10 +161,17 @@ describe("Integration - Complete Consultation Booking Flow", () => {
     expect(booking.status).toBe("confirmed");
     expect(booking.depositPaidCents).toBe(booking.depositRequiredCents);
     expect(booking.intakeFormId).toBeDefined();
+
+    // Verify that confirmation email was sent
+    expect(sendAppointmentConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: bookingId }),
+      expect.any(String),
+      expect.any(String)
+    );
   });
 });
 
-describe("Integration - Multi-Session Project Booking Flow", () => {
+conditionalDescribe("Integration - Multi-Session Project Booking Flow", () => {
   let artistId;
   let clientId;
   let projectId;
@@ -207,7 +224,7 @@ describe("Integration - Multi-Session Project Booking Flow", () => {
   });
 });
 
-describe("Integration - Rescheduling with Deposit Forfeiture", () => {
+conditionalDescribe("Integration - Rescheduling with Deposit Forfeiture", () => {
   let artistId;
   let clientId;
   let bookingId;
@@ -249,7 +266,7 @@ describe("Integration - Rescheduling with Deposit Forfeiture", () => {
   });
 });
 
-describe("Integration - Deposit Application to Final Payment", () => {
+conditionalDescribe("Integration - Deposit Application to Final Payment", () => {
   let artistId;
   let clientId;
   let bookingId;
