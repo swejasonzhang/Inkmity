@@ -1,6 +1,9 @@
 import Billing from "../models/Billing.js";
 import Booking from "../models/Booking.js";
+import Client from "../models/Client.js";
+import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
+import { sendAppointmentConfirmationEmail } from "../services/emailService.js";
 
 let WebhookEvent;
 (async () => {
@@ -502,6 +505,28 @@ export async function stripeWebhook(req, res) {
               book.status = "confirmed";
               book.confirmedAt = new Date();
               await book.save();
+
+              // Send confirmation email to client
+              try {
+                let clientEmail = null;
+                let clientName = "Valued Client";
+
+                // Try to get client info
+                if (book.clientId) {
+                  const client = await Client.findById(book.clientId);
+                  if (client) {
+                    clientEmail = client.email;
+                    clientName = client.username || client.handle || "Valued Client";
+                  }
+                }
+
+                if (clientEmail) {
+                  await sendAppointmentConfirmationEmail(book, clientEmail, clientName);
+                }
+              } catch (emailError) {
+                console.error("Failed to send confirmation email:", emailError);
+                // Don't fail the webhook if email fails
+              }
             }
           }
           break;

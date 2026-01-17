@@ -301,13 +301,13 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     ? createPortal(
       <div className="sm:hidden fixed inset-0 z-[2147483647]">
         <div className="absolute inset-0 bg-transparent" onClick={() => setMobileMenuOpen(false)} aria-hidden />
-        <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex flex-col text-app [&_*]:text-app [&_*]:border-app">
-          <div className={`flex items-center justify-between px-4 xs:px-5 sm:px-6 ${MOBILE_HEADER_H}`}>
-            <div className="flex items-center gap-3 xs:gap-3.5 sm:gap-4">
+        <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex-col text-app [&_*]:text-app [&_*]:border-app">
+          <div className={`flex-between items-center px-fluid-md xs:px-fluid-lg sm:px-fluid-xl ${MOBILE_HEADER_H}`}>
+            <div className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
               <img src={resolvedLogo} alt="Inkmity Logo" className={`${MOBILE_LOGO_H} w-auto object-contain`} />
             </div>
-            <Button aria-label="Close menu" variant="ghost" className="p-2 xs:p-2.5 sm:p-3 rounded-lg hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
-              <X strokeWidth={MOBILE_ICON_STROKE} className="h-20 xs:h-24 w-auto" />
+            <Button aria-label="Close menu" variant="ghost" className="p-fluid-xs xs:p-fluid-sm sm:p-fluid-md rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
+              <X strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
             </Button>
           </div>
           <NavMobile items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
@@ -319,22 +319,22 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="flex w-full relative items-center z-50 px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10 py-3 xs:py-3.5 sm:py-4 md:py-4.5 lg:py-5 text-app bg-transparent">
-        <div className="w-full flex justify-between items-center sm:grid sm:grid-cols-[auto_1fr_auto]">
-          <div className="justify-self-start -ml-1 xs:-ml-1.5 sm:-ml-2 md:-ml-4 lg:-ml-6 pl-1 xs:pl-1.5 sm:pl-2 md:pl-0 flex-shrink-0">
-            <Link to={homeHref} className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 md:gap-3.5 lg:gap-4">
-              <img src={resolvedLogo} alt="Inkmity Logo" className="h-20 xs:h-24 sm:h-20 md:h-24 lg:h-[6.5rem] xl:h-28 w-auto object-contain" draggable={false} />
+      <header className="flex w-full relative items-center z-50 px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-fluid-sm xs:py-fluid-md sm:py-fluid-lg text-app bg-transparent">
+        <div className="w-full flex-between items-center sm:flex-col sm:items-stretch">
+          <div className="flex-shrink-0">
+            <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
+              <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain" draggable={false} />
               <span className="sr-only">Inkmity</span>
             </Link>
           </div>
 
-          <div className="hidden sm:flex justify-self-stretch items-center justify-center">
-            <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-[17px] xs:text-[18px] sm:text-[19px] md:text-[20px]" />
+          <div className="hidden sm:flex flex-1 items-center justify-center">
+            <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-fluid-sm xs:text-fluid-base sm:text-fluid-lg" />
           </div>
 
-          <div className="flex items-center gap-2 xs:gap-2.5 sm:gap-3 md:gap-4 pr-1 xs:pr-1.5 sm:pr-2 md:pr-0 justify-self-end">
-            <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-2 xs:p-2.5 rounded-lg hover:bg-elevated active:scale-[0.98] text-app ml-0.5 xs:ml-1" onClick={() => setMobileMenuOpen(true)}>
-              <Menu strokeWidth={MOBILE_ICON_STROKE} className="h-20 xs:h-24 w-auto" />
+          <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md">
+            <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-fluid-xs xs:p-fluid-sm rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app ml-fluid-1 xs:ml-fluid-2" onClick={() => setMobileMenuOpen(true)}>
+              <Menu strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
             </Button>
 
             {isLoaded && isSignedIn ? (

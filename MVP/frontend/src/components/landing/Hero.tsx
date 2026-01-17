@@ -23,9 +23,9 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
     };
 
     return (
-        <section className="px-3">
+        <section className="px-fluid-sm">
             <div className="mx-auto max-w-9xl text-center">
-                <h1 className="text-5xl md:text-6xl lg:text-8xl font-extrabold leading-tight tracking-tight" style={wc}>
+                <h1 className="text-fluid-4xl md:text-fluid-5xl lg:text-fluid-6xl font-extrabold leading-tight tracking-tight" style={wc}>
                     <m.span
                         initial={gradientInitial}
                         {...(!prefersReduced && { animate: gradientAnimate })}
@@ -37,35 +37,35 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
 
                 <m.p
                     variants={textFadeUp}
-                    className="mt-4 md:mt-5 text-2xl md:text-2xl lg:text-3xl font-bold leading-tight max-w-4xl mx-auto"
+                    className="mt-fluid-md md:mt-fluid-lg text-fluid-xl md:text-fluid-xl lg:text-fluid-2xl font-bold leading-tight max-w-4xl mx-auto"
                     style={wc}
                 >
                     Inkmity brings real availability, real context, and verified reviews—so you can align fast and book with confidence.
                 </m.p>
 
-                <m.div variants={textFadeUp} className="mt-5 sm:mt-6 flex items-center justify-center gap-2 sm:gap-4">
+                <m.div variants={textFadeUp} className="mt-fluid-lg sm:mt-fluid-xl flex-center gap-fluid-sm sm:gap-fluid-md">
                     <Button
                         asChild
-                        className="rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                        className="rounded-fluid-md px-fluid-md py-fluid-sm md:px-fluid-lg md:py-fluid-md text-fluid-sm md:text-fluid-lg font-semibold bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                     >
                         <Link to="/signup" aria-label="Create your Inkmity account">Create your account!</Link>
                     </Button>
                     <Button
                         asChild
                         variant="outline"
-                        className="rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold border border-app bg-card/70 text-app hover:bg-card/80 focus-visible:ring-2 focus-visible:ring-[color:var(--border)]/40"
+                        className="rounded-fluid-md px-fluid-md py-fluid-sm md:px-fluid-lg md:py-fluid-md text-fluid-sm md:text-fluid-lg font-semibold border border-app bg-card/70 text-app hover:bg-card/80 focus-visible:ring-2 focus-visible:ring-[color:var(--border)]/40"
                     >
                         <Link to="/login" aria-label="Log in to Inkmity">Login here!</Link>
                     </Button>
                 </m.div>
 
-                <m.div variants={textFadeUp} className="mt-3 md:mt-6 flex items-center justify-center">
+                <m.div variants={textFadeUp} className="mt-fluid-sm md:mt-fluid-lg flex-center">
                     <button
                         type="button"
                         onClick={scrollDown}
                         className={[
-                            "group inline-flex items-center gap-2 sm:gap-3 rounded-full border border-app",
-                            "bg-card/70 backdrop-blur px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-semibold text-app",
+                            "group inline-flex items-center gap-fluid-sm sm:gap-fluid-md rounded-fluid-md border border-app",
+                            "bg-card/70 backdrop-blur px-fluid-md py-fluid-sm md:px-fluid-lg md:py-fluid-md text-fluid-sm md:text-fluid-lg font-semibold text-app",
                             "transition active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-[color:var(--border)]",
                             "shadow-[0_6px_20px_rgba(0,0,0,0.25)]",
                         ].join(" ")}

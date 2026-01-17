@@ -78,34 +78,34 @@ const Landing: React.FC = () => {
             <div className="fixed inset-0 -z-20 bg-app" aria-hidden />
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
-                    <div className="relative z-10 text-app flex flex-col min-h-[100svh]">
+                    <div className="relative z-10 text-app flex-col min-h-[100svh]">
                         <div className="sticky top-0 z-50 bg-app/80 backdrop-blur-sm sm:backdrop-blur-md border-b border-app">
                             <Header />
                         </div>
 
                         <main className="flex-1">
-                            <section className="relative pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12">
-                                <div className="mx-auto max-w-6xl px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12">
+                            <section className="relative pt-fluid-md xs:pt-fluid-lg sm:pt-fluid-xl md:pt-fluid-2xl lg:pt-fluid-3xl">
+                                <div className="mx-auto max-w-6xl px-fluid-md xs:px-fluid-lg sm:px-fluid-xl md:px-fluid-2xl">
                                     <m.div
                                         variants={introStagger}
                                         initial="hidden"
                                         whileInView="visible"
                                         viewport={{ once: true, amount: 0.4 }}
-                                        className="space-y-4 xs:space-y-5 sm:space-y-6 md:space-y-7 lg:space-y-8"
+                                        className="gap-fluid-md xs:gap-fluid-lg sm:gap-fluid-xl md:gap-fluid-2xl lg:gap-fluid-3xl"
                                     >
                                         <Hero prefersReduced={!!prefersReduced} wc={wc} textFadeUp={textFadeUp} onReveal={handleRevealButton} />
                                     </m.div>
                                 </div>
                             </section>
 
-                            <div ref={dividerWrapRef} className="mt-2 xs:mt-2.5 sm:mt-3 md:mt-3.5 lg:mt-4 mb-1 xs:mb-1.5 sm:mb-2 md:mb-2.5">
+                            <div ref={dividerWrapRef} className="mt-fluid-xs xs:mt-fluid-sm sm:mt-fluid-md md:mt-fluid-lg lg:mt-fluid-xl mb-fluid-xs xs:mb-fluid-sm sm:mb-fluid-md md:mb-fluid-lg">
                                 <Divider />
                             </div>
 
                             <div ref={sentinelRef} style={{ height: 10 }} />
 
                             {!revealed && didMount && (
-                                <div aria-hidden className="mx-auto max-w-6xl px-4 xs:px-5 sm:px-6 md:px-8">
+                                <div aria-hidden className="mx-auto max-w-6xl px-fluid-md xs:px-fluid-lg sm:px-fluid-xl md:px-fluid-2xl">
                                     <div className="h-[40vh] xs:h-[45vh] sm:h-[55vh] md:h-[65vh] lg:h-[70vh] xl:h-[75vh]" />
                                 </div>
                             )}
@@ -114,7 +114,7 @@ const Landing: React.FC = () => {
                                 initial="hidden"
                                 animate={revealed ? "show" : "hidden"}
                                 variants={featuresFade}
-                                className="mx-auto max-w-6xl px-4 xs:px-5 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-1 xs:py-1.5 sm:py-2 md:py-2.5 lg:py-3"
+                                className="mx-auto max-w-6xl px-fluid-md xs:px-fluid-lg sm:px-fluid-xl md:px-fluid-2xl py-fluid-xs xs:py-fluid-sm sm:py-fluid-md md:py-fluid-lg lg:py-fluid-xl"
                                 style={{ willChange: "opacity, transform" }}
                             >
                                 {revealed && (
