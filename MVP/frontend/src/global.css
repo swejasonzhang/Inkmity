@@ -283,8 +283,6 @@ canvas {
   --fluid-4xl: clamp(2.25rem, calc(1.95rem + 1.5vw), 3rem);
   --fluid-5xl: clamp(3rem, calc(2.5rem + 2.5vw), 4.5rem);
   --fluid-6xl: clamp(3.5rem, calc(3rem + 3vw), 5rem);
-
-  /* Fluid Spacing Scale - all in rem */
   --fluid-space-1: clamp(0.25rem, calc(0.2rem + 0.25vw), 0.5rem);
   --fluid-space-2: clamp(0.5rem, calc(0.4rem + 0.5vw), 1rem);
   --fluid-space-3: clamp(0.75rem, calc(0.6rem + 0.75vw), 1.5rem);
@@ -296,16 +294,12 @@ canvas {
   --fluid-space-16: clamp(4rem, calc(3.2rem + 4vw), 8rem);
   --fluid-space-20: clamp(5rem, calc(4rem + 5vw), 10rem);
   --fluid-space-24: clamp(6rem, calc(4.8rem + 6vw), 12rem);
-
-  /* Fluid Padding Scale */
   --fluid-padding-xs: clamp(0.25rem, calc(0.2rem + 0.25vw), 0.5rem);
   --fluid-padding-sm: clamp(0.5rem, calc(0.4rem + 0.5vw), 1rem);
   --fluid-padding-md: clamp(1rem, calc(0.8rem + 1vw), 2rem);
   --fluid-padding-lg: clamp(1.5rem, calc(1.2rem + 1.5vw), 3rem);
   --fluid-padding-xl: clamp(2rem, calc(1.6rem + 2vw), 4rem);
   --fluid-padding-2xl: clamp(3rem, calc(2.4rem + 3vw), 6rem);
-
-  /* Fluid Gap Scale for Flexbox */
   --fluid-gap-xs: clamp(0.25rem, calc(0.2rem + 0.25vw), 0.5rem);
   --fluid-gap-sm: clamp(0.5rem, calc(0.4rem + 0.5vw), 1rem);
   --fluid-gap-md: clamp(0.75rem, calc(0.6rem + 0.75vw), 1.5rem);
@@ -313,14 +307,11 @@ canvas {
   --fluid-gap-xl: clamp(1.5rem, calc(1.2rem + 1.5vw), 3rem);
   --fluid-gap-2xl: clamp(2rem, calc(1.6rem + 2vw), 4rem);
 
-  /* Fluid Border Radius */
   --fluid-radius-sm: clamp(0.25rem, calc(0.2rem + 0.25vw), 0.5rem);
   --fluid-radius-md: clamp(0.375rem, calc(0.3rem + 0.375vw), 0.75rem);
   --fluid-radius-lg: clamp(0.5rem, calc(0.4rem + 0.5vw), 1rem);
   --fluid-radius-xl: clamp(0.75rem, calc(0.6rem + 0.75vw), 1.5rem);
   --fluid-radius-2xl: clamp(1rem, calc(0.8rem + 1vw), 2rem);
-
-  /* Flexbox Layout Variables */
   --flex-gap-xs: var(--fluid-gap-xs);
   --flex-gap-sm: var(--fluid-gap-sm);
   --flex-gap-md: var(--fluid-gap-md);
@@ -333,7 +324,6 @@ html {
   font-size: var(--fluid-base);
 }
 
-/* Fluid Typography Classes */
 .text-fluid-xs { font-size: var(--fluid-xs); }
 .text-fluid-sm { font-size: var(--fluid-sm); }
 .text-fluid-base { font-size: var(--fluid-base); }
@@ -345,7 +335,6 @@ html {
 .text-fluid-5xl { font-size: var(--fluid-5xl); }
 .text-fluid-6xl { font-size: var(--fluid-6xl); }
 
-/* Fluid Spacing Classes */
 .p-fluid-xs { padding: var(--fluid-padding-xs); }
 .p-fluid-sm { padding: var(--fluid-padding-sm); }
 .p-fluid-md { padding: var(--fluid-padding-md); }
@@ -359,7 +348,6 @@ html {
 .m-fluid-lg { margin: var(--fluid-space-6); }
 .m-fluid-xl { margin: var(--fluid-space-8); }
 
-/* Fluid Gap Classes for Flexbox */
 .gap-fluid-xs { gap: var(--fluid-gap-xs); }
 .gap-fluid-sm { gap: var(--fluid-gap-sm); }
 .gap-fluid-md { gap: var(--fluid-gap-md); }
@@ -367,7 +355,6 @@ html {
 .gap-fluid-xl { gap: var(--fluid-gap-xl); }
 .gap-fluid-2xl { gap: var(--fluid-gap-2xl); }
 
-/* Flexbox Layout Utility Classes */
 .flex-center {
   display: flex;
   align-items: center;
@@ -458,7 +445,6 @@ html {
   flex-grow: 0;
 }
 
-/* Responsive Flexbox Classes */
 @media (max-width: 640px) {
   .flex-col-mobile {
     flex-direction: column;

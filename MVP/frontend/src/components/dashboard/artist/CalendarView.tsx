@@ -89,10 +89,8 @@ export default function CalendarView({
         }
         
         if (isPast) {
-            // Past appointments: use gray
             return "bg-gray-500/15 text-gray-400 border border-gray-500/30";
         } else {
-            // Upcoming appointments: use white
             return "bg-white/15 text-white border border-white/30";
         }
     };

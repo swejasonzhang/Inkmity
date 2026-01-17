@@ -115,7 +115,6 @@ export default function ArtistAppointmentHistory() {
 
     const getStatusColor = (status: string, isPast: boolean = false) => {
         if (isPast) {
-            // Past appointments: use gray
             switch (status) {
                 case "completed":
                     return "bg-gray-500/20 text-gray-400 border-gray-500/30";
@@ -126,7 +125,6 @@ export default function ArtistAppointmentHistory() {
                     return "bg-gray-500/20 text-gray-400 border-gray-500/30";
             }
         } else {
-            // Upcoming appointments: use white
             switch (status) {
                 case "confirmed":
                 case "booked":

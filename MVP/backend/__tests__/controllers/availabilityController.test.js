@@ -51,7 +51,6 @@ describe("Availability Controller - getAvailability", () => {
   });
 });
 
-// Skip database-dependent tests when database is not available
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 
 conditionalDescribe("Availability Controller - upsertAvailability", () => {

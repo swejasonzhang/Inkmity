@@ -1,10 +1,9 @@
-// Simple test to verify email functionality without database
 import { sendAppointmentConfirmationEmail, sendAppointmentCancellationEmail } from './services/emailService.js';
 
 async function testEmailOnly() {
   console.log('🚀 Testing email service functionality...');
 
-  // Mock booking object
+  const mockBooking = {
   const mockBooking = {
     _id: '507f1f77bcf86cd799439011',
     startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow

@@ -506,12 +506,9 @@ export async function stripeWebhook(req, res) {
               book.confirmedAt = new Date();
               await book.save();
 
-              // Send confirmation email to client
               try {
                 let clientEmail = null;
                 let clientName = "Valued Client";
-
-                // Try to get client info
                 if (book.clientId) {
                   const client = await Client.findById(book.clientId);
                   if (client) {
@@ -525,7 +522,6 @@ export async function stripeWebhook(req, res) {
                 }
               } catch (emailError) {
                 console.error("Failed to send confirmation email:", emailError);
-                // Don't fail the webhook if email fails
               }
             }
           }

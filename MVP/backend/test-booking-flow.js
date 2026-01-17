@@ -1,4 +1,3 @@
-// Comprehensive test for the appointment booking flow with Stripe and email
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Booking from './models/Booking.js';
@@ -12,14 +11,12 @@ async function testBookingFlow() {
   let mongoServer;
 
   try {
-    // Start in-memory MongoDB
     console.log('📊 Starting MongoDB...');
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected');
 
-    // Create test data
     console.log('👤 Creating test client...');
     const client = await Client.create({
       clerkId: 'test-client-123',
@@ -51,7 +48,6 @@ async function testBookingFlow() {
     });
 
     console.log('💳 Simulating payment success...');
-    // Simulate payment success (what happens in the webhook)
     booking.depositPaidCents = booking.depositRequiredCents;
     booking.status = 'confirmed';
     booking.confirmedAt = new Date();
@@ -101,7 +97,6 @@ async function testBookingFlow() {
   } catch (error) {
     console.error('❌ Test failed:', error);
   } finally {
-    // Cleanup
     if (mongoServer) {
       await mongoose.disconnect();
       await mongoServer.stop();
