@@ -1,434 +1,331 @@
-# Inkmity MVP
+# Inkmity - Tattoo Artist Appointment Platform
 
-A full-stack tattoo artist booking platform connecting clients with talented tattoo artists. Built with React, TypeScript, Node.js, Express, and MongoDB.
+Inkmity is a comprehensive platform connecting tattoo artists with clients, streamlining the appointment booking process with integrated payment processing and real-time communication.
+
+## 🌟 Features
+
+### For Clients
+- **Smart Artist Discovery** - Browse and filter tattoo artists by style, location, and reviews
+- **Real-Time Availability** - View live availability calendars and book appointments instantly
+- **Secure Payments** - Integrated Stripe payment processing with deposit and final payment options
+- **Appointment Management** - Track upcoming appointments, reschedule, or cancel with ease
+- **Review System** - Rate and review artists to help others find the perfect match
+- **Messaging** - Real-time chat with artists before and during the booking process
+
+### For Artists
+- **Professional Profile** - Showcase portfolio, services, pricing, and availability
+- **Appointment Management** - Accept, reschedule, or decline appointments with automatic notifications
+- **Payment Processing** - Secure Stripe integration with customizable deposit policies
+- **Client Communication** - Built-in messaging system for consultation and coordination
+- **Analytics Dashboard** - Track earnings, appointments, and client satisfaction
+- **Flexible Scheduling** - Set custom availability with buffer times and blackout dates
+
+### Platform Features
+- **Real-Time Updates** - Live notifications and status updates via WebSocket
+- **Mobile Responsive** - Fully responsive design that works on all devices
+- **Email Notifications** - Automated confirmation and reminder emails
+- **Secure Authentication** - Clerk-powered authentication with role-based access
+- **File Upload** - Cloudinary integration for portfolio images and references
+- **Review & Rating System** - Verified reviews to build trust and reputation
+
+## 🛠 Tech Stack
+
+### Frontend
+- **React 18** - Modern React with hooks and functional components
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework with custom design system
+- **Framer Motion** - Smooth animations and transitions
+- **React Router** - Client-side routing
+- **Clerk** - Authentication and user management
+- **Socket.io Client** - Real-time communication
+
+### Backend
+- **Node.js** - Server runtime
+- **Express.js** - Web framework
+- **MongoDB** - NoSQL database with Mongoose ODM
+- **Stripe** - Payment processing
+- **Nodemailer** - Email notifications
+- **Socket.io** - Real-time communication
+- **JWT** - Token-based authentication
+- **Cloudinary** - Image hosting and optimization
+
+### DevOps & Quality
+- **Jest** - Unit and integration testing
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+- **Husky** - Git hooks
+- **Docker** - Containerization
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-- **Node.js** (v20 or higher)
-- **npm** (v9 or higher) or **yarn**
-- **MongoDB** (local instance or MongoDB Atlas)
-- **Clerk Account** (for authentication)
-- **Cloudinary Account** (for image storage)
-- **Stripe Account** (for payments)
+- Node.js 18+
+- MongoDB 6+
+- npm or yarn
+- Stripe account
+- Clerk account
+- Cloudinary account
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd MVP
+   git clone https://github.com/your-username/inkmity.git
+   cd inkmity
    ```
 
-2. **Install backend dependencies**
+2. **Install dependencies**
    ```bash
-   cd backend
-   npm install
+   # Backend dependencies
+   cd backend && npm install
+
+   # Frontend dependencies
+   cd ../frontend && npm install
    ```
 
-3. **Install frontend dependencies**
+3. **Environment Setup**
+
+   Create `.env` files in both backend and frontend directories:
+
+   **Backend (.env)**
+   ```env
+   NODE_ENV=development
+   PORT=3001
+   FRONTEND_URL=http://localhost:3000
+   BACKEND_URL=http://localhost:3001
+
+   # Database
+   MONGODB_URI=mongodb://localhost:27017/inkmity
+
+   # Authentication
+   CLERK_SECRET_KEY=your_clerk_secret_key
+   VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+
+   # Payments
+   STRIPE_SECRET_KEY=your_stripe_secret_key
+   VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+   STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+   # Email
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=your-app-password
+   FROM_EMAIL=noreply@inkmity.com
+
+   # File Upload
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+   ```
+
+   **Frontend (.env)**
+   ```env
+   VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+   VITE_API_URL=http://localhost:3001
+   ```
+
+4. **Database Setup**
    ```bash
-   cd ../frontend
-   npm install
+   # Start MongoDB (if using local installation)
+   mongod
+
+   # Or use Docker
+   docker run -d -p 27017:27017 --name mongodb mongo:6
    ```
 
-## ⚙️ Environment Variables
+5. **Start the Application**
+   ```bash
+   # Terminal 1: Backend
+   cd backend && npm run dev
 
-> **⚠️ SECURITY WARNING**: Never commit `.env` files or hardcode API keys in your code. All sensitive keys should be stored in environment variables. The `.env` files are already in `.gitignore` for your protection.
+   # Terminal 2: Frontend
+   cd frontend && npm run dev
+   ```
 
-### Backend Environment Variables
+6. **Access the Application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001
+   - API Documentation: http://localhost:3001/api
 
-Create a `.env` or `.env.development` file in the `backend/` directory:
+## 📡 API Documentation
 
-> **Note**: Copy `.env.example` to `.env` and fill in your actual values. The example file shows the required variables without exposing real keys.
+### Authentication Endpoints
+- `POST /auth/login` - User login
+- `POST /auth/register` - User registration
+- `POST /auth/logout` - User logout
+- `GET /auth/me` - Get current user profile
 
-```env
-# Server Configuration
-NODE_ENV=development
-PORT=5005
-FRONTEND_ORIGIN=http://localhost:5173
-APP_URL=http://localhost:5005
+### User Management
+- `GET /users` - List users (paginated)
+- `GET /users/:id` - Get user by ID
+- `PUT /users/profile` - Update user profile
+- `POST /users/avatar` - Upload user avatar
 
-# Database
-MONGO_URI=mongodb://localhost:27017/inkmity
-# OR for MongoDB Atlas:
-# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/inkmity
+### Artist Management
+- `GET /users/artists` - List all artists
+- `GET /users/artists/:id` - Get artist details
+- `PUT /users/artists/availability` - Update artist availability
+- `GET /users/artists/:id/portfolio` - Get artist portfolio
 
-# Clerk Authentication
-CLERK_SECRET_KEY=sk_test_...
+### Booking System
+- `POST /bookings/consultation` - Create consultation booking
+- `POST /bookings/session` - Create tattoo session booking
+- `GET /bookings` - List user bookings
+- `GET /bookings/:id` - Get booking details
+- `PUT /bookings/:id/reschedule` - Reschedule booking
+- `POST /bookings/:id/cancel` - Cancel booking
+- `POST /bookings/:id/accept` - Accept booking (artists)
+- `POST /bookings/:id/deny` - Deny booking (artists)
 
-# Cloudinary (Image Storage)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+### Payment Processing
+- `POST /billing/deposit/intent` - Create deposit payment intent
+- `POST /billing/final-payment/intent` - Create final payment intent
+- `POST /billing/webhook` - Stripe webhook handler
+- `GET /billing/transactions` - Get payment history
 
-# Stripe (Payments)
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+### Messaging
+- `GET /messages/conversations` - Get user conversations
+- `POST /messages/send` - Send message
+- `GET /messages/:conversationId` - Get conversation messages
 
-# Socket.IO (Optional)
-SOCKET_PATH=/socket.io
+### File Upload
+- `POST /images/upload` - Upload image
+- `DELETE /images/:id` - Delete image
+
+## 🏗 Architecture
+
+### Backend Architecture
+```
+backend/
+├── config/           # Configuration management
+├── controllers/      # Request handlers
+├── middleware/       # Express middleware
+├── models/          # MongoDB schemas
+├── routes/          # API route definitions
+├── services/        # Business logic services
+├── utils/           # Utility functions
+└── __tests__/       # Test suites
 ```
 
-### Frontend Environment Variables
-
-Create a `.env` or `.env.development` file in the `frontend/` directory:
-
-```env
-# Clerk Authentication
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
-
-# API Configuration
-VITE_API_URL=http://localhost:5005
-
-# Stripe Configuration (Optional)
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
-
-# Socket.IO Configuration (Optional)
-VITE_SOCKET_URL=http://localhost:5005
-VITE_SOCKET_PATH=/socket.io
+### Frontend Architecture
+```
+frontend/
+├── src/
+│   ├── components/     # Reusable UI components
+│   ├── pages/         # Page components
+│   ├── hooks/         # Custom React hooks
+│   ├── lib/           # Utility libraries
+│   ├── styles/        # Component-specific styles
+│   └── utils/         # Helper functions
+├── public/            # Static assets
+└── __tests__/        # Component tests
 ```
 
-## 🏃 Running the Application
-
-### Development Mode
-
-1. **Start the backend server**
-   ```bash
-   cd backend
-   npm run dev
-   ```
-   The backend will start on `http://localhost:5005`
-
-2. **Start the frontend development server** (in a new terminal)
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   The frontend will start on `http://localhost:5173`
-
-3. **Open your browser**
-   Navigate to `http://localhost:5173`
-
-### Production Build
-
-1. **Build the frontend**
-   ```bash
-   cd frontend
-   npm run build
-   ```
-
-2. **Start the backend in production mode**
-   ```bash
-   cd backend
-   NODE_ENV=production npm start
-   ```
-
-## 📁 Project Structure
-
-```
-MVP/
-├── backend/                 # Node.js/Express backend
-│   ├── config/             # Database and service configurations
-│   ├── controllers/        # Request handlers
-│   ├── middleware/         # Express middleware (auth, rate limiting, performance, etc.)
-│   ├── models/             # Mongoose schemas
-│   ├── repositories/       # Data access layer (DRY pattern)
-│   ├── routes/             # API route definitions
-│   ├── services/           # Business logic layer (DRY pattern)
-│   ├── utils/              # Utility functions (logger, cache, query optimizer)
-│   ├── __tests__/          # Test suites
-│   │   ├── controllers/    # Controller tests
-│   │   ├── services/       # Service tests (TDD)
-│   │   ├── repositories/   # Repository tests (TDD)
-│   │   ├── integration/    # Integration tests
-│   │   ├── scaling/        # Load and performance tests
-│   │   └── setup/          # Test setup and mocks
-│   └── server.js           # Main server entry point
-│
-└── frontend/               # React/TypeScript frontend
-    ├── src/
-    │   ├── api/           # API client functions
-    │   ├── components/    # React components
-    │   │   ├── booking/   # Booking flow components
-    │   │   ├── dashboard/ # Dashboard-specific components
-    │   │   ├── ui/        # Reusable UI components (Shadcn)
-    │   │   └── ...
-    │   ├── hooks/         # Custom React hooks
-    │   ├── lib/           # Library utilities
-    │   ├── pages/         # Page components
-    │   ├── utils/         # Utility functions
-    │   ├── __tests__/     # Test suites
-    │   │   ├── components/# Component tests
-    │   │   └── setup/     # Test utilities and setup
-    │   └── main.tsx       # Application entry point
-    └── public/            # Static assets
-```
-
-## 🛠️ Available Scripts
-
-### Backend Scripts
-
-- `npm start` - Start the server in production mode
-- `npm run dev` - Start the server with nodemon (auto-reload)
-- `npm test` - Run all tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Generate test coverage report
-- `npm run test:load` - Run load/scaling tests only
-
-### Frontend Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm test` - Run all tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Generate test coverage report
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint errors automatically
-- `npm run format` - Format code with Prettier
-- `npm run format:check` - Check code formatting
-- `npm run type-check` - Run TypeScript type checking
-- `npm run build:analyze` - Build and analyze bundle size
-
-## 🧪 Testing
-
-### Test-Driven Development (TDD)
-
-This project follows **Test-Driven Development** principles with comprehensive test coverage:
-
-- **Backend Tests**: 73+ passing tests covering controllers, services, repositories, and integration flows
-- **Frontend Tests**: Component tests using Jest and React Testing Library
-- **Load Tests**: Performance and scalability tests for concurrent requests
-
-### Running Tests
-
-**Backend:**
-```bash
-cd backend
-npm test                    # Run all tests
-npm run test:watch         # Watch mode
-npm run test:coverage      # Coverage report
-npm run test:load          # Load tests only
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm test                    # Run all tests
-npm run test:watch         # Watch mode
-npm run test:coverage      # Coverage report
-```
-
-### Test Structure
-
-- **Unit Tests**: Individual components, services, and repositories
-- **Integration Tests**: End-to-end flows (booking, payment, messaging)
-- **Load Tests**: Performance testing with 100+ concurrent requests
-- **Coverage Target**: >80% code coverage
-
-## 🏗️ Architecture & Engineering Principles
-
-### Design Patterns
-
-#### Repository Pattern (DRY)
-- **Location**: `backend/repositories/`
-- Centralized data access layer
-- Eliminates code duplication across controllers
-- Consistent caching strategy
-- Easier testing and maintenance
-
-#### Service Layer (DRY)
-- **Location**: `backend/services/`
-- Business logic separation from controllers
-- Reusable business operations
-- Centralized validation
-- Clean separation of concerns
-
-### Performance Optimizations
-
-#### Database Indexing
-- Compound indexes on frequently queried fields
-- Text search indexes for searchable content
-- Optimized query patterns
-- **Models**: `Booking`, `UserBase`, `Message`
-
-#### Caching Layer
-- **Location**: `backend/utils/cache.js`
-- In-memory caching with TTL support
-- Redis-ready architecture (easy migration)
-- Cache invalidation patterns
-- Performance statistics
-
-#### Query Optimization
-- **Location**: `backend/utils/queryOptimizer.js`
-- Experience filter parsing
-- Text search query building
-- Pagination helpers
-- Field selection for lean queries
-
-### Performance Monitoring
-
-- **Middleware**: `backend/middleware/performance.js`
-- Request duration tracking
-- Memory usage monitoring
-- Slow request detection (>1s)
-- Query performance measurement
-- Response headers with metrics
-
-### Scalability Features
-
-- **Load Testing**: Comprehensive tests for concurrent requests
-- **Database**: Optimized indexes for common queries
-- **Caching**: Frequently accessed data cached
-- **Connection Pooling**: Mongoose connection optimization
-- **Rate Limiting**: API endpoint protection
-- **Performance Monitoring**: Real-time tracking
-
-## 🧪 Development Workflow
-
-1. **Code Quality**
-   - ESLint is configured for TypeScript/React
-   - Prettier is configured for consistent formatting
-   - TypeScript strict mode is enabled
-   - Test-driven development (TDD)
-
-2. **Hot Reload**
-   - Backend: Nodemon watches for file changes
-   - Frontend: Vite HMR (Hot Module Replacement) for instant updates
-
-3. **Error Handling**
-   - Backend: Centralized error handler with Winston logging
-   - Frontend: Error Boundary component for React errors
-
-4. **Testing Workflow**
-   - Write tests first (TDD)
-   - Run tests on file changes (watch mode)
-   - Check coverage regularly
-   - Load test before deployment
-
-## 🔧 Key Features
-
-- **Authentication**: Clerk-based authentication system
-- **Real-time Messaging**: Socket.IO for instant messaging
-- **Booking System**: Calendar-based appointment booking
-- **Payment Processing**: Stripe integration for deposits and payments
-- **Image Management**: Cloudinary for portfolio and profile images
-- **Artist Profiles**: Comprehensive artist profiles with portfolios
-- **Client Dashboard**: Browse artists, book appointments, manage bookings
-- **Artist Dashboard**: Manage availability, bookings, and profile
-- **Performance**: Optimized queries, caching, and monitoring
-- **Scalability**: Load-tested, database indexes, query optimization
+### Database Schema
+- **Users** - Client and artist profiles
+- **Bookings** - Appointment records with status tracking
+- **Billing** - Payment records and Stripe integration
+- **Messages** - Real-time messaging between users
+- **Reviews** - Client reviews and ratings
+- **Images** - Portfolio and reference images
+- **Availability** - Artist scheduling data
 
 ## 🔒 Security Features
 
-- Rate limiting on API endpoints
-- Helmet.js for security headers
-- CORS configuration
-- Request timeouts
-- Input validation with Zod
-- File upload validation
-- Environment variable validation
+- **Input Validation** - Comprehensive Zod schema validation
+- **XSS Protection** - Input sanitization and CSP headers
+- **Rate Limiting** - API rate limiting to prevent abuse
+- **Authentication** - JWT tokens with role-based access
+- **Payment Security** - PCI-compliant Stripe integration
+- **File Upload Security** - Type validation and size limits
+- **SQL Injection Prevention** - Parameterized queries
 
-## 📝 API Endpoints
+## 📱 Responsive Design
 
-The backend API is available at `http://localhost:5005/api`:
+The application uses a fluid design system with:
+- **Rem-based scaling** - Consistent sizing across devices
+- **Flexible layouts** - Flexbox and CSS Grid for adaptability
+- **Mobile-first approach** - Progressive enhancement for larger screens
+- **Touch-friendly interactions** - Optimized for mobile devices
 
-- `/api/auth/*` - Authentication endpoints
-- `/api/users/*` - User management
-- `/api/bookings/*` - Booking management
-- `/api/messages/*` - Messaging endpoints
-- `/api/billing/*` - Payment processing
-- `/api/images/*` - Image upload endpoints
-- `/api/reviews/*` - Review endpoints
-- `/api/availability/*` - Availability management
-- `/health` - Health check endpoint
+## 🧪 Testing
 
-## 🐛 Troubleshooting
+```bash
+# Run all tests
+npm test
 
-### Backend won't start
-- Check that MongoDB is running (if using local instance)
-- Verify all required environment variables are set
-- Check the console for specific error messages
+# Run backend tests only
+cd backend && npm test
 
-### Frontend won't start
-- Ensure Node.js version is v20 or higher
-- Delete `node_modules` and `package-lock.json`, then run `npm install` again
-- Check that `VITE_CLERK_PUBLISHABLE_KEY` is set in `.env`
+# Run frontend tests only
+cd frontend && npm test
 
-### Database connection issues
-- Verify `MONGO_URI` is correct
-- Check MongoDB is accessible (firewall, network, etc.)
-- For MongoDB Atlas, ensure your IP is whitelisted
+# Run with coverage
+npm run test:coverage
 
-### Image upload issues
-- Verify Cloudinary credentials are correct
-- Check file size limits (configured in backend)
-- Ensure CORS is properly configured
+# Run integration tests
+npm run test:integration
+```
 
-### Tests failing
-- Ensure MongoDB is running for integration tests
-- Check that all environment variables are set (especially Stripe keys for payment tests)
-- Run `npm install` to ensure all dependencies are installed
-- For frontend tests, ensure `VITE_STRIPE_PUBLISHABLE_KEY` is set in `.env`
+## 🚀 Deployment
 
-## 📚 Tech Stack
+### Environment Variables for Production
+Ensure all production environment variables are set:
+- Database connection strings
+- Stripe live keys
+- Email service credentials
+- Cloudinary production config
+- Proper CORS origins
 
-### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM
-- **Socket.IO** - Real-time communication
-- **Clerk** - Authentication
-- **Stripe** - Payment processing
-- **Cloudinary** - Image storage
-- **Winston** - Logging
-- **Zod** - Schema validation
-- **Jest** - Testing framework
-- **Supertest** - API testing
-- **MongoDB Memory Server** - Test database
+### Build Commands
+```bash
+# Build frontend
+cd frontend && npm run build
 
-### Frontend
-- **React 19** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **React Router** - Routing
-- **Tailwind CSS** - Styling
-- **Shadcn UI** - Component library
-- **Clerk** - Authentication
-- **Socket.IO Client** - Real-time communication
-- **Axios** - HTTP client
-- **Jest** - Testing framework
-- **React Testing Library** - Component testing
-- **ts-jest** - TypeScript testing support
+# Build backend (if needed)
+cd backend && npm run build
+```
 
-## 📊 Performance Metrics
+### Docker Deployment
+```bash
+# Build Docker image
+docker build -t inkmity .
 
-### Targets
-- **Request Duration**: < 500ms (95th percentile)
-- **Query Duration**: < 100ms (95th percentile)
-- **Cache Hit Rate**: > 70%
-- **Test Coverage**: > 80%
+# Run with Docker Compose
+docker-compose up -d
+```
 
-### Monitoring
-- All slow requests logged
-- Query performance tracked
-- Memory usage monitored
-- Cache statistics available
-- Load test results included
+## 🤝 Contributing
 
-## 🔄 Future Scalability Considerations
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Ready for:
-- **Redis Integration**: Cache layer designed for easy migration
-- **Database Read Replicas**: Query optimization supports read replicas
-- **Service Decoupling**: Microservices-ready architecture
-- **Horizontal Scaling**: Load-tested and optimized
-- **CDN Integration**: Static asset delivery
-- **Message Queue Integration**: Async processing ready
+### Development Guidelines
+- Follow the existing code style and patterns
+- Write tests for new features
+- Update documentation as needed
+- Ensure all tests pass before submitting PR
+- Use conventional commit messages
 
 ## 📄 License
 
-ISC
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+For support, email support@inkmity.com or join our Discord community.
+
+## 🙏 Acknowledgments
+
+- Tattoo artists and clients for their feedback
+- Open source community for the amazing tools and libraries
+- Design inspiration from modern SaaS platforms
+
+---
+
+**Made with ❤️ for the tattoo community**

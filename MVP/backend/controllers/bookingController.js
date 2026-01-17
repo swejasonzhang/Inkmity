@@ -473,13 +473,10 @@ export async function cancelBooking(req, res) {
       });
     } catch {}
 
-    // Send cancellation email to client
     try {
       if (isClient) {
         let clientEmail = null;
         let clientName = "Valued Client";
-
-        // Try to get client info
         if (booking.clientId) {
           const client = await Client.findById(booking.clientId);
           if (client) {
@@ -494,7 +491,6 @@ export async function cancelBooking(req, res) {
       }
     } catch (emailError) {
       console.error("Failed to send cancellation email:", emailError);
-      // Don't fail the cancellation if email fails
     }
 
     res.json(booking);
@@ -508,10 +504,6 @@ export async function cancelBookingViaLink(req, res) {
   try {
     const { id } = req.params;
     const { token } = req.query;
-
-    // For security, we'd want to verify the token here
-    // For now, we'll allow cancellation with just the booking ID
-    // In production, implement proper token verification
 
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ error: "not_found" });
@@ -537,7 +529,6 @@ export async function cancelBookingViaLink(req, res) {
 
     await booking.save();
 
-    // Send cancellation email confirmation
     try {
       let clientEmail = null;
       let clientName = "Valued Client";
@@ -557,7 +548,6 @@ export async function cancelBookingViaLink(req, res) {
       console.error("Failed to send cancellation confirmation email:", emailError);
     }
 
-    // Redirect to dashboard with success message
     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/appointments?cancelled=true`);
 
   } catch (error) {

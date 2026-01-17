@@ -1,7 +1,6 @@
 import request from "supertest";
 import express from "express";
 
-// Skip database-dependent tests when database is not available
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 import mongoose from "mongoose";
 import "../../models/Client.js";

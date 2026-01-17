@@ -16,7 +16,6 @@ const mockAuth = (req, res, next) => {
 
 app.get("/dashboard", mockAuth, getDashboardData);
 
-// Skip database-dependent tests when database is not available
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 
 conditionalDescribe("Dashboard Controller - getDashboardData", () => {

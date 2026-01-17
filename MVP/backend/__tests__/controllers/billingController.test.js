@@ -2,7 +2,6 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
-// Skip database-dependent tests when database is not available
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 import Booking from "../../models/Booking.js";
 import Billing from "../../models/Billing.js";

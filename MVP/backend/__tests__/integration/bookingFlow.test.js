@@ -65,7 +65,6 @@ jest.mock("../../services/emailService.js", () => ({
   sendAppointmentCancellationEmail: jest.fn(),
 }));
 
-// Skip database-dependent tests when database is not available
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 
 conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
@@ -162,7 +161,6 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
     expect(booking.depositPaidCents).toBe(booking.depositRequiredCents);
     expect(booking.intakeFormId).toBeDefined();
 
-    // Verify that confirmation email was sent
     expect(sendAppointmentConfirmationEmail).toHaveBeenCalledWith(
       expect.objectContaining({ _id: bookingId }),
       expect.any(String),
