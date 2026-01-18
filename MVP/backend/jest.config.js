@@ -4,7 +4,7 @@ export default {
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
-  testMatch: ["**/__tests__/**/*.test.js"],
+  testMatch: ["**/tests/**/*.test.js"],
   collectCoverageFrom: [
     "controllers/**/*.js",
     "models/**/*.js",
@@ -22,6 +22,6 @@ export default {
       statements: 70,
     },
   },
-  setupFilesAfterEnv: ["<rootDir>/__tests__/setup/jest.setup.js"],
+  setupFilesAfterEnv: ["<rootDir>/tests/setup/jest.setup.js"],
   testTimeout: 30000,
 };
