@@ -34,8 +34,8 @@ const Landing: React.FC = () => {
     const reveal = React.useCallback(() => setRevealed(true), []);
     const handleRevealButton = () => {
         reveal();
-        const target = document.getElementById("features-title");
-        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        const target = document.getElementById("features");
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
     };
 
     React.useEffect(() => {

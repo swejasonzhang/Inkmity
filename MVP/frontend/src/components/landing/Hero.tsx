@@ -17,8 +17,8 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
 
     const scrollDown = () => {
         onReveal();
-        const anchor = document.getElementById("features-title") as HTMLElement | null;
-        if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+        const anchor = document.getElementById("features") as HTMLElement | null;
+        if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "center" });
         else window.scrollBy({ top: Math.max(0, window.innerHeight * 0.9), behavior: "smooth" });
     };
 
