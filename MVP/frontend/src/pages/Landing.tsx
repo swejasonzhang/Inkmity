@@ -84,7 +84,7 @@ const Landing: React.FC = () => {
                         </div>
 
                         <main className="flex-1">
-                            <section className="relative pt-fluid-md xs:pt-fluid-lg sm:pt-fluid-xl md:pt-fluid-2xl lg:pt-fluid-3xl">
+                            <section className="relative pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12">
                                 <div className="mx-auto max-w-6xl px-fluid-md xs:px-fluid-lg sm:px-fluid-xl md:px-fluid-2xl">
                                     <m.div
                                         variants={introStagger}
@@ -119,7 +119,6 @@ const Landing: React.FC = () => {
                             >
                                 {revealed && (
                                     <>
-                                        <div id="features-title" />
                                         <FeaturesGrid textFadeUp={textFadeUp} wc={wc} />
                                         <Divider className="my-2 xs:my-2.5 sm:my-3 md:my-3.5 lg:my-4" />
                                         <Differentiators textFadeUp={textFadeUp} wc={wc} />
