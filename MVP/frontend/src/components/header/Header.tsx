@@ -6,8 +6,7 @@ import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
 import BlackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems";
-import { NavDesktop } from "../header/NavDesktop";
-import { NavMobile } from "../header/NavMobile";
+import { Nav } from "./Nav";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { getSocket } from "@/lib/socket";
@@ -291,8 +290,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const portalTarget = document.getElementById("dashboard-portal-root") ?? document.getElementById("dashboard-scope") ?? document.body;
 
-  const MOBILE_HEADER_H = "h-24";
-  const MOBILE_LOGO_H = "h-20 xs:h-24";
+  const MOBILE_HEADER_H = "h-20 xs:h-24";
+  const MOBILE_LOGO_H = "h-16 xs:h-20";
   const MOBILE_ICON_STROKE = 1.5;
 
   const resolvedLogo = logoSrcProp ?? (!isDashboard ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
@@ -301,8 +300,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     ? createPortal(
       <div className="sm:hidden fixed inset-0 z-[2147483647]">
         <div className="absolute inset-0 bg-transparent" onClick={() => setMobileMenuOpen(false)} aria-hidden />
-        <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex-col text-app [&_*]:text-app [&_*]:border-app">
-          <div className={`flex-between items-center px-fluid-md xs:px-fluid-lg sm:px-fluid-xl ${MOBILE_HEADER_H}`}>
+        <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex-col text-app [&_*]:text-app [&_*]:border-app overflow-hidden">
+          <div className={`flex-between items-center px-fluid-md xs:px-fluid-lg sm:px-fluid-xl ${MOBILE_HEADER_H} min-w-0`}>
             <div className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
               <img src={resolvedLogo} alt="Inkmity Logo" className={`${MOBILE_LOGO_H} w-auto object-contain`} />
             </div>
@@ -310,7 +309,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               <X strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
             </Button>
           </div>
-          <NavMobile items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
         </div>
       </div>,
       portalTarget
@@ -319,51 +318,45 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="flex w-full relative items-center z-50 px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-fluid-sm xs:py-fluid-md sm:py-fluid-lg text-app bg-transparent">
-        {/* Logo positioned on the left side */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
-          <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg pl-fluid-sm xs:pl-fluid-md sm:pl-fluid-lg md:pl-fluid-xl">
-            <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain" draggable={false} />
+      <header className="flex w-full relative items-center z-50 px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-1 xs:py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-hidden" style={{ minWidth: '320px' }}>
+        <div className="flex-shrink-0 relative z-10 mr-fluid-sm xs:mr-fluid-md sm:mr-fluid-lg">
+          <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
+            <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain flex-shrink-0" draggable={false} />
             <span className="sr-only">Inkmity</span>
           </Link>
         </div>
 
-        <div className="w-full flex-between items-center sm:flex-col sm:items-stretch">
-          <div className="flex-shrink-0">
-            {/* Logo moved to absolute position above */}
-          </div>
+        <div className="flex-1 min-w-0 flex justify-center">
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
+        </div>
 
-          <div className="hidden sm:flex flex-1 items-center justify-center ml-fluid-md xs:ml-fluid-lg sm:ml-fluid-xl md:ml-fluid-2xl">
-            <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-fluid-sm xs:text-fluid-base sm:text-fluid-lg" />
-          </div>
-
-          <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md">
+        <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
             <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-fluid-xs xs:p-fluid-sm rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app ml-fluid-1 xs:ml-fluid-2" onClick={() => setMobileMenuOpen(true)}>
               <Menu strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
             </Button>
 
             {isLoaded && isSignedIn ? (
               <div
-                className="relative hidden md:inline-block align-top text-app [&_*]:text-app [&_*]:border-app"
+                className="relative flex flex-shrink-0 text-app [&_*]:text-app [&_*]:border-app"
               >
                 <div
                   ref={triggerRef}
                   className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
-                  style={{ minWidth: '220px' }}
+                  style={{ minWidth: '180px', maxWidth: '280px' }}
                   aria-haspopup="menu"
                   aria-expanded={showDropdown}
                   onClick={() => setShowDropdown((v) => !v)}
                 >
-                  <span className="mr-2 font-semibold text-xl leading-none flex-shrink-0">✦</span>
-                  <div className="flex items-center leading-none gap-2 justify-center">
-                    <span className="font-bold whitespace-nowrap flex-shrink-0">Welcome Back</span>
+                  <span className="mr-1 md:mr-2 font-semibold text-lg md:text-xl leading-none flex-shrink-0">✦</span>
+                  <div className="flex items-center leading-none gap-1 md:gap-2 justify-center min-w-0 flex-1">
+                    <span className="font-bold truncate flex-shrink-0 min-w-0">Welcome Back</span>
                     {(() => {
                       const visibility = getVisibilityDisplay();
                       const Icon = visibility.icon;
                       return (
-                        <span className="flex items-center gap-1.5 flex-shrink-0 opacity-70 text-xs">
-                          <Icon size={10} className={visibility.color} />
-                          <span>{visibility.label}</span>
+                        <span className="flex items-center gap-1 md:gap-1.5 flex-shrink-0 opacity-70 text-xs min-w-0">
+                          <Icon size={8} className={visibility.color} />
+                          <span className="truncate min-w-0">{visibility.label}</span>
                         </span>
                       );
                     })()}
@@ -425,8 +418,20 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   </button>
                 </div>
               </div>
-            ) : isLoaded && !isSignedIn ? null : (
-              <div className="relative hidden md:inline-block align-top">
+            ) : isLoaded && !isSignedIn ? (
+              <div className="relative flex flex-shrink-0">
+                <button
+                  className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
+                  style={{ minWidth: '140px' }}
+                  onClick={() => navigate('/login')}
+                  type="button"
+                >
+                  <span className="mr-2 font-semibold text-xl leading-none">✦</span>
+                  <span className="font-bold whitespace-nowrap">Sign In</span>
+                </button>
+              </div>
+            ) : (
+              <div className="relative flex flex-shrink-0">
                 <div
                   className={`${dropdownBtnClasses} opacity-50 pointer-events-none`}
                   style={{ minWidth: '140px' }}
@@ -437,17 +442,16 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               </div>
             )}
           </div>
-        </div>
-
-        {dashboardDisabled && tip.show && (
-          <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
-            <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-3 py-2 shadow-lg">
-              <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
-              <span className="text-sm text-app whitespace-nowrap">Not authorized. <span className="text-app">Sign up first.</span></span>
-            </div>
-          </div>
-        )}
       </header>
+
+      {dashboardDisabled && tip.show && (
+        <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
+          <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-3 py-2 shadow-lg">
+            <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
+            <span className="text-sm text-app whitespace-nowrap">Not authorized. <span className="text-app">Sign up first.</span></span>
+          </div>
+        </div>
+      )}
 
       {mobileSheet}
     </>

@@ -43,14 +43,13 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
     const vp = { once: true, amount: 0.18 } as const;
 
     return (
-        <section className="px-1 sm:px-3 grid place-items-center">
+        <section id="features" className="px-1 sm:px-3 grid place-items-center">
             <div className="mx-auto w-full max-w-[100rem] text-center mb-4 sm:mb-6 md:mb-12">
                 <m.h2
                     variants={textFadeUp}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.5 }}
-                    id="features"
                     className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight text-transparent bg-clip-text bg-[linear-gradient(90deg,var(--fg)_0%,var(--fg)_55%,white_100%)]"
                     style={wc}
                 >
