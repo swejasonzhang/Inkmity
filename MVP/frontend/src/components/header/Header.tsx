@@ -320,15 +320,20 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   return (
     <>
       <header className="flex w-full relative items-center z-50 px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-fluid-sm xs:py-fluid-md sm:py-fluid-lg text-app bg-transparent">
+        {/* Logo positioned on the left side */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+          <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg pl-fluid-sm xs:pl-fluid-md sm:pl-fluid-lg md:pl-fluid-xl">
+            <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain" draggable={false} />
+            <span className="sr-only">Inkmity</span>
+          </Link>
+        </div>
+
         <div className="w-full flex-between items-center sm:flex-col sm:items-stretch">
           <div className="flex-shrink-0">
-            <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
-              <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain" draggable={false} />
-              <span className="sr-only">Inkmity</span>
-            </Link>
+            {/* Logo moved to absolute position above */}
           </div>
 
-          <div className="hidden sm:flex flex-1 items-center justify-center">
+          <div className="hidden sm:flex flex-1 items-center justify-center ml-fluid-md xs:ml-fluid-lg sm:ml-fluid-xl md:ml-fluid-2xl">
             <NavDesktop items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} className="text-app [&_a]:text-app [&_button]:text-app [&_svg]:text-app text-fluid-sm xs:text-fluid-base sm:text-fluid-lg" />
           </div>
 
