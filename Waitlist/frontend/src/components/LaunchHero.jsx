@@ -25,8 +25,8 @@ export default function LaunchHero() {
   };
 
   return (
-    <section className="container mx-auto max-w-5xl px-3 sm:px-4 touch-pan-y">
-      <div className="mx-auto rounded-2xl p-3 sm:p-8 md:p-12 text-center">
+    <section className="container mx-auto max-w-5xl px-3 xs:px-4 sm:px-5 md:px-6 touch-pan-y w-full">
+      <div className="mx-auto rounded-2xl p-3 sm:p-6 md:p-8 lg:p-12 text-center flex flex-col justify-between" style={{ minHeight: 'calc(100vh - 4rem)' }}>
         <a href="/" aria-label="Inkmity home" className="mx-auto block w-fit">
           <img
             src="/logo.png"
@@ -41,9 +41,10 @@ export default function LaunchHero() {
           initial="hidden"
           animate="show"
           className="mt-2 md:mt-6 text-[clamp(1.4rem,6.5vw,2rem)] md:text-[clamp(2.25rem,6vw,5rem)] leading-[1.06] md:leading-[0.95] font-black tracking-tight"
+          style={{ textShadow: '0 2px 40px rgba(255,255,255,0.15), 0 1px 10px rgba(255,255,255,0.1)' }}
         >
-          <span className="inline-block text-white/85">About</span>{" "}
-          <span className="bg-clip-text text-transparent bg-[conic-gradient(at_30%_120%,#fff,rgba(255,255,255,.6)_35%,#fff_70%)] drop-shadow-[0_1px_20px_rgba(255,255,255,0.18)]">
+          <span className="inline-block text-white/92" style={{ textShadow: '0 1px 20px rgba(255,255,255,0.2)' }}>About</span>{" "}
+          <span className="bg-clip-text text-transparent bg-[conic-gradient(at_30%_120%,#fff,rgba(255,255,255,.7)_35%,#fff_70%)] drop-shadow-[0_2px_30px_rgba(255,255,255,0.25)]" style={{ filter: 'drop-shadow(0 1px 15px rgba(255,255,255,0.2))' }}>
             Inkmity
           </span>
         </motion.h1>
@@ -53,7 +54,8 @@ export default function LaunchHero() {
           variants={fade}
           initial="hidden"
           animate="show"
-          className="mx-auto mt-2.5 md:mt-8 max-w-3xl text-pretty text-[0.95rem] sm:text-xl md:text-2xl font-semibold text-white/95"
+          className="mx-auto mt-2.5 md:mt-6 max-w-3xl text-pretty text-[0.95rem] sm:text-xl md:text-2xl font-semibold text-white/97"
+          style={{ textShadow: '0 1px 15px rgba(255,255,255,0.12)' }}
         >
           Inkmity is in active development—one hub to discover artists, keep
           every message and reference in one place, and book with clear price
@@ -65,30 +67,30 @@ export default function LaunchHero() {
           variants={fade}
           initial="hidden"
           animate="show"
-          className="mx-auto mt-4 md:mt-6 grid w-full max-w-3xl grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3"
+          className="mx-auto mt-3 md:mt-4 grid w-full max-w-3xl grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3"
         >
-          <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 sm:p-4 text-center">
-            <div className="text-[13px] md:text-sm font-semibold text-white/90">
+          <div className="rounded-xl border border-white/18 bg-white/6 backdrop-blur-sm p-2.5 sm:p-4 text-center shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+            <div className="text-[13px] md:text-sm font-semibold text-white/93" style={{ textShadow: '0 1px 8px rgba(255,255,255,0.1)' }}>
               Search that understands style
             </div>
-            <p className="mt-1 text-[11px] md:text-xs text-white/70">
+            <p className="mt-1 text-[11px] md:text-xs text-white/75">
               Filter by technique, healed results, budget, and travel radius.
             </p>
           </div>
-          <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 sm:p-4 text-center">
-            <div className="text-[13px] md:text-sm font-semibold text-white/90">
+          <div className="rounded-xl border border-white/18 bg-white/6 backdrop-blur-sm p-2.5 sm:p-4 text-center shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+            <div className="text-[13px] md:text-sm font-semibold text-white/93" style={{ textShadow: '0 1px 8px rgba(255,255,255,0.1)' }}>
               Chat with context
             </div>
-            <p className="mt-1 text-[11px] md:text-xs text-white/70">
+            <p className="mt-1 text-[11px] md:text-xs text-white/75">
               Share references, approve sketches, and lock details without
               losing threads.
             </p>
           </div>
-          <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 sm:p-4 text-center">
-            <div className="text-[13px] md:text-sm font-semibold text-white/90">
+          <div className="rounded-xl border border-white/18 bg-white/6 backdrop-blur-sm p-2.5 sm:p-4 text-center shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+            <div className="text-[13px] md:text-sm font-semibold text-white/93" style={{ textShadow: '0 1px 8px rgba(255,255,255,0.1)' }}>
               Clear pricing and rewards
             </div>
-            <p className="mt-1 text-[11px] md:text-xs text-white/70">
+            <p className="mt-1 text-[11px] md:text-xs text-white/75">
               Up-front quotes, verified reviews, and perks that stack as you
               book.
             </p>
@@ -100,7 +102,8 @@ export default function LaunchHero() {
           variants={fade}
           initial="hidden"
           animate="show"
-          className="mt-6 md:mt-10 text-lg sm:text-3xl md:text-4xl font-extrabold"
+          className="mt-4 md:mt-6 text-lg sm:text-3xl md:text-4xl font-extrabold"
+          style={{ textShadow: '0 2px 25px rgba(255,255,255,0.15)' }}
         >
           Built to spotlight artists
         </motion.h2>
@@ -110,7 +113,8 @@ export default function LaunchHero() {
           variants={fade}
           initial="hidden"
           animate="show"
-          className="mt-1.5 md:mt-3 text-sm sm:text-lg md:text-2xl text-white/90 font-semibold"
+          className="mt-1 md:mt-2 text-sm sm:text-lg md:text-2xl text-white/93 font-semibold"
+          style={{ textShadow: '0 1px 15px rgba(255,255,255,0.12)' }}
         >
           Portfolios that load fast, metrics that matter, and tools that turn
           interest into bookings.
@@ -121,7 +125,7 @@ export default function LaunchHero() {
           variants={fade}
           initial="hidden"
           animate="show"
-          className="mt-3.5 md:mt-6 inline-flex flex-wrap items-center justify-center gap-1.5 md:gap-2"
+          className="mt-2 md:mt-3 inline-flex flex-wrap items-center justify-center gap-1.5 md:gap-2"
         >
           {[
             "Earn as you book",
@@ -130,7 +134,8 @@ export default function LaunchHero() {
           ].map((t) => (
             <span
               key={t}
-              className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] md:text-sm text-white/90"
+              className="rounded-full border border-white/18 bg-white/12 backdrop-blur-sm px-2.5 py-1 text-[11px] md:text-sm text-white/93 shadow-[0_2px_12px_rgba(0,0,0,0.25)]"
+              style={{ textShadow: '0 1px 6px rgba(255,255,255,0.1)' }}
             >
               {t}
             </span>
@@ -139,7 +144,7 @@ export default function LaunchHero() {
 
         <div
           className={[
-            "mt-5 md:mt-9 flex flex-col items-center gap-1.5 md:gap-2 select-none transition-all duration-500",
+            "mt-auto pt-4 md:pt-6 flex flex-col items-center gap-1.5 md:gap-2 select-none transition-all duration-500",
             cueVisible
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-2 pointer-events-none",

@@ -21,7 +21,7 @@ const vp = { once: true, amount: 0.01, margin: "0px 0px" };
 
 export default function WaitlistPage() {
   const [confettiKey, setConfettiKey] = useState(0);
-  const container = "container mx-auto w-full max-w-4xl px-4";
+  const container = "container mx-auto w-full max-w-4xl px-3 xs:px-4 sm:px-5 md:px-6";
 
   function onSuccessConfetti() {
     setConfettiKey((k) => k + 1);
@@ -49,12 +49,12 @@ export default function WaitlistPage() {
             initial="hidden"
             whileInView="show"
             viewport={vp}
-            className="w-full flex items-center transform-gpu min-h-screen"
-            style={{ willChange: "opacity, transform" }}
+            className="w-full flex items-center justify-center transform-gpu min-h-screen"
+            style={{ willChange: "opacity, transform", minHeight: '100vh' }}
           >
-            <div className={container}>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
+            <div className={container + " h-full flex items-center"}>
+              <div className="flex items-center justify-between w-full h-full">
+                <div className="flex-1 w-full h-full">
                   <LaunchHero />
                 </div>
               </div>

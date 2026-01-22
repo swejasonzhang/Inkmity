@@ -59,7 +59,7 @@ function SignedUpBadge({ count }) {
   const colors = ["#0a0a0a", "#262626", "#525252"];
   return (
     <div
-      className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 pl-2 pr-2.5 py-0.5"
+      className="mt-1 inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 backdrop-blur-sm pl-2 pr-2.5 py-0.5 shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
       aria-live="polite"
     >
       <div className="flex -space-x-2">
@@ -75,9 +75,9 @@ function SignedUpBadge({ count }) {
           <Users className="h-3 w-3" aria-hidden />
         </span>
       </div>
-      <span className="text-xs md:text-sm text-white/90">
+      <span className="text-xs md:text-sm text-white/93" style={{ textShadow: '0 1px 6px rgba(255,255,255,0.1)' }}>
         <span className="font-semibold">{kfmt(count)}</span>{" "}
-        <span className="opacity-80">signed up</span>
+        <span className="opacity-85">signed up</span>
       </span>
     </div>
   );
@@ -138,23 +138,41 @@ export default function WaitlistForm({ onSuccess }) {
     e.preventDefault();
     if (loading) return;
     setErrorMsg("");
-    const fn = firstName.trim();
-    const ln = lastName.trim();
-    const em = email.trim();
+    
+    // Client-side validation and sanitization
+    const fn = firstName.trim().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
+    const ln = lastName.trim().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
+    const em = email.trim().toLowerCase().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
+    
     if (!fn) return setErrorMsg("Enter your first name.");
     if (!ln) return setErrorMsg("Enter your last name.");
     if (!em) return setErrorMsg("Enter your email.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))
+    
+    // Enhanced email validation
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(em) || em.length > 254) {
       return setErrorMsg("Use a valid email.");
+    }
+    
+    // Validate name length
+    const fullName = `${fn} ${ln}`;
+    if (fullName.length > 120) {
+      return setErrorMsg("Name is too long.");
+    }
+    
     setLoading(true);
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), 5000);
     try {
       const res = await fetch(`${API_URL}/api/waitlist`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: `${fn} ${ln}`, email: em }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({ name: fullName, email: em }),
         signal: ac.signal,
+        credentials: "omit", // Don't send cookies
       });
       clearTimeout(to);
       if (res.status === 204 || res.ok) {
@@ -167,11 +185,20 @@ export default function WaitlistForm({ onSuccess }) {
       } else {
         const data = await res.json().catch(() => ({}));
         setSuccess(false);
-        setErrorMsg(data.error || "Something went wrong.");
+        // Handle rate limiting
+        if (res.status === 429) {
+          setErrorMsg(data.error || "Too many requests. Please try again later.");
+        } else {
+          setErrorMsg(data.error || "Something went wrong.");
+        }
       }
-    } catch {
+    } catch (err) {
       setSuccess(false);
-      setErrorMsg("Network error. Try again.");
+      if (err.name === "AbortError") {
+        setErrorMsg("Request timed out. Please try again.");
+      } else {
+        setErrorMsg("Network error. Try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -181,7 +208,7 @@ export default function WaitlistForm({ onSuccess }) {
     <section className="w-full relative">
       <motion.div
         ref={cardRef}
-        className="relative mx-auto w-full px-4 max-w-[25rem] xs:max-w-[22rem] sm:max-w-[28rem] md:max-w-[36rem] lg:max-w-[56rem]"
+        className="relative mx-auto w-full px-3 xs:px-4 sm:px-6 max-w-[20rem] xs:max-w-[22rem] sm:max-w-[28rem] md:max-w-[36rem] lg:max-w-[56rem]"
         initial={{ opacity: 0, scale: 0.99 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
@@ -191,13 +218,13 @@ export default function WaitlistForm({ onSuccess }) {
           transform: "rotateX(var(--rx,0)) rotateY(var(--ry,0))",
         }}
       >
-        <div className="pointer-events-none absolute -inset-0.5 rounded-3xl bg-[radial-gradient(120px_80px_at_20%_0%,rgba(255,255,255,.12),transparent),radial-gradient(120px_80px_at_80%_100%,rgba(255,255,255,.1),transparent)] blur-md" />
-        <Card className="relative overflow-hidden rounded-3xl bg-black/65 backdrop-blur-xl border border-white/12 shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
-          <span className="pointer-events-none absolute inset-px rounded-[22px] bg-gradient-to-b from-white/10 to-transparent" />
+        <div className="pointer-events-none absolute -inset-0.5 rounded-3xl bg-[radial-gradient(120px_80px_at_20%_0%,rgba(255,255,255,.15),transparent),radial-gradient(120px_80px_at_80%_100%,rgba(255,255,255,.12),transparent)] blur-md" />
+        <Card className="relative overflow-hidden rounded-3xl bg-black/70 backdrop-blur-xl border border-white/16 shadow-[0_8px_32px_rgba(0,0,0,0.5),0_2px_8px_rgba(255,255,255,0.05)]">
+          <span className="pointer-events-none absolute inset-px rounded-[22px] bg-gradient-to-b from-white/12 to-transparent" />
           <CardHeader className="relative z-10 flex flex-col items-center justify-center text-center px-3 pt-2 pb-1 md:px-5 md:pt-3 md:pb-2 space-y-1.5">
             <div className="flex items-center gap-1.5">
-              <PenTool className="h-6 w-6 text-white/80" aria-hidden />
-              <CardTitle className="text-white text-2xl md:text-3xl font-extrabold">
+              <PenTool className="h-6 w-6 text-white/88" aria-hidden style={{ filter: 'drop-shadow(0 1px 8px rgba(255,255,255,0.15))' }} />
+              <CardTitle className="text-white text-2xl md:text-3xl font-extrabold" style={{ textShadow: '0 2px 20px rgba(255,255,255,0.2)' }}>
                 Early access
               </CardTitle>
             </div>
@@ -208,7 +235,7 @@ export default function WaitlistForm({ onSuccess }) {
           <CardContent className="relative z-10">
             <SuccessNote show={success} />
             <ErrorBanner message={errorMsg} />
-            <p className="mb-3 text-sm md:text-base text-white/90 text-center">
+            <p className="mb-3 text-sm md:text-base text-white/93 text-center" style={{ textShadow: '0 1px 10px rgba(255,255,255,0.1)' }}>
               Sign up for launch updates.
             </p>
             <form onSubmit={handleSubmit} noValidate className="space-y-3">
@@ -219,7 +246,7 @@ export default function WaitlistForm({ onSuccess }) {
                     placeholder="First name"
                     value={firstName}
                     onChange={(ev) => setFirstName(ev.target.value)}
-                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
+                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/25 focus-visible:!ring-2 focus-visible:!ring-black/40 focus-visible:!border-black/40 text-center shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                     autoComplete="off"
                     spellCheck={false}
                     required
@@ -231,7 +258,7 @@ export default function WaitlistForm({ onSuccess }) {
                     placeholder="Last name"
                     value={lastName}
                     onChange={(ev) => setLastName(ev.target.value)}
-                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
+                    className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/25 focus-visible:!ring-2 focus-visible:!ring-black/40 focus-visible:!border-black/40 text-center shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                     autoComplete="off"
                     spellCheck={false}
                     required
@@ -245,7 +272,7 @@ export default function WaitlistForm({ onSuccess }) {
                   placeholder="you@inkmail.com"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/30 focus-visible:!ring-2 focus-visible:!ring-black/30 text-center"
+                  className="ink-input h-12 pl-10 rounded-xl !bg-white !text-black !placeholder:text-black/60 !border !border-black/25 focus-visible:!ring-2 focus-visible:!ring-black/40 focus-visible:!border-black/40 text-center shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                   autoComplete="off"
                   spellCheck={false}
                   required
@@ -270,7 +297,8 @@ export default function WaitlistForm({ onSuccess }) {
                   }
                   whileTap={prefersReduced ? {} : { y: 0 }}
                   transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                  className="group relative w-full h-14 rounded-2xl text-white font-semibold tracking-tight text-xl md:text-2xl outline-none ring-0 border border-white/15 shadow-[0_6px_24px_rgba(0,0,0,0.35)] focus-visible:ring-2 focus-visible:ring-white/30 disabled:opacity-70 overflow-hidden"
+                  className="group relative w-full h-14 rounded-2xl text-white font-semibold tracking-tight text-xl md:text-2xl outline-none ring-0 border border-white/18 shadow-[0_8px_28px_rgba(0,0,0,0.4),0_2px_8px_rgba(255,255,255,0.08)] focus-visible:ring-2 focus-visible:ring-white/35 disabled:opacity-70 overflow-hidden"
+                  style={{ textShadow: '0 1px 12px rgba(255,255,255,0.15)' }}
                   style={{
                     backgroundImage:
                       "linear-gradient(120deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.08) 40%, rgba(255,255,255,0.14) 100%), radial-gradient(160px 100px at 20% 0%, rgba(255,255,255,0.10), transparent), radial-gradient(160px 100px at 80% 100%, rgba(255,255,255,0.08), transparent)",
@@ -295,14 +323,14 @@ export default function WaitlistForm({ onSuccess }) {
                 </motion.button>
               </div>
             </form>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-white/70">
-              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
+            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-white/75">
+              <div className="rounded-lg border border-white/12 bg-white/[0.06] backdrop-blur-sm px-2 py-1.5 grid place-items-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                 No spam
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
+              <div className="rounded-lg border border-white/12 bg-white/[0.06] backdrop-blur-sm px-2 py-1.5 grid place-items-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                 One update stream
               </div>
-              <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 grid place-items-center text-center">
+              <div className="rounded-lg border border-white/12 bg-white/[0.06] backdrop-blur-sm px-2 py-1.5 grid place-items-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                 Launch notice
               </div>
             </div>

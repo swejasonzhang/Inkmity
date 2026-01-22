@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   Images,
   BarChart3,
+  Languages,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,222 +41,288 @@ export const Shell = ({
   widthClass,
 }) => (
   <Card
-    className={`mx-auto w-full h-full ${widthClass ?? "max-w-2xl"} ${
+    className={`mx-auto w-full ${widthClass ?? "max-w-2xl"} ${
       heightClass
         ? heightClass
         : compact
         ? "min-h-[14rem] sm:min-h-[16rem] md:min-h-[18rem]"
         : "min-h-[20rem] sm:min-h-[22rem] md:min-h-[28rem]"
-    } bg-white/[0.04] border-white/15 backdrop-blur flex flex-col`}
+    } bg-white/[0.05] border-white/18 backdrop-blur-md flex flex-col shadow-[0_6px_24px_rgba(0,0,0,0.35)]`}
   >
-    <CardHeader className="flex flex-col items-center justify-center space-y-2 px-4 pt-4 pb-1 md:space-y-3 md:px-6 md:pt-6">
+    <CardHeader className="flex flex-col items-center justify-center space-y-2 px-3 xs:px-4 sm:px-5 pt-3 xs:pt-4 pb-1 md:space-y-3 md:px-6 md:pt-6">
       {icon
-        ? React.createElement(icon, { className: "h-5 w-5 text-white/80" })
+        ? React.createElement(icon, { className: "h-4 w-4 xs:h-5 xs:w-5 sm:h-5 sm:w-5 text-white/88", style: { filter: 'drop-shadow(0 1px 6px rgba(255,255,255,0.15))' } })
         : null}
-      <CardTitle className="text-lg md:text-xl text-center">{title}</CardTitle>
+      <CardTitle className="text-base xs:text-lg sm:text-lg md:text-xl text-center" style={{ textShadow: '0 1px 12px rgba(255,255,255,0.12)' }}>{title}</CardTitle>
       <div className="py-2 md:py-3">
-        <Separator className="bg-white/15 w-20 md:w-24" />
+        <Separator className="bg-white/15 w-16 xs:w-20 md:w-24" />
       </div>
     </CardHeader>
-    <CardContent className="flex-1 w-full flex flex-col items-center justify-center text-center px-4 pb-4 md:px-6 md:pb-6">
+    <CardContent className="flex-1 w-full flex flex-col items-center justify-center text-center px-3 xs:px-4 sm:px-5 pb-3 xs:pb-4 md:px-6 md:pb-6">
       {children}
     </CardContent>
   </Card>
 );
 
 export function MessagingCard({ compact = true }) {
-  const threads = [
-    {
-      header: "Client • Aiko S.",
-      date: "Nov 10",
-      status: "Seen",
-      msgs: [
-        {
-          me: false,
-          name: "Liam",
-          text: "Hey! Can you do fine-line roses?",
-          time: "10:12 AM",
-        },
-        {
-          me: true,
-          name: "Aiko",
-          text: "Absolutely. What size and placement?",
-          time: "10:14 AM",
-        },
-        {
-          me: false,
-          name: "Liam",
-          text: "Forearm, ~4in. Budget $300.",
-          time: "10:16 AM",
-        },
-        {
-          me: true,
-          name: "Aiko",
-          text: "Locked. Friday 2pm works?",
-          time: "10:18 AM",
-        },
-      ],
-    },
-    {
-      header: "Client • Marco T.",
-      date: "Nov 9",
-      status: "Delivered",
-      msgs: [
-        {
-          me: false,
-          name: "Sara",
-          text: "Looking for script 'amor fati'.",
-          time: "6:21 PM",
-        },
-        {
-          me: true,
-          name: "Marco",
-          text: "Nice. 3–4in wrist works best.",
-          time: "6:24 PM",
-        },
-        {
-          me: false,
-          name: "Sara",
-          text: "Cool. Can we do Monday?",
-          time: "6:25 PM",
-        },
-        {
-          me: true,
-          name: "Marco",
-          text: "Booked 11:00 AM. See you then.",
-          time: "6:27 PM",
-        },
-      ],
-    },
-    {
-      header: "Client • Evan R.",
-      date: "Nov 11",
-      status: "Seen",
-      msgs: [
-        {
-          me: false,
-          name: "Noah",
-          text: "Do you have healed blackwork examples?",
-          time: "3:03 PM",
-        },
-        {
-          me: true,
-          name: "Evan",
-          text: "Yes. Sending album link.",
-          time: "3:05 PM",
-        },
-        {
-          me: false,
-          name: "Noah",
-          text: "Great. What's the deposit?",
-          time: "3:06 PM",
-        },
-        {
-          me: true,
-          name: "Evan",
-          text: "$50 holds the slot. Refundable if rescheduled 48h+.",
-          time: "3:08 PM",
-        },
-      ],
-    },
-  ];
+  const [translatedMessages, setTranslatedMessages] = useState(new Set());
 
-  const ThreadCard = (t, ti) => (
-    <div
-      key={t.header}
-      className="rounded-2xl border border-white/15 bg-white/[0.04] p-3 md:p-4"
-    >
-      <div className="mb-2 text-xs md:text-sm font-semibold text-white/90">
-        {t.header}
-      </div>
-      <div className="space-y-2 md:space-y-3">
-        {t.msgs.map((m, i) => {
-          const isLast = i === t.msgs.length - 1;
-          return (
-            <motion.div
-              key={`${t.header}-${i}`}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.6 }}
-              transition={{ duration: 0.22, delay: i * 0.05 + ti * 0.02 }}
-              className={`flex ${m.me ? "justify-end" : "justify-start"}`}
-            >
-              <div className="max-w-[85%]">
-                <div
-                  className={`rounded-2xl px-3 py-1.5 md:px-3.5 md:py-2 text-[11px] md:text-sm leading-snug border ${
-                    m.me
-                      ? "bg-white !text-black border-white rounded-br-sm"
-                      : "bg-black !text-white border-white/20 rounded-bl-sm"
-                  }`}
-                >
-                  <div
-                    className={`mb-0.5 text-[9px] md:text-[10px] uppercase tracking-wide ${
-                      m.me ? "!text-black/70" : "!text-white/70"
-                    }`}
-                  >
-                    {m.name}
-                  </div>
-                  <div>{m.text}</div>
-                </div>
-                <div
-                  className={`mt-1 text-[10px] md:text-[11px] ${
-                    m.me
-                      ? "text-white/60 text-right pr-1"
-                      : "text-white/60 text-left pl-1"
-                  }`}
-                >
-                  <time className="normal-case">
-                    {m.time}
-                    {isLast ? ` • ${t.status} • ${t.date}` : ""}
-                  </time>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const toggleTranslation = (msgIndex) => {
+    const newSet = new Set(translatedMessages);
+    if (newSet.has(msgIndex)) {
+      newSet.delete(msgIndex);
+    } else {
+      newSet.add(msgIndex);
+    }
+    setTranslatedMessages(newSet);
+  };
+
+  const conversation = {
+    header: "Client • Liam M.",
+    date: "Nov 10, 2024",
+    status: "Seen",
+    language: "English",
+    msgs: [
+      {
+        me: false,
+        name: "Liam",
+        text: "¡Hola! ¿Puedes hacer rosas de línea fina? Busco algo delicado en mi antebrazo.",
+        originalText: "¡Hola! ¿Puedes hacer rosas de línea fina? Busco algo delicado en mi antebrazo.",
+        translatedText: "Hey! Can you do fine-line roses? I'm looking for something delicate on my forearm.",
+        time: "10:12 AM",
+        timestamp: "Nov 10, 2024 at 10:12:34 AM",
+        status: "Delivered",
+        seen: true,
+        language: "Spanish",
+      },
+      {
+        me: true,
+        name: "Aiko",
+        text: "Absolutely! I specialize in fine-line work. What size and placement are you thinking?",
+        originalText: "Absolutely! I specialize in fine-line work. What size and placement are you thinking?",
+        translatedText: null,
+        time: "10:14 AM",
+        timestamp: "Nov 10, 2024 at 10:14:12 AM",
+        status: "Seen",
+        seen: true,
+        language: "English",
+      },
+      {
+        me: false,
+        name: "Liam",
+        text: "Antebrazo, unas 4 pulgadas. El presupuesto es alrededor de $300. ¿Tienes ejemplos de trabajos curados?",
+        originalText: "Antebrazo, unas 4 pulgadas. El presupuesto es alrededor de $300. ¿Tienes ejemplos de trabajos curados?",
+        translatedText: "Forearm, about 4 inches. Budget is around $300. Do you have examples of healed work?",
+        time: "10:16 AM",
+        timestamp: "Nov 10, 2024 at 10:16:45 AM",
+        status: "Delivered",
+        seen: true,
+        language: "Spanish",
+      },
+      {
+        me: true,
+        name: "Aiko",
+        text: "Perfect size for that area. Yes, I'll send you a link to my healed portfolio. $300 works for that piece.",
+        originalText: "Perfect size for that area. Yes, I'll send you a link to my healed portfolio. $300 works for that piece.",
+        translatedText: null,
+        time: "10:18 AM",
+        timestamp: "Nov 10, 2024 at 10:18:22 AM",
+        status: "Seen",
+        seen: true,
+        language: "English",
+      },
+      {
+        me: false,
+        name: "Liam",
+        text: "¡Genial! ¿Cuándo es tu próxima disponibilidad?",
+        originalText: "¡Genial! ¿Cuándo es tu próxima disponibilidad?",
+        translatedText: "Awesome! When's your next availability?",
+        time: "10:19 AM",
+        timestamp: "Nov 10, 2024 at 10:19:08 AM",
+        status: "Delivered",
+        seen: true,
+        language: "Spanish",
+      },
+      {
+        me: true,
+        name: "Aiko",
+        text: "I have Friday at 2pm open. Does that work for you?",
+        originalText: "I have Friday at 2pm open. Does that work for you?",
+        translatedText: null,
+        time: "10:20 AM",
+        timestamp: "Nov 10, 2024 at 10:20:15 AM",
+        status: "Seen",
+        seen: true,
+        language: "English",
+      },
+      {
+        me: false,
+        name: "Liam",
+        text: "¡Perfecto! Lo tomaré. ¿Debo enviar un depósito?",
+        originalText: "¡Perfecto! Lo tomaré. ¿Debo enviar un depósito?",
+        translatedText: "Perfect! I'll take it. Should I send a deposit?",
+        time: "10:21 AM",
+        timestamp: "Nov 10, 2024 at 10:21:33 AM",
+        status: "Delivered",
+        seen: false,
+        language: "Spanish",
+      },
+    ],
+  };
 
   return (
     <Shell
       icon={MessageSquare}
       title="Real-time messaging"
       compact={compact}
-      widthClass="max-w-md md:max-w-6xl"
-      heightClass="min-h-[14rem] sm:min-h-[16rem] md:min-h-[26rem]"
+      widthClass="max-w-xs sm:max-w-md md:max-w-2xl lg:max-w-3xl"
+      heightClass="min-h-[20rem] sm:min-h-[24rem] md:min-h-[28rem] lg:min-h-[32rem]"
     >
-      {/* Mobile: scroll-snap carousel */}
-      <div className="w-full mx-auto md:hidden">
-        <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 px-1">
-          {threads.map((t, ti) => (
-            <div
-              key={`mobile-${t.header}`}
-              className="snap-center shrink-0 w-[85%]"
-            >
-              {ThreadCard(t, ti)}
+      <div className="w-full mx-auto max-w-full">
+        <div className="rounded-2xl border border-white/18 bg-white/[0.06] backdrop-blur-sm p-3 sm:p-4 md:p-5 shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+          {/* Header */}
+          <div className="mb-3 sm:mb-4 flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 pb-3 border-b border-white/10">
+            <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap">
+              <div className="text-xs xs:text-sm sm:text-base font-semibold text-white/93" style={{ textShadow: '0 1px 8px rgba(255,255,255,0.1)' }}>
+                {conversation.header}
+              </div>
+              <Badge
+                variant="outline"
+                className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 text-[8px] xs:text-[9px] sm:text-[10px] px-1.5 py-0.5 h-auto shrink-0"
+              >
+                Mixed languages
+              </Badge>
             </div>
-          ))}
+            <div className="text-[9px] xs:text-[10px] sm:text-xs text-white/70 shrink-0">
+              {conversation.date}
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="space-y-2 sm:space-y-3 max-h-[20rem] sm:max-h-[24rem] md:max-h-[28rem] overflow-y-auto pr-4 sm:pr-5 md:pr-6 custom-scrollbar">
+            {conversation.msgs.map((m, i) => {
+              const isLast = i === conversation.msgs.length - 1;
+              return (
+                <motion.div
+                  key={`msg-${i}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.22, delay: i * 0.05 }}
+                  className={`flex ${m.me ? "justify-end" : "justify-start"}`}
+                >
+                  <div className={`max-w-[90%] xs:max-w-[85%] sm:max-w-[80%] md:max-w-[75%] ${m.me ? "items-end" : "items-start"} flex flex-col`}>
+                    {/* Message bubble */}
+                    <div
+                      className={`rounded-2xl px-3 py-2 sm:px-3.5 sm:py-2.5 md:px-4 md:py-3 text-[11px] sm:text-xs md:text-sm leading-relaxed border shadow-[0_2px_8px_rgba(0,0,0,0.2)] ${
+                        m.me
+                          ? "bg-white !text-black border-white rounded-br-sm"
+                          : "bg-black !text-white border-white/22 rounded-bl-sm"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <div
+                          className={`text-[9px] sm:text-[10px] uppercase tracking-wide font-semibold ${
+                            m.me ? "!text-black/70" : "!text-white/70"
+                          }`}
+                        >
+                          {m.name}
+                        </div>
+                        {m.language !== "English" && m.translatedText && (
+                          <button
+                            onClick={() => toggleTranslation(i)}
+                            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] xs:text-[9px] transition-colors ${
+                              m.me
+                                ? "bg-black/10 hover:bg-black/20 text-black/70"
+                                : "bg-white/10 hover:bg-white/20 text-white/70"
+                            }`}
+                            title={translatedMessages.has(i) ? "Show original" : "Translate to English"}
+                          >
+                            <Languages className="h-2.5 w-2.5 xs:h-3 xs:w-3" />
+                            <span className="hidden xs:inline">{translatedMessages.has(i) ? "Original" : "Translate"}</span>
+                          </button>
+                        )}
+                      </div>
+                      <div className={`${m.me ? "text-black/95" : "text-white/95"}`}>
+                        {translatedMessages.has(i) && m.translatedText ? (
+                          <>
+                            <div className="mb-1.5">{m.translatedText}</div>
+                            <div className={`text-[10px] border-t pt-1.5 ${m.me ? "border-black/20 text-black/60" : "border-white/20 text-white/60"}`}>
+                              <span className="italic">{m.originalText}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div>{m.text}</div>
+                        )}
+                      </div>
+                      {m.language !== "English" && !translatedMessages.has(i) && (
+                        <div className={`mt-1.5 pt-1.5 border-t ${m.me ? "border-black/10" : "border-white/10"}`}>
+                          <Badge
+                            variant="outline"
+                            className={`text-[8px] xs:text-[9px] px-1.5 py-0.5 h-auto ${
+                              m.me
+                                ? "bg-black/10 border-black/20 text-black/60"
+                                : "bg-white/10 border-white/20 text-white/60"
+                            }`}
+                          >
+                            {m.language}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Timestamp and status row */}
+                    <div
+                      className={`mt-1 flex items-center gap-1 xs:gap-1.5 text-[8px] xs:text-[9px] sm:text-[10px] flex-wrap ${
+                        m.me
+                          ? "text-white/60 text-right flex-row-reverse justify-end"
+                          : "text-white/60 text-left justify-start"
+                      }`}
+                    >
+                      <time className="normal-case" title={m.timestamp}>
+                        {m.time}
+                      </time>
+                      <span className="opacity-50">•</span>
+                      <span className={`${m.status === "Seen" ? "text-emerald-400/80" : "text-white/50"}`}>
+                        {m.status}
+                      </span>
+                      {m.seen && m.me && (
+                        <>
+                          <span className="opacity-50">•</span>
+                          <span className="text-emerald-400/80 flex items-center gap-0.5">
+                            <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+                              <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+                            </svg>
+                          </span>
+                        </>
+                      )}
+                      {!m.seen && m.me && (
+                        <>
+                          <span className="opacity-50">•</span>
+                          <span className="text-white/40">Pending</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Desktop: unchanged 3-column grid */}
-      <div className="w-full mx-auto hidden md:grid grid-cols-3 gap-6 max-w-md md:max-w-5xl">
-        {threads.map((t, ti) => ThreadCard(t, ti))}
-      </div>
-
-      <div className="mt-4 md:mt-6 flex gap-2 justify-center">
+      <div className="mt-4 sm:mt-5 md:mt-6 flex flex-wrap gap-2 justify-center">
         <Badge
           variant="outline"
-          className="bg-white/5 border-white/15 text-white/80 gap-1"
+          className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 gap-1 shadow-[0_2px_8px_rgba(0,0,0,0.2)] text-[10px] sm:text-xs px-2 py-1"
         >
-          <Search className="h-3.5 w-3.5" /> Share refs
+          <Search className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Share refs
         </Badge>
         <Badge
           variant="outline"
-          className="bg-white/5 border-white/15 text-white/80 gap-1"
+          className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 gap-1 shadow-[0_2px_8px_rgba(0,0,0,0.2)] text-[10px] sm:text-xs px-2 py-1"
         >
-          <Star className="h-3.5 w-3.5" /> Keep context
+          <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Keep context
         </Badge>
       </div>
     </Shell>
@@ -285,7 +352,7 @@ export function FiltersCard({ compact = true }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: i * 0.06 }}
-              className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] md:text-xs"
+              className="inline-flex items-center justify-center rounded-full border border-white/22 bg-white/12 backdrop-blur-sm px-3 py-1.5 text-[11px] md:text-xs shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
             >
               {c}
             </motion.div>
@@ -337,7 +404,7 @@ export function RewardsCard({ compact = true }) {
       icon={Gift}
       title="Rewards & progression"
       compact={compact}
-      widthClass="max-w-md"
+      widthClass="max-w-2xl"
       heightClass="min-h-[40rem] sm:min-h-[44rem] md:min-h-[48rem]"
     >
       <div className="w-full mx-auto flex flex-col items-center text-center gap-5 md:gap-6">
@@ -422,7 +489,7 @@ export function RewardsCard({ compact = true }) {
             {unlocked.slice(-3).map((r, idx) => (
               <div
                 key={`${r}-${idx}`}
-                className="rounded-md border border-white/15 bg-white/[0.08] px-4 py-2.5 text-[12px] md:text-sm text-center"
+                className="rounded-md border border-white/18 bg-white/[0.1] backdrop-blur-sm px-4 py-2.5 text-[12px] md:text-sm text-center shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
               >
                 {r}
               </div>
@@ -436,7 +503,7 @@ export function RewardsCard({ compact = true }) {
             {earners.map((e) => (
               <div
                 key={e.k}
-                className="rounded-md border border-white/15 bg-white/[0.06] px-3 py-2"
+                className="rounded-md border border-white/18 bg-white/[0.08] backdrop-blur-sm px-3 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
               >
                 <div className="text-[11px] text-white/70">{e.k}</div>
                 <div className="text-sm font-semibold mt-1">+{e.v} pts</div>
@@ -448,19 +515,19 @@ export function RewardsCard({ compact = true }) {
         <div className="flex flex-wrap items-center justify-center gap-2 w-full px-2">
           <Badge
             variant="outline"
-            className="bg-white/5 border-white/15 text-white/80 h-9 inline-flex items-center justify-center w-full text-center"
+            className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 h-9 inline-flex items-center justify-center w-full text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
           >
             Book to earn
           </Badge>
           <Badge
             variant="outline"
-            className="bg-white/5 border-white/15 text-white/80 h-9 inline-flex items-center justify-center w-full text-center"
+            className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 h-9 inline-flex items-center justify-center w-full text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
           >
             Bonuses on reviews
           </Badge>
           <Badge
             variant="outline"
-            className="bg-white/5 border-white/15 text-white/80 h-9 inline-flex items-center justify-center w-full text-center"
+            className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 h-9 inline-flex items-center justify-center w-full text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
           >
             Streak multipliers
           </Badge>
@@ -552,7 +619,7 @@ export function FlashDealsCard({ compact = true }) {
       icon={Zap}
       title="Flash deals"
       compact={compact}
-      widthClass="max-w-md"
+      widthClass="max-w-2xl"
       heightClass="min-h-0"
     >
       <div className="w-full max-w-md mx-auto flex flex-col gap-6 md:gap-2">
@@ -565,7 +632,7 @@ export function FlashDealsCard({ compact = true }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.2, delay: i * 0.04 }}
-              className="rounded-lg border border-white/15 bg-white/[0.06] px-4 py-3 flex flex-col gap-2.5 shadow-[0_6px_20px_rgb(255_255_255/0.05)]"
+              className="rounded-lg border border-white/18 bg-white/[0.08] backdrop-blur-sm px-4 py-3 flex flex-col gap-2.5 shadow-[0_6px_24px_rgba(0,0,0,0.35),0_2px_8px_rgba(255,255,255,0.05)]"
             >
               <div className="flex items-start justify-between gap-3 min-w-0">
                 <h3 className="text-sm md:text-base font-semibold leading-tight flex-1 min-w-0 truncate">
@@ -575,15 +642,15 @@ export function FlashDealsCard({ compact = true }) {
 
               {/* One-line tags without horizontal scroll */}
               <div className="flex w-full items-center gap-1 flex-nowrap text-[10px] md:text-xs">
-                <span className="flex-1 min-w-0 truncate rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                <span className="flex-1 min-w-0 truncate rounded-full border border-white/18 bg-white/12 backdrop-blur-sm px-2 py-0.5 whitespace-nowrap shadow-[0_1px_6px_rgba(0,0,0,0.2)]">
                   <span className="text-white/60">Style:</span>{" "}
                   <span className="text-white/90">{d.style}</span>
                 </span>
-                <span className="flex-1 min-w-0 truncate rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                <span className="flex-1 min-w-0 truncate rounded-full border border-white/18 bg-white/12 backdrop-blur-sm px-2 py-0.5 whitespace-nowrap shadow-[0_1px_6px_rgba(0,0,0,0.2)]">
                   <span className="text-white/60">City:</span>{" "}
                   <span className="text-white/90">{d.city}</span>
                 </span>
-                <span className="flex-[0_0_auto] rounded-full border border-white/15 bg-white/10 px-2 py-0.5 whitespace-nowrap">
+                <span className="flex-[0_0_auto] rounded-full border border-white/18 bg-white/12 backdrop-blur-sm px-2 py-0.5 whitespace-nowrap shadow-[0_1px_6px_rgba(0,0,0,0.2)]">
                   ${d.price}
                 </span>
               </div>
@@ -641,7 +708,7 @@ export function LoyaltyCard({ compact = true }) {
   return (
     <Shell icon={Crown} title="Loyalty tiers" compact={compact}>
       <div className="w-full max-w-2xl mx-auto grid md:grid-cols-[1.2fr_1fr] gap-5 md:gap-8 items-stretch">
-        <div className="rounded-2xl border border-white/15 bg-white/[0.06] p-4 md:p-5 flex flex-col">
+        <div className="rounded-2xl border border-white/18 bg-white/[0.08] backdrop-blur-sm p-4 md:p-5 flex flex-col shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
           <div className="flex items-start justify-between gap-4 md:gap-6">
             <div>
               <div className="text-xs text-white/70">Current tier</div>
@@ -692,7 +759,7 @@ export function LoyaltyCard({ compact = true }) {
               {perksByTier[current.name].map((p) => (
                 <span
                   key={p}
-                  className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-xs h-7 inline-flex items-center justify-center text-center"
+                  className="rounded-full border border-white/18 bg-white/[0.08] backdrop-blur-sm px-3 py-1 text-xs h-7 inline-flex items-center justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
                 >
                   {p}
                 </span>
@@ -721,10 +788,10 @@ export function LoyaltyCard({ compact = true }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.25 }}
-                className={`relative rounded-xl border px-4 py-3 flex-1 ${
+                className={`relative rounded-xl border px-4 py-3 flex-1 shadow-[0_3px_12px_rgba(0,0,0,0.25)] ${
                   active
-                    ? "border-white bg-white/[0.08]"
-                    : "border-white/15 bg-white/[0.04]"
+                    ? "border-white/20 bg-white/[0.1] backdrop-blur-sm"
+                    : "border-white/18 bg-white/[0.06] backdrop-blur-sm"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -759,7 +826,7 @@ export function LoyaltyCard({ compact = true }) {
 function Metric({ label, value, children, className = "" }) {
   return (
     <div
-      className={`rounded-lg border border-white/15 bg-white/[0.06] px-3 py-2.5 md:py-3 ${className}`}
+      className={`rounded-lg border border-white/18 bg-white/[0.08] backdrop-blur-sm px-3 py-2.5 md:py-3 shadow-[0_3px_12px_rgba(0,0,0,0.25)] ${className}`}
     >
       <div className="flex items-center justify-between">
         <div className="text-sm">{label}</div>
@@ -811,7 +878,7 @@ export function AnalyticsCard({ compact = true }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: i * 0.05 }}
-              className="rounded-lg border border-white/15 bg-white/[0.06] px-3 py-2.5 md:py-3"
+              className="rounded-lg border border-white/18 bg-white/[0.08] backdrop-blur-sm px-3 py-2.5 md:py-3 shadow-[0_3px_12px_rgba(0,0,0,0.25)]"
             >
               <div className="text-[11px] text-white/70">{k.label}</div>
               <div className="mt-1 text-base md:text-lg font-semibold">
@@ -824,7 +891,7 @@ export function AnalyticsCard({ compact = true }) {
         <div className="grid md:grid-cols-2 gap-4 md:gap-6 items-stretch">
           <div>
             <h4 className="text-sm text-white/80 mb-2">Bookings (7d)</h4>
-            <div className="flex items-end justify-between gap-2 h-24 md:h-28 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2">
+            <div className="flex items-end justify-between gap-2 h-24 md:h-28 rounded-md border border-white/15 bg-white/[0.06] backdrop-blur-sm px-3 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
               {bars.map((b, i) => (
                 <motion.div
                   key={`b-${i}`}
@@ -852,7 +919,7 @@ export function AnalyticsCard({ compact = true }) {
 
           <div>
             <h4 className="text-sm text-white/80 mb-2">Revenue (7d)</h4>
-            <div className="flex items-end justify-between gap-2 h-24 md:h-28 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2">
+            <div className="flex items-end justify-between gap-2 h-24 md:h-28 rounded-md border border-white/15 bg-white/[0.06] backdrop-blur-sm px-3 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
               {bars.map((b, i) => (
                 <motion.div
                   key={`r-${i}`}
@@ -917,7 +984,7 @@ export function AnalyticsCard({ compact = true }) {
           </div>
 
           <div className="space-y-4 flex flex-col">
-            <div className="rounded-lg border border-white/15 bg-white/[0.06] p-3">
+            <div className="rounded-lg border border-white/18 bg-white/[0.08] backdrop-blur-sm p-3 shadow-[0_3px_12px_rgba(0,0,0,0.25)]">
               <div className="text-sm mb-2">Top styles</div>
               <div className="space-y-2">
                 {topStyles.map((s) => (
@@ -932,7 +999,7 @@ export function AnalyticsCard({ compact = true }) {
               </div>
             </div>
 
-            <div className="rounded-lg border border-white/15 bg-white/[0.06] p-3 h-full min-h-[120px] md:min-h-[160px] overflow-hidden flex flex-col">
+            <div className="rounded-lg border border-white/18 bg-white/[0.08] backdrop-blur-sm p-3 h-full min-h-[120px] md:min-h-[160px] overflow-hidden flex flex-col shadow-[0_3px_12px_rgba(0,0,0,0.25)]">
               <div className="text-sm md:text-base font-semibold mb-2 text-center">
                 Next openings
               </div>
@@ -948,7 +1015,7 @@ export function AnalyticsCard({ compact = true }) {
                     .slice(0, 3)
                     .map((o) => (
                       <li key={o.when} className="w-full">
-                        <div className="w-full rounded-md border border-white/15 bg-white/[0.08] px-4 py-2 text-white/90 text-[13px] md:text-sm text-center">
+                        <div className="w-full rounded-md border border-white/18 bg-white/[0.1] backdrop-blur-sm px-4 py-2 text-white/93 text-[13px] md:text-sm text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                           {o.when}
                         </div>
                       </li>
@@ -962,13 +1029,13 @@ export function AnalyticsCard({ compact = true }) {
 
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Badge
-            className="bg-white/5 border-white/15 text-white/80 h-8 inline-flex items-center"
+            className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 h-8 inline-flex items-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
             variant="outline"
           >
             Manage payouts
           </Badge>
           <Badge
-            className="bg-white/5 border-white/15 text-white/80 h-8 inline-flex items-center"
+            className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 h-8 inline-flex items-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
             variant="outline"
           >
             Improve ranking
@@ -997,13 +1064,13 @@ export function PreferencesCard({ compact = true }) {
               Pick one or more preferred tattoo styles.
             </p>
             <Select>
-              <SelectTrigger className="w-full bg-white/10 border-white/15 text-white justify-center text-center">
+              <SelectTrigger className="w-full bg-white/12 backdrop-blur-sm border-white/18 text-white justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                 <SelectValue
                   placeholder="Choose styles"
                   className="text-center"
                 />
               </SelectTrigger>
-              <SelectContent className="bg-black/90 border-white/15 text-white text-center">
+              <SelectContent className="bg-black/92 backdrop-blur-md border-white/18 text-white text-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                 <SelectItem
                   value="fine-line"
                   className="justify-center text-center"
@@ -1052,13 +1119,13 @@ export function PreferencesCard({ compact = true }) {
               Set your typical spend range per session.
             </p>
             <Select>
-              <SelectTrigger className="w-full bg-white/10 border-white/15 text-white justify-center text-center">
+              <SelectTrigger className="w-full bg-white/12 backdrop-blur-sm border-white/18 text-white justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                 <SelectValue
                   placeholder="Select budget"
                   className="text-center"
                 />
               </SelectTrigger>
-              <SelectContent className="bg-black/90 border-white/15 text-white text-center">
+              <SelectContent className="bg-black/92 backdrop-blur-md border-white/18 text-white text-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                 <SelectItem
                   value="100-200"
                   className="justify-center text-center"
@@ -1095,13 +1162,13 @@ export function PreferencesCard({ compact = true }) {
               Choose where you want to book.
             </p>
             <Select>
-              <SelectTrigger className="w-full bg-white/10 border-white/15 text-white justify-center text-center">
+              <SelectTrigger className="w-full bg-white/12 backdrop-blur-sm border-white/18 text-white justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                 <SelectValue
                   placeholder="Pick a city"
                   className="text-center"
                 />
               </SelectTrigger>
-              <SelectContent className="bg-black/90 border-white/15 text-white text-center">
+              <SelectContent className="bg-black/92 backdrop-blur-md border-white/18 text-white text-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                 <SelectItem value="nyc" className="justify-center text-center">
                   New York City
                 </SelectItem>
@@ -1135,13 +1202,13 @@ export function PreferencesCard({ compact = true }) {
               Tell artists when you prefer to meet.
             </p>
             <Select>
-              <SelectTrigger className="w-full bg-white/10 border-white/15 text-white justify-center text-center">
+              <SelectTrigger className="w-full bg-white/12 backdrop-blur-sm border-white/18 text-white justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                 <SelectValue
                   placeholder="When are you free?"
                   className="text-center"
                 />
               </SelectTrigger>
-              <SelectContent className="bg-black/90 border-white/15 text-white text-center">
+              <SelectContent className="bg-black/92 backdrop-blur-md border-white/18 text-white text-center shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                 <SelectItem value="asap" className="justify-center text-center">
                   ASAP
                 </SelectItem>
@@ -1206,7 +1273,7 @@ export function GalleryCard({ compact = true }) {
                 scale: 1.04,
                 transition: { type: "spring", stiffness: 220, damping: 18 },
               }}
-              className="group relative w-full max-w-[220px] sm:max-w-[260px] aspect-[2/3] rounded-xl border border-white/15 bg-black overflow-visible"
+              className="group relative w-full max-w-[220px] sm:max-w-[260px] aspect-[2/3] rounded-xl border border-white/18 bg-black overflow-visible shadow-[0_6px_24px_rgba(0,0,0,0.4)]"
               style={{ transformStyle: "preserve-3d", willChange: "transform" }}
             >
               <div className="absolute inset-0 rounded-xl overflow-hidden">
@@ -1221,7 +1288,7 @@ export function GalleryCard({ compact = true }) {
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/25 to-transparent" />
               </div>
               <figcaption className="absolute left-2 bottom-2">
-                <span className="rounded-full border border-white/20 bg-black/70 backdrop-blur px-2.5 py-1 text-[10px] font-medium text-white">
+                <span className="rounded-full border border-white/22 bg-black/75 backdrop-blur-sm px-2.5 py-1 text-[10px] font-medium text-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.4)]" style={{ textShadow: '0 1px 6px rgba(255,255,255,0.1)' }}>
                   {img.label}
                 </span>
               </figcaption>
@@ -1234,13 +1301,13 @@ export function GalleryCard({ compact = true }) {
       <div className="mt-4 md:mt-6 flex gap-2 justify-center w-full px-2">
         <Badge
           variant="outline"
-          className="bg-white/5 border-white/15 text-white/80 h-8 inline-flex items-center w-full"
+          className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 h-8 inline-flex items-center w-full shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
         >
           Browse styles
         </Badge>
         <Badge
           variant="outline"
-          className="bg-white/5 border-white/15 text-white/80 h-8 inline-flex items-center w-full"
+          className="bg-white/6 border-white/18 backdrop-blur-sm text-white/85 h-8 inline-flex items-center w-full shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
         >
           Save favorites
         </Badge>

@@ -4,6 +4,14 @@ import cors from "cors";
 import helmet from "helmet";
 import mongoose from "mongoose";
 import waitlistRoutes from "./routes/waitlist.js";
+import {
+  apiLimiter,
+  postLimiter,
+  securityHeaders,
+  validateRequestSize,
+  ipFilter,
+} from "./middleware/security.js";
+import { sanitizeInput } from "./middleware/validation.js";
 
 const app = express();
 
@@ -20,6 +28,43 @@ if (process.env.ALLOWED_ORIGINS) {
     allowlist.add(o.trim())
   );
 }
+
+// Trust proxy for accurate IP addresses
+app.set("trust proxy", 1);
+
+// Security middleware - apply early
+app.use(ipFilter);
+app.use(securityHeaders);
+app.use(validateRequestSize);
+app.use(sanitizeInput);
+
+// Enhanced Helmet configuration
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://api.postmarkapp.com"],
+        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    frameguard: { action: "deny" },
+    noSniff: true,
+    xssFilter: true,
+  })
+);
 
 app.use(
   cors({
@@ -44,15 +89,39 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(express.json({ limit: "256kb" }));
+// Rate limiting
+app.use("/api", apiLimiter);
+app.use("/api/waitlist", postLimiter);
+
+// Body parsing with size limit
+app.use(express.json({ limit: "256kb", strict: true }));
+app.use(express.urlencoded({ extended: false, limit: "256kb" }));
 
 app.use("/api/waitlist", waitlistRoutes);
 app.get("/healthz", (req, res) => res.status(200).json({ ok: true }));
 
+// Enhanced error handling
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Server error" });
+  // Log error details server-side only
+  console.error("Unhandled error:", {
+    message: err?.message,
+    stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
+    path: req.path,
+    method: req.method,
+    ip: req.clientIP || req.ip,
+  });
+
+  // Don't leak error details to clients
+  const statusCode = err.statusCode || 500;
+  const message =
+    statusCode === 500
+      ? "Server error, please try again later"
+      : err.message || "An error occurred";
+
+  res.status(statusCode).json({
+    error: message,
+    ...(process.env.NODE_ENV === "development" && { details: err.message }),
+  });
 });
 
 const PORT = process.env.PORT || 8080;

@@ -28,10 +28,25 @@ body::-webkit-scrollbar {
     background: transparent !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 
   html {
     font-size: clamp(17px, 1.1vw + 14px, 19px);
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  img, video {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: auto;
   }
 
   :root {
@@ -65,6 +80,8 @@ body::-webkit-scrollbar {
   body {
     color: #fff !important;
     overflow-x: hidden;
+    font-feature-settings: "kern" 1, "liga" 1;
+    font-kerning: normal;
   }
 
   * {
@@ -115,4 +132,31 @@ body::-webkit-scrollbar {
 .ink-input::placeholder {
   color: rgba(0, 0, 0, 0.6) !important;
   opacity: 1 !important;
+}
+
+/* Custom scrollbar for message threads */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+  scrollbar-gutter: stable;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  margin: 8px 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  margin: 0 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }

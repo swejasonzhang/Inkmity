@@ -18,7 +18,22 @@ async function connectDB() {
 }
 
 function setCors(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const allowlist = new Set([
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://inkmity.com",
+    "https://www.inkmity.com",
+  ]);
+  
+  const origin = req.headers.origin;
+  const allowedOrigin =
+    origin && (allowlist.has(origin) || /^http:\/\/localhost:\d+$/.test(origin))
+      ? origin
+      : "https://inkmity.com";
+  
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader(
@@ -26,6 +41,10 @@ function setCors(req, res) {
     "Content-Type, Authorization, Accept"
   );
   res.setHeader("Access-Control-Max-Age", "86400");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 }
 
 function getBody(req) {
@@ -57,31 +76,38 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
+    // Sanitize and validate input
     const rawName = String(req.body?.name ?? "")
       .trim()
-      .replace(/\s+/g, " ");
+      .replace(/\0/g, "") // Remove null bytes
+      .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
+      .replace(/\s+/g, " "); // Normalize whitespace
+    
     const emailNorm = String(req.body?.email ?? "")
       .trim()
-      .toLowerCase();
+      .toLowerCase()
+      .replace(/\0/g, "") // Remove null bytes
+      .replace(/[\x00-\x1F\x7F]/g, ""); // Remove control characters
 
     if (!rawName || !emailNorm) {
-      console.log("joinWaitlist validation failed: missing name/email", {
-        rawName,
-        emailNorm,
-      });
       return res.status(400).json({ error: "Name and email are required" });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm)) {
-      console.log("joinWaitlist validation failed: invalid email", {
-        emailNorm,
-      });
-      return res.status(400).json({ error: "Use a valid email" });
+    
+    // Enhanced email validation
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(emailNorm) || emailNorm.length > 254) {
+      return res.status(400).json({ error: "Invalid email format" });
     }
-    if (rawName.length > 120) {
-      console.log("joinWaitlist validation failed: name too long", {
-        rawNameLength: rawName.length,
-      });
-      return res.status(400).json({ error: "Name is too long" });
+    
+    // Enhanced name validation
+    if (rawName.length > 120 || rawName.length < 1) {
+      return res.status(400).json({ error: "Name must be between 1 and 120 characters" });
+    }
+    
+    // Validate name contains only allowed characters
+    if (!/^[a-zA-Z\s'-]+$/.test(rawName)) {
+      return res.status(400).json({ error: "Name contains invalid characters" });
     }
 
     const firstName = rawName.split(" ")[0];
@@ -296,6 +322,38 @@ export default async function handler(req, res) {
     setCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).end();
 
+    // Rate limiting for serverless (simple in-memory store)
+    if (req.method === "POST") {
+      const clientIP = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "unknown";
+      const rateLimitKey = `waitlist_${clientIP}`;
+      const now = Date.now();
+      const windowMs = 60 * 60 * 1000; // 1 hour
+      const maxRequests = 5;
+      
+      if (!global.rateLimitStore) {
+        global.rateLimitStore = new Map();
+      }
+      
+      const record = global.rateLimitStore.get(rateLimitKey);
+      if (record && now < record.resetTime && record.count >= maxRequests) {
+        return res.status(429).json({
+          error: "Too many signup attempts, please try again in an hour",
+        });
+      }
+      
+      if (!record || now >= record.resetTime) {
+        global.rateLimitStore.set(rateLimitKey, { count: 1, resetTime: now + windowMs });
+      } else {
+        record.count++;
+      }
+
+      // Validate request size
+      const contentLength = req.headers["content-length"];
+      if (contentLength && parseInt(contentLength) > 256 * 1024) {
+        return res.status(413).json({ error: "Request payload too large" });
+      }
+    }
+
     await connectDB();
 
     if (req.method === "GET") {
@@ -315,9 +373,9 @@ export default async function handler(req, res) {
     } catch {}
     console.error("waitlist handler error:", {
       message: err?.message,
-      stack: err?.stack,
-      raw: err,
+      stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
     });
-    return res.status(500).json({ error: err?.message || "Server error" });
+    // Don't leak error details to clients
+    return res.status(500).json({ error: "Server error, please try again later" });
   }
 }
