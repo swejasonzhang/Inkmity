@@ -19,31 +19,25 @@ export const getTotalSignups = async (req, res) => {
 
 export const joinWaitlist = async (req, res) => {
   try {
-    const rawName = String(req.body?.name ?? "")
-      .trim()
-      .replace(/\s+/g, " ");
-    const emailNorm = String(req.body?.email ?? "")
-      .trim()
-      .toLowerCase();
+    // Input is already validated and sanitized by middleware
+    const rawName = req.body.name.trim().replace(/\s+/g, " ");
+    const emailNorm = req.body.email.trim().toLowerCase();
 
+    // Additional server-side validation (defense in depth)
     if (!rawName || !emailNorm) {
-      console.log("joinWaitlist validation failed: missing name/email", {
-        rawName,
-        emailNorm,
-      });
       return res.status(400).json({ error: "Name and email are required" });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm)) {
-      console.log("joinWaitlist validation failed: invalid email", {
-        emailNorm,
-      });
-      return res.status(400).json({ error: "Use a valid email" });
+    
+    // Validate email format (already done by middleware, but double-check)
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(emailNorm) || emailNorm.length > 254) {
+      return res.status(400).json({ error: "Invalid email format" });
     }
-    if (rawName.length > 120) {
-      console.log("joinWaitlist validation failed: name too long", {
-        rawNameLength: rawName.length,
-      });
-      return res.status(400).json({ error: "Name is too long" });
+    
+    // Validate name length (already done by middleware, but double-check)
+    if (rawName.length > 120 || rawName.length < 1) {
+      return res.status(400).json({ error: "Name must be between 1 and 120 characters" });
     }
 
     const firstName = rawName.split(" ")[0];

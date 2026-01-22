@@ -3,10 +3,21 @@ import {
   getTotalSignups,
   joinWaitlist,
 } from "../controllers/waitlistController.js";
+import {
+  validateWaitlistSignup,
+  handleValidationErrors,
+} from "../middleware/validation.js";
+import { signupLimiter } from "../middleware/security.js";
 
 const router = express.Router();
 
 router.get("/", getTotalSignups);
-router.post("/", joinWaitlist);
+router.post(
+  "/",
+  signupLimiter,
+  validateWaitlistSignup,
+  handleValidationErrors,
+  joinWaitlist
+);
 
 export default router;
