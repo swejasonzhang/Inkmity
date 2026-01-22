@@ -164,8 +164,92 @@ export function MessagingCard({ compact = true }) {
         time: "10:21 AM",
         timestamp: "Nov 10, 2024 at 10:21:33 AM",
         status: "Delivered",
-        seen: false,
+        seen: true,
         language: "Spanish",
+      },
+      {
+        me: true,
+        name: "Aiko",
+        text: "Yes, a $50 deposit will secure your spot. It's refundable if you reschedule with 48+ hours notice. I'll send you the payment link.",
+        originalText: "Yes, a $50 deposit will secure your spot. It's refundable if you reschedule with 48+ hours notice. I'll send you the payment link.",
+        translatedText: null,
+        time: "10:22 AM",
+        timestamp: "Nov 10, 2024 at 10:22:08 AM",
+        status: "Seen",
+        seen: true,
+        language: "English",
+      },
+      {
+        me: false,
+        name: "Liam",
+        text: "Perfecto, lo haré ahora. ¿Necesitas alguna referencia específica o puedo elegir el diseño?",
+        originalText: "Perfecto, lo haré ahora. ¿Necesitas alguna referencia específica o puedo elegir el diseño?",
+        translatedText: "Perfect, I'll do it now. Do you need any specific reference or can I choose the design?",
+        time: "10:23 AM",
+        timestamp: "Nov 10, 2024 at 10:23:15 AM",
+        status: "Delivered",
+        seen: true,
+        language: "Spanish",
+      },
+      {
+        me: true,
+        name: "Aiko",
+        text: "Feel free to share any reference images you have in mind, or I can design something custom based on your style preferences. Either works!",
+        originalText: "Feel free to share any reference images you have in mind, or I can design something custom based on your style preferences. Either works!",
+        translatedText: null,
+        time: "10:24 AM",
+        timestamp: "Nov 10, 2024 at 10:24:42 AM",
+        status: "Seen",
+        seen: true,
+        language: "English",
+      },
+      {
+        me: false,
+        name: "Liam",
+        text: "Genial, te enviaré algunas fotos que me gustan. ¿Cuánto tiempo antes debo llegar el viernes?",
+        originalText: "Genial, te enviaré algunas fotos que me gustan. ¿Cuánto tiempo antes debo llegar el viernes?",
+        translatedText: "Great, I'll send you some photos I like. How early should I arrive on Friday?",
+        time: "10:25 AM",
+        timestamp: "Nov 10, 2024 at 10:25:28 AM",
+        status: "Delivered",
+        seen: true,
+        language: "Spanish",
+      },
+      {
+        me: true,
+        name: "Aiko",
+        text: "Just arrive 5-10 minutes early. The studio is at 123 Ink Street, 2nd floor. I'll send you the exact address and parking info in a confirmation email.",
+        originalText: "Just arrive 5-10 minutes early. The studio is at 123 Ink Street, 2nd floor. I'll send you the exact address and parking info in a confirmation email.",
+        translatedText: null,
+        time: "10:26 AM",
+        timestamp: "Nov 10, 2024 at 10:26:10 AM",
+        status: "Seen",
+        seen: true,
+        language: "English",
+      },
+      {
+        me: false,
+        name: "Liam",
+        text: "Perfecto, gracias por toda la información. ¡Nos vemos el viernes!",
+        originalText: "Perfecto, gracias por toda la información. ¡Nos vemos el viernes!",
+        translatedText: "Perfect, thanks for all the information. See you Friday!",
+        time: "10:27 AM",
+        timestamp: "Nov 10, 2024 at 10:27:05 AM",
+        status: "Delivered",
+        seen: true,
+        language: "Spanish",
+      },
+      {
+        me: true,
+        name: "Aiko",
+        text: "Looking forward to it! Feel free to send those reference photos anytime. See you Friday at 2pm! 🎨",
+        originalText: "Looking forward to it! Feel free to send those reference photos anytime. See you Friday at 2pm! 🎨",
+        translatedText: null,
+        time: "10:27 AM",
+        timestamp: "Nov 10, 2024 at 10:27:45 AM",
+        status: "Seen",
+        seen: true,
+        language: "English",
       },
     ],
   };
@@ -180,7 +264,6 @@ export function MessagingCard({ compact = true }) {
     >
       <div className="w-full mx-auto max-w-full">
         <div className="rounded-2xl border border-white/18 bg-white/[0.06] backdrop-blur-sm p-3 sm:p-4 md:p-5 shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
-          {/* Header */}
           <div className="mb-3 sm:mb-4 flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 pb-3 border-b border-white/10">
             <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap">
               <div className="text-xs xs:text-sm sm:text-base font-semibold text-white/93" style={{ textShadow: '0 1px 8px rgba(255,255,255,0.1)' }}>
@@ -198,10 +281,19 @@ export function MessagingCard({ compact = true }) {
             </div>
           </div>
 
-          {/* Messages */}
           <div className="space-y-2 sm:space-y-3 max-h-[20rem] sm:max-h-[24rem] md:max-h-[28rem] overflow-y-auto pr-4 sm:pr-5 md:pr-6 custom-scrollbar">
             {conversation.msgs.map((m, i) => {
               const isLast = i === conversation.msgs.length - 1;
+              const lastSeenIndex = conversation.msgs.findLastIndex((msg, idx) => {
+                if (msg.me) {
+                  return msg.seen === true;
+                } else {
+                  return msg.seen === true;
+                }
+              });
+              
+              const showStatus = i >= lastSeenIndex;
+              
               return (
                 <motion.div
                   key={`msg-${i}`}
@@ -212,7 +304,6 @@ export function MessagingCard({ compact = true }) {
                   className={`flex ${m.me ? "justify-end" : "justify-start"}`}
                 >
                   <div className={`max-w-[90%] xs:max-w-[85%] sm:max-w-[80%] md:max-w-[75%] ${m.me ? "items-end" : "items-start"} flex flex-col`}>
-                    {/* Message bubble */}
                     <div
                       className={`rounded-2xl px-3 py-2 sm:px-3.5 sm:py-2.5 md:px-4 md:py-3 text-[11px] sm:text-xs md:text-sm leading-relaxed border shadow-[0_2px_8px_rgba(0,0,0,0.2)] ${
                         m.me
@@ -271,7 +362,6 @@ export function MessagingCard({ compact = true }) {
                       )}
                     </div>
                     
-                    {/* Timestamp and status row */}
                     <div
                       className={`mt-1 flex items-center gap-1 xs:gap-1.5 text-[8px] xs:text-[9px] sm:text-[10px] flex-wrap ${
                         m.me
@@ -282,24 +372,28 @@ export function MessagingCard({ compact = true }) {
                       <time className="normal-case" title={m.timestamp}>
                         {m.time}
                       </time>
-                      <span className="opacity-50">•</span>
-                      <span className={`${m.status === "Seen" ? "text-emerald-400/80" : "text-white/50"}`}>
-                        {m.status}
-                      </span>
-                      {m.seen && m.me && (
+                      {showStatus && (
                         <>
                           <span className="opacity-50">•</span>
-                          <span className="text-emerald-400/80 flex items-center gap-0.5">
-                            <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
-                              <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
-                            </svg>
+                          <span className={`${m.status === "Seen" ? "text-emerald-400/80" : "text-white/50"}`}>
+                            {m.status}
                           </span>
-                        </>
-                      )}
-                      {!m.seen && m.me && (
-                        <>
-                          <span className="opacity-50">•</span>
-                          <span className="text-white/40">Pending</span>
+                          {m.seen && m.me && (
+                            <>
+                              <span className="opacity-50">•</span>
+                              <span className="text-emerald-400/80 flex items-center gap-0.5">
+                                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
+                                  <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+                                </svg>
+                              </span>
+                            </>
+                          )}
+                          {!m.seen && m.me && (
+                            <>
+                              <span className="opacity-50">•</span>
+                              <span className="text-white/40">Pending</span>
+                            </>
+                          )}
                         </>
                       )}
                     </div>
@@ -640,7 +734,6 @@ export function FlashDealsCard({ compact = true }) {
                 </h3>
               </div>
 
-              {/* One-line tags without horizontal scroll */}
               <div className="flex w-full items-center gap-1 flex-nowrap text-[10px] md:text-xs">
                 <span className="flex-1 min-w-0 truncate rounded-full border border-white/18 bg-white/12 backdrop-blur-sm px-2 py-0.5 whitespace-nowrap shadow-[0_1px_6px_rgba(0,0,0,0.2)]">
                   <span className="text-white/60">Style:</span>{" "}

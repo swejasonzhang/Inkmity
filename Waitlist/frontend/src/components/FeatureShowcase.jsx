@@ -45,7 +45,6 @@ export default function FeatureShowcase() {
         <MessagingCard compact />
       </div>
 
-      {/* Mobile Toggle */}
       <div className="mt-6 md:hidden">
         <div className="mx-auto w-full max-w-xs">
           <motion.div
@@ -88,9 +87,7 @@ export default function FeatureShowcase() {
         </div>
       </div>
 
-      {/* Side by side layout for desktop, single view for mobile */}
       <div className="mt-6 md:mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
-        {/* Client Section */}
         <motion.div
           initial="hidden"
           whileInView="show"
@@ -122,7 +119,6 @@ export default function FeatureShowcase() {
           </motion.div>
         </motion.div>
 
-        {/* Artist Section */}
         <motion.div
           initial="hidden"
           whileInView="show"

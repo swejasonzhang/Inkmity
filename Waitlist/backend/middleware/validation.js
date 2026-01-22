@@ -1,12 +1,9 @@
 import { body, validationResult } from "express-validator";
 
-// Input sanitization and validation
 export const sanitizeInput = (req, res, next) => {
-  // Sanitize string inputs
   if (req.body) {
     Object.keys(req.body).forEach((key) => {
       if (typeof req.body[key] === "string") {
-        // Remove null bytes and control characters
         req.body[key] = req.body[key]
           .replace(/\0/g, "")
           .replace(/[\x00-\x1F\x7F]/g, "");
@@ -16,7 +13,6 @@ export const sanitizeInput = (req, res, next) => {
   next();
 };
 
-// Validation rules for waitlist signup
 export const validateWaitlistSignup = [
   body("name")
     .trim()
@@ -27,7 +23,6 @@ export const validateWaitlistSignup = [
     .matches(/^[a-zA-Z\s'-]+$/)
     .withMessage("Name contains invalid characters")
     .customSanitizer((value) => {
-      // Normalize whitespace
       return value.replace(/\s+/g, " ");
     }),
   
@@ -41,7 +36,6 @@ export const validateWaitlistSignup = [
     .isLength({ max: 254 })
     .withMessage("Email is too long")
     .custom((value) => {
-      // Block common disposable email domains
       const disposableDomains = [
         "tempmail.com",
         "throwaway.email",
@@ -56,7 +50,6 @@ export const validateWaitlistSignup = [
     }),
 ];
 
-// Validation error handler
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -68,18 +61,15 @@ export const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Email validation helper
 export const isValidEmail = (email) => {
   const emailRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   return emailRegex.test(email) && email.length <= 254;
 };
 
-// Name validation helper
 export const isValidName = (name) => {
   if (!name || typeof name !== "string") return false;
   const trimmed = name.trim();
   if (trimmed.length < 1 || trimmed.length > 120) return false;
-  // Allow letters, spaces, hyphens, and apostrophes
   return /^[a-zA-Z\s'-]+$/.test(trimmed);
 };

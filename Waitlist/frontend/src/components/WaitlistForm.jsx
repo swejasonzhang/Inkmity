@@ -139,7 +139,6 @@ export default function WaitlistForm({ onSuccess }) {
     if (loading) return;
     setErrorMsg("");
     
-    // Client-side validation and sanitization
     const fn = firstName.trim().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
     const ln = lastName.trim().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
     const em = email.trim().toLowerCase().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
@@ -148,13 +147,11 @@ export default function WaitlistForm({ onSuccess }) {
     if (!ln) return setErrorMsg("Enter your last name.");
     if (!em) return setErrorMsg("Enter your email.");
     
-    // Enhanced email validation
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     if (!emailRegex.test(em) || em.length > 254) {
       return setErrorMsg("Use a valid email.");
     }
     
-    // Validate name length
     const fullName = `${fn} ${ln}`;
     if (fullName.length > 120) {
       return setErrorMsg("Name is too long.");
@@ -185,7 +182,6 @@ export default function WaitlistForm({ onSuccess }) {
       } else {
         const data = await res.json().catch(() => ({}));
         setSuccess(false);
-        // Handle rate limiting
         if (res.status === 429) {
           setErrorMsg(data.error || "Too many requests. Please try again later.");
         } else {

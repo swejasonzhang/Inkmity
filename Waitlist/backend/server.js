@@ -29,16 +29,13 @@ if (process.env.ALLOWED_ORIGINS) {
   );
 }
 
-// Trust proxy for accurate IP addresses
 app.set("trust proxy", 1);
 
-// Security middleware - apply early
 app.use(ipFilter);
 app.use(securityHeaders);
 app.use(validateRequestSize);
 app.use(sanitizeInput);
 
-// Enhanced Helmet configuration
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -89,20 +86,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate limiting
 app.use("/api", apiLimiter);
 app.use("/api/waitlist", postLimiter);
 
-// Body parsing with size limit
 app.use(express.json({ limit: "256kb", strict: true }));
 app.use(express.urlencoded({ extended: false, limit: "256kb" }));
 
 app.use("/api/waitlist", waitlistRoutes);
 app.get("/healthz", (req, res) => res.status(200).json({ ok: true }));
 
-// Enhanced error handling
 app.use((err, req, res, next) => {
-  // Log error details server-side only
   console.error("Unhandled error:", {
     message: err?.message,
     stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
@@ -111,7 +104,6 @@ app.use((err, req, res, next) => {
     ip: req.clientIP || req.ip,
   });
 
-  // Don't leak error details to clients
   const statusCode = err.statusCode || 500;
   const message =
     statusCode === 500
@@ -126,11 +118,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 8080;
 const URI = process.env.MONGO_URI || process.env.MONGODB_URI;
-
-console.log("Boot env:", {
-  hasMongoUri: !!URI,
-  hasPostmarkToken: !!process.env.POSTMARK_SERVER_TOKEN,
-});
 
 mongoose.set("strictQuery", true);
 mongoose

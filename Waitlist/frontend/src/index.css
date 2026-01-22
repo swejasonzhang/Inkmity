@@ -134,7 +134,6 @@ body::-webkit-scrollbar {
   opacity: 1 !important;
 }
 
-/* Custom scrollbar for message threads */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);

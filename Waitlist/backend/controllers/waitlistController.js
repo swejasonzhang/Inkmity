@@ -19,23 +19,19 @@ export const getTotalSignups = async (req, res) => {
 
 export const joinWaitlist = async (req, res) => {
   try {
-    // Input is already validated and sanitized by middleware
     const rawName = req.body.name.trim().replace(/\s+/g, " ");
     const emailNorm = req.body.email.trim().toLowerCase();
 
-    // Additional server-side validation (defense in depth)
     if (!rawName || !emailNorm) {
       return res.status(400).json({ error: "Name and email are required" });
     }
     
-    // Validate email format (already done by middleware, but double-check)
     const emailRegex =
       /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     if (!emailRegex.test(emailNorm) || emailNorm.length > 254) {
       return res.status(400).json({ error: "Invalid email format" });
     }
     
-    // Validate name length (already done by middleware, but double-check)
     if (rawName.length > 120 || rawName.length < 1) {
       return res.status(400).json({ error: "Name must be between 1 and 120 characters" });
     }
@@ -48,17 +44,6 @@ export const joinWaitlist = async (req, res) => {
       if (existing.name !== rawName) {
         existing.name = rawName;
         await existing.save();
-        console.log("joinWaitlist: updated existing name", {
-          id: existing._id.toString(),
-          email: existing.email,
-          name: existing.name,
-        });
-      } else {
-        console.log("joinWaitlist: existing waitlist entry", {
-          id: existing._id.toString(),
-          email: existing.email,
-          name: existing.name,
-        });
       }
       const totalSignups = await Waitlist.countDocuments();
       return res.status(200).json({
@@ -74,13 +59,6 @@ export const joinWaitlist = async (req, res) => {
     const totalSignups = position;
     const refCode = entry._id.toString().slice(-8);
     const shareUrl = `https://inkmity.com/?r=${refCode}`;
-
-    console.log("joinWaitlist: created new entry", {
-      id: entry._id.toString(),
-      email: entry.email,
-      name: entry.name,
-      position,
-    });
 
     const emailResult = await sendWelcomeEmail({
       to: emailNorm,

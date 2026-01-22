@@ -1,6 +1,3 @@
-// Simple in-memory rate limiting for serverless functions
-// In production, use Redis or a dedicated service
-
 const rateLimitStore = new Map();
 
 export function createRateLimiter(windowMs, maxRequests) {
@@ -32,7 +29,6 @@ export function createRateLimiter(windowMs, maxRequests) {
   };
 }
 
-// Cleanup old entries periodically
 setInterval(() => {
   const now = Date.now();
   for (const [key, record] of rateLimitStore.entries()) {
@@ -40,4 +36,4 @@ setInterval(() => {
       rateLimitStore.delete(key);
     }
   }
-}, 60000); // Clean up every minute
+}, 60000);
