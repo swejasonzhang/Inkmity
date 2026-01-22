@@ -42,15 +42,7 @@ export async function sendWelcomeEmail({ to, subject, text, html, name }) {
       message.Metadata = { name };
     }
 
-    const result = await pmClient.sendEmail(message);
-
-    console.log("sendWelcomeEmail success:", {
-      to,
-      messageId: result.MessageID,
-      submittedAt: result.SubmittedAt,
-      toEmail: result.To,
-    });
-
+    await pmClient.sendEmail(message);
     return { ok: true };
   } catch (err) {
     console.error("sendWelcomeEmail error:", {

@@ -76,36 +76,32 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
-    // Sanitize and validate input
     const rawName = String(req.body?.name ?? "")
       .trim()
-      .replace(/\0/g, "") // Remove null bytes
-      .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
-      .replace(/\s+/g, " "); // Normalize whitespace
+      .replace(/\0/g, "")
+      .replace(/[\x00-\x1F\x7F]/g, "")
+      .replace(/\s+/g, " ");
     
     const emailNorm = String(req.body?.email ?? "")
       .trim()
       .toLowerCase()
-      .replace(/\0/g, "") // Remove null bytes
-      .replace(/[\x00-\x1F\x7F]/g, ""); // Remove control characters
+      .replace(/\0/g, "")
+      .replace(/[\x00-\x1F\x7F]/g, "");
 
     if (!rawName || !emailNorm) {
       return res.status(400).json({ error: "Name and email are required" });
     }
     
-    // Enhanced email validation
     const emailRegex =
       /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     if (!emailRegex.test(emailNorm) || emailNorm.length > 254) {
       return res.status(400).json({ error: "Invalid email format" });
     }
     
-    // Enhanced name validation
     if (rawName.length > 120 || rawName.length < 1) {
       return res.status(400).json({ error: "Name must be between 1 and 120 characters" });
     }
     
-    // Validate name contains only allowed characters
     if (!/^[a-zA-Z\s'-]+$/.test(rawName)) {
       return res.status(400).json({ error: "Name contains invalid characters" });
     }
@@ -118,17 +114,6 @@ async function handlePost(req, res) {
       if (existing.name !== rawName) {
         existing.name = rawName;
         await existing.save();
-        console.log("joinWaitlist: updated existing name", {
-          id: existing._id.toString(),
-          email: existing.email,
-          name: existing.name,
-        });
-      } else {
-        console.log("joinWaitlist: existing waitlist entry", {
-          id: existing._id.toString(),
-          email: existing.email,
-          name: existing.name,
-        });
       }
       const totalSignups = await Waitlist.countDocuments();
       return res.status(200).json({
@@ -144,13 +129,6 @@ async function handlePost(req, res) {
     const totalSignups = position;
     const refCode = entry._id.toString().slice(-8);
     const shareUrl = `https://inkmity.com/?r=${refCode}`;
-
-    console.log("joinWaitlist: created new entry", {
-      id: entry._id.toString(),
-      email: entry.email,
-      name: entry.name,
-      position,
-    });
 
     const emailResult = await sendWelcomeEmail({
       to: emailNorm,
@@ -322,12 +300,11 @@ export default async function handler(req, res) {
     setCors(req, res);
     if (req.method === "OPTIONS") return res.status(204).end();
 
-    // Rate limiting for serverless (simple in-memory store)
     if (req.method === "POST") {
       const clientIP = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "unknown";
       const rateLimitKey = `waitlist_${clientIP}`;
       const now = Date.now();
-      const windowMs = 60 * 60 * 1000; // 1 hour
+      const windowMs = 60 * 60 * 1000;
       const maxRequests = 5;
       
       if (!global.rateLimitStore) {
@@ -347,7 +324,6 @@ export default async function handler(req, res) {
         record.count++;
       }
 
-      // Validate request size
       const contentLength = req.headers["content-length"];
       if (contentLength && parseInt(contentLength) > 256 * 1024) {
         return res.status(413).json({ error: "Request payload too large" });
@@ -375,7 +351,6 @@ export default async function handler(req, res) {
       message: err?.message,
       stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
     });
-    // Don't leak error details to clients
     return res.status(500).json({ error: "Server error, please try again later" });
   }
 }
