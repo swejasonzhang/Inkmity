@@ -48,6 +48,24 @@ function SuccessNote({ show }) {
   );
 }
 
+function AlreadyExistsNote({ show }) {
+  if (!show) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.16 }}
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-400/10 px-3.5 py-2.5 text-blue-100"
+      role="status"
+    >
+      <CheckCircle className="h-4 w-4" />
+      <span className="text-sm text-center">
+        You have already signed up. Please wait for notifications.
+      </span>
+    </motion.div>
+  );
+}
+
 function kfmt(n) {
   if (n >= 1_000_000)
     return (n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0) + "M";
@@ -91,6 +109,7 @@ export default function WaitlistForm({ onSuccess }) {
   const [totalSignups, setTotalSignups] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [success, setSuccess] = useState(false);
+  const [alreadyExists, setAlreadyExists] = useState(false);
   const prefersReduced = useReducedMotion();
   const cardRef = useRef(null);
 
@@ -138,6 +157,7 @@ export default function WaitlistForm({ onSuccess }) {
     e.preventDefault();
     if (loading) return;
     setErrorMsg("");
+    setAlreadyExists(false);
     
     const fn = firstName.trim().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
     const ln = lastName.trim().replace(/\0/g, "").replace(/[\x00-\x1F\x7F]/g, "");
@@ -169,19 +189,30 @@ export default function WaitlistForm({ onSuccess }) {
         },
         body: JSON.stringify({ name: fullName, email: em }),
         signal: ac.signal,
-        credentials: "omit", // Don't send cookies
+        credentials: "omit",
       });
       clearTimeout(to);
+      const data = await res.json().catch(() => ({}));
+      
       if (res.status === 204 || res.ok) {
-        setFirstName("");
-        setLastName("");
-        setEmail("");
-        setTotalSignups((v) => (typeof v === "number" ? v + 1 : 1));
-        setSuccess(true);
-        if (onSuccess) onSuccess();
+        if (data.message === "Already on waitlist") {
+          setAlreadyExists(true);
+          setSuccess(false);
+          setFirstName("");
+          setLastName("");
+          setEmail("");
+        } else {
+          setFirstName("");
+          setLastName("");
+          setEmail("");
+          setTotalSignups((v) => (typeof v === "number" ? v + 1 : 1));
+          setSuccess(true);
+          setAlreadyExists(false);
+          if (onSuccess) onSuccess();
+        }
       } else {
-        const data = await res.json().catch(() => ({}));
         setSuccess(false);
+        setAlreadyExists(false);
         if (res.status === 429) {
           setErrorMsg(data.error || "Too many requests. Please try again later.");
         } else {
@@ -190,6 +221,7 @@ export default function WaitlistForm({ onSuccess }) {
       }
     } catch (err) {
       setSuccess(false);
+      setAlreadyExists(false);
       if (err.name === "AbortError") {
         setErrorMsg("Request timed out. Please try again.");
       } else {
@@ -230,6 +262,7 @@ export default function WaitlistForm({ onSuccess }) {
           </CardHeader>
           <CardContent className="relative z-10">
             <SuccessNote show={success} />
+            <AlreadyExistsNote show={alreadyExists} />
             <ErrorBanner message={errorMsg} />
             <p className="mb-3 text-sm md:text-base text-white/93 text-center" style={{ textShadow: '0 1px 10px rgba(255,255,255,0.1)' }}>
               Sign up for launch updates.
