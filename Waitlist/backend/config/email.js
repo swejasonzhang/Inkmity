@@ -2,6 +2,13 @@ import { ServerClient } from "postmark";
 
 const { POSTMARK_SERVER_TOKEN, MAIL_FROM } = process.env;
 
+if (!POSTMARK_SERVER_TOKEN) {
+  console.error("⚠️  EMAIL CONFIGURATION ERROR: POSTMARK_SERVER_TOKEN is not set!");
+  console.error("   Emails will not be sent. Please set POSTMARK_SERVER_TOKEN in your environment variables.");
+} else {
+  console.log("✓ Postmark email service configured");
+}
+
 let client;
 
 function getClient() {
@@ -13,8 +20,10 @@ function getClient() {
 
 export async function sendWelcomeEmail({ to, subject, text, html, name }) {
   if (!POSTMARK_SERVER_TOKEN) {
-    console.error("sendWelcomeEmail: missing POSTMARK_SERVER_TOKEN");
-    return { ok: false, error: "Missing Postmark configuration" };
+    const errorMsg = "Missing Postmark configuration: POSTMARK_SERVER_TOKEN not set";
+    console.error("❌ sendWelcomeEmail FAILED:", errorMsg);
+    console.error("   Email recipient:", to);
+    return { ok: false, error: errorMsg };
   }
 
   try {
@@ -42,16 +51,35 @@ export async function sendWelcomeEmail({ to, subject, text, html, name }) {
       message.Metadata = { name };
     }
 
-    await pmClient.sendEmail(message);
-    return { ok: true };
+    const result = await pmClient.sendEmail(message);
+    console.log("✓ Welcome email sent successfully:", {
+      to,
+      messageId: result?.MessageID,
+      submittedAt: result?.SubmittedAt,
+    });
+    return { ok: true, messageId: result?.MessageID };
   } catch (err) {
-    console.error("sendWelcomeEmail error:", {
+    const errorDetails = {
       message: err?.message,
       code: err?.ErrorCode,
       statusCode: err?.statusCode,
       response: err?.response,
-      stack: err?.stack,
+      stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
+    };
+    console.error("❌ sendWelcomeEmail FAILED:", {
+      recipient: to,
+      ...errorDetails,
     });
-    return { ok: false, error: err?.message || "Email send failed" };
+    
+    let errorMessage = "Email send failed";
+    if (err?.ErrorCode === 401 || err?.statusCode === 401) {
+      errorMessage = "Invalid Postmark API token";
+    } else if (err?.ErrorCode === 422) {
+      errorMessage = "Invalid email format or Postmark configuration";
+    } else if (err?.message) {
+      errorMessage = err.message;
+    }
+    
+    return { ok: false, error: errorMessage, details: errorDetails };
   }
 }
