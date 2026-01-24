@@ -39,28 +39,52 @@ export const joinWaitlist = async (req, res) => {
     const firstName = rawName.split(" ")[0];
     const first = firstName;
 
-    const existing = await Waitlist.findOne({ email: emailNorm });
-    if (existing) {
-      if (existing.name !== rawName) {
-        existing.name = rawName;
-        await existing.save();
-      }
-      const totalSignups = await Waitlist.countDocuments();
-      return res.status(200).json({
-        message: "Already on waitlist",
-        data: { id: existing._id, name: existing.name, email: existing.email },
-        meta: { totalSignups, emailSent: false },
-      });
-    }
-
     const preCount = await Waitlist.countDocuments();
-    const entry = await Waitlist.create({ name: rawName, email: emailNorm });
-    const position = preCount + 1;
-    const totalSignups = position;
-    const refCode = entry._id.toString().slice(-8);
-    const shareUrl = `https://inkmity.com/?r=${refCode}`;
+    
+    try {
+      const result = await Waitlist.findOneAndUpdate(
+        { email: emailNorm },
+        {
+          $setOnInsert: { 
+            email: emailNorm, 
+            name: rawName 
+          },
+          $set: {
+            name: rawName,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        }
+      );
 
-    const emailResult = await sendWelcomeEmail({
+      const createdAt = new Date(result.createdAt).getTime();
+      const updatedAt = new Date(result.updatedAt).getTime();
+      const timeDiff = Math.abs(updatedAt - createdAt);
+      
+      const isNewEntry = timeDiff < 100;
+      
+      if (!isNewEntry) {
+        const totalSignups = await Waitlist.countDocuments();
+        const refCode = result._id.toString().slice(-8);
+        const shareUrl = `https://inkmity.com/?r=${refCode}`;
+        return res.status(200).json({
+          message: "Already on waitlist",
+          data: { id: result._id, name: result.name, email: result.email },
+          meta: { totalSignups, emailSent: false, refCode, shareUrl },
+        });
+      }
+      
+      const position = preCount + 1;
+      const totalSignups = position;
+      const entry = result;
+      const refCode = entry._id.toString().slice(-8);
+      const shareUrl = `https://inkmity.com/?r=${refCode}`;
+
+      const emailResult = await sendWelcomeEmail({
       to: emailNorm,
       subject: `${first}, welcome to Inkmity`,
       text: `Hi ${first},
@@ -188,27 +212,53 @@ We’ll email you when early access opens.
     </table>
   </body>
 </html>`,
-      name: rawName,
-    });
-
-    if (!emailResult.ok) {
-      console.error("joinWaitlist: welcome email failed", {
-        email: emailNorm,
-        error: emailResult.error,
+        name: rawName,
       });
-    }
 
-    return res.status(201).json({
-      message: "Added to waitlist",
-      data: { id: entry._id, name: entry.name, email: entry.email },
-      meta: {
-        position,
-        totalSignups,
-        refCode,
-        shareUrl,
-        emailSent: !!emailResult.ok,
-      },
-    });
+      if (!emailResult.ok) {
+        console.error("❌ joinWaitlist: welcome email failed", {
+          email: emailNorm,
+          name: rawName,
+          error: emailResult.error,
+          details: emailResult.details,
+        });
+        console.warn("⚠️  User signup succeeded but welcome email could not be sent");
+      } else {
+        console.log("✓ New waitlist signup with email sent:", {
+          email: emailNorm,
+          name: rawName,
+          position,
+          messageId: emailResult.messageId,
+        });
+      }
+
+      return res.status(201).json({
+        message: "Added to waitlist",
+        data: { id: entry._id, name: entry.name, email: entry.email },
+        meta: {
+          position,
+          totalSignups,
+          refCode,
+          shareUrl,
+          emailSent: !!emailResult.ok,
+        },
+      });
+    } catch (createErr) {
+      if (createErr?.code === 11000 || createErr?.message?.includes("duplicate key")) {
+        const duplicateEntry = await Waitlist.findOne({ email: emailNorm });
+        if (duplicateEntry) {
+          const totalSignups = await Waitlist.countDocuments();
+          const refCode = duplicateEntry._id.toString().slice(-8);
+          const shareUrl = `https://inkmity.com/?r=${refCode}`;
+          return res.status(200).json({
+            message: "Already on waitlist",
+            data: { id: duplicateEntry._id, name: duplicateEntry.name, email: duplicateEntry.email },
+            meta: { totalSignups, emailSent: false, refCode, shareUrl },
+          });
+        }
+      }
+      throw createErr;
+    }
   } catch (err) {
     console.error("joinWaitlist error:", {
       message: err?.message,
@@ -216,9 +266,7 @@ We’ll email you when early access opens.
       stack: err?.stack,
       raw: err,
     });
-    if (err?.code === 11000) {
-      return res.status(200).json({ message: "Already on waitlist" });
-    }
+    
     return res
       .status(500)
       .json({ error: "Server error, please try again later" });
