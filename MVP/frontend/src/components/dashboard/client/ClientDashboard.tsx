@@ -44,12 +44,23 @@ export default function ClientDashboard() {
 
     const authFetch = useCallback(
         async (url: string, options: RequestInit = {}) => {
-            const full = url.startsWith("http") ? url : `${API_URL}${url}`;
-            const token = await getToken();
-            const headers = new Headers(options.headers || {});
-            if (token) headers.set("Authorization", `Bearer ${token}`);
-            if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-            return fetch(full, { ...options, headers, credentials: "include" });
+            try {
+                const full = url.startsWith("http") ? url : `${API_URL}${url}`;
+                const token = await getToken();
+                const headers = new Headers(options.headers || {});
+                if (token) headers.set("Authorization", `Bearer ${token}`);
+                if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+                return await fetch(full, { ...options, headers, credentials: "include" });
+            } catch (error: any) {
+                // Return a Response with status 503 (Service Unavailable) for network errors
+                // This prevents unhandled promise rejections while indicating a network issue
+                console.error("[ClientDashboard] authFetch failed:", error);
+                return new Response(JSON.stringify({ error: error.message || "Network error" }), {
+                    status: 503,
+                    statusText: error.message || "Service Unavailable",
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
         },
         [getToken]
     );

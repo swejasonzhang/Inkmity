@@ -2,7 +2,7 @@ const RAW_API_URL =
   (import.meta as any)?.env?.VITE_API_URL ||
   (import.meta as any)?.env?.VITE_API_BASE ||
   import.meta.env?.VITE_API_URL ||
-  "http://localhost:5005/api";
+  "http://localhost:3001";
 
 export const API_URL = String(RAW_API_URL).replace(/\/+$/, "");
 

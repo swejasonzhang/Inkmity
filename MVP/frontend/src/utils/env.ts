@@ -1,7 +1,7 @@
 const API_URL =
   (import.meta as any)?.env?.VITE_API_URL ||
   import.meta.env?.VITE_API_URL ||
-  "http://localhost:5005";
+  "http://localhost:3001";
 
 const SOCKET_PATH =
   (import.meta as any)?.env?.VITE_SOCKET_PATH ||

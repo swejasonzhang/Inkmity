@@ -157,10 +157,10 @@ export default function AnalyticsPanel(props: Props) {
             <div className="flex items-baseline justify-center flex-shrink-0">
               <div className="text-sm font-semibold text-app">Hours on needle (last 4 weeks)</div>
             </div>
-            <div className="mt-3 flex w-full items-end justify-between gap-6 px-2 flex-1 min-h-0 pb-8 pt-10 relative">
+            <div className="mt-3 flex w-full items-end justify-between gap-2 sm:gap-4 md:gap-6 px-1 sm:px-2 flex-1 min-h-0 pb-8 pt-10 relative overflow-hidden">
               {weeks.map((w, weekIdx) => (
-                <div key={weekIdx} className="flex-1 flex flex-col items-center h-full justify-end">
-                  <div className="flex items-end justify-center gap-1.5 h-full w-full">
+                <div key={weekIdx} className="flex-1 flex flex-col items-center h-full justify-end min-w-0">
+                  <div className="flex items-end justify-center gap-0.5 sm:gap-1 md:gap-1.5 h-full w-full min-w-0">
                     {w.days.map((day, dayIdx) => {
                       const heightPercent = Math.max(10, (day.hours / maxHours) * 100);
                       const barId = `${weekIdx}-${dayIdx}`;
@@ -168,18 +168,19 @@ export default function AnalyticsPanel(props: Props) {
                       return (
                         <div
                           key={dayIdx}
-                          className="flex-1 rounded-t-md bg-gradient-to-t from-zinc-400 to-zinc-300 dark:from-zinc-600 dark:to-zinc-500 transition-all duration-200 ease-out cursor-pointer relative group"
+                          className="flex-1 rounded-t-md bg-gradient-to-t from-zinc-400 to-zinc-300 dark:from-zinc-600 dark:to-zinc-500 transition-all duration-200 ease-out cursor-pointer relative group min-w-0"
                           style={{ 
                             height: `${heightPercent}%`,
                             transform: isHovered ? 'scaleY(1.05) translateY(-2px)' : 'scaleY(1)',
                             transformOrigin: 'bottom',
-                            opacity: isHovered ? 1 : 0.7
+                            opacity: isHovered ? 1 : 0.7,
+                            maxHeight: '100%'
                           }}
                           onMouseEnter={() => setHoveredBar(barId)}
                           onMouseLeave={() => setHoveredBar(null)}
                         >
                           {isHovered && (
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black text-[10px] px-2 py-1 rounded whitespace-nowrap font-medium shadow-lg z-10">
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black dark:bg-white text-white dark:text-black text-[10px] px-2 py-1 rounded whitespace-nowrap font-medium shadow-lg z-10 pointer-events-none" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
                               {day.day}: {day.hours}h
                               <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-black dark:border-t-white"></div>
                             </div>
@@ -188,8 +189,8 @@ export default function AnalyticsPanel(props: Props) {
                       );
                     })}
                   </div>
-                  <div className="mt-2 text-[10px] text-muted text-center font-medium">{w.week}</div>
-                  <div className="text-[10px] text-app font-semibold">{w.hoursTattooed}h</div>
+                  <div className="mt-2 text-[10px] text-muted text-center font-medium truncate w-full">{w.week}</div>
+                  <div className="text-[10px] text-app font-semibold truncate w-full">{w.hoursTattooed}h</div>
                 </div>
               ))}
             </div>

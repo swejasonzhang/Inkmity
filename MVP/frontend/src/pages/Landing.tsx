@@ -79,7 +79,7 @@ const Landing: React.FC = () => {
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
                     <div className="relative z-10 text-app flex-col min-h-[100svh]">
-                        <div className="sticky top-0 z-50 bg-app/80 backdrop-blur-sm sm:backdrop-blur-md border-b border-app">
+                        <div className="sticky top-0 z-[2147483500] bg-app/80 backdrop-blur-sm sm:backdrop-blur-md border-b border-app overflow-visible">
                             <Header />
                         </div>
 
@@ -143,7 +143,7 @@ const Landing: React.FC = () => {
                 playsInline
                 preload="metadata"
                 className={[
-                    "fixed top-0 left-1/2 -translate-x-1/2 z-[999]",
+                    "fixed top-0 left-1/2 -translate-x-1/2 z-[100]",
                     "w-auto max-w-none",
                     "h-[100svh]",
                     "sm:inset-0 sm:left-0 sm:translate-x-0 sm:w-full sm:h-full",

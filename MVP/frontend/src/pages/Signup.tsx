@@ -28,7 +28,7 @@ type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
-const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:5005/api";
+const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:3001";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 function apiUrl(path: string, qs?: Record<string, string>) {
   const url = new URL(path.replace(/^\/+/, ""), API_BASE + "/");

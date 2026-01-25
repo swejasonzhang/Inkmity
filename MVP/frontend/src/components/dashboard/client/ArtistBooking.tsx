@@ -31,7 +31,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   const apiOrigin =
     (import.meta as any)?.env?.VITE_API_URL ||
     import.meta.env?.VITE_API_URL ||
-    "http://localhost:5005";
+    "http://localhost:3001";
 
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
