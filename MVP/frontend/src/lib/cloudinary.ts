@@ -1,7 +1,7 @@
 const RAW_API_BASE =
   (typeof import.meta !== "undefined" &&
     (import.meta as any).env?.VITE_API_URL) ||
-  "http://localhost:5005/api";
+  "http://localhost:3001";
 const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 
 export async function getSignedUpload(kind: "client_ref" | "artist_portfolio") {

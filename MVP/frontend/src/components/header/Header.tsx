@@ -238,18 +238,50 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const [showDropdown, setShowDropdown] = useState(false);
   const triggerRef = useRef<HTMLDivElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const [triggerWidth, setTriggerWidth] = useState<number>(220);
+  const [triggerWidth, setTriggerWidth] = useState<number>(180);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => {
     const measure = () => {
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
-      setTriggerWidth(Math.max(220, rect.width));
+      // Use exact width to match the trigger button
+      setTriggerWidth(rect.width);
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
+
+  // Remeasure when dropdown opens to ensure accurate width and position
+  useEffect(() => {
+    if (!showDropdown) {
+      setDropdownPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      setTriggerWidth(rect.width);
+      // Calculate position for portal rendering
+      setDropdownPosition({
+        top: rect.bottom + 6,
+        right: window.innerWidth - rect.right,
+      });
+    };
+
+    updatePosition();
+    
+    // Update position on scroll and resize
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [showDropdown]);
 
   useEffect(() => {
     if (!showDropdown) return;
@@ -318,7 +350,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="flex w-full relative items-center z-50 px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-1 xs:py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-hidden" style={{ minWidth: '320px' }}>
+      <header className="flex w-full relative items-center z-[100] px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-1 xs:py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px' }}>
         <div className="flex-shrink-0 relative z-10 mr-fluid-sm xs:mr-fluid-md sm:mr-fluid-lg">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
             <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain flex-shrink-0" draggable={false} />
@@ -364,59 +396,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                 </div>
 
                 <div className="absolute left-0 right-0 top-full h-2" />
-
-                <div
-                  ref={dropdownRef}
-                  role="menu"
-                  aria-label="User menu"
-                  style={{ width: triggerWidth || undefined, marginTop: 6 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                  }}
-                  className={`absolute right-0 top-full bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out z-[2147483000] overflow-visible ${showDropdown ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-2 invisible"}`}
-                >
-                  <div className="px-4 py-3 text-center">
-                    <div className="text-sm opacity-80 mb-2">
-                      {userRole === "artist" ? "Ready to create your next masterpiece?" : userRole === "client" ? "Ready for your next tattoo?" : "Welcome"}
-                    </div>
-                    <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
-                    {isDashboard && (
-                      <div className="mt-3 flex items-center justify-center">
-                        <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-                  <div 
-                    className="px-4 py-3"
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <VisibilityDropdown
-                      currentStatus={userVisibility}
-                      isOnline={isOnline}
-                      onStatusChange={handleVisibilityChange}
-                      triggerWidth={triggerWidth}
-                    />
-                  </div>
-                  <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-                  <Link 
-                    to="/profile" 
-                    onClick={() => setShowDropdown(false)}
-                    className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2"
-                  >
-                    <User size={18} />
-                    <span>Profile</span>
-                  </Link>
-                  <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-                  <button onClick={handleLogout} className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">
-                    <LogOut size={18} />
-                    <span>Logout</span>
-                  </button>
-                </div>
               </div>
             ) : isLoaded && !isSignedIn ? (
               <div className="relative flex flex-shrink-0">
@@ -454,6 +433,70 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       )}
 
       {mobileSheet}
+
+      {showDropdown && dropdownPosition && triggerRef.current && createPortal(
+        <div
+          ref={dropdownRef}
+          role="menu"
+          aria-label="User menu"
+          style={{ 
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            right: `${dropdownPosition.right}px`,
+            width: triggerWidth || undefined, 
+            minWidth: triggerWidth || undefined,
+            maxWidth: triggerWidth || undefined,
+            zIndex: 2147483600,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          className="bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out overflow-visible"
+        >
+          <div className="px-4 py-3 text-center">
+            <div className="text-sm opacity-80 mb-2">
+              {userRole === "artist" ? "Ready to create your next masterpiece?" : userRole === "client" ? "Ready for your next tattoo?" : "Welcome"}
+            </div>
+            <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
+            {isDashboard && (
+              <div className="mt-3 flex items-center justify-center">
+                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
+              </div>
+            )}
+          </div>
+          <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+          <div 
+            className="px-4 py-3"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <VisibilityDropdown
+              currentStatus={userVisibility}
+              isOnline={isOnline}
+              onStatusChange={handleVisibilityChange}
+              triggerWidth={triggerWidth}
+            />
+          </div>
+          <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+          <Link 
+            to="/profile" 
+            onClick={() => setShowDropdown(false)}
+            className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2"
+          >
+            <User size={18} />
+            <span>Profile</span>
+          </Link>
+          <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+          <button onClick={handleLogout} className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
+        </div>,
+        portalTarget
+      )}
     </>
   );
 };

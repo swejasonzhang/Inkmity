@@ -10,7 +10,7 @@ global.TextDecoder = TextDecoder as any;
 
 const importMetaEnv = {
   VITE_STRIPE_PUBLISHABLE_KEY: process.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_MOCK_KEY_FOR_TESTING_ONLY",
-  VITE_API_URL: process.env.VITE_API_URL || "http://localhost:5005",
+  VITE_API_URL: process.env.VITE_API_URL || "http://localhost:3001",
   VITE_CLERK_PUBLISHABLE_KEY: process.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_MOCK_KEY_FOR_TESTING_ONLY",
   MODE: "test",
   DEV: false,

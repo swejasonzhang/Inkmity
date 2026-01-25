@@ -76,7 +76,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const apiBase = String(
     (import.meta as any)?.env?.VITE_API_URL ??
       import.meta.env?.VITE_API_URL ??
-      "http://localhost:5005/api"
+      "http://localhost:3001"
   ).replace(/\/$/, "");
 
   const getGate = useCallback(
@@ -188,14 +188,15 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const res = await authFetch(`${apiBase}/messages/user/${currentUserId}`, {
-      method: "GET",
-    });
-    if (!res.ok) {
-      setLoading(false);
-      return;
-    }
-    const data = (await res.json()) as Conversation[];
+    try {
+      const res = await authFetch(`${apiBase}/messages/user/${currentUserId}`, {
+        method: "GET",
+      });
+      if (!res.ok) {
+        setLoading(false);
+        return;
+      }
+      const data = (await res.json()) as Conversation[];
     const base = new Map<string, Conversation>();
     (data || []).forEach((c) => base.set(c.participantId, c));
     const pending = loadPending();
@@ -229,6 +230,11 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     setLoading(false);
     fetchUnread();
     fetchIncomingRequests();
+    } catch (error: any) {
+      console.error("[useMessaging] fetchAll failed:", error);
+      setLoading(false);
+      // Silently fail - network errors are expected if backend is down
+    }
   }, [
     apiBase,
     authFetch,

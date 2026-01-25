@@ -114,8 +114,12 @@ export const VisibilityDropdown = ({
       <DropdownMenuContent 
         align="center" 
         side="bottom"
-        style={{ width: width || undefined }}
-        className="bg-card border-[color-mix(in_oklab,var(--fg)_16%,transparent)] text-app"
+        style={{ 
+          width: width || undefined,
+          minWidth: width || undefined,
+          maxWidth: width || undefined
+        }}
+        className="bg-card border-[color-mix(in_oklab,var(--fg)_16%,transparent)] text-app z-[2147483700]"
         onClick={(e) => {
           e.stopPropagation();
         }}

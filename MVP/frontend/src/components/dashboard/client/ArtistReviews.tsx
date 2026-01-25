@@ -53,9 +53,9 @@ const Stars: React.FC<{ value: number }> = React.memo(({ value }) => {
 });
 Stars.displayName = "Stars";
 
-const ENV_API = (import.meta as any)?.env?.VITE_API_URL || import.meta.env?.VITE_API_URL || "";
+const ENV_API = (import.meta as any)?.env?.VITE_API_URL || import.meta.env?.VITE_API_URL || "http://localhost:3001";
 const PRIMARY_BASE = String(ENV_API).replace(/\/$/, "");
-const API_BASES = [PRIMARY_BASE, "/api"].filter(Boolean);
+const API_BASES = [PRIMARY_BASE].filter(Boolean);
 const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`;
 
 const INITIAL_BATCH = 12;

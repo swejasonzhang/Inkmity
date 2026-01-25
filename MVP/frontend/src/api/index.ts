@@ -3,7 +3,7 @@ import { useAuth } from "@clerk/clerk-react";
 export const API_URL: string =
   (import.meta as any)?.env?.VITE_API_URL ||
   import.meta.env?.VITE_API_URL ||
-  "http://localhost:5005";
+  "http://localhost:3001";
 
 export function isAbortError(
   e: unknown
