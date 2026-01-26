@@ -85,6 +85,7 @@ export const VisibilityDropdown = ({
     }
   }, [open, triggerWidth, currentTheme]);
 
+  // Use currentStatus directly for display - it updates immediately when changed
   const displayStatus = isOnline ? currentStatus : "invisible";
   const displayOption = visibilityOptions.find((opt) => opt.value === displayStatus) || visibilityOptions[0];
   const Icon = displayOption.icon;
@@ -146,11 +147,13 @@ export const VisibilityDropdown = ({
           onValueChange={(value) => {
             const newStatus = value as VisibilityStatus;
             if (newStatus !== currentStatus) {
+              // Call the change handler immediately for real-time update
               onStatusChange(newStatus);
             }
+            // Close dropdown after a brief delay to allow the update to process
             setTimeout(() => {
               setOpen(false);
-            }, 0);
+            }, 100);
           }}
           onClick={(e) => {
             e.stopPropagation();
@@ -169,11 +172,13 @@ export const VisibilityDropdown = ({
                   e.preventDefault();
                   e.stopPropagation();
                   if (option.value !== currentStatus) {
+                    // Call the change handler immediately for real-time update
                     onStatusChange(option.value);
                   }
+                  // Close dropdown after a brief delay to allow the update to process
                   setTimeout(() => {
                     setOpen(false);
-                  }, 0);
+                  }, 100);
                 }}
                 onClick={(e) => {
                   e.stopPropagation();

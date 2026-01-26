@@ -9,7 +9,7 @@ import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems"
 import { Nav } from "./Nav";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
-import { getSocket } from "@/lib/socket";
+import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityDropdown, VisibilityStatus } from "./VisibilityDropdown";
 import { updateVisibility } from "@/api";
 import { Circle, Clock, EyeOff } from "lucide-react";
@@ -155,11 +155,21 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
     const handleVisibilityUpdate = (data: { userId: string; visibility: VisibilityStatus }) => {
       if (data.userId === user.id) {
+        // Update state immediately when socket event is received
         setUserVisibility(data.visibility);
       }
     };
+    
+    // Listen for visibility updates - both events ensure real-time updates
     socket.on("user:visibility:updated", handleVisibilityUpdate);
     socket.on("user:visibility:changed", handleVisibilityUpdate);
+    
+    // Ensure socket is connected and registered
+    if (!socket.connected && user?.id) {
+      connectSocket(getToken, user.id).catch(console.error);
+    } else if (socket.connected && user?.id) {
+      socket.emit("register", user.id);
+    }
 
     return () => {
       socket.off("connect", updateOnlineStatus);
@@ -167,7 +177,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       socket.off("user:visibility:updated", handleVisibilityUpdate);
       socket.off("user:visibility:changed", handleVisibilityUpdate);
     };
-  }, [isLoaded, isSignedIn, user?.id]);
+  }, [isLoaded, isSignedIn, user?.id, getToken]);
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -178,10 +188,38 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const handleVisibilityChange = async (status: VisibilityStatus) => {
     try {
       const token = await getToken();
-      await updateVisibility(status, token || undefined);
+      // Update optimistically for immediate UI feedback
       setUserVisibility(status);
+      
+      // Ensure socket is connected for real-time updates
+      const socket = getSocket();
+      if (!socket.connected && user?.id) {
+        await connectSocket(getToken, user.id);
+      }
+      
+      // Update via API - socket events will also update it
+      await updateVisibility(status, token || undefined);
+      
+      // The socket event handler will update the state again to ensure consistency
+      // This ensures real-time updates across all clients
     } catch (error) {
       console.error("Failed to update visibility:", error);
+      // Revert on error - fetch current status from server
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE}/users/me`, {
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.visibility && ["online", "away", "invisible"].includes(data.visibility)) {
+            setUserVisibility(data.visibility as VisibilityStatus);
+          }
+        }
+      } catch (fetchError) {
+        console.error("Failed to fetch current visibility:", fetchError);
+      }
     }
   };
 
