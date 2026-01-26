@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Send, Image as ImageIcon, X, Calendar, MessageSquare } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
+import { formatActivityStatus } from "@/utils/activity";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPanel from "./messages/requestPanel";
@@ -45,6 +46,7 @@ export type Conversation = {
   meta?: { lastStatus?: "pending" | "accepted" | "declined" | null; allowed?: boolean; blocked?: boolean };
   isTyping?: boolean;
   isOnline?: boolean;
+  lastActive?: number | null;
   lastSeen?: number;
 };
 
@@ -749,11 +751,14 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }
 
   if (!conversations || conversations.length === 0) {
+    const emptyMessage = isClient 
+      ? "No conversations currently.\nPlease click an artist to start one."
+      : "No conversations with a client just yet, they will reach out to you.";
+    
     return (
       <div className="flex items-center justify-center h-full bg-card rounded-2xl p-4">
         <p className="text-muted-foreground text-center whitespace-pre-line">
-          No conversations currently.
-          {"\n"}Please click an artist to start one.
+          {emptyMessage}
         </p>
       </div>
     );
@@ -1179,7 +1184,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               <X size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                             </button>
                           </div>
-                          <span className="text-xs whitespace-nowrap">{displayNameFromUsername(c.username)}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs whitespace-nowrap">{displayNameFromUsername(c.username)}</span>
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              {formatActivityStatus(c.isOnline, c.lastActive)}
+                            </span>
+                          </div>
                         </button>
                       </li>
                     );
@@ -1212,7 +1222,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             </SelectContent>
                           </Select>
                         ) : (
-                          <div className="text-sm text-muted-foreground">No conversations yet</div>
+                          <div className="text-sm text-muted-foreground">
+                            {isClient 
+                              ? "No conversations currently. Please click an artist to start one."
+                              : "No conversations with a client just yet, they will reach out to you."}
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1307,7 +1321,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           <p className="text-sm text-muted-foreground text-center">
                             {conversations.length > 0 
                               ? "Select a conversation from the list above"
-                              : "No conversations yet"}
+                              : (isClient 
+                                  ? "No conversations currently. Please click an artist to start one."
+                                  : "No conversations with a client just yet, they will reach out to you.")}
                           </p>
                         </div>
                       ) : (!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
@@ -1536,10 +1552,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           {avatarFor(c, { border: false })}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
+                                {c.isOnline && (
+                                  <span className="shrink-0 w-2 h-2 rounded-full bg-white" title="Currently active" />
+                                )}
+                              </div>
                               <div className="text-[13px] shrink-0">{lastMsg ? fmtTime(lastMsg.timestamp) : ""}</div>
                             </div>
-                            <div className="text-xs text-muted-foreground truncate">{lastMsg?.text || "No messages"}</div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-xs text-muted-foreground truncate flex-1">{lastMsg?.text || "No messages"}</div>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {formatActivityStatus(c.isOnline, c.lastActive)}
+                              </span>
+                            </div>
                           </div>
                           {!!unreadMap[c.participantId] && (
                             <span className="ml-2 shrink-0 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-semibold">
@@ -1587,8 +1613,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     </div>
                     <div className="hidden md:flex items-center gap-3">
                       {activeConv && avatarFor(activeConv)}
-                      <div className="text-sm font-semibold text-app truncate">
-                        {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <div className="text-sm font-semibold text-app truncate">
+                            {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
+                          </div>
+                          {activeConv?.isOnline && (
+                            <span className="shrink-0 w-2 h-2 rounded-full bg-green-500" title="Currently active" />
+                          )}
+                        </div>
+                        {activeConv && (
+                          <span className="text-[10px] text-muted-foreground truncate">
+                            {formatActivityStatus(activeConv.isOnline, activeConv.lastActive)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1891,7 +1929,17 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
                         >
                           {avatarFor(c, { border: false })}
-                          <span className="text-xs">{displayNameFromUsername(c.username)}</span>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs truncate">{displayNameFromUsername(c.username)}</span>
+                              {c.isOnline && (
+                                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-white" title="Currently active" />
+                              )}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              {formatActivityStatus(c.isOnline, c.lastActive)}
+                            </span>
+                          </div>
                         </button>
                       </li>
                     );

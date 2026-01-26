@@ -41,6 +41,7 @@ export default function FloatingBar({
   const [isMdUp, setIsMdUp] = useState(false);
   const [vp, setVp] = useState({ w: 375, h: 667 });
   const [vvBottom, setVvBottom] = useState(0);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -78,6 +79,26 @@ export default function FloatingBar({
     };
   }, [vp.h]);
 
+  useEffect(() => {
+    const measureHeader = () => {
+      const header = document.querySelector("header");
+      if (header) {
+        setHeaderHeight(header.offsetHeight);
+      }
+    };
+    measureHeader();
+    const ro = new ResizeObserver(measureHeader);
+    const header = document.querySelector("header");
+    if (header) {
+      ro.observe(header);
+    }
+    window.addEventListener("resize", measureHeader);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measureHeader);
+    };
+  }, []);
+
   const { btnRef, open, setOpen, unreadConvoCount, requestCount, derivedTotal } = useInkConversations({
     role,
     unreadCount,
@@ -112,12 +133,13 @@ export default function FloatingBar({
   const MOBILE_HEADER_HEIGHT = 96;
   const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - MOBILE_HEADER_HEIGHT;
 
-  const PANEL_W = 320;
-  const DESKTOP_OPEN_W = 1200;
+  const PANEL_W = 280;
+  const DESKTOP_OPEN_W = Math.floor(vp.w * 0.5);
   const DESKTOP_CLOSED_W = 160;
+  const DESKTOP_OPEN_H = vp.h - headerHeight;
 
   const convW = isMdUp ? (open ? DESKTOP_OPEN_W + (role === "Artist" ? PANEL_W : 0) : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
-  const convH = isMdUp ? (open ? 860 : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
+  const convH = isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
 
   const centerRef = useRef<HTMLDivElement | null>(null);
   const [centerH, setCenterH] = useState(0);
@@ -262,7 +284,7 @@ export default function FloatingBar({
                   }),
                   ...(isMdUp || !open ? {
                     width: isMdUp ? convW : Math.max(0, convW - 50),
-                    height: isMdUp ? convH : convH,
+                    height: isMdUp ? (open ? vp.h - headerHeight : collapsedHeight) : convH,
                   } : {}),
                   zIndex: !isMdUp && open ? 9999 : undefined
                 }}

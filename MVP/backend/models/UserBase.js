@@ -30,6 +30,7 @@ const UserBaseSchema = new Schema(
     bio: { type: String, default: "", maxlength: 600, required: false },
     visible: { type: Boolean, default: true, index: true },
     visibility: { type: String, enum: ["online", "away", "invisible"], default: "online", index: true },
+    lastActive: { type: Date, default: Date.now, index: true },
   },
   { timestamps: true, discriminatorKey: "role", collection: "users" }
 );

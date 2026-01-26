@@ -200,6 +200,9 @@ export async function getArtists(req, res) {
       : sortKey === "rating_asc"
       ? { rating: 1, reviewsCount: -1 }
       : { rating: -1, reviewsCount: -1, createdAt: -1 };
+  const { getOnlineUsers } = await import("../services/socketService.js");
+  const onlineUsersSet = getOnlineUsers();
+  
   const [total, items] = await Promise.all([
     Artist.countDocuments(filter),
     Artist.find(filter)
@@ -207,7 +210,7 @@ export async function getArtists(req, res) {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .select(
-        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages avatar coverImage"
+        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages avatar coverImage lastActive visibility"
       )
       .lean(),
   ]);
@@ -215,6 +218,8 @@ export async function getArtists(req, res) {
     ...item,
     profileImage: item.avatar?.url || item.profileImage || null,
     avatarUrl: item.avatar?.url || item.avatarUrl || null,
+    isOnline: onlineUsersSet.has(item.clerkId) && item.visibility !== "invisible",
+    lastActive: item.lastActive ? item.lastActive.getTime() : null,
   }));
   res.json({
     items: itemsWithProfileImage,
@@ -228,12 +233,16 @@ export async function getArtists(req, res) {
 export async function getArtistById(req, res) {
   const { id } = req.params;
   const Artist = mongoose.model("artist");
-  const doc = await Artist.findById(id).lean();
+  const doc = await Artist.findById(id).select("+lastActive +visibility").lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
+  const { getOnlineUsers } = await import("../services/socketService.js");
+  const onlineUsersSet = getOnlineUsers();
   const docWithProfileImage = {
     ...doc,
     profileImage: doc.avatar?.url || doc.profileImage || null,
     avatarUrl: doc.avatar?.url || doc.avatarUrl || null,
+    isOnline: onlineUsersSet.has(doc.clerkId) && doc.visibility !== "invisible",
+    lastActive: doc.lastActive ? doc.lastActive.getTime() : null,
   };
   res.json(docWithProfileImage);
 }

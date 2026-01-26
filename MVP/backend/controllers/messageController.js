@@ -116,10 +116,21 @@ export const getAllMessagesForUser = async (req, res) => {
     }
     const participantIds = [...buckets.keys()];
     const users = await User.find({ clerkId: { $in: participantIds } }).select(
-      "clerkId username avatar handle"
+      "clerkId username avatar handle lastActive visibility"
     );
+    const { getOnlineUsers } = await import("../services/socketService.js");
+    const onlineUsersSet = getOnlineUsers();
     const userMap = Object.fromEntries(
-      users.map((u) => [u.clerkId, { username: u.username, avatarUrl: u.avatar?.url || null, handle: u.handle || null }])
+      users.map((u) => [
+        u.clerkId,
+        {
+          username: u.username,
+          avatarUrl: u.avatar?.url || null,
+          handle: u.handle || null,
+          lastActive: u.lastActive ? u.lastActive.getTime() : null,
+          isOnline: onlineUsersSet.has(u.clerkId) && u.visibility !== "invisible",
+        },
+      ])
     );
     const convs = [];
     for (const pid of participantIds) {
@@ -138,12 +149,15 @@ export const getAllMessagesForUser = async (req, res) => {
         allowed = lastStatus === "accepted";
       }
       if (blocked) continue;
+      const userInfo = userMap[pid] || {};
       convs.push({
         participantId: pid,
-        username: userMap[pid]?.username || "Unknown",
-        avatarUrl: userMap[pid]?.avatarUrl || null,
-        handle: userMap[pid]?.handle || null,
+        username: userInfo.username || "Unknown",
+        avatarUrl: userInfo.avatarUrl || null,
+        handle: userInfo.handle || null,
         messages: buckets.get(pid).messages,
+        isOnline: userInfo.isOnline || false,
+        lastActive: userInfo.lastActive || null,
         meta: {
           allowed,
           lastStatus,
