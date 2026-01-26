@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { formatActivityStatus } from "@/utils/activity";
 
 interface Artist {
   _id: string;
@@ -203,15 +204,27 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               minWidth: 0
             } as React.CSSProperties}
           >
-            <h2 
-              className={`font-extrabold tracking-tight ${fullScreen ? "text-3xl" : ""}`} 
-              style={fullScreen ? { color: "var(--fg)" } : {
-                color: "var(--fg)",
-                fontSize: 'clamp(1rem, 1.6vh + 0.6vw, 1.5rem)'
-              } as React.CSSProperties}
-            >
-              {artist.username}
-            </h2>
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-2">
+                <h2 
+                  className={`font-extrabold tracking-tight ${fullScreen ? "text-3xl" : ""}`} 
+                  style={fullScreen ? { color: "var(--fg)" } : {
+                    color: "var(--fg)",
+                    fontSize: 'clamp(1rem, 1.6vh + 0.6vw, 1.5rem)'
+                  } as React.CSSProperties}
+                >
+                  {artist.username}
+                </h2>
+                {(artist as any).isOnline && (
+                  <span className="shrink-0 w-2 h-2 rounded-full bg-white" title="Currently active" />
+                )}
+              </div>
+              {(artist as any).lastActive !== undefined && (
+                <span className="text-[10px] text-muted-foreground">
+                  {formatActivityStatus((artist as any).isOnline, (artist as any).lastActive)}
+                </span>
+              )}
+            </div>
             <button
               type="button"
               onClick={openProfile}

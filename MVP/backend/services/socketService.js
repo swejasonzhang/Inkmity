@@ -1,8 +1,18 @@
 import Message from "../models/Message.js";
+import User from "../models/UserBase.js";
 
 let io;
 const onlineUsers = new Map();
 const MAX_DECLINES = 99;
+
+const updateLastActive = async (clerkId) => {
+  if (!clerkId) return;
+  try {
+    await User.updateOne({ clerkId }, { lastActive: new Date() });
+  } catch (err) {
+    console.error("Failed to update lastActive:", err);
+  }
+};
 
 export const initSocket = (ioInstance) => {
   io = ioInstance;
@@ -10,11 +20,12 @@ export const initSocket = (ioInstance) => {
   io.on("connection", (socket) => {
     socket.data = socket.data || {};
 
-    socket.on("register", (clerkId) => {
+    socket.on("register", async (clerkId) => {
       if (typeof clerkId !== "string" || !clerkId) return;
       onlineUsers.set(clerkId, socket.id);
       socket.data.userId = clerkId;
       socket.join(userRoom(clerkId));
+      await updateLastActive(clerkId);
     });
 
     socket.on("unregister", () => {
@@ -70,6 +81,7 @@ export const initSocket = (ioInstance) => {
           return ack?.({ error: "missing_fields" });
         const allowed = await isAllowedToChat(senderId, receiverId);
         if (!allowed) return ack?.({ error: "not_allowed" });
+        await updateLastActive(senderId);
         const now = new Date();
         const message = await Message.create({
           senderId: String(senderId),
@@ -127,6 +139,12 @@ export const initSocket = (ioInstance) => {
 export const getIO = () => {
   if (!io) throw new Error("Socket.io not initialized");
   return io;
+};
+export const isUserOnline = (clerkId) => {
+  return onlineUsers.has(clerkId);
+};
+export const getOnlineUsers = () => {
+  return new Set(onlineUsers.keys());
 };
 export const userRoom = (userId) => `user:${userId}`;
 export const threadRoom = (threadKey) => `thread:${threadKey}`;
