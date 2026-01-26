@@ -290,7 +290,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           };
         });
       });
-      setTimeout(() => scrollToBottom(), 0);
+      requestAnimationFrame(() => scrollToBottom());
     };
 
     const onDeclined = (p: {
@@ -332,15 +332,39 @@ const ChatWindow: FC<ChatWindowProps> = ({
       }
     };
 
+    const handleUserOnline = (data: { clerkId: string }) => {
+      setConversations(prev => prev.map(c => 
+        c.participantId === data.clerkId ? { ...c, isOnline: true } : c
+      ));
+    };
+    
+    const handleUserOffline = (data: { clerkId: string }) => {
+      setConversations(prev => prev.map(c => 
+        c.participantId === data.clerkId ? { ...c, isOnline: false } : c
+      ));
+    };
+    
+    const handleActivityUpdate = (data: { userId: string; lastActive: number }) => {
+      setConversations(prev => prev.map(c => 
+        c.participantId === data.userId ? { ...c, lastActive: data.lastActive } : c
+      ));
+    };
+    
     socket.on("conversation:ack", onAck);
     socket.on("message:new", onMessageNew);
     socket.on("conversation:declined", onDeclined);
     socket.on("unread:update", onUnreadUpdate);
+    socket.on("user:online", handleUserOnline);
+    socket.on("user:offline", handleUserOffline);
+    socket.on("user:activity:updated", handleActivityUpdate);
     return () => {
       socket.off("conversation:ack", onAck);
       socket.off("message:new", onMessageNew);
       socket.off("conversation:declined", onDeclined);
       socket.off("unread:update", onUnreadUpdate);
+      socket.off("user:online", handleUserOnline);
+      socket.off("user:offline", handleUserOffline);
+      socket.off("user:activity:updated", handleActivityUpdate);
     };
   }, [currentUserId, authFetch, isArtist, isClient]);
 
@@ -429,7 +453,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   useEffect(() => {
     if (activeConv?.messages?.length) {
-      setTimeout(() => scrollToBottom(), 0);
+      requestAnimationFrame(() => scrollToBottom());
     }
   }, [activeConv?.messages?.length, activeConv?.participantId]);
 
@@ -668,7 +692,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         });
       });
       
-      setTimeout(() => scrollToBottom(), 0);
+      requestAnimationFrame(() => scrollToBottom());
       onMarkRead(clientId);
       setSendError(null);
     } catch (e: any) {
@@ -816,7 +840,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         });
       });
       
-      setTimeout(() => scrollToBottom(), 0);
+      requestAnimationFrame(() => scrollToBottom());
       
       onMarkRead(participantId);
     } catch (err: any) {

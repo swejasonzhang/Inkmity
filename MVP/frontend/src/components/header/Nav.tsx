@@ -3,6 +3,7 @@ import type { NavItem as BuildNavItem } from "./buildNavItems";
 import { InkBar } from "./InkBar";
 import { InkAccentMobile } from "./InkBar";
 import { Lock, User } from "lucide-react";
+import { VisibilityDropdown } from "./VisibilityDropdown";
 
 export type NavItem = BuildNavItem;
 
@@ -14,6 +15,9 @@ export function Nav({
     onDisabledDashboardLeave,
     setMobileMenuOpen,
     handleLogout,
+    userVisibility,
+    isOnline,
+    onVisibilityChange,
 }: {
     items: NavItem[];
     isActive: (to: string) => boolean;
@@ -22,6 +26,9 @@ export function Nav({
     onDisabledDashboardLeave?: React.MouseEventHandler<Element>;
     setMobileMenuOpen?: (v: boolean) => void;
     handleLogout?: () => void;
+    userVisibility?: "online" | "away" | "invisible";
+    isOnline?: boolean;
+    onVisibilityChange?: (status: "online" | "away" | "invisible") => void;
 }) {
     return (
         <>
@@ -130,6 +137,20 @@ export function Nav({
 
                 {isSignedIn && handleLogout && (
                     <>
+                        {userVisibility !== undefined && onVisibilityChange && (
+                            <div className="w-full px-8 py-4">
+                                <div className="text-[14px] font-semibold uppercase tracking-wide text-app/70 mb-3 text-center">Status</div>
+                                <VisibilityDropdown
+                                    currentStatus={userVisibility}
+                                    isOnline={isOnline || false}
+                                    onStatusChange={(status) => {
+                                        onVisibilityChange(status);
+                                    }}
+                                    triggerWidth={280}
+                                />
+                            </div>
+                        )}
+                        <div className="w-full h-px bg-app/20 my-2" />
                         <Link
                             to="/profile"
                             onClick={() => setMobileMenuOpen?.(false)}
