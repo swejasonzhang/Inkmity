@@ -25,7 +25,10 @@ export const initSocket = (ioInstance) => {
       onlineUsers.set(clerkId, socket.id);
       socket.data.userId = clerkId;
       socket.join(userRoom(clerkId));
-      await updateLastActive(clerkId);
+      updateLastActive(clerkId).then(() => {
+        io.emit("user:activity:updated", { userId: clerkId, lastActive: Date.now() });
+      }).catch(() => {});
+      io.emit("user:online", { clerkId, socketId: socket.id });
     });
 
     socket.on("unregister", () => {
@@ -33,6 +36,7 @@ export const initSocket = (ioInstance) => {
         if (sid === socket.id) {
           onlineUsers.delete(uid);
           socket.leave(userRoom(uid));
+          io.emit("user:offline", { clerkId: uid });
           break;
         }
       }
@@ -81,8 +85,10 @@ export const initSocket = (ioInstance) => {
           return ack?.({ error: "missing_fields" });
         const allowed = await isAllowedToChat(senderId, receiverId);
         if (!allowed) return ack?.({ error: "not_allowed" });
-        await updateLastActive(senderId);
         const now = new Date();
+        updateLastActive(senderId).then(() => {
+          io.emit("user:activity:updated", { userId: senderId, lastActive: now.getTime() });
+        }).catch(() => {});
         const message = await Message.create({
           senderId: String(senderId),
           receiverId: String(receiverId),
@@ -129,6 +135,7 @@ export const initSocket = (ioInstance) => {
       for (const [uid, sid] of onlineUsers.entries()) {
         if (sid === socket.id) {
           onlineUsers.delete(uid);
+          io.emit("user:offline", { clerkId: uid });
           break;
         }
       }

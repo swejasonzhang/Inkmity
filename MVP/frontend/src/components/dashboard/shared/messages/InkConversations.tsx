@@ -94,8 +94,9 @@ export const InkConversations: React.FC<Props> = ({
             style={!isMdUp ? { minHeight: "50px" } : undefined}
           >
             <div 
-              className={`flex items-center gap-2 font-semibold ${!isMdUp ? "h-10" : ""}`}
+              className={`flex items-center gap-2 font-semibold cursor-pointer ${!isMdUp ? "h-10" : ""}`}
               style={!isMdUp ? { minHeight: "40px" } : undefined}
+              onClick={() => setOpen(false)}
             >
               <MessageSquare size={16} />
               <span className={isMdUp ? "" : "text-sm"}>Messages</span>

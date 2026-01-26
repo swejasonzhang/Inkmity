@@ -150,10 +150,8 @@ export const VisibilityDropdown = ({
               // Call the change handler immediately for real-time update
               onStatusChange(newStatus);
             }
-            // Close dropdown after a brief delay to allow the update to process
-            setTimeout(() => {
-              setOpen(false);
-            }, 100);
+            // Close dropdown immediately
+            setOpen(false);
           }}
           onClick={(e) => {
             e.stopPropagation();
@@ -175,10 +173,8 @@ export const VisibilityDropdown = ({
                     // Call the change handler immediately for real-time update
                     onStatusChange(option.value);
                   }
-                  // Close dropdown after a brief delay to allow the update to process
-                  setTimeout(() => {
-                    setOpen(false);
-                  }, 100);
+                  // Close dropdown immediately
+                  setOpen(false);
                 }}
                 onClick={(e) => {
                   e.stopPropagation();

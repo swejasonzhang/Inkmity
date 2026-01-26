@@ -186,10 +186,11 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   };
 
   const handleVisibilityChange = async (status: VisibilityStatus) => {
+    // Update optimistically for immediate UI feedback
+    setUserVisibility(status);
+    
     try {
       const token = await getToken();
-      // Update optimistically for immediate UI feedback
-      setUserVisibility(status);
       
       // Ensure socket is connected for real-time updates
       const socket = getSocket();
@@ -198,28 +199,26 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       }
       
       // Update via API - socket events will also update it
-      await updateVisibility(status, token || undefined);
-      
-      // The socket event handler will update the state again to ensure consistency
-      // This ensures real-time updates across all clients
-    } catch (error) {
-      console.error("Failed to update visibility:", error);
-      // Revert on error - fetch current status from server
-      try {
-        const token = await getToken();
-        const res = await fetch(`${API_BASE}/users/me`, {
+      // Don't await - let it happen in background for immediate response
+      updateVisibility(status, token || undefined).catch((error) => {
+        console.error("Failed to update visibility:", error);
+        // Revert on error - fetch current status from server
+        fetch(`${API_BASE}/users/me`, {
           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.visibility && ["online", "away", "invisible"].includes(data.visibility)) {
-            setUserVisibility(data.visibility as VisibilityStatus);
-          }
-        }
-      } catch (fetchError) {
-        console.error("Failed to fetch current visibility:", fetchError);
-      }
+        })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.visibility && ["online", "away", "invisible"].includes(data.visibility)) {
+              setUserVisibility(data.visibility as VisibilityStatus);
+            }
+          })
+          .catch(fetchError => {
+            console.error("Failed to fetch current visibility:", fetchError);
+          });
+      });
+    } catch (error) {
+      console.error("Failed to update visibility:", error);
     }
   };
 
@@ -370,8 +369,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     ? createPortal(
       <div className="sm:hidden fixed inset-0 z-[2147483647]">
         <div className="absolute inset-0 bg-transparent" onClick={() => setMobileMenuOpen(false)} aria-hidden />
-        <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex-col text-app [&_*]:text-app [&_*]:border-app overflow-hidden">
-          <div className={`flex-between items-center px-fluid-md xs:px-fluid-lg sm:px-fluid-xl ${MOBILE_HEADER_H} min-w-0`}>
+        <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex flex-col text-app [&_*]:text-app [&_*]:border-app overflow-hidden">
+          <div className={`flex-between items-center px-fluid-md xs:px-fluid-lg sm:px-fluid-xl ${MOBILE_HEADER_H} min-w-0 flex-shrink-0`}>
             <div className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
               <img src={resolvedLogo} alt="Inkmity Logo" className={`${MOBILE_LOGO_H} w-auto object-contain`} />
             </div>
@@ -379,7 +378,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               <X strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
             </Button>
           </div>
-          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} userVisibility={userVisibility} isOnline={isOnline} onVisibilityChange={handleVisibilityChange} />
+          </div>
         </div>
       </div>,
       portalTarget
@@ -388,26 +389,26 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="flex w-full relative items-center z-[100] px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-1 xs:py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px' }}>
-        <div className="flex-shrink-0 relative z-10 mr-fluid-sm xs:mr-fluid-md sm:mr-fluid-lg">
+      <header className="flex w-full relative items-center justify-between z-[100] px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-1 xs:py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px' }}>
+        <div className="flex-shrink-0 relative z-10">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
             <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain flex-shrink-0" draggable={false} />
             <span className="sr-only">Inkmity</span>
           </Link>
         </div>
 
-        <div className="flex-1 min-w-0 flex justify-center">
-          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
+        <div className="flex-1 min-w-0 flex justify-center hidden sm:flex">
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} userVisibility={userVisibility} isOnline={isOnline} onVisibilityChange={handleVisibilityChange} />
         </div>
 
         <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
-            <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-fluid-xs xs:p-fluid-sm rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app ml-fluid-1 xs:ml-fluid-2" onClick={() => setMobileMenuOpen(true)}>
+            <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-fluid-xs xs:p-fluid-sm rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(true)}>
               <Menu strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
             </Button>
 
             {isLoaded && isSignedIn ? (
               <div
-                className="relative flex flex-shrink-0 text-app [&_*]:text-app [&_*]:border-app"
+                className="relative flex flex-shrink-0 text-app [&_*]:text-app [&_*]:border-app hidden sm:flex"
               >
                 <div
                   ref={triggerRef}
