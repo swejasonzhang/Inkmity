@@ -137,6 +137,78 @@ body,
     stroke var(--ui-ms) ease, box-shadow var(--ui-ms) ease;
 }
 
+.ink-scope textarea,
+.ink-scope input[type="text"],
+.ink-scope input[type="email"],
+.ink-scope input[type="password"],
+.ink-scope input[type="number"],
+.ink-scope input[type="search"],
+.ink-scope input[type="tel"],
+.ink-scope input[type="url"],
+.ink-scope input:not([type]),
+.ink-scope select {
+  color: var(--fg) !important;
+  background-color: var(--background);
+}
+
+.ink-scope textarea[style*="color"],
+.ink-scope input[style*="color"],
+.ink-scope select[style*="color"],
+.ink-scope textarea[class*="text-"],
+.ink-scope input[class*="text-"],
+.ink-scope select[class*="text-"] {
+  color: var(--fg) !important;
+}
+
+.ink-scope textarea::placeholder,
+.ink-scope input::placeholder {
+  color: var(--muted-foreground) !important;
+  opacity: 1;
+}
+
+.ink-scope select option {
+  color: var(--fg) !important;
+  background-color: var(--background);
+}
+
+.ink-scope select:not([multiple]) {
+  color: var(--fg) !important;
+}
+
+.ink-scope [data-slot="select-trigger"],
+.ink-scope [data-slot="select-content"],
+.ink-scope [data-slot="select-item"],
+.ink-scope [data-slot="select-value"] {
+  color: var(--foreground) !important;
+}
+
+.ink-scope [data-slot="select-trigger"] {
+  background-color: var(--background);
+}
+
+.ink-scope [data-slot="select-content"] {
+  background-color: var(--popover);
+}
+
+.ink-scope [data-slot="select-item"]:hover,
+.ink-scope [data-slot="select-item"][data-highlighted] {
+  background-color: var(--accent);
+  color: var(--accent-foreground) !important;
+}
+
+.ink-scope [data-slot="select-trigger"][data-placeholder],
+.ink-scope [data-slot="select-value"][data-placeholder] {
+  color: var(--muted-foreground) !important;
+}
+
+.ink-scope [data-slot="select-label"] {
+  color: var(--muted-foreground) !important;
+}
+
+.ink-scope [data-slot="select-separator"] {
+  background-color: var(--border);
+}
+
 .ink-scope.ink-theming {
   position: relative;
 }

@@ -155,16 +155,13 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
     const handleVisibilityUpdate = (data: { userId: string; visibility: VisibilityStatus }) => {
       if (data.userId === user.id) {
-        // Update state immediately when socket event is received
         setUserVisibility(data.visibility);
       }
     };
     
-    // Listen for visibility updates - both events ensure real-time updates
     socket.on("user:visibility:updated", handleVisibilityUpdate);
     socket.on("user:visibility:changed", handleVisibilityUpdate);
     
-    // Ensure socket is connected and registered
     if (!socket.connected && user?.id) {
       connectSocket(getToken, user.id).catch(console.error);
     } else if (socket.connected && user?.id) {
@@ -186,23 +183,18 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   };
 
   const handleVisibilityChange = async (status: VisibilityStatus) => {
-    // Update optimistically for immediate UI feedback
     setUserVisibility(status);
     
     try {
       const token = await getToken();
       
-      // Ensure socket is connected for real-time updates
       const socket = getSocket();
       if (!socket.connected && user?.id) {
         await connectSocket(getToken, user.id);
       }
       
-      // Update via API - socket events will also update it
-      // Don't await - let it happen in background for immediate response
       updateVisibility(status, token || undefined).catch((error) => {
         console.error("Failed to update visibility:", error);
-        // Revert on error - fetch current status from server
         fetch(`${API_BASE}/users/me`, {
           headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           credentials: "include",
@@ -282,7 +274,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     const measure = () => {
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
-      // Use exact width to match the trigger button
       setTriggerWidth(rect.width);
     };
     measure();
@@ -290,7 +281,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  // Remeasure when dropdown opens to ensure accurate width and position
   useEffect(() => {
     if (!showDropdown) {
       setDropdownPosition(null);
@@ -301,7 +291,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
       setTriggerWidth(rect.width);
-      // Calculate position for portal rendering
       setDropdownPosition({
         top: rect.bottom + 6,
         right: window.innerWidth - rect.right,
@@ -310,7 +299,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
     updatePosition();
     
-    // Update position on scroll and resize
     window.addEventListener('scroll', updatePosition, true);
     window.addEventListener('resize', updatePosition);
     
