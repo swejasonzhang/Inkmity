@@ -30,7 +30,9 @@ function isEmailConfigured() {
 }
 
 function createEmailContent(booking, clientName, type = 'confirmation') {
-  const cancelUrl = `${config.server.backendUrl}/bookings/${booking._id}/cancel-link`;
+  const cancelUrl = booking.cancelToken
+    ? `${config.server.backendUrl}/bookings/${booking._id}/cancel-link?token=${booking.cancelToken}`
+    : `${config.server.backendUrl}/bookings/${booking._id}/cancel-link`;
 
   if (type === 'confirmation') {
     return {

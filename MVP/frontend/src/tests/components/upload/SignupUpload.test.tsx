@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, waitFor } from "@/__tests__/setup/test-utils";
+import { render, waitFor } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 
 const mockGetToken = jest.fn<() => Promise<string>>();

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
-import CircularProgress from "@mui/material/CircularProgress";
+import { Spinner } from "@/components/ui/spinner";
 import { motion } from "framer-motion";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -357,7 +357,7 @@ export default function ArtistsSection({
             <div className="flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
                 {isCenterLoading && (
                     <div className="absolute inset-0 z-10 grid place-items-center">
-                        <CircularProgress sx={{ color: "var(--fg)" }} />
+                        <Spinner className="text-[color:var(--fg)]" />
                     </div>
                 )}
 

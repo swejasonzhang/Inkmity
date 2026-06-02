@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useTheme } from "@/hooks/useTheme";
-import { API_URL } from "@/lib/http";
+import { API_URL } from "@/api";
 import { Save, X, Camera, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

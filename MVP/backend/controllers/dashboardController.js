@@ -14,7 +14,6 @@ export const getDashboardData = async (req, res) => {
 
     res.status(200).json({ user, featuredArtists });
   } catch (error) {
-    console.error("Dashboard fetch error:", error);
     res.status(500).json({ error: "Error fetching dashboard data" });
   }
 };

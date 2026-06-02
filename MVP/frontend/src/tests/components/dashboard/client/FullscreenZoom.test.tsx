@@ -1,5 +1,5 @@
 import { jest, describe, test, expect } from "@jest/globals";
-import { render, waitFor, screen } from "@/__tests__/setup/test-utils";
+import { render, waitFor, screen } from "@/tests/setup/test-utils";
 
 const { default: FullscreenZoom } = await import("@/components/dashboard/client/FullscreenZoom");
 

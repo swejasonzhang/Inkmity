@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen } from "@/__tests__/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 
 const { default: CalendarPicker } = await import("@/components/calender/CalendarPicker");
@@ -37,13 +37,13 @@ describe("CalendarPicker", () => {
     const onDateChange = jest.fn();
     render(<CalendarPicker {...defaultProps} onDateChange={onDateChange} />);
 
-    const dayButtons = screen.getAllByRole("gridcell").filter(btn => {
+    const dayButtons = screen.getAllByRole("gridcell").filter((btn: HTMLElement) => {
       const text = btn.textContent || "";
       const num = parseInt(text.trim());
       return /^\d+$/.test(text.trim()) && num > 0 && num <= 31;
     });
     if (dayButtons.length > 0) {
-      const clickableButton = dayButtons.find(btn => {
+      const clickableButton = dayButtons.find((btn: HTMLElement) => {
         const button = btn.querySelector("button");
         return button && !button.disabled;
       });

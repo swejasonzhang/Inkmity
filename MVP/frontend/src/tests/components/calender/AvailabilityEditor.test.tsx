@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render } from "@/__tests__/setup/test-utils";
+import { render } from "@/tests/setup/test-utils";
 
 const mockGetToken = jest.fn<() => Promise<string>>();
 const mockListBookingsForDay = jest.fn<() => Promise<any>>();

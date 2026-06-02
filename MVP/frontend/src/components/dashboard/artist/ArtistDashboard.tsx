@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ChatWindow from "@/components/dashboard/shared/ChatWindow";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
-import { API_URL } from "@/lib/http";
+import { API_URL } from "@/api";
 import { useMessaging } from "@/hooks/useMessaging";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));

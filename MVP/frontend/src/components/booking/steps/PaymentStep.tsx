@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+import { stripePromise } from "@/lib/stripe";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -15,17 +15,9 @@ import {
   createDepositPaymentIntent,
   submitIntakeForm,
   getArtistPolicy,
+  getBooking,
 } from "@/api";
 import { useApi } from "@/api";
-
-const getStripeKey = (): string => {
-  try {
-    return (import.meta?.env as any)?.VITE_STRIPE_PUBLISHABLE_KEY || "";
-  } catch {
-    return "";
-  }
-};
-const stripePromise = loadStripe(getStripeKey());
 
 type BookingFlowData = {
   appointmentType: "consultation" | "tattoo_session" | null;
@@ -87,6 +79,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
   const [depositPolicy, setDepositPolicy] = useState<DepositPolicy | null>(null);
   useEffect(() => {
@@ -198,6 +191,16 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
           }
 
           if (paymentIntent?.status === "succeeded") {
+            // Poll until the server confirms depositStatus === 'paid' (handles async 3DS flows)
+            const token = await getToken();
+            let pollAttempts = 0;
+            const maxAttempts = 10;
+            while (pollAttempts < maxAttempts) {
+              const updated = await getBooking(booking._id, token);
+              if ((updated as any)?.depositStatus === "paid") break;
+              pollAttempts++;
+              await new Promise((r) => setTimeout(r, 1000 * pollAttempts));
+            }
             toast.success(`Deposit paid successfully! ($${(depositToPay / 100).toFixed(2)})`);
           } else {
             throw new Error("Payment did not complete successfully");
@@ -212,6 +215,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       }
 
       toast.success("Appointment booked successfully!");
+      setConfirmedBooking(booking);
       onSubmit(booking);
     } catch (error: any) {
       console.error("Booking error:", error);
@@ -225,6 +229,29 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
 
   const isSubmitting = submitting || parentSubmitting;
   const canSubmit = !isSubmitting && !!bookingData.startISO && !!bookingData.endISO && !!bookingData.appointmentType;
+
+  if (confirmedBooking) {
+    return (
+      <div className="space-y-6">
+        <Card className="p-6 space-y-4">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="rounded-full bg-green-500/10 p-4">
+              <CreditCard className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold">Booking Confirmed!</h3>
+            <p className="text-sm text-muted-foreground">
+              Your appointment has been booked successfully.
+            </p>
+            {confirmedBooking._id && (
+              <p className="text-xs text-muted-foreground font-mono">
+                Booking ID: {confirmedBooking._id}
+              </p>
+            )}
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { API_URL } from "@/lib/http";
+import { API_URL } from "@/api";
 import { Save, Edit2, X, Plus, Camera, Briefcase, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -845,7 +845,7 @@ export default function ArtistProfile() {
                                 className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs"
                                 placeholder="Enter shop address"
                             />
-                            {currentShopLat && currentShopLng && (
+                            {currentShopLat && currentShopLng && import.meta.env.VITE_GOOGLE_MAPS_API_KEY && (
                                 <div className="mt-2 w-full h-48 rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
                                     <iframe
                                         width="100%"
@@ -854,7 +854,7 @@ export default function ArtistProfile() {
                                         loading="lazy"
                                         allowFullScreen
                                         referrerPolicy="no-referrer-when-downgrade"
-                                        src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY'}&q=${currentShopLat},${currentShopLng}`}
+                                        src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${currentShopLat},${currentShopLng}`}
                                     />
                                 </div>
                             )}

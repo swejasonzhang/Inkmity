@@ -104,8 +104,8 @@ const Artists: React.FC = () => {
   )
 
   return (
-    <div className="min-h-dvh bg-gray-900 text-white">
-      <div className="sticky top-0 z-20 bg-gray-900/85 backdrop-blur supports-[backdrop-filter]:bg-gray-900/70 border-b border-white/10">
+    <div className="min-h-dvh bg-app text-app">
+      <div className="sticky top-0 z-20 bg-app/90 backdrop-blur supports-[backdrop-filter]:bg-app/80 border-b border-app">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
           <ArtistFilter
             priceFilter={priceFilter}
@@ -139,16 +139,16 @@ const Artists: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
           {loading && artists.length === 0
             ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonCard key={`sk-${i}`} />)
             : artists.map(artist => <ArtistCard key={artist._id} artist={artist as any} onClick={() => { }} />)}
         </div>
 
         {!loading && artists.length === 0 && !error && (
-          <div className="text-center text-white/70 py-16">
-            <p className="text-lg">No artists match your filters.</p>
-            <p className="text-sm mt-1">Try adjusting filters or keywords.</p>
+          <div className="text-center py-12 sm:py-16" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+            <p className="text-base sm:text-lg">No artists match your filters.</p>
+            <p className="text-xs sm:text-sm mt-1">Try adjusting filters or keywords.</p>
           </div>
         )}
 

@@ -532,7 +532,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           } as React.CSSProperties}
         >
           <div className="w-full max-w-[1100px] mx-auto px-6 pt-5 relative flex flex-col items-center">
-            <h2 className="text-2xl font-extrabold">{artist.username}</h2>
+            <h2 className="text-2xl font-extrabold text-center w-full px-10">{artist.username}</h2>
             <button
               onPointerDown={handleClosePointerDown}
               aria-label="Close"

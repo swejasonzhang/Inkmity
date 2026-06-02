@@ -1,6 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useRole } from "@/hooks/useRole";
 
 const mockGetMe = jest.fn<() => Promise<any>>();
 const mockGetToken = jest.fn<() => Promise<string>>();
@@ -63,6 +62,8 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
   }),
 }));
 
+const { useRole } = await import("@/hooks/useRole");
+
 describe("useRole", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -81,7 +82,7 @@ describe("useRole", () => {
   });
 
   test("should return artist role when user is artist", async () => {
-    mockGetMe.mockClear();
+    mockGetMe.mockReset();
     mockGetMe.mockResolvedValue({ role: "artist" });
     const { result } = renderHook(() => useRole());
 

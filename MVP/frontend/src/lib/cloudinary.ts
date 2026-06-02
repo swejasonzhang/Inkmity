@@ -1,8 +1,4 @@
-const RAW_API_BASE =
-  (typeof import.meta !== "undefined" &&
-    (import.meta as any).env?.VITE_API_URL) ||
-  "http://localhost:3001";
-const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
+import { API_URL as API_BASE } from "@/api";
 
 export async function getSignedUpload(kind: "client_ref" | "artist_portfolio") {
   const qs = new URLSearchParams({ kind }).toString();

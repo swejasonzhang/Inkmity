@@ -1,8 +1,64 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, waitFor } from "@/__tests__/setup/test-utils";
+import { render, waitFor } from "@/tests/setup/test-utils";
 
 const mockGetDashboardData = jest.fn<() => Promise<any>>();
 const mockGetToken = jest.fn<() => Promise<string>>();
+
+jest.unstable_mockModule("react-toastify", () => ({
+  toast: jest.fn(),
+  ToastContainer: jest.fn(() => null),
+}));
+
+jest.unstable_mockModule("@/components/dashboard/artist/CalendarView", () => ({
+  default: jest.fn(() => <div data-testid="calendar-view">Calendar</div>),
+}));
+
+jest.unstable_mockModule("@/components/dashboard/artist/AnalyticsPanel", () => ({
+  default: jest.fn(() => <div data-testid="analytics-panel">Analytics</div>),
+}));
+
+jest.unstable_mockModule("@/components/dashboard/shared/ChatWindow", () => ({
+  default: jest.fn(() => <div data-testid="chat-window">ChatWindow</div>),
+}));
+
+jest.unstable_mockModule("@/components/dashboard/shared/FloatingBar", () => ({
+  default: jest.fn(() => <div data-testid="floating-bar">FloatingBar</div>),
+}));
+
+jest.unstable_mockModule("@/components/header/Header", () => ({
+  default: jest.fn(() => <header data-testid="header">Header</header>),
+}));
+
+jest.unstable_mockModule("@/lib/socket", () => ({
+  getSocket: jest.fn(() => ({
+    on: jest.fn(),
+    off: jest.fn(),
+    emit: jest.fn(),
+    connected: true,
+  })),
+  connectSocket: jest.fn(),
+  socket: {
+    on: jest.fn(),
+    off: jest.fn(),
+    emit: jest.fn(),
+    connected: true,
+  },
+}));
+
+jest.unstable_mockModule("@/hooks/useRole", () => ({
+  useRole: jest.fn(() => ({ role: "artist", isLoaded: true, isSignedIn: true })),
+}));
+
+jest.unstable_mockModule("@/hooks/useMessaging", () => ({
+  useMessaging: jest.fn(() => ({
+    conversations: [],
+    messages: [],
+    activeConversationId: null,
+    setActiveConversationId: jest.fn(),
+    sendMessage: jest.fn(),
+    isLoading: false,
+  })),
+}));
 
 jest.unstable_mockModule("@/api", () => ({
   getDashboardData: mockGetDashboardData,

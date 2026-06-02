@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen } from "@/__tests__/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 
 jest.unstable_mockModule("@/lib/cloudinary", () => ({
   uploadToCloudinary: jest.fn<() => Promise<{ public_id: string }>>().mockResolvedValue({ public_id: "test-id" }),

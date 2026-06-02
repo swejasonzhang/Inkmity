@@ -11,6 +11,7 @@ import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
 import { getIO } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail } from "../services/emailService.js";
+import { randomBytes } from "crypto";
 
 const DEFAULT_TIMEZONE = "America/New_York";
 const DEFAULT_SLOT_MINUTES = 30;
@@ -78,23 +79,33 @@ function buildDayIntervals({ dateISO, tz, ranges }) {
 }
 
 export async function getBookingsForDay(req, res) {
-  const { artistId, date } = req.query;
-  if (!artistId || !date)
-    return res.status(400).json({ error: "artistId and date are required" });
-  const { start, end } = dayBoundsUTC(String(date));
-  const docs = await Booking.find({
-    artistId,
-    startAt: { $lt: end },
-    endAt: { $gt: start },
-    status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
-  }).sort({ startAt: 1 });
-  res.json(docs);
+  try {
+    const { artistId, date } = req.query;
+    if (!artistId || !date)
+      return res.status(400).json({ error: "artistId and date are required" });
+    const { start, end } = dayBoundsUTC(String(date));
+    const docs = await Booking.find({
+      artistId,
+      startAt: { $lt: end },
+      endAt: { $gt: start },
+      status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
+    }).sort({ startAt: 1 });
+    res.json(docs);
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "Invalid parameter" });
+    res.status(500).json({ error: "Failed to fetch bookings for day" });
+  }
 }
 
 export async function getBooking(req, res) {
-  const doc = await Booking.findById(req.params.id);
-  if (!doc) return res.status(404).json({ error: "not_found" });
-  res.json(doc);
+  try {
+    const doc = await Booking.findById(req.params.id);
+    if (!doc) return res.status(404).json({ error: "not_found" });
+    res.json(doc);
+  } catch (err) {
+    if (err.name === "CastError") return res.status(400).json({ error: "Invalid booking id" });
+    res.status(500).json({ error: "Failed to fetch booking" });
+  }
 }
 
 export async function getClientBookings(req, res) {
@@ -133,7 +144,6 @@ export async function getClientBookings(req, res) {
             },
           };
         } catch (err) {
-          console.error("Error fetching artist for booking:", err);
           return {
             ...booking,
             artist: {
@@ -148,7 +158,6 @@ export async function getClientBookings(req, res) {
 
     res.json(bookingsWithArtists);
   } catch (error) {
-    console.error("Error fetching client bookings:", error);
     res.status(500).json({ error: "Failed to fetch bookings" });
   }
 }
@@ -188,7 +197,6 @@ export async function getArtistBookings(req, res) {
             },
           };
         } catch (err) {
-          console.error("Error fetching client for booking:", err);
           return {
             ...booking,
             client: {
@@ -203,7 +211,6 @@ export async function getArtistBookings(req, res) {
 
     res.json(bookingsWithClients);
   } catch (error) {
-    console.error("Error fetching artist bookings:", error);
     res.status(500).json({ error: "Failed to fetch artist bookings" });
   }
 }
@@ -291,6 +298,7 @@ export async function createBooking(req, res) {
         depositPaidCents: 0,
         clientCode: genCode(),
         artistCode: genCode(),
+        cancelToken: randomBytes(32).toString("hex"),
         codeIssuedAt: null,
         codeExpiresAt: null,
         clientVerifiedAt: null,
@@ -495,7 +503,6 @@ export async function cancelBooking(req, res) {
 
     res.json(booking);
   } catch (error) {
-    console.error("Error cancelling booking:", error);
     res.status(500).json({ error: "cancel_failed" });
   }
 }
@@ -505,8 +512,14 @@ export async function cancelBookingViaLink(req, res) {
     const { id } = req.params;
     const { token } = req.query;
 
-    const booking = await Booking.findById(id);
+    // Fetch the booking including the secret cancel token
+    const booking = await Booking.findById(id).select("+cancelToken");
     if (!booking) return res.status(404).json({ error: "not_found" });
+
+    // Validate the cancellation token to prevent unauthorised link-based cancellation
+    if (!token || !booking.cancelToken || token !== booking.cancelToken) {
+      return res.status(403).redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/appointments?error=invalid_token`);
+    }
 
     if (booking.status === "cancelled") {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/appointments?cancelled=true`);
@@ -551,15 +564,17 @@ export async function cancelBookingViaLink(req, res) {
     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/appointments?cancelled=true`);
 
   } catch (error) {
-    console.error("Error cancelling booking via link:", error);
     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/appointments?error=cancel_failed`);
   }
 }
 
 export async function completeBooking(req, res) {
   try {
+    const actorId = getActorId(req);
     const doc = await Booking.findById(req.params.id);
     if (!doc) return res.status(404).json({ error: "not_found" });
+    const isArtist = String(doc.artistId) === actorId;
+    if (!isArtist) return res.status(403).json({ error: "Only the artist can complete a booking" });
     if (doc.status === "completed") return res.json(doc);
     doc.status = "completed";
     doc.completedAt = new Date();
@@ -578,6 +593,10 @@ export async function verifyBookingCode(req, res) {
       return res.status(400).json({ error: "role and code required" });
     const doc = await Booking.findById(id);
     if (!doc) return res.status(404).json({ error: "not_found" });
+    const actorId = getActorId(req);
+    const isClient = String(doc.clientId) === actorId;
+    const isArtist = String(doc.artistId) === actorId;
+    if (!isClient && !isArtist) return res.status(403).json({ error: "Forbidden" });
     if (doc.status === "cancelled")
       return res.status(400).json({ error: "booking_cancelled" });
     if (!doc.codeExpiresAt || new Date() > new Date(doc.codeExpiresAt))
@@ -791,6 +810,7 @@ export async function createConsultation(req, res) {
         sessionNumber: 1,
         clientCode: genCode(),
         artistCode: genCode(),
+        cancelToken: randomBytes(32).toString("hex"),
       });
     } catch (e) {
       if (e?.name === "ValidationError") {
@@ -920,6 +940,7 @@ export async function createTattooSession(req, res) {
         depositPaidCents: 0,
         clientCode: genCode(),
         artistCode: genCode(),
+        cancelToken: randomBytes(32).toString("hex"),
       });
     } catch (e) {
       if (e?.name === "ValidationError") {
@@ -1203,7 +1224,6 @@ export async function getIntakeForm(req, res) {
 
     res.json(intakeForm);
   } catch (error) {
-    console.error("Error fetching intake form:", error);
     return res.status(500).json({ error: "Failed to fetch intake form" });
   }
 }
@@ -1244,7 +1264,6 @@ export async function getAppointmentDetails(req, res) {
         : null,
     });
   } catch (error) {
-    console.error("Error fetching appointment details:", error);
     return res
       .status(500)
       .json({ error: "Failed to fetch appointment details" });
@@ -1429,7 +1448,6 @@ export async function getAppointments(req, res) {
 
     res.json(appointmentsWithUsers);
   } catch (error) {
-    console.error("Error fetching appointments:", error);
     return res.status(500).json({ error: "Failed to fetch appointments" });
   }
 }

@@ -1,11 +1,19 @@
 import { Link } from "react-router-dom";
 import type { NavItem as BuildNavItem } from "./buildNavItems";
-import { InkBar } from "./InkBar";
-import { InkAccentMobile } from "./InkBar";
 import { Lock, User } from "lucide-react";
 import { VisibilityDropdown } from "./VisibilityDropdown";
 
 export type NavItem = BuildNavItem;
+
+const desktopBase =
+    "relative inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg text-[12px] lg:text-[14px] xl:text-[15px] font-extrabold uppercase tracking-wide flex-shrink-0 whitespace-nowrap transition-all duration-200";
+const desktopActive = "bg-elevated border border-app text-app shadow-sm";
+const desktopIdle = "border border-transparent text-app/55 hover:text-app hover:bg-elevated/50";
+
+const mobileBase =
+    "relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-center text-[22px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap transition-all duration-200";
+const mobileActive = "bg-elevated/70 border border-app text-app";
+const mobileIdle = "border border-transparent text-app/75 hover:text-app";
 
 export function Nav({
     items,
@@ -32,51 +40,47 @@ export function Nav({
 }) {
     return (
         <>
-            <nav className="hidden sm:flex items-center justify-center gap-2 md:gap-4 lg:gap-6 xl:gap-8 w-full">
+            <nav className="hidden md:flex items-center justify-center gap-1.5 lg:gap-2 w-full min-w-0">
                 {items.map((item) => {
                     const active = isActive(item.to);
-                    const base =
-                        "relative group inline-flex items-center gap-1 md:gap-2 px-1 md:px-2 lg:px-3 py-2 text-[14px] md:text-[16px] lg:text-[18px] font-extrabold uppercase tracking-wide text-app/90 hover:text-app flex-shrink-0 whitespace-nowrap";
                     const isDisabled = item.to === "#" || item.disabled;
+                    const cls = `${desktopBase} ${active ? desktopActive : desktopIdle}`;
 
                     if (isDisabled) {
                         return (
                             <button
                                 key={item.label}
                                 type="button"
-                                disabled
-                                onMouseEnter={onDisabledDashboardHover}
+                                onMouseMove={onDisabledDashboardHover}
                                 onMouseLeave={onDisabledDashboardLeave}
                                 onClick={item.onClick}
-                                className={base}
-                                aria-disabled="true"
-                                title="In Development"
+                                aria-label={`${item.label} — sign in required`}
+                                className={`${desktopBase} ${desktopIdle}`}
                             >
-                                <Lock size={14} className="opacity-80 flex-shrink-0" />
+                                <Lock size={11} className="opacity-60 flex-shrink-0" />
                                 <span className="whitespace-nowrap">{item.label}</span>
-                                <span className="rounded px-1 py-0.5 text-[9px] md:text-[10px] font-black uppercase tracking-wider bg-elevated border border-app text-app flex-shrink-0 whitespace-nowrap">
-                                    In Dev
-                                </span>
-                                <InkBar active={active} />
                             </button>
                         );
                     }
 
                     return (
-                        <Link key={item.label} to={item.to} className={base}>
-                            <span className="truncate min-w-0">{item.label}</span>
-                            <InkBar active={active} />
+                        <Link
+                            key={item.label}
+                            to={item.to}
+                            aria-current={active ? "page" : undefined}
+                            className={cls}
+                        >
+                            <span className="whitespace-nowrap">{item.label}</span>
                         </Link>
                     );
                 })}
             </nav>
 
-            <nav className="sm:hidden flex-1 overflow-y-auto flex flex-col items-center justify-center gap-4 py-6">
+            <nav className="md:hidden flex-1 overflow-y-auto flex flex-col items-center justify-center gap-3 py-6 w-full px-6">
                 {items.map((item) => {
                     const active = isActive(item.to);
-                    const base =
-                        "relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[24px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap";
                     const isDisabled = item.to === "#" || item.disabled;
+                    const cls = `${mobileBase} ${active ? mobileActive : mobileIdle}`;
 
                     if (isDisabled) {
                         const isGate = typeof item.onClick === "function";
@@ -89,12 +93,10 @@ export function Nav({
                                         item.onClick?.(e);
                                         setMobileMenuOpen?.(false);
                                     }}
-                                    className={base}
-                                    aria-disabled="true"
+                                    className={cls}
+                                    aria-label={`${item.label} — sign in required`}
                                 >
-                                    <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
-                                        <InkAccentMobile active={active} />
-                                    </span>
+                                    <Lock size={18} className="opacity-70 flex-shrink-0" />
                                     <span className="whitespace-nowrap">{item.label}</span>
                                 </button>
                             );
@@ -104,17 +106,14 @@ export function Nav({
                                 key={item.label}
                                 type="button"
                                 disabled
-                                className={base}
+                                className={cls}
                                 aria-disabled="true"
                                 title="In Development"
                             >
-                                <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
-                                    <InkAccentMobile active={active} />
-                                </span>
-                                <Lock size={18} className="opacity-80 flex-shrink-0" />
+                                <Lock size={18} className="opacity-70 flex-shrink-0" />
                                 <span className="whitespace-nowrap">{item.label}</span>
-                                <span className="rounded-md px-2 py-0.5 text-[12px] font-black uppercase tracking-wider bg-elevated border border-app text-app">
-                                    In Development
+                                <span className="rounded-md px-2 py-0.5 text-[12px] font-black uppercase tracking-wider bg-app/10 text-app/70">
+                                    Soon
                                 </span>
                             </button>
                         );
@@ -125,11 +124,9 @@ export function Nav({
                             key={item.label}
                             to={item.to}
                             onClick={() => setMobileMenuOpen?.(false)}
-                            className={base}
+                            aria-current={active ? "page" : undefined}
+                            className={cls}
                         >
-                            <span className="inline-flex items-center justify-center scale-125">
-                                <InkAccentMobile active={active} />
-                            </span>
                             <span>{item.label}</span>
                         </Link>
                     );
@@ -138,27 +135,23 @@ export function Nav({
                 {isSignedIn && handleLogout && (
                     <>
                         {userVisibility !== undefined && onVisibilityChange && (
-                            <div className="w-full px-8 py-4">
+                            <div className="w-full max-w-xs px-2 py-4">
                                 <div className="text-[14px] font-semibold uppercase tracking-wide text-app/70 mb-3 text-center">Status</div>
                                 <VisibilityDropdown
                                     currentStatus={userVisibility}
                                     isOnline={isOnline || false}
-                                    onStatusChange={(status) => {
-                                        onVisibilityChange(status);
-                                    }}
+                                    onStatusChange={(status) => onVisibilityChange(status)}
                                     triggerWidth={280}
                                 />
                             </div>
                         )}
-                        <div className="w-full h-px bg-app/20 my-2" />
+                        <div className="w-full max-w-xs h-px bg-app/20 my-2" />
                         <Link
                             to="/profile"
                             onClick={() => setMobileMenuOpen?.(false)}
-                            className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[24px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap"
+                            aria-current={isActive("/profile") ? "page" : undefined}
+                            className={`${mobileBase} ${isActive("/profile") ? mobileActive : mobileIdle}`}
                         >
-                            <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
-                                <InkAccentMobile active={isActive("/profile")} />
-                            </span>
                             <User size={20} className="flex-shrink-0" />
                             <span className="whitespace-nowrap">Profile</span>
                         </Link>
@@ -168,11 +161,8 @@ export function Nav({
                                 setMobileMenuOpen?.(false);
                                 handleLogout();
                             }}
-                            className="relative inline-flex items-center justify-center gap-3 px-8 py-5 text-center text-app text-[24px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap"
+                            className={`${mobileBase} ${mobileIdle}`}
                         >
-                            <span className="inline-flex items-center justify-center scale-125 flex-shrink-0">
-                                <InkAccentMobile active={false} />
-                            </span>
                             <span className="whitespace-nowrap">Logout</span>
                         </button>
                     </>

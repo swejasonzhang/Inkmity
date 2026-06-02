@@ -5,10 +5,9 @@ const { buildNavItems } = await import("@/components/header/buildNavItems");
 describe("buildNavItems", () => {
   test("should return nav items when dashboard is enabled", () => {
     const items = buildNavItems(false, jest.fn());
-    expect(items).toHaveLength(6);
-    expect(items[0].label).toBe("Landing");
-    expect(items[1].label).toBe("Dashboard");
-    expect(items[1].disabled).toBeUndefined();
+    expect(items).toHaveLength(5);
+    expect(items[0].label).toBe("Dashboard");
+    expect(items[0].disabled).toBeUndefined();
   });
 
   test("should disable dashboard when dashboardDisabled is true", () => {
@@ -24,10 +23,9 @@ describe("buildNavItems", () => {
     expect(dashboardItem?.onClick).toBeDefined();
   });
 
-  test("should include gallery badge", () => {
+  test("should include core public destinations", () => {
     const items = buildNavItems(false, jest.fn());
-    const galleryItem = items.find(item => item.label === "Gallery");
-    expect(galleryItem?.badge).toBeDefined();
-    expect(galleryItem?.disabled).toBe(true);
+    const labels = items.map(i => i.label);
+    expect(labels).toEqual(["Dashboard", "Artists", "Appointments", "Contact", "About"]);
   });
 });

@@ -44,6 +44,8 @@ async function declineCount(clientId, artistId) {
 export const getAllMessagesForUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    const authId = String(req.auth?.userId || req.user?.clerkId || "");
+    if (authId !== userId) return res.status(403).json({ error: "Forbidden" });
     const deletedConvs = await DeletedConversation.find({ userId }).lean();
     const deletedParticipantIds = new Set(deletedConvs.map(dc => dc.participantId));
     
@@ -473,28 +475,6 @@ export const declineMessageRequest = async (req, res) => {
     msg.requestStatus = "declined";
     await msg.save();
     
-    const existingDeclines = await declineCount(msg.senderId, artistId);
-    if (existingDeclines < MAX_DECLINES) {
-      const declinesToAdd = MAX_DECLINES - existingDeclines;
-      const declineRecords = [];
-      for (let i = 0; i < declinesToAdd; i++) {
-        declineRecords.push({
-          senderId: msg.senderId,
-          receiverId: artistId,
-          text: "Request declined",
-          type: "request",
-          requestStatus: "declined",
-          delivered: true,
-          deliveredAt: new Date(),
-          seen: false,
-          threadKey: msg.threadKey,
-        });
-      }
-      if (declineRecords.length > 0) {
-        await Message.insertMany(declineRecords);
-      }
-    }
-    
     const clientId = msg.senderId;
     const artist = await User.findOne({ clerkId: artistId }).lean();
     const artistUsername = artist?.username || "the artist";
@@ -535,8 +515,8 @@ export const declineMessageRequest = async (req, res) => {
       io.to(userRoom(clientId)).emit("conversation:declined", {
         convoId: msg.threadKey,
         declines,
-        blocked: true,
-        remainingRequests: 0,
+        blocked,
+        remainingRequests: blocked ? 0 : MAX_DECLINES - declines,
       });
       
       io.to(userRoom(clientId))
@@ -544,9 +524,8 @@ export const declineMessageRequest = async (req, res) => {
         .to(threadRoom(msg.threadKey))
         .emit("conversation:removed", { convoId: msg.threadKey });
     }
-    res.json({ ok: true, declines, blocked: true });
+    res.json({ ok: true, declines, blocked });
   } catch (e) {
-    console.error("Error declining message request:", e);
     res.status(500).json({ error: "Failed to decline request" });
   }
 };

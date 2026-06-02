@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach, afterEach } from "@jest/globals";
-import { render, screen } from "@/__tests__/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 
 beforeEach(() => {
   Object.defineProperty(globalThis, "import", {

@@ -1,8 +1,8 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
+import { render, screen, waitFor } from "@/tests/setup/test-utils";
 
-jest.unstable_mockModule("@mui/material/CircularProgress", () => ({
-  default: () => <div data-testid="loading-spinner">Loading...</div>,
+jest.unstable_mockModule("@/components/ui/spinner", () => ({
+  Spinner: () => <div data-testid="loading-spinner" role="status" aria-label="Loading">Loading...</div>,
 }));
 
 const { default: RequestPanel } = await import("@/components/dashboard/shared/messages/requestPanel");
