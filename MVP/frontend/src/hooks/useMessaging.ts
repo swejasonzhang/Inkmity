@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { socket } from "@/lib/socket";
+import { API_URL } from "@/api";
 
 export type Message = {
   senderId: string;
@@ -73,11 +74,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
   const mounted = useRef(false);
   const lastJoined = useRef<string | null>(null);
 
-  const apiBase = String(
-    (import.meta as any)?.env?.VITE_API_URL ??
-      import.meta.env?.VITE_API_URL ??
-      "http://localhost:3001"
-  ).replace(/\/$/, "");
+  const apiBase = API_URL;
 
   const getGate = useCallback(
     async (artistId: string): Promise<ConversationMeta> => {
@@ -231,7 +228,6 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     fetchUnread();
     fetchIncomingRequests();
     } catch (error: any) {
-      console.error("[useMessaging] fetchAll failed:", error);
       setLoading(false);
       // Silently fail - network errors are expected if backend is down
     }

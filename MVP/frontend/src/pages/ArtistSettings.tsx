@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import AvailabilityEditor, { type Availability as EditorAvailability } from "@/components/calender/AvailabilityEditor";
-import { http } from "@/lib/http";
+import { apiGet } from "@/api";
 
 type Props = { artistId: string };
 
 async function getAvailability(artistId: string): Promise<EditorAvailability> {
-  return http<EditorAvailability>("/availability", { method: "GET" }, undefined, { artistId });
+  return apiGet<EditorAvailability>("/availability", { artistId });
 }
 
 export default function ArtistSettings({ artistId }: Props) {

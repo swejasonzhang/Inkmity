@@ -4,6 +4,7 @@ import Client from "../models/Client.js";
 import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
 import { sendAppointmentConfirmationEmail } from "../services/emailService.js";
+import { config } from "../config/index.js";
 
 let WebhookEvent;
 (async () => {
@@ -13,6 +14,14 @@ let WebhookEvent;
 
 const PLATFORM_FEE_CENTS = 1000;
 const CURRENCY = "usd";
+
+function ensureMinimumAmount(amountCents) {
+  const minAmount = config.stripe.testMode 
+    ? config.stripe.testMinAmountCents 
+    : 50; 
+  
+  return Math.max(amountCents, minAmount);
+}
 
 const STRIPE_APPEARANCE = {
   theme: "night",
@@ -57,59 +66,69 @@ function requireBooking(booking) {
 }
 
 export async function checkoutPlatformFee(req, res) {
-  const { bookingId } = req.body || {};
-  if (!bookingId) return res.status(400).json({ error: "bookingId required" });
+  try {
+    const { bookingId } = req.body || {};
+    if (!bookingId) return res.status(400).json({ error: "bookingId required" });
 
-  const booking = await Booking.findById(bookingId);
-  requireBooking(booking);
+    const booking = await Booking.findById(bookingId);
+    requireBooking(booking);
 
-  const customer = await stripe.customers.create({
-    metadata: { clientId: String(booking.clientId) },
-  });
+    const customer = await stripe.customers.create({
+      metadata: { clientId: String(booking.clientId) },
+    });
 
-  const bill = await Billing.create({
-    bookingId,
-    artistId: booking.artistId,
-    clientId: booking.clientId,
-    type: "platform_fee",
-    amountCents: PLATFORM_FEE_CENTS,
-    currency: CURRENCY,
-    stripeCustomerId: customer.id,
-    status: "pending",
-    metadata: {},
-  });
+    const platformFeeAmount = config.stripe.testMode
+      ? Math.max(PLATFORM_FEE_CENTS, config.stripe.testMinAmountCents)
+      : PLATFORM_FEE_CENTS;
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    customer: customer.id,
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: CURRENCY,
-          product_data: { name: "Booking platform fee" },
-          unit_amount: PLATFORM_FEE_CENTS,
-        },
-        quantity: 1,
-      },
-    ],
-    appearance: STRIPE_APPEARANCE,
-    metadata: {
-      billingId: String(bill._id),
-      bookingId: String(booking._id),
+    const bill = await Billing.create({
+      bookingId,
+      artistId: booking.artistId,
+      clientId: booking.clientId,
       type: "platform_fee",
-    },
-    success_url: `${process.env.APP_URL}/booking/${bookingId}?paid=platform_fee`,
-    cancel_url: `${process.env.APP_URL}/booking/${bookingId}?cancelled=platform_fee`,
-  });
+      amountCents: platformFeeAmount,
+      currency: CURRENCY,
+      stripeCustomerId: customer.id,
+      status: "pending",
+      metadata: {},
+    });
 
-  bill.stripeCheckoutSessionId = session.id;
-  await bill.save();
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer: customer.id,
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: CURRENCY,
+            product_data: { name: "Booking platform fee" },
+            unit_amount: platformFeeAmount,
+          },
+          quantity: 1,
+        },
+      ],
+      appearance: STRIPE_APPEARANCE,
+      metadata: {
+        billingId: String(bill._id),
+        bookingId: String(booking._id),
+        type: "platform_fee",
+      },
+      success_url: `${process.env.APP_URL}/booking/${bookingId}?paid=platform_fee`,
+      cancel_url: `${process.env.APP_URL}/booking/${bookingId}?cancelled=platform_fee`,
+    });
 
-  res.json({ url: session.url, id: session.id });
+    bill.stripeCheckoutSessionId = session.id;
+    await bill.save();
+
+    res.json({ url: session.url, id: session.id });
+  } catch (err) {
+    console.error("checkoutPlatformFee error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
 }
 
 export async function checkoutDeposit(req, res) {
+  try {
   const { bookingId } = req.body || {};
   if (!bookingId) return res.status(400).json({ error: "bookingId required" });
 
@@ -120,9 +139,13 @@ export async function checkoutDeposit(req, res) {
     return res.status(400).json({ error: "deposit_already_paid" });
   }
 
-  const amount = Number(booking.depositRequiredCents || 0);
+  let amount = Number(booking.depositRequiredCents || 0);
   if (amount <= 0)
     return res.status(400).json({ error: "no_deposit_required" });
+
+  if (config.stripe.testMode && amount < config.stripe.testMinAmountCents) {
+    amount = config.stripe.testMinAmountCents;
+  }
 
   let customer;
   try {
@@ -200,9 +223,14 @@ export async function checkoutDeposit(req, res) {
   await bill.save();
 
   res.json({ url: session.url, id: session.id, clientSecret: null });
+  } catch (err) {
+    console.error("checkoutDeposit error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
 }
 
 export async function createDepositPaymentIntent(req, res) {
+  try {
   const { bookingId } = req.body || {};
   if (!bookingId) return res.status(400).json({ error: "bookingId required" });
 
@@ -213,9 +241,13 @@ export async function createDepositPaymentIntent(req, res) {
     return res.status(400).json({ error: "deposit_already_paid" });
   }
 
-  const amount = Number(booking.depositRequiredCents || 0);
+  let amount = Number(booking.depositRequiredCents || 0);
   if (amount <= 0)
     return res.status(400).json({ error: "no_deposit_required" });
+  
+  if (config.stripe.testMode && amount < config.stripe.testMinAmountCents) {
+    amount = config.stripe.testMinAmountCents;
+  }
 
   let customer;
   try {
@@ -283,46 +315,66 @@ export async function createDepositPaymentIntent(req, res) {
     paymentIntentId: paymentIntent.id,
     billingId: String(bill._id),
   });
+  } catch (err) {
+    console.error("createDepositPaymentIntent error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
 }
 
 export async function refundBilling(req, res) {
-  const { billingId, bookingId } = req.body || {};
-  const byId = billingId ? await Billing.findById(billingId) : null;
-  const list = byId
-    ? [byId]
-    : await Billing.find({ bookingId, type: "platform_fee", status: "paid" });
+  try {
+    const { billingId, bookingId } = req.body || {};
+    const byId = billingId ? await Billing.findById(billingId) : null;
+    const list = byId
+      ? [byId]
+      : await Billing.find({ bookingId, type: "platform_fee", status: "paid" });
 
-  const refunds = [];
-  for (const b of list) {
-    if (b.type !== "platform_fee") continue;
-    const pi = b.stripePaymentIntentId;
-    if (!pi) continue;
-    const rr = await stripe.refunds.create({ payment_intent: pi });
-    b.status = "refunded";
-    b.stripeRefundIds.push(rr.id);
-    b.refundedAt = new Date();
-    await b.save();
-    refunds.push({ billingId: String(b._id), refundId: rr.id });
+    const refunds = [];
+    for (const b of list) {
+      if (b.type !== "platform_fee") continue;
+      const pi = b.stripePaymentIntentId;
+      if (!pi) continue;
+      const rr = await stripe.refunds.create({ payment_intent: pi });
+      b.status = "refunded";
+      b.stripeRefundIds.push(rr.id);
+      b.refundedAt = new Date();
+      await b.save();
+      refunds.push({ billingId: String(b._id), refundId: rr.id });
+    }
+    res.json({ ok: true, refunds });
+  } catch (err) {
+    console.error("refundBilling error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
   }
-  res.json({ ok: true, refunds });
 }
 
 export async function createPortalSession(req, res) {
-  const { customerId } = req.body || {};
-  if (!customerId)
-    return res.status(400).json({ error: "customerId required" });
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: process.env.APP_URL,
-  });
-  res.json({ url: session.url });
+  try {
+    const { customerId } = req.body || {};
+    if (!customerId)
+      return res.status(400).json({ error: "customerId required" });
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: process.env.APP_URL,
+    });
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("createPortalSession error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
 }
 
 export async function scheduleCancel(_req, res) {
-  res.json({ ok: true });
+  try {
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("scheduleCancel error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
 }
 
 export async function createFinalPaymentIntent(req, res) {
+  try {
   const { bookingId } = req.body || {};
   if (!bookingId) return res.status(400).json({ error: "bookingId required" });
 
@@ -335,13 +387,17 @@ export async function createFinalPaymentIntent(req, res) {
 
   const totalCents = Number(booking.priceCents || 0);
   const depositPaidCents = Number(booking.depositPaidCents || 0);
-  const remainingCents = Math.max(0, totalCents - depositPaidCents);
+  let remainingCents = Math.max(0, totalCents - depositPaidCents);
 
   if (remainingCents <= 0) {
     return res.status(400).json({
       error: "no_payment_required",
       message: "Deposit covers full amount",
     });
+  }
+  
+  if (config.stripe.testMode && remainingCents > 0 && remainingCents < config.stripe.testMinAmountCents) {
+    remainingCents = config.stripe.testMinAmountCents;
   }
 
   let customer;
@@ -415,6 +471,10 @@ export async function createFinalPaymentIntent(req, res) {
     depositApplied: depositPaidCents,
     totalAmount: totalCents,
   });
+  } catch (err) {
+    console.error("createFinalPaymentIntent error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
 }
 
 export async function stripeWebhook(req, res) {

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from "react";
-import CircularProgress from "@mui/material/CircularProgress";
+import { Spinner } from "@/components/ui/spinner";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Send, Image as ImageIcon, X, Calendar, MessageSquare } from "lucide-react";
@@ -10,7 +10,7 @@ import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPanel from "./messages/requestPanel";
 import { useAuth } from "@clerk/clerk-react";
-import { API_URL } from "@/lib/http";
+import { API_URL } from "@/api";
 import { socket } from "@/lib/socket";
 import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
 import { enableClientBookings, checkConsultationStatus, getArtistPolicy } from "@/api";
@@ -761,7 +761,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   if (!currentUserId) {
     return (
       <div className="flex items-center justify-center h-full bg-card rounded-2xl">
-        <CircularProgress sx={{ color: "var(--fg)" }} />
+        <Spinner className="text-[color:var(--fg)]" />
       </div>
     );
   }
@@ -769,7 +769,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full bg-card rounded-2xl">
-        <CircularProgress sx={{ color: "var(--fg)" }} />
+        <Spinner className="text-[color:var(--fg)]" />
       </div>
     );
   }
@@ -1505,7 +1505,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           title="Add images"
                         >
                           {uploading ? (
-                            <CircularProgress sx={{ color: "var(--fg)", width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
+                            <Spinner size={16} className="text-[color:var(--fg)]" />
                           ) : (
                             <ImageIcon size={undefined} style={{ width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
                           )}
@@ -1895,7 +1895,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       title="Add images"
                     >
                       {uploading ? (
-                        <CircularProgress size={18} className="text-app" />
+                        <Spinner size={18} className="text-app" />
                       ) : (
                         <ImageIcon size={18} />
                       )}

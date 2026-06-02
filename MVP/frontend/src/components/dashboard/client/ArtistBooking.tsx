@@ -3,7 +3,7 @@ import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useApi, isAbortError, getBookingGate, type BookingGate } from "@/api";
+import { useApi, isAbortError, getBookingGate, type BookingGate, API_URL } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -28,10 +28,6 @@ type Gate = {
 export default function ArtistBooking({ artist, onBack, onClose }: BookingProps) {
   const { request } = useApi();
   const { user } = useUser();
-  const apiOrigin =
-    (import.meta as any)?.env?.VITE_API_URL ||
-    import.meta.env?.VITE_API_URL ||
-    "http://localhost:3001";
 
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -84,7 +80,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     
     (async () => {
       try {
-        const g = await requestRef.current(`${apiOrigin}/messages/gate/${artistId}`, {
+        const g = await requestRef.current(`${API_URL}/messages/gate/${artistId}`, {
           method: "GET",
           signal: ac.signal as any
         });
@@ -100,7 +96,6 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       } catch (e) {
         if (!mounted) return;
         if (!isAbortError(e)) {
-          console.error("[ArtistBooking] gate fetch failed", { artistId, error: e });
           if (mounted) setGateReady(true);
         }
       } finally {
@@ -113,13 +108,8 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       fetchingRef.current = false;
       ac.abort();
     };
-  }, [apiOrigin, artist?.clerkId]);
+  }, [artist?.clerkId]);
 
-  useEffect(() => {
-    const handler = () => {};
-    window.addEventListener("ink:open-booking", handler as EventListener);
-    return () => window.removeEventListener("ink:open-booking", handler as EventListener);
-  }, []);
 
   const refreshBookingGate = useCallback(async () => {
     const artistId = artist?.clerkId;
@@ -132,7 +122,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       setBookingGateReady(true);
     } catch (e) {
       if (!isAbortError(e)) {
-        console.error("[ArtistBooking] booking gate fetch failed", { artistId, error: e });
+        // Error handled silently
       }
       setBookingGateReady(true);
     }
@@ -148,12 +138,17 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
 
   useEffect(() => {
     if (!bookingGateReady || bookingGate?.enabled) return;
-    
+
+    let active = true;
     const interval = setInterval(() => {
+      if (!active || bookingGate?.enabled) return;
       refreshBookingGate();
     }, 5000);
-    
-    return () => clearInterval(interval);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [bookingGateReady, bookingGate?.enabled, refreshBookingGate]);
 
   useEffect(() => {
@@ -254,7 +249,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           stylesSnapshot: []
         }
       };
-      const res: any = await request(`${apiOrigin}/messages/request`, {
+      const res: any = await request(`${API_URL}/messages/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload)

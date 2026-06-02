@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useRole } from "@/hooks/useRole";
@@ -69,19 +70,6 @@ function useDevOverride() {
   return { override: isDev ? fromQuery : null };
 }
 
-function applyTheme(el: HTMLElement, theme: "light" | "dark") {
-  el.classList.toggle("ink-light", theme === "light");
-  el.setAttribute("data-ink", theme);
-}
-
-function useDashboardScope(scopeEl: HTMLElement | null, initialTheme: "light" | "dark") {
-  useLayoutEffect(() => {
-    if (!scopeEl) return;
-    scopeEl.classList.add("ink-scope", "ink-no-anim");
-    applyTheme(scopeEl, initialTheme);
-    requestAnimationFrame(() => scopeEl.classList.remove("ink-no-anim"));
-  }, [scopeEl, initialTheme]);
-}
 
 const Dashboard: React.FC = () => {
   useSyncOnAuth();
@@ -123,25 +111,6 @@ const Dashboard: React.FC = () => {
     };
   }, [theme]);
 
-  useEffect(() => {
-    const handleThemeChange = (e?: CustomEvent) => {
-      const scope = scopeRef.current;
-      if (!scope) return;
-      const newTheme = (e?.detail?.value as "light" | "dark") || theme;
-      applyTheme(scope, newTheme);
-      const shellBg = newTheme === "light" ? "#ffffff" : "#0b0b0b";
-      const shellFg = newTheme === "light" ? "#111111" : "#f5f5f5";
-      scope.style.background = shellBg;
-      scope.style.color = shellFg;
-      document.body.style.backgroundColor = shellBg;
-    };
-    
-    handleThemeChange();
-    const handler = handleThemeChange as EventListener;
-    window.addEventListener("ink:theme-change", handler);
-    return () => window.removeEventListener("ink:theme-change", handler);
-  }, [theme]);
-
   const roleToUse = useMemo<"client" | "artist">(() => {
     if (override) return override;
     if (role === "artist" || role === "client") return role;
@@ -149,7 +118,6 @@ const Dashboard: React.FC = () => {
   }, [override, role]);
 
   const scopeRef = useRef<HTMLDivElement | null>(null);
-  useDashboardScope(scopeRef.current, theme);
 
   const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
   const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
@@ -167,28 +135,11 @@ const Dashboard: React.FC = () => {
         style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
       >
         <Suspense fallback={
-          <div className="flex items-center justify-center h-full">
-            <div className="flex flex-col items-center gap-4">
-              <div 
-                className="rounded-full border-4"
-                style={{ 
-                  width: "48px", 
-                  height: "48px", 
-                  borderColor: "color-mix(in oklab, var(--fg) 15%, transparent)",
-                  borderTopColor: "var(--fg)",
-                  animation: "spin 1s linear infinite"
-                }} 
-              />
-              <div className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-                Loading dashboard...
-              </div>
+          <div className="flex flex-col items-center justify-center gap-4 h-full">
+            <Spinner size={40} className="text-[color:var(--fg)]" />
+            <div className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+              Loading dashboard...
             </div>
-            <style>{`
-              @keyframes spin {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-              }
-            `}</style>
           </div>
         }>
           {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon, LogOut, User } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
@@ -11,8 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityDropdown, VisibilityStatus } from "./VisibilityDropdown";
-import { updateVisibility } from "@/api";
-import { Circle, Clock, EyeOff } from "lucide-react";
+import { updateVisibility, API_URL } from "@/api";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -74,7 +73,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const [userRole, setUserRole] = useState<"client" | "artist" | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(false);
   const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
-  const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+  const API_BASE = API_URL;
 
   const userLabelRef = useRef<string>("");
   useEffect(() => {
@@ -95,7 +94,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     let cancelled = false;
     const ac = new AbortController();
     async function run() {
-      if (!isSignedIn || !API_BASE) return;
+      if (!isSignedIn) return;
       try {
         const token = await getToken();
         if (cancelled || ac.signal.aborted) return;
@@ -135,7 +134,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       cancelled = true;
       ac.abort();
     };
-  }, [isLoaded, isSignedIn, getToken, API_BASE]);
+  }, [isLoaded, isSignedIn, getToken]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) {
@@ -205,8 +204,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               setUserVisibility(data.visibility as VisibilityStatus);
             }
           })
-          .catch(fetchError => {
-            console.error("Failed to fetch current visibility:", fetchError);
+          .catch(() => {
+            // Error handled silently
           });
       });
     } catch (error) {
@@ -223,7 +222,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
-  const dashboardDisabled = disableDashboardLink && !isSignedIn;
+  const dashboardDisabled = disableDashboardLink || !isSignedIn;
 
   const onDashboardGate: React.MouseEventHandler = (e) => {
     if (!isSignedIn) {
@@ -355,7 +354,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const mobileSheet = mobileMenuOpen
     ? createPortal(
-      <div className="sm:hidden fixed inset-0 z-[2147483647]">
+      <div className="md:hidden fixed inset-0 z-[2147483647]">
         <div className="absolute inset-0 bg-transparent" onClick={() => setMobileMenuOpen(false)} aria-hidden />
         <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex flex-col text-app [&_*]:text-app [&_*]:border-app overflow-hidden">
           <div className={`flex-between items-center px-fluid-md xs:px-fluid-lg sm:px-fluid-xl ${MOBILE_HEADER_H} min-w-0 flex-shrink-0`}>
@@ -385,35 +384,35 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </Link>
         </div>
 
-        <div className="flex-1 min-w-0 flex justify-center hidden sm:flex">
+        <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-hidden">
           <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} userVisibility={userVisibility} isOnline={isOnline} onVisibilityChange={handleVisibilityChange} />
         </div>
 
         <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
-            <Button aria-label="Open menu" variant="ghost" className="sm:hidden p-fluid-xs xs:p-fluid-sm rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(true)}>
+            <Button aria-label="Open menu" variant="ghost" className="md:hidden p-fluid-xs xs:p-fluid-sm rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app min-h-[44px] min-w-[44px]" onClick={() => setMobileMenuOpen(true)}>
               <Menu strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
             </Button>
 
             {isLoaded && isSignedIn ? (
               <div
-                className="relative flex flex-shrink-0 text-app [&_*]:text-app [&_*]:border-app hidden sm:flex"
+                className="hidden md:flex relative flex-shrink-0 text-app [&_*]:text-app [&_*]:border-app"
               >
                 <div
                   ref={triggerRef}
                   className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
-                  style={{ minWidth: '180px', maxWidth: '280px' }}
+                  style={{ minWidth: 'clamp(140px, 18vw, 220px)', maxWidth: '260px' }}
                   aria-haspopup="menu"
                   aria-expanded={showDropdown}
                   onClick={() => setShowDropdown((v) => !v)}
                 >
-                  <span className="mr-1 md:mr-2 font-semibold text-lg md:text-xl leading-none flex-shrink-0">✦</span>
-                  <div className="flex items-center leading-none gap-1 md:gap-2 justify-center min-w-0 flex-1">
-                    <span className="font-bold truncate flex-shrink-0 min-w-0">Welcome Back</span>
+                  <span className="mr-1 font-semibold text-base lg:text-xl leading-none flex-shrink-0">✦</span>
+                  <div className="flex items-center leading-none gap-1 justify-center min-w-0 flex-1">
+                    <span className="font-bold truncate flex-shrink-0 min-w-0 text-[13px] lg:text-[17px]">Welcome Back</span>
                     {(() => {
                       const visibility = getVisibilityDisplay();
                       const Icon = visibility.icon;
                       return (
-                        <span className="flex items-center gap-1 md:gap-1.5 flex-shrink-0 opacity-70 text-xs min-w-0">
+                        <span className="hidden lg:flex items-center gap-1 flex-shrink-0 opacity-70 text-xs min-w-0">
                           <Icon size={8} className={visibility.color} />
                           <span className="truncate min-w-0">{visibility.label}</span>
                         </span>
@@ -425,25 +424,29 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                 <div className="absolute left-0 right-0 top-full h-2" />
               </div>
             ) : isLoaded && !isSignedIn ? (
-              <div className="relative flex flex-shrink-0">
+              <div className="hidden md:flex relative flex-shrink-0">
                 <button
                   className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
-                  style={{ minWidth: '140px' }}
+                  style={{ minWidth: 'clamp(110px, 14vw, 160px)' }}
                   onClick={() => navigate('/login')}
                   type="button"
                 >
-                  <span className="mr-2 font-semibold text-xl leading-none">✦</span>
-                  <span className="font-bold whitespace-nowrap">Sign In</span>
+                  <span className="flex items-center justify-center gap-2 w-full">
+                    <span className="font-semibold text-xl leading-none">✦</span>
+                    <span className="font-bold whitespace-nowrap text-[13px] lg:text-[17px]">Sign In</span>
+                  </span>
                 </button>
               </div>
             ) : (
-              <div className="relative flex flex-shrink-0">
+              <div className="hidden md:flex relative flex-shrink-0">
                 <div
                   className={`${dropdownBtnClasses} opacity-50 pointer-events-none`}
-                  style={{ minWidth: '140px' }}
+                  style={{ minWidth: '110px' }}
                 >
-                  <span className="mr-2 font-semibold text-xl leading-none">✦</span>
-                  <span className="font-bold whitespace-nowrap">Welcome User</span>
+                  <span className="flex items-center justify-center gap-2 w-full">
+                    <span className="font-semibold text-xl leading-none">✦</span>
+                    <span className="font-bold whitespace-nowrap text-[13px] lg:text-[17px]">Loading</span>
+                  </span>
                 </div>
               </div>
             )}
@@ -451,10 +454,12 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       </header>
 
       {dashboardDisabled && tip.show && (
-        <div className="fixed z-[70] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 20px)" }}>
-          <div className="relative rounded-lg border border-app bg-card/95 backdrop-blur px-3 py-2 shadow-lg">
-            <span className="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 h-3 w-3 rotate-45 bg-card border-l border-t border-app" />
-            <span className="text-sm text-app whitespace-nowrap">Not authorized. <span className="text-app">Sign up first.</span></span>
+        <div className="fixed z-[2147483600] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 18px)" }}>
+          <div className="flex items-center gap-2 rounded-xl border border-app bg-card px-3.5 py-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)]">
+            <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-elevated p-1">
+              <Lock className="h-3 w-3 text-app/70" />
+            </span>
+            <span className="text-xs font-semibold text-app whitespace-nowrap">Sign in to access your dashboard</span>
           </div>
         </div>
       )}
@@ -484,10 +489,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           className="bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out overflow-visible"
         >
           <div className="px-4 py-3 text-center">
-            <div className="text-sm opacity-80 mb-2">
+            <div className="text-sm opacity-80 mb-2 text-app">
               {userRole === "artist" ? "Ready to create your next masterpiece?" : userRole === "client" ? "Ready for your next tattoo?" : "Welcome"}
             </div>
-            <div className="text-lg font-semibold truncate">{userLabel || "User"}</div>
+            <div className="text-lg font-semibold truncate text-app">{userLabel || "User"}</div>
             {isDashboard && (
               <div className="mt-3 flex items-center justify-center">
                 <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />

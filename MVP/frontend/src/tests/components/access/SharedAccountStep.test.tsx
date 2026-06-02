@@ -1,6 +1,6 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import React from "react";
-import { render, screen } from "@/__tests__/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 
 const { default: SharedAccountStep } = await import("@/components/access/SharedAccountStep");
@@ -34,7 +34,7 @@ describe("SharedAccountStep", () => {
     const user = userEvent.setup();
     const onChange = jest.fn();
     render(<SharedAccountStep {...defaultProps} onChange={onChange} />);
-    
+
     const usernameInput = screen.getByLabelText(/Username/i);
     await user.type(usernameInput, "testuser");
     expect(onChange).toHaveBeenCalled();
@@ -43,11 +43,13 @@ describe("SharedAccountStep", () => {
   test("should toggle password visibility", async () => {
     const user = userEvent.setup();
     render(<SharedAccountStep {...defaultProps} shared={{ ...defaultProps.shared, password: "password123" }} />);
-    
+
     const passwordInputs = screen.getAllByLabelText(/Password/i);
     const passwordInput = passwordInputs[0];
-    const toggleButton = screen.getByLabelText(/Show password/i);
-    
+    // Use getAllByLabelText since there are two toggle buttons (password + confirm password)
+    const toggleButtons = screen.getAllByLabelText(/Show password/i);
+    const toggleButton = toggleButtons[0];
+
     expect(passwordInput).toHaveAttribute("type", "password");
     await user.click(toggleButton);
     expect(passwordInput).toHaveAttribute("type", "text");
@@ -57,7 +59,7 @@ describe("SharedAccountStep", () => {
     const user = userEvent.setup();
     const setRole = jest.fn();
     render(<SharedAccountStep {...defaultProps} setRole={setRole} />);
-    
+
     const artistButton = screen.getByText(/I'm an artist/i);
     await user.click(artistButton);
     expect(setRole).toHaveBeenCalledWith("artist");

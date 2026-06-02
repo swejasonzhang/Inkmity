@@ -1,5 +1,5 @@
 import { jest, describe, test, expect } from "@jest/globals";
-import { render } from "@/__tests__/setup/test-utils";
+import { render } from "@/tests/setup/test-utils";
 
 const { InkConversations } = await import("@/components/dashboard/shared/messages/InkConversations");
 

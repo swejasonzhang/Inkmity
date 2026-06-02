@@ -9,6 +9,8 @@ import SignupFormCard from "@/components/access/SignupFormCard";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
+import { API_URL } from "@/api";
+import VideoBackground from "@/components/VideoBackground";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
@@ -28,10 +30,8 @@ type InputLike = { target: { name: string; value: string } };
 
 const LOGOUT_TYPE_KEY = "logoutType";
 const LOGIN_TIMESTAMP_KEY = "lastLogin";
-const RAW_API_BASE = (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "http://localhost:3001";
-const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 function apiUrl(path: string, qs?: Record<string, string>) {
-  const url = new URL(path.replace(/^\/+/, ""), API_BASE + "/");
+  const url = new URL(path.replace(/^\/+/, ""), API_URL + "/");
   if (qs) Object.entries(qs).forEach(([k, v]) => url.searchParams.set(k, v));
   return url.toString();
 }
@@ -472,9 +472,7 @@ export default function SignUp() {
 
   return (
     <div className="relative text-app">
-      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
-        <source src="/Background.mp4" type="video/mp4" />
-      </video>
+      <VideoBackground />
       <div ref={headerRef} className="sticky top-0 z-30 bg-black/20">
         <Header />
       </div>
@@ -502,8 +500,8 @@ export default function SignUp() {
                   layout={false}
                   className="w-full max-w-2xl p-0 mb-2 xs:mb-3 sm:mb-4 md:mb-0 flex items-center justify-center"
                 >
-                  <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 xs:p-5 sm:p-6 md:p-7 lg:p-8 mx-auto">
-                    <div className="w-full min-h-[560px] xs:min-h-[580px] sm:min-h-[620px] md:min-h-[660px] lg:min-h-[680px] xl:min-h-[700px] flex items-center justify-center">
+                  <div className="rounded-3xl w-full m-0 bg-card border border-app p-4 xs:p-5 sm:p-6 md:p-7 lg:p-8 mx-auto">
+                    <div className="w-full flex items-center justify-center py-10 sm:py-14">
                       <div className="ink-success-wrap flex flex-col items-center justify-center gap-6 xs:gap-7 sm:gap-8 md:gap-9 lg:gap-10 py-12 xs:py-14 sm:py-16 md:py-18">
                         <div className="ink-spinner" />
                         <div className="text-center space-y-2 px-4">

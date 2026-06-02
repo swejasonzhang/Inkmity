@@ -1,9 +1,31 @@
 import { useAuth } from "@clerk/clerk-react";
 
-export const API_URL: string =
+export const API_URL: string = (
   (import.meta as any)?.env?.VITE_API_URL ||
-  import.meta.env?.VITE_API_URL ||
-  "http://localhost:3001";
+  "http://localhost:3001"
+).replace(/\/+$/, "");
+
+export function buildUrl(path: string, params?: Record<string, any>) {
+  if (/^https?:\/\//i.test(path)) return path + (params ? buildQuery(params) : "");
+  const clean = path.replace(/^\/+/, "");
+  return `${API_URL}/${clean}${params ? buildQuery(params) : ""}`;
+}
+
+function buildQuery(params: Record<string, any>): string {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === "") continue;
+    if (Array.isArray(v)) {
+      for (const item of v) qs.append(k, String(item));
+    } else if (typeof v === "object") {
+      qs.append(k, JSON.stringify(v));
+    } else {
+      qs.append(k, String(v));
+    }
+  }
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
 
 export function isAbortError(
   e: unknown
@@ -34,21 +56,6 @@ function safeParse(s: string) {
   }
 }
 
-function buildUrl(path: string, params?: Record<string, any>) {
-  const base = API_URL.replace(/\/+$/, "");
-  const url = path.startsWith("http")
-    ? path.replace(/\/+$/, "")
-    : `${base}/${path.replace(/^\/+/, "")}`;
-  if (!params || !Object.keys(params).length) return url;
-  const qs = new URLSearchParams(
-    Object.fromEntries(
-      Object.entries(params).filter(
-        ([, v]) => v !== undefined && v !== null && v !== ""
-      )
-    )
-  ).toString();
-  return qs ? `${url}?${qs}` : url;
-}
 
 export async function apiRequest<T = any>(
   path: string,
@@ -62,7 +69,6 @@ export async function apiRequest<T = any>(
     res = await fetch(url, req);
   } catch (e) {
     if (isAbortError(e)) throw e;
-    console.error("[apiRequest] fetch failed", { url, init: req, error: e });
     throw e;
   }
 
@@ -85,13 +91,6 @@ export async function apiRequest<T = any>(
     (err as any).url = url;
     (err as any).headers = headersObj;
     (err as any).requestId = requestId;
-    console.error("[apiRequest] http error", {
-      url,
-      status: res.status,
-      body,
-      headers: headersObj,
-      requestId,
-    });
     throw err;
   }
 

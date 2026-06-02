@@ -9,7 +9,7 @@ import ChatWindow from "@/components/dashboard/shared/ChatWindow";
 import ChatBot from "@/components/dashboard/shared/ChatBot";
 import { toast } from "react-toastify";
 import { displayNameFromUsername } from "@/lib/format";
-import { API_URL } from "@/lib/http";
+import { API_URL } from "@/api";
 import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
 import type { Artist as ArtistDto } from "@/api";
@@ -54,7 +54,6 @@ export default function ClientDashboard() {
             } catch (error: any) {
                 // Return a Response with status 503 (Service Unavailable) for network errors
                 // This prevents unhandled promise rejections while indicating a network issue
-                console.error("[ClientDashboard] authFetch failed:", error);
                 return new Response(JSON.stringify({ error: error.message || "Network error" }), {
                     status: 503,
                     statusText: error.message || "Service Unavailable",

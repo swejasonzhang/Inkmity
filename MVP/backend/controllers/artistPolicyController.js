@@ -2,55 +2,65 @@ import ArtistPolicy from "../models/ArtistPolicy.js";
 import ClientBookingPermission from "../models/ClientBookingPermission.js";
 
 export async function getArtistPolicy(req, res) {
-  const { artistId } = req.params;
-  if (!artistId) return res.status(400).json({ error: "missing_artistId" });
-  const doc =
-    (await ArtistPolicy.findOne({ artistId })) ||
-    (await ArtistPolicy.create({ artistId }));
-  res.json(doc);
+  try {
+    const { artistId } = req.params;
+    if (!artistId) return res.status(400).json({ error: "missing_artistId" });
+    const doc =
+      (await ArtistPolicy.findOne({ artistId })) ||
+      (await ArtistPolicy.create({ artistId }));
+    res.json(doc);
+  } catch (err) {
+    console.error("getArtistPolicy error:", err);
+    return res.status(500).json({ error: "Failed to fetch artist policy" });
+  }
 }
 
 export async function upsertArtistPolicy(req, res) {
-  const { artistId } = req.params;
-  if (!artistId) return res.status(400).json({ error: "missing_artistId" });
-  const depositPayload = req.body?.deposit || {};
-  const bookingEnabled = req.body?.bookingEnabled;
-  
-  const update = {
-    deposit: {
-      mode: depositPayload.mode || "percent",
-      amountCents: Math.max(0, Number(depositPayload.amountCents ?? 5000)),
-      percent: Math.max(0, Math.min(1, Number(depositPayload.percent ?? 0.2))),
-      minCents: Math.max(0, Number(depositPayload.minCents ?? 5000)),
-      maxCents: Math.max(0, Number(depositPayload.maxCents ?? 30000)),
-      nonRefundable: Boolean(depositPayload.nonRefundable ?? true),
-      cutoffHours: Math.max(0, Number(depositPayload.cutoffHours ?? 48)),
-    },
-  };
-  
-  if (bookingEnabled === true) {
-    const deposit = update.deposit;
-    const hasDepositConfig = 
-      (deposit.mode === "flat" && deposit.amountCents > 0) ||
-      (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
-    
-    if (!hasDepositConfig) {
-      return res.status(400).json({ 
-        error: "deposit_required",
-        message: "Deposit must be configured before enabling bookings"
-      });
+  try {
+    const { artistId } = req.params;
+    if (!artistId) return res.status(400).json({ error: "missing_artistId" });
+    const depositPayload = req.body?.deposit || {};
+    const bookingEnabled = req.body?.bookingEnabled;
+
+    const update = {
+      deposit: {
+        mode: depositPayload.mode || "percent",
+        amountCents: Math.max(0, Number(depositPayload.amountCents ?? 5000)),
+        percent: Math.max(0, Math.min(1, Number(depositPayload.percent ?? 0.2))),
+        minCents: Math.max(0, Number(depositPayload.minCents ?? 5000)),
+        maxCents: Math.max(0, Number(depositPayload.maxCents ?? 30000)),
+        nonRefundable: Boolean(depositPayload.nonRefundable ?? true),
+        cutoffHours: Math.max(0, Number(depositPayload.cutoffHours ?? 48)),
+      },
+    };
+
+    if (bookingEnabled === true) {
+      const deposit = update.deposit;
+      const hasDepositConfig =
+        (deposit.mode === "flat" && deposit.amountCents > 0) ||
+        (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
+
+      if (!hasDepositConfig) {
+        return res.status(400).json({
+          error: "deposit_required",
+          message: "Deposit must be configured before enabling bookings",
+        });
+      }
+      update.bookingEnabled = true;
+    } else if (bookingEnabled === false) {
+      update.bookingEnabled = false;
     }
-    update.bookingEnabled = true;
-  } else if (bookingEnabled === false) {
-    update.bookingEnabled = false;
+
+    const doc = await ArtistPolicy.findOneAndUpdate(
+      { artistId },
+      { $set: update },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    res.json(doc);
+  } catch (err) {
+    console.error("upsertArtistPolicy error:", err);
+    return res.status(500).json({ error: "Failed to update artist policy" });
   }
-  
-  const doc = await ArtistPolicy.findOneAndUpdate(
-    { artistId },
-    { $set: update },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
-  );
-  res.json(doc);
 }
 
 export async function getBookingGate(req, res) {
@@ -143,7 +153,6 @@ export async function enableClientBookings(req, res) {
       message: "Appointments enabled for this client"
     });
   } catch (error) {
-    console.error("Error enabling client bookings:", error);
     res.status(500).json({ error: "Failed to enable client bookings" });
   }
 }

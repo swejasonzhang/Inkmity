@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
+import { render, screen, waitFor } from "@/tests/setup/test-utils";
 import type { Artist, Booking } from "@/api";
 
 const mockCreateTattooSession = jest.fn<() => Promise<Booking>>();
@@ -62,6 +62,13 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
     user: { id: "user-123" },
     isSignedIn: true,
     isLoaded: true,
+  }),
+}));
+
+jest.unstable_mockModule("@/lib/stripe", () => ({
+  stripePromise: Promise.resolve({
+    createPaymentMethod: jest.fn(),
+    confirmCardPayment: jest.fn(),
   }),
 }));
 
@@ -230,7 +237,7 @@ describe("PaymentStep", () => {
     );
 
     const buttons = screen.getAllByRole("button");
-    const submitButton = buttons.find(btn => 
+    const submitButton = buttons.find((btn: HTMLElement) => 
       btn.textContent?.includes("Deposit") || 
       btn.textContent?.includes("Complete") ||
       btn.textContent?.includes("Processing")

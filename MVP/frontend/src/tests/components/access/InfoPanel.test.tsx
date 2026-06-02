@@ -1,19 +1,6 @@
-import { jest, describe, test, expect } from "@jest/globals";
-import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
-
-jest.unstable_mockModule("@/components/access/InkMascot", () => ({
-  default: jest.fn(({ dx, dy, hasError, isPasswordHidden }: any) => (
-    <div
-      data-testid="ink-mascot"
-      data-dx={dx ?? 0}
-      data-dy={dy ?? 0}
-      data-has-error={hasError}
-      data-password-hidden={isPasswordHidden}
-    />
-  )),
-}));
-
-const { default: InfoPanel } = await import("@/components/access/InfoPanel");
+import { describe, test, expect } from "@jest/globals";
+import { render, screen, waitFor } from "@/tests/setup/test-utils";
+import InfoPanel from "@/components/access/InfoPanel";
 
 describe("InfoPanel", () => {
   test("should render info panel", async () => {
@@ -33,14 +20,14 @@ describe("InfoPanel", () => {
   test("should display welcome message for login", async () => {
     render(<InfoPanel show={true} prefersReduced={false} mode="login" />);
     await waitFor(() => {
-      expect(screen.getByText(/We've missed you/i)).toBeInTheDocument();
+      expect(screen.getByText(/missed you/i)).toBeInTheDocument();
     }, { timeout: 2000 });
   });
 
-  test("should render InkMascot", async () => {
-    render(<InfoPanel show={true} prefersReduced={false} />);
+  test("should render value props", async () => {
+    render(<InfoPanel show={true} prefersReduced={false} mode="signup" />);
     await waitFor(() => {
-      expect(screen.getByTestId("ink-mascot")).toBeInTheDocument();
-    });
+      expect(screen.getByText(/Earn as you book/i)).toBeInTheDocument();
+    }, { timeout: 2000 });
   });
 });

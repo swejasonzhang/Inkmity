@@ -523,7 +523,7 @@ export default function Appointments() {
                 <Button
                   onClick={() => handleAccept(appointment._id)}
                   disabled={processing === appointment._id}
-                  className="flex-1 h-9 text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 h-10 sm:h-11 text-xs sm:text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: "var(--fg)",
                     color: "var(--card)",
@@ -537,7 +537,7 @@ export default function Appointments() {
                   onClick={() => handleDeny(appointment._id)}
                   disabled={processing === appointment._id}
                   variant="outline"
-                  className="flex-1 h-9 text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 h-10 sm:h-11 text-xs sm:text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     borderColor: "color-mix(in oklab, var(--fg) 50%, transparent)",
                     color: "color-mix(in oklab, var(--fg) 80%, transparent)",
@@ -552,7 +552,7 @@ export default function Appointments() {
                   onClick={() => handleDeny(appointment._id)}
                   disabled={processing === appointment._id}
                   variant="outline"
-                  className="flex-1 h-9 text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 h-10 sm:h-11 text-xs sm:text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     borderColor: "var(--border)",
                     color: "var(--fg)",
@@ -579,12 +579,12 @@ export default function Appointments() {
         style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
       >
       <Header />
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold mb-2 text-app">
+      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
+        <div className="mb-4 sm:mb-6 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-app">
             Appointments
           </h1>
-          <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+          <p className="text-xs sm:text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
             Manage your consultation and tattoo session requests
           </p>
         </div>
@@ -594,17 +594,15 @@ export default function Appointments() {
             <Loading theme={theme} />
           </div>
         ) : appointments.length === 0 ? (
-          <div className="text-center py-8 text-muted">
+          <div className="text-center py-8 text-muted text-sm sm:text-base">
             No appointments found
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="text-center w-full">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <h2 className="text-xl font-bold text-app">
-                  Pending
-                </h2>
-                <span 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="w-full">
+              <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-app">Pending</h2>
+                <span
                   className="px-2 py-0.5 rounded-full text-xs font-semibold"
                   style={{
                     background: "var(--elevated)",
@@ -615,14 +613,14 @@ export default function Appointments() {
                 </span>
               </div>
               {pendingAppointments.length === 0 ? (
-                <div className="text-center py-6 min-h-[150px] rounded-lg border border-dashed" style={{ 
+                <div className="text-center py-4 sm:py-6 min-h-[80px] sm:min-h-[120px] rounded-lg border border-dashed flex items-center justify-center text-xs sm:text-sm" style={{
                   color: "color-mix(in oklab, var(--fg) 50%, transparent)",
                   borderColor: "color-mix(in oklab, var(--border) 50%, transparent)"
                 }}>
                   No pending appointments
                 </div>
               ) : (
-                <div className="grid gap-4 max-w-2xl mx-auto w-full">
+                <div className="grid gap-3 sm:gap-4 w-full">
                   {pendingAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}
@@ -630,12 +628,10 @@ export default function Appointments() {
               )}
             </div>
 
-            <div className="text-center w-full">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <h2 className="text-xl font-bold text-app">
-                  Past
-                </h2>
-                <span 
+            <div className="w-full">
+              <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-app">Past</h2>
+                <span
                   className="px-2 py-0.5 rounded-full text-xs font-semibold"
                   style={{
                     background: isLightTheme ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.1)",
@@ -646,14 +642,14 @@ export default function Appointments() {
                 </span>
               </div>
               {pastAppointments.length === 0 ? (
-                <div className="text-center py-6 min-h-[150px] rounded-lg border border-dashed" style={{ 
+                <div className="text-center py-4 sm:py-6 min-h-[80px] sm:min-h-[120px] rounded-lg border border-dashed flex items-center justify-center text-xs sm:text-sm" style={{
                   color: "color-mix(in oklab, var(--fg) 50%, transparent)",
                   borderColor: "color-mix(in oklab, var(--border) 50%, transparent)"
                 }}>
                   No past appointments
                 </div>
               ) : (
-                <div className="grid gap-4 max-w-2xl mx-auto w-full">
+                <div className="grid gap-3 sm:gap-4 w-full">
                   {pastAppointments.map((appointment) => (
                     <AppointmentCard key={appointment._id} appointment={appointment} />
                   ))}

@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen, waitFor } from "@/__tests__/setup/test-utils";
+import { render, screen, waitFor } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 
 const mockApiGet = jest.fn<(path: string, params?: any, token?: string, signal?: AbortSignal) => Promise<any>>();
@@ -100,7 +100,7 @@ describe("TimeSlotStep", () => {
     }, { timeout: 3000 });
 
     const timeSlots = screen.getAllByRole("button");
-    const slotButton = timeSlots.find((btn) => btn.textContent?.includes("10:00"));
+    const slotButton = timeSlots.find((btn: HTMLElement) => btn.textContent?.includes("10:00"));
 
     if (slotButton) {
       await user.click(slotButton);
@@ -120,7 +120,7 @@ describe("TimeSlotStep", () => {
     }, { timeout: 3000 });
 
     const timeSlots = screen.getAllByRole("button");
-    const slotButton = timeSlots.find((btn) => btn.textContent?.includes("10:00"));
+    const slotButton = timeSlots.find((btn: HTMLElement) => btn.textContent?.includes("10:00"));
 
     if (slotButton) {
       await user.click(slotButton);
@@ -141,7 +141,7 @@ describe("TimeSlotStep", () => {
     }, { timeout: 3000 });
 
     const timeSlots = screen.getAllByRole("button");
-    const slotButton = timeSlots.find((btn) => btn.textContent?.includes("10:00"));
+    const slotButton = timeSlots.find((btn: HTMLElement) => btn.textContent?.includes("10:00"));
 
     if (slotButton) {
       await user.click(slotButton);

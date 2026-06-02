@@ -1,4 +1,5 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { API_URL } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -53,9 +54,6 @@ const Stars: React.FC<{ value: number }> = React.memo(({ value }) => {
 });
 Stars.displayName = "Stars";
 
-const ENV_API = (import.meta as any)?.env?.VITE_API_URL || import.meta.env?.VITE_API_URL || "http://localhost:3001";
-const PRIMARY_BASE = String(ENV_API).replace(/\/$/, "");
-const API_BASES = [PRIMARY_BASE].filter(Boolean);
 const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`;
 
 const INITIAL_BATCH = 12;
@@ -160,40 +158,28 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
             abortRef.current = controller;
             try {
                 const token = await getToken();
-                let lastErr: any = null;
-                for (const base of API_BASES) {
-                    try {
-                        const url = joinUrl(base, `/users/artists/${artist._id}`);
-                        const res = await fetch(url, {
-                            headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                            signal: controller.signal,
-                            cache: "force-cache"
-                        });
-                        const ctype = res.headers.get("content-type") || "";
-                        if (!res.ok) {
-                            const txt = await res.text().catch(() => "");
-                            throw new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\n${txt.slice(0, 200)}`);
-                        }
-                        if (!ctype.toLowerCase().includes("application/json")) {
-                            const txt = await res.text().catch(() => "");
-                            throw new Error(`Non-JSON response @ ${url}\n${txt.slice(0, 200)}`);
-                        }
-                        const json = await res.json();
-                        const list: Review[] = Array.isArray(json?.reviews) ? json.reviews.map(mapReview) : [];
-                        if (!cancelled) {
-                            cacheRef.current.set(artist._id, list);
-                            setRemoteReviews(list);
-                            setVisibleCount(INITIAL_BATCH);
-                        }
-                        lastErr = null;
-                        break;
-                    } catch (e: any) {
-                        if (controller.signal.aborted) return;
-                        lastErr = e;
-                        continue;
-                    }
+                const url = joinUrl(API_URL, `/users/artists/${artist._id}`);
+                const res = await fetch(url, {
+                    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                    signal: controller.signal,
+                    cache: "force-cache"
+                });
+                const ctype = res.headers.get("content-type") || "";
+                if (!res.ok) {
+                    const txt = await res.text().catch(() => "");
+                    throw new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\n${txt.slice(0, 200)}`);
                 }
-                if (lastErr) throw lastErr;
+                if (!ctype.toLowerCase().includes("application/json")) {
+                    const txt = await res.text().catch(() => "");
+                    throw new Error(`Non-JSON response @ ${url}\n${txt.slice(0, 200)}`);
+                }
+                const json = await res.json();
+                const list: Review[] = Array.isArray(json?.reviews) ? json.reviews.map(mapReview) : [];
+                if (!cancelled) {
+                    cacheRef.current.set(artist._id, list);
+                    setRemoteReviews(list);
+                    setVisibleCount(INITIAL_BATCH);
+                }
             } catch (e: any) {
                 if (!cancelled) setLoadErr(e?.message || "Failed to load reviews");
             } finally {

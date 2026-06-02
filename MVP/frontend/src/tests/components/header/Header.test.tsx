@@ -1,10 +1,18 @@
-import { jest, describe, test, expect, beforeEach, beforeAll } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import React from "react";
-import { render } from "@/__tests__/setup/test-utils";
+import { render } from "@/tests/setup/test-utils";
 
 const mockSignOut = jest.fn();
 const mockGetToken = jest.fn<() => Promise<string>>();
 const mockUpdateVisibility = jest.fn<() => Promise<any>>();
+
+jest.unstable_mockModule("@/assets/WhiteLogo.png", () => ({
+  default: "white-logo.png",
+}));
+
+jest.unstable_mockModule("@/assets/BlackLogo.png", () => ({
+  default: "black-logo.png",
+}));
 
 jest.unstable_mockModule("@clerk/clerk-react", () => ({
   useClerk: () => ({
@@ -82,6 +90,7 @@ jest.unstable_mockModule("@/lib/socket", () => ({
     emit: jest.fn(),
     connected: true,
   }),
+  connectSocket: jest.fn(),
 }));
 
 jest.unstable_mockModule("react-router-dom", () => ({
@@ -91,14 +100,9 @@ jest.unstable_mockModule("react-router-dom", () => ({
   BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+const { default: Header } = await import("@/components/header/Header");
+
 describe("Header", () => {
-  let Header: React.ComponentType;
-
-  beforeAll(async () => {
-    const module = await import("@/components/header/Header");
-    Header = module.default;
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetToken.mockResolvedValue("mock-token");

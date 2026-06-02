@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import CircularProgress from "@mui/material/CircularProgress";
+import { Spinner } from "@/components/ui/spinner";
 
 type ReqItem = {
     id: string;
@@ -44,7 +44,7 @@ export default function RequestPanel({ authFetch, onOpenConversation }: Props) {
     if (loading) {
         return (
             <div className="h-full grid place-items-center">
-                <CircularProgress sx={{ color: "var(--fg)" }} />
+                <Spinner className="text-[color:var(--fg)]" />
             </div>
         );
     }

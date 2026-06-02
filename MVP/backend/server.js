@@ -39,6 +39,7 @@ if (missing.length > 0) {
 
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import mongoose from "mongoose";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -47,9 +48,20 @@ import authRoutes from "./routes/auth.js";
 import bookingRoutes from "./routes/bookings.js";
 import userRoutes from "./routes/users.js";
 import billingRoutes from "./routes/billing.js";
+import messageRoutes from "./routes/messages.js";
+import availabilityRoutes from "./routes/availability.js";
+import imageRoutes from "./routes/images.js";
+import dashboardRoutes from "./routes/dashboard.js";
+import artistPolicyRoutes from "./routes/artistPolicy.js";
+import reviewRoutes from "./routes/reviews.js";
+import { mountStripeWebhook } from "./controllers/billingController.js";
+import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
 
 const app = express();
 const server = createServer(app);
+
+// Mount Stripe webhook BEFORE express.json so raw body is preserved
+mountStripeWebhook(app);
 
 const frontendOrigins = process.env.FRONTEND_URL 
   ? (Array.isArray(process.env.FRONTEND_URL) ? process.env.FRONTEND_URL : [process.env.FRONTEND_URL])
@@ -63,22 +75,18 @@ const io = new Server(server, {
   },
 });
 
+app.use(helmet());
+
 app.use(cors({
   origin: frontendOrigins,
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 }));
+
+app.use(apiLimiter);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    console.log(`${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
-  });
-  next();
-});
 
 app.get("/health", (req, res) => {
   res.json({
@@ -90,10 +98,16 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.use("/auth", authRoutes);
+app.use("/auth", authLimiter, authRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/users", userRoutes);
 app.use("/billing", billingRoutes);
+app.use("/messages", messageRoutes);
+app.use("/availability", availabilityRoutes);
+app.use("/images", imageRoutes);
+app.use("/dashboard", dashboardRoutes);
+app.use("/artist-policy", artistPolicyRoutes);
+app.use("/reviews", reviewRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
@@ -107,7 +121,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 async function startServer() {
   try {

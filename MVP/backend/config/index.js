@@ -11,11 +11,11 @@ export const config = {
   },
 
   database: {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/inkmity',
+    uri: process.env.MONGO_URI || 'mongodb://localhost:27017/inkmity',
   },
 
   auth: {
-    clerkPublishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY,
+    clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY,
     clerkSecretKey: process.env.CLERK_SECRET_KEY,
   },
 
@@ -25,6 +25,8 @@ export const config = {
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     platformFeeCents: 1000,
     currency: 'usd',
+    testMode: process.env.STRIPE_TEST_MODE === 'true',
+    testMinAmountCents: 50, 
   },
 
   email: {
@@ -49,7 +51,7 @@ export const config = {
 
     deposits: {
       defaultPercent: 0.2,
-      tattooMinimum: 5000, // $50 minimum for tattoos
+      tattooMinimum: 5000,
       cancellationHoursThreshold: 48,
     },
 
@@ -61,19 +63,19 @@ export const config = {
 
   cache: {
     ttl: {
-      user: 300, // 5 minutes
-      booking: 60, // 1 minute
-      availability: 300, // 5 minutes
+      user: 300,
+      booking: 60,
+      availability: 300, 
     },
   },
 
   rateLimit: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100,
   },
 
   upload: {
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 10 * 1024 * 1024,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
   },
 };

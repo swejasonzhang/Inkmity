@@ -1,5 +1,5 @@
 import { jest, describe, test, expect } from "@jest/globals";
-import { render } from "@/__tests__/setup/test-utils";
+import { render } from "@/tests/setup/test-utils";
 
 jest.unstable_mockModule("@/components/dashboard/client/ArtistCard", () => ({
   default: jest.fn(() => <div data-testid="artist-card">Artist Card</div>),

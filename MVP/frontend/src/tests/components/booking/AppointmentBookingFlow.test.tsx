@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen } from "@/__tests__/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 import type { Booking } from "@/api";
 
@@ -51,6 +51,24 @@ jest.unstable_mockModule("@/api", () => ({
   enableClientBookings: jest.fn(),
   checkConsultationStatus: jest.fn(),
   API_URL: "http://localhost:5005",
+}));
+
+jest.unstable_mockModule("@/lib/stripe", () => ({
+  stripePromise: Promise.resolve({
+    createPaymentMethod: jest.fn(),
+    confirmCardPayment: jest.fn(),
+  }),
+}));
+
+jest.unstable_mockModule("@stripe/stripe-js", () => ({
+  loadStripe: jest.fn(() => Promise.resolve({})),
+}));
+
+jest.unstable_mockModule("@stripe/react-stripe-js", () => ({
+  Elements: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  CardElement: () => <div data-testid="card-element">Card Element</div>,
+  useStripe: () => null,
+  useElements: () => null,
 }));
 
 const { default: AppointmentBookingFlow } = await import("@/components/booking/AppointmentBookingFlow");

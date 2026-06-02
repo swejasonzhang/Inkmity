@@ -8,6 +8,7 @@ import LoginFormCard from "@/components/access/LoginFormCard";
 import { Button } from "@/components/ui/button";
 import { container } from "@/lib/animations";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
+import VideoBackground from "@/components/VideoBackground";
 
 type TipState = { show: boolean; x: number; y: number };
 
@@ -220,11 +221,6 @@ export default function Login() {
     try {
       const result = await signIn.create({ identifier: email.trim().toLowerCase(), password });
       
-      if (import.meta.env.DEV) {
-        console.log("Sign-in result:", result);
-        console.log("Sign-in status:", result.status);
-      }
-      
       if (result.status === "complete") {
         if (!result.createdSessionId) {
           setAuthError("Login failed: No session created. Please try again.");
@@ -289,14 +285,10 @@ export default function Login() {
         triggerMascotError();
       }
     } catch (err: any) {
-      console.error("Login error:", err);
-      console.error("Full error object:", JSON.stringify(err, null, 2));
-      
       let errorMessage = "Login failed. Please check your credentials and try again.";
       
       if (err?.errors && Array.isArray(err.errors) && err.errors.length > 0) {
         const firstError = err.errors[0];
-        console.error("First error details:", firstError);
         errorMessage = firstError.message || firstError.longMessage || firstError.code || errorMessage;
       } else if (err?.message) {
         errorMessage = err.message;
@@ -321,10 +313,6 @@ export default function Login() {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
       } else if (err?.status === 401 || err?.statusCode === 401) {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
-      }
-      
-      if (import.meta.env.DEV) {
-        console.error("Final error message:", errorMessage);
       }
       
       setAuthError(errorMessage);
@@ -362,9 +350,7 @@ export default function Login() {
 
   return (
     <div className="relative text-app">
-      <video autoPlay loop muted playsInline preload="auto" className="fixed inset-0 w-full h-full object-cover pointer-events-none z-0" aria-hidden>
-        <source src="/Background.mp4" type="video/mp4" />
-      </video>
+      <VideoBackground />
       <div ref={headerRef} className="sticky top-0 z-30 bg-black/20 border-b border-white/10">
         <Header />
       </div>
@@ -381,8 +367,8 @@ export default function Login() {
               )}
               {!authLoaded ? null : isSignedIn ? (
                 <motion.div ref={cardRef} layout={false} className="w-full max-w-2xl p-0 mb-4 xs:mb-5 sm:mb-6 md:mb-0">
-                  <div className="rounded-3xl w-full m-0 bg-[#0b0b0b]/80 border border-white/10 ring-1 ring-white/10 p-4 xs:p-5 sm:p-6 md:p-7 lg:p-8 h-full mx-auto flex flex-col overflow-hidden">
-                    <div className="w-full min-h-[560px] xs:min-h-[580px] sm:min-h-[620px] md:min-h-[660px] lg:min-h-[680px] xl:min-h-[700px] flex flex-col items-center justify-center gap-6 xs:gap-7 sm:gap-8 md:gap-9 lg:gap-10 py-12 xs:py-14 sm:py-16 md:py-18">
+                  <div className="rounded-3xl w-full m-0 bg-card border border-app p-4 xs:p-5 sm:p-6 md:p-7 lg:p-8 h-full mx-auto flex flex-col overflow-hidden">
+                    <div className="w-full flex flex-col items-center justify-center gap-6 sm:gap-8 py-10 sm:py-14">
                       <div className="ink-ring scale-110 xs:scale-115 sm:scale-125 md:scale-135 lg:scale-150" aria-hidden="true">
                         <div className="ink-ring__inner" />
                       </div>
@@ -412,7 +398,7 @@ export default function Login() {
                     hideHeader={showSuccess}
                   >
                     {showSuccess ? (
-                      <div className="w-full min-h-[560px] xs:min-h-[580px] sm:min-h-[620px] md:min-h-[660px] lg:min-h-[680px] xl:min-h-[700px] flex flex-col items-center justify-center gap-6 xs:gap-7 sm:gap-8 md:gap-9 lg:gap-10 py-12 xs:py-14 sm:py-16 md:py-18">
+                      <div className="w-full flex flex-col items-center justify-center gap-6 sm:gap-8 py-10 sm:py-14">
                         <div className="ink-ring scale-110 xs:scale-115 sm:scale-125 md:scale-135 lg:scale-150" aria-hidden="true">
                           <div className="ink-ring__inner" />
                         </div>
@@ -477,7 +463,7 @@ export default function Login() {
                               type="button"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={togglePwd}
-                              className="absolute right-2 xs:right-2.5 sm:right-3 top-1/2 -translate-y-1/2 inline-flex h-6 xs:h-7 sm:h-8 w-6 xs:w-7 sm:w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-11 w-11 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition"
                               aria-label={showPassword ? "Hide password" : "Show password"}
                             >
                               {showPassword ? (

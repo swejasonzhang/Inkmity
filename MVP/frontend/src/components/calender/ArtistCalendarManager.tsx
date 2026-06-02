@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import { API_URL } from "@/lib/http";
+import { API_URL } from "@/api";
 import { Calendar as CalendarIcon, Clock, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
