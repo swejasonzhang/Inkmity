@@ -9,6 +9,8 @@ import Appointments from "./pages/Appointments";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Landing from "./pages/Landing";
+import SSOCallback from "./pages/SSOCallback";
+import Onboarding from "./pages/Onboarding";
 import { useTheme } from "@/hooks/useTheme";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 
@@ -55,6 +57,8 @@ const App: React.FC = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/landing" element={<Landing />} />
+        <Route path="/sso-callback" element={<SSOCallback />} />
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route
           path="/"
           element={

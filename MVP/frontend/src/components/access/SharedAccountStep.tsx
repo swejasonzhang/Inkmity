@@ -3,6 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import OAuthButtons from "@/components/access/OAuthButtons";
 import { validateEmail, validatePassword } from "@/lib/utils";
 
 type Role = "client" | "artist";
@@ -87,6 +88,12 @@ export default function SharedAccountStep({
 
     return (
         <div className="grid w-full mx-0 p-0 place-items-stretch text-center">
+            <OAuthButtons mode="signup" />
+            <div className="flex items-center gap-3 w-full mt-3 mb-2" aria-hidden>
+                <span className="h-px flex-1 bg-white/15" />
+                <span className="text-xs text-white/60">or sign up with email</span>
+                <span className="h-px flex-1 bg-white/15" />
+            </div>
             <div className="w-full">
                 <Label className="block text-sm text-white/80 mb-1.5">I want to join as</Label>
                 <div className="flex flex-col md:flex-row gap-2 items-stretch">

@@ -101,7 +101,6 @@ export default function SignupFormCard(props: SignupProps) {
     onEmailBlur,
     emailTaken,
     clientRefs,
-    setClientRefs,
     artistPortfolioImgs,
     setArtistPortfolioImgs,
     onCancelVerification,
@@ -215,12 +214,15 @@ export default function SignupFormCard(props: SignupProps) {
                       )}
                       {slides[step].key === "client-1" && <ClientDetailsStep client={client} onChange={onClientChange} />}
                       {slides[step].key === "artist-1" && <ArtistDetailsStep artist={artist} onChange={onArtistChange} />}
-                      {slides[step].key === "upload" &&
-                        (role === "client" ? (
-                          <SignupUpload label="Reference images (up to 3)" kind="client_ref" value={clientRefs} onChange={setClientRefs} />
-                        ) : (
-                          <SignupUpload label="Portfolio highlights (up to 3)" kind="artist_portfolio" value={artistPortfolioImgs} onChange={setArtistPortfolioImgs} />
-                        ))}
+                      {slides[step].key === "upload" && (
+                        <SignupUpload
+                          label="Showcase your top 3 pieces"
+                          kind="artist_portfolio"
+                          value={artistPortfolioImgs}
+                          onChange={setArtistPortfolioImgs}
+                          hint="Pick your three strongest works to feature now — you can add your full portfolio anytime after you finish signing up."
+                        />
+                      )}
                       {slides[step].key === "review" && (
                         <ReviewStep role={role} shared={shared} client={client} artist={artist} clientImages={clientRefs} artistImages={artistPortfolioImgs} bio={bio} onBioChange={onBioChange} />
                       )}

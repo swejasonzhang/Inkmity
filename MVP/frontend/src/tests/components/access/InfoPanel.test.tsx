@@ -27,7 +27,7 @@ describe("InfoPanel", () => {
   test("should render value props", async () => {
     render(<InfoPanel show={true} prefersReduced={false} mode="signup" />);
     await waitFor(() => {
-      expect(screen.getByText(/Earn as you book/i)).toBeInTheDocument();
+      expect(screen.getByText(/Rewarded for every piece/i)).toBeInTheDocument();
     }, { timeout: 2000 });
   });
 });

@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
 import { API_URL } from "@/api";
 import VideoBackground from "@/components/VideoBackground";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
@@ -233,7 +235,6 @@ export default function SignUp() {
       ? [
         { key: "role", valid: allSharedValid },
         { key: "client-1", valid: allClientValid },
-        { key: "upload", valid: true },
         { key: "review", valid: allSharedValid && allClientValid }
       ]
       : [
@@ -291,28 +292,24 @@ export default function SignUp() {
       return;
     }
     setLoading(true);
-    
     setAwaitingCode(true);
-    
+
     if (userId) {
-      signOut().catch(() => {
-      });
+      signOut().catch(() => { });
     }
-    
+
     try {
       const profile = role === "client" ? { ...client, referenceImages: clientRefs.filter(Boolean) } : { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean), shop: undefined };
+      const unsafeMetadata = { role, displayName: shared.username.trim(), email: shared.email.trim().toLowerCase(), profile };
+
       const attempt =
         signUpAttempt ??
-        (await signUp.create({
-          emailAddress: shared.email.trim().toLowerCase(),
-          password: shared.password,
-          publicMetadata: { role, displayName: shared.username.trim(), profile }
-        } as any));
+        (await signUp.create({ emailAddress: shared.email.trim().toLowerCase(), password: shared.password, unsafeMetadata } as any));
       setSignUpAttempt(attempt as SignUpResource);
-      
+
       attempt.prepareEmailAddressVerification({ strategy: "email_code" })
         .catch((error) => {
-          console.error("Error sending verification email:", error);
+          console.error("Error sending verification code:", error);
           setAwaitingCode(false);
           triggerMascotError();
         })
@@ -425,6 +422,7 @@ export default function SignUp() {
 
   return (
     <div className="relative h-svh overflow-hidden flex flex-col text-app">
+      <ToastContainer position="top-center" theme="dark" newestOnTop closeOnClick hideProgressBar style={{ zIndex: 2147483647 }} />
       <VideoBackground />
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8 py-4">

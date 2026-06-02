@@ -1,7 +1,6 @@
 import React from "react";
 
 type Props = {
-    /** Strength of the dark scrim over the video (0-100). Higher = more readable text. */
     scrim?: number;
 };
 

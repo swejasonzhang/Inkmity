@@ -13,20 +13,6 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
   }),
 }));
 
-jest.unstable_mockModule("@/components/dashboard/shared/FormInput", () => ({
-  default: ({ value, onChange, placeholder, message }: any) => (
-    <div>
-      <input
-        data-testid="otp-input"
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-      />
-      <p>{message}</p>
-    </div>
-  ),
-}));
-
 const { default: OtpStep } = await import("@/components/access/OtpStep");
 
 describe("OtpStep", () => {
@@ -43,9 +29,9 @@ describe("OtpStep", () => {
     mockPrepareEmailVerification.mockResolvedValue(undefined);
   });
 
-  test("should render OTP step", () => {
+  test("should render six code inputs", () => {
     render(<OtpStep {...defaultProps} />);
-    expect(screen.getByTestId("otp-input")).toBeInTheDocument();
+    expect(screen.getAllByRole("textbox")).toHaveLength(6);
   });
 
   test("should display expiry timer", () => {
@@ -53,13 +39,12 @@ describe("OtpStep", () => {
     expect(screen.getByText(/Expires in/i)).toBeInTheDocument();
   });
 
-  test("should call setCode when input changes", async () => {
+  test("should call setCode when a digit is entered", async () => {
     const user = userEvent.setup();
     const setCode = jest.fn();
     render(<OtpStep {...defaultProps} setCode={setCode} />);
-    
-    const input = screen.getByTestId("otp-input");
-    await user.type(input, "123456");
+
+    await user.type(screen.getByLabelText("Digit 1"), "1");
     expect(setCode).toHaveBeenCalled();
   });
 
@@ -67,9 +52,8 @@ describe("OtpStep", () => {
     const user = userEvent.setup();
     const onVerify = jest.fn();
     render(<OtpStep {...defaultProps} code="123456" onVerify={onVerify} />);
-    
-    const verifyButton = screen.getByText(/Verify & Continue/i);
-    await user.click(verifyButton);
+
+    await user.click(screen.getByText(/Verify & Continue/i));
     expect(onVerify).toHaveBeenCalled();
   });
 });
