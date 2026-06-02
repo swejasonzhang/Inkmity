@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
+import { uploadUnsigned } from "@/lib/cloudinary";
 import { Image as ImageIcon, Trash2, Info, UploadCloud } from "lucide-react";
 import clsx from "clsx";
 
@@ -24,6 +23,7 @@ type Props = {
     className?: string;
     accept?: string;
     maxSizeMB?: number;
+    hint?: string;
 };
 
 const MAX_PARALLEL_UPLOADS = 3;
@@ -31,14 +31,13 @@ const MAX_ITEMS = 3;
 
 export default function SignupUpload({
     label,
-    kind,
     value,
     onChange,
     className,
     accept = "image/*",
     maxSizeMB = 12,
+    hint,
 }: Props): React.ReactElement {
-    const { getToken } = useAuth();
     const inputId = useId();
     const inputRef = useRef<HTMLInputElement | null>(null);
     const dropRef = useRef<HTMLDivElement | null>(null);
@@ -147,14 +146,11 @@ export default function SignupUpload({
                 setSlots((prev) => prev.map((s) => (s.id === id ? { ...s, uploading: true, error: undefined } : s)));
 
                 try {
-                    await getToken().catch(() => undefined);
-                    const sig = await getSignedUpload(kind);
-
                     const current = slotsRef.current.find((s) => s.id === id);
                     const file = current?.file;
                     if (!file) throw new Error("Missing file");
 
-                    const { url, publicId } = await uploadToCloudinary(file, sig);
+                    const { url, publicId } = await uploadUnsigned(file);
                     if (!url) throw new Error("No URL returned");
 
                     setSlots((prev) =>
@@ -175,7 +171,7 @@ export default function SignupUpload({
         return () => {
             cancelled = true;
         };
-    }, [queue, activeUploads, getToken, kind]);
+    }, [queue, activeUploads]);
 
     useEffect(() => {
         const el = dropRef.current;
@@ -246,6 +242,9 @@ export default function SignupUpload({
                     <label htmlFor={inputId} className="text-sm md:text-base font-semibold text-app">
                         {label}
                     </label>
+                    {hint && (
+                        <p className="text-xs text-white/60 max-w-md -mt-1">{hint}</p>
+                    )}
                     <div className="flex flex-wrap items-center justify-center gap-2">
                         <Badge variant="outline" className="text-xs">Uploaded {uploadedCount}</Badge>
                         <Badge variant="outline" className="text-xs">Uploading {uploadingCount}</Badge>

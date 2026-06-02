@@ -3,6 +3,10 @@ import React from "react";
 import { render, screen } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 
+jest.unstable_mockModule("@/components/access/OAuthButtons", () => ({
+  default: () => <div data-testid="oauth-buttons" />,
+}));
+
 const { default: SharedAccountStep } = await import("@/components/access/SharedAccountStep");
 
 describe("SharedAccountStep", () => {

@@ -30,13 +30,14 @@ export const config = {
   },
 
   email: {
+    resendApiKey: process.env.RESEND_API_KEY,
     smtp: {
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT || 587,
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    from: process.env.FROM_EMAIL || 'noreply@inkmity.com',
+    from: process.env.FROM_EMAIL || 'Inkmity <onboarding@resend.dev>',
     templates: {
       confirmationSubject: 'Appointment Confirmed - Inkmity',
       cancellationSubject: 'Appointment Cancelled - Inkmity',

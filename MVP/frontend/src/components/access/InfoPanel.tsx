@@ -19,20 +19,23 @@ const loginProps = [
 ];
 
 const clientProps = [
-    { icon: Search, title: "Search that understands style", body: "Filter by technique, healed results, budget, and travel radius." },
-    { icon: MessageSquareText, title: "Chat with full context", body: "Share references and approve sketches in one clean thread." },
-    { icon: Tag, title: "Transparent pricing", body: "Up-front quotes and verified reviews before you ever commit." },
-    { icon: Gift, title: "Earn as you book", body: "Reward points stack with every session toward real perks." },
-    { icon: BadgeCheck, title: "Free to join", body: "Browse, message, and book artists at no cost as a client." },
+    { icon: Search, title: "Matched to your vision", body: "We surface artists whose healed work fits your style, budget, and city." },
+    { icon: MessageSquareText, title: "Everything in one place", body: "Ideas, references, and decisions stay together — never lost in DMs." },
+    { icon: Tag, title: "No surprises at checkout", body: "See honest quotes and real reviews before you ever put money down." },
+    { icon: Gift, title: "Rewarded for every piece", body: "Collect points with each session and redeem them for real perks." },
+    { icon: BadgeCheck, title: "Start free, stay flexible", body: "Joining costs nothing — explore, message, and book on your terms." },
 ];
 
 const artistProps = [
-    { icon: MessageSquareText, title: "One inbox for everything", body: "Every client conversation in a single, organized thread." },
-    { icon: CreditCard, title: "Automated deposits", body: "Deposits collected at booking — get paid before the session." },
-    { icon: FileText, title: "Client intake forms", body: "Health info, references, and placement delivered ahead of time." },
-    { icon: LayoutGrid, title: "A portfolio that gets found", body: "Showcase your work and surface in style-based search." },
-    { icon: CalendarDays, title: "Your schedule, your rules", body: "Set availability and let clients book the slots you open." },
+    { icon: MessageSquareText, title: "Less admin, more art", body: "Messages, bookings, and deposits handled so you can focus on tattooing." },
+    { icon: CreditCard, title: "Paid before the needle", body: "Deposits are collected the moment a client locks in their slot." },
+    { icon: FileText, title: "Prepared clients, every time", body: "Intake details and references land in your inbox before they arrive." },
+    { icon: LayoutGrid, title: "Get discovered", body: "Your portfolio reaches clients searching for your exact style." },
+    { icon: CalendarDays, title: "Booked on your terms", body: "Open the hours you want and let clients fill them around you." },
 ];
+
+const clientSteps = ["Explore", "Reserve", "Get rewarded"];
+const artistSteps = ["Create", "Get booked", "Cash out"];
 
 export default function InfoPanel({ show, prefersReduced, mode = "signup", role = "client" }: Props) {
     const [delayed, setDelayed] = useState(false);
@@ -59,6 +62,7 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                 : "We connect clients with artists through clear expectations, transparent pricing, and respectful collaboration.";
     const valueProps =
         mode === "login" ? loginProps : role === "artist" ? artistProps : clientProps;
+    const steps = role === "artist" ? artistSteps : clientSteps;
 
     return (
         <motion.div
@@ -106,6 +110,29 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                             </motion.div>
                         ))}
                     </div>
+
+                    {mode === "signup" && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={delayed ? { opacity: 1, y: 0 } : {}}
+                            transition={prefersReduced ? { duration: 0 } : { duration: 0.45, ease: "easeOut", delay: 0.45 }}
+                            className="mt-5 w-full max-w-sm"
+                        >
+                            <div className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-app/50 mb-2.5">
+                                How it works
+                            </div>
+                            <div className="flex items-start gap-1">
+                                {steps.map((label, i) => (
+                                    <div key={label} className="flex-1 flex flex-col items-center gap-1.5">
+                                        <span className="grid h-7 w-7 place-items-center rounded-full border border-app/40 bg-elevated text-fluid-xs font-bold text-app">
+                                            {i + 1}
+                                        </span>
+                                        <span className="text-fluid-xs text-subtle leading-tight">{label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
 
                     {mode === "signup" && (
                         <motion.p

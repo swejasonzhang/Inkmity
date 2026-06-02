@@ -5,10 +5,13 @@ import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { validateEmail } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import LoginFormCard from "@/components/access/LoginFormCard";
+import OAuthButtons from "@/components/access/OAuthButtons";
 import { Button } from "@/components/ui/button";
 import { container } from "@/lib/animations";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
 import VideoBackground from "@/components/VideoBackground";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type TipState = { show: boolean; x: number; y: number };
 
@@ -304,6 +307,7 @@ export default function Login() {
 
   return (
     <div className="relative h-svh overflow-hidden flex flex-col text-app">
+      <ToastContainer position="top-center" theme="dark" newestOnTop closeOnClick hideProgressBar style={{ zIndex: 2147483647 }} />
       <VideoBackground />
       <Header />
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8 py-4">
@@ -368,6 +372,12 @@ export default function Login() {
                       </div>
                     ) : (
                       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
+                        <OAuthButtons mode="login" />
+                        <div className="flex items-center gap-3 w-full" aria-hidden>
+                          <span className="h-px flex-1 bg-app/15" />
+                          <span className="text-xs text-subtle">or</span>
+                          <span className="h-px flex-1 bg-app/15" />
+                        </div>
                         <div className="w-full">
                           <label className="block text-sm font-semibold text-app mb-1.5 text-center" htmlFor="email">Email</label>
                           <input

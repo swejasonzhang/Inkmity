@@ -1,0 +1,187 @@
+import { useEffect, useState, type ChangeEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { getMe, syncUser } from "@/api";
+import Header from "@/components/header/Header";
+import VideoBackground from "@/components/VideoBackground";
+import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import ClientDetailsStep from "@/components/access/ClientDetailsStep";
+import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
+
+type Role = "client" | "artist";
+
+const CLIENT_DEFAULTS = { budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", style: "all", availability: "all" };
+const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100", bookingPreference: "open" as const, travelFrequency: "rare" as const, portfolio: "", styles: [] as string[], bio: "" };
+
+export default function Onboarding() {
+    const navigate = useNavigate();
+    const { isLoaded, isSignedIn, user } = useUser();
+    const { getToken } = useAuth();
+
+    const [checking, setChecking] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [role, setRole] = useState<Role>("client");
+    const [client, setClient] = useState({ ...CLIENT_DEFAULTS });
+    const [artist, setArtist] = useState({ ...ARTIST_DEFAULTS });
+
+    useEffect(() => {
+        if (!isLoaded) return;
+        if (!isSignedIn) {
+            navigate("/login", { replace: true });
+            return;
+        }
+        let active = true;
+        (async () => {
+            try {
+                const token = await getToken();
+                await getMe({ token: token ?? undefined });
+                if (active) navigate("/dashboard", { replace: true });
+            } catch {
+                if (active) setChecking(false);
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [isLoaded, isSignedIn, getToken, navigate]);
+
+    const handleClient = (e: ChangeEvent<HTMLInputElement> | { target: { name: string; value: string } }) => {
+        const { name, value } = (e as { target: { name: string; value: string } }).target;
+        if (!name) return;
+        setClient((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleArtist = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target as HTMLInputElement;
+        if (name === "stylesCSV") {
+            setArtist((prev) => ({ ...prev, styles: value.split(",").map((s) => s.trim()).filter(Boolean) }));
+        } else {
+            setArtist((prev) => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const finish = async (useDefaults: boolean) => {
+        if (!user || submitting) return;
+        setSubmitting(true);
+        try {
+            const token = await getToken();
+            const email =
+                user.primaryEmailAddress?.emailAddress ||
+                user.emailAddresses?.[0]?.emailAddress ||
+                "";
+            const fn = user.firstName?.trim() || "";
+            const ln = user.lastName?.trim() || "";
+            const username = `${fn} ${ln}`.trim() || email.split("@")[0] || `user-${user.id.slice(-6)}`;
+
+            const src = useDefaults ? null : role === "artist" ? artist : client;
+            const profile =
+                role === "artist"
+                    ? {
+                          location: (src as typeof artist)?.location || "New York, NY",
+                          years: Number((src as typeof artist)?.years) || 0,
+                          baseRate: Number((src as typeof artist)?.baseRate) || 100,
+                          bookingPreference: (src as typeof artist)?.bookingPreference || "open",
+                          travelFrequency: (src as typeof artist)?.travelFrequency || "rare",
+                          styles: (src as typeof artist)?.styles || [],
+                          bio: (src as typeof artist)?.bio || "",
+                      }
+                    : {
+                          budgetMin: Number((src as typeof client)?.budgetMin) || 100,
+                          budgetMax: Number((src as typeof client)?.budgetMax) || 200,
+                          location: (src as typeof client)?.location || "New York, NY",
+                          placement: (src as typeof client)?.placement || "",
+                          size: (src as typeof client)?.size || "",
+                      };
+
+            await syncUser(token ?? "", {
+                clerkId: user.id,
+                email,
+                role,
+                username,
+                firstName: fn,
+                lastName: ln,
+                profile,
+            });
+            navigate("/dashboard", { replace: true });
+        } catch {
+            setSubmitting(false);
+        }
+    };
+
+    if (!isLoaded || checking) {
+        return (
+            <div className="relative h-svh flex flex-col items-center justify-center text-app">
+                <VideoBackground />
+                <div className="flex flex-col items-center gap-4">
+                    <Spinner size={40} className="text-app" />
+                    <p className="text-sm text-subtle">Setting up your account…</p>
+                </div>
+            </div>
+        );
+    }
+
+    const roleBtn = (r: Role, label: string) => (
+        <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setRole(r)}
+            className={`flex-1 h-11 rounded-xl text-sm ${role === r ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+        >
+            {label}
+        </Button>
+    );
+
+    return (
+        <div className="relative min-h-svh flex flex-col text-app">
+            <VideoBackground />
+            <Header />
+            <main className="flex-1 flex items-start sm:items-center justify-center px-4 sm:px-6 py-6 overflow-y-auto">
+                <div className="w-full max-w-2xl mx-auto rounded-3xl bg-card border border-app p-5 sm:p-7">
+                    <div className="text-center mb-5">
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-1 text-xs text-app/70 mb-2">
+                            ✦ <span>Welcome to Inkmity</span>
+                        </div>
+                        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app">Tell us what you're looking for</h1>
+                        <p className="text-subtle text-xs sm:text-sm mt-1">A few quick details help us tailor your experience. You can change these anytime.</p>
+                    </div>
+
+                    <div className="mb-5">
+                        <div className="block text-sm text-white/80 mb-1.5 text-center">I'm joining as</div>
+                        <div className="flex gap-2">
+                            {roleBtn("client", "Client")}
+                            {roleBtn("artist", "Artist")}
+                        </div>
+                    </div>
+
+                    <div className="mb-6">
+                        {role === "client" ? (
+                            <ClientDetailsStep client={client} onChange={handleClient} />
+                        ) : (
+                            <ArtistDetailsStep artist={artist} onChange={handleArtist} />
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            onClick={() => finish(true)}
+                            disabled={submitting}
+                            className="h-11 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition"
+                        >
+                            Skip for now
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={() => finish(false)}
+                            disabled={submitting}
+                            className="flex-1 h-11 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
+                        >
+                            {submitting ? "Saving…" : "Continue to dashboard"}
+                        </Button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+}

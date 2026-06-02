@@ -119,7 +119,7 @@ export default function ReviewStep({
                             <span className="text-sm">{shared.username}</span>
                         </Row>
                         <Row label="Email:">
-                            <span className="text-sm">{shared.email}</span>
+                            <span className="text-sm break-all max-w-full">{shared.email}</span>
                         </Row>
                         <Row label="Role:">
                             <span className="capitalize text-sm">{role}</span>
@@ -187,24 +187,26 @@ export default function ReviewStep({
                 </div>
             )}
 
-            <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                <h3 className="text-sm font-semibold mb-2">{role === "client" ? "Reference Images" : "Portfolio Highlights"}</h3>
-                <div className="grid grid-cols-3 gap-1.5">
-                    {tiles.map((i) => {
-                        const u = imgs[i];
-                        return (
-                            <div key={i} className="aspect-square w-full rounded-md overflow-hidden border border-white/10 bg-white/5">
-                                {u ? (
-                                    <img src={u} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                    <div className="h-full w-full grid place-items-center text-[10px] text-white/40">Empty</div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-                <p className="mt-2 text-[11px] text-white/60">Images will appear larger on your dashboard.</p>
-            </section>
+            {role === "artist" && (
+                <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                    <h3 className="text-sm font-semibold mb-2">Portfolio Highlights</h3>
+                    <div className="grid grid-cols-3 gap-1.5">
+                        {tiles.map((i) => {
+                            const u = imgs[i];
+                            return (
+                                <div key={i} className="aspect-square w-full rounded-md overflow-hidden border border-white/10 bg-white/5">
+                                    {u ? (
+                                        <img src={u} alt="" className="h-full w-full object-cover" />
+                                    ) : (
+                                        <div className="h-full w-full grid place-items-center text-[10px] text-white/40">Empty</div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <p className="mt-2 text-[11px] text-white/60">You can add your full portfolio after signup.</p>
+                </section>
+            )}
 
             {role === "artist" && (
                 <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
