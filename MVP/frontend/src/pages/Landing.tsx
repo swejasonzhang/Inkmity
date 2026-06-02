@@ -56,9 +56,7 @@ const Landing: React.FC = () => {
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
                     <div className="relative z-10 text-app flex flex-col min-h-[100svh]">
-                        <div className="sticky top-0 z-[2147483500] bg-app/80 backdrop-blur-sm sm:backdrop-blur-md border-b border-app overflow-visible">
-                            <Header />
-                        </div>
+                        <Header />
 
                         <main className="flex-1">
                             <section className="relative flex items-center justify-center min-h-svh px-4 sm:px-6 lg:px-8">

@@ -208,13 +208,13 @@ export default function ReviewStep({
 
             {role === "artist" && (
                 <section className="w-full max-w-5xl rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                    <h3 className="text-sm font-semibold mb-2">Bio (optional)</h3>
+                    <h3 className="text-sm font-semibold mb-2">Bio<span className="block text-xs text-white/50 mt-0.5">(optional)</span></h3>
                     <textarea
                         value={bio}
                         onChange={onBioChange}
                         rows={5}
                         placeholder="Add notes about style, experience, booking details."
-                        className="w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                        className="w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
                     />
                 </section>
             )}

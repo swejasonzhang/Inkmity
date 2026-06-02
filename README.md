@@ -1,122 +1,143 @@
 # Inkmity
 
-> A modern web application connecting tattoo clients and artists, helping them communicate, find local artists, and explore tattoo designs. Built with a MERN stack and modern frontend tools.
+> A modern platform for discovering tattoo artists across the US — browse by style, message with full context, book with transparent pricing, and earn rewards as you go.
+
+Inkmity connects tattoo clients and artists in one place: real-time messaging, portfolio-driven discovery, an end-to-end booking flow with deposits and intake forms, and verified reviews. It is in active development; launch timing will be announced as the product matures.
 
 ---
 
-## Table of Contents
+## Repository structure
 
-- Project Overview
-- Current Features
-- Future Features
-- Tech Stack
-- Getting Started
-- Contributing
-- License & Usage
-- Contact
-- Deployment Notes
+| Path | Description |
+|------|-------------|
+| [`MVP/`](MVP) | The main application — full React + Express stack (the active product). |
+| [`MVP/frontend/`](MVP/frontend) | React 19 + Vite + TypeScript single-page app. |
+| [`MVP/backend/`](MVP/backend) | Node.js + Express 5 API, MongoDB, Socket.io. |
+| [`Waitlist/`](Waitlist) | The earlier standalone waitlist / landing site. |
 
----
-
-## Project Overview
-
-**Inkmity** is designed to bridge the gap between tattoo clients and artists by providing:
-
-- A platform for clients to discover and communicate with tattoo artists near them.  
-- A modern, responsive user interface with smooth interactions.  
-- Backend services to manage users, artists, and their interactions securely.  
-
-The goal is to improve the way clients find artists, book sessions, and visualize tattoo ideas. Future AI enhancements will provide intelligent recommendations, tattoo placement previews, and sorting by style, pricing, and location.
+The MVP is the project to run. See [`MVP/README.md`](MVP/README.md) for in-depth, app-specific documentation.
 
 ---
 
-## Current Features
+## Features
 
-- **Waitlist sign-up**: Users can join a waitlist to get early access to the platform.  
-- Responsive design with Tailwind CSS.  
-- Interactive animations using Framer Motion.  
-- Notifications using React Toastify.
+**For clients**
+- Discover artists by technique, healed results, budget, location, and travel radius
+- Real-time messaging with shared references and sketch approval
+- End-to-end booking: time selection, intake form, deposit, confirmation
+- Transparent up-front pricing and verified reviews
+- Rewards that accrue as you book
+
+**For artists**
+- One inbox for every client conversation
+- Automated deposits collected at booking
+- Client intake forms (health info, references, placement) delivered ahead of the session
+- A fast portfolio that helps clients find you
+
+**Platform**
+- Clerk authentication with role-based access (client / artist)
+- Stripe payments (deposits, final payments, webhooks)
+- Cloudinary image uploads
+- Light/dark theming, fully responsive, accessible
+- Jest test suites on both frontend and backend
 
 ---
 
-## Future Features
-
-- User authentication (signup/login)  
-- Artist and client profiles  
-- Search and filter artists by location and style  
-- Real-time messaging between clients and artists via **WebSockets**  
-- AI-powered chatbot for client guidance  
-- AI tattoo placement visualization  
-- Sorting artists by pricing, style, and area  
-- In-app booking, reviews, and ratings  
-
----
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React (Vite), Tailwind CSS, Framer Motion, React Toastify |
-| Backend | Node.js, Express.js, WebSockets (Socket.io) |
-| Database | MongoDB Atlas |
-| Hosting | Vercel |
-| Dev Tools | ESLint, Prettier, npm/yarn |
+| Frontend | React 19, Vite, TypeScript, Tailwind CSS, Radix UI / shadcn, Framer Motion |
+| Backend | Node.js, Express 5, Socket.io |
+| Database | MongoDB (Mongoose) |
+| Auth | Clerk |
+| Payments | Stripe |
+| Media | Cloudinary |
+| Email | Nodemailer |
+| Tooling | ESLint, Jest, nodemon |
 
 ---
+
+## Getting started
 
 ### Prerequisites
-- Node.js v18+  
-- npm or yarn  
-- MongoDB Atlas account  
+- Node.js v18+
+- npm
+- A MongoDB connection string, plus Clerk, Stripe, and Cloudinary accounts
+
+### 1. Backend
+
+```bash
+cd MVP/backend
+npm install
+# create .env.development (see "Environment variables" below)
+npm run dev        # starts the API on http://localhost:3001
+```
+
+### 2. Frontend
+
+```bash
+cd MVP/frontend
+npm install
+# create .env.development (see "Environment variables" below)
+npm run dev        # starts the app on http://localhost:5173
+```
+
+### Environment variables
+
+These files are git-ignored and must be created locally. **Never commit real keys.**
+
+**`MVP/backend/.env.development`**
+```
+APP_URL=http://localhost:5173
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+MONGO_URI=your-mongodb-connection-string
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+CURRENCY=usd
+```
+
+**`MVP/frontend/.env.development`**
+```
+VITE_API_URL=http://localhost:3001
+VITE_SOCKET_URL=http://localhost:3001
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+VITE_CLOUDINARY_CLOUD_NAME=...
+VITE_CLOUDINARY_UPLOAD_PRESET=...
+```
 
 ---
 
-## Scaling Considerations
+## Scripts
 
-Even with the waitlist as the first feature, planning ahead will help when adding more features:
-
-- **Backend & API**
-  - Use WebSockets for real-time messaging once implemented.  
-  - Add caching (Redis) for frequent queries.  
-  - Optimize MongoDB queries and add indexes for scalability.
-
-- **Frontend**
-  - Use code-splitting and lazy loading for improved performance.  
-  - Optimize static assets and images.
-
-- **Future-Proofing**
-  - Monitor performance and errors using tools like Sentry or LogRocket.  
-  - Design backend to allow horizontal scaling when traffic grows.  
+| Command | Location | What it does |
+|---------|----------|--------------|
+| `npm run dev` | frontend / backend | Start dev server (Vite / nodemon) |
+| `npm run build` | frontend | Type-check and produce a production build |
+| `npm test` | frontend / backend | Run the Jest test suites |
+| `npm start` | backend | Run the API in production mode |
 
 ---
 
-## Contributing
+## License & usage
 
-This is a **personal project** and is not open for public contributions.  
-Professional collaborations may be considered by contacting the author directly.
-
----
-
-## License & Usage
-
-- **Private intellectual property** — this project is **not for personal or commercial use without explicit permission**.  
-- Redistribution or copying for personal use is strictly prohibited.  
+Private intellectual property. Not licensed for personal or commercial use, redistribution, or copying without explicit written permission from the author.
 
 ---
 
 ## Contact
 
-**Jason Zhang**  
-- GitHub: https://github.com/swejasonzhang  
-- Email: `swejasonzhang@gmail.com`  
-- LinkedIn: `https://www.linkedin.com/in/swejasonzhang/`  
-
----
-
-## Deployment Notes
-
-**Frontend & Backend (Vercel)**  
-- Both the frontend and backend are deployed on **Vercel**.  
-- The frontend is a React (Vite) app served as a static build.  
-- The backend API (Node.js/Express) is deployed as serverless functions on Vercel.  
-- Environment variables (like MongoDB connection strings and API keys) are securely configured in the Vercel dashboard for both projects.  
+**Jason Zhang**
+- GitHub: https://github.com/swejasonzhang
+- LinkedIn: https://www.linkedin.com/in/swejasonzhang/
+- Email: swejasonzhang@gmail.com
