@@ -147,8 +147,8 @@ body,
 .ink-scope input[type="url"],
 .ink-scope input:not([type]),
 .ink-scope select {
-  color: var(--fg) !important;
-  background-color: var(--background);
+  color: #000 !important;
+  background-color: #fff !important;
 }
 
 .ink-scope textarea[style*="color"],
@@ -157,18 +157,18 @@ body,
 .ink-scope textarea[class*="text-"],
 .ink-scope input[class*="text-"],
 .ink-scope select[class*="text-"] {
-  color: var(--fg) !important;
+  color: #000 !important;
 }
 
 .ink-scope textarea::placeholder,
 .ink-scope input::placeholder {
-  color: var(--muted-foreground) !important;
-  opacity: 1;
+  color: #000 !important;
+  opacity: 0.75;
 }
 
 .ink-scope select option {
-  color: var(--fg) !important;
-  background-color: var(--background);
+  color: #000 !important;
+  background-color: #fff;
 }
 
 .ink-scope select:not([multiple]) {
@@ -179,34 +179,31 @@ body,
 .ink-scope [data-slot="select-content"],
 .ink-scope [data-slot="select-item"],
 .ink-scope [data-slot="select-value"] {
-  color: var(--foreground) !important;
+  color: #000 !important;
 }
 
-.ink-scope [data-slot="select-trigger"] {
-  background-color: var(--background);
-}
-
+.ink-scope [data-slot="select-trigger"],
 .ink-scope [data-slot="select-content"] {
-  background-color: var(--popover);
+  background-color: #fff;
 }
 
 .ink-scope [data-slot="select-item"]:hover,
 .ink-scope [data-slot="select-item"][data-highlighted] {
-  background-color: var(--accent);
-  color: var(--accent-foreground) !important;
+  background-color: #262626;
+  color: #fff !important;
 }
 
 .ink-scope [data-slot="select-trigger"][data-placeholder],
 .ink-scope [data-slot="select-value"][data-placeholder] {
-  color: var(--muted-foreground) !important;
+  color: rgba(0, 0, 0, 0.55) !important;
 }
 
 .ink-scope [data-slot="select-label"] {
-  color: var(--muted-foreground) !important;
+  color: rgba(0, 0, 0, 0.6) !important;
 }
 
 .ink-scope [data-slot="select-separator"] {
-  background-color: var(--border);
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .ink-scope.ink-theming {
@@ -627,9 +624,9 @@ h3 {
   word-break: break-word;
   min-height: var(--cen-min-h, 12rem);
   padding: 0.75rem;
-  background: var(--card);
-  color: var(--fg);
-  border: 1px solid var(--border);
+  background: #fff;
+  color: #000;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 1rem;
   transition: box-shadow 200ms ease, border-color 200ms ease,
     background 200ms ease;
@@ -647,6 +644,7 @@ h3 {
   display: grid;
   place-items: center;
   pointer-events: none;
+  color: rgba(0, 0, 0, 0.5) !important;
 }
 .placeholder-overlay .blink {
   animation: cursorBlink 1s step-end infinite;

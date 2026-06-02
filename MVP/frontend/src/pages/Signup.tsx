@@ -132,11 +132,6 @@ export default function SignUp() {
   const { signOut } = useClerk();
   const { userId, getToken, isLoaded: authLoaded } = useAuth();
   const navigate = useNavigate();
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const headerRef = useRef<HTMLDivElement | null>(null);
-  const [headerH, setHeaderH] = useState(0);
-  const [cardH, setCardH] = useState<number | null>(null);
-  const [isMdUp, setIsMdUp] = useState<boolean>(typeof window !== "undefined" ? window.matchMedia("(min-width: 768px)").matches : false);
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [flashToken, setFlashToken] = useState(0);
 
@@ -180,48 +175,6 @@ export default function SignUp() {
     };
   }, []);
 
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const measure = () => setHeaderH(el.offsetHeight || 0);
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    measure();
-    const onResize = () => measure();
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", onResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-    const measure = () => {
-      const height = el.offsetHeight || null;
-      if (height && height > 0) {
-        setCardH(height);
-      }
-    };
-    const timeoutId = setTimeout(measure, 0);
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measure);
-    });
-    ro.observe(el);
-    return () => {
-      clearTimeout(timeoutId);
-      ro.disconnect();
-    };
-  }, [step, showSuccess, awaitingCode, authLoaded, userId]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const onChange = () => setIsMdUp(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   useEffect(() => {
     const onFocus = () => {
@@ -471,42 +424,35 @@ export default function SignUp() {
   const successSubtitle = successType === "already" ? "Redirecting now" : "Redirecting to Dashboard.";
 
   return (
-    <div className="relative text-app">
+    <div className="relative h-svh overflow-hidden flex flex-col text-app">
       <VideoBackground />
-      <div ref={headerRef} className="sticky top-0 z-30 bg-black/20">
-        <Header />
-      </div>
-      <main className="z-10 grid place-items-center px-3 xs:px-4 sm:px-5 md:px-6 lg:px-8 xl:px-0 overflow-y-auto sm:overflow-visible sm:pt-0 sm:pb-0" style={{ minHeight: `calc(100svh - ${headerH}px)` }}>
-        <div className="mx-auto w-full max-w-7xl grid place-items-center h-full px-1 xs:px-2 sm:px-3 md:px-4 lg:px-0">
-          <motion.div variants={container} initial="hidden" animate="show" className="w-full h-full">
-            <div className={`relative flex w-full h-full flex-col sm:flex-row sm:items-center sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId ? "" : "justify-center"}`}>
+      <Header />
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8 py-4">
+          <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-3xl mx-auto">
+            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId ? "" : "justify-center"}`}>
               {showInfo && !showSuccess && authLoaded && !userId && (
                 <motion.div
                   layout={!showSuccess && !userId}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="flex-1 w-full sm:w-1/2 lg:w-2/5 sm:flex-none mt-2 xs:mt-3 sm:mt-0"
-                  style={{
-                    height: isMdUp && cardH ? `${cardH}px` : undefined
-                  }}
+                  className="hidden sm:flex w-full sm:w-1/2"
                 >
-                  <div className="h-full w-full" style={{ height: isMdUp && cardH ? `${cardH}px` : undefined }}>
-                    <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" />
+                  <div className="w-full h-full">
+                    <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="signup" role={role} />
                   </div>
                 </motion.div>
               )}
               {!authLoaded ? null : userId ? (
                 <motion.div
-                  ref={cardRef}
                   layout={false}
-                  className="w-full max-w-2xl p-0 mb-2 xs:mb-3 sm:mb-4 md:mb-0 flex items-center justify-center"
+                  className="w-full max-w-md p-0 flex items-center justify-center"
                 >
                   <div className="rounded-3xl w-full m-0 bg-card border border-app p-4 xs:p-5 sm:p-6 md:p-7 lg:p-8 mx-auto">
                     <div className="w-full flex items-center justify-center py-10 sm:py-14">
-                      <div className="ink-success-wrap flex flex-col items-center justify-center gap-6 xs:gap-7 sm:gap-8 md:gap-9 lg:gap-10 py-12 xs:py-14 sm:py-16 md:py-18">
+                      <div className="ink-success-wrap flex flex-col items-center justify-center gap-6 sm:gap-8">
                         <div className="ink-spinner" />
                         <div className="text-center space-y-2 px-4">
-                          <div className="text-white text-xl xs:text-2xl sm:text-2xl md:text-3xl lg:text-3xl font-semibold">{successHeading}</div>
-                          <div className="text-white/80 text-sm xs:text-base sm:text-base md:text-lg lg:text-lg">
+                          <div className="text-app text-xl sm:text-2xl md:text-3xl font-semibold">{successHeading}</div>
+                          <div className="text-subtle text-sm sm:text-base md:text-lg">
                             {successSubtitle}
                             <span className="ink-dots" aria-hidden="true">
                               <span className="ink-dot" />
@@ -521,10 +467,9 @@ export default function SignUp() {
                 </motion.div>
               ) : (
                 <motion.div
-                  ref={cardRef}
                   layout={!showSuccess && !userId}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className={`${showInfo && !showSuccess && (!authLoaded || !userId) ? "flex-1 w-full sm:w-1/2 lg:w-3/5 sm:flex-none" : "w-full max-w-lg"} p-0 mb-2 xs:mb-3 sm:mb-4 md:mb-0`}
+                  className={`${showInfo && !showSuccess && (!authLoaded || !userId) ? "w-full sm:w-1/2" : "w-full max-w-md"} p-0`}
                 >
                   <SignupFormCard
                     showInfo={showInfo}
@@ -551,7 +496,7 @@ export default function SignUp() {
                     onVerify={verifyCode}
                     onPasswordVisibilityChange={handlePasswordVisibilityChange}
                     emailTaken={false}
-                    className=""
+                    className="h-full"
                     clientRefs={clientRefs}
                     setClientRefs={setClientRefs}
                     artistPortfolioImgs={artistPortfolioImgs}
@@ -571,7 +516,6 @@ export default function SignUp() {
               )}
             </div>
           </motion.div>
-        </div>
       </main>
     </div>
   );

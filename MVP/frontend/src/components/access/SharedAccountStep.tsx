@@ -88,6 +88,28 @@ export default function SharedAccountStep({
     return (
         <div className="grid w-full mx-0 p-0 place-items-stretch text-center">
             <div className="w-full">
+                <Label className="block text-sm text-white/80 mb-1.5">I want to join as</Label>
+                <div className="flex flex-col md:flex-row gap-2 items-stretch">
+                    <Button
+                        type="button"
+                        onClick={() => setRole("client")}
+                        className={`w-full flex-1 px-4 py-2 rounded-xl text-sm ${role === "client" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+                        variant="secondary"
+                    >
+                        Client
+                    </Button>
+                    <Button
+                        type="button"
+                        onClick={() => setRole("artist")}
+                        className={`w-full flex-1 px-4 py-2 rounded-xl text-sm ${role === "artist" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+                        variant="secondary"
+                    >
+                        Artist
+                    </Button>
+                </div>
+            </div>
+
+            <div className="w-full mt-2">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="username">Username</Label>
                 <Input
                     id="username"
@@ -96,14 +118,14 @@ export default function SharedAccountStep({
                     value={shared.username}
                     placeholder="Enter a display name"
                     onChange={onChange}
-                    className={`h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-white/30 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
+                    className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
                     aria-describedby="username-help"
                     aria-invalid={!usernameOk}
                 />
                 <p id="username-help" className={`mt-1 text-xs ${usernameOk ? "text-white/60" : "text-red-400"}`}>{usernameHelp}</p>
             </div>
 
-            <div className="w-full mt-3">
+            <div className="w-full mt-2">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="email">Email</Label>
                 <Input
                     id="email"
@@ -113,14 +135,14 @@ export default function SharedAccountStep({
                     placeholder="name@example.com"
                     onChange={onChange}
                     onBlur={onEmailBlur}
-                    className={`h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-white/30 transition-shadow will-change-[box-shadow] ${flashEmail ? "ink-flash" : ""}`}
+                    className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashEmail ? "ink-flash" : ""}`}
                     aria-describedby="email-help"
                     aria-invalid={!emailOk}
                 />
                 <p id="email-help" className={`mt-1 text-xs ${emailOk ? "text-white/60" : "text-red-400"}`}>{emailHelp}</p>
             </div>
 
-            <div className="w-full mt-3">
+            <div className="w-full mt-2">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="password">Password</Label>
                 <div className="relative">
                     <Input
@@ -131,7 +153,7 @@ export default function SharedAccountStep({
                         value={shared.password}
                         placeholder="At least 8 characters with letters and numbers"
                         onChange={onChange}
-                        className={`h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-white/30 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
+                        className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
                         aria-describedby="password-help"
                         aria-invalid={!pwdOk}
                     />
@@ -139,7 +161,7 @@ export default function SharedAccountStep({
                         type="button"
                         onMouseDown={(e) => { e.preventDefault(); }}
                         onClick={togglePassword}
-                        className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 md:h-8 md:w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20"
+                        className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 md:h-8 md:w-8 items-center justify-center rounded-lg text-black/50 hover:text-black bg-transparent hover:bg-black/5"
                         size="icon"
                         variant="ghost"
                         aria-label={showPassword ? "Hide password" : "Show password"}
@@ -152,7 +174,7 @@ export default function SharedAccountStep({
                 <p id="password-help" className={`mt-1 text-xs ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
             </div>
 
-            <div className="w-full mt-3">
+            <div className="w-full mt-2">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="confirmPassword">Confirm Password</Label>
                 <div className="relative">
                     <Input
@@ -163,7 +185,7 @@ export default function SharedAccountStep({
                         value={confirmPassword || ""}
                         placeholder="Re-enter your password"
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`h-11 w-full rounded-xl bg-white/10 border-0 text-white text-center placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-white/30 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
+                        className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
                         aria-describedby="confirm-password-help"
                         aria-invalid={!confirmPwdOk}
                     />
@@ -171,7 +193,7 @@ export default function SharedAccountStep({
                         type="button"
                         onMouseDown={(e) => { e.preventDefault(); }}
                         onClick={toggleConfirmPassword}
-                        className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 md:h-8 md:w-8 items-center justify-center rounded-lg text-white/80 hover:text-white bg-white/10 hover:bg-white/20"
+                        className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 md:h-8 md:w-8 items-center justify-center rounded-lg text-black/50 hover:text-black bg-transparent hover:bg-black/5"
                         size="icon"
                         variant="ghost"
                         aria-label={showConfirmPassword ? "Hide password" : "Show password"}
@@ -182,25 +204,6 @@ export default function SharedAccountStep({
                     </Button>
                 </div>
                 <p id="confirm-password-help" className={`mt-1 text-xs ${confirmPwdOk ? "text-white/60" : "text-red-400"}`}>{confirmPwdHelp}</p>
-            </div>
-
-            <div className="w-full mt-4 flex flex-col md:flex-row gap-2 items-stretch">
-                <Button
-                    type="button"
-                    onClick={() => setRole("client")}
-                    className={`w-full flex-1 px-4 py-3 md:py-2 rounded-xl text-sm ${role === "client" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
-                    variant="secondary"
-                >
-                    I'm a client
-                </Button>
-                <Button
-                    type="button"
-                    onClick={() => setRole("artist")}
-                    className={`w-full flex-1 px-4 py-3 md:py-2 rounded-xl text-sm ${role === "artist" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
-                    variant="secondary"
-                >
-                    I'm an artist
-                </Button>
             </div>
         </div>
     );

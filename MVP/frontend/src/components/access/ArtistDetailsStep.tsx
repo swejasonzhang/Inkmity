@@ -64,11 +64,11 @@ export default function ArtistDetailsStep({
     ];
 
     const inputCls =
-        "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 text-center";
+        "w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black focus:outline-none focus:ring-2 focus:ring-black/20 text-center";
     const labelCls = "text-sm font-medium text-white/90 text-center";
     const helpCls = "text-xs text-white/50 text-center";
-    const triggerCls = "h-11 w-full rounded-xl border border-white/10 bg-white/10 px-4 text-white text-center !justify-center [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:w-full";
-    const contentCls = "rounded-2xl max-h-72 overflow-y-auto border-white/10 bg-[#0b0b0b] text-white";
+    const triggerCls = "h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-black text-center !justify-center [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:w-full";
+    const contentCls = "rounded-2xl max-h-72 overflow-y-auto border-black/10 bg-white text-black";
 
     function MultiSelect({
         options,
@@ -104,18 +104,18 @@ export default function ArtistDetailsStep({
                         <Button
                             type="button"
                             variant="outline"
-                            className="w-full justify-center rounded-xl border-white/10 bg-white/10 text-white min-h-0"
+                            className="w-full justify-center rounded-xl border-black/10 bg-white text-black min-h-0"
                         >
                             <div className="flex flex-wrap items-center justify-center gap-1.5 text-center max-w-full overflow-hidden">
                                 {value.length === 0 ? (
-                                    <span className="text-white/60 text-center">{placeholder}</span>
+                                    <span className="text-black/60 text-center">{placeholder}</span>
                                 ) : (
                                     <>
                                         {value.slice(0, 1).map((v) => (
                                             <Badge
                                                 key={v}
                                                 variant="secondary"
-                                                className="bg-white/15 text-white hover:bg-white/25 text-center max-w-full truncate"
+                                                className="bg-black/10 text-black hover:bg-black/20 text-center max-w-full truncate"
                                             >
                                                 <span className="truncate">{v}</span>
                                                 <button
@@ -136,7 +136,7 @@ export default function ArtistDetailsStep({
                                             </Badge>
                                         ))}
                                         {value.length > 1 && (
-                                            <span className="text-white/60 text-sm whitespace-nowrap">+{value.length - 1} more</span>
+                                            <span className="text-black/60 text-sm whitespace-nowrap">+{value.length - 1} more</span>
                                         )}
                                     </>
                                 )}
@@ -146,17 +146,17 @@ export default function ArtistDetailsStep({
                     </PopoverTrigger>
 
                     <PopoverContent
-                        className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-white/10 bg-[#0b0b0b] text-white"
+                        className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl border-black/10 bg-white text-black"
                         align="start"
                     >
                         <Command className="bg-transparent">
                             <div className="relative flex flex-col max-h-64">
-                                <div className="flex-shrink-0 flex items-center justify-center py-2 bg-[#0b0b0b] border-b border-white/10">
+                                <div className="flex-shrink-0 flex items-center justify-center py-2 bg-white border-b border-black/10">
                                     <button
                                         type="button"
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => scrollBy(-120)}
-                                        className="rounded-md px-2 py-1 text-white/80 hover:bg-white/10 bg-[#0b0b0b]/90 backdrop-blur-sm"
+                                        className="rounded-md px-2 py-1 text-black/70 hover:bg-black/5 bg-white/90 backdrop-blur-sm"
                                         aria-label="Scroll up"
                                     >
                                         <ChevronUp className="h-4 w-4" />
@@ -173,7 +173,7 @@ export default function ArtistDetailsStep({
                   "
                                 >
                                     <CommandList className="bg-transparent">
-                                        <CommandEmpty className="py-6 text-white/60 text-center">
+                                        <CommandEmpty className="py-6 text-black/60 text-center">
                                             No results
                                         </CommandEmpty>
                                         <CommandGroup>
@@ -184,7 +184,7 @@ export default function ArtistDetailsStep({
                                                         key={opt}
                                                         value={opt}
                                                         onSelect={() => toggle(opt)}
-                                                        className="relative flex w-full items-center justify-center text-center aria-selected:bg-white/5 data-[selected=true]:bg-white/10 pl-8"
+                                                        className="relative flex w-full items-center justify-center text-center aria-selected:bg-black/5 data-[selected=true]:bg-black/10 pl-8"
                                                         data-selected={checked ? "true" : "false"}
                                                     >
                                                         <Check
@@ -198,12 +198,12 @@ export default function ArtistDetailsStep({
                                     </CommandList>
                                 </div>
 
-                                <div className="flex-shrink-0 flex items-center justify-center py-2 bg-[#0b0b0b] border-t border-white/10">
+                                <div className="flex-shrink-0 flex items-center justify-center py-2 bg-white border-t border-black/10">
                                     <button
                                         type="button"
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => scrollBy(120)}
-                                        className="rounded-md px-2 py-1 text-white/80 hover:bg-white/10 bg-[#0b0b0b]/90 backdrop-blur-sm"
+                                        className="rounded-md px-2 py-1 text-black/70 hover:bg-black/5 bg-white/90 backdrop-blur-sm"
                                         aria-label="Scroll down"
                                     >
                                         <ChevronDown className="h-4 w-4" />
@@ -211,14 +211,14 @@ export default function ArtistDetailsStep({
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between border-t border-white/10 p-2 bg-[#0b0b0b]">
-                                <span className="text-xs text-white/60">{value.length} selected</span>
+                            <div className="flex items-center justify-between border-t border-black/10 p-2 bg-white">
+                                <span className="text-xs text-black/60">{value.length} selected</span>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={clearAll}
-                                    className="text-white/80 hover:bg-white/10"
+                                    className="text-black/70 hover:bg-black/5"
                                 >
                                     Clear
                                 </Button>

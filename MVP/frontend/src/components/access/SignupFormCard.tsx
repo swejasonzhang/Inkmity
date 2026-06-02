@@ -133,8 +133,8 @@ export default function SignupFormCard(props: SignupProps) {
             <div className="ink-success-wrap flex flex-col items-center justify-center gap-8 py-16">
               <div className="ink-spinner" />
               <div className="text-center space-y-2">
-                <div className="text-white text-2xl md:text-3xl font-semibold">{successHeading || "Signup Successful!"}</div>
-                <div className="text-white/80 text-base md:text-lg">
+                <div className="text-app text-2xl md:text-3xl font-semibold">{successHeading || "Signup Successful!"}</div>
+                <div className="text-subtle text-base md:text-lg">
                   {successSubtitle || "Redirecting to Dashboard"}
                   <span className="ink-dots" aria-hidden="true">
                     <span className="ink-dot" />
@@ -170,24 +170,22 @@ export default function SignupFormCard(props: SignupProps) {
   const currentIndex = awaitingCode ? slides.length : step;
 
   return (
-    <motion.div 
-      className={`relative w-full ${className ?? ""}`}
+    <motion.div
+      className={`relative w-full h-full flex flex-col ${className ?? ""}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <div className={`${showInfo ? "rounded-b-3xl md:rounded-tr-3xl md:rounded-br-3xl md:rounded-tl-none md:rounded-bl-none" : "rounded-3xl"} w-full m-0 bg-card border border-app p-5 sm:p-6 h-full mx-auto flex items-center justify-center`}>
-        <div className="w-full flex flex-col items-center justify-center gap-5">
-          <div className="flex flex-col items-center text-center gap-4">
-            <div className="text-white">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs">
-                <Sparkles className="h-3 w-3" />
-                <span>Join the Inkmity community</span>
-              </div>
+        <div className="w-full flex flex-col items-center justify-center gap-3">
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-1 text-xs text-app/70">
+              <Sparkles className="h-3 w-3" />
+              <span>Join the Inkmity community</span>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-white">Sign up</h1>
-              <p className="text-white/90 text-sm sm:text-base">A few quick steps to personalize your experience.</p>
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-app">Sign up</h1>
+              <p className="text-subtle text-xs sm:text-sm">A few quick steps to personalize your experience.</p>
             </div>
           </div>
           <div className="w-full flex flex-col">
@@ -229,7 +227,7 @@ export default function SignupFormCard(props: SignupProps) {
                     </div>
                     <div className={`w-full mt-3 sm:mt-4 flex flex-row gap-2`}>
                       {step > 0 && (
-                        <Button type="button" onClick={onBack} className="flex-1 bg-white/10 hover:bg-white/20 text-white h-11 text-sm rounded-xl">
+                        <Button type="button" onClick={onBack} className="flex-1 bg-elevated border border-app text-app hover:bg-elevated/70 h-11 text-sm rounded-xl">
                           Back
                         </Button>
                       )}
@@ -238,13 +236,13 @@ export default function SignupFormCard(props: SignupProps) {
                           type="button"
                           onClick={onNext}
                           disabled={!!disableNextForEmail || loading}
-                          className={`${step === 0 ? "w-full" : "flex-1"} ${disableNextForEmail ? "bg-white/10 text-white/40 cursor-not-allowed" : "bg-white/15 hover:bg-white/25 text-white"} h-11 text-sm rounded-xl`}
+                          className={`${step === 0 ? "w-full" : "flex-1"} ${disableNextForEmail ? "bg-elevated text-app/40 cursor-not-allowed" : "bg-neutral-700 text-white hover:bg-neutral-600"} h-11 text-sm rounded-xl font-semibold`}
                         >
                           Next
                         </Button>
                       )}
                       {step === slides.length - 1 && (
-                        <Button type="button" onClick={onStartVerification} disabled={loading || !isLoaded || !!emailTaken} className="flex-1 bg-white/15 hover:bg-white/25 text-white h-11 text-sm rounded-xl">
+                        <Button type="button" onClick={onStartVerification} disabled={loading || !isLoaded || !!emailTaken} className="flex-1 bg-neutral-700 text-white hover:bg-neutral-600 h-11 text-sm rounded-xl font-semibold">
                           {loading ? "Sending..." : "Send Verification Code"}
                         </Button>
                       )}
@@ -267,8 +265,8 @@ export default function SignupFormCard(props: SignupProps) {
               </AnimatePresence>
             </motion.div>
           </div>
-          <div className="text-white/90 text-center text-xs sm:text-sm">
-            <span>Already have an account? <a href="/login" className="underline hover:opacity-80">Login</a></span>
+          <div className="text-subtle text-center text-xs sm:text-sm">
+            <span>Already have an account? <a href="/login" className="underline text-app hover:opacity-80">Login</a></span>
           </div>
         </div>
       </div>

@@ -60,7 +60,7 @@ describe("SharedAccountStep", () => {
     const setRole = jest.fn();
     render(<SharedAccountStep {...defaultProps} setRole={setRole} />);
 
-    const artistButton = screen.getByText(/I'm an artist/i);
+    const artistButton = screen.getByRole("button", { name: /^artist$/i });
     await user.click(artistButton);
     expect(setRole).toHaveBeenCalledWith("artist");
   });
