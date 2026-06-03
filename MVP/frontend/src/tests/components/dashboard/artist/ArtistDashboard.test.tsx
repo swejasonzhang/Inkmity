@@ -13,8 +13,8 @@ jest.unstable_mockModule("@/components/dashboard/artist/CalendarView", () => ({
   default: jest.fn(() => <div data-testid="calendar-view">Calendar</div>),
 }));
 
-jest.unstable_mockModule("@/components/dashboard/artist/AnalyticsPanel", () => ({
-  default: jest.fn(() => <div data-testid="analytics-panel">Analytics</div>),
+jest.unstable_mockModule("@/components/dashboard/artist/ArtistOverview", () => ({
+  default: jest.fn(() => <div data-testid="artist-overview">Overview</div>),
 }));
 
 jest.unstable_mockModule("@/components/dashboard/shared/ChatWindow", () => ({

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense, useState, useCallback, useEffect, useMemo } from "react";
 import Header from "@/components/header/Header";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
 import { X, Bot } from "lucide-react";
@@ -7,11 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ChatWindow from "@/components/dashboard/shared/ChatWindow";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
-import { API_URL } from "@/api";
+import { API_URL, getAppointments } from "@/api";
 import { useMessaging } from "@/hooks/useMessaging";
+import type { AppointmentWithUsers } from "@/components/dashboard/artist/ArtistOverview";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
-const AnalyticsPanel = lazy(() => import("@/components/dashboard/artist/AnalyticsPanel"));
+const ArtistOverview = lazy(() => import("@/components/dashboard/artist/ArtistOverview"));
 
 export default function ArtistDashboard() {
   const { user } = useUser();
@@ -20,6 +21,41 @@ export default function ArtistDashboard() {
   const isArtist = role === "artist";
   const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [appointments, setAppointments] = useState<AppointmentWithUsers[]>([]);
+  const [apptLoading, setApptLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const data = await getAppointments(undefined, token ?? undefined);
+        if (!cancelled) setAppointments((data as AppointmentWithUsers[]) ?? []);
+      } catch {
+        if (!cancelled) setAppointments([]);
+      } finally {
+        if (!cancelled) setApptLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken]);
+
+  const calendarBookings = useMemo(
+    () =>
+      appointments
+        .filter((a) => a.status !== "cancelled" && a.status !== "denied")
+        .map((a) => ({
+          id: a._id,
+          title: a.appointmentType === "consultation" ? "Consultation" : "Tattoo session",
+          clientName: a.client?.username,
+          start: a.startAt,
+          end: a.endAt,
+          status: a.status,
+        })),
+    [appointments]
+  );
 
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
@@ -65,14 +101,14 @@ export default function ArtistDashboard() {
         <Header />
         <main className="artist-dashboard-main flex-1 flex flex-col md:min-h-0 md:overflow-hidden" style={{ padding: '0 16px', paddingBottom: 'clamp(3.5rem, 4.5vmin + 2.5vw, 6rem)', gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 md:flex-1 md:min-h-0" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
-            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[400px] md:min-h-0 md:flex-1">
+            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[420px] md:min-h-0 md:flex-1">
               <CardHeader className="border-b border-app flex-shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                 <CardTitle className="w-full text-center font-extrabold" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.5rem)' }}>
                   {isArtist ? "Bookings Calendar" : "Read-only Calendar"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
-                <div style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+              <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
+                <div className="h-full" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
                   <Suspense
                     fallback={
                       <div style={{ padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }} className="space-y-3">
@@ -86,30 +122,31 @@ export default function ArtistDashboard() {
                       </div>
                     }
                   >
-                    <CalendarView />
+                    <CalendarView bookings={calendarBookings} />
                   </Suspense>
                 </div>
               </CardContent>
             </Card>
             <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[200px] md:min-h-0 md:flex-1">
               <CardHeader className="border-b border-app flex-shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
-                <CardTitle className="w-full text-center font-extrabold" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.5rem)' }}>Analytics</CardTitle>
+                <CardTitle className="w-full text-center font-extrabold" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.5rem)' }}>Overview</CardTitle>
               </CardHeader>
               <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
                 <div className="h-full analytics-content" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                   <Suspense
                     fallback={
                       <div className="space-y-3">
-                        <Skeleton className="h-6 w-32" />
-                        <Skeleton className="h-40 w-full" />
-                        <div className="grid grid-cols-2" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
-                          <Skeleton className="h-24 w-full rounded-xl" />
-                          <Skeleton className="h-24 w-full rounded-xl" />
+                        <div className="grid grid-cols-2 xl:grid-cols-4" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+                          <Skeleton className="h-20 w-full rounded-xl" />
+                          <Skeleton className="h-20 w-full rounded-xl" />
+                          <Skeleton className="h-20 w-full rounded-xl" />
+                          <Skeleton className="h-20 w-full rounded-xl" />
                         </div>
+                        <Skeleton className="h-40 w-full rounded-xl" />
                       </div>
                     }
                   >
-                    {isArtist ? <AnalyticsPanel /> : <div className="text-sm opacity-70" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>Analytics available to artist accounts only.</div>}
+                    {isArtist ? <ArtistOverview appointments={appointments} loading={apptLoading} /> : <div className="text-sm opacity-70" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>Overview available to artist accounts only.</div>}
                   </Suspense>
                 </div>
               </CardContent>

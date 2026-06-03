@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react"
 import ArtistCard from "@/components/dashboard/client/ArtistCard"
 import ArtistFilter from "@/components/dashboard/client/ArtistFilter"
+import Header from "@/components/header/Header"
 import { fetchArtists, type Artist } from "@/api"
 
 const PAGE_SIZE = 12
@@ -105,6 +106,7 @@ const Artists: React.FC = () => {
 
   return (
     <div className="min-h-dvh bg-app text-app">
+      <Header />
       <div className="sticky top-0 z-20 bg-app/90 backdrop-blur supports-[backdrop-filter]:bg-app/80 border-b border-app">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
           <ArtistFilter

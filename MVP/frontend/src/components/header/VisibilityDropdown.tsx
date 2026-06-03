@@ -19,26 +19,26 @@ type VisibilityDropdownProps = {
   triggerWidth?: number;
 };
 
-const getVisibilityOptions = (theme: "light" | "dark") => [
+const getVisibilityOptions = (_theme: "light" | "dark") => [
   {
     value: "online" as VisibilityStatus,
     label: "Online",
     icon: Circle,
-    color: theme === "light" ? "text-black" : "text-white",
+    color: "text-emerald-500 fill-emerald-500",
     description: "Visible to everyone",
   },
   {
     value: "away" as VisibilityStatus,
     label: "Away",
     icon: Clock,
-    color: theme === "light" ? "text-gray-600" : "text-gray-400",
+    color: "text-amber-500",
     description: "Away but visible",
   },
   {
     value: "invisible" as VisibilityStatus,
     label: "Invisible",
     icon: EyeOff,
-    color: theme === "light" ? "text-gray-400" : "text-gray-500",
+    color: "text-zinc-400",
     description: "Appear offline",
   },
 ];
