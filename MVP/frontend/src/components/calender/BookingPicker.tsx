@@ -205,7 +205,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
               background: isLightTheme ? "#ffffff" : "var(--card)",
               color: isLightTheme ? "#000000" : "var(--fg)",
               border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
-              boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+              boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
             }
           }
         )
@@ -246,7 +246,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
               background: isLightTheme ? "#ffffff" : "var(--card)",
               color: isLightTheme ? "#000000" : "var(--fg)",
               border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
-              boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+              boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
             }
           }
         )
@@ -411,8 +411,8 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           onClick={() => setConfirmOpen(true)}
           className="px-4 py-2 rounded-xl font-medium outline-none focus-visible:ring-2 text-sm sm:text-base"
           style={{
-            background: canConfirm ? "var(--fg)" : "color-mix(in oklab, var(--elevated) 80%, transparent)",
-            color: canConfirm ? "var(--card)" : (isLightTheme ? "rgba(0,0,0,0.6)" : "color-mix(in oklab, var(--fg) 60%, transparent)"),
+            background: canConfirm ? "var(--fg)" : "color-mix(in srgb, var(--elevated) 80%, transparent)",
+            color: canConfirm ? "var(--card)" : (isLightTheme ? "rgba(0,0,0,0.6)" : "color-mix(in srgb, var(--fg) 60%, transparent)"),
             border: `1px solid ${canConfirm ? "var(--fg)" : "var(--border)"}`
           }}
         >
@@ -581,7 +581,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
                         background: isLightTheme ? "#ffffff" : "var(--card)",
                         color: isLightTheme ? "#000000" : "var(--fg)",
                         border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
-                        boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+                        boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
                       }
                     }
                   )
@@ -620,7 +620,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           background: isLightTheme ? "#ffffff" : "var(--card)",
           color: isLightTheme ? "#000000" : "var(--fg)",
           border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
-          boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+          boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
         }}
         className="text-sm"
         style={{ zIndex: 2147483647 }}

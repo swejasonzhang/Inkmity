@@ -8,10 +8,11 @@ import BlackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems";
 import { Nav } from "./Nav";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityDropdown, VisibilityStatus } from "./VisibilityDropdown";
 import { updateVisibility, API_URL } from "@/api";
+import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername } from "@/lib/roleCache";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -28,8 +29,7 @@ type ThemeSwitchProps = {
 
 const ThemeSwitch = ({ theme, toggleTheme, size = "md" }: ThemeSwitchProps) => {
   const { pathname } = useLocation();
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/appointments");
-  if (!isDashboard) return null;
+  if (!isThemedPath(pathname)) return null;
   const isLight = theme === "light";
   const dims =
     size === "lg"
@@ -67,18 +67,18 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/profile") || pathname.startsWith("/appointments");
+  const themed = isThemedPath(pathname);
 
-  const [userLabel, setUserLabel] = useState<string>("User");
-  const [userRole, setUserRole] = useState<"client" | "artist" | null>(null);
+  const [userLabel, setUserLabel] = useState<string>(() => getCachedUsername() ?? "User");
+  const [userRole, setUserRole] = useState<"client" | "artist" | null>(() => getCachedRole());
   const [isOnline, setIsOnline] = useState<boolean>(false);
   const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
   const API_BASE = API_URL;
 
-  const userLabelRef = useRef<string>("");
+  const userLabelRef = useRef<string>(getCachedUsername() ?? "");
   useEffect(() => {
+    // While Clerk is still loading, keep the cached label (no "User" flash).
     if (!isLoaded) {
-      setUserLabel("User");
       return;
     }
     if (!isSignedIn) {
@@ -90,7 +90,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       setUserLabel(userLabelRef.current);
       return;
     }
-    setUserLabel("User");
     let cancelled = false;
     const ac = new AbortController();
     async function run() {
@@ -114,8 +113,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         const finalName = name || "User";
         userLabelRef.current = finalName;
         setUserLabel(finalName);
+        if (name) setCachedUsername(name);
         if (data?.role && (data.role === "client" || data.role === "artist")) {
           setUserRole(data.role);
+          setCachedRole(data.role);
         }
         if (data?.visibility && ["online", "away", "invisible"].includes(data.visibility)) {
           setUserVisibility(data.visibility as VisibilityStatus);
@@ -125,8 +126,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       } catch (e: any) {
         if (cancelled || ac.signal.aborted) return;
         if (e?.name === "AbortError") return;
-        setUserLabel("User");
-        userLabelRef.current = "User";
+        const cached = getCachedUsername() ?? "User";
+        setUserLabel(cached);
+        userLabelRef.current = cached;
       }
     }
     run();
@@ -220,7 +222,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     return { icon: EyeOff, label: "Invisible", color: "text-zinc-400", dot: "bg-zinc-400" };
   };
 
-  const homeHref = isSignedIn ? "/dashboard" : "/landing";
+  const homeHref = "/landing";
   const dashboardDisabled = disableDashboardLink || !isSignedIn;
 
   const onDashboardGate: React.MouseEventHandler = (e) => {
@@ -253,7 +255,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   }, [mobileMenuOpen]);
 
   const dropdownBtnClasses =
-    "relative inline-flex h-11 md:h-12 items-center justify-start px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] bg-[color-mix(in_oklab,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_oklab,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md shadow-[0_6px_24px_-8px_rgba(0,0,0,0.35)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--fg)_10%,transparent)]";
+    "relative inline-flex h-11 md:h-12 items-center justify-start px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_srgb,var(--fg)_16%,transparent)] bg-[color-mix(in_srgb,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_srgb,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md";
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
@@ -349,7 +351,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const MOBILE_LOGO_H = "h-16 xs:h-20";
   const MOBILE_ICON_STROKE = 1.5;
 
-  const resolvedLogo = logoSrcProp ?? (!isDashboard ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
+  const resolvedLogo = logoSrcProp ?? (!themed ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
 
   const mobileSheet = mobileMenuOpen
     ? createPortal(
@@ -375,10 +377,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="flex w-full relative items-center justify-between z-[100] px-fluid-sm xs:px-fluid-md sm:px-fluid-lg md:px-fluid-xl py-1 xs:py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px' }}>
+      <header className="flex w-full relative items-center justify-between z-[100] px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px' }}>
         <div className="flex-shrink-0 relative z-10">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
-            <img src={resolvedLogo} alt="Inkmity Logo" className="h-fluid-8 xs:h-fluid-10 sm:h-fluid-8 md:h-fluid-10 lg:h-fluid-12 xl:h-fluid-16 w-auto object-contain flex-shrink-0" draggable={false} />
+            <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 sm:h-20 lg:h-24 w-auto object-contain flex-shrink-0" draggable={false} />
             <span className="sr-only">Inkmity</span>
           </Link>
         </div>
@@ -398,7 +400,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               >
                 <div
                   ref={triggerRef}
-                  className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
+                  className={dropdownBtnClasses}
                   style={{ minWidth: 'clamp(140px, 18vw, 220px)', maxWidth: '260px' }}
                   aria-haspopup="menu"
                   aria-expanded={showDropdown}
@@ -429,7 +431,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             ) : isLoaded && !isSignedIn ? (
               <div className="hidden md:flex relative flex-shrink-0">
                 <button
-                  className={`${dropdownBtnClasses} hover:shadow-[0_10px_28px_-10px_rgba(0,0,0,0.45)]`}
+                  className={dropdownBtnClasses}
                   style={{ minWidth: 'clamp(110px, 14vw, 160px)' }}
                   onClick={() => navigate('/login')}
                   type="button"
@@ -489,7 +491,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
-          className="bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out overflow-visible"
+          className="bg-card border border-[color-mix(in_srgb,var(--fg)_16%,transparent)] rounded-xl transform transition-all duration-300 ease-out overflow-visible"
         >
           {(() => {
             const visibility = getVisibilityDisplay();
@@ -509,7 +511,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   </div>
                 </div>
                 <div className="mt-3 text-xs opacity-70 text-app text-center">{greeting}</div>
-                {isDashboard && (
+                {themed && (
                   <div className="mt-3 flex items-center justify-center">
                     <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
                   </div>
@@ -517,7 +519,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               </div>
             );
           })()}
-          <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+          <div className="h-px w-full bg-[color-mix(in_srgb,var(--fg)_14%,transparent)]" />
           <div
             className="px-4 py-3"
             onClick={(e) => e.stopPropagation()}
@@ -531,17 +533,17 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               triggerWidth={triggerWidth}
             />
           </div>
-          <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
+          <div className="h-px w-full bg-[color-mix(in_srgb,var(--fg)_14%,transparent)]" />
           <Link
             to="/profile"
             onClick={() => setShowDropdown(false)}
-            className="w-full px-4 py-3 hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-sm flex items-center gap-2.5 transition-colors"
+            className="w-full px-4 py-3 hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] text-app text-sm flex items-center justify-center gap-2 transition-colors"
           >
             <User size={16} className="opacity-70" />
             <span>Profile</span>
           </Link>
-          <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-          <button onClick={handleLogout} className="w-full px-4 py-3 hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-sm flex items-center gap-2.5 transition-colors rounded-b-xl">
+          <div className="h-px w-full bg-[color-mix(in_srgb,var(--fg)_14%,transparent)]" />
+          <button onClick={handleLogout} className="w-full px-4 py-3 hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] text-app text-sm flex items-center justify-center gap-2 transition-colors rounded-b-xl">
             <LogOut size={16} className="opacity-70" />
             <span>Logout</span>
           </button>

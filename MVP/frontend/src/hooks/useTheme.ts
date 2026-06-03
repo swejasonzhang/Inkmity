@@ -5,6 +5,17 @@ export const THEME_MS = 300;
 type Theme = "dark" | "light";
 const STORAGE_KEY = "inkmity-theme";
 
+// Routes that support light/dark theming (and persist the choice). These all
+// render inside #dashboard-scope. Public pages (incl. gallery) stay dark.
+export function isThemedPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/appointments") ||
+    pathname.startsWith("/portfolio")
+  );
+}
+
 function readStored(): Theme {
   if (typeof window === "undefined") return "dark";
   try {
@@ -37,25 +48,21 @@ function applyToDom(t: Theme, animate: boolean) {
 
 export function useTheme() {
   const { pathname } = useLocation();
-  const isDashboard =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/profile") ||
-    pathname.startsWith("/appointments");
+  const themed = isThemedPath(pathname);
 
   const [theme, setTheme] = useState<Theme>(() =>
-    isDashboard ? readStored() : "dark"
+    themed ? readStored() : "dark"
   );
 
-  // Apply to DOM whenever isDashboard changes (no animation on mount)
+  // Apply to DOM whenever the themed-ness of the route changes (no animation on mount).
   useEffect(() => {
-    if (!isDashboard) return;
-    applyToDom(theme, false);
-  }, [isDashboard]);
+    applyToDom(themed ? theme : "dark", false);
+  }, [themed]);
 
-  // Reset to dark when leaving dashboard routes
+  // Reset to dark when leaving themed routes
   useEffect(() => {
-    if (!isDashboard && theme !== "dark") setTheme("dark");
-  }, [isDashboard]);
+    if (!themed && theme !== "dark") setTheme("dark");
+  }, [themed]);
 
   // Sync across tabs
   useEffect(() => {
@@ -63,32 +70,32 @@ export function useTheme() {
       if (e.key !== STORAGE_KEY) return;
       const next = e.newValue === "light" || e.newValue === "dark" ? e.newValue : "dark";
       setTheme(next);
-      applyToDom(next, false);
+      if (themed) applyToDom(next, false);
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [themed]);
 
   const toggleTheme = useCallback(() => {
-    if (!isDashboard) return;
+    if (!themed) return;
     setTheme((prev) => {
       const next: Theme = prev === "light" ? "dark" : "light";
       writeStored(next);
       applyToDom(next, true);
       return next;
     });
-  }, [isDashboard]);
+  }, [themed]);
 
   const logoSrc = useMemo(() => {
-    if (!isDashboard) return "/assets/WhiteLogo.png";
+    if (!themed) return "/assets/WhiteLogo.png";
     return theme === "light" ? "/assets/BlackLogo.png" : "/assets/WhiteLogo.png";
-  }, [theme, isDashboard]);
+  }, [theme, themed]);
 
   return {
-    theme: isDashboard ? theme : ("dark" as Theme),
+    theme: themed ? theme : ("dark" as Theme),
     toggleTheme,
     logoSrc,
     themeClass: "ink-scope" as const,
-    canToggleTheme: isDashboard,
+    canToggleTheme: themed,
   };
 }

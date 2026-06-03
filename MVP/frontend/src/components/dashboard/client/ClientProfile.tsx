@@ -495,7 +495,7 @@ export default function ClientProfile() {
     if (!client) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>No profile data available</div>
+                <div style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>No profile data available</div>
             </div>
         );
     }
@@ -543,9 +543,9 @@ export default function ClientProfile() {
                                         onError={() => setBgOk(false)}
                                     />
                                 ) : (
-                                    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+                                    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 85%, var(--fg) 15%), color-mix(in srgb, var(--bg) 78%, var(--fg) 22%))" }} />
                                 )}
-                                <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
+                                <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in srgb, var(--bg) 18%, transparent) 100%)" }} />
                             </div>
                             <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
                                 {currentProfileImage ? (
@@ -650,7 +650,7 @@ export default function ClientProfile() {
                             <div className="flex flex-wrap items-center justify-center gap-2 text-xs min-h-[2rem] px-4">
                             <span
                                 className="rounded-full px-3 py-1 border"
-                                style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
+                                style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
                             >
                                 {loc}
                             </span>
@@ -660,7 +660,7 @@ export default function ClientProfile() {
                         <div className="w-full mt-4 space-y-4 flex-1 min-h-0 overflow-y-auto px-4">
                         <div className="rounded-xl p-4 border backdrop-blur-sm w-full"
                             style={{
-                                background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                                background: "color-mix(in srgb, var(--card) 80%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
                             <h3 className="text-sm font-semibold mb-4 text-center" style={{ color: "var(--fg)" }}>
@@ -887,7 +887,7 @@ export default function ClientProfile() {
 
                         <div className="rounded-xl p-4 border backdrop-blur-sm w-full"
                             style={{
-                                background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                                background: "color-mix(in srgb, var(--card) 80%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
                             <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
@@ -983,7 +983,7 @@ export default function ClientProfile() {
                                 )}
                             </div>
                             {currentReferences.length === 0 && (
-                                <div className="text-xs text-center mt-3" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                <div className="text-xs text-center mt-3" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
                                     No reference images added
                                 </div>
                             )}

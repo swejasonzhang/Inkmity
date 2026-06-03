@@ -129,10 +129,10 @@ const Dashboard: React.FC = () => {
       className="ink-scope h-dvh overflow-y-hidden flex flex-col"
       style={{ background: shellBg, color: shellFg }}
     >
-      {!bootDone && <Loading theme={theme} />}
+      {(!bootDone || !isLoaded) && <Loading theme={theme} />}
       <div
         className="flex-1 min-h-0 w-full"
-        style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
+        style={{ opacity: bootDone && fadeIn && isLoaded ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
       >
         <Suspense fallback={
           <div className="flex flex-col items-center justify-center gap-4 h-full">
@@ -142,7 +142,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         }>
-          {roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />}
+          {isLoaded ? (roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />) : null}
         </Suspense>
       </div>
     </div>

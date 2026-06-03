@@ -148,7 +148,7 @@ const Artists: React.FC = () => {
         </div>
 
         {!loading && artists.length === 0 && !error && (
-          <div className="text-center py-12 sm:py-16" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+          <div className="text-center py-12 sm:py-16" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
             <p className="text-base sm:text-lg">No artists match your filters.</p>
             <p className="text-xs sm:text-sm mt-1">Try adjusting filters or keywords.</p>
           </div>

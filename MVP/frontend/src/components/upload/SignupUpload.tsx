@@ -239,7 +239,7 @@ export default function SignupUpload({
         <div className={clsx("w-full grid place-items-center", className)}>
             <div className="w-full max-w-4xl">
                 <div className="flex flex-col items-center gap-3 text-center">
-                    <label htmlFor={inputId} className="text-sm md:text-base font-semibold text-app">
+                    <label htmlFor={inputId} className="text-sm md:text-base font-semibold text-app text-center">
                         {label}
                     </label>
                     {hint && (

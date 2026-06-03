@@ -6,7 +6,7 @@ import { VisibilityDropdown } from "./VisibilityDropdown";
 export type NavItem = BuildNavItem;
 
 const desktopBase =
-    "relative inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg text-[12px] lg:text-[14px] xl:text-[15px] font-extrabold uppercase tracking-wide flex-shrink-0 whitespace-nowrap transition-all duration-200";
+    "relative inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg text-[13px] lg:text-[15px] xl:text-[16px] font-extrabold uppercase tracking-wide flex-shrink-0 whitespace-nowrap transition-all duration-200";
 const desktopActive = "bg-elevated border border-app text-app shadow-sm";
 const desktopIdle = "border border-transparent text-app/55 hover:text-app hover:bg-elevated/50";
 

@@ -62,7 +62,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                                 <div
                                     className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                                    style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
+                                    style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
                                 >
                                     <Maximize2 className="h-3.5 w-3.5" /> View
                                 </div>
@@ -72,7 +72,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                 </div>
             </div>
         ) : (
-            <p className="hidden sm:block text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+            <p className="hidden sm:block text-sm" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                 No items to show yet.
             </p>
         );
@@ -106,7 +106,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                         </motion.button>
                         <div
                             className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                            style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
+                            style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
                         >
                             <Maximize2 className="h-3.5 w-3.5" /> View
                         </div>
@@ -118,15 +118,15 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                                 onClick={() => setIndex(i)}
                                 aria-label={`Go to ${label} ${i + 1}`}
                                 className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
-                                style={{ backgroundColor: i === index ? "color-mix(in oklab, var(--fg) 95%, transparent)" : "color-mix(in oklab, var(--fg) 40%, transparent)" }}
+                                style={{ backgroundColor: i === index ? "color-mix(in srgb, var(--fg) 95%, transparent)" : "color-mix(in srgb, var(--fg) 40%, transparent)" }}
                             />
                         ))}
                     </div>
                     <div className="sm:hidden grid grid-cols-2 gap-3 mt-6">
-                        <Button variant="outline" onClick={() => swipeTo("prev")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
+                        <Button variant="outline" onClick={() => swipeTo("prev")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
                             Prev
                         </Button>
-                        <Button variant="outline" onClick={() => swipeTo("next")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
+                        <Button variant="outline" onClick={() => swipeTo("next")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
                             Next
                         </Button>
                     </div>
@@ -165,10 +165,10 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                                     onError={() => setBgOk(false)}
                                 />
                             ) : (
-                                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+                                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 85%, var(--fg) 15%), color-mix(in srgb, var(--bg) 78%, var(--fg) 22%))" }} />
                             )}
-                            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
-                            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
+                            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in srgb, var(--bg) 18%, transparent) 100%)" }} />
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in srgb, var(--bg) 90%, transparent), transparent)" }} />
                         </div>
                         <CardHeader className="text-center space-y-1 px-3 sm:px-6 relative z-10">
                             <CardTitle className="text-base sm:text-lg break-words">About {artist.username}</CardTitle>
@@ -188,7 +188,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                                 ) : (
                                     <div
                                         className="h-32 w-32 sm:h-40 sm:w-40 rounded-full grid place-items-center border shadow text-3xl sm:text-4xl font-semibold"
-                                        style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
+                                        style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
                                         aria-label={`${artist.username} profile placeholder`}
                                     >
                                         {initials}
@@ -196,7 +196,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                                 )}
                             </div>
                             <Separator className="my-4 sm:my-5 opacity-60" />
-                            <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7 text-center" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                            <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7 text-center" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                 {bioText}
                             </p>
                         </CardContent>
@@ -205,7 +205,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
                 <section className="w-full -mt-2">
                     <div className="mx-auto max-w-4xl text-center px-4">
-                        <p className="text-lg sm:text-xl font-bold leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>
+                        <p className="text-lg sm:text-xl font-bold leading-relaxed" style={{ color: "color-mix(in srgb, var(--fg) 88%, transparent)" }}>
                             View the gallery below and click any image to zoom. Press and hold while zoomed for magnification.
                         </p>
                     </div>

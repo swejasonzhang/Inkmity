@@ -70,8 +70,8 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
                             style={{
                                 backgroundColor:
                                     i === active
-                                        ? "color-mix(in oklab, var(--fg) 95%, transparent)"
-                                        : "color-mix(in oklab, var(--fg) 40%, transparent)",
+                                        ? "color-mix(in srgb, var(--fg) 95%, transparent)"
+                                        : "color-mix(in srgb, var(--fg) 40%, transparent)",
                             }}
                         />
                     ))}
@@ -85,8 +85,8 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
                     transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
                     className="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium shadow-sm min-h-[40px] sm:min-h-[44px]"
                     style={{
-                        backgroundColor: "color-mix(in oklab, var(--elevated) 92%, transparent)",
-                        color: "color-mix(in oklab, var(--fg) 90%, transparent)",
+                        backgroundColor: "color-mix(in srgb, var(--elevated) 92%, transparent)",
+                        color: "color-mix(in srgb, var(--fg) 90%, transparent)",
                     }}
                 >
                     <ChevronDown className="h-4 w-4" />
@@ -103,7 +103,7 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
                         onMouseDown={preventMouseFocus}
                         onPointerDown={preventPointerFocus}
                         className="rounded-full px-3 sm:px-4 text-xs sm:text-sm font-medium shadow-sm border-0 min-h-[40px] sm:min-h-[44px]"
-                        style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
+                        style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                         variant="outline"
                     >
                         {computedLeftLabel}
@@ -115,7 +115,7 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
                     onMouseDown={preventMouseFocus}
                     onPointerDown={preventPointerFocus}
                     className="rounded-full px-3 sm:px-4 text-xs sm:text-sm font-medium shadow-sm border-0 min-h-[40px] sm:min-h-[44px]"
-                    style={{ backgroundColor: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
+                    style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}
                     variant="outline"
                 >
                     {computedRightLabel}

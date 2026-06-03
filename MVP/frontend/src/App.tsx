@@ -10,6 +10,7 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Gallery from "./pages/Gallery";
 import Artists from "./pages/Artists";
+import Portfolio from "./pages/Portfolio";
 import Landing from "./pages/Landing";
 import SSOCallback from "./pages/SSOCallback";
 import Onboarding from "./pages/Onboarding";
@@ -52,6 +53,9 @@ const App: React.FC = () => {
       </Route>
       <Route path="/appointments" element={<DashboardScope />}>
         <Route index element={<Appointments />} />
+      </Route>
+      <Route path="/portfolio" element={<DashboardScope />}>
+        <Route index element={<Portfolio />} />
       </Route>
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />

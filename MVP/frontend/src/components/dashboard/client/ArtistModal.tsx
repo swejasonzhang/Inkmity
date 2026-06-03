@@ -501,7 +501,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       key={artist._id}
       className="fixed inset-0 flex items-center justify-center ink-no-anim"
       style={{ 
-        background: "color-mix(in oklab, var(--bg) 30%, transparent)", 
+        background: "color-mix(in srgb, var(--bg) 30%, transparent)", 
         overscrollBehavior: "contain",
         transition: "none !important",
         animation: "none !important"
@@ -541,7 +541,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             >
               <X className="h-5 w-5" />
             </button>
-            <Separator className="mt-4 w-full" style={{ background: "color-mix(in oklab, var(--fg) 18%, transparent)" }} />
+            <Separator className="mt-4 w-full" style={{ background: "color-mix(in srgb, var(--fg) 18%, transparent)" }} />
           </div>
 
           <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>

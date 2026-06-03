@@ -65,7 +65,7 @@ export default function ReviewPromptModal({ open, onClose, artistId, artistName,
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium mb-2 block">Rating</label>
+            <label className="text-sm font-medium mb-2 block text-center">Rating</label>
             <div className="flex items-center gap-2">
               {[1, 2, 3, 4, 5].map((value) => (
                 <button
@@ -87,7 +87,7 @@ export default function ReviewPromptModal({ open, onClose, artistId, artistName,
             </div>
           </div>
           <div>
-            <label htmlFor="review-comment" className="text-sm font-medium mb-2 block">
+            <label htmlFor="review-comment" className="text-sm font-medium mb-2 block text-center">
               Your Review
             </label>
             <Textarea

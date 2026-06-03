@@ -468,7 +468,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                 Bookings ({selectedDayBookings.length}):
                             </h4>
                             {selectedDayBookings.length === 0 ? (
-                                <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                <p className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
                                     No bookings for this day
                                 </p>
                             ) : (
@@ -493,7 +493,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                                 </div>
                                                 <div
                                                     className="text-sm"
-                                                    style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}
+                                                    style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}
                                                 >
                                                     Status: {booking.status}
                                                 </div>
@@ -520,7 +520,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                     <div className="space-y-4 mt-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium mb-1 block" style={{ color: "var(--fg)" }}>
+                                <label className="text-sm font-medium mb-1 block text-center" style={{ color: "var(--fg)" }}>
                                     Start Time
                                 </label>
                                 <input
@@ -532,7 +532,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium mb-1 block" style={{ color: "var(--fg)" }}>
+                                <label className="text-sm font-medium mb-1 block text-center" style={{ color: "var(--fg)" }}>
                                     End Time
                                 </label>
                                 <input

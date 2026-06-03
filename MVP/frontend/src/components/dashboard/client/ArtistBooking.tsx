@@ -312,7 +312,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
                 {hasExistingChat ? "You already have an open conversation with this artist. Please resume your chat below." : "Send a request to message. You will be able to chat once the artist accepts."}
               </p>
               {status === "error" && (
-                <div role="alert" aria-live="assertive" className="w-full max-w-[36rem] px-3 py-2 rounded-md text-sm" style={{ background: "color-mix(in oklab, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}>
+                <div role="alert" aria-live="assertive" className="w-full max-w-[36rem] px-3 py-2 rounded-md text-sm" style={{ background: "color-mix(in srgb, var(--danger) 15%, var(--elevated))", color: "var(--fg)" }}>
                   {errorMsg}
                 </div>
               )}
@@ -390,10 +390,10 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
         </Card>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t" style={{ background: "color-mix(in oklab, var(--card) 96%, transparent)", borderColor: "var(--border)", color: "var(--fg)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t" style={{ background: "color-mix(in srgb, var(--card) 96%, transparent)", borderColor: "var(--border)", color: "var(--fg)", paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="mx-auto max-w-screen-md px-3 py-2">
           <div className="grid grid-cols-3 gap-2">
-            <Button onClick={onBack} className="col-span-1 w-full text-sm border-0 min-h-[48px]" style={{ background: "color-mix(in oklab, var(--elevated) 96%, transparent)", color: "var(--fg)" }} variant="outline">
+            <Button onClick={onBack} className="col-span-1 w-full text-sm border-0 min-h-[48px]" style={{ background: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }} variant="outline">
               Back
             </Button>
             {hasExistingChat ? (
@@ -431,7 +431,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
           background: "var(--card)",
           color: "var(--fg)",
           border: "1px solid var(--border)",
-          boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+          boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
         }}
         className="text-sm"
         style={{ zIndex: 2147483647 }}

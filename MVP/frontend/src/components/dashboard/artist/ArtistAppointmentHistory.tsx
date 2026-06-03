@@ -146,7 +146,7 @@ export default function ArtistAppointmentHistory() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                <div style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                     Loading appointments...
                 </div>
             </div>
@@ -162,7 +162,7 @@ export default function ArtistAppointmentHistory() {
             <div
                 className="rounded-xl border p-4"
                 style={{
-                    background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                    background: "color-mix(in srgb, var(--card) 80%, transparent)",
                     borderColor: "var(--border)",
                 }}
             >
@@ -180,7 +180,7 @@ export default function ArtistAppointmentHistory() {
                                 className="h-10 w-10 rounded-full flex items-center justify-center border flex-shrink-0"
                                 style={{
                                     borderColor: "var(--border)",
-                                    background: "color-mix(in oklab, var(--elevated) 92%, transparent)",
+                                    background: "color-mix(in srgb, var(--elevated) 92%, transparent)",
                                 }}
                             >
                                 <User className="h-5 w-5" style={{ color: "var(--fg)" }} />
@@ -208,22 +208,22 @@ export default function ArtistAppointmentHistory() {
 
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }} />
+                        <Calendar className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }} />
                         <span style={{ color: "var(--fg)" }}>{formatDate(booking.startAt)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }} />
+                        <Clock className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }} />
                         <span style={{ color: "var(--fg)" }}>
                             {formatTime(booking.startAt)} - {formatTime(booking.endAt)}
                         </span>
-                        <span className="text-xs ml-auto" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                        <span className="text-xs ml-auto" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                             ({formatDuration(booking.startAt, booking.endAt)})
                         </span>
                     </div>
                     
                     {isAppointment && booking.priceCents !== undefined && booking.priceCents > 0 && (
                         <div className="flex items-center gap-2 text-sm pt-1">
-                            <DollarSign className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }} />
+                            <DollarSign className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }} />
                             <span style={{ color: "var(--fg)" }}>
                                 Total: <span className="font-semibold">{formatCurrency(booking.priceCents)}</span>
                             </span>
@@ -232,11 +232,11 @@ export default function ArtistAppointmentHistory() {
                     
                     {isAppointment && booking.depositRequiredCents !== undefined && booking.depositRequiredCents > 0 && (
                         <div className="flex items-center gap-2 text-sm">
-                            <CreditCard className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }} />
+                            <CreditCard className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }} />
                             <span style={{ color: "var(--fg)" }}>
                                 Deposit: <span className="font-semibold">{formatCurrency(booking.depositRequiredCents)}</span>
                                 {booking.depositPaidCents !== undefined && booking.depositPaidCents > 0 && (
-                                    <span className="text-xs ml-1" style={{ color: booking.depositPaidCents >= booking.depositRequiredCents ? "#10b981" : "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                    <span className="text-xs ml-1" style={{ color: booking.depositPaidCents >= booking.depositRequiredCents ? "#10b981" : "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                         ({booking.depositPaidCents >= booking.depositRequiredCents ? "Paid" : `Paid: ${formatCurrency(booking.depositPaidCents)}`})
                                     </span>
                                 )}
@@ -246,7 +246,7 @@ export default function ArtistAppointmentHistory() {
                     
                     {booking.note && (
                         <div className="mt-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
-                            <p className="text-xs leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                            <p className="text-xs leading-relaxed" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                 <span className="font-medium">Note: </span>{booking.note}
                             </p>
                         </div>
@@ -257,7 +257,7 @@ export default function ArtistAppointmentHistory() {
     };
 
     const Empty = ({ title, subtitle }: { title: string; subtitle: string }) => (
-        <div className="text-center w-full" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+        <div className="text-center w-full" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
             <Calendar className="h-14 w-14 mx-auto mb-3 opacity-50" />
             <p className="text-lg font-semibold mb-1">{title}</p>
             <p className="text-sm opacity-70">{subtitle}</p>

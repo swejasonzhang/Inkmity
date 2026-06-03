@@ -26,7 +26,7 @@ function LegendTile({
     const ring = variant === "selected" ? "ring-2 ring-[color:var(--fg)]" : "";
     const style =
         variant === "unavailable"
-            ? { color: "color-mix(in oklab, var(--fg) 55%, transparent)" }
+            ? { color: "color-mix(in srgb, var(--fg) 55%, transparent)" }
             : { color: "var(--fg)" };
     return (
         <div className="inline-flex items-center gap-2">

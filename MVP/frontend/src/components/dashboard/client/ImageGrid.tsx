@@ -37,7 +37,7 @@ const ImageGrid: React.FC<Props> = ({ images, imgAltPrefix, startOffset = 0, onO
                         <div
                             className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
                             style={{
-                                background: "color-mix(in oklab, var(--elevated) 80%, transparent)",
+                                background: "color-mix(in srgb, var(--elevated) 80%, transparent)",
                                 borderColor: "var(--border)",
                                 color: "var(--fg)",
                             }}

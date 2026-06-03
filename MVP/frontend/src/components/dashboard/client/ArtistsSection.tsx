@@ -395,7 +395,7 @@ export default function ArtistsSection({
                                             className="pointer-events-auto rounded-full h-12 w-12 p-0 shadow-lg"
                                             style={{
                                                 borderColor: "var(--border)",
-                                                backgroundColor: atStart ? "color-mix(in oklab, var(--elevated) 60%, transparent)" : "color-mix(in oklab, var(--card) 95%, transparent)",
+                                                backgroundColor: atStart ? "color-mix(in srgb, var(--elevated) 60%, transparent)" : "color-mix(in srgb, var(--card) 95%, transparent)",
                                                 color: "var(--fg)",
                                                 opacity: atStart ? 0.5 : 1,
                                             }}
@@ -410,7 +410,7 @@ export default function ArtistsSection({
                                             className="pointer-events-auto rounded-full h-12 w-12 p-0 shadow-lg"
                                             style={{
                                                 borderColor: "var(--border)",
-                                                backgroundColor: atEnd ? "color-mix(in oklab, var(--elevated) 60%, transparent)" : "color-mix(in oklab, var(--card) 95%, transparent)",
+                                                backgroundColor: atEnd ? "color-mix(in srgb, var(--elevated) 60%, transparent)" : "color-mix(in srgb, var(--card) 95%, transparent)",
                                                 color: "var(--fg)",
                                                 opacity: atEnd ? 0.5 : 1,
                                             }}
@@ -426,7 +426,7 @@ export default function ArtistsSection({
                                 <div className="snap-start snap-always h-full w-full flex items-center justify-center" style={{ height: "100%", minHeight: "100%", scrollSnapStop: "always", scrollSnapAlign: "center", padding: '0' }}>
                                     <div className="text-center px-4">
                                         <p className="text-base font-medium" style={{ color: "var(--fg)" }}>No artists match your filters.</p>
-                                        <p className="text-sm mt-1" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>Try adjusting filters or keywords.</p>
+                                        <p className="text-sm mt-1" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>Try adjusting filters or keywords.</p>
                                     </div>
                                 </div>
                             </div>
@@ -465,7 +465,7 @@ export default function ArtistsSection({
                                 <div className="w-full h-full grid place-items-center">
                                     <div className="text-center max-w-prose">
                                         <p className="font-semibold" style={{ color: "var(--fg)", fontSize: 'clamp(1rem, 1.2vmin + 0.6vw, 1.125rem)' }}>No artists match your filters.</p>
-                                        <p className="mt-1.5" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)", fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>
+                                        <p className="mt-1.5" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)", fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>
                                             Try adjusting filters or keywords to broaden your search.
                                         </p>
                                     </div>

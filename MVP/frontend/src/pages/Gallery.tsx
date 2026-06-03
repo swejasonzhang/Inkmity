@@ -52,11 +52,11 @@ const Gallery: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-svh flex flex-col text-app overflow-x-hidden">
+    <div className="h-svh overflow-y-auto overflow-x-hidden text-app">
       <VideoBackground />
       <Header />
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 pb-16">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

@@ -2,14 +2,14 @@
   border: 2px solid var(--fg);
   border-radius: 0.75rem;
   overflow: hidden;
-  background: color-mix(in oklab, var(--bg) 92%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
 .ink-conv-image-button:hover,
 .ink-conv-image-button:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px color-mix(in oklab, var(--fg) 12%, transparent);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--fg) 12%, transparent);
 }
 
 .ink-conv-chat-thumb {
@@ -17,7 +17,7 @@
   aspect-ratio: 4 / 3;
   object-fit: cover;
   display: block;
-  background: color-mix(in oklab, var(--bg) 85%, transparent);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
 }
 
 .ink-conv-image-viewer {
@@ -40,5 +40,5 @@
   max-height: 100vh;
   object-fit: contain;
   display: block;
-  background: color-mix(in oklab, var(--bg) 90%, transparent);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
 }
