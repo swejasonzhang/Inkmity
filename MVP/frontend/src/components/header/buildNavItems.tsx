@@ -9,24 +9,24 @@ export type NavItem = {
 };
 
 export function buildNavItems(
-  dashboardDisabled: boolean,
-  onDashboardGate: (e: React.MouseEvent) => void,
+  isSignedIn: boolean,
+  onGate: (e: React.MouseEvent) => void,
   role?: "client" | "artist" | null
 ): NavItem[] {
-  // Artists don't need to browse other artists — give them a link to their
-  // own studio/portfolio instead. Clients keep the artist directory.
-  const discover: NavItem =
-    role === "artist"
-      ? { label: "Portfolio", to: "/portfolio" }
-      : { label: "Artists", to: "/artists" };
+  // Auth-required links are locked (with a sign-in toast) when signed out.
+  // Contact and About stay open to everyone.
+  const gated = (label: string, to: string): NavItem =>
+    isSignedIn ? { label, to } : { label, to, disabled: true, onClick: onGate };
+
+  // Artists don't need to browse other artists — give them their portfolio instead.
+  const discover =
+    role === "artist" ? gated("Portfolio", "/portfolio") : gated("Artists", "/artists");
 
   return [
-    dashboardDisabled
-      ? { label: "Dashboard", to: "/dashboard", disabled: true, onClick: onDashboardGate }
-      : { label: "Dashboard", to: "/dashboard", onClick: onDashboardGate },
+    gated("Dashboard", "/dashboard"),
     discover,
-    { label: "Appointments", to: "/appointments" },
-    { label: "Gallery", to: "/gallery" },
+    gated("Appointments", "/appointments"),
+    gated("Gallery", "/gallery"),
     { label: "Contact", to: "/contact" },
     { label: "About", to: "/about" },
   ];
