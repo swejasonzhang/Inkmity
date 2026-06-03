@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 const PLACEMENT_OPTIONS = [
@@ -659,6 +658,8 @@ export default function ArtistProfile() {
                 <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative overflow-hidden p-8 items-center justify-center" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 overflow-y-auto">
 
+                    <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-6">Artist Profile</h2>
+
                     <div className="relative mb-8 w-full flex items-center justify-center group">
                         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                             {bgOk && currentCoverImage ? (
@@ -738,13 +739,13 @@ export default function ArtistProfile() {
                         />
                     </div>
 
-                    <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
+                    <div className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
                             background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}>
-                        <h3 className="text-sm font-semibold mb-4 flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
-                            <Briefcase className="h-4 w-4" style={{ color: "var(--fg)" }} />
+                        <h3 className="ink-flash-title text-xs mb-5" style={{ color: "var(--fg)" }}>
+                            <Briefcase className="h-3.5 w-3.5" style={{ color: "var(--fg)" }} />
                             Professional Information
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -855,13 +856,13 @@ export default function ArtistProfile() {
                     </div>
 
                     <div
-                        className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
+                        className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
                             background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}
                     >
-                        <h3 className="text-sm font-semibold mb-4 text-center" style={{ color: "var(--fg)" }}>
+                        <h3 className="ink-flash-title text-xs mb-5" style={{ color: "var(--fg)" }}>
                             Deposit Settings
                         </h3>
                         <div className="space-y-2">
@@ -893,12 +894,12 @@ export default function ArtistProfile() {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
+                    <div className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
                             background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}>
-                        <Label className="text-sm font-semibold mb-3 flex items-center justify-center gap-2 w-full" style={{ color: "var(--fg)" }}>
+                        <Label className="ink-flash-title text-xs mb-4 w-full" style={{ color: "var(--fg)" }}>
                             Specialty Styles
                         </Label>
                         <div className="flex flex-wrap gap-2 mb-3 min-h-[42px] p-3 rounded-lg border justify-center"
@@ -963,13 +964,13 @@ export default function ArtistProfile() {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
+                    <div className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
                             background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}>
-                        <Label className="text-sm font-semibold mb-3 flex items-center justify-center gap-2 w-full" style={{ color: "var(--fg)" }}>
-                            Body Placements I Don't Tattoo
+                        <Label className="ink-flash-title text-xs mb-4 w-full" style={{ color: "var(--fg)" }}>
+                            Placements I Avoid
                         </Label>
                         <div className="flex flex-wrap gap-2 mb-3 min-h-[42px] p-3 rounded-lg border justify-center"
                             style={{
@@ -1002,9 +1003,9 @@ export default function ArtistProfile() {
                                 </span>
                             )}
                         </div>
-                        <div className="flex gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full">
                             <Select value={newRestrictedPlacement} onValueChange={setNewRestrictedPlacement}>
-                                <SelectTrigger className="flex-1 bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-xs h-8 justify-center [&>span]:text-center [&>span]:flex [&>span]:justify-center">
+                                <SelectTrigger className="flex-1 min-w-0 bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-xs h-8 justify-center [&>span]:text-center [&>span]:flex [&>span]:justify-center">
                                     <SelectValue placeholder="Select a body placement" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={false}>
@@ -1020,7 +1021,7 @@ export default function ArtistProfile() {
                                 disabled={!newRestrictedPlacement}
                                 size="sm"
                                 style={{ background: "var(--fg)", color: "var(--bg)" }}
-                                className="hover:opacity-90 font-semibold"
+                                className="shrink-0 h-8 px-3 hover:opacity-90 font-semibold"
                             >
                                 <Plus className="h-4 w-4 mr-1" />
                                 Add
@@ -1029,17 +1030,6 @@ export default function ArtistProfile() {
                     </div>
 
                     <div className="flex flex-col gap-4 pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
-                        <div className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 50%, transparent)", width: "100%" }}>
-                            <Label htmlFor="visible" className="text-sm font-medium cursor-pointer" style={{ color: "var(--fg)" }}>
-                                Visible to others
-                            </Label>
-                            <Switch
-                                id="visible"
-                                checked={editedArtist.visible !== undefined ? editedArtist.visible : (artist?.visible !== undefined ? artist.visible : true)}
-                                onCheckedChange={(checked: boolean) => setEditedArtist({ ...editedArtist, visible: checked })}
-                                disabled={saving}
-                            />
-                        </div>
                         <div className="flex gap-3 justify-center">
                             <Button
                                 onClick={() => setEditedArtist({})}
