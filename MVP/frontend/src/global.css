@@ -195,6 +195,37 @@ body,
   }
 }
 
+.ink-flash-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 800;
+}
+.ink-flash-title::before,
+.ink-flash-title::after {
+  content: "";
+  height: 1px;
+  width: clamp(1.5rem, 7vw, 2.75rem);
+  background: color-mix(in srgb, var(--fg) 32%, transparent);
+  flex: none;
+}
+.ink-frame {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 9%, transparent);
+}
+.ink-rule {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--fg) 26%, transparent),
+    transparent
+  );
+}
+
 .ink-gate-tip {
   animation: inkGateTip 160ms ease-out;
 }
