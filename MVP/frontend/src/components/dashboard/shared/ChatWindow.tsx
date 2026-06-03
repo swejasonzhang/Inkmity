@@ -780,8 +780,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
       : "No conversations with a client just yet, they will reach out to you.";
     
     return (
-      <div className="flex items-center justify-center h-full bg-card rounded-2xl p-4">
-        <p className="text-muted-foreground text-center whitespace-pre-line">
+      <div className="flex flex-col items-center justify-center gap-3 h-full bg-card rounded-2xl p-6 text-center">
+        <span className="grid place-items-center h-12 w-12 rounded-2xl border border-app/40 bg-elevated">
+          <MessageSquare className="h-5 w-5 text-muted-foreground" />
+        </span>
+        <p className="text-muted-foreground whitespace-pre-line max-w-xs text-sm leading-relaxed">
           {emptyMessage}
         </p>
       </div>
@@ -1384,7 +1387,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           return (
                             <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                               <div
-                                className={`px-3 py-3 rounded-2xl w-fit break-words whitespace-pre-wrap border text-sm overflow-hidden ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                                className={`px-3.5 py-2.5 rounded-2xl w-fit break-words whitespace-pre-wrap border text-sm overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
                                 style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
                               >
                                 <div className="whitespace-pre-wrap break-words">
@@ -1440,7 +1443,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     ))}
                                   </div>
                                 )}
-                                <div className={`mt-1 text-xs ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                                <div className={`mt-1 text-[10px] ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                                   {timestampText}{statusText}
                                 </div>
                               </div>
@@ -1510,7 +1513,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             <ImageIcon size={undefined} style={{ width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
                           )}
                         </button>
-                        <div className="flex-1 flex rounded-lg overflow-hidden border border-app bg-card">
+                        <div className="flex-1 flex rounded-lg overflow-hidden border border-app bg-card transition focus-within:ring-1 focus-within:ring-app/60">
                           <input
                             type="text"
                             value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
@@ -1571,7 +1574,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               onMarkRead(c.participantId);
                             }
                           }}
-                          className={`w-full flex items-center gap-3 px-3 py-2 text-left ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
+                          className={`group w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors ${isActive ? "bg-elevated/60 border-app" : "border-transparent hover:bg-elevated/40"}`}
                         >
                           {avatarFor(c, { border: false })}
                           <div className="flex-1 min-w-0">
@@ -1579,7 +1582,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
                                 {c.isOnline && (
-                                  <span className="shrink-0 w-2 h-2 rounded-full bg-white" title="Currently active" />
+                                  <span className="shrink-0 w-2 h-2 rounded-full bg-emerald-500" title="Currently active" />
                                 )}
                               </div>
                               <div className="text-[13px] shrink-0">{lastMsg ? fmtTime(lastMsg.timestamp) : ""}</div>
@@ -1598,13 +1601,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           )}
                           <button
                             type="button"
-                            className="shrink-0 text-xs text-muted-foreground hover:text-app"
+                            className="shrink-0 grid place-items-center h-7 w-7 rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-app hover:bg-card transition"
                             onClick={e => {
                               e.stopPropagation();
                               requestDelete(c.participantId);
                             }}
+                            aria-label="Delete conversation"
+                            title="Delete conversation"
                           >
-                            Delete
+                            <X size={14} />
                           </button>
                         </div>
                       </li>
@@ -1643,7 +1648,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
                           </div>
                           {activeConv?.isOnline && (
-                            <span className="shrink-0 w-2 h-2 rounded-full bg-green-500" title="Currently active" />
+                            <span className="shrink-0 w-2 h-2 rounded-full bg-emerald-500" title="Currently active" />
                           )}
                         </div>
                         {activeConv && (
@@ -1778,7 +1783,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       return (
                         <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`px-3 py-4 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-loose overflow-hidden ${isMe ? "bg-primary text-primary-foreground border-primary/80" : "bg-elevated text-app border-app"}`}
+                            className={`px-3.5 py-2.5 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-relaxed overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
                             style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.875rem, 1vw, 0.9375rem)' }}
                           >
                             <div className="whitespace-pre-wrap break-words">
@@ -1834,7 +1839,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 ))}
                               </div>
                             )}
-                            <div className={`mt-1 text-[13px] ${isMe ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                            <div className={`mt-1 text-[10px] ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                               {timestampText}{statusText}
                             </div>
                           </div>
@@ -1900,7 +1905,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         <ImageIcon size={18} />
                       )}
                     </button>
-                    <div className="flex-1 flex rounded-xl overflow-hidden border border-app bg-card">
+                    <div className="flex-1 flex rounded-xl overflow-hidden border border-app bg-card transition focus-within:ring-1 focus-within:ring-app/60">
                       <input
                         type="text"
                         value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
@@ -1957,7 +1962,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs truncate">{displayNameFromUsername(c.username)}</span>
                               {c.isOnline && (
-                                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-white" title="Currently active" />
+                                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500" title="Currently active" />
                               )}
                             </div>
                             <span className="text-[10px] text-muted-foreground truncate">

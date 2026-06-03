@@ -215,10 +215,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const getVisibilityDisplay = () => {
     const displayStatus = isOnline ? userVisibility : "invisible";
-    const isLight = theme === "light";
-    if (displayStatus === "online") return { icon: Circle, label: "Online", color: isLight ? "text-black" : "text-white" };
-    if (displayStatus === "away") return { icon: Clock, label: "Away", color: isLight ? "text-gray-600" : "text-gray-400" };
-    return { icon: EyeOff, label: "Invisible", color: isLight ? "text-gray-400" : "text-gray-500" };
+    if (displayStatus === "online") return { icon: Circle, label: "Online", color: "text-emerald-500", dot: "bg-emerald-500" };
+    if (displayStatus === "away") return { icon: Clock, label: "Away", color: "text-amber-500", dot: "bg-amber-500" };
+    return { icon: EyeOff, label: "Invisible", color: "text-zinc-400", dot: "bg-zinc-400" };
   };
 
   const homeHref = isSignedIn ? "/dashboard" : "/landing";
@@ -231,7 +230,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     }
   };
 
-  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(dashboardDisabled, onDashboardGate), [dashboardDisabled, onDashboardGate]);
+  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(dashboardDisabled, onDashboardGate, userRole), [dashboardDisabled, onDashboardGate, userRole]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -405,20 +404,24 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   aria-expanded={showDropdown}
                   onClick={() => setShowDropdown((v) => !v)}
                 >
-                  <span className="mr-1 font-semibold text-base lg:text-xl leading-none flex-shrink-0">✦</span>
-                  <div className="flex items-center leading-none gap-1 justify-center min-w-0 flex-1">
-                    <span className="font-bold truncate flex-shrink-0 min-w-0 text-[13px] lg:text-[17px]">Welcome Back</span>
-                    {(() => {
-                      const visibility = getVisibilityDisplay();
-                      const Icon = visibility.icon;
-                      return (
-                        <span className="hidden lg:flex items-center gap-1 flex-shrink-0 opacity-70 text-xs min-w-0">
-                          <Icon size={8} className={visibility.color} />
-                          <span className="truncate min-w-0">{visibility.label}</span>
-                        </span>
-                      );
-                    })()}
+                  <span className="mr-2.5 text-lg lg:text-xl leading-none flex-shrink-0">✦</span>
+                  <div className="flex flex-col items-start leading-tight min-w-0 flex-1">
+                    <span className="text-[10px] lg:text-[11px] opacity-60 leading-none">Welcome back,</span>
+                    <span className="font-bold truncate max-w-full text-[13px] lg:text-[16px] leading-tight">{userLabel || "User"}</span>
                   </div>
+                  {(() => {
+                    const visibility = getVisibilityDisplay();
+                    return (
+                      <span className="ml-2 flex items-center gap-1.5 flex-shrink-0">
+                        <span className={`relative inline-flex h-2 w-2 rounded-full ${visibility.dot}`}>
+                          {visibility.label === "Online" && (
+                            <span className={`absolute inset-0 rounded-full ${visibility.dot} opacity-60 animate-ping`} />
+                          )}
+                        </span>
+                        <span className="hidden lg:inline text-[11px] opacity-60">{visibility.label}</span>
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 <div className="absolute left-0 right-0 top-full h-2" />
@@ -488,23 +491,39 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           }}
           className="bg-card border border-[color-mix(in_oklab,var(--fg)_16%,transparent)] rounded-xl shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)] transform transition-all duration-300 ease-out overflow-visible"
         >
-          <div className="px-4 py-3 text-center">
-            <div className="text-sm opacity-80 mb-2 text-app">
-              {userRole === "artist" ? "Ready to create your next masterpiece?" : userRole === "client" ? "Ready for your next tattoo?" : "Welcome"}
-            </div>
-            <div className="text-lg font-semibold truncate text-app">{userLabel || "User"}</div>
-            {isDashboard && (
-              <div className="mt-3 flex items-center justify-center">
-                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
+          {(() => {
+            const visibility = getVisibilityDisplay();
+            const initial = (userLabel || "U").trim().charAt(0).toUpperCase();
+            const roleLabel = userRole === "artist" ? "Artist account" : userRole === "client" ? "Client account" : "Member";
+            const greeting = userRole === "artist" ? "Ready to create your next masterpiece?" : userRole === "client" ? "Ready for your next tattoo?" : "Welcome back";
+            return (
+              <div className="px-4 pt-4 pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="relative grid place-items-center h-11 w-11 rounded-full bg-elevated border border-app text-app font-bold text-lg flex-shrink-0">
+                    {initial}
+                    <span className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[color:var(--card)] ${visibility.dot}`} title={visibility.label} />
+                  </span>
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="text-base font-semibold truncate text-app">{userLabel || "User"}</div>
+                    <div className="text-[11px] uppercase tracking-wide opacity-50 truncate">{roleLabel}</div>
+                  </div>
+                </div>
+                <div className="mt-3 text-xs opacity-70 text-app text-center">{greeting}</div>
+                {isDashboard && (
+                  <div className="mt-3 flex items-center justify-center">
+                    <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
           <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-          <div 
+          <div
             className="px-4 py-3"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
+            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2 text-center">Status</div>
             <VisibilityDropdown
               currentStatus={userVisibility}
               isOnline={isOnline}
@@ -513,17 +532,17 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             />
           </div>
           <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-          <Link 
-            to="/profile" 
+          <Link
+            to="/profile"
             onClick={() => setShowDropdown(false)}
-            className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-sm flex items-center gap-2.5 transition-colors"
           >
-            <User size={18} />
+            <User size={16} className="opacity-70" />
             <span>Profile</span>
           </Link>
           <div className="h-px w-full bg-[color-mix(in_oklab,var(--fg)_14%,transparent)]" />
-          <button onClick={handleLogout} className="w-full px-4 py-3 text-center hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-lg flex items-center justify-center gap-2">
-            <LogOut size={18} />
+          <button onClick={handleLogout} className="w-full px-4 py-3 hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app text-sm flex items-center gap-2.5 transition-colors rounded-b-xl">
+            <LogOut size={16} className="opacity-70" />
             <span>Logout</span>
           </button>
         </div>,

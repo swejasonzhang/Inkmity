@@ -8,6 +8,8 @@ import Profile from "./pages/Profile";
 import Appointments from "./pages/Appointments";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import Gallery from "./pages/Gallery";
+import Artists from "./pages/Artists";
 import Landing from "./pages/Landing";
 import SSOCallback from "./pages/SSOCallback";
 import Onboarding from "./pages/Onboarding";
@@ -56,6 +58,8 @@ const App: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
+        <Route path="/gallery" element={<Gallery />} />
+        <Route path="/artists" element={<Artists />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />
