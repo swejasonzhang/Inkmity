@@ -89,7 +89,7 @@ export default function SharedAccountStep({
     return (
         <div className="grid w-full mx-0 p-0 place-items-stretch text-center">
             <OAuthButtons mode="signup" />
-            <div className="flex items-center gap-3 w-full mt-3 mb-2" aria-hidden>
+            <div className="flex items-center gap-3 w-full mt-2 mb-2" aria-hidden>
                 <span className="h-px flex-1 bg-white/15" />
                 <span className="text-xs text-white/60">or sign up with email</span>
                 <span className="h-px flex-1 bg-white/15" />
@@ -116,7 +116,7 @@ export default function SharedAccountStep({
                 </div>
             </div>
 
-            <div className="w-full mt-2">
+            <div className="w-full mt-1.5">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="username">Username</Label>
                 <Input
                     id="username"
@@ -125,14 +125,14 @@ export default function SharedAccountStep({
                     value={shared.username}
                     placeholder="Enter a display name"
                     onChange={onChange}
-                    className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
+                    className={`h-9 sm:h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
                     aria-describedby="username-help"
                     aria-invalid={!usernameOk}
                 />
-                <p id="username-help" className={`mt-1 text-xs ${usernameOk ? "text-white/60" : "text-red-400"}`}>{usernameHelp}</p>
+                <p id="username-help" className={`mt-0.5 text-[11px] ${usernameOk ? "text-white/60" : "text-red-400"}`}>{usernameHelp}</p>
             </div>
 
-            <div className="w-full mt-2">
+            <div className="w-full mt-1.5">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="email">Email</Label>
                 <Input
                     id="email"
@@ -142,14 +142,14 @@ export default function SharedAccountStep({
                     placeholder="name@example.com"
                     onChange={onChange}
                     onBlur={onEmailBlur}
-                    className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashEmail ? "ink-flash" : ""}`}
+                    className={`h-9 sm:h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashEmail ? "ink-flash" : ""}`}
                     aria-describedby="email-help"
                     aria-invalid={!emailOk}
                 />
-                <p id="email-help" className={`mt-1 text-xs ${emailOk ? "text-white/60" : "text-red-400"}`}>{emailHelp}</p>
+                <p id="email-help" className={`mt-0.5 text-[11px] ${emailOk ? "text-white/60" : "text-red-400"}`}>{emailHelp}</p>
             </div>
 
-            <div className="w-full mt-2">
+            <div className="w-full mt-1.5">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="password">Password</Label>
                 <div className="relative">
                     <Input
@@ -160,7 +160,7 @@ export default function SharedAccountStep({
                         value={shared.password}
                         placeholder="At least 8 characters with letters and numbers"
                         onChange={onChange}
-                        className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
+                        className={`h-9 sm:h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
                         aria-describedby="password-help"
                         aria-invalid={!pwdOk}
                     />
@@ -178,10 +178,10 @@ export default function SharedAccountStep({
                         <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
                     </Button>
                 </div>
-                <p id="password-help" className={`mt-1 text-xs ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
+                <p id="password-help" className={`mt-0.5 text-[11px] ${pwdOk ? "text-white/60" : "text-red-400"}`}>{pwdHelp}</p>
             </div>
 
-            <div className="w-full mt-2">
+            <div className="w-full mt-1.5">
                 <Label className="block text-sm text-white/80 mb-1" htmlFor="confirmPassword">Confirm Password</Label>
                 <div className="relative">
                     <Input
@@ -192,7 +192,7 @@ export default function SharedAccountStep({
                         value={confirmPassword || ""}
                         placeholder="Re-enter your password"
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
+                        className={`h-9 sm:h-10 w-full rounded-xl bg-white border border-black/10 text-black text-center placeholder:text-black placeholder:text-xs sm:placeholder:text-sm pl-4 pr-12 focus-visible:ring-black/20 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
                         aria-describedby="confirm-password-help"
                         aria-invalid={!confirmPwdOk}
                     />
@@ -210,7 +210,7 @@ export default function SharedAccountStep({
                         <span className="sr-only">{showConfirmPassword ? "Hide" : "Show"}</span>
                     </Button>
                 </div>
-                <p id="confirm-password-help" className={`mt-1 text-xs ${confirmPwdOk ? "text-white/60" : "text-red-400"}`}>{confirmPwdHelp}</p>
+                <p id="confirm-password-help" className={`mt-0.5 text-[11px] ${confirmPwdOk ? "text-white/60" : "text-red-400"}`}>{confirmPwdHelp}</p>
             </div>
         </div>
     );

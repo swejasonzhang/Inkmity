@@ -310,7 +310,7 @@ export default function Login() {
       <ToastContainer position="top-center" theme="dark" newestOnTop closeOnClick hideProgressBar style={{ zIndex: 2147483647 }} />
       <VideoBackground />
       <Header />
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8 py-4">
+      <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 md:px-8 py-4">
           <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-3xl mx-auto">
             <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !isSignedIn ? "" : "justify-center"}`}>
               {showInfo && !showSuccess && authLoaded && !isSignedIn && (

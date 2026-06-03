@@ -3,42 +3,43 @@ import { jest, describe, test, expect } from "@jest/globals";
 const { buildNavItems } = await import("@/components/header/buildNavItems");
 
 describe("buildNavItems", () => {
-  test("should return nav items when dashboard is enabled", () => {
-    const items = buildNavItems(false, jest.fn());
-    expect(items).toHaveLength(6);
-    expect(items[0].label).toBe("Dashboard");
-    expect(items[0].disabled).toBeUndefined();
-  });
-
-  test("should disable dashboard when dashboardDisabled is true", () => {
+  test("should return all enabled nav items when signed in", () => {
     const items = buildNavItems(true, jest.fn());
-    const dashboardItem = items.find(item => item.label === "Dashboard");
-    expect(dashboardItem?.disabled).toBe(true);
+    expect(items).toHaveLength(6);
+    expect(items.every((i) => !i.disabled)).toBe(true);
   });
 
-  test("should include onClick handler for dashboard", () => {
-    const onDashboardGate = jest.fn();
-    const items = buildNavItems(false, onDashboardGate);
-    const dashboardItem = items.find(item => item.label === "Dashboard");
-    expect(dashboardItem?.onClick).toBeDefined();
-  });
-
-  test("should include core public destinations", () => {
-    const items = buildNavItems(false, jest.fn());
-    const labels = items.map(i => i.label);
+  test("should include core destinations in order", () => {
+    const items = buildNavItems(true, jest.fn());
+    const labels = items.map((i) => i.label);
     expect(labels).toEqual(["Dashboard", "Artists", "Appointments", "Gallery", "Contact", "About"]);
   });
 
+  test("should lock auth links (with gate handler) when signed out, leaving Contact/About open", () => {
+    const onGate = jest.fn();
+    const items = buildNavItems(false, onGate);
+    const byLabel = (label: string) => items.find((i) => i.label === label)!;
+
+    for (const label of ["Dashboard", "Artists", "Appointments", "Gallery"]) {
+      expect(byLabel(label).disabled).toBe(true);
+      expect(byLabel(label).onClick).toBe(onGate);
+    }
+    for (const label of ["Contact", "About"]) {
+      expect(byLabel(label).disabled).toBeUndefined();
+      expect(byLabel(label).onClick).toBeUndefined();
+    }
+  });
+
   test("should show Artists directory for clients", () => {
-    const items = buildNavItems(false, jest.fn(), "client");
+    const items = buildNavItems(true, jest.fn(), "client");
     const discover = items[1];
     expect(discover.label).toBe("Artists");
     expect(discover.to).toBe("/artists");
   });
 
   test("should replace Artists with Portfolio for artists", () => {
-    const items = buildNavItems(false, jest.fn(), "artist");
-    const labels = items.map(i => i.label);
+    const items = buildNavItems(true, jest.fn(), "artist");
+    const labels = items.map((i) => i.label);
     expect(labels).not.toContain("Artists");
     const discover = items[1];
     expect(discover.label).toBe("Portfolio");

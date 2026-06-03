@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
 import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -7,12 +7,13 @@ import WhiteLogo from "@/assets/WhiteLogo.png";
 import BlackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems";
 import { Nav } from "./Nav";
-import { Button } from "@/components/ui/button";
 import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityDropdown, VisibilityStatus } from "./VisibilityDropdown";
 import { updateVisibility, API_URL } from "@/api";
 import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername } from "@/lib/roleCache";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -223,16 +224,23 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   };
 
   const homeHref = "/landing";
-  const dashboardDisabled = disableDashboardLink || !isSignedIn;
+  const navLocked = disableDashboardLink || !isSignedIn;
 
-  const onDashboardGate: React.MouseEventHandler = (e) => {
-    if (!isSignedIn) {
+  const onGate = useCallback<React.MouseEventHandler>(
+    (e) => {
       e.preventDefault();
+      toast.info("Please sign in to continue.", {
+        containerId: "nav-gate",
+        position: "top-center",
+        theme: theme === "light" ? "light" : "dark",
+        toastId: "nav-gate",
+      });
       navigate("/login", { state: { from: pathname } });
-    }
-  };
+    },
+    [navigate, pathname, theme]
+  );
 
-  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(dashboardDisabled, onDashboardGate, userRole), [dashboardDisabled, onDashboardGate, userRole]);
+  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(!!isSignedIn, onGate, userRole), [isSignedIn, onGate, userRole]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -259,7 +267,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
-    if (!dashboardDisabled) return;
+    if (!navLocked) return;
     setTip({ show: true, x: e.clientX, y: e.clientY });
   };
   const onDashLeave = () => setTip((t) => ({ ...t, show: false }));
@@ -347,26 +355,27 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const portalTarget = document.getElementById("dashboard-portal-root") ?? document.getElementById("dashboard-scope") ?? document.body;
 
-  const MOBILE_HEADER_H = "h-20 xs:h-24";
-  const MOBILE_LOGO_H = "h-16 xs:h-20";
-  const MOBILE_ICON_STROKE = 1.5;
-
   const resolvedLogo = logoSrcProp ?? (!themed ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
+
+  // Logo + menu button share these exact classes in the header AND the open
+  // menu so nothing shifts when the menu opens.
+  const mobileLogoCls = "h-16 sm:h-20 w-auto object-contain flex-shrink-0";
+  const mobileBtnCls = "md:hidden grid place-items-center rounded-xl text-app hover:bg-white/10 active:scale-95 transition p-1";
+  const mobileIconCls = "h-12 w-12 xs:h-14 xs:w-14";
 
   const mobileSheet = mobileMenuOpen
     ? createPortal(
-      <div className="md:hidden fixed inset-0 z-[2147483647]">
-        <div className="absolute inset-0 bg-transparent" onClick={() => setMobileMenuOpen(false)} aria-hidden />
-        <div className="absolute inset-0 bg-app/95 backdrop-blur-sm flex flex-col text-app [&_*]:text-app [&_*]:border-app overflow-hidden">
-          <div className={`flex-between items-center px-fluid-md xs:px-fluid-lg sm:px-fluid-xl ${MOBILE_HEADER_H} min-w-0 flex-shrink-0`}>
-            <div className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
-              <img src={resolvedLogo} alt="Inkmity Logo" className={`${MOBILE_LOGO_H} w-auto object-contain`} />
-            </div>
-            <Button aria-label="Close menu" variant="ghost" className="p-fluid-xs xs:p-fluid-sm sm:p-fluid-md rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app" onClick={() => setMobileMenuOpen(false)}>
-              <X strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
-            </Button>
+      <div className="md:hidden fixed inset-0 z-[2147483647] text-white [&_*]:!text-white [&_*]:border-white/15">
+        <div className="absolute inset-0 bg-[#0a0a0a]/95 backdrop-blur-2xl flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 flex-shrink-0">
+            <Link to={homeHref} onClick={() => setMobileMenuOpen(false)} className="flex-shrink-0">
+              <img src={WhiteLogo} alt="Inkmity Logo" className={mobileLogoCls} draggable={false} />
+            </Link>
+            <button aria-label="Close menu" className={`${mobileBtnCls} !text-white`} onClick={() => setMobileMenuOpen(false)}>
+              <X strokeWidth={1.75} className={mobileIconCls} />
+            </button>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto">
             <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} userVisibility={userVisibility} isOnline={isOnline} onVisibilityChange={handleVisibilityChange} />
           </div>
         </div>
@@ -390,9 +399,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         </div>
 
         <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
-            <Button aria-label="Open menu" variant="ghost" className="md:hidden p-fluid-xs xs:p-fluid-sm rounded-fluid-md hover:bg-elevated active:scale-[0.98] text-app min-h-[44px] min-w-[44px]" onClick={() => setMobileMenuOpen(true)}>
-              <Menu strokeWidth={MOBILE_ICON_STROKE} className="h-fluid-8 xs:h-fluid-10 w-auto" />
-            </Button>
+            <button type="button" aria-label="Open menu" className={mobileBtnCls} onClick={() => setMobileMenuOpen(true)}>
+              <Menu strokeWidth={1.75} className={mobileIconCls} />
+            </button>
 
             {isLoaded && isSignedIn ? (
               <div
@@ -458,13 +467,15 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </div>
       </header>
 
-      {dashboardDisabled && tip.show && (
+      <ToastContainer containerId="nav-gate" position="top-center" autoClose={2500} newestOnTop limit={1} />
+
+      {navLocked && tip.show && (
         <div className="fixed z-[2147483600] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 18px)" }}>
           <div className="flex items-center gap-2 rounded-xl border border-app bg-card px-3.5 py-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)]">
             <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-elevated p-1">
               <Lock className="h-3 w-3 text-app/70" />
             </span>
-            <span className="text-xs font-semibold text-app whitespace-nowrap">Sign in to access your dashboard</span>
+            <span className="text-xs font-semibold text-app whitespace-nowrap">Sign in to access this page</span>
           </div>
         </div>
       )}
