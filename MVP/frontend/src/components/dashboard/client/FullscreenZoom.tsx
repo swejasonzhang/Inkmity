@@ -103,7 +103,7 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
     return (
         <div
             className="fixed inset-0 z-[1300] flex items-center justify-center"
-            style={{ background: "color-mix(in oklab, var(--bg) 85%, black 15%)" }}
+            style={{ background: "color-mix(in srgb, var(--bg) 85%, black 15%)" }}
             role="dialog"
             aria-modal="true"
             aria-label="Zoomed artwork"

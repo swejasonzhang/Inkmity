@@ -4,46 +4,14 @@
 @tailwind components;
 @tailwind utilities;
 
-@property --bg {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #0b0b0b;
-}
-@property --fg {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #f5f5f5;
-}
-@property --muted {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(245, 245, 245, 0.56);
-}
-@property --subtle {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(245, 245, 245, 0.72);
-}
-@property --card {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #111111;
-}
-@property --overlay {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(0, 0, 0, 0.6);
-}
-@property --border {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(245, 245, 245, 0.2);
-}
-@property --elevated {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(244, 244, 244, 0.06);
-}
+/*
+ * Theme color tokens are intentionally NOT registered with @property as
+ * `<color>`. Registered color custom properties animate in the Oklab color
+ * space, and interpolating between the dark and light theme values (especially
+ * the semi-transparent ones) passes through a pink/salmon midpoint during the
+ * theme switch. Leaving them as plain custom properties means the swap is
+ * instant and the crossfade is handled by an opaque neutral curtain instead.
+ */
 
 html,
 body,
@@ -69,14 +37,14 @@ body,
   --overlay: rgba(0, 0, 0, 0.6);
   --border: rgba(245, 245, 245, 0.2);
   --elevated: rgba(244, 244, 244, 0.06);
-  --accent: #7dd3fc;
+  --accent: #d4d4d4;
   --background: 0 0% 4%;
   --foreground: 0 0% 96%;
   --card-h: 0 0% 7%;
   --card-foreground: var(--foreground);
   --popover: var(--card-h);
   --popover-foreground: var(--foreground);
-  --primary: 197 95% 80%;
+  --primary: 0 0% 85%;
   --primary-foreground: 0 0% 5%;
   --secondary: 0 0% 12%;
   --secondary-foreground: var(--foreground);
@@ -113,13 +81,13 @@ body,
   --card-foreground: var(--foreground) !important;
   --popover: var(--card-h) !important;
   --popover-foreground: var(--foreground) !important;
-  --primary: 197 95% 50% !important;
+  --primary: 0 0% 20% !important;
   --primary-foreground: 0 0% 100% !important;
   --secondary: 0 0% 96% !important;
   --secondary-foreground: 0 0% 7% !important;
   --muted2: 0 0% 45% !important;
   --muted-foreground: 0 0% 30% !important;
-  --accent-h: 197 95% 50% !important;
+  --accent-h: 0 0% 20% !important;
   --accent-foreground: 0 0% 100% !important;
   --destructive: 0 72% 46% !important;
   --destructive-foreground: 0 0% 98% !important;
@@ -578,10 +546,10 @@ h3 {
   overflow: hidden;
   background: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--card), transparent 0%) 0%,
-    color-mix(in oklab, var(--card), black 6%) 100%
+    color-mix(in srgb, var(--card), transparent 0%) 0%,
+    color-mix(in srgb, var(--card), black 6%) 100%
   );
-  border: 1px solid color-mix(in oklab, var(--border), transparent 40%);
+  border: 1px solid color-mix(in srgb, var(--border), transparent 40%);
 }
 .ink-card::before {
   content: "";
@@ -594,7 +562,7 @@ h3 {
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in oklab, var(--border), transparent 80%),
+    color-mix(in srgb, var(--border), transparent 80%),
     transparent
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -793,8 +761,8 @@ input::-moz-focus-inner {
 
 .fullscreen-zoom__count {
   background: var(--bg);
-  border: 2px solid color-mix(in oklab, var(--fg) 80%, transparent);
-  color: color-mix(in oklab, var(--bg) 20%, var(--fg));
+  border: 2px solid color-mix(in srgb, var(--fg) 80%, transparent);
+  color: color-mix(in srgb, var(--bg) 20%, var(--fg));
   transition: color 200ms ease, border-color 200ms ease;
 }
 .ink-scope[data-ink="light"] .fullscreen-zoom__count,
@@ -808,7 +776,7 @@ input::-moz-focus-inner {
   transition: color 200ms ease;
 }
 .portfolio-section-count {
-  color: color-mix(in oklab, var(--fg) 65%, transparent) !important;
+  color: color-mix(in srgb, var(--fg) 65%, transparent) !important;
   transition: color 200ms ease;
 }
 .ink-scope[data-ink="light"] .portfolio-section-title,
@@ -817,7 +785,7 @@ input::-moz-focus-inner {
 }
 .ink-scope[data-ink="light"] .portfolio-section-count,
 .ink-scope.ink-light .portfolio-section-count {
-  color: color-mix(in oklab, #000 70%, transparent) !important;
+  color: color-mix(in srgb, #000 70%, transparent) !important;
 }
 
 [data-calendar-cell],

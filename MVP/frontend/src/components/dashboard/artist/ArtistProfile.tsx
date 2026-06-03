@@ -622,7 +622,7 @@ export default function ArtistProfile() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>Loading profile...</div>
+                <div style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>Loading profile...</div>
             </div>
         );
     }
@@ -630,7 +630,7 @@ export default function ArtistProfile() {
     if (!artist) {
         return (
             <div className="flex items-center justify-center h-full">
-                <div style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>No profile data available</div>
+                <div style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>No profile data available</div>
             </div>
         );
     }
@@ -678,9 +678,9 @@ export default function ArtistProfile() {
                                     onError={() => setBgOk(false)}
                                 />
                             ) : (
-                                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+                                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 85%, var(--fg) 15%), color-mix(in srgb, var(--bg) 78%, var(--fg) 22%))" }} />
                             )}
-                            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
+                            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in srgb, var(--bg) 18%, transparent) 100%)" }} />
                         </div>
                         <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
                             {currentProfileImage ? (
@@ -747,7 +747,7 @@ export default function ArtistProfile() {
 
                     <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
-                            background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                            background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}>
                         <h3 className="text-sm font-semibold mb-4 flex items-center justify-center gap-2" style={{ color: "var(--fg)" }}>
@@ -756,7 +756,7 @@ export default function ArtistProfile() {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="location" className="text-xs text-center block w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                <Label htmlFor="location" className="text-xs text-center block w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                     Location
                                 </Label>
                                 <Select
@@ -775,7 +775,7 @@ export default function ArtistProfile() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="years" className="text-xs text-center block w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                <Label htmlFor="years" className="text-xs text-center block w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                     Years Experience
                                 </Label>
                                 <Select
@@ -793,7 +793,7 @@ export default function ArtistProfile() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="rate" className="text-xs text-center block w-full whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                                <Label htmlFor="rate" className="text-xs text-center block w-full whitespace-nowrap" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                     Base Rate (USD/hr)
                                 </Label>
                                 <Select
@@ -812,7 +812,7 @@ export default function ArtistProfile() {
                             </div>
                         </div>
                         <div className="space-y-2 mt-4">
-                            <Label htmlFor="shop" className="text-xs text-center block w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                            <Label htmlFor="shop" className="text-xs text-center block w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                 Shop Name
                             </Label>
                             <Input
@@ -823,7 +823,7 @@ export default function ArtistProfile() {
                                 className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs mb-2"
                                 placeholder="Shop name"
                             />
-                            <Label htmlFor="shopAddress" className="text-xs flex items-center justify-center gap-2 w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                            <Label htmlFor="shopAddress" className="text-xs flex items-center justify-center gap-2 w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                 Shop Address
                             </Label>
                             <Input
@@ -864,7 +864,7 @@ export default function ArtistProfile() {
                     <div
                         className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
-                            background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                            background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}
                     >
@@ -872,7 +872,7 @@ export default function ArtistProfile() {
                             Deposit Settings
                         </h3>
                         <div className="space-y-2">
-                            <Label className="text-xs text-center block w-full" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                            <Label className="text-xs text-center block w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                 Required Deposit (USD)
                             </Label>
                             <Input
@@ -882,7 +882,7 @@ export default function ArtistProfile() {
                                 className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
                                 placeholder="50.00"
                             />
-                            <p className="text-xs text-center" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                            <p className="text-xs text-center" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                                 Clients must pay this deposit to book a tattoo session. Minimum $50.00.
                             </p>
                             <div className="pt-2 flex justify-center">
@@ -902,7 +902,7 @@ export default function ArtistProfile() {
 
                     <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
-                            background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                            background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}>
                         <Label className="text-sm font-semibold mb-3 flex items-center justify-center gap-2 w-full" style={{ color: "var(--fg)" }}>
@@ -910,7 +910,7 @@ export default function ArtistProfile() {
                         </Label>
                         <div className="flex flex-wrap gap-2 mb-3 min-h-[42px] p-3 rounded-lg border justify-center"
                             style={{
-                                background: "color-mix(in oklab, var(--elevated) 40%, transparent)",
+                                background: "color-mix(in srgb, var(--elevated) 40%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
                             {(() => {
@@ -924,7 +924,7 @@ export default function ArtistProfile() {
                                             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all hover:scale-105"
                                             style={{
                                                 borderColor: "var(--border)",
-                                                background: "linear-gradient(135deg, color-mix(in oklab, var(--elevated) 95%, var(--fg) 5%), color-mix(in oklab, var(--elevated) 85%, var(--fg) 15%))",
+                                                background: "linear-gradient(135deg, color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%), color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%))",
                                                 color: "var(--fg)"
                                             }}
                                         >
@@ -939,7 +939,7 @@ export default function ArtistProfile() {
                                     ));
                                 }
                                 return (
-                                    <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                    <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
                                         No styles added yet
                                     </span>
                                 );
@@ -972,7 +972,7 @@ export default function ArtistProfile() {
 
                     <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
-                            background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                            background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}>
                         <Label className="text-sm font-semibold mb-3 flex items-center justify-center gap-2 w-full" style={{ color: "var(--fg)" }}>
@@ -980,7 +980,7 @@ export default function ArtistProfile() {
                         </Label>
                         <div className="flex flex-wrap gap-2 mb-3 min-h-[42px] p-3 rounded-lg border justify-center"
                             style={{
-                                background: "color-mix(in oklab, var(--elevated) 40%, transparent)",
+                                background: "color-mix(in srgb, var(--elevated) 40%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
                             {currentRestrictedPlacements.length > 0 ? (
@@ -990,7 +990,7 @@ export default function ArtistProfile() {
                                         className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all hover:scale-105"
                                         style={{
                                             borderColor: "var(--border)",
-                                            background: "linear-gradient(135deg, color-mix(in oklab, var(--elevated) 95%, var(--fg) 5%), color-mix(in oklab, var(--elevated) 85%, var(--fg) 15%))",
+                                            background: "linear-gradient(135deg, color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%), color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%))",
                                             color: "var(--fg)"
                                         }}
                                     >
@@ -1004,7 +1004,7 @@ export default function ArtistProfile() {
                                     </span>
                                 ))
                             ) : (
-                                <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
                                     No restrictions added
                                 </span>
                             )}
@@ -1037,7 +1037,7 @@ export default function ArtistProfile() {
 
                     <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
-                            background: "color-mix(in oklab, var(--card) 80%, transparent)",
+                            background: "color-mix(in srgb, var(--card) 80%, transparent)",
                             borderColor: "var(--border)"
                         }}>
                         <div className="flex items-center justify-between mb-3">
@@ -1080,14 +1080,14 @@ export default function ArtistProfile() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-sm text-center py-8" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                            <div className="text-sm text-center py-8" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
                                 No portfolio images yet. Click "Manage Portfolio" to add images.
                             </div>
                         )}
                     </div>
 
                     <div className="flex flex-col gap-4 pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
-                        <div className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border" style={{ borderColor: "var(--border)", background: "color-mix(in oklab, var(--elevated) 50%, transparent)", width: "100%" }}>
+                        <div className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 50%, transparent)", width: "100%" }}>
                             <Label htmlFor="visible" className="text-sm font-medium cursor-pointer" style={{ color: "var(--fg)" }}>
                                 Visible to others
                             </Label>
@@ -1145,7 +1145,7 @@ export default function ArtistProfile() {
                             </DialogHeader>
 
                             <Tabs value={portfolioCategory} onValueChange={(value) => setPortfolioCategory(value as "pastWorks" | "recentWorks" | "sketches")} className="w-full">
-                                <TabsList className="w-full justify-start mb-6" style={{ background: "color-mix(in oklab, var(--elevated) 50%, transparent)", borderColor: "var(--border)" }}>
+                                <TabsList className="w-full justify-start mb-6" style={{ background: "color-mix(in srgb, var(--elevated) 50%, transparent)", borderColor: "var(--border)" }}>
                                     <TabsTrigger value="recentWorks" style={{ color: "var(--fg)" }}>Recent Works</TabsTrigger>
                                     <TabsTrigger value="pastWorks" style={{ color: "var(--fg)" }}>Past Works</TabsTrigger>
                                     <TabsTrigger value="sketches" style={{ color: "var(--fg)" }}>Upcoming Sketches</TabsTrigger>
@@ -1153,7 +1153,7 @@ export default function ArtistProfile() {
 
                                 <TabsContent value="recentWorks" className="space-y-6">
                                     <div className="flex flex-col gap-3">
-                                        <p className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                        <p className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
                                             The first 3 images will appear in your profile preview to capture clients' attention. Use arrows to reorder. All images will be visible when clients click "View Portfolio".
                                         </p>
                                         <div className="flex justify-center">
@@ -1224,7 +1224,7 @@ export default function ArtistProfile() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-sm text-center py-12 border-2 border-dashed rounded-xl" style={{ borderColor: "var(--border)", color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                        <div className="text-sm text-center py-12 border-2 border-dashed rounded-xl" style={{ borderColor: "var(--border)", color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
                                             No recent works. Click "Add Images" to get started.
                                         </div>
                                     )}
@@ -1232,7 +1232,7 @@ export default function ArtistProfile() {
 
                                 <TabsContent value="pastWorks" className="space-y-6">
                                     <div className="flex flex-col gap-3">
-                                        <p className="text-sm whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                        <p className="text-sm whitespace-nowrap" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
                                             Showcase your completed past works. Use arrows to reorder.
                                         </p>
                                         <div className="flex justify-center">
@@ -1298,7 +1298,7 @@ export default function ArtistProfile() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-sm text-center py-12 border-2 border-dashed rounded-xl" style={{ borderColor: "var(--border)", color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                        <div className="text-sm text-center py-12 border-2 border-dashed rounded-xl" style={{ borderColor: "var(--border)", color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
                                             No past works. Click "Add Images" to get started.
                                         </div>
                                     )}
@@ -1306,7 +1306,7 @@ export default function ArtistProfile() {
 
                                 <TabsContent value="sketches" className="space-y-6">
                                     <div className="flex flex-col gap-3">
-                                        <p className="text-sm whitespace-nowrap" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                        <p className="text-sm whitespace-nowrap" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
                                             Share your upcoming sketches and designs. Use arrows to reorder.
                                         </p>
                                         <div className="flex justify-center">
@@ -1372,7 +1372,7 @@ export default function ArtistProfile() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-sm text-center py-12 border-2 border-dashed rounded-xl" style={{ borderColor: "var(--border)", color: "color-mix(in oklab, var(--fg) 50%, transparent)" }}>
+                                        <div className="text-sm text-center py-12 border-2 border-dashed rounded-xl" style={{ borderColor: "var(--border)", color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
                                             No sketches. Click "Add Images" to get started.
                                         </div>
                                     )}

@@ -283,6 +283,10 @@ export type Me = {
   clerkId: string;
   role: "client" | "artist";
   username: string;
+  portfolioImages?: string[];
+  bio?: string;
+  avatar?: { url?: string };
+  avatarUrl?: string;
 };
 
 export async function fetchArtists(
@@ -471,6 +475,18 @@ export async function updateVisibility(
   return apiRequest<{ ok: boolean; visibility: string }>(
     "/users/me/visibility",
     { method: "PUT", body: JSON.stringify({ visibility }), signal },
+    token
+  );
+}
+
+export async function updateMyPortfolio(
+  urls: string[],
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiRequest<{ ok: boolean; portfolioImages: string[] }>(
+    "/users/me/portfolio",
+    { method: "PUT", body: JSON.stringify({ urls }), signal },
     token
   );
 }

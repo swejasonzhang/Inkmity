@@ -12,13 +12,13 @@ const VideoBackground: React.FC<Props> = ({ scrim = 55 }) => (
             muted
             playsInline
             preload="metadata"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover grayscale"
         >
             <source src="/Landing.mp4" type="video/mp4" />
         </video>
         <div
             className="absolute inset-0"
-            style={{ background: `color-mix(in oklab, var(--bg) ${scrim}%, transparent)` }}
+            style={{ background: `color-mix(in srgb, var(--bg) ${scrim}%, transparent)` }}
         />
     </div>
 );

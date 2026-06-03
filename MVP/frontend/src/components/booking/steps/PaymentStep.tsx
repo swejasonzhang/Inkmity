@@ -324,7 +324,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
 
             <div className="space-y-3">
               <div className="p-4 border rounded-md bg-background">
-                <label className="text-sm font-medium mb-2 block">Card Details</label>
+                <label className="text-sm font-medium mb-2 block text-center">Card Details</label>
                 <div className="p-3 border rounded-md bg-white dark:bg-gray-900">
                   <CardElement
                     options={{

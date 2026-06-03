@@ -105,7 +105,7 @@ export const VisibilityDropdown = ({
           onPointerDown={(e) => {
             e.stopPropagation();
           }}
-          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] text-app transition-colors ${className}`}
+          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] text-app transition-colors ${className}`}
         >
           <Icon size={14} className={displayOption.color} />
           <span className="text-sm font-medium">{displayOption.label}</span>
@@ -120,7 +120,7 @@ export const VisibilityDropdown = ({
           minWidth: width || undefined,
           maxWidth: width || undefined
         }}
-        className="bg-card border-[color-mix(in_oklab,var(--fg)_16%,transparent)] text-app z-[2147483700]"
+        className="bg-card border-[color-mix(in_srgb,var(--fg)_16%,transparent)] text-app z-[2147483700]"
         onClick={(e) => {
           e.stopPropagation();
         }}
@@ -182,7 +182,7 @@ export const VisibilityDropdown = ({
                 onMouseDown={(e) => {
                   e.stopPropagation();
                 }}
-                className="flex items-center justify-center gap-2 text-app hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] whitespace-nowrap"
+                className="flex items-center justify-center gap-2 text-app hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] whitespace-nowrap"
               >
                 <OptionIcon size={12} className={option.color} />
                 <span className="text-sm font-medium whitespace-nowrap">{option.label}</span>

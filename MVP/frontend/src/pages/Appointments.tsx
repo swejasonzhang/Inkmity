@@ -231,39 +231,39 @@ export default function Appointments() {
     const getStatusBadgeStyle = (): React.CSSProperties => {
       const statusColors: Record<string, { bg: string; text: string; border: string }> = {
         pending: {
-          bg: "color-mix(in oklab, var(--fg) 15%, transparent)",
-          text: "color-mix(in oklab, var(--fg) 85%, transparent)",
-          border: "color-mix(in oklab, var(--border) 80%, transparent)"
+          bg: "color-mix(in srgb, var(--fg) 15%, transparent)",
+          text: "color-mix(in srgb, var(--fg) 85%, transparent)",
+          border: "color-mix(in srgb, var(--border) 80%, transparent)"
         },
         accepted: {
-          bg: "color-mix(in oklab, var(--fg) 15%, transparent)",
-          text: "color-mix(in oklab, var(--fg) 90%, transparent)",
-          border: "color-mix(in oklab, var(--border) 80%, transparent)"
+          bg: "color-mix(in srgb, var(--fg) 15%, transparent)",
+          text: "color-mix(in srgb, var(--fg) 90%, transparent)",
+          border: "color-mix(in srgb, var(--border) 80%, transparent)"
         },
         confirmed: {
-          bg: "color-mix(in oklab, var(--fg) 15%, transparent)",
-          text: "color-mix(in oklab, var(--fg) 90%, transparent)",
-          border: "color-mix(in oklab, var(--border) 80%, transparent)"
+          bg: "color-mix(in srgb, var(--fg) 15%, transparent)",
+          text: "color-mix(in srgb, var(--fg) 90%, transparent)",
+          border: "color-mix(in srgb, var(--border) 80%, transparent)"
         },
         completed: {
-          bg: "color-mix(in oklab, var(--fg) 12%, transparent)",
-          text: "color-mix(in oklab, var(--fg) 85%, transparent)",
-          border: "color-mix(in oklab, var(--border) 75%, transparent)"
+          bg: "color-mix(in srgb, var(--fg) 12%, transparent)",
+          text: "color-mix(in srgb, var(--fg) 85%, transparent)",
+          border: "color-mix(in srgb, var(--border) 75%, transparent)"
         },
         denied: {
-          bg: "color-mix(in oklab, var(--fg) 12%, transparent)",
-          text: "color-mix(in oklab, var(--fg) 80%, transparent)",
-          border: "color-mix(in oklab, var(--border) 70%, transparent)"
+          bg: "color-mix(in srgb, var(--fg) 12%, transparent)",
+          text: "color-mix(in srgb, var(--fg) 80%, transparent)",
+          border: "color-mix(in srgb, var(--border) 70%, transparent)"
         },
         cancelled: {
-          bg: "color-mix(in oklab, var(--fg) 12%, transparent)",
-          text: "color-mix(in oklab, var(--fg) 80%, transparent)",
-          border: "color-mix(in oklab, var(--border) 70%, transparent)"
+          bg: "color-mix(in srgb, var(--fg) 12%, transparent)",
+          text: "color-mix(in srgb, var(--fg) 80%, transparent)",
+          border: "color-mix(in srgb, var(--border) 70%, transparent)"
         },
         "no-show": {
-          bg: "color-mix(in oklab, var(--fg) 12%, transparent)",
-          text: "color-mix(in oklab, var(--fg) 75%, transparent)",
-          border: "color-mix(in oklab, var(--border) 70%, transparent)"
+          bg: "color-mix(in srgb, var(--fg) 12%, transparent)",
+          text: "color-mix(in srgb, var(--fg) 75%, transparent)",
+          border: "color-mix(in srgb, var(--border) 70%, transparent)"
         }
       };
 
@@ -281,10 +281,10 @@ export default function Appointments() {
     };
 
     const DetailRow = ({ icon: Icon, label, value, className = "" }: { icon: any; label: string; value: string | React.ReactNode; className?: string }) => (
-      <div className={`flex items-start gap-2 py-1.5 px-1.5 rounded-md transition-colors hover:bg-[color-mix(in_oklab,var(--elevated)_50%,transparent)] ${className}`}>
-        <Icon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: "color-mix(in oklab, var(--fg) 50%, transparent)" }} />
+      <div className={`flex items-start gap-2 py-1.5 px-1.5 rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] ${className}`}>
+        <Icon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }} />
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold mb-0.5 uppercase tracking-wide" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)", letterSpacing: "0.05em" }}>
+          <div className="text-xs font-semibold mb-0.5 uppercase tracking-wide" style={{ color: "color-mix(in srgb, var(--fg) 65%, transparent)", letterSpacing: "0.05em" }}>
             {label}
           </div>
           <div className="text-xs leading-relaxed" style={{ color: "var(--fg)" }}>
@@ -299,7 +299,7 @@ export default function Appointments() {
         className="border rounded-xl p-4 bg-card border-app h-full flex flex-col transition-all duration-200 hover:shadow-lg"
         style={{
           borderColor: "var(--border)",
-          boxShadow: `0 1px 3px color-mix(in oklab, var(--fg) 8%, transparent), 0 1px 2px color-mix(in oklab, var(--fg) 5%, transparent)`,
+          boxShadow: `0 1px 3px color-mix(in srgb, var(--fg) 8%, transparent), 0 1px 2px color-mix(in srgb, var(--fg) 5%, transparent)`,
           background: "var(--card)"
         }}
       >
@@ -321,13 +321,13 @@ export default function Appointments() {
                 {otherUser?.username || "Unknown"}
               </CardTitle>
               <div className="text-xs font-medium px-2 py-0.5 rounded-md inline-block mb-1" style={{ 
-                color: "color-mix(in oklab, var(--fg) 75%, transparent)",
+                color: "color-mix(in srgb, var(--fg) 75%, transparent)",
                 background: "var(--elevated)"
               }}>
                 {isConsultation ? "Consultation" : isTattooSession ? "Tattoo Session" : "Appointment"}
               </div>
               {appointment.createdAt && (
-                <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                   Requested: {formatDateTime(appointment.createdAt)}
                 </div>
               )}
@@ -338,7 +338,7 @@ export default function Appointments() {
         <CardContent className="p-0 space-y-2 flex-1">
           <div 
             className="border-t pt-3 grid grid-cols-2 gap-x-2 gap-y-0.5"
-            style={{ borderColor: "color-mix(in oklab, var(--border) 50%, transparent)" }}
+            style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}
           >
             <DetailRow 
               icon={Calendar} 
@@ -379,7 +379,7 @@ export default function Appointments() {
                       <div className="space-y-0.5">
                         <div>Required: {formatCurrency(appointment.depositRequiredCents)}</div>
                     {appointment.depositPaidCents !== undefined && appointment.depositPaidCents > 0 && (
-                          <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                          <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                             Paid: {formatCurrency(appointment.depositPaidCents)}
                             {remainingBalance !== undefined && remainingBalance > 0 && (
                               <span className="ml-1.5">
@@ -451,7 +451,7 @@ export default function Appointments() {
                 value={
                   <div className="space-y-0.5">
                     <div>From: {formatDateTime(appointment.rescheduledFrom!)}</div>
-                    <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                    <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                       By: {appointment.rescheduledBy === "client" ? "Client" : "Artist"}
                     </div>
               </div>
@@ -468,7 +468,7 @@ export default function Appointments() {
                   <div className="space-y-0.5">
                     <div>{formatDateTime(appointment.cancelledAt)}</div>
                 {appointment.cancellationReason && (
-                      <div className="text-xs italic" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                      <div className="text-xs italic" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                     Reason: {appointment.cancellationReason}
                   </div>
                 )}
@@ -486,7 +486,7 @@ export default function Appointments() {
                   <div className="space-y-0.5">
                     <div>Marked: {formatDateTime(appointment.noShowMarkedAt)}</div>
                     {appointment.noShowMarkedBy && (
-                      <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 80%, transparent)" }}>
+                      <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                         By: {appointment.noShowMarkedBy === "client" ? "Client" : appointment.noShowMarkedBy === "artist" ? "Artist" : "System"}
                       </div>
                     )}
@@ -498,7 +498,7 @@ export default function Appointments() {
           </div>
 
           {isCompleted && isTattooSession && (
-            <div className="pt-2 border-t" style={{ borderColor: "color-mix(in oklab, var(--border) 50%, transparent)" }}>
+            <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
               <Button
                 onClick={() => {
                   setAftercareAppointment(appointment);
@@ -518,7 +518,7 @@ export default function Appointments() {
           )}
 
           {(canAccept || canDeny || canCancel) && (
-            <div className="flex gap-2 pt-2 border-t" style={{ borderColor: "color-mix(in oklab, var(--border) 50%, transparent)" }}>
+            <div className="flex gap-2 pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
               {canAccept && (
                 <Button
                   onClick={() => handleAccept(appointment._id)}
@@ -539,8 +539,8 @@ export default function Appointments() {
                   variant="outline"
                   className="flex-1 h-10 sm:h-11 text-xs sm:text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    borderColor: "color-mix(in oklab, var(--fg) 50%, transparent)",
-                    color: "color-mix(in oklab, var(--fg) 80%, transparent)",
+                    borderColor: "color-mix(in srgb, var(--fg) 50%, transparent)",
+                    color: "color-mix(in srgb, var(--fg) 80%, transparent)",
                     background: "transparent",
                   }}
                 >
@@ -584,7 +584,7 @@ export default function Appointments() {
           <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-app">
             Appointments
           </h1>
-          <p className="text-xs sm:text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+          <p className="text-xs sm:text-sm" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
             Manage your consultation and tattoo session requests
           </p>
         </div>
@@ -606,7 +606,7 @@ export default function Appointments() {
                   className="px-2 py-0.5 rounded-full text-xs font-semibold"
                   style={{
                     background: "var(--elevated)",
-                    color: "color-mix(in oklab, var(--fg) 75%, transparent)"
+                    color: "color-mix(in srgb, var(--fg) 75%, transparent)"
                   }}
                 >
                   {pendingAppointments.length}
@@ -614,8 +614,8 @@ export default function Appointments() {
               </div>
               {pendingAppointments.length === 0 ? (
                 <div className="text-center py-4 sm:py-6 min-h-[80px] sm:min-h-[120px] rounded-lg border border-dashed flex items-center justify-center text-xs sm:text-sm" style={{
-                  color: "color-mix(in oklab, var(--fg) 50%, transparent)",
-                  borderColor: "color-mix(in oklab, var(--border) 50%, transparent)"
+                  color: "color-mix(in srgb, var(--fg) 50%, transparent)",
+                  borderColor: "color-mix(in srgb, var(--border) 50%, transparent)"
                 }}>
                   No pending appointments
                 </div>
@@ -635,7 +635,7 @@ export default function Appointments() {
                   className="px-2 py-0.5 rounded-full text-xs font-semibold"
                   style={{
                     background: isLightTheme ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.1)",
-                    color: "color-mix(in oklab, var(--fg) 70%, transparent)"
+                    color: "color-mix(in srgb, var(--fg) 70%, transparent)"
                   }}
                 >
                   {pastAppointments.length}
@@ -643,8 +643,8 @@ export default function Appointments() {
               </div>
               {pastAppointments.length === 0 ? (
                 <div className="text-center py-4 sm:py-6 min-h-[80px] sm:min-h-[120px] rounded-lg border border-dashed flex items-center justify-center text-xs sm:text-sm" style={{
-                  color: "color-mix(in oklab, var(--fg) 50%, transparent)",
-                  borderColor: "color-mix(in oklab, var(--border) 50%, transparent)"
+                  color: "color-mix(in srgb, var(--fg) 50%, transparent)",
+                  borderColor: "color-mix(in srgb, var(--border) 50%, transparent)"
                 }}>
                   No past appointments
                 </div>
@@ -683,7 +683,7 @@ export default function Appointments() {
           background: "var(--card)",
           color: "var(--fg)",
           border: "1px solid var(--border)",
-          boxShadow: "0 10px 25px color-mix(in oklab, var(--fg) 8%, transparent)"
+          boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
         }}
         className="text-sm"
         style={{ zIndex: 2147483647 }}

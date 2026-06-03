@@ -202,7 +202,7 @@ export default function FloatingBar({
           title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
           style={{
             height: collapsedHeight,
-            boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in oklab, var(--app) 70%, transparent)"
+            boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in srgb, var(--app) 70%, transparent)"
           }}
           variant="outline"
         >

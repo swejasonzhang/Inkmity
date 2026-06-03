@@ -42,8 +42,8 @@ const Stars: React.FC<{ value: number }> = React.memo(({ value }) => {
                         key={i}
                         className="h-4 w-4"
                         style={{
-                            color: filled || half ? "var(--fg)" : "color-mix(in oklab, var(--fg) 35%, transparent)",
-                            fill: filled ? "var(--fg)" : half ? "color-mix(in oklab, var(--fg) 70%, transparent)" : "transparent",
+                            color: filled || half ? "var(--fg)" : "color-mix(in srgb, var(--fg) 35%, transparent)",
+                            fill: filled ? "var(--fg)" : half ? "color-mix(in srgb, var(--fg) 70%, transparent)" : "transparent",
                             stroke: "currentColor"
                         }}
                     />
@@ -82,12 +82,12 @@ const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React
                         <Stars value={r.rating} />
                     </span>
                 </CardTitle>
-                <div className="text-xs mt-1" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                <div className="text-xs mt-1" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                     by {r.authorName} • {fmtDate(r.createdAt)}
                 </div>
             </CardHeader>
             <CardContent className="text-left space-y-3">
-                <p className="text-sm leading-relaxed" style={{ color: "color-mix(in oklab, var(--fg) 88%, transparent)" }}>{r.body}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "color-mix(in srgb, var(--fg) 88%, transparent)" }}>{r.body}</p>
                 {r.photos && r.photos.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {r.photos.slice(0, 6).map((src, idx) => (
@@ -237,18 +237,18 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                         <div className="w-full flex flex-col items-center gap-2 text-center">
                             <div className="flex items-center gap-2 flex-wrap justify-center">
                                 <Stars value={avgDisplay} />
-                                <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
                                     {avgDisplay ? `${avgDisplay} / 5` : "No ratings yet"}
                                 </span>
                                 {effectiveReviews.length > 0 && (
-                                    <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 60%, transparent)" }}>
+                                    <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                                         • {effectiveReviews.length} review{effectiveReviews.length === 1 ? "" : "s"}
                                     </span>
                                 )}
                             </div>
 
                             <div className="flex items-center gap-2 mt-2 w-full justify-center">
-                                <label className="text-sm text-center" style={{ color: "color-mix(in oklab, var(--fg) 70%, transparent)" }}>
+                                <label className="text-sm text-center" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
                                     Sort:
                                 </label>
 
@@ -280,7 +280,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                             </div>
 
                             {isSorting && (
-                                <div className="text-xs" style={{ color: "color-mix(in oklab, var(--fg) 55%, transparent)" }}>
+                                <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>
                                     Optimizing…
                                 </div>
                             )}
@@ -291,7 +291,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                 {loadErr && !effectiveReviews.length ? (
                     <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
                         <CardContent className="px-4 py-3 flex items-center justify-between gap-3">
-                            <span className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>{loadErr}</span>
+                            <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 65%, transparent)" }}>{loadErr}</span>
                             <Button onClick={() => { setLoadErr(null); setRemoteReviews([]); }} variant="outline" className="px-3 py-1" style={{ borderColor: "var(--border)" }}>
                                 Dismiss
                             </Button>
@@ -310,7 +310,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                 {deferredSorted.length === 0 ? (
                     <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
                         <CardContent className="px-4 py-3">
-                            <div className="text-sm" style={{ color: "color-mix(in oklab, var(--fg) 65%, transparent)" }}>No reviews yet.</div>
+                            <div className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 65%, transparent)" }}>No reviews yet.</div>
                         </CardContent>
                     </Card>
                 ) : (
@@ -324,7 +324,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                                     onClick={() => setVisibleCount(c => c + BATCH_SIZE)}
                                     variant="outline"
                                     className="rounded-lg px-4 py-2 text-sm font-medium w-auto"
-                                    style={{ background: "color-mix(in oklab, var(--elevated) 92%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
+                                    style={{ background: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
                                 >
                                     Show more
                                 </Button>
@@ -337,7 +337,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
             {zoomSrc && (
                 <div
                     className="fixed inset-0 z-[1300] flex items-center justify-center p-2 sm:p-4"
-                    style={{ background: "color-mix(in oklab, var(--bg) 75%, black 25%)" }}
+                    style={{ background: "color-mix(in srgb, var(--bg) 75%, black 25%)" }}
                     onClick={() => setZoomSrc(null)}
                     role="dialog"
                     aria-modal="true"

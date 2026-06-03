@@ -17,7 +17,7 @@ export function buildNavItems(
   // own studio/portfolio instead. Clients keep the artist directory.
   const discover: NavItem =
     role === "artist"
-      ? { label: "Portfolio", to: "/profile" }
+      ? { label: "Portfolio", to: "/portfolio" }
       : { label: "Artists", to: "/artists" };
 
   return [
@@ -25,8 +25,8 @@ export function buildNavItems(
       ? { label: "Dashboard", to: "/dashboard", disabled: true, onClick: onDashboardGate }
       : { label: "Dashboard", to: "/dashboard", onClick: onDashboardGate },
     discover,
-    { label: "Gallery", to: "/gallery" },
     { label: "Appointments", to: "/appointments" },
+    { label: "Gallery", to: "/gallery" },
     { label: "Contact", to: "/contact" },
     { label: "About", to: "/about" },
   ];

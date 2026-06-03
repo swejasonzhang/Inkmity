@@ -26,7 +26,7 @@ describe("buildNavItems", () => {
   test("should include core public destinations", () => {
     const items = buildNavItems(false, jest.fn());
     const labels = items.map(i => i.label);
-    expect(labels).toEqual(["Dashboard", "Artists", "Gallery", "Appointments", "Contact", "About"]);
+    expect(labels).toEqual(["Dashboard", "Artists", "Appointments", "Gallery", "Contact", "About"]);
   });
 
   test("should show Artists directory for clients", () => {
@@ -42,6 +42,6 @@ describe("buildNavItems", () => {
     expect(labels).not.toContain("Artists");
     const discover = items[1];
     expect(discover.label).toBe("Portfolio");
-    expect(discover.to).toBe("/profile");
+    expect(discover.to).toBe("/portfolio");
   });
 });

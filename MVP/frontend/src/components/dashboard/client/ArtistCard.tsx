@@ -88,11 +88,11 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
       className={`rounded-full border ${fullScreen ? "px-3 py-1.5 text-sm" : ""}`}
       style={fullScreen ? {
         borderColor: "var(--border)", 
-        background: "color-mix(in oklab, var(--elevated) 92%, transparent)", 
+        background: "color-mix(in srgb, var(--elevated) 92%, transparent)", 
         color: "var(--fg)"
       } : {
         borderColor: "var(--border)", 
-        background: "color-mix(in oklab, var(--elevated) 92%, transparent)", 
+        background: "color-mix(in srgb, var(--elevated) 92%, transparent)", 
         color: "var(--fg)",
         padding: 'clamp(0.375rem, 0.6vh + 0.15vw, 0.625rem) clamp(0.5rem, 0.8vh + 0.2vw, 0.875rem)',
         fontSize: 'clamp(0.6875rem, 1vh + 0.25vw, 0.875rem)'
@@ -141,10 +141,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
                 onError={() => setBgOk(false)}
               />
             ) : (
-              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in oklab, var(--bg) 85%, var(--fg) 15%), color-mix(in oklab, var(--bg) 78%, var(--fg) 22%))" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 85%, var(--fg) 15%), color-mix(in srgb, var(--bg) 78%, var(--fg) 22%))" }} />
             )}
-            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in oklab, var(--bg) 18%, transparent) 100%)" }} />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "clamp(3rem, 4vw, 4.5rem)", background: "linear-gradient(to top, color-mix(in oklab, var(--bg) 90%, transparent), transparent)" }} />
+            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in srgb, var(--bg) 18%, transparent) 100%)" }} />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "clamp(3rem, 4vw, 4.5rem)", background: "linear-gradient(to top, color-mix(in srgb, var(--bg) 90%, transparent), transparent)" }} />
             <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 ${fullScreen ? "-translate-y-1/2" : "-translate-y-[60%] sm:-translate-y-1/2"} grid place-items-center gap-2`}>
               <div 
                 className={`relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] ${fullScreen ? "" : ""}`} 
@@ -232,12 +232,12 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               className={`inline-flex items-center gap-1 rounded-lg ${fullScreen ? "px-4 py-2 text-base" : ""} font-medium transition border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30 hover:-translate-y-0.5`}
               style={fullScreen ? {
                 borderColor: "var(--border)", 
-                background: "color-mix(in oklab, var(--elevated) 88%, transparent)", 
+                background: "color-mix(in srgb, var(--elevated) 88%, transparent)", 
                 color: "var(--fg)", 
                 whiteSpace: "nowrap"
               } : {
                 borderColor: "var(--border)", 
-                background: "color-mix(in oklab, var(--elevated) 88%, transparent)", 
+                background: "color-mix(in srgb, var(--elevated) 88%, transparent)", 
                 color: "var(--fg)", 
                 whiteSpace: "nowrap",
                 padding: 'clamp(0.375rem, 0.8vh + 0.2vw, 0.75rem) clamp(0.625rem, 1.2vh + 0.3vw, 1rem)',
@@ -263,10 +263,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             <p 
               className={`${fullScreen ? "text-base" : ""} leading-snug w-full`} 
               style={fullScreen ? {
-                color: "color-mix(in oklab, var(--fg) 75%, transparent)",
+                color: "color-mix(in srgb, var(--fg) 75%, transparent)",
                 marginTop: '0.25rem'
               } : {
-                color: "color-mix(in oklab, var(--fg) 75%, transparent)",
+                color: "color-mix(in srgb, var(--fg) 75%, transparent)",
                 marginTop: 'clamp(0.125rem, 0.3vh + 0.1vw, 0.375rem)',
                 fontSize: 'clamp(0.5625rem, 0.85vh + 0.2vw, 0.8125rem)',
                 width: '100%',

@@ -288,7 +288,7 @@ export default function ClientDetailsStep({
         <div className="w-full h-full grid place-items-center">
             <div className="w-full max-w-2xl mx-auto grid gap-6 text-center justify-items-stretch">
                 <div className="w-full">
-                    <label className="mb-2 block text-sm text-white/70">Estimated budget (USD) <span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
+                    <label className="mb-2 block text-sm text-white/70 text-center">Estimated budget (USD) <span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
                     <div className="relative pb-4 pt-5">
                         <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/10" />
                         <div className="pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/40" style={{ left: `${leftPct}%`, right: `${rightPct}%` }} />
@@ -341,7 +341,7 @@ export default function ClientDetailsStep({
 
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-stretch text-center">
                     <div className="w-full">
-                        <label className="mb-1 block text-sm text-white/70">Preferred style<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
+                        <label className="mb-1 block text-sm text-white/70 text-center">Preferred style<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
                         <Select
                             value={prefStyle}
                             onValueChange={(v) => {
@@ -367,7 +367,7 @@ export default function ClientDetailsStep({
                     </div>
 
                     <div className="w-full">
-                        <label className="mb-1 block text-sm text-white/70">Availability<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
+                        <label className="mb-1 block text-sm text-white/70 text-center">Availability<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
                         <Select
                             value={prefAvail}
                             onValueChange={(v) => {
@@ -392,7 +392,7 @@ export default function ClientDetailsStep({
 
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-stretch text-center">
                     <div className="w-full">
-                        <label className="mb-1 block text-sm text-white/70">Placement<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
+                        <label className="mb-1 block text-sm text-white/70 text-center">Placement<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
                         <Select value={client.placement && client.placement !== "" ? client.placement : undefined} onValueChange={(v) => emit("placement", v)}>
                             <SelectTrigger className="h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-black justify-center text-center [&_span]:w-full [&_span]:text-center">
                                 <SelectValue placeholder="Select placement" className="text-center" />
@@ -408,7 +408,7 @@ export default function ClientDetailsStep({
                     </div>
 
                     <div className="w-full">
-                        <label className="mb-1 block text-sm text-white/70">Approximate size<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
+                        <label className="mb-1 block text-sm text-white/70 text-center">Approximate size<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
                         <Select value={client.size && client.size !== "" ? client.size : undefined} onValueChange={(v) => emit("size", v)}>
                             <SelectTrigger className="h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-black justify-center text-center [&_span]:w-full [&_span]:text-center">
                                 <SelectValue placeholder="Select size" className="text-center" />

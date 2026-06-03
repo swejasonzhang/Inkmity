@@ -465,7 +465,7 @@ export async function saveMyPortfolio(req, res) {
     const urls = (Array.isArray(req.body?.urls) ? req.body.urls : [])
       .map((u) => String(u || "").trim())
       .filter(Boolean)
-      .slice(0, 3);
+      .slice(0, 30);
     const Artist = mongoose.model("artist");
     const user = await Artist.findOneAndUpdate(
       { clerkId },

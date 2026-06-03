@@ -1,14 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getMe } from "@/api";
+import { getCachedRole, setCachedRole, clearCachedRole } from "@/lib/roleCache";
 
 type Role = "client" | "artist";
 
 export function useRole() {
   const { user, isSignedIn, isLoaded: clerkLoaded } = useUser();
   const { getToken } = useAuth();
-  const [role, setRole] = useState<Role>("client");
-  const [ready, setReady] = useState(false);
+  // Seed from the cached role so a refresh renders the correct view immediately
+  // (no flash of the default) while we still verify against the server.
+  const [role, setRole] = useState<Role>(() => getCachedRole() ?? "client");
+  const [ready, setReady] = useState<boolean>(() => getCachedRole() != null);
   const fetchedUserIdRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inFlightRef = useRef<Promise<void> | null>(null);
@@ -22,6 +25,7 @@ export function useRole() {
     if (!isSignedIn) {
       setRole("client");
       setReady(true);
+      clearCachedRole();
       fetchedUserIdRef.current = null;
       inFlightRef.current = null;
       return;
@@ -66,17 +70,21 @@ export function useRole() {
         if (cancelled || ac.signal.aborted) return;
         if (r) {
           setRole(r);
+          setCachedRole(r);
           fetchedUserIdRef.current = userId;
         } else {
           const md = (user?.publicMetadata?.role as string | undefined) || "";
           const fallbackRole = md === "artist" ? "artist" : "client";
           setRole(fallbackRole);
+          setCachedRole(fallbackRole);
           fetchedUserIdRef.current = userId;
         }
       } catch (e: any) {
         if (cancelled || ac.signal.aborted || e?.name === "AbortError") return;
         const md = (user?.publicMetadata?.role as string | undefined) || "";
-        setRole(md === "artist" ? "artist" : "client");
+        const fallbackRole = md === "artist" ? "artist" : "client";
+        setRole(fallbackRole);
+        setCachedRole(fallbackRole);
         fetchedUserIdRef.current = userId;
       } finally {
         inFlightRef.current = null;

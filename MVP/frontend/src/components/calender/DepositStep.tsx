@@ -219,7 +219,7 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
                 disabled={processing || isPaid}
                 className="flex-1 rounded-xl font-medium flex items-center justify-center gap-2"
                 style={{
-                  background: processing ? "color-mix(in oklab, var(--fg) 60%, transparent)" : (isLightTheme ? "#000000" : "#ffffff"),
+                  background: processing ? "color-mix(in srgb, var(--fg) 60%, transparent)" : (isLightTheme ? "#000000" : "#ffffff"),
                   color: processing ? "var(--fg)" : (isLightTheme ? "#ffffff" : "#000000"),
                   border: "1px solid transparent",
                 }}

@@ -81,6 +81,10 @@ jest.unstable_mockModule("@/hooks/useTheme", () => ({
     toggleTheme: jest.fn(),
     logoSrc: "/logo.png",
   }),
+  isThemedPath: (pathname: string) =>
+    ["/dashboard", "/profile", "/appointments", "/portfolio"].some((p) =>
+      pathname.startsWith(p)
+    ),
 }));
 
 jest.unstable_mockModule("@/lib/socket", () => ({
