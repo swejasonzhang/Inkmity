@@ -50,7 +50,6 @@ describe("SharedAccountStep", () => {
 
     const passwordInputs = screen.getAllByLabelText(/Password/i);
     const passwordInput = passwordInputs[0];
-    // Use getAllByLabelText since there are two toggle buttons (password + confirm password)
     const toggleButtons = screen.getAllByLabelText(/Show password/i);
     const toggleButton = toggleButtons[0];
 

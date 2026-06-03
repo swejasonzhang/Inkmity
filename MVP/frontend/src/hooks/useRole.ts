@@ -8,8 +8,6 @@ type Role = "client" | "artist";
 export function useRole() {
   const { user, isSignedIn, isLoaded: clerkLoaded } = useUser();
   const { getToken } = useAuth();
-  // Seed from the cached role so a refresh renders the correct view immediately
-  // (no flash of the default) while we still verify against the server.
   const [role, setRole] = useState<Role>(() => getCachedRole() ?? "client");
   const [ready, setReady] = useState<boolean>(() => getCachedRole() != null);
   const fetchedUserIdRef = useRef<string | null>(null);

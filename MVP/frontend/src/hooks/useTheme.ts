@@ -5,8 +5,6 @@ export const THEME_MS = 300;
 type Theme = "dark" | "light";
 const STORAGE_KEY = "inkmity-theme";
 
-// Routes that support light/dark theming (and persist the choice). These all
-// render inside #dashboard-scope. Public pages (incl. gallery) stay dark.
 export function isThemedPath(pathname: string): boolean {
   return (
     pathname.startsWith("/dashboard") ||
@@ -21,7 +19,6 @@ function readStored(): Theme {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v === "light" || v === "dark") return v;
-    // migrate from legacy key
     const legacy = localStorage.getItem("dashboard-theme");
     if (legacy === "light" || legacy === "dark") {
       localStorage.setItem(STORAGE_KEY, legacy);
@@ -54,17 +51,14 @@ export function useTheme() {
     themed ? readStored() : "dark"
   );
 
-  // Apply to DOM whenever the themed-ness of the route changes (no animation on mount).
   useEffect(() => {
     applyToDom(themed ? theme : "dark", false);
   }, [themed]);
 
-  // Reset to dark when leaving themed routes
   useEffect(() => {
     if (!themed && theme !== "dark") setTheme("dark");
   }, [themed]);
 
-  // Sync across tabs
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY) return;

@@ -191,7 +191,6 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
           }
 
           if (paymentIntent?.status === "succeeded") {
-            // Poll until the server confirms depositStatus === 'paid' (handles async 3DS flows)
             const token = await getToken();
             let pollAttempts = 0;
             const maxAttempts = 10;

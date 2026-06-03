@@ -8,7 +8,6 @@ const ClientProfile = lazy(() => import("@/components/dashboard/client/ClientPro
 
 const FADE_MS = 300;
 
-
 export default function Profile() {
   const { role, isLoaded } = useRole();
   const { theme } = useTheme();

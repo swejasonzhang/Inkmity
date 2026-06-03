@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-import ClientAppointmentHistory from "./ClientAppointmentHistory";
 
 interface Client {
     _id: string;
@@ -528,8 +527,8 @@ export default function ClientProfile() {
                     }
                 }}
             />
-            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 items-stretch">
-                <div className="group w-full h-full flex flex-col rounded-3xl transition relative p-6 lg:p-8 items-center overflow-hidden" style={{ background: "var(--card)" }}>
+            <div className="w-full max-w-3xl mx-auto flex flex-col h-full min-h-0 items-stretch">
+                <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative p-6 lg:p-8 items-center overflow-hidden" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-2 w-full max-w-2xl relative z-10 flex-1 min-h-0">
                         <div className="relative mb-8 w-full flex items-center justify-center group">
                             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
@@ -1016,9 +1015,6 @@ export default function ClientProfile() {
                         </div>
                     </div>
                     </div>
-                </div>
-                <div className="w-full h-full flex flex-col rounded-3xl transition relative p-6 lg:p-8 overflow-hidden" style={{ background: "var(--card)" }}>
-                    <ClientAppointmentHistory />
                 </div>
             </div>
         </div>

@@ -70,7 +70,6 @@ function useDevOverride() {
   return { override: isDev ? fromQuery : null };
 }
 
-
 const Dashboard: React.FC = () => {
   useSyncOnAuth();
   const { role, isLoaded, isSignedIn } = useRole();

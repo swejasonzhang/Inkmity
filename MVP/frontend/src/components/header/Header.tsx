@@ -9,11 +9,9 @@ import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems"
 import { Nav } from "./Nav";
 import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
-import { VisibilityDropdown, VisibilityStatus } from "./VisibilityDropdown";
-import { updateVisibility, API_URL } from "@/api";
+import { VisibilityStatus } from "./VisibilityDropdown";
+import { API_URL } from "@/api";
 import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername } from "@/lib/roleCache";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -78,7 +76,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const userLabelRef = useRef<string>(getCachedUsername() ?? "");
   useEffect(() => {
-    // While Clerk is still loading, keep the cached label (no "User" flash).
     if (!isLoaded) {
       return;
     }
@@ -184,38 +181,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     await signOut({ redirectUrl: "/login" });
   };
 
-  const handleVisibilityChange = async (status: VisibilityStatus) => {
-    setUserVisibility(status);
-    
-    try {
-      const token = await getToken();
-      
-      const socket = getSocket();
-      if (!socket.connected && user?.id) {
-        await connectSocket(getToken, user.id);
-      }
-      
-      updateVisibility(status, token || undefined).catch((error) => {
-        console.error("Failed to update visibility:", error);
-        fetch(`${API_BASE}/users/me`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          credentials: "include",
-        })
-          .then(res => res.ok ? res.json() : null)
-          .then(data => {
-            if (data?.visibility && ["online", "away", "invisible"].includes(data.visibility)) {
-              setUserVisibility(data.visibility as VisibilityStatus);
-            }
-          })
-          .catch(() => {
-            // Error handled silently
-          });
-      });
-    } catch (error) {
-      console.error("Failed to update visibility:", error);
-    }
-  };
-
   const getVisibilityDisplay = () => {
     const displayStatus = isOnline ? userVisibility : "invisible";
     if (displayStatus === "online") return { icon: Circle, label: "Online", color: "text-emerald-500", dot: "bg-emerald-500" };
@@ -226,19 +191,17 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const homeHref = "/landing";
   const navLocked = disableDashboardLink || !isSignedIn;
 
-  const onGate = useCallback<React.MouseEventHandler>(
-    (e) => {
-      e.preventDefault();
-      toast.info("Please sign in to continue.", {
-        containerId: "nav-gate",
-        position: "top-center",
-        theme: theme === "light" ? "light" : "dark",
-        toastId: "nav-gate",
-      });
-      navigate("/login", { state: { from: pathname } });
-    },
-    [navigate, pathname, theme]
-  );
+  const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
+  const tipTimer = useRef<number | null>(null);
+
+  const onGate = useCallback<React.MouseEventHandler>((e) => {
+    e.preventDefault();
+    const x = (e as React.MouseEvent).clientX || window.innerWidth / 2;
+    const y = (e as React.MouseEvent).clientY || 72;
+    setTip({ show: true, x, y });
+    if (tipTimer.current) window.clearTimeout(tipTimer.current);
+    tipTimer.current = window.setTimeout(() => setTip((t) => ({ ...t, show: false })), 2400);
+  }, []);
 
   const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(!!isSignedIn, onGate, userRole), [isSignedIn, onGate, userRole]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
@@ -265,7 +228,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const dropdownBtnClasses =
     "relative inline-flex h-11 md:h-12 items-center justify-start px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_srgb,var(--fg)_16%,transparent)] bg-[color-mix(in_srgb,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_srgb,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md";
 
-  const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const onDashMouseMove = (e: React.MouseEvent) => {
     if (!navLocked) return;
     setTip({ show: true, x: e.clientX, y: e.clientY });
@@ -357,8 +319,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const resolvedLogo = logoSrcProp ?? (!themed ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
 
-  // Logo + menu button share these exact classes in the header AND the open
-  // menu so nothing shifts when the menu opens.
   const mobileLogoCls = "h-16 sm:h-20 w-auto object-contain flex-shrink-0";
   const mobileBtnCls = "md:hidden grid place-items-center rounded-xl text-app hover:bg-white/10 active:scale-95 transition p-1";
   const mobileIconCls = "h-12 w-12 xs:h-14 xs:w-14";
@@ -376,7 +336,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             </button>
           </div>
           <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto">
-            <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} userVisibility={userVisibility} isOnline={isOnline} onVisibilityChange={handleVisibilityChange} />
+            <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
           </div>
         </div>
       </div>,
@@ -395,7 +355,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         </div>
 
         <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-hidden">
-          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} userVisibility={userVisibility} isOnline={isOnline} onVisibilityChange={handleVisibilityChange} />
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
         </div>
 
         <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
@@ -467,15 +427,13 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </div>
       </header>
 
-      <ToastContainer containerId="nav-gate" position="top-center" autoClose={2500} newestOnTop limit={1} />
-
       {navLocked && tip.show && (
-        <div className="fixed z-[2147483600] pointer-events-none" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 18px)" }}>
-          <div className="flex items-center gap-2 rounded-xl border border-app bg-card px-3.5 py-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)]">
-            <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-elevated p-1">
-              <Lock className="h-3 w-3 text-app/70" />
+        <div className="fixed z-[2147483600] pointer-events-none ink-gate-tip" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 18px)" }}>
+          <div className="flex items-center gap-2 rounded-xl border border-app bg-card px-4 py-2.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)] ring-1 ring-[color-mix(in_srgb,var(--fg)_25%,transparent)]">
+            <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-elevated p-1.5">
+              <Lock className="h-3.5 w-3.5 text-app" />
             </span>
-            <span className="text-xs font-semibold text-app whitespace-nowrap">Sign in to access this page</span>
+            <span className="text-[13px] font-bold text-app whitespace-nowrap">Sign in to access this page</span>
           </div>
         </div>
       )}
@@ -530,20 +488,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               </div>
             );
           })()}
-          <div className="h-px w-full bg-[color-mix(in_srgb,var(--fg)_14%,transparent)]" />
-          <div
-            className="px-4 py-3"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="text-[11px] uppercase tracking-wide opacity-50 mb-2 text-center">Status</div>
-            <VisibilityDropdown
-              currentStatus={userVisibility}
-              isOnline={isOnline}
-              onStatusChange={handleVisibilityChange}
-              triggerWidth={triggerWidth}
-            />
-          </div>
           <div className="h-px w-full bg-[color-mix(in_srgb,var(--fg)_14%,transparent)]" />
           <Link
             to="/profile"

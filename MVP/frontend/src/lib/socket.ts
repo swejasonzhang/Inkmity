@@ -18,7 +18,6 @@ export function getSocket() {
   return socket;
 }
 
-// Reference count: only connect on first subscriber, only disconnect on last.
 let subscriberCount = 0;
 
 export async function connectSocket(
@@ -27,7 +26,6 @@ export async function connectSocket(
 ) {
   subscriberCount++;
 
-  // If already connected with valid auth, skip re-initialising credentials.
   if (socket.connected) return;
 
   try {
@@ -41,6 +39,5 @@ export async function connectSocket(
 
 export function disconnectSocket() {
   subscriberCount = Math.max(0, subscriberCount - 1);
-  // Only physically disconnect when no subscribers remain.
   if (subscriberCount === 0 && socket.connected) socket.disconnect();
 }

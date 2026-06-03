@@ -83,7 +83,7 @@ export default function ArtistDashboard() {
 
   return (
     <div>
-      <div className="min-h-screen bg-app text-app flex flex-col overflow-y-auto md:overflow-hidden md:h-dvh">
+      <div className="h-dvh bg-app text-app flex flex-col overflow-hidden">
         <style>{`
           #middle-content::-webkit-scrollbar { display: none; }
           @media (max-width: 767px) {
@@ -99,9 +99,9 @@ export default function ArtistDashboard() {
           }
         `}</style>
         <Header />
-        <main className="artist-dashboard-main flex-1 flex flex-col md:min-h-0 md:overflow-hidden" style={{ padding: '0 16px', paddingBottom: 'clamp(3.5rem, 4.5vmin + 2.5vw, 6rem)', gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 md:flex-1 md:min-h-0" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
-            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[420px] md:min-h-0 md:flex-1">
+        <main className="artist-dashboard-main flex-1 flex flex-col min-h-0 overflow-hidden" style={{ padding: '0 16px', paddingBottom: 'clamp(3.5rem, 4.5vmin + 2.5vw, 6rem)', gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+          <div className="grid grid-cols-1 grid-rows-2 lg:grid-cols-2 lg:grid-rows-1 flex-1 min-h-0" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
+            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
               <CardHeader className="border-b border-app flex-shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                 <CardTitle className="w-full text-center font-extrabold" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.5rem)' }}>
                   {isArtist ? "Bookings Calendar" : "Read-only Calendar"}
@@ -127,7 +127,7 @@ export default function ArtistDashboard() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-[200px] md:min-h-0 md:flex-1">
+            <Card className="rounded-xl sm:rounded-2xl bg-card border border-app overflow-hidden flex flex-col min-h-0">
               <CardHeader className="border-b border-app flex-shrink-0" style={{ padding: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
                 <CardTitle className="w-full text-center font-extrabold" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.5rem)' }}>Overview</CardTitle>
               </CardHeader>

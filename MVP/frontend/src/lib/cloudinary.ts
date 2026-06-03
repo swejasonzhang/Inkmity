@@ -32,7 +32,6 @@ export async function uploadUnsigned(file: File): Promise<UploadResult> {
   return { url: json.secure_url, publicId: json.public_id };
 }
 
-/** Server-signed upload — for authenticated contexts (dashboard, messaging). */
 export async function getSignedUpload(kind: "client_ref" | "artist_portfolio", token?: string) {
   const qs = new URLSearchParams({ kind }).toString();
   const res = await fetch(`${API_BASE}/images/sign?${qs}`, {

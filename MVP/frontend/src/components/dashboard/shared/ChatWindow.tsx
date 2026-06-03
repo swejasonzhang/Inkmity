@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } fr
 import { Spinner } from "@/components/ui/spinner";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { Send, Image as ImageIcon, X, Calendar, MessageSquare } from "lucide-react";
+import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import { formatActivityStatus } from "@/utils/activity";
 import QuickBooking from "../client/QuickBooking";
@@ -123,6 +123,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [pendingImages, setPendingImages] = useState<Record<string, string[]>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [requestCount, setRequestCount] = useState(0);
+  const [mobileRequestsOpen, setMobileRequestsOpen] = useState(false);
   const messagesContainerRefMobile = useRef<HTMLDivElement | null>(null);
   const messagesContainerRefDesktop = useRef<HTMLDivElement | null>(null);
 
@@ -1156,101 +1157,76 @@ const ChatWindow: FC<ChatWindowProps> = ({
             </aside>
           )}
           <div className="flex-1 min-w-0 flex min-h-0">
-            <div className="w-full h-full flex flex-col md:hidden gap-3 overflow-y-auto">
-              {isArtist && (
-                <div className="flex-shrink-0 rounded-xl border border-app bg-card flex flex-col" style={{ maxHeight: "clamp(200px, 40vh, 400px)" }}>
-                  <div className="px-3 py-2.5 border-b border-app flex items-center justify-between flex-shrink-0">
-                    <div className="text-center flex-1">
-                      <div className="text-sm font-semibold">Message Requests</div>
-                      <div className="text-xs text-muted-foreground">Review new requests</div>
-                    </div>
+            <div className="w-full h-full flex md:hidden gap-2 min-h-0 relative">
+              <div className="w-[4.75rem] flex-shrink-0 flex flex-col gap-2 min-h-0">
+                {isArtist && (
+                  <button
+                    type="button"
+                    onClick={() => setMobileRequestsOpen((v) => !v)}
+                    className={`relative shrink-0 grid place-items-center gap-0.5 h-[4.75rem] rounded-xl border border-app transition ${mobileRequestsOpen ? "bg-elevated" : "bg-card hover:bg-elevated/60"}`}
+                    aria-label="Message requests"
+                    title="Message requests"
+                  >
+                    <Inbox size={20} />
+                    <span className="text-[9px] text-muted">Requests</span>
                     {requestCount > 0 && (
-                      <span className="rounded-full bg-primary text-primary-foreground text-[10px] px-2 py-0.5 font-semibold">
-                        {requestCount}
-                      </span>
+                      <span className="absolute -top-1 -right-1 grid place-items-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold">{requestCount}</span>
                     )}
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto">
-                    <RequestPanel
-                      authFetch={authFetch}
-                      onOpenConversation={(clerkId) => {
-                        setExpandedId(clerkId);
-                        try {
-                          window.dispatchEvent(new CustomEvent("ink:set-expanded-conversation", { detail: clerkId }));
-                        } catch { }
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-              <aside className="flex-shrink-0 rounded-xl border border-app bg-card overflow-x-auto">
-                <ul className="flex gap-2 p-2">
+                  </button>
+                )}
+                <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-app bg-card p-2 flex flex-col items-center gap-2">
                   {conversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     return (
-                      <li key={c.participantId} className="relative group flex items-center gap-2">
+                      <div key={c.participantId} className="relative group flex-shrink-0">
                         <button
                           onClick={() => {
                             if (expandedId !== c.participantId) setExpandedId(c.participantId);
                             onMarkRead(c.participantId);
                           }}
-                          className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${isActive ? "bg-elevated/60" : "hover:bg-elevated/40"}`}
+                          className={`grid place-items-center rounded-full p-0.5 transition ${isActive ? "ring-2 ring-app" : "opacity-75 hover:opacity-100"}`}
+                          title={displayNameFromUsername(c.username)}
                         >
-                          <div className="relative">
-                            {avatarFor(c, { border: false })}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                requestDelete(c.participantId);
-                              }}
-                              className="absolute opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90"
-                              style={{ top: 'clamp(-0.125rem, -0.5vw, -0.25rem)', right: 'clamp(-0.125rem, -0.5vw, -0.25rem)', width: 'clamp(1rem, 1.5vw, 1.25rem)', height: 'clamp(1rem, 1.5vw, 1.25rem)', fontSize: 'clamp(0.625rem, 0.9vw, 0.75rem)' }}
-                              aria-label="Delete conversation"
-                              title="Delete conversation"
-                            >
-                              <X size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                            </button>
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-xs whitespace-nowrap">{displayNameFromUsername(c.username)}</span>
-                            <span className="text-[10px] text-muted-foreground truncate">
-                              {formatActivityStatus(c.isOnline, c.lastActive)}
-                            </span>
-                          </div>
+                          {avatarFor(c, { border: false })}
                         </button>
-                      </li>
+                        {c.isOnline && <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-card pointer-events-none" />}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            requestDelete(c.participantId);
+                          }}
+                          className="absolute -top-1 -right-1 grid place-items-center h-4 w-4 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition shadow"
+                          aria-label="Delete conversation"
+                          title="Delete conversation"
+                        >
+                          <X size={10} strokeWidth={2.5} />
+                        </button>
+                      </div>
                     );
                   })}
-                </ul>
-              </aside>
-              <div className="flex-1 min-h-0 w-full">
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 min-h-0">
                   <section className="h-full rounded-xl border border-app bg-card flex flex-col min-h-0">
                     <header className="px-3 py-2.5 border-b border-app flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {conversations.length > 0 ? (
-                          <Select
-                            value={activeConv?.participantId || conversations[0]?.participantId || ""}
-                            onValueChange={(val) => {
-                              setExpandedId(val);
-                              onMarkRead(val);
-                            }}
-                          >
-                            <SelectTrigger className="h-9 focus:outline-none flex-1 max-w-full">
-                              <SelectValue placeholder="Select conversation">
-                                {activeConv ? displayNameFromUsername(activeConv.username) : "Select conversation"}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[50vh]">
-                              {conversations.map(c => (
-                                <SelectItem key={c.participantId} value={c.participantId}>
-                                  {displayNameFromUsername(c.username)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2 min-w-0 flex-1 w-full">
+                            {activeConv && avatarFor(activeConv, { border: false })}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-sm font-semibold text-app truncate">
+                                {activeConv ? displayNameFromUsername(activeConv.username) : "Select a conversation"}
+                              </span>
+                              {activeConv && (
+                                <span className="text-[10px] text-muted-foreground truncate">
+                                  {formatActivityStatus(activeConv.isOnline, activeConv.lastActive)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         ) : (
                           <div className="text-sm text-muted-foreground">
-                            {isClient 
+                            {isClient
                               ? "No conversations currently. Please click an artist to start one."
                               : "No conversations with a client just yet, they will reach out to you."}
                           </div>
@@ -1341,7 +1317,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           el.scrollTop = el.scrollHeight;
                         }
                       }} 
-                      className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-3 overscroll-contain min-h-0"
+                      className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
                     >
                       {!activeConv ? (
                         <div className="flex items-center justify-center h-full">
@@ -1387,7 +1363,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           return (
                             <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                               <div
-                                className={`px-3.5 py-2.5 rounded-2xl w-fit break-words whitespace-pre-wrap border text-sm overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
+                                className={`px-3 py-1.5 rounded-2xl w-fit break-words whitespace-pre-wrap border text-[13px] leading-snug overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
                                 style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
                               >
                                 <div className="whitespace-pre-wrap break-words">
@@ -1488,7 +1464,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       </div>
                     )}
                     <footer className="p-2 border-t border-app flex-shrink-0">
-                      <div className="flex items-stretch gap-2">
+                      <div className="flex items-center gap-2">
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -1502,54 +1478,60 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           type="button"
                           onClick={openUpload}
                           disabled={(needsApproval && !isClient) || isMessagingDisabled || uploading}
-                          className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60 rounded-lg"
-                          style={{ width: 'clamp(2rem, 2.5vw, 2.5rem)', height: 'clamp(2rem, 2.5vw, 2.5rem)' }}
+                          className="shrink-0 grid place-items-center h-10 w-10 rounded-full bg-elevated hover:bg-elevated/70 text-app disabled:opacity-60 transition"
                           aria-label="Add images"
                           title="Add images"
                         >
-                          {uploading ? (
-                            <Spinner size={16} className="text-[color:var(--fg)]" />
-                          ) : (
-                            <ImageIcon size={undefined} style={{ width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
-                          )}
+                          {uploading ? <Spinner size={16} className="text-[color:var(--fg)]" /> : <ImageIcon size={16} />}
                         </button>
-                        <div className="flex-1 flex rounded-lg overflow-hidden border border-app bg-card transition focus-within:ring-1 focus-within:ring-app/60">
-                          <input
-                            type="text"
-                            value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
-                            onChange={e =>
-                              activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
-                            }
-                            className="flex-1 p-2 text-sm bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
-                            placeholder={
-                              isMessagingDisabled
-                                ? "Messaging disabled - artist declined your request"
-                                : needsApproval && !isClient
-                                  ? "Approve to enable messaging"
-                                  : status === "declined" && !isClient
-                                    ? "Messaging locked"
-                                    : "Type a message"
-                            }
-                            disabled={(needsApproval && !isClient) || isMessagingDisabled}
-                            onKeyDown={e => {
-                              if ((needsApproval && !isClient) || isMessagingDisabled) return;
-                              if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => activeConv && (!needsApproval || isClient) && !isMessagingDisabled && handleSend(activeConv.participantId)}
-                            disabled={(needsApproval && !isClient) || isMessagingDisabled}
-                            className="w-9 h-9 flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
-                            aria-label="Send message"
-                          >
-                            <Send size={undefined} style={{ width: 'clamp(0.875rem, 1.2vw, 1rem)', height: 'clamp(0.875rem, 1.2vw, 1rem)' }} />
-                          </button>
-                        </div>
+                        <input
+                          type="text"
+                          value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
+                          onChange={e =>
+                            activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
+                          }
+                          className="flex-1 min-w-0 h-10 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-app/60"
+                          placeholder={
+                            isMessagingDisabled
+                              ? "Messaging disabled - artist declined your request"
+                              : needsApproval && !isClient
+                                ? "Approve to enable messaging"
+                                : status === "declined" && !isClient
+                                  ? "Messaging locked"
+                                  : "Type a message"
+                          }
+                          disabled={(needsApproval && !isClient) || isMessagingDisabled}
+                          onKeyDown={e => {
+                            if ((needsApproval && !isClient) || isMessagingDisabled) return;
+                            if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => activeConv && (!needsApproval || isClient) && !isMessagingDisabled && handleSend(activeConv.participantId)}
+                          disabled={(needsApproval && !isClient) || isMessagingDisabled}
+                          className="shrink-0 grid place-items-center h-10 w-10 rounded-full bg-neutral-700 hover:bg-neutral-600 text-white disabled:opacity-50 transition active:scale-95"
+                          aria-label="Send message"
+                        >
+                          <Send size={16} />
+                        </button>
                       </div>
                     </footer>
                   </section>
               </div>
+              {isArtist && mobileRequestsOpen && (
+                <div className="absolute inset-0 z-20 rounded-xl border border-app bg-card flex flex-col">
+                  <div className="px-3 py-2.5 border-b border-app flex items-center justify-between">
+                    <span className="text-sm font-semibold">Message requests</span>
+                    <button type="button" onClick={() => setMobileRequestsOpen(false)} className="grid place-items-center h-8 w-8 rounded-full hover:bg-elevated" aria-label="Close requests">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                    <RequestPanel authFetch={authFetch} onOpenConversation={(clerkId) => { setExpandedId(clerkId); setMobileRequestsOpen(false); try { window.dispatchEvent(new CustomEvent("ink:set-expanded-conversation", { detail: clerkId })); } catch { } }} />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="hidden md:grid gap-3 h-full min-h-0 flex-1 w-full" style={{ gridTemplateColumns: 'clamp(180px, 15vw, 260px) minmax(0, 1fr)' }}>
               <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto">
@@ -1747,7 +1729,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       el.scrollTop = el.scrollHeight;
                     }
                   }} 
-                  className="flex-1 overflow-y-auto px-3 md:px-4 py-3 flex flex-col gap-3 overscroll-contain min-h-0"
+                  className="flex-1 overflow-y-auto px-3 md:px-4 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
                 >
                   {(!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
                     <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
@@ -1783,8 +1765,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       return (
                         <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`px-3.5 py-2.5 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-relaxed overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
-                            style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.875rem, 1vw, 0.9375rem)' }}
+                            className={`px-3 py-1.5 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-snug overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
+                            style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.8125rem, 0.9vw, 0.875rem)' }}
                           >
                             <div className="whitespace-pre-wrap break-words">
                               {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => 
@@ -1880,7 +1862,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   </div>
                 )}
                 <footer className="p-2.5 md:p-3 border-t border-app">
-                  <div className="flex items-stretch gap-2">
+                  <div className="flex items-center gap-2">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1894,53 +1876,45 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       type="button"
                       onClick={openUpload}
                       disabled={(needsApproval && !isClient) || isMessagingDisabled || uploading}
-                      className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
-                      style={{ width: 'clamp(2.25rem, 3vw, 2.75rem)', height: 'clamp(2.25rem, 3vw, 2.75rem)' }}
+                      className="shrink-0 grid place-items-center h-11 w-11 rounded-full bg-elevated hover:bg-elevated/70 text-app disabled:opacity-60 transition"
                       aria-label="Add images"
                       title="Add images"
                     >
-                      {uploading ? (
-                        <Spinner size={18} className="text-app" />
-                      ) : (
-                        <ImageIcon size={18} />
-                      )}
+                      {uploading ? <Spinner size={18} className="text-app" /> : <ImageIcon size={18} />}
                     </button>
-                    <div className="flex-1 flex rounded-xl overflow-hidden border border-app bg-card transition focus-within:ring-1 focus-within:ring-app/60">
-                      <input
-                        type="text"
-                        value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
-                        onChange={e =>
-                          activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
-                        }
-                        className="flex-1 p-3 md:p-3 bg-transparent text-app placeholder:text-muted-foreground focus:outline-none"
-                        placeholder={
-                          isMessagingDisabled
-                            ? "Messaging disabled - artist declined your request"
-                            : needsApproval && !isClient
-                              ? isArtist
-                                ? "Approve to enable messaging"
-                                : "Waiting for approval"
-                              : status === "declined" && !isClient
-                                ? "Messaging locked"
-                                : "Type a message"
-                        }
-                        disabled={(needsApproval && !isClient) || isMessagingDisabled}
-                        onKeyDown={e => {
-                          if ((needsApproval && !isClient) || isMessagingDisabled) return;
-                          if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => activeConv && (!needsApproval || isClient) && !isMessagingDisabled && handleSend(activeConv.participantId)}
-                        disabled={(needsApproval && !isClient) || isMessagingDisabled}
-                        className="flex items-center justify-center bg-elevated hover:bg-elevated/80 text-app disabled:opacity-60"
-                      style={{ width: 'clamp(2.25rem, 3vw, 2.75rem)', height: 'clamp(2.25rem, 3vw, 2.75rem)' }}
-                        aria-label="Send message"
-                      >
-                        <Send size={18} />
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={activeConv ? messageInput[activeConv.participantId] || "" : ""}
+                      onChange={e =>
+                        activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
+                      }
+                      className="flex-1 min-w-0 h-11 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-app/60"
+                      placeholder={
+                        isMessagingDisabled
+                          ? "Messaging disabled - artist declined your request"
+                          : needsApproval && !isClient
+                            ? isArtist
+                              ? "Approve to enable messaging"
+                              : "Waiting for approval"
+                            : status === "declined" && !isClient
+                              ? "Messaging locked"
+                              : "Type a message"
+                      }
+                      disabled={(needsApproval && !isClient) || isMessagingDisabled}
+                      onKeyDown={e => {
+                        if ((needsApproval && !isClient) || isMessagingDisabled) return;
+                        if (e.key === "Enter" && activeConv) handleSend(activeConv.participantId);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => activeConv && (!needsApproval || isClient) && !isMessagingDisabled && handleSend(activeConv.participantId)}
+                      disabled={(needsApproval && !isClient) || isMessagingDisabled}
+                      className="shrink-0 grid place-items-center h-11 w-11 rounded-full bg-neutral-700 hover:bg-neutral-600 text-white disabled:opacity-50 transition active:scale-95"
+                      aria-label="Send message"
+                    >
+                      <Send size={18} />
+                    </button>
                   </div>
                 </footer>
               </section>

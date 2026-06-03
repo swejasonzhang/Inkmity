@@ -10,7 +10,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-import ArtistAppointmentHistory from "./ArtistAppointmentHistory";
 
 const PLACEMENT_OPTIONS = [
     "Forearm",
@@ -243,7 +242,7 @@ export default function ArtistProfile() {
         if (depositPolicySaving) return;
         const parsed = Number(depositDollars);
         const cents = Math.round((isNaN(parsed) ? 0 : parsed) * 100);
-        const enforced = Math.max(5000, cents); // tattoo-session deposits are never optional
+        const enforced = Math.max(5000, cents);
         try {
             setDepositPolicySaving(true);
             const token = await getToken();
@@ -586,12 +585,6 @@ export default function ArtistProfile() {
     const currentBaseRate = editedArtist.baseRate ?? artist?.baseRate ?? 0;
     const currentRestrictedPlacements = editedArtist.restrictedPlacements ?? artist?.restrictedPlacements ?? [];
 
-    const portfolioPreview = useMemo(() => {
-        const recentWorks = artist?.portfolioImages || [];
-        return recentWorks.filter(Boolean).slice(0, 3);
-    }, [artist?.portfolioImages]);
-    const pastWorks = artist?.pastWorks || [];
-    const recentWorks = artist?.portfolioImages || [];
     const healedWorks = artist?.healedWorks || [];
     const sketches = artist?.sketches || [];
 
@@ -662,8 +655,8 @@ export default function ArtistProfile() {
                     files.forEach(file => handleImageUpload(file, "portfolio"));
                 }}
             />
-            <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 items-stretch">
-                <div className="group w-full h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8 items-center justify-center" style={{ background: "var(--card)" }}>
+            <div className="w-full max-w-3xl mx-auto flex flex-col h-full min-h-0 items-stretch">
+                <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative overflow-hidden p-8 items-center justify-center" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 overflow-y-auto">
 
                     <div className="relative mb-8 w-full flex items-center justify-center group">
@@ -1035,57 +1028,6 @@ export default function ArtistProfile() {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl p-4 border backdrop-blur-sm w-full max-w-2xl mb-4"
-                        style={{
-                            background: "color-mix(in srgb, var(--card) 80%, transparent)",
-                            borderColor: "var(--border)"
-                        }}>
-                        <div className="flex items-center justify-between mb-3">
-                            <Label className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-                                Recent Works {recentWorks.length > 0 && `(${recentWorks.length})`}
-                            </Label>
-                            <Button
-                                onClick={() => {
-                                    setEditedPastWorks([...pastWorks]);
-                                    setEditedRecentWorks([...recentWorks]);
-                                    setEditedSketches([...sketches]);
-                                    setPortfolioCategory("recentWorks");
-                                    setPortfolioModalOpen(true);
-                                }}
-                                size="sm"
-                                variant="outline"
-                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                            >
-                                <Edit2 className="h-4 w-4 mr-2" />
-                                Manage Portfolio
-                            </Button>
-                        </div>
-                        {portfolioPreview.length > 0 ? (
-                            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
-                                {portfolioPreview.map((src, i) => (
-                                    <div
-                                        key={`${src}-${i}`}
-                                        className="relative aspect-square w-full overflow-hidden rounded-xl border"
-                                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                                    >
-                                        <img
-                                            src={src}
-                                            alt={`Work ${i + 1}`}
-                                            className="h-full w-full object-cover"
-                                            loading={i < 3 ? "eager" : "lazy"}
-                                            decoding="async"
-                                            referrerPolicy="no-referrer"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-sm text-center py-8" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
-                                No portfolio images yet. Click "Manage Portfolio" to add images.
-                            </div>
-                        )}
-                    </div>
-
                     <div className="flex flex-col gap-4 pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
                         <div className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg border" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 50%, transparent)", width: "100%" }}>
                             <Label htmlFor="visible" className="text-sm font-medium cursor-pointer" style={{ color: "var(--fg)" }}>
@@ -1425,9 +1367,6 @@ export default function ArtistProfile() {
                         </div>
                     )}
                     </div>
-                </div>
-                <div className="w-full h-full flex flex-col rounded-3xl transition relative overflow-hidden p-8" style={{ background: "var(--card)" }}>
-                    <ArtistAppointmentHistory />
                 </div>
             </div>
         </div>
