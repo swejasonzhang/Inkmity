@@ -33,9 +33,9 @@ const desktopActive = "bg-elevated border border-app text-app shadow-sm";
 const desktopIdle = "border border-transparent text-app/55 hover:text-app hover:bg-elevated/50";
 
 const mobileBase =
-    "group relative w-full max-w-sm inline-flex items-center gap-4 px-5 py-3.5 rounded-2xl text-xl font-extrabold uppercase tracking-wide transition-all duration-200";
-const mobileActive = "bg-white/10 ring-1 ring-white/20";
-const mobileIdle = "hover:bg-white/[0.06] active:scale-[0.98]";
+    "group relative w-full max-w-sm inline-flex items-center gap-4 px-5 py-3.5 rounded-2xl text-xl font-extrabold uppercase tracking-wide transition-all duration-200 bg-black/45 backdrop-blur-sm";
+const mobileActive = "bg-black/65 ring-1 ring-white/25";
+const mobileIdle = "hover:bg-black/60 active:scale-[0.98]";
 
 export function Nav({
     items,
@@ -92,7 +92,7 @@ export function Nav({
                 })}
             </nav>
 
-            <nav className="md:hidden flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center gap-1.5 py-6 w-full px-6">
+            <nav className="md:hidden flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-evenly gap-2 py-6 w-full px-6">
                 {items.map((item) => {
                     const active = isActive(item.to);
                     const isDisabled = item.to === "#" || item.disabled;

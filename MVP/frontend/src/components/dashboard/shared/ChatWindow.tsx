@@ -953,7 +953,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
             >
               <h3 className="text-base font-semibold mb-2">Delete conversation?</h3>
               <p className="text-muted-foreground mb-4 text-sm">
-                This action cannot be undone. The conversation and contact with this {isClient ? "artist" : "client"} will be removed, and all further communication will be deleted. You will only be able to reach out again if they initiate contact with you.
+                This can't be undone — the conversation and your contact with this {isClient ? "artist" : "client"} will be permanently deleted and <span className="font-semibold text-app">cannot be recovered</span>. You'll only be able to reach out again if they message you first.
               </p>
               {deleteError && <div className="mb-3 text-sm text-destructive">{deleteError}</div>}
               <div className="flex justify-center gap-3">
@@ -1133,7 +1133,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         ref={appRef}
         className={`h-full w-full min-h-0 flex flex-col ${overlayActive ? "pointer-events-none" : ""}`}
       >
-        <div className="w-full flex-1 min-h-0 bg-card rounded-2xl p-3 flex gap-3">
+        <div className="w-full flex-1 min-h-0 bg-card rounded-2xl p-1.5 md:p-3 flex gap-2 md:gap-3">
           {isArtist && (
             <aside
               className="hidden md:flex flex-col border border-app bg-card h-full shrink-0 rounded-xl min-h-0"
@@ -1158,23 +1158,22 @@ const ChatWindow: FC<ChatWindowProps> = ({
           )}
           <div className="flex-1 min-w-0 flex min-h-0">
             <div className="w-full h-full flex md:hidden gap-2 min-h-0 relative">
-              <div className="w-[4.75rem] flex-shrink-0 flex flex-col gap-2 min-h-0">
+              <div className="w-12 flex-shrink-0 flex flex-col items-center gap-2 min-h-0">
                 {isArtist && (
                   <button
                     type="button"
                     onClick={() => setMobileRequestsOpen((v) => !v)}
-                    className={`relative shrink-0 grid place-items-center gap-0.5 h-[4.75rem] rounded-xl border border-app transition ${mobileRequestsOpen ? "bg-elevated" : "bg-card hover:bg-elevated/60"}`}
+                    className={`relative shrink-0 grid place-items-center h-10 w-10 rounded-full border border-app transition ${mobileRequestsOpen ? "bg-elevated" : "bg-card hover:bg-elevated/60"}`}
                     aria-label="Message requests"
                     title="Message requests"
                   >
-                    <Inbox size={20} />
-                    <span className="text-[9px] text-muted">Requests</span>
+                    <Inbox size={16} />
                     {requestCount > 0 && (
-                      <span className="absolute -top-1 -right-1 grid place-items-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold">{requestCount}</span>
+                      <span className="absolute -top-1 -right-1 grid place-items-center min-w-[1rem] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-semibold">{requestCount}</span>
                     )}
                   </button>
                 )}
-                <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-app bg-card p-2 flex flex-col items-center gap-2">
+                <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-app bg-card p-1.5 flex flex-col items-center gap-2 w-full">
                   {conversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     return (
@@ -1184,22 +1183,22 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             if (expandedId !== c.participantId) setExpandedId(c.participantId);
                             onMarkRead(c.participantId);
                           }}
-                          className={`grid place-items-center rounded-full p-0.5 transition ${isActive ? "ring-2 ring-app" : "opacity-75 hover:opacity-100"}`}
+                          className={`grid place-items-center h-10 w-10 rounded-full border overflow-hidden transition ${isActive ? "border-app ring-2 ring-app" : "border-app hover:bg-elevated/60"}`}
                           title={displayNameFromUsername(c.username)}
                         >
                           {avatarFor(c, { border: false })}
                         </button>
-                        {c.isOnline && <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-card pointer-events-none" />}
+                        {c.isOnline && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card pointer-events-none" />}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             requestDelete(c.participantId);
                           }}
-                          className="absolute -top-1 -right-1 grid place-items-center h-4 w-4 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition shadow"
+                          className="absolute -top-1.5 -right-1.5 grid place-items-center h-5 w-5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition shadow leading-none"
                           aria-label="Delete conversation"
                           title="Delete conversation"
                         >
-                          <X size={10} strokeWidth={2.5} />
+                          <X size={12} strokeWidth={2.5} className="block" />
                         </button>
                       </div>
                     );

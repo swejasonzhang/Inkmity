@@ -61,7 +61,7 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                 ? "Spend less time on admin and more on the art. Inkmity handles bookings, deposits, and intake so you can focus on creating."
                 : "We connect clients with artists through clear expectations, transparent pricing, and respectful collaboration.";
     const valueProps =
-        mode === "login" ? loginProps : role === "artist" ? artistProps : clientProps;
+        (mode === "login" ? loginProps : role === "artist" ? artistProps : clientProps).slice(0, 3);
     const steps = role === "artist" ? artistSteps : clientSteps;
 
     return (
@@ -134,18 +134,6 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                         </motion.div>
                     )}
 
-                    {mode === "signup" && (
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: delayed ? 1 : 0 }}
-                            transition={{ duration: 0.45, ease: "easeOut", delay: 0.5 }}
-                            className="mt-4 text-fluid-xs text-subtle/80 leading-snug max-w-sm select-none"
-                        >
-                            {role === "artist"
-                                ? "Built for US artists · You set your terms · Cancel anytime"
-                                : "US-based artists · You control what’s shared · Cancel anytime"}
-                        </motion.p>
-                    )}
                 </div>
             </div>
         </motion.div>

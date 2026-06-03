@@ -531,7 +531,7 @@ export default function ClientProfile() {
                 <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative p-6 lg:p-8 items-center overflow-hidden" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
                     <div className="flex flex-col items-center justify-center text-center gap-2 w-full max-w-2xl relative z-10 flex-1 min-h-0">
                         <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-6">My Profile</h2>
-                        <div className="relative mb-8 w-full flex items-center justify-center group">
+                        <div className="relative mb-8 w-full flex items-center justify-center">
                             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                                 {bgOk && currentCoverImage ? (
                                     <img
@@ -547,7 +547,7 @@ export default function ClientProfile() {
                                 )}
                                 <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in srgb, var(--bg) 18%, transparent) 100%)" }} />
                             </div>
-                            <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
+                            <div className="group relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
                                 {currentProfileImage ? (
                                     <img
                                         src={currentProfileImage}
@@ -686,29 +686,29 @@ export default function ClientProfile() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[2px] w-full max-w-6xl">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-[2px] w-full max-w-6xl">
                                     <div className="w-full flex flex-col items-center">
-                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-[110px]" style={{ color: "var(--fg)" }}>
+                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-full" style={{ color: "var(--fg)" }}>
                                             City
                                         </Label>
-                                        <div className="w-[110px]">
+                                        <div className="w-full">
                                             <Select
                                                 value={currentLocation}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
-                                                        width: "110px",
+                                                        width: "100%",
                                                         overflow: "hidden"
                                                     }}
                                                 >
                                                     <SelectValue
-                                                        placeholder="Select city"
+                                                        placeholder="City"
                                                         className="!flex !items-center !justify-center !text-center !m-0 !px-0 !w-full !whitespace-nowrap !text-xs !overflow-hidden !text-ellipsis"
                                                         style={{
                                                             textAlign: "center",
@@ -726,7 +726,7 @@ export default function ClientProfile() {
                                                         }}
                                                     />
                                                 </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[110px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "110px", minWidth: "110px", maxWidth: "110px" }}>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-full max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ minWidth: "12rem", maxWidth: "min(90vw, 20rem)" }}>
                                                     {cities.map((city) => (
                                                         <SelectItem key={city} value={city} className="!px-2 !py-2 !pr-6 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0 text-xs" style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.5rem" }}>{city}</SelectItem>
                                                     ))}
@@ -736,22 +736,22 @@ export default function ClientProfile() {
                                     </div>
 
                                     <div className="w-full flex flex-col items-center">
-                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-[110px]" style={{ color: "var(--fg)" }}>
+                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-full" style={{ color: "var(--fg)" }}>
                                             Piece Type
                                         </Label>
-                                        <div className="w-[110px]">
+                                        <div className="w-full">
                                             <Select
                                                 value={currentPieceType || "none"}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
-                                                        width: "110px",
+                                                        width: "100%",
                                                         overflow: "hidden"
                                                     }}
                                                 >
@@ -774,7 +774,7 @@ export default function ClientProfile() {
                                                         }}
                                                     />
                                                 </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[110px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "110px", minWidth: "110px", maxWidth: "110px" }}>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-full max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ minWidth: "12rem", maxWidth: "min(90vw, 20rem)" }}>
                                                     <SelectItem value="none" className="!px-2 !py-2 !pr-6 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0 text-xs" style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.5rem" }}>No preference</SelectItem>
                                                     {PIECE_TYPE_OPTIONS.map((p) => (
                                                         <SelectItem key={p} value={p} className="!px-2 !py-2 !pr-6 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0 text-xs" style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.5rem" }}>{p}</SelectItem>
@@ -785,22 +785,22 @@ export default function ClientProfile() {
                                     </div>
 
                                     <div className="w-full flex flex-col items-center">
-                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-[110px]" style={{ color: "var(--fg)" }}>
+                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-full" style={{ color: "var(--fg)" }}>
                                             Placement
                                         </Label>
-                                        <div className="w-[110px]">
+                                        <div className="w-full">
                                             <Select
                                                 value={currentPlacement || "none"}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, placement: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
-                                                        width: "110px",
+                                                        width: "100%",
                                                         overflow: "hidden"
                                                     }}
                                                 >
@@ -823,7 +823,7 @@ export default function ClientProfile() {
                                                         }}
                                                     />
                                                 </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[110px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "110px", minWidth: "110px", maxWidth: "110px" }}>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-full max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ minWidth: "12rem", maxWidth: "min(90vw, 20rem)" }}>
                                                     <SelectItem value="none" className="!px-2 !py-2 !pr-6 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0 text-xs" style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.5rem" }}>No preference</SelectItem>
                                                     {PLACEMENT_OPTIONS.map((p) => (
                                                         <SelectItem key={p} value={p} className="!px-2 !py-2 !pr-6 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0 text-xs" style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.5rem" }}>{p}</SelectItem>
@@ -834,22 +834,22 @@ export default function ClientProfile() {
                                     </div>
 
                                     <div className="w-full flex flex-col items-center">
-                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-[110px]" style={{ color: "var(--fg)" }}>
+                                        <Label className="text-xs font-medium mb-3 block text-center w-full max-w-full" style={{ color: "var(--fg)" }}>
                                             Size
                                         </Label>
-                                        <div className="w-[110px]">
+                                        <div className="w-full">
                                             <Select
                                                 value={currentSize || "none"}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, size: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-[110px] px-2 overflow-hidden"
+                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
                                                         position: "relative",
                                                         padding: "0.5rem",
-                                                        width: "110px",
+                                                        width: "100%",
                                                         overflow: "hidden"
                                                     }}
                                                 >
@@ -872,7 +872,7 @@ export default function ClientProfile() {
                                                         }}
                                                     />
                                                 </SelectTrigger>
-                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[110px] max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ width: "110px", minWidth: "110px", maxWidth: "110px" }}>
+                                                <SelectContent className="bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-full max-h-64 overflow-y-auto" position="popper" side="bottom" align="start" style={{ minWidth: "12rem", maxWidth: "min(90vw, 20rem)" }}>
                                                     <SelectItem value="none" className="!px-2 !py-2 !pr-6 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0 text-xs" style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.5rem" }}>No preference</SelectItem>
                                                     {SIZE_OPTIONS.map((s) => (
                                                         <SelectItem key={s.value} value={s.value} className="!px-2 !py-2 !pr-6 justify-center text-center items-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0 text-xs" style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.5rem" }}>{s.label}</SelectItem>

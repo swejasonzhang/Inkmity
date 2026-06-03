@@ -5,6 +5,7 @@ import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
+import GateNotice from "@/components/access/GateNotice";
 import SignupFormCard from "@/components/access/SignupFormCard";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
@@ -420,12 +421,13 @@ export default function SignUp() {
   const successSubtitle = successType === "already" ? "Redirecting now" : "Redirecting to Dashboard.";
 
   return (
-    <div className="relative min-h-svh flex flex-col text-app">
+    <div className="relative h-svh overflow-hidden flex flex-col text-app">
       <ToastContainer position="top-center" theme="dark" newestOnTop closeOnClick hideProgressBar style={{ zIndex: 2147483647 }} />
       <VideoBackground />
       <Header />
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8 py-6 sm:py-10" style={{ paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))" }}>
-          <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-3xl mx-auto">
+      <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 md:px-8 pt-2 pb-6 sm:pb-8" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
+          <motion.div variants={container} initial="hidden" animate="show" className="relative w-full max-w-2xl mx-auto">
+            <GateNotice />
             <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId ? "" : "justify-center"}`}>
               {showInfo && !showSuccess && authLoaded && !userId && (
                 <motion.div

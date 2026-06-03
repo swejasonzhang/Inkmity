@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { validateEmail } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
+import GateNotice from "@/components/access/GateNotice";
 import LoginFormCard from "@/components/access/LoginFormCard";
 import OAuthButtons from "@/components/access/OAuthButtons";
 import { Button } from "@/components/ui/button";
@@ -309,7 +310,8 @@ export default function Login() {
       <VideoBackground />
       <Header />
       <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 md:px-8 py-4">
-          <motion.div variants={container} initial="hidden" animate="show" className="w-full max-w-3xl mx-auto">
+          <motion.div variants={container} initial="hidden" animate="show" className="relative w-full max-w-3xl mx-auto">
+            <GateNotice />
             <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !isSignedIn ? "" : "justify-center"}`}>
               {showInfo && !showSuccess && authLoaded && !isSignedIn && (
                 <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="hidden sm:flex w-full sm:w-1/2">
