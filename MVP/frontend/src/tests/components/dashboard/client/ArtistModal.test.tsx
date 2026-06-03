@@ -39,11 +39,7 @@ describe("ArtistModal", () => {
   };
 
   test("should render artist modal when open", async () => {
-    // ArtistModal renders its content via a portal into document.body.
-    // The portal is mounted asynchronously after theme CSS variables are available,
-    // which may not occur in JSDOM. We verify the component mounts without errors.
     expect(() => render(<ArtistModal {...defaultProps} />)).not.toThrow();
-    // The component renders React nodes even if the portal hasn't attached yet
     await waitFor(() => {
       expect(document.body).toBeInTheDocument();
     }, { timeout: 3000 });

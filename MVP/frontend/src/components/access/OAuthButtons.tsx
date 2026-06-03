@@ -28,8 +28,6 @@ export default function OAuthButtons({ mode }: Props) {
 
     const ready = mode === "login" ? signInLoaded : signUpLoaded;
 
-    // Only show providers actually enabled on the Clerk instance (fall back to all
-    // if the environment can't be read, so we never hide everything by mistake).
     const enabled = (() => {
         try {
             const social = (clerk as any)?.__unstable__environment?.userSettings?.social;
@@ -42,7 +40,7 @@ export default function OAuthButtons({ mode }: Props) {
                 if (set.size > 0) return set;
             }
         } catch {
-            /* fall through */
+            
         }
         return null;
     })();

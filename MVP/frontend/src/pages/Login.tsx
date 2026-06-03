@@ -119,8 +119,6 @@ export default function Login() {
     };
   }, []);
 
-
-
   useEffect(() => {
     if (!authLoaded) return;
     if (isSignedIn) {

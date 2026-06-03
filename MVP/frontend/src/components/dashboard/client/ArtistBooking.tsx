@@ -110,7 +110,6 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     };
   }, [artist?.clerkId]);
 
-
   const refreshBookingGate = useCallback(async () => {
     const artistId = artist?.clerkId;
     const clientId = user?.id;
@@ -122,7 +121,6 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       setBookingGateReady(true);
     } catch (e) {
       if (!isAbortError(e)) {
-        // Error handled silently
       }
       setBookingGateReady(true);
     }

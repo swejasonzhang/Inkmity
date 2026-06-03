@@ -1,9 +1,31 @@
 import { Link } from "react-router-dom";
 import type { NavItem as BuildNavItem } from "./buildNavItems";
-import { Lock, User } from "lucide-react";
-import { VisibilityDropdown } from "./VisibilityDropdown";
+import {
+    Lock,
+    User,
+    LogOut,
+    LayoutDashboard,
+    Users,
+    Image as ImageIcon,
+    Images,
+    CalendarDays,
+    Mail,
+    Info,
+    ChevronRight,
+    type LucideIcon,
+} from "lucide-react";
 
 export type NavItem = BuildNavItem;
+
+const NAV_ICONS: Record<string, LucideIcon> = {
+    Dashboard: LayoutDashboard,
+    Artists: Users,
+    Portfolio: ImageIcon,
+    Appointments: CalendarDays,
+    Gallery: Images,
+    Contact: Mail,
+    About: Info,
+};
 
 const desktopBase =
     "relative inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg text-[13px] lg:text-[15px] xl:text-[16px] font-extrabold uppercase tracking-wide flex-shrink-0 whitespace-nowrap transition-all duration-200";
@@ -11,9 +33,9 @@ const desktopActive = "bg-elevated border border-app text-app shadow-sm";
 const desktopIdle = "border border-transparent text-app/55 hover:text-app hover:bg-elevated/50";
 
 const mobileBase =
-    "relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-center text-[22px] md:text-[26px] font-extrabold uppercase tracking-wide whitespace-nowrap transition-all duration-200";
-const mobileActive = "bg-elevated/70 border border-app text-app";
-const mobileIdle = "border border-transparent text-app/75 hover:text-app";
+    "group relative w-full max-w-sm inline-flex items-center gap-4 px-5 py-3.5 rounded-2xl text-xl font-extrabold uppercase tracking-wide transition-all duration-200";
+const mobileActive = "bg-white/10 ring-1 ring-white/20";
+const mobileIdle = "hover:bg-white/[0.06] active:scale-[0.98]";
 
 export function Nav({
     items,
@@ -23,9 +45,6 @@ export function Nav({
     onDisabledDashboardLeave,
     setMobileMenuOpen,
     handleLogout,
-    userVisibility,
-    isOnline,
-    onVisibilityChange,
 }: {
     items: NavItem[];
     isActive: (to: string) => boolean;
@@ -34,9 +53,6 @@ export function Nav({
     onDisabledDashboardLeave?: React.MouseEventHandler<Element>;
     setMobileMenuOpen?: (v: boolean) => void;
     handleLogout?: () => void;
-    userVisibility?: "online" | "away" | "invisible";
-    isOnline?: boolean;
-    onVisibilityChange?: (status: "online" | "away" | "invisible") => void;
 }) {
     return (
         <>
@@ -76,45 +92,29 @@ export function Nav({
                 })}
             </nav>
 
-            <nav className="md:hidden flex-1 overflow-y-auto flex flex-col items-center justify-center gap-3 py-6 w-full px-6">
+            <nav className="md:hidden flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center gap-1.5 py-6 w-full px-6">
                 {items.map((item) => {
                     const active = isActive(item.to);
                     const isDisabled = item.to === "#" || item.disabled;
                     const cls = `${mobileBase} ${active ? mobileActive : mobileIdle}`;
+                    const Icon = NAV_ICONS[item.label] ?? LayoutDashboard;
+                    const iconOpacity = active ? "opacity-100" : "opacity-60";
 
                     if (isDisabled) {
                         const isGate = typeof item.onClick === "function";
-                        if (isGate) {
-                            return (
-                                <button
-                                    key={item.label}
-                                    type="button"
-                                    onClick={(e) => {
-                                        item.onClick?.(e);
-                                        setMobileMenuOpen?.(false);
-                                    }}
-                                    className={cls}
-                                    aria-label={`${item.label} — sign in required`}
-                                >
-                                    <Lock size={18} className="opacity-70 flex-shrink-0" />
-                                    <span className="whitespace-nowrap">{item.label}</span>
-                                </button>
-                            );
-                        }
                         return (
                             <button
                                 key={item.label}
                                 type="button"
-                                disabled
+                                disabled={!isGate}
+                                onClick={isGate ? (e) => { item.onClick?.(e); setMobileMenuOpen?.(false); } : undefined}
                                 className={cls}
-                                aria-disabled="true"
-                                title="In Development"
+                                aria-label={`${item.label} — sign in required`}
+                                title={isGate ? undefined : "In Development"}
                             >
-                                <Lock size={18} className="opacity-70 flex-shrink-0" />
-                                <span className="whitespace-nowrap">{item.label}</span>
-                                <span className="rounded-md px-2 py-0.5 text-[12px] font-black uppercase tracking-wider bg-app/10 text-app/70">
-                                    Soon
-                                </span>
+                                <Icon size={22} className={`flex-shrink-0 ${iconOpacity}`} />
+                                <span className="flex-1 text-left whitespace-nowrap">{item.label}</span>
+                                <Lock size={16} className="opacity-50 flex-shrink-0" />
                             </button>
                         );
                     }
@@ -127,33 +127,25 @@ export function Nav({
                             aria-current={active ? "page" : undefined}
                             className={cls}
                         >
-                            <span>{item.label}</span>
+                            <Icon size={22} className={`flex-shrink-0 ${iconOpacity}`} />
+                            <span className="flex-1 text-left">{item.label}</span>
+                            <ChevronRight size={18} className="opacity-30 group-hover:opacity-70 transition-opacity flex-shrink-0" />
                         </Link>
                     );
                 })}
 
                 {isSignedIn && handleLogout && (
                     <>
-                        {userVisibility !== undefined && onVisibilityChange && (
-                            <div className="w-full max-w-xs px-2 py-4">
-                                <div className="text-[14px] font-semibold uppercase tracking-wide text-app/70 mb-3 text-center">Status</div>
-                                <VisibilityDropdown
-                                    currentStatus={userVisibility}
-                                    isOnline={isOnline || false}
-                                    onStatusChange={(status) => onVisibilityChange(status)}
-                                    triggerWidth={280}
-                                />
-                            </div>
-                        )}
-                        <div className="w-full max-w-xs h-px bg-app/20 my-2" />
+                        <div className="w-full max-w-sm h-px bg-white/10 my-2" />
                         <Link
                             to="/profile"
                             onClick={() => setMobileMenuOpen?.(false)}
                             aria-current={isActive("/profile") ? "page" : undefined}
                             className={`${mobileBase} ${isActive("/profile") ? mobileActive : mobileIdle}`}
                         >
-                            <User size={20} className="flex-shrink-0" />
-                            <span className="whitespace-nowrap">Profile</span>
+                            <User size={22} className={`flex-shrink-0 ${isActive("/profile") ? "opacity-100" : "opacity-60"}`} />
+                            <span className="flex-1 text-left">Profile</span>
+                            <ChevronRight size={18} className="opacity-30 group-hover:opacity-70 transition-opacity flex-shrink-0" />
                         </Link>
                         <button
                             type="button"
@@ -161,9 +153,10 @@ export function Nav({
                                 setMobileMenuOpen?.(false);
                                 handleLogout();
                             }}
-                            className={`${mobileBase} ${mobileIdle}`}
+                            className={`${mobileBase} ${mobileIdle} text-red-300`}
                         >
-                            <span className="whitespace-nowrap">Logout</span>
+                            <LogOut size={22} className="flex-shrink-0 opacity-70" />
+                            <span className="flex-1 text-left">Logout</span>
                         </button>
                     </>
                 )}

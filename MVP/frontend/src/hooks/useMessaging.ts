@@ -229,7 +229,6 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     fetchIncomingRequests();
     } catch (error: any) {
       setLoading(false);
-      // Silently fail - network errors are expected if backend is down
     }
   }, [
     apiBase,

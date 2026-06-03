@@ -131,7 +131,7 @@ export default function FloatingBar({
   const MOBILE_CLOSED_W = 112;
   const MOBILE_OPEN_W = isMdUp ? Math.min(Math.max(240, vp.w - 48), 360) : vp.w;
   const MOBILE_HEADER_HEIGHT = 96;
-  const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - MOBILE_HEADER_HEIGHT;
+  const MOBILE_OPEN_H = isMdUp ? Math.min(Math.max(300, vp.h - 180), 480) : vp.h - (headerHeight || MOBILE_HEADER_HEIGHT);
 
   const PANEL_W = 280;
   const DESKTOP_OPEN_W = Math.floor(vp.w * 0.5);
@@ -273,7 +273,7 @@ export default function FloatingBar({
                     right: pad.right,
                     bottom: 0,
                   } : open ? {
-                    top: MOBILE_HEADER_HEIGHT,
+                    top: headerHeight || MOBILE_HEADER_HEIGHT,
                     left: 0,
                     right: 0,
                     width: "100vw",

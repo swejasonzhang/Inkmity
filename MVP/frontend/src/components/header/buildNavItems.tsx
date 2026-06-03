@@ -13,12 +13,9 @@ export function buildNavItems(
   onGate: (e: React.MouseEvent) => void,
   role?: "client" | "artist" | null
 ): NavItem[] {
-  // Auth-required links are locked (with a sign-in toast) when signed out.
-  // Contact and About stay open to everyone.
   const gated = (label: string, to: string): NavItem =>
     isSignedIn ? { label, to } : { label, to, disabled: true, onClick: onGate };
 
-  // Artists don't need to browse other artists — give them their portfolio instead.
   const discover =
     role === "artist" ? gated("Portfolio", "/portfolio") : gated("Artists", "/artists");
 

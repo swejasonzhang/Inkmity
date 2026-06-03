@@ -52,8 +52,6 @@ export default function ClientDashboard() {
                 if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
                 return await fetch(full, { ...options, headers, credentials: "include" });
             } catch (error: any) {
-                // Return a Response with status 503 (Service Unavailable) for network errors
-                // This prevents unhandled promise rejections while indicating a network issue
                 return new Response(JSON.stringify({ error: error.message || "Network error" }), {
                     status: 503,
                     statusText: error.message || "Service Unavailable",

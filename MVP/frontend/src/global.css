@@ -4,15 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Theme color tokens are intentionally NOT registered with @property as
- * `<color>`. Registered color custom properties animate in the Oklab color
- * space, and interpolating between the dark and light theme values (especially
- * the semi-transparent ones) passes through a pink/salmon midpoint during the
- * theme switch. Leaving them as plain custom properties means the swap is
- * instant and the crossfade is handled by an opaque neutral curtain instead.
- */
-
 html,
 body,
 #root,
@@ -201,6 +192,18 @@ body,
   }
   100% {
     opacity: 0;
+  }
+}
+
+.ink-gate-tip {
+  animation: inkGateTip 160ms ease-out;
+}
+@keyframes inkGateTip {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -404,7 +407,6 @@ html {
   justify-content: space-between;
 }
 
-
 h1,
 h2,
 h3,
@@ -581,7 +583,6 @@ h3 {
   border-top-right-radius: 1.5rem;
   height: 2px;
 }
-
 
 .center-area {
   display: grid;

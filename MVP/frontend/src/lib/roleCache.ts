@@ -16,7 +16,7 @@ export function setCachedRole(role: CachedRole): void {
   try {
     localStorage.setItem(KEY, role);
   } catch {
-    /* ignore */
+    
   }
 }
 
@@ -33,7 +33,7 @@ export function setCachedUsername(name: string): void {
   try {
     if (name && name.trim()) localStorage.setItem(NAME_KEY, name);
   } catch {
-    /* ignore */
+    
   }
 }
 
@@ -42,6 +42,6 @@ export function clearCachedRole(): void {
     localStorage.removeItem(KEY);
     localStorage.removeItem(NAME_KEY);
   } catch {
-    /* ignore */
+    
   }
 }

@@ -104,7 +104,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
     return {
       stats: [
         { label: "Upcoming", value: upcomingList.length, Icon: CalendarClock },
-        { label: "Pending requests", value: pendingCount, Icon: Hourglass },
+        { label: "Pending", value: pendingCount, Icon: Hourglass },
         { label: "This week", value: thisWeekCount, Icon: CalendarRange },
         { label: "Completed", value: completed.length, Icon: CheckCircle2 },
       ],
@@ -119,21 +119,19 @@ export default function ArtistOverview({ appointments, loading }: Props) {
 
   return (
     <div className="flex flex-col h-full gap-3 sm:gap-4">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3 flex-shrink-0">
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-2 flex-shrink-0">
         {stats.map(({ label, value, Icon }) => (
           <div
             key={label}
-            className="rounded-xl border border-app bg-elevated px-3 py-3 sm:py-4 flex flex-col gap-1.5 min-w-0"
+            className="rounded-xl border border-app bg-elevated px-1 py-2 sm:py-2.5 flex flex-col items-center justify-center text-center gap-0.5 min-w-0"
           >
-            <div className="flex items-center gap-1.5 text-muted">
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              <span className="text-[10px] sm:text-[11px] truncate">{label}</span>
-            </div>
+            <Icon className="h-3.5 w-3.5 text-muted shrink-0" />
             {loading ? (
-              <Skeleton className="h-7 w-10" />
+              <Skeleton className="h-6 w-6" />
             ) : (
-              <div className="text-2xl sm:text-3xl font-bold text-app leading-none">{value}</div>
+              <div className="text-lg sm:text-2xl font-bold text-app leading-none">{value}</div>
             )}
+            <span className="text-[9px] sm:text-[10px] text-muted leading-tight">{label}</span>
           </div>
         ))}
       </div>

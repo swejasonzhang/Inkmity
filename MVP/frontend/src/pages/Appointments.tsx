@@ -102,6 +102,7 @@ export default function Appointments() {
   const [bootDone, setBootDone] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
   const [appointments, setAppointments] = useState<AppointmentWithUsers[]>([]);
+  const [view, setView] = useState<"pending" | "past">("pending");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [aftercareModalOpen, setAftercareModalOpen] = useState(false);
@@ -199,8 +200,6 @@ export default function Appointments() {
     }
   };
 
-  const isLightTheme = theme === "light";
-
   const pendingAppointments = appointments
     .filter((a) => a.status === "pending")
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
@@ -296,7 +295,7 @@ export default function Appointments() {
 
     return (
       <Card
-        className="border rounded-xl p-4 bg-card border-app h-full flex flex-col transition-all duration-200 hover:shadow-lg"
+        className="border rounded-2xl p-4 bg-card border-app h-full flex flex-col transition-all duration-200 hover:shadow-lg hover:border-app"
         style={{
           borderColor: "var(--border)",
           boxShadow: `0 1px 3px color-mix(in srgb, var(--fg) 8%, transparent), 0 1px 2px color-mix(in srgb, var(--fg) 5%, transparent)`,
@@ -304,35 +303,30 @@ export default function Appointments() {
         }}
       >
         <CardHeader className="p-0 pb-3 flex-shrink-0">
-          <div className="flex flex-col items-center text-center space-y-2">
-            <div className="w-full flex items-center justify-between">
-              <div className="flex-1"></div>
-              <div 
-                className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide transition-all"
-                style={getStatusBadgeStyle()}
-              >
-                {appointment.status.replace("-", " ")}
-              </div>
-              <div className="flex-1"></div>
-            </div>
-            
-            <div className="w-full text-center">
-              <CardTitle className="text-xl font-bold mb-1 text-app">
+          <div className="flex items-center gap-3">
+            <span className="grid place-items-center h-10 w-10 rounded-full bg-elevated border border-app text-app font-bold text-sm uppercase flex-shrink-0">
+              {(otherUser?.username || "?").charAt(0)}
+            </span>
+            <div className="min-w-0 flex-1 text-left">
+              <CardTitle className="text-base font-bold text-app truncate">
                 {otherUser?.username || "Unknown"}
               </CardTitle>
-              <div className="text-xs font-medium px-2 py-0.5 rounded-md inline-block mb-1" style={{ 
-                color: "color-mix(in srgb, var(--fg) 75%, transparent)",
-                background: "var(--elevated)"
-              }}>
+              <div className="text-[11px] text-muted truncate">
                 {isConsultation ? "Consultation" : isTattooSession ? "Tattoo Session" : "Appointment"}
               </div>
-              {appointment.createdAt && (
-                <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
-                  Requested: {formatDateTime(appointment.createdAt)}
-                </div>
-              )}
             </div>
+            <span
+              className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide flex-shrink-0"
+              style={getStatusBadgeStyle()}
+            >
+              {appointment.status.replace("-", " ")}
+            </span>
           </div>
+          {appointment.createdAt && (
+            <div className="mt-2 text-[11px] text-muted">
+              Requested {formatDateTime(appointment.createdAt)}
+            </div>
+          )}
         </CardHeader>
         
         <CardContent className="p-0 space-y-2 flex-1">
@@ -594,69 +588,48 @@ export default function Appointments() {
             <Loading theme={theme} />
           </div>
         ) : appointments.length === 0 ? (
-          <div className="text-center py-8 text-muted text-sm sm:text-base">
+          <div className="text-center py-16 text-muted text-sm sm:text-base">
             No appointments found
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="w-full">
-              <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-app">Pending</h2>
-                <span
-                  className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                  style={{
-                    background: "var(--elevated)",
-                    color: "color-mix(in srgb, var(--fg) 75%, transparent)"
-                  }}
-                >
-                  {pendingAppointments.length}
-                </span>
+          <>
+            <div className="mb-5 sm:mb-6 flex justify-center">
+              <div className="inline-flex items-center gap-1 rounded-full border border-app bg-elevated p-1">
+                {([
+                  { key: "pending" as const, label: "Pending", count: pendingAppointments.length },
+                  { key: "past" as const, label: "Past", count: pastAppointments.length },
+                ]).map((t) => {
+                  const active = view === t.key;
+                  return (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setView(t.key)}
+                      aria-pressed={active}
+                      className={`inline-flex items-center gap-2 rounded-full px-4 sm:px-5 py-2 text-sm font-semibold transition ${active ? "bg-neutral-700 text-white shadow-sm" : "text-app/70 hover:text-app"}`}
+                    >
+                      {t.label}
+                      <span className={`grid place-items-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-bold ${active ? "bg-white/20 text-white" : "bg-card text-app/70"}`}>
+                        {t.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-              {pendingAppointments.length === 0 ? (
-                <div className="text-center py-4 sm:py-6 min-h-[80px] sm:min-h-[120px] rounded-lg border border-dashed flex items-center justify-center text-xs sm:text-sm" style={{
-                  color: "color-mix(in srgb, var(--fg) 50%, transparent)",
-                  borderColor: "color-mix(in srgb, var(--border) 50%, transparent)"
-                }}>
-                  No pending appointments
-                </div>
-              ) : (
-                <div className="grid gap-3 sm:gap-4 w-full">
-                  {pendingAppointments.map((appointment) => (
-                    <AppointmentCard key={appointment._id} appointment={appointment} />
-                  ))}
-                </div>
-              )}
             </div>
 
-            <div className="w-full">
-              <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-app">Past</h2>
-                <span
-                  className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                  style={{
-                    background: isLightTheme ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.1)",
-                    color: "color-mix(in srgb, var(--fg) 70%, transparent)"
-                  }}
-                >
-                  {pastAppointments.length}
-                </span>
+            {(view === "pending" ? pendingAppointments : pastAppointments).length === 0 ? (
+              <div className="max-w-2xl mx-auto text-center py-14 rounded-2xl border border-dashed border-app/50 text-sm text-muted">
+                {view === "pending" ? "No pending appointments." : "No past appointments."}
               </div>
-              {pastAppointments.length === 0 ? (
-                <div className="text-center py-4 sm:py-6 min-h-[80px] sm:min-h-[120px] rounded-lg border border-dashed flex items-center justify-center text-xs sm:text-sm" style={{
-                  color: "color-mix(in srgb, var(--fg) 50%, transparent)",
-                  borderColor: "color-mix(in srgb, var(--border) 50%, transparent)"
-                }}>
-                  No past appointments
-                </div>
-              ) : (
-                <div className="grid gap-3 sm:gap-4 w-full">
-                  {pastAppointments.map((appointment) => (
-                    <AppointmentCard key={appointment._id} appointment={appointment} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+            ) : (
+              <div className="grid gap-3 sm:gap-4 max-w-2xl mx-auto w-full">
+                {(view === "pending" ? pendingAppointments : pastAppointments).map((appointment) => (
+                  <AppointmentCard key={appointment._id} appointment={appointment} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
       </div>
