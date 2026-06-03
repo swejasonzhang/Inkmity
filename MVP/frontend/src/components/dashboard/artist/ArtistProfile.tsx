@@ -660,7 +660,7 @@ export default function ArtistProfile() {
 
                     <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-6">Artist Profile</h2>
 
-                    <div className="relative mb-8 w-full flex items-center justify-center group">
+                    <div className="relative mb-8 w-full flex items-center justify-center">
                         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                             {bgOk && currentCoverImage ? (
                                 <img
@@ -676,7 +676,7 @@ export default function ArtistProfile() {
                             )}
                             <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in srgb, var(--bg) 18%, transparent) 100%)" }} />
                         </div>
-                        <div className="relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
+                        <div className="group relative rounded-full overflow-hidden shadow-2xl ring-2 ring-[color:var(--card)] transition-all duration-300 h-28 w-28 sm:h-32 sm:w-32 md:h-40 md:w-40" style={{ border: `1px solid var(--border)`, background: "var(--card)", zIndex: 1 }}>
                             {currentProfileImage ? (
                                 <img
                                     src={currentProfileImage}
@@ -748,7 +748,7 @@ export default function ArtistProfile() {
                             <Briefcase className="h-3.5 w-3.5" style={{ color: "var(--fg)" }} />
                             Professional Information
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="location" className="text-xs text-center block w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                     Location
@@ -758,16 +758,17 @@ export default function ArtistProfile() {
                                     onValueChange={(v) => setEditedArtist({ ...editedArtist, location: v === "none" ? "" : v })}
                                 >
                                     <SelectTrigger className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs h-8 w-full justify-center [&>span]:text-center [&>span]:flex [&>span]:justify-center">
-                                        <SelectValue placeholder="Select city" />
+                                        <SelectValue placeholder="City" />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={false}>
-                                        <SelectItem value="none" className="text-center justify-center">No preference</SelectItem>
+                                    <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={true}>
+                                        <SelectItem value="none" className="text-center justify-center whitespace-nowrap">No preference</SelectItem>
                                         {CITIES.map((city) => (
-                                            <SelectItem key={city} value={city} className="text-center justify-center">{city}</SelectItem>
+                                            <SelectItem key={city} value={city} className="text-center justify-center whitespace-nowrap">{city}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="years" className="text-xs text-center block w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
                                     Years Experience
@@ -777,11 +778,11 @@ export default function ArtistProfile() {
                                     onValueChange={(v) => setEditedArtist({ ...editedArtist, yearsExperience: parseInt(v) || 0 })}
                                 >
                                     <SelectTrigger className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs h-8 w-full justify-center [&>span]:text-center [&>span]:flex [&>span]:justify-center">
-                                        <SelectValue placeholder="Select years" />
+                                        <SelectValue placeholder="Years" />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={false}>
+                                    <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={true}>
                                         {YEARS_OPTIONS.map((option) => (
-                                            <SelectItem key={option.value} value={option.value} className="text-center justify-center">{option.label}</SelectItem>
+                                            <SelectItem key={option.value} value={option.value} className="text-center justify-center whitespace-nowrap">{option.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -795,14 +796,15 @@ export default function ArtistProfile() {
                                     onValueChange={(v) => setEditedArtist({ ...editedArtist, baseRate: parseInt(v) || 0 })}
                                 >
                                     <SelectTrigger className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs h-8 w-full justify-center [&>span]:text-center [&>span]:flex [&>span]:justify-center">
-                                        <SelectValue placeholder="Select rate" />
+                                        <SelectValue placeholder="Rate" />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={false}>
+                                    <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={true}>
                                         {BASE_RATE_OPTIONS.map((option) => (
-                                            <SelectItem key={option.value} value={option.value} className="text-center justify-center">{option.label}</SelectItem>
+                                            <SelectItem key={option.value} value={option.value} className="text-center justify-center whitespace-nowrap">{option.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
                             </div>
                         </div>
                         <div className="space-y-2 mt-4">
@@ -915,7 +917,7 @@ export default function ArtistProfile() {
                                     return cleanStyles.map((styleStr: string) => (
                                         <span
                                             key={styleStr}
-                                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all hover:scale-105"
+                                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all hover:scale-105 whitespace-nowrap"
                                             style={{
                                                 borderColor: "var(--border)",
                                                 background: "linear-gradient(135deg, color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%), color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%))",
@@ -951,13 +953,13 @@ export default function ArtistProfile() {
                                 <SelectTrigger className="flex-1 bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs h-8 justify-center [&>span]:text-center [&>span]:flex [&>span]:justify-center">
                                     <SelectValue placeholder="Select a style to add" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={false}>
+                                <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={true}>
                                     {STYLE_OPTIONS.filter(s => {
                                         const currentStyles = editedArtist.styles ?? artist?.styles ?? [];
                                         const stylesArray = Array.isArray(currentStyles) ? currentStyles : [];
                                         return !stylesArray.includes(s);
                                     }).map((style) => (
-                                        <SelectItem key={style} value={style} className="text-center justify-center">{style}</SelectItem>
+                                        <SelectItem key={style} value={style} className="text-center justify-center whitespace-nowrap">{style}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -981,7 +983,7 @@ export default function ArtistProfile() {
                                 currentRestrictedPlacements.map((placement: string) => (
                                     <span
                                         key={placement}
-                                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all hover:scale-105"
+                                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border transition-all hover:scale-105 whitespace-nowrap"
                                         style={{
                                             borderColor: "var(--border)",
                                             background: "linear-gradient(135deg, color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%), color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%))",
@@ -1006,11 +1008,11 @@ export default function ArtistProfile() {
                         <div className="flex items-center gap-2 w-full">
                             <Select value={newRestrictedPlacement} onValueChange={setNewRestrictedPlacement}>
                                 <SelectTrigger className="flex-1 min-w-0 bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-xs h-8 justify-center [&>span]:text-center [&>span]:flex [&>span]:justify-center">
-                                    <SelectValue placeholder="Select a body placement" />
+                                    <SelectValue placeholder="Add a placement" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={false}>
+                                <SelectContent className="bg-card text-app rounded-xl max-h-[300px] overflow-y-auto" position="popper" side="bottom" align="center" avoidCollisions={true}>
                                     {PLACEMENT_OPTIONS.filter(p => !currentRestrictedPlacements.includes(p)).map((placement) => (
-                                        <SelectItem key={placement} value={placement} className="text-center justify-center">
+                                        <SelectItem key={placement} value={placement} className="text-center justify-center whitespace-nowrap">
                                             {placement}
                                         </SelectItem>
                                     ))}

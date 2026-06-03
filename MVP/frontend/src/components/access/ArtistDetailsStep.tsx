@@ -64,10 +64,10 @@ export default function ArtistDetailsStep({
     ];
 
     const inputCls =
-        "w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black focus:outline-none focus:ring-2 focus:ring-black/20 text-center";
-    const labelCls = "text-sm font-medium text-white/90 text-center";
+        "w-full rounded-xl border border-black/10 bg-white px-3 py-1.5 text-xs text-black placeholder:text-black focus:outline-none focus:ring-2 focus:ring-black/20 text-center";
+    const labelCls = "text-xs font-medium text-white/90 text-center";
     const helpCls = "text-xs text-white/50 text-center";
-    const triggerCls = "h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-black text-center !justify-center [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:w-full";
+    const triggerCls = "h-9 w-full rounded-xl border border-black/10 bg-white px-4 text-black text-center !justify-center [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:w-full";
     const contentCls = "rounded-2xl max-h-72 overflow-y-auto border-black/10 bg-white text-black";
 
     function MultiSelect({
@@ -231,7 +231,7 @@ export default function ArtistDetailsStep({
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             <div className="flex items-center justify-center text-center">
                 <div>
                     <h3 className="text-lg font-semibold">Artist Details</h3>
@@ -239,8 +239,8 @@ export default function ArtistDetailsStep({
                 </div>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-1.5 flex flex-col items-center">
+            <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1 flex flex-col items-center">
                     <label className={labelCls}>Location</label>
                     <Select value={artist.location && artist.location !== "__unset__" ? artist.location : "New York, NY"} onValueChange={handleSelect("location")}>
                         <SelectTrigger className={triggerCls}>
@@ -281,7 +281,7 @@ export default function ArtistDetailsStep({
                     <p className={helpCls}>Choose a U.S. city. Use "Custom…" to type any U.S. location.</p>
                 </div>
 
-                <div className="space-y-1.5 flex flex-col items-center">
+                <div className="space-y-1 flex flex-col items-center">
                     <label className={labelCls}>Years of experience</label>
                     <Select value={artist.years && artist.years !== "__unset__" ? artist.years : "0"} onValueChange={handleSelect("years")}>
                         <SelectTrigger className={triggerCls}>
@@ -302,7 +302,7 @@ export default function ArtistDetailsStep({
                     <p className={helpCls}>Select your total years of tattooing experience.</p>
                 </div>
 
-                <div className="space-y-1.5 flex flex-col items-center">
+                <div className="space-y-1 flex flex-col items-center">
                     <label className={labelCls}>Base hourly rate (USD)</label>
                     <Select value={artist.baseRate && artist.baseRate !== "__unset__" ? artist.baseRate : "100"} onValueChange={handleSelect("baseRate")}>
                         <SelectTrigger className={triggerCls}>
@@ -336,7 +336,7 @@ export default function ArtistDetailsStep({
                     <p className={helpCls}>Choose an hourly rate or enter a custom amount.</p>
                 </div>
 
-                <div className="space-y-1.5 flex flex-col items-center">
+                <div className="space-y-1 flex flex-col items-center">
                     <label className={labelCls}>Specialty styles</label>
                     <div className="w-full">
                         <MultiSelect
@@ -349,7 +349,7 @@ export default function ArtistDetailsStep({
                     <p className={helpCls}>Pick one or more styles. At least one is required.</p>
                 </div>
 
-                <div className="space-y-1.5 flex flex-col items-center">
+                <div className="space-y-1 flex flex-col items-center">
                     <label className={labelCls}>Booking preference</label>
                     <Select value={artist.bookingPreference || "open"} onValueChange={handleSelect("bookingPreference")}>
                         <SelectTrigger className={triggerCls}>
@@ -366,7 +366,7 @@ export default function ArtistDetailsStep({
                     <p className={helpCls}>How you're currently accepting clients.</p>
                 </div>
 
-                <div className="space-y-1.5 flex flex-col items-center">
+                <div className="space-y-1 flex flex-col items-center">
                     <label className={labelCls}>Travel frequency</label>
                     <Select value={artist.travelFrequency || "rare"} onValueChange={handleSelect("travelFrequency")}>
                         <SelectTrigger className={triggerCls}>

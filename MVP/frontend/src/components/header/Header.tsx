@@ -190,18 +190,12 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const homeHref = "/landing";
   const navLocked = disableDashboardLink || !isSignedIn;
-
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
-  const tipTimer = useRef<number | null>(null);
 
   const onGate = useCallback<React.MouseEventHandler>((e) => {
     e.preventDefault();
-    const x = (e as React.MouseEvent).clientX || window.innerWidth / 2;
-    const y = (e as React.MouseEvent).clientY || 72;
-    setTip({ show: true, x, y });
-    if (tipTimer.current) window.clearTimeout(tipTimer.current);
-    tipTimer.current = window.setTimeout(() => setTip((t) => ({ ...t, show: false })), 2400);
-  }, []);
+    navigate("/login", { state: { from: pathname, gate: true } });
+  }, [navigate, pathname]);
 
   const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(!!isSignedIn, onGate, userRole), [isSignedIn, onGate, userRole]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
@@ -228,6 +222,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const dropdownBtnClasses =
     "relative inline-flex h-11 md:h-12 items-center justify-start px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_srgb,var(--fg)_16%,transparent)] bg-[color-mix(in_srgb,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_srgb,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md";
 
+  // Desktop only: hovering a locked link shows a tip near the cursor.
   const onDashMouseMove = (e: React.MouseEvent) => {
     if (!navLocked) return;
     setTip({ show: true, x: e.clientX, y: e.clientY });
@@ -326,17 +321,31 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const mobileSheet = mobileMenuOpen
     ? createPortal(
       <div className="md:hidden fixed inset-0 z-[2147483647] text-white [&_*]:!text-white [&_*]:border-white/15">
-        <div className="absolute inset-0 bg-[#0a0a0a]/95 backdrop-blur-2xl flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 flex-shrink-0">
-            <Link to={homeHref} onClick={() => setMobileMenuOpen(false)} className="flex-shrink-0">
-              <img src={WhiteLogo} alt="Inkmity Logo" className={mobileLogoCls} draggable={false} />
-            </Link>
-            <button aria-label="Close menu" className={`${mobileBtnCls} !text-white`} onClick={() => setMobileMenuOpen(false)}>
-              <X strokeWidth={1.75} className={mobileIconCls} />
-            </button>
-          </div>
-          <div className="flex-1 min-h-0 flex flex-col justify-center overflow-y-auto">
-            <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+        <div className="absolute inset-0 overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover grayscale pointer-events-none"
+          >
+            <source src="/Landing.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/55" />
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="flex items-center justify-between px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 flex-shrink-0">
+              <Link to={homeHref} onClick={() => setMobileMenuOpen(false)} className="flex-shrink-0">
+                <img src={WhiteLogo} alt="Inkmity Logo" className={mobileLogoCls} draggable={false} />
+              </Link>
+              <button aria-label="Close menu" className={`${mobileBtnCls} !text-white`} onClick={() => setMobileMenuOpen(false)}>
+                <X strokeWidth={1.75} className={mobileIconCls} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+            </div>
           </div>
         </div>
       </div>,
@@ -428,7 +437,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       </header>
 
       {navLocked && tip.show && (
-        <div className="fixed z-[2147483600] pointer-events-none ink-gate-tip" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 18px)" }}>
+        <div className="hidden md:block fixed z-[2147483600] pointer-events-none ink-gate-tip" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 18px)" }}>
           <div className="flex items-center gap-2 rounded-xl border border-app bg-card px-4 py-2.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)] ring-1 ring-[color-mix(in_srgb,var(--fg)_25%,transparent)]">
             <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-elevated p-1.5">
               <Lock className="h-3.5 w-3.5 text-app" />

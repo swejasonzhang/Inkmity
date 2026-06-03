@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useLayoutEffect } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -78,9 +78,6 @@ const Dashboard: React.FC = () => {
   const { override } = useDevOverride();
   const { theme } = useTheme();
 
-  const [bootDone, setBootDone] = useState(false);
-  const [fadeIn, setFadeIn] = useState(false);
-
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn && !warnedRef.current) {
@@ -89,18 +86,6 @@ const Dashboard: React.FC = () => {
       navigate("/login", { replace: true });
     }
   }, [isLoaded, isSignedIn, navigate]);
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-    setBootDone(false);
-    setFadeIn(false);
-    const t1 = window.setTimeout(() => {
-      setBootDone(true);
-      const t2 = window.setTimeout(() => setFadeIn(true), 0);
-      return () => window.clearTimeout(t2);
-    }, LOAD_MS);
-    return () => window.clearTimeout(t1);
-  }, [isLoaded, isSignedIn]);
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
@@ -128,10 +113,10 @@ const Dashboard: React.FC = () => {
       className="ink-scope h-dvh overflow-y-hidden flex flex-col"
       style={{ background: shellBg, color: shellFg }}
     >
-      {(!bootDone || !isLoaded) && <Loading theme={theme} />}
+      {!isLoaded && <Loading theme={theme} />}
       <div
         className="flex-1 min-h-0 w-full"
-        style={{ opacity: bootDone && fadeIn && isLoaded ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
+        style={{ opacity: isLoaded ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
       >
         <Suspense fallback={
           <div className="flex flex-col items-center justify-center gap-4 h-full">
