@@ -117,7 +117,6 @@ export default function Appointments() {
       setAppointments(data || []);
     } catch (error: any) {
       console.error("Error loading appointments:", error);
-      toast.error("Failed to load appointments");
     } finally {
       setLoading(false);
     }

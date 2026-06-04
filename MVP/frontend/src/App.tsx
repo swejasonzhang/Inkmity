@@ -16,11 +16,12 @@ import SSOCallback from "./pages/SSOCallback";
 import Onboarding from "./pages/Onboarding";
 import { useTheme } from "@/hooks/useTheme";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
+import { useOnboarded } from "@/hooks/useOnboarded";
 
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
   return (
-    <div id="public-scope" className={`${themeClass} h-dvh max-h-dvh overflow-hidden`} data-ink="dark" data-ink-no-theme="true">
+    <div id="public-scope" className={themeClass} data-ink="dark" data-ink-no-theme="true">
       <Outlet />
     </div>
   );
@@ -28,10 +29,15 @@ const PublicScope: React.FC = () => {
 
 const DashboardScope: React.FC = () => {
   const { themeClass } = useTheme();
+  const { onboarded } = useOnboarded();
   return (
-    <div id="dashboard-scope" className={`${themeClass} theme-smooth h-dvh max-h-dvh overflow-hidden`}>
+    <div id="dashboard-scope" className={`${themeClass} theme-smooth`}>
       <SignedIn>
-        <Outlet />
+        {onboarded === false ? (
+          <Navigate to="/onboarding" replace />
+        ) : onboarded === null ? null : (
+          <Outlet />
+        )}
       </SignedIn>
       <SignedOut>
         <RedirectToSignIn />
