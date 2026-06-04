@@ -12,7 +12,7 @@ import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityStatus } from "./VisibilityDropdown";
 import HeaderRewards from "./HeaderRewards";
 import { API_URL } from "@/api";
-import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername } from "@/lib/roleCache";
+import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername, clearCachedUsername } from "@/lib/roleCache";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -136,6 +136,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         userLabelRef.current = finalName;
         setUserLabel(finalName);
         if (name) setCachedUsername(name);
+        else clearCachedUsername();
         if (data?.role && (data.role === "client" || data.role === "artist")) {
           setUserRole(data.role);
           setCachedRole(data.role);
@@ -148,9 +149,15 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       } catch (e: any) {
         if (cancelled || ac.signal.aborted) return;
         if (e?.name === "AbortError") return;
-        const cached = getCachedUsername() ?? "User";
-        setUserLabel(cached);
-        userLabelRef.current = cached;
+        if (String(e?.message) === "404") {
+          clearCachedUsername();
+          setUserLabel("User");
+          userLabelRef.current = "User";
+        } else {
+          const cached = getCachedUsername() ?? "User";
+          setUserLabel(cached);
+          userLabelRef.current = cached;
+        }
       }
     }
     run();

@@ -1,7 +1,13 @@
 export type CachedRole = "client" | "artist";
 
 const KEY = "inkmity-role";
-const NAME_KEY = "inkmity-username";
+const NAME_KEY = "inkmity-username-v2";
+
+try {
+  localStorage.removeItem("inkmity-username");
+} catch {
+  /* ignore */
+}
 
 export function getCachedRole(): CachedRole | null {
   try {
@@ -33,7 +39,16 @@ export function setCachedUsername(name: string): void {
   try {
     if (name && name.trim()) localStorage.setItem(NAME_KEY, name);
   } catch {
-    
+
+  }
+}
+
+export function clearCachedUsername(): void {
+  try {
+    localStorage.removeItem(NAME_KEY);
+    localStorage.removeItem("inkmity-username");
+  } catch {
+
   }
 }
 

@@ -136,28 +136,25 @@ export default function Onboarding() {
             type="button"
             variant="secondary"
             onClick={() => setRole(r)}
-            className={`flex-1 h-11 rounded-xl text-sm ${role === r ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+            className={`flex-1 h-10 rounded-xl text-sm ${role === r ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
         >
             {label}
         </Button>
     );
 
     return (
-        <div className="relative min-h-svh flex flex-col text-app">
+        <div className="relative h-svh overflow-hidden flex flex-col text-app">
             <VideoBackground />
             <Header />
-            <main className="flex-1 flex items-start sm:items-center justify-center px-4 sm:px-6 py-6 ink-page-scroll">
-                <div className="w-full max-w-2xl mx-auto rounded-3xl bg-card border border-app p-5 sm:p-7">
-                    <div className="text-center mb-5">
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-1 text-xs text-app/70 mb-2">
-                            ✦ <span>Welcome to Inkmity</span>
-                        </div>
-                        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app">Choose your username</h1>
-                        <p className="text-subtle text-xs sm:text-sm mt-1">A username is required to finish creating your account. You can change it anytime.</p>
+            <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-3 overflow-hidden">
+                <div className="w-full max-w-xl mx-auto max-h-full overflow-hidden rounded-2xl bg-card border border-app p-4 sm:p-5">
+                    <div className="text-center mb-3">
+                        <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-app">Choose your username</h1>
+                        <p className="text-subtle text-[11px] sm:text-xs mt-0.5">A username is required to finish creating your account.</p>
                     </div>
 
-                    <div className="mb-5">
-                        <label htmlFor="onboard-username" className="block text-sm text-white/80 mb-1.5 text-center">
+                    <div className="mb-3">
+                        <label htmlFor="onboard-username" className="block text-xs text-white/80 mb-1 text-center">
                             Username <span className="text-red-400">*</span> <span className="text-app/50">(required)</span>
                         </label>
                         <Input
@@ -169,24 +166,24 @@ export default function Onboarding() {
                             maxLength={40}
                             autoFocus
                             aria-required="true"
-                            className={`h-11 rounded-xl text-center ${!usernameValid && username.length > 0 ? "border-red-400" : ""}`}
+                            className={`h-10 rounded-xl text-center ${!usernameValid && username.length > 0 ? "border-red-400" : ""}`}
                         />
-                        <p className={`text-xs mt-1.5 text-center ${!usernameValid && username.length > 0 ? "text-red-400" : "text-app/50"}`}>
+                        <p className={`text-[11px] mt-1 text-center ${!usernameValid && username.length > 0 ? "text-red-400" : "text-app/50"}`}>
                             {!usernameValid && username.length > 0
                                 ? "Username must be at least 2 characters."
                                 : "You must enter a username before you can continue."}
                         </p>
                     </div>
 
-                    <div className="mb-5">
-                        <div className="block text-sm text-white/80 mb-1.5 text-center">I'm joining as</div>
+                    <div className="mb-3">
+                        <div className="block text-xs text-white/80 mb-1 text-center">I'm joining as</div>
                         <div className="flex gap-2">
                             {roleBtn("client", "Client")}
                             {roleBtn("artist", "Artist")}
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-3">
                         {role === "client" ? (
                             <ClientDetailsStep client={client} onChange={handleClient} />
                         ) : (
@@ -199,7 +196,7 @@ export default function Onboarding() {
                             type="button"
                             onClick={() => finish(true)}
                             disabled={submitting || !usernameValid}
-                            className="h-11 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
+                            className="h-10 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
                         >
                             Skip for now
                         </Button>
@@ -207,7 +204,7 @@ export default function Onboarding() {
                             type="button"
                             onClick={() => finish(false)}
                             disabled={submitting || !usernameValid}
-                            className="flex-1 h-11 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
+                            className="flex-1 h-10 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
                         >
                             {submitting ? "Saving…" : "Continue to dashboard"}
                         </Button>
