@@ -6,7 +6,6 @@ import { setCachedUsername } from "@/lib/roleCache";
 import { markOnboarded } from "@/hooks/useOnboarded";
 import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
-import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
@@ -121,12 +120,8 @@ export default function Onboarding() {
 
     if (!isLoaded || checking) {
         return (
-            <div className="relative h-svh flex flex-col items-center justify-center text-app">
+            <div className="relative h-svh flex flex-col text-app">
                 <VideoBackground />
-                <div className="flex flex-col items-center gap-4">
-                    <Spinner size={40} className="text-app" />
-                    <p className="text-sm text-subtle">Setting up your account…</p>
-                </div>
             </div>
         );
     }
@@ -148,20 +143,13 @@ export default function Onboarding() {
             <Header />
             <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-3 overflow-hidden">
                 <div className="w-full max-w-xl mx-auto max-h-full overflow-hidden rounded-2xl bg-card border border-app p-4 sm:p-5">
-                    <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center">
+                    <div className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-center">
                         <p className="text-[11px] sm:text-xs font-semibold text-amber-300">
                             Finish setting up your account to continue.
                         </p>
-                        <p className="text-[10px] sm:text-[11px] text-amber-200/80 mt-0.5">
-                            You'll be brought back here until your profile is complete.
-                        </p>
-                    </div>
-                    <div className="text-center mb-3">
-                        <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-app">Choose your username</h1>
-                        <p className="text-subtle text-[11px] sm:text-xs mt-0.5">A username is required to finish creating your account.</p>
                     </div>
 
-                    <div className="mb-3">
+                    <div className="mb-2">
                         <label htmlFor="onboard-username" className="block text-xs text-white/80 mb-1 text-center">
                             Username <span className="text-red-400">*</span> <span className="text-app/50">(required)</span>
                         </label>
@@ -179,11 +167,11 @@ export default function Onboarding() {
                         <p className={`text-[11px] mt-1 text-center ${!usernameValid && username.length > 0 ? "text-red-400" : "text-app/50"}`}>
                             {!usernameValid && username.length > 0
                                 ? "Username must be at least 2 characters."
-                                : "You must enter a username before you can continue."}
+                                : "Required to continue."}
                         </p>
                     </div>
 
-                    <div className="mb-3">
+                    <div className="mb-2">
                         <div className="block text-xs text-white/80 mb-1 text-center">I'm joining as</div>
                         <div className="flex gap-2">
                             {roleBtn("client", "Client")}
@@ -191,7 +179,7 @@ export default function Onboarding() {
                         </div>
                     </div>
 
-                    <div className="mb-3">
+                    <div className="mb-2">
                         {role === "client" ? (
                             <ClientDetailsStep client={client} onChange={handleClient} />
                         ) : (

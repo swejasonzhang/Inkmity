@@ -223,9 +223,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     return { icon: EyeOff, label: "Invisible", color: "text-zinc-400", dot: "bg-zinc-400" };
   };
 
-  const homeHref = "/landing";
   const cachedSignedIn = useMemo(() => !!getCachedUsername(), []);
   const effectiveSignedIn = (isLoaded ? !!isSignedIn : cachedSignedIn) && isOnboarded;
+  const homeHref = effectiveSignedIn ? "/dashboard" : "/landing";
   const navLocked = disableDashboardLink || !effectiveSignedIn;
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
