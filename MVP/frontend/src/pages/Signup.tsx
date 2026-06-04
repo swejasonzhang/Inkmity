@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
+import { setCachedUsername } from "@/lib/roleCache";
 import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
 import CookieConsent from "@/components/access/CookieConsent";
@@ -355,6 +356,8 @@ export default function SignUp() {
           if (!meRes.ok) throw new Error("me_not_found");
           const me = await meRes.json();
           if (!me?._id) throw new Error("me_missing_id");
+          setCachedUsername(shared.username.trim());
+          window.dispatchEvent(new Event("inkmity:user-updated"));
           if (role === "client") {
             const urls = clientRefs.filter(Boolean).slice(0, 3);
             if (urls.length) {

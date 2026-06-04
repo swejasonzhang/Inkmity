@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getMe, syncUser } from "@/api";
+import { setCachedUsername } from "@/lib/roleCache";
 import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
 import { Spinner } from "@/components/ui/spinner";
@@ -106,6 +107,8 @@ export default function Onboarding() {
                 lastName: ln,
                 profile,
             });
+            setCachedUsername(username.trim());
+            window.dispatchEvent(new Event("inkmity:user-updated"));
             navigate("/dashboard", { replace: true });
         } catch {
             setSubmitting(false);
