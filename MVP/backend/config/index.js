@@ -35,6 +35,20 @@ export const config = {
     minCents: Number(process.env.PLATFORM_FEE_MIN_CENTS ?? 500),
   },
 
+  // Local testing escape hatch: bypass marketplace gates (artist Connect
+  // onboarding, per-client booking permission, cooldowns) so the full workflow
+  // can be exercised without setup. Hard-disabled in production.
+  // A getter (not a fixed value) so it reflects env loaded after this module is
+  // imported — under ESM, imports are hoisted before server.js loads its .env.
+  dev: {
+    get bypassGates() {
+      return (
+        process.env.DEV_BYPASS_GATES === "true" &&
+        (process.env.NODE_ENV || "development") !== "production"
+      );
+    },
+  },
+
   // Milestone rewards: a client's completed-booking count maps to a reduced
   // platform-fee rate. Ordered ascending by `bookings` threshold.
   rewards: {

@@ -1,6 +1,7 @@
 import ArtistPolicy from "../models/ArtistPolicy.js";
 import ClientBookingPermission from "../models/ClientBookingPermission.js";
 import Artist from "../models/Artist.js";
+import { config } from "../config/index.js";
 
 export async function getArtistPolicy(req, res) {
   try {
@@ -68,9 +69,19 @@ export async function getBookingGate(req, res) {
   try {
     const { artistId } = req.params;
     const clientId = req.query?.clientId || req.user?.clerkId || req.auth?.userId;
-    
+
     if (!artistId) return res.status(400).json({ error: "missing_artistId" });
-    
+
+    // Dev bypass: unblock the booking UI without onboarding/permission setup.
+    if (config.dev.bypassGates) {
+      return res.json({
+        enabled: true,
+        depositConfigured: true,
+        payoutsReady: true,
+        message: "Dev mode: bookings enabled",
+      });
+    }
+
     const policy = await ArtistPolicy.findOne({ artistId });
     if (!policy) {
       return res.json({ 

@@ -26,17 +26,20 @@ function computePlatformFeeCents(priceCents, effectivePct, minCents) {
 }
 
 // Resolve the artist's Connect account by clerkId (booking.artistId is a clerkId).
-// Returns the connected account id, or throws a 409 if the artist can't accept payouts yet.
-async function requireArtistConnectAccount(artistId) {
+// Returns the connected account id when the artist is onboarded. Returns null in
+// dev-bypass mode (charge the platform test account directly, no transfer);
+// otherwise throws a 409 if the artist can't accept payouts yet.
+async function resolveArtistPayoutAccount(artistId) {
   const artist = await Artist.findOne({ clerkId: String(artistId) });
-  if (!artist?.stripeConnectAccountId || !artist.chargesEnabled) {
-    const e = new Error("artist_not_onboarded");
-    e.status = 409;
-    e.publicMessage =
-      "This artist hasn't finished payment setup yet, so payments can't be processed.";
-    throw e;
+  if (artist?.stripeConnectAccountId && artist.chargesEnabled) {
+    return artist.stripeConnectAccountId;
   }
-  return artist.stripeConnectAccountId;
+  if (config.dev.bypassGates) return null;
+  const e = new Error("artist_not_onboarded");
+  e.status = 409;
+  e.publicMessage =
+    "This artist hasn't finished payment setup yet, so payments can't be processed.";
+  throw e;
 }
 
 function requireBooking(booking) {
@@ -80,7 +83,7 @@ export async function checkoutDeposit(req, res) {
 
   // Marketplace: the platform fee is added on top of the deposit. The artist's
   // Connect account receives the deposit; the platform keeps the fee.
-  const connectAccountId = await requireArtistConnectAccount(booking.artistId);
+  const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
   const effectivePct = await getEffectiveFeePct(booking.clientId);
   const platformFeeCents = computePlatformFeeCents(
     booking.priceCents,
@@ -166,10 +169,14 @@ export async function checkoutDeposit(req, res) {
     mode: "payment",
     customer: customer.id,
     payment_method_types: ["card"],
-    payment_intent_data: {
-      application_fee_amount: platformFeeCents,
-      transfer_data: { destination: connectAccountId },
-    },
+    ...(connectAccountId
+      ? {
+          payment_intent_data: {
+            application_fee_amount: platformFeeCents,
+            transfer_data: { destination: connectAccountId },
+          },
+        }
+      : {}),
     line_items: lineItems,
     metadata: {
       billingId: String(bill._id),
@@ -213,8 +220,9 @@ export async function createDepositPaymentIntent(req, res) {
 
   // Marketplace: the platform fee is added on top of the deposit. The client
   // pays (deposit + fee); the artist's Connect account receives the deposit; the
-  // platform keeps the fee as the application fee.
-  const connectAccountId = await requireArtistConnectAccount(booking.artistId);
+  // platform keeps the fee as the application fee. (Dev bypass: no Connect
+  // account — the whole charge stays on the platform test account.)
+  const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
   const effectivePct = await getEffectiveFeePct(booking.clientId);
   const platformFeeCents = computePlatformFeeCents(
     booking.priceCents,
@@ -271,12 +279,10 @@ export async function createDepositPaymentIntent(req, res) {
   booking.platformFeeCents = platformFeeCents;
   await booking.save();
 
-  const paymentIntent = await stripe.paymentIntents.create({
+  const depositIntentParams = {
     amount: chargeAmount,
     currency: CURRENCY,
     customer: customer.id,
-    application_fee_amount: platformFeeCents,
-    transfer_data: { destination: connectAccountId },
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
@@ -288,7 +294,12 @@ export async function createDepositPaymentIntent(req, res) {
     automatic_payment_methods: {
       enabled: true,
     },
-  });
+  };
+  if (connectAccountId) {
+    depositIntentParams.application_fee_amount = platformFeeCents;
+    depositIntentParams.transfer_data = { destination: connectAccountId };
+  }
+  const paymentIntent = await stripe.paymentIntents.create(depositIntentParams);
 
   bill.stripePaymentIntentId = paymentIntent.id;
   await bill.save();
@@ -389,8 +400,8 @@ export async function createFinalPaymentIntent(req, res) {
   }
 
   // Final payment transfers entirely to the artist — the platform fee was
-  // already collected on the deposit.
-  const connectAccountId = await requireArtistConnectAccount(booking.artistId);
+  // already collected on the deposit. (Dev bypass: stays on the platform account.)
+  const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
 
   let customer;
   try {
@@ -437,11 +448,10 @@ export async function createFinalPaymentIntent(req, res) {
     },
   });
 
-  const paymentIntent = await stripe.paymentIntents.create({
+  const finalIntentParams = {
     amount: remainingCents,
     currency: CURRENCY,
     customer: customer.id,
-    transfer_data: { destination: connectAccountId },
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
@@ -453,7 +463,11 @@ export async function createFinalPaymentIntent(req, res) {
     automatic_payment_methods: {
       enabled: true,
     },
-  });
+  };
+  if (connectAccountId) {
+    finalIntentParams.transfer_data = { destination: connectAccountId };
+  }
+  const paymentIntent = await stripe.paymentIntents.create(finalIntentParams);
 
   bill.stripePaymentIntentId = paymentIntent.id;
   await bill.save();
