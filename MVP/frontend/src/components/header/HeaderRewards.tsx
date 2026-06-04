@@ -10,12 +10,15 @@ function pctLabel(p: number) {
 export default function HeaderRewards() {
   const { getToken } = useAuth();
   const [data, setData] = useState<RewardsSummary | null>(null);
+  const [ready, setReady] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const token = await getToken();
       setData(await getMyRewards(token ?? undefined));
     } catch {
+    } finally {
+      setReady(true);
     }
   }, [getToken]);
 
@@ -25,6 +28,18 @@ export default function HeaderRewards() {
     window.addEventListener("rewards:refresh", onRefresh);
     return () => window.removeEventListener("rewards:refresh", onRefresh);
   }, [load]);
+
+  if (!ready) {
+    return (
+      <div className="hidden md:flex items-center gap-2 rounded-full border border-app bg-card px-3 py-1.5 flex-shrink-0">
+        <span className="ink-shimmer h-4 w-4 rounded-full" />
+        <div className="flex flex-col gap-1">
+          <span className="ink-shimmer h-3 w-12 rounded" />
+          <span className="ink-shimmer h-2 w-8 rounded" />
+        </div>
+      </div>
+    );
+  }
 
   if (!data) return null;
 

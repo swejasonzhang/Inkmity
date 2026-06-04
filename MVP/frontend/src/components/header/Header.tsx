@@ -225,14 +225,14 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const cachedSignedIn = useMemo(() => !!getCachedUsername(), []);
   const effectiveSignedIn = (isLoaded ? !!isSignedIn : cachedSignedIn) && isOnboarded;
-  const homeHref = effectiveSignedIn ? "/dashboard" : "/landing";
+  const homeHref = "/landing";
   const navLocked = disableDashboardLink || !effectiveSignedIn;
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
   const onGate = useCallback<React.MouseEventHandler>((e) => {
     e.preventDefault();
-    navigate("/login", { state: { from: pathname, gate: true } });
-  }, [navigate, pathname]);
+    e.stopPropagation();
+  }, []);
 
   const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(effectiveSignedIn, onGate, userRole), [effectiveSignedIn, onGate, userRole]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
