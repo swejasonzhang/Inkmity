@@ -282,6 +282,8 @@ export type Me = {
   clerkId: string;
   role: "client" | "artist";
   username: string;
+  handle?: string;
+  usernameUpdatedAt?: string;
   onboardingComplete?: boolean;
   portfolioImages?: string[];
   bio?: string;

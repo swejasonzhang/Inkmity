@@ -4,6 +4,7 @@ import "../models/Client.js";
 import "../models/Artist.js";
 import cloudinary from "../lib/cloudinary.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
+import { config } from "../config/index.js";
 
 const SAFE_ROLES = new Set(["client", "artist"]);
 
@@ -283,8 +284,31 @@ export async function syncUser(req, res) {
         .json({ error: "clerkId, email, role are required" });
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
     const existing = await User.findOne({ clerkId }).lean();
-    const finalUsername =
+    const requestedUsername =
       String(bodyUsername || "").trim() || existing?.username || "user";
+
+    const cooldownMs =
+      config.account.usernameChangeCooldownDays * 24 * 60 * 60 * 1000;
+    let finalUsername = requestedUsername;
+    let usernameUpdatedAt = existing?.usernameUpdatedAt || null;
+    let usernameChange = { changed: false, blocked: false, availableAt: null };
+    if (existing && requestedUsername !== existing.username) {
+      const lastMs = existing.usernameUpdatedAt
+        ? new Date(existing.usernameUpdatedAt).getTime()
+        : 0;
+      if (lastMs && Date.now() - lastMs < cooldownMs) {
+        finalUsername = existing.username;
+        usernameChange = {
+          changed: false,
+          blocked: true,
+          availableAt: new Date(lastMs + cooldownMs),
+        };
+      } else {
+        usernameUpdatedAt = new Date();
+        usernameChange = { changed: true, blocked: false, availableAt: null };
+      }
+    }
+
     let targetHandle = existing?.handle;
     if (!targetHandle) {
       const baseForHandle =
@@ -318,6 +342,7 @@ export async function syncUser(req, res) {
       visible,
       visibility,
       onboardingComplete: true,
+      ...(usernameUpdatedAt ? { usernameUpdatedAt } : {}),
       ...(styles.length ? { styles } : {}),
     };
     if (role === "client") {
@@ -392,7 +417,7 @@ export async function syncUser(req, res) {
         setDefaultsOnInsert: true,
       }
     ).lean();
-    res.status(200).json(user);
+    res.status(200).json({ ...user, usernameChange });
   } catch (e) {
     console.error("[syncUser] failed:", e);
     res

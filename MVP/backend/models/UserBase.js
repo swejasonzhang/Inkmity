@@ -17,7 +17,8 @@ const UserBaseSchema = new Schema(
     clerkId: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
     username: { type: String, required: true, default: "user" },
-    handle: { type: String, required: true, unique: true, index: true },
+    usernameUpdatedAt: { type: Date },
+    handle: { type: String, required: true, unique: true, immutable: true, index: true },
     styles: [{ type: String, index: true }],
     avatar: ImageSchema,
     role: {
