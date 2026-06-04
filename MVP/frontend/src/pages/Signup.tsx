@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, ChangeEvent, useRef } from "react";
 import Header from "@/components/header/Header";
 import { motion, useReducedMotion } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
+import { useOnboarded } from "@/hooks/useOnboarded";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
@@ -135,9 +136,29 @@ export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { userId, getToken, isLoaded: authLoaded } = useAuth();
+  const { onboarded } = useOnboarded();
+  const staleSessionRef = useRef<boolean | null>(null);
   const navigate = useNavigate();
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [flashToken, setFlashToken] = useState(0);
+
+  useEffect(() => {
+    if (!authLoaded) return;
+    if (staleSessionRef.current === null) staleSessionRef.current = !!userId;
+  }, [authLoaded, userId]);
+
+  useEffect(() => {
+    if (authLoaded && staleSessionRef.current === true && !!userId && onboarded === false) {
+      if (redirectTimerRef.current !== null) {
+        clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+      isRedirectingRef.current = false;
+      setShowSuccess(false);
+      setSuccessType(null);
+      signOut();
+    }
+  }, [authLoaded, userId, onboarded, signOut]);
 
   useEffect(() => {
     if (!authLoaded) return;
