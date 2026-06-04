@@ -41,8 +41,10 @@ export default function Onboarding() {
         (async () => {
             try {
                 const token = await getToken();
-                await getMe({ token: token ?? undefined });
-                if (active) navigate("/dashboard", { replace: true });
+                const me = await getMe({ token: token ?? undefined });
+                if (!active) return;
+                if (me?.onboardingComplete === true) navigate("/dashboard", { replace: true });
+                else setChecking(false);
             } catch {
                 if (active) setChecking(false);
             }
@@ -151,24 +153,29 @@ export default function Onboarding() {
                             ✦ <span>Welcome to Inkmity</span>
                         </div>
                         <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app">Choose your username</h1>
-                        <p className="text-subtle text-xs sm:text-sm mt-1">Pick a display name, then add a few details. You can change these anytime.</p>
+                        <p className="text-subtle text-xs sm:text-sm mt-1">A username is required to finish creating your account. You can change it anytime.</p>
                     </div>
 
                     <div className="mb-5">
-                        <label htmlFor="onboard-username" className="block text-sm text-white/80 mb-1.5 text-center">Username</label>
+                        <label htmlFor="onboard-username" className="block text-sm text-white/80 mb-1.5 text-center">
+                            Username <span className="text-red-400">*</span> <span className="text-app/50">(required)</span>
+                        </label>
                         <Input
                             id="onboard-username"
                             name="username"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Enter a username"
+                            placeholder="Enter a username to continue"
                             maxLength={40}
                             autoFocus
-                            className="h-11 rounded-xl text-center"
+                            aria-required="true"
+                            className={`h-11 rounded-xl text-center ${!usernameValid && username.length > 0 ? "border-red-400" : ""}`}
                         />
-                        {!usernameValid && username.length > 0 && (
-                            <p className="text-xs text-red-400 mt-1.5 text-center">Username must be at least 2 characters.</p>
-                        )}
+                        <p className={`text-xs mt-1.5 text-center ${!usernameValid && username.length > 0 ? "text-red-400" : "text-app/50"}`}>
+                            {!usernameValid && username.length > 0
+                                ? "Username must be at least 2 characters."
+                                : "You must enter a username before you can continue."}
+                        </p>
                     </div>
 
                     <div className="mb-5">

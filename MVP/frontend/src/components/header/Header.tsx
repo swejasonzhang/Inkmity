@@ -126,9 +126,11 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         const name =
-          (data?.username && String(data.username).trim()) ||
-          (data?.handle && String(data.handle).replace(/^@/, "")) ||
-          "";
+          data?.onboardingComplete === true
+            ? (data?.username && String(data.username).trim()) ||
+              (data?.handle && String(data.handle).replace(/^@/, "")) ||
+              ""
+            : "";
         if (cancelled || ac.signal.aborted) return;
         const finalName = name || "User";
         userLabelRef.current = finalName;
