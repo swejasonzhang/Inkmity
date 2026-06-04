@@ -10,6 +10,7 @@ import { Nav } from "./Nav";
 import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityStatus } from "./VisibilityDropdown";
+import HeaderRewards from "./HeaderRewards";
 import { API_URL } from "@/api";
 import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername } from "@/lib/roleCache";
 
@@ -382,6 +383,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             <button type="button" aria-label="Open menu" className={mobileBtnCls} onClick={() => setMobileMenuOpen(true)}>
               <Menu strokeWidth={1.75} className={mobileIconCls} />
             </button>
+
+            {effectiveSignedIn && userRole === "client" && <HeaderRewards />}
 
             {effectiveSignedIn ? (
               <div

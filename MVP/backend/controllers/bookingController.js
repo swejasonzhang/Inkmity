@@ -13,6 +13,7 @@ import { DateTime, Interval } from "luxon";
 import { getIO } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
+import { config } from "../config/index.js";
 import { randomBytes } from "crypto";
 
 const DEFAULT_TIMEZONE = "America/New_York";
@@ -36,6 +37,7 @@ function genCode() {
 
 // A client can only book an artist who can actually receive marketplace payouts.
 async function artistCanReceivePayments(artistId) {
+  if (config.dev.bypassGates) return true;
   const artist = await Artist.findOne({ clerkId: String(artistId) });
   return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
 }
@@ -279,7 +281,7 @@ export async function createBooking(req, res) {
       clientId: String(userId),
     });
     
-    if (!permission || !permission.enabled) {
+    if (!config.dev.bypassGates && (!permission || !permission.enabled)) {
       return res.status(403).json({
         error: "bookings_disabled",
         message: "Appointments are not enabled for you. Please contact the artist to enable appointments."
@@ -293,11 +295,9 @@ export async function createBooking(req, res) {
       });
     }
 
-    const depositRequiredCents = computeDepositCents(
-      policy,
-      priceCents,
-      "tattoo_session"
-    );
+    const depositRequiredCents = config.dev.bypassGates
+      ? 0
+      : computeDepositCents(policy, priceCents, "tattoo_session");
     let created;
     try {
       created = await Booking.create({
@@ -796,11 +796,13 @@ export async function createConsultation(req, res) {
       return res.status(409).json({ error: "Slot already booked" });
     }
 
-    const activeCooldown = await BookingCooldown.findOne({
-      userId: String(userId),
-      artistId,
-      expiresAt: { $gt: new Date() },
-    });
+    const activeCooldown = config.dev.bypassGates
+      ? null
+      : await BookingCooldown.findOne({
+          userId: String(userId),
+          artistId,
+          expiresAt: { $gt: new Date() },
+        });
 
     if (activeCooldown) {
       const hoursRemaining = (activeCooldown.expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60);
@@ -817,11 +819,9 @@ export async function createConsultation(req, res) {
     } catch {}
 
     const consultationPriceCents = Math.max(0, Number(body.priceCents || 0));
-    const depositRequiredCents = computeDepositCents(
-      policy,
-      consultationPriceCents,
-      "consultation"
-    );
+    const depositRequiredCents = config.dev.bypassGates
+      ? 0
+      : computeDepositCents(policy, consultationPriceCents, "consultation");
 
     let booking;
     try {
@@ -937,7 +937,7 @@ export async function createTattooSession(req, res) {
       clientId: String(userId),
     });
     
-    if (!permission || !permission.enabled) {
+    if (!config.dev.bypassGates && (!permission || !permission.enabled)) {
       return res.status(403).json({
         error: "bookings_disabled",
         message: "Appointments are not enabled for you. Please contact the artist to enable appointments."
@@ -952,11 +952,9 @@ export async function createTattooSession(req, res) {
     }
 
     const priceCents = Math.max(0, Number(body.priceCents || 0));
-    const depositRequiredCents = computeDepositCents(
-      policy,
-      priceCents,
-      "tattoo_session"
-    );
+    const depositRequiredCents = config.dev.bypassGates
+      ? 0
+      : computeDepositCents(policy, priceCents, "tattoo_session");
 
     let booking;
     try {
