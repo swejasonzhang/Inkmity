@@ -317,6 +317,7 @@ export async function syncUser(req, res) {
       bio,
       visible,
       visibility,
+      onboardingComplete: true,
       ...(styles.length ? { styles } : {}),
     };
     if (role === "client") {

@@ -31,6 +31,7 @@ const UserBaseSchema = new Schema(
     visible: { type: Boolean, default: true, index: true },
     visibility: { type: String, enum: ["online", "away", "invisible"], default: "online", index: true },
     lastActive: { type: Date, default: Date.now, index: true },
+    onboardingComplete: { type: Boolean, default: false, index: true },
   },
   { timestamps: true, discriminatorKey: "role", collection: "users" }
 );

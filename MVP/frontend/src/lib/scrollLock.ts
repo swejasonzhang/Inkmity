@@ -1,4 +1,4 @@
-export const PAGE_SCROLL_LOCKED = true;
+export const PAGE_SCROLL_LOCKED = false;
 
 export function applyScrollLock(locked: boolean) {
   const html = document.documentElement;

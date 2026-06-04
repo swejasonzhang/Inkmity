@@ -28,7 +28,7 @@ export function useOnboarded() {
         const token = await getToken();
         const me = await getMe({ token: token ?? undefined });
         if (cancelled) return;
-        const ok = Boolean(me?._id);
+        const ok = me?.onboardingComplete === true;
         if (ok && uid) cachedOnboardedUserId = uid;
         setOnboarded(ok);
       } catch (e: unknown) {
