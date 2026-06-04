@@ -161,6 +161,7 @@ const BASE_RATE_OPTIONS = [
 interface Artist {
     _id: string;
     username: string;
+    handle?: string;
     bio?: string;
     location?: string;
     style?: string[] | string;
@@ -195,6 +196,7 @@ export default function ArtistProfile() {
     const { user } = useUser();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [usernameNotice, setUsernameNotice] = useState<string | null>(null);
     const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
     const [portfolioCategory, setPortfolioCategory] = useState<"pastWorks" | "recentWorks" | "sketches">("recentWorks");
     const [artist, setArtist] = useState<Artist | null>(null);
@@ -290,6 +292,7 @@ export default function ArtistProfile() {
             const artistData: Artist = {
                 _id: data._id || "",
                 username: data.username || "",
+                handle: data.handle || "",
                 visibility: data.visibility || "online",
                 bio: data.bio || "",
                 location: data.location || "",
@@ -560,6 +563,14 @@ export default function ArtistProfile() {
             });
             if (!response.ok) throw new Error("Failed to save profile");
 
+            const result = await response.json().catch(() => null);
+            if (result?.usernameChange?.blocked && result.usernameChange.availableAt) {
+                const when = new Date(result.usernameChange.availableAt).toLocaleDateString();
+                setUsernameNotice(`Your handle is permanent; username can be changed again on ${when}.`);
+            } else {
+                setUsernameNotice(null);
+            }
+
             await loadProfile();
             setEditedArtist({});
         } catch (error) {
@@ -724,6 +735,11 @@ export default function ArtistProfile() {
                             className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center"
                             placeholder="Your name"
                         />
+                        {artist?.handle && (
+                            <p className="text-xs text-center text-app/50">
+                                {artist.handle.startsWith("@") ? artist.handle : `@${artist.handle}`} · permanent handle
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2 w-full max-w-md mb-4">
@@ -1032,6 +1048,9 @@ export default function ArtistProfile() {
                     </div>
 
                     <div className="flex flex-col gap-4 pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
+                        {usernameNotice && (
+                            <p className="text-xs text-amber-400 text-center">{usernameNotice}</p>
+                        )}
                         <div className="flex gap-3 justify-center">
                             <Button
                                 onClick={() => setEditedArtist({})}

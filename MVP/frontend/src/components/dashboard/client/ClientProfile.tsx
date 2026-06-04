@@ -142,6 +142,7 @@ export default function ClientProfile() {
     const { theme } = useTheme();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [usernameNotice, setUsernameNotice] = useState<string | null>(null);
     const [client, setClient] = useState<Client | null>(null);
     const [editedClient, setEditedClient] = useState<Partial<Client>>({});
     const [uploading, setUploading] = useState(false);
@@ -366,6 +367,14 @@ export default function ClientProfile() {
                 }),
             });
             if (!response.ok) throw new Error("Failed to save profile");
+
+            const result = await response.json().catch(() => null);
+            if (result?.usernameChange?.blocked && result.usernameChange.availableAt) {
+                const when = new Date(result.usernameChange.availableAt).toLocaleDateString();
+                setUsernameNotice(`Your handle is permanent; username can be changed again on ${when}.`);
+            } else {
+                setUsernameNotice(null);
+            }
 
             await loadProfile();
             setEditedClient({});
@@ -989,6 +998,9 @@ export default function ClientProfile() {
                             )}
                         </div>
                         <div className="flex flex-col gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+                            {usernameNotice && (
+                                <p className="text-xs text-amber-400 text-center">{usernameNotice}</p>
+                            )}
                             <div className="flex gap-3 justify-end">
                                 <Button
                                     onClick={() => {

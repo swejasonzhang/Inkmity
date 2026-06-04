@@ -66,6 +66,10 @@ export const config = {
     },
   },
 
+  account: {
+    usernameChangeCooldownDays: Number(process.env.USERNAME_CHANGE_COOLDOWN_DAYS ?? 30),
+  },
+
   business: {
     timezone: 'America/New_York',
     defaultSlotMinutes: 30,
