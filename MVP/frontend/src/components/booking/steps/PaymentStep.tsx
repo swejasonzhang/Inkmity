@@ -102,8 +102,6 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
     );
   }, [depositPolicy, bookingData.priceCents, bookingData.appointmentType]);
 
-  // Platform fee preview (added on top of the deposit). Uses the client's reward
-  // tier rate so loyal clients see their reduced fee.
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
   useEffect(() => {
     const ac = new AbortController();

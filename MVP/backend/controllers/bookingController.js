@@ -35,7 +35,6 @@ function genCode() {
   return s;
 }
 
-// A client can only book an artist who can actually receive marketplace payouts.
 async function artistCanReceivePayments(artistId) {
   if (config.dev.bypassGates) return true;
   const artist = await Artist.findOne({ clerkId: String(artistId) });
@@ -527,11 +526,9 @@ export async function cancelBookingViaLink(req, res) {
     const { id } = req.params;
     const { token } = req.query;
 
-    // Fetch the booking including the secret cancel token
     const booking = await Booking.findById(id).select("+cancelToken");
     if (!booking) return res.status(404).json({ error: "not_found" });
 
-    // Validate the cancellation token to prevent unauthorised link-based cancellation
     if (!token || !booking.cancelToken || token !== booking.cancelToken) {
       return res.status(403).redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/appointments?error=invalid_token`);
     }

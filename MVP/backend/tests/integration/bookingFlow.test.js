@@ -8,8 +8,6 @@ import Artist from "../../models/Artist.js";
 import Client from "../../models/Client.js";
 import ClientBookingPermission from "../../models/ClientBookingPermission.js";
 
-// ESM-safe module mocks (registered before the controllers are dynamically
-// imported, since jest.mock does not hoist under native ES modules).
 const stripeMock = {
   customers: { create: jest.fn(), retrieve: jest.fn() },
   paymentIntents: { create: jest.fn() },

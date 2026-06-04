@@ -1,8 +1,3 @@
-// Verifies the local dev-bypass workflow: a client can book an artist who has
-// NOT onboarded with Stripe Connect and has NOT granted booking permission, the
-// deposit is waived (no Stripe), and completing bookings advances the rewards
-// tier. config.dev.bypassGates is a live getter, so the flag is toggled around
-// this suite only (and cleaned up) to avoid leaking into other test files.
 import request from "supertest";
 import express from "express";
 
@@ -44,7 +39,6 @@ conditionalDescribe("Dev Bypass - full booking → rewards workflow", () => {
   });
 
   beforeEach(async () => {
-    // Artist is NOT Connect-onboarded; client has NO booking permission.
     await Artist.create({
       clerkId: artistId,
       email: "a@example.com",
@@ -71,7 +65,6 @@ conditionalDescribe("Dev Bypass - full booking → rewards workflow", () => {
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO, durationMinutes: 120, priceCents: 20000 });
     expect(create.status).toBe(201);
-    // Deposit waived in dev bypass — no Stripe needed.
     expect(create.body.depositRequiredCents).toBe(0);
     const id = create.body._id;
 

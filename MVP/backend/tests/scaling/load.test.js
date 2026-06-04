@@ -230,8 +230,6 @@ describe("Scalability Testing - Large Datasets", () => {
 
     await mongoose.model("artist").insertMany(artists);
 
-    // getArtists caps pageSize at 48 (see userController.getArtists), so request
-    // the maximum page size and expect a full page of 48.
     const MAX_PAGE_SIZE = 48;
     const startTime = Date.now();
     const response = await request(app)

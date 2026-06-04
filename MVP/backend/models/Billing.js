@@ -11,9 +11,7 @@ const BillingSchema = new mongoose.Schema({
     index: true,
   },
   amountCents: { type: Number, default: 0, min: 0 },
-  // Platform (application) fee taken from this charge, in cents.
   platformFeeCents: { type: Number, default: 0, min: 0 },
-  // Connect account the funds were transferred to (the artist).
   stripeConnectAccountId: { type: String, index: true },
   currency: { type: String, default: "usd" },
   paidBy: { type: String, enum: ["client"], default: "client", index: true },

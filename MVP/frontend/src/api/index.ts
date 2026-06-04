@@ -707,8 +707,6 @@ export async function checkConsultationStatus(
   );
 }
 
-// ---- Stripe Connect (artist payouts) ----
-
 export type ConnectStatus = {
   connected: boolean;
   accountId?: string;
@@ -728,8 +726,6 @@ export async function startConnectOnboarding(token?: string, signal?: AbortSigna
 export async function getConnectLoginLink(token?: string, signal?: AbortSignal) {
   return apiPost<{ url: string }>("/connect/login-link", undefined, token, signal);
 }
-
-// ---- Rewards (client milestone tiers) ----
 
 export type RewardsSummary = {
   completedBookings: number;

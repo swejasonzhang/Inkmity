@@ -6,7 +6,6 @@ function getActorId(req) {
   ).trim();
 }
 
-// GET /rewards/me — milestone tier + current platform-fee rate for the client.
 export async function getMyRewards(req, res) {
   try {
     const clientId = getActorId(req);

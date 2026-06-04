@@ -13,7 +13,6 @@ import RewardsPanel from "@/components/dashboard/client/RewardsPanel";
 import LazyReveal from "@/components/ui/LazyReveal";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
 
-
 function formatCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -89,7 +88,6 @@ export default function Appointments() {
       document.body.style.backgroundColor = prev;
     };
   }, [theme]);
-
 
   const isClient = role === "client";
   const isArtist = role === "artist";

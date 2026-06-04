@@ -7,9 +7,6 @@ function pctLabel(p: number) {
   return `${((p * 100) % 1 === 0 ? (p * 100).toFixed(0) : (p * 100).toFixed(1))}%`;
 }
 
-// Compact client rewards chip for the header: current tier + platform-fee rate,
-// with a tooltip showing progress to the next tier. Refetches on the
-// `rewards:refresh` window event (dispatched after a booking completes).
 export default function HeaderRewards() {
   const { getToken } = useAuth();
   const [data, setData] = useState<RewardsSummary | null>(null);
@@ -19,7 +16,6 @@ export default function HeaderRewards() {
       const token = await getToken();
       setData(await getMyRewards(token ?? undefined));
     } catch {
-      /* non-blocking */
     }
   }, [getToken]);
 

@@ -8,8 +8,6 @@ function pctLabel(p: number) {
   return `${(p * 100).toFixed(p * 100 % 1 === 0 ? 0 : 1)}%`;
 }
 
-// Client-facing milestone rewards: shows current tier, the platform-fee rate it
-// earns, and progress toward the next tier.
 export default function RewardsPanel({ className = "" }: { className?: string }) {
   const { getToken } = useAuth();
   const [data, setData] = useState<RewardsSummary | null>(null);
@@ -20,7 +18,6 @@ export default function RewardsPanel({ className = "" }: { className?: string })
       const token = await getToken();
       setData(await getMyRewards(token ?? undefined));
     } catch {
-      /* non-blocking */
     } finally {
       setLoading(false);
     }
@@ -34,7 +31,6 @@ export default function RewardsPanel({ className = "" }: { className?: string })
 
   const { tier, nextTier, completedBookings, currentFeePct } = data;
 
-  // Progress within the current tier band toward the next threshold.
   let progress = 100;
   if (nextTier) {
     const span = nextTier.bookingsToNextTier + completedBookings; // next threshold
