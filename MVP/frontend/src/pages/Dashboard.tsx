@@ -1,5 +1,4 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useLayoutEffect } from "react";
-import { Spinner } from "@/components/ui/spinner";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useRole } from "@/hooks/useRole";
@@ -34,33 +33,6 @@ const loadArtistDashboard = (): Promise<{ default: React.ComponentType<any> }> =
 
 const ClientDashboard = lazy(loadClientDashboard);
 const ArtistDashboard = lazy(loadArtistDashboard);
-
-const LOAD_MS = 500;
-const FADE_MS = 160;
-
-const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
-  const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
-  const fg = theme === "light" ? "#111111" : "#f5f5f5";
-  return (
-    <div
-      className="fixed inset-0 grid place-items-center"
-      style={{ zIndex: 2147483640, background: bg, color: fg }}
-    >
-      <style>{`
-        @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
-        @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
-      `}</style>
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
-          <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: `ink-fill ${LOAD_MS}ms linear forwards` }} />
-        </div>
-        <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite" }}>
-          Loading
-        </div>
-      </div>
-    </div>
-  );
-};
 
 function useDevOverride() {
   const isDev = import.meta.env.MODE !== "production";
@@ -113,19 +85,8 @@ const Dashboard: React.FC = () => {
       className="ink-scope h-dvh overflow-y-hidden flex flex-col"
       style={{ background: shellBg, color: shellFg }}
     >
-      {!isLoaded && <Loading theme={theme} />}
-      <div
-        className="flex-1 min-h-0 w-full"
-        style={{ opacity: isLoaded ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
-      >
-        <Suspense fallback={
-          <div className="flex flex-col items-center justify-center gap-4 h-full">
-            <Spinner size={40} className="text-[color:var(--fg)]" />
-            <div className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
-              Loading dashboard...
-            </div>
-          </div>
-        }>
+      <div className="flex-1 min-h-0 w-full">
+        <Suspense fallback={null}>
           {isLoaded ? (roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />) : null}
         </Suspense>
       </div>

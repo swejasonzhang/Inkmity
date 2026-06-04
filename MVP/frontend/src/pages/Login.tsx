@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/header/Header";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
@@ -8,6 +9,7 @@ import GateNotice from "@/components/access/GateNotice";
 import LoginFormCard from "@/components/access/LoginFormCard";
 import OAuthButtons from "@/components/access/OAuthButtons";
 import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 import { container } from "@/lib/animations";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
 import VideoBackground from "@/components/VideoBackground";
@@ -17,6 +19,7 @@ import "react-toastify/dist/ReactToastify.css";
 type TipState = { show: boolean; x: number; y: number };
 
 export default function Login() {
+  const navigate = useNavigate();
   const prefersReduced = !!useReducedMotion();
   const [showPassword, setShowPassword] = useState(false);
   const [pwdFocused, setPwdFocused] = useState(false);
@@ -46,9 +49,9 @@ export default function Login() {
     }
     isRedirectingRef.current = true;
     redirectTimerRef.current = window.setTimeout(() => {
-      window.location.assign("/dashboard");
+      navigate("/dashboard", { replace: true });
     }, 2000);
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     return () => {
@@ -300,9 +303,50 @@ export default function Login() {
   };
 
   const successTitle =
-    successType === "already" ? "You're already logged in." : "Welcome Back!";
+    successType === "already" ? "You're already logged in" : "Welcome back!";
   const successSubtitle =
-    successType === "already" ? "Redirecting now" : "Redirecting to Dashboard!";
+    successType === "already" ? "Taking you to your dashboard" : "Redirecting to your dashboard";
+
+  const RedirectNotice = (
+    <motion.div
+      initial={prefersReduced ? false : { opacity: 0, y: 14, filter: "blur(8px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="w-full flex flex-col items-center justify-center text-center gap-fluid-6 px-fluid-6 py-fluid-12"
+    >
+      <div className="relative grid place-items-center" style={{ height: "clamp(4.5rem, 9vw, 6rem)", width: "clamp(4.5rem, 9vw, 6rem)" }}>
+        <span
+          className="absolute inset-0 rounded-full animate-spin"
+          style={{
+            border: "2px solid color-mix(in srgb, var(--fg) 16%, transparent)",
+            borderTopColor: "var(--fg)",
+            animationDuration: "0.9s",
+          }}
+          aria-hidden
+        />
+        <span
+          className="absolute inset-0 rounded-full"
+          style={{ boxShadow: "0 0 0 0 color-mix(in srgb, var(--fg) 30%, transparent)", animation: prefersReduced ? undefined : "ink-pulse-ring 1.8s ease-out infinite" }}
+          aria-hidden
+        />
+        <span className="grid place-items-center rounded-full bg-elevated text-app border border-app" style={{ height: "60%", width: "60%" }}>
+          <Check style={{ height: "clamp(1.25rem, 2.4vw, 1.75rem)", width: "clamp(1.25rem, 2.4vw, 1.75rem)" }} />
+        </span>
+      </div>
+      <div className="max-w-sm">
+        <p className="font-extrabold tracking-tight text-app text-fluid-2xl leading-tight">{successTitle}</p>
+        <p className="mt-fluid-2 text-subtle text-fluid-sm inline-flex items-center justify-center leading-relaxed">
+          {successSubtitle}
+          <span className="ink-dots" aria-hidden="true">
+            <span className="ink-dot" />
+            <span className="ink-dot" />
+            <span className="ink-dot" />
+          </span>
+        </p>
+        <span className="sr-only" aria-live="polite">{successTitle}. {successSubtitle}.</span>
+      </div>
+    </motion.div>
+  );
 
   return (
     <div className="relative h-svh overflow-hidden flex flex-col text-app">
@@ -321,25 +365,10 @@ export default function Login() {
                 </motion.div>
               )}
               {!authLoaded ? null : isSignedIn ? (
-                <motion.div layout={false} className="w-full max-w-md p-0">
-                  <div className="rounded-3xl w-full m-0 bg-card border border-app p-4 xs:p-5 sm:p-6 md:p-7 lg:p-8 mx-auto flex flex-col overflow-hidden">
-                    <div className="w-full flex flex-col items-center justify-center gap-6 sm:gap-8 py-10 sm:py-14">
-                      <div className="ink-ring scale-110 xs:scale-115 sm:scale-125 md:scale-135 lg:scale-150" aria-hidden="true">
-                        <div className="ink-ring__inner" />
-                      </div>
-                      <div className="text-center px-4">
-                        <p className="text-app text-xl sm:text-2xl md:text-3xl font-semibold">{successTitle}</p>
-                        <p className="text-subtle mt-2 text-sm sm:text-base md:text-lg">
-                          {successSubtitle}
-                          <span className="ink-dots" aria-hidden="true">
-                            <span className="ink-dot" />
-                            <span className="ink-dot" />
-                            <span className="ink-dot" />
-                          </span>
-                        </p>
-                        <span className="sr-only" aria-live="polite">{successTitle} {successSubtitle}.</span>
-                      </div>
-                    </div>
+                <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} className="w-full max-w-md p-0">
+                  <div className="relative rounded-3xl w-full mx-auto bg-card border border-app overflow-hidden shadow-[0_24px_60px_-18px_rgba(0,0,0,0.6)] ring-1 ring-[color-mix(in_srgb,var(--fg)_12%,transparent)]">
+                    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28" style={{ background: "linear-gradient(to bottom, color-mix(in srgb, var(--fg) 8%, transparent), transparent)" }} />
+                    {RedirectNotice}
                   </div>
                 </motion.div>
               ) : (
@@ -353,23 +382,7 @@ export default function Login() {
                     hideHeader={showSuccess}
                   >
                     {showSuccess ? (
-                      <div className="w-full flex flex-col items-center justify-center gap-6 sm:gap-8 py-10 sm:py-14">
-                        <div className="ink-ring scale-110 xs:scale-115 sm:scale-125 md:scale-135 lg:scale-150" aria-hidden="true">
-                          <div className="ink-ring__inner" />
-                        </div>
-                        <div className="text-center px-4">
-                          <p className="text-app text-xl sm:text-2xl md:text-3xl font-semibold">{successTitle}</p>
-                          <p className="text-subtle mt-2 text-sm sm:text-base md:text-lg">
-                            {successSubtitle}
-                            <span className="ink-dots" aria-hidden="true">
-                              <span className="ink-dot" />
-                              <span className="ink-dot" />
-                              <span className="ink-dot" />
-                            </span>
-                          </p>
-                          <span className="sr-only" aria-live="polite">{successTitle} {successSubtitle}.</span>
-                        </div>
-                      </div>
+                      RedirectNotice
                     ) : (
                       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
                         <OAuthButtons mode="login" />

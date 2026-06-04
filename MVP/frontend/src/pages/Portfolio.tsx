@@ -6,6 +6,7 @@ import Header from "@/components/header/Header";
 import { getMe, updateMyPortfolio } from "@/api";
 import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
 import { Spinner } from "@/components/ui/spinner";
+import LazyReveal from "@/components/ui/LazyReveal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Plus, X, ImageIcon, Save, Star } from "lucide-react";
@@ -134,7 +135,7 @@ export default function Portfolio() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Your Portfolio</h1>
             <p className="mt-1 text-sm text-subtle">
-              Showcase your best tattoo work. Add or remove pieces anytime — the first image is your cover.
+              Showcase your best tattoo work. Add or remove pieces anytime — your first three are featured, and the very first is your cover.
             </p>
           </div>
           {isArtist && (
@@ -169,13 +170,18 @@ export default function Portfolio() {
             title="Portfolios are for artist accounts"
             body="Switch to or create an artist account to build and manage your tattoo portfolio."
           />
-        ) : loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-xl bg-elevated border border-app animate-pulse" />
-            ))}
-          </div>
-        ) : images.length === 0 ? (
+        ) : (
+          <LazyReveal
+            loading={loading}
+            skeleton={
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-xl ink-shimmer" />
+                ))}
+              </div>
+            }
+          >
+          {images.length === 0 ? (
           <EmptyState
             title="No work yet"
             body="Upload your first tattoo photos or stencils to start your portfolio."
@@ -194,12 +200,16 @@ export default function Portfolio() {
             {images.map((url, i) => (
               <figure
                 key={`${url}-${i}`}
-                className="group relative aspect-square overflow-hidden rounded-xl border border-app bg-card"
+                className={`group relative aspect-square overflow-hidden rounded-xl bg-card transition ${
+                  i < 3
+                    ? "ring-2 ring-[var(--fg)] ring-offset-2 ring-offset-[var(--bg)] shadow-[0_10px_30px_-8px_rgba(0,0,0,0.55)]"
+                    : "border border-app"
+                }`}
               >
                 <img src={url} alt={`Portfolio piece ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-                {i === 0 && (
-                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5">
-                    <Star className="h-3 w-3" /> Cover
+                {i < 3 && (
+                  <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--fg)] text-[var(--bg)] text-[10px] font-bold px-2 py-0.5 shadow">
+                    <Star className="h-3 w-3" /> {i === 0 ? "Cover" : "Featured"}
                   </span>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -226,6 +236,8 @@ export default function Portfolio() {
               </figure>
             ))}
           </div>
+        )}
+          </LazyReveal>
         )}
       </main>
     </div>

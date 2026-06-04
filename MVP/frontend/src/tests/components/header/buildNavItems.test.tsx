@@ -3,16 +3,16 @@ import { jest, describe, test, expect } from "@jest/globals";
 const { buildNavItems } = await import("@/components/header/buildNavItems");
 
 describe("buildNavItems", () => {
-  test("should return all enabled nav items when signed in", () => {
+  test("should return enabled nav items (no discovery link without a role) when signed in", () => {
     const items = buildNavItems(true, jest.fn());
-    expect(items).toHaveLength(6);
+    expect(items).toHaveLength(5);
     expect(items.every((i) => !i.disabled)).toBe(true);
   });
 
   test("should include core destinations in order", () => {
     const items = buildNavItems(true, jest.fn());
     const labels = items.map((i) => i.label);
-    expect(labels).toEqual(["Dashboard", "Artists", "Appointments", "Gallery", "Contact", "About"]);
+    expect(labels).toEqual(["Dashboard", "Appointments", "Gallery", "Contact", "About"]);
   });
 
   test("should lock auth links (with gate handler) when signed out, leaving Contact/About open", () => {
@@ -20,7 +20,7 @@ describe("buildNavItems", () => {
     const items = buildNavItems(false, onGate);
     const byLabel = (label: string) => items.find((i) => i.label === label)!;
 
-    for (const label of ["Dashboard", "Artists", "Appointments", "Gallery"]) {
+    for (const label of ["Dashboard", "Appointments", "Gallery"]) {
       expect(byLabel(label).disabled).toBe(true);
       expect(byLabel(label).onClick).toBe(onGate);
     }
@@ -30,19 +30,24 @@ describe("buildNavItems", () => {
     }
   });
 
-  test("should show Artists directory for clients", () => {
+  test("should NOT show an Artists link for clients (dashboard already lists artists)", () => {
     const items = buildNavItems(true, jest.fn(), "client");
-    const discover = items[1];
-    expect(discover.label).toBe("Artists");
-    expect(discover.to).toBe("/artists");
+    const labels = items.map((i) => i.label);
+    expect(labels).not.toContain("Artists");
+    expect(labels).toEqual(["Dashboard", "Appointments", "Gallery", "Contact", "About"]);
   });
 
-  test("should replace Artists with Portfolio for artists", () => {
+  test("should give artists a Portfolio link as their discovery destination", () => {
     const items = buildNavItems(true, jest.fn(), "artist");
     const labels = items.map((i) => i.label);
     expect(labels).not.toContain("Artists");
     const discover = items[1];
     expect(discover.label).toBe("Portfolio");
     expect(discover.to).toBe("/portfolio");
+  });
+
+  test("should NOT show Portfolio for a signed-out artist (stale cached role)", () => {
+    const items = buildNavItems(false, jest.fn(), "artist");
+    expect(items.map((i) => i.label)).not.toContain("Portfolio");
   });
 });
