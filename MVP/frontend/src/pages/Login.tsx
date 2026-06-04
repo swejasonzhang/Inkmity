@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { container } from "@/lib/animations";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
-import { useOnboarded } from "@/hooks/useOnboarded";
 import VideoBackground from "@/components/VideoBackground";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,9 +29,7 @@ export default function Login() {
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive, isLoaded: signInLoaded } = useSignIn();
-  const { userId, isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
-  const { onboarded } = useOnboarded();
-  const staleSessionRef = useRef<boolean | null>(null);
+  const { userId, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const [authError, setAuthError] = useState("");
   const pwdRef = useRef<HTMLInputElement | null>(null);
@@ -64,24 +61,6 @@ export default function Login() {
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (!authLoaded) return;
-    if (staleSessionRef.current === null) staleSessionRef.current = !!isSignedIn;
-  }, [authLoaded, isSignedIn]);
-
-  useEffect(() => {
-    if (authLoaded && staleSessionRef.current === true && isSignedIn && onboarded === false) {
-      if (redirectTimerRef.current !== null) {
-        window.clearTimeout(redirectTimerRef.current);
-        redirectTimerRef.current = null;
-      }
-      isRedirectingRef.current = false;
-      setShowSuccess(false);
-      setSuccessType(null);
-      signOut();
-    }
-  }, [authLoaded, isSignedIn, onboarded, signOut]);
 
   useEffect(() => {
     const mm = (e: MouseEvent) => {
