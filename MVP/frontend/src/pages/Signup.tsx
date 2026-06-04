@@ -5,7 +5,7 @@ import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import { setCachedUsername } from "@/lib/roleCache";
-import { markOnboarded } from "@/hooks/useOnboarded";
+import { markOnboarded, useOnboarded } from "@/hooks/useOnboarded";
 import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
 import CookieConsent from "@/components/access/CookieConsent";
@@ -137,13 +137,15 @@ export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { userId, getToken, isLoaded: authLoaded } = useAuth();
+  const { onboarded } = useOnboarded();
+  const effectivelySignedIn = !!userId && onboarded === true;
   const navigate = useNavigate();
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [flashToken, setFlashToken] = useState(0);
 
   useEffect(() => {
     if (!authLoaded) return;
-    if (!userId) {
+    if (!effectivelySignedIn) {
       if (!isMountedRef.current) {
         isMountedRef.current = true;
       }
@@ -165,7 +167,7 @@ export default function SignUp() {
         navigate("/dashboard", { replace: true });
       }, 2000);
     }
-  }, [authLoaded, userId, navigate]);
+  }, [authLoaded, effectivelySignedIn, navigate]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowInfo(true), 2000);
@@ -434,10 +436,10 @@ export default function SignUp() {
       <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 md:px-8 pt-2 pb-6 sm:pb-8" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
           <motion.div variants={container} initial="hidden" animate="show" className="relative w-full max-w-2xl mx-auto">
             <GateNotice />
-            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId ? "" : "justify-center"}`}>
-              {showInfo && !showSuccess && authLoaded && !userId && (
+            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !effectivelySignedIn ? "" : "justify-center"}`}>
+              {showInfo && !showSuccess && authLoaded && !effectivelySignedIn && (
                 <motion.div
-                  layout={!showSuccess && !userId}
+                  layout={!showSuccess && !effectivelySignedIn}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   className="hidden sm:flex w-full sm:w-1/2"
                 >
@@ -446,7 +448,7 @@ export default function SignUp() {
                   </div>
                 </motion.div>
               )}
-              {!authLoaded ? null : userId ? (
+              {!authLoaded ? null : effectivelySignedIn ? (
                 <motion.div
                   layout={false}
                   className="w-full max-w-md p-0 flex items-center justify-center"
