@@ -6,6 +6,7 @@ import { setCachedUsername } from "@/lib/roleCache";
 import { markOnboarded } from "@/hooks/useOnboarded";
 import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
@@ -23,6 +24,7 @@ export default function Onboarding() {
 
     const [checking, setChecking] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [completing, setCompleting] = useState(false);
     const [username, setUsername] = useState("");
     const [role, setRole] = useState<Role>("client");
 
@@ -71,6 +73,7 @@ export default function Onboarding() {
     const finish = async (useDefaults: boolean) => {
         if (!user || submitting || !usernameValid) return;
         setSubmitting(true);
+        setCompleting(true);
         try {
             const token = await getToken();
             const email =
@@ -112,11 +115,24 @@ export default function Onboarding() {
             setCachedUsername(username.trim());
             markOnboarded(user.id);
             window.dispatchEvent(new Event("inkmity:user-updated"));
-            navigate("/dashboard", { replace: true });
+            setTimeout(() => navigate("/dashboard", { replace: true }), 1100);
         } catch {
             setSubmitting(false);
+            setCompleting(false);
         }
     };
+
+    if (completing) {
+        return (
+            <div className="relative h-svh flex flex-col items-center justify-center text-app">
+                <VideoBackground />
+                <div className="flex flex-col items-center gap-4">
+                    <Spinner size={40} className="text-app" />
+                    <p className="text-sm text-subtle">Setting up your account…</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!isLoaded || checking) {
         return (

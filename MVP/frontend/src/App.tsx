@@ -1,6 +1,6 @@
 import React from "react";
-import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import { SignedIn, SignedOut, RedirectToSignIn, useUser } from "@clerk/clerk-react";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -46,23 +46,8 @@ const DashboardScope: React.FC = () => {
   );
 };
 
-const ONBOARDING_EXEMPT = ["/onboarding", "/sso-callback"];
-
 const App: React.FC = () => {
   useInactivityLogout();
-  const { isSignedIn, isLoaded } = useUser();
-  const { onboarded } = useOnboarded();
-  const { pathname } = useLocation();
-
-  const mustOnboard =
-    isLoaded &&
-    !!isSignedIn &&
-    onboarded === false &&
-    !ONBOARDING_EXEMPT.some((p) => pathname === p || pathname.startsWith(p + "/"));
-
-  if (mustOnboard) {
-    return <Navigate to="/onboarding" replace state={{ needsOnboarding: true }} />;
-  }
 
   return (
     <Routes>
