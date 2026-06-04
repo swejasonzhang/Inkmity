@@ -20,7 +20,7 @@ const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100",
 export default function Onboarding() {
     const navigate = useNavigate();
     const { isLoaded, isSignedIn, user } = useUser();
-    const { getToken } = useAuth();
+    const { getToken, signOut } = useAuth();
 
     const [checking, setChecking] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -148,6 +148,14 @@ export default function Onboarding() {
             <Header />
             <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-3 overflow-hidden">
                 <div className="w-full max-w-xl mx-auto max-h-full overflow-hidden rounded-2xl bg-card border border-app p-4 sm:p-5">
+                    <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center">
+                        <p className="text-[11px] sm:text-xs font-semibold text-amber-300">
+                            Finish setting up your account to continue.
+                        </p>
+                        <p className="text-[10px] sm:text-[11px] text-amber-200/80 mt-0.5">
+                            You'll be brought back here until your profile is complete.
+                        </p>
+                    </div>
                     <div className="text-center mb-3">
                         <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-app">Choose your username</h1>
                         <p className="text-subtle text-[11px] sm:text-xs mt-0.5">A username is required to finish creating your account.</p>
@@ -208,6 +216,16 @@ export default function Onboarding() {
                         >
                             {submitting ? "Saving…" : "Continue to dashboard"}
                         </Button>
+                    </div>
+
+                    <div className="mt-3 text-center">
+                        <button
+                            type="button"
+                            onClick={() => signOut({ redirectUrl: "/login" })}
+                            className="text-[11px] text-app/50 hover:text-app/80 underline underline-offset-2 transition"
+                        >
+                            Not you? Sign out
+                        </button>
                     </div>
                 </div>
             </main>
