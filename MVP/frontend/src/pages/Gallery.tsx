@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ImageIcon, Bot, ShieldCheck, X } from "lucide-react";
 import Header from "@/components/header/Header";
-import VideoBackground from "@/components/VideoBackground";
+import LazyReveal from "@/components/ui/LazyReveal";
 import { fetchArtists, type Artist } from "@/api";
 
 type GalleryItem = {
@@ -67,8 +67,7 @@ const Gallery: React.FC = () => {
   ];
 
   return (
-    <div className="h-svh overflow-y-auto overflow-x-hidden text-app">
-      <VideoBackground />
+    <div className="h-svh overflow-y-auto overflow-x-hidden bg-app text-app">
       <Header />
 
       <main className="w-full max-w-[1600px] mx-auto px-3 sm:px-6 py-8 sm:py-10 pb-16">
@@ -166,55 +165,64 @@ const RealWork: React.FC<{
   loading: boolean;
   onOpen: (item: GalleryItem) => void;
 }> = ({ items, loading, onOpen }) => {
-  if (loading) {
-    return (
-      <div className="columns-2 xs:columns-3 sm:columns-4 lg:columns-5 xl:columns-6 gap-2 sm:gap-3">
-        {Array.from({ length: 18 }).map((_, i) => (
-          <div
-            key={i}
-            className="mb-2 sm:mb-3 w-full rounded-xl bg-elevated border border-app animate-pulse"
-            style={{ height: `${140 + (i % 4) * 40}px` }}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <EmptyState
-        Icon={ImageIcon}
-        title="No artwork yet"
-        body="As artists publish their portfolios, their stencils and finished tattoos will show up here."
-      />
-    );
-  }
-
-  return (
-    <div className="columns-2 xs:columns-3 sm:columns-4 lg:columns-5 xl:columns-6 gap-2 sm:gap-3">
-      {items.map((item, i) => (
-        <motion.button
-          type="button"
-          key={`${item.url}-${i}`}
-          onClick={() => onOpen(item)}
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-          transition={{ duration: 0.35, delay: Math.min(i * 0.015, 0.25) }}
-          className="mb-2 sm:mb-3 block w-full break-inside-avoid relative overflow-hidden rounded-xl border border-app bg-card group cursor-zoom-in"
-        >
-          <img
-            src={item.url}
-            alt={`Tattoo work by ${item.artist}`}
-            loading="lazy"
-            className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          />
-          <figcaption className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white text-left">
-            @{item.artist}
-          </figcaption>
-        </motion.button>
+  const skeleton = (
+    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+      {Array.from({ length: 24 }).map((_, i) => (
+        <div key={i} className="aspect-square w-full rounded-xl ink-shimmer" />
       ))}
     </div>
+  );
+
+  return (
+    <LazyReveal loading={loading} skeleton={skeleton}>
+      {items.length === 0 ? (
+        <EmptyState
+          Icon={ImageIcon}
+          title="No artwork yet"
+          body="As artists publish their portfolios, their stencils and finished tattoos will show up here."
+        />
+      ) : (
+        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+          {items.map((item, i) => (
+            <GalleryTile key={`${item.url}-${i}`} item={item} index={i} onOpen={onOpen} />
+          ))}
+        </div>
+      )}
+    </LazyReveal>
+  );
+};
+
+const GalleryTile: React.FC<{
+  item: GalleryItem;
+  index: number;
+  onOpen: (item: GalleryItem) => void;
+}> = ({ item, index, onOpen }) => {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <motion.button
+      type="button"
+      onClick={() => onOpen(item)}
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "0px 0px -8% 0px" }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.015, 0.25) }}
+      className="block w-full aspect-square relative overflow-hidden rounded-xl border border-app bg-card group cursor-zoom-in"
+    >
+      {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
+      <img
+        src={item.url}
+        alt={`Tattoo work by ${item.artist}`}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${loaded ? "ink-fade-in" : "opacity-0"}`}
+      />
+      <figcaption className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white text-left">
+        @{item.artist}
+      </figcaption>
+    </motion.button>
   );
 };
 

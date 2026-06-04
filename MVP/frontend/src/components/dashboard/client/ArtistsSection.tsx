@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
-import { Spinner } from "@/components/ui/spinner";
+import LazyReveal from "@/components/ui/LazyReveal";
 import { motion } from "framer-motion";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Artist } from "@/api";
 
@@ -20,6 +20,48 @@ type Props = {
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
 const ITEMS_PER_PAGE = 12;
+
+const ArtistCardSkeleton = () => (
+    <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl border border-app bg-card/90">
+        <div className="relative w-full flex-shrink-0" style={{ height: 'clamp(7rem, 9vh + 1.5vw, 11rem)' }}>
+            <div className="ink-shimmer absolute inset-0" />
+            <div
+                className="ink-shimmer absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] rounded-full ring-2 ring-[color:var(--card)]"
+                style={{ width: 'clamp(4rem, 5.5vh + 1vw, 6.5rem)', height: 'clamp(4rem, 5.5vh + 1vw, 6.5rem)' }}
+            />
+        </div>
+        <div
+            className="flex-1 min-h-0 flex flex-col items-center w-full"
+            style={{ padding: 'clamp(0.5rem, 1.2vh + 0.4vw, 1rem) clamp(0.625rem, 1.2vh + 0.4vw, 1rem)', gap: 'clamp(0.375rem, 0.9vh + 0.25vw, 0.75rem)' }}
+        >
+            <div className="ink-shimmer h-4 w-1/2 rounded" />
+            <div className="ink-shimmer h-6 w-2/3 rounded-full" />
+            <div className="ink-shimmer h-3 w-full rounded" />
+            <div className="ink-shimmer h-3 w-4/5 rounded" />
+            <div className="mt-auto w-full grid grid-cols-3 gap-1.5">
+                <div className="ink-shimmer aspect-square rounded-lg" />
+                <div className="ink-shimmer aspect-square rounded-lg" />
+                <div className="ink-shimmer aspect-square rounded-lg" />
+            </div>
+        </div>
+    </div>
+);
+
+const EmptyArtists = () => (
+    <div className="h-full w-full grid place-items-center p-6">
+        <div className="flex flex-col items-center text-center gap-3 max-w-sm">
+            <span className="grid place-items-center h-12 w-12 rounded-2xl border border-app/40 bg-elevated">
+                <Search className="h-5 w-5 text-subtle" />
+            </span>
+            <p className="font-semibold text-app" style={{ fontSize: 'clamp(1rem, 1.2vmin + 0.6vw, 1.125rem)' }}>
+                No artists to show yet
+            </p>
+            <p className="text-subtle text-sm leading-relaxed">
+                Tip: try clearing a filter or widening your search — new artists join Inkmity all the time.
+            </p>
+        </div>
+    </div>
+);
 
 const normalizeYears = (y: unknown): number | undefined => {
     if (typeof y === "number" && Number.isFinite(y)) return Math.trunc(y);
@@ -354,16 +396,27 @@ export default function ArtistsSection({
                 />
             </div>
 
-            <div className="flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
-                {isCenterLoading && (
-                    <div className="absolute inset-0 z-10 grid place-items-center">
-                        <Spinner className="text-[color:var(--fg)]" />
-                    </div>
-                )}
-
-                <div
-                    className={`${isCenterLoading ? "opacity-0 pointer-events-none" : ""} h-full`}
-                    style={{ height: "100%" }}
+            <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
+                <LazyReveal
+                    loading={isCenterLoading}
+                    className="h-full"
+                    skeleton={
+                        <div className="h-full w-full">
+                            <div
+                                className="hidden md:grid md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 w-full h-full"
+                                style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)', padding: 'clamp(10px, 1.2vh + 0.4vw, 18px) 0', gridAutoRows: '1fr', alignContent: 'start' }}
+                            >
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <ArtistCardSkeleton key={i} />
+                                ))}
+                            </div>
+                            <div className="md:hidden h-full w-full grid place-items-center" style={{ padding: '6px' }}>
+                                <div className="w-full h-full max-w-md">
+                                    <ArtistCardSkeleton />
+                                </div>
+                            </div>
+                        </div>
+                    }
                 >
                     <div className="md:hidden h-full w-full relative" style={{ height: "100%" }}>
                         {listItems.length > 0 ? (
@@ -422,24 +475,17 @@ export default function ArtistsSection({
                                 )}
                             </>
                         ) : (
-                            <div className="h-full w-full snap-y snap-mandatory overscroll-contain" style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}>
-                                <div className="snap-start snap-always h-full w-full flex items-center justify-center" style={{ height: "100%", minHeight: "100%", scrollSnapStop: "always", scrollSnapAlign: "center", padding: '0' }}>
-                                    <div className="text-center px-4">
-                                        <p className="text-base font-medium" style={{ color: "var(--fg)" }}>No artists match your filters.</p>
-                                        <p className="text-sm mt-1" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>Try adjusting filters or keywords.</p>
-                                    </div>
-                                </div>
-                            </div>
+                            <EmptyArtists />
                         )}
                     </div>
 
                     <div className="hidden md:block h-full min-h-0 overflow-hidden">
                         {listItems.length > 0 ? (
-                            <div 
-                                className="w-full h-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3" 
-                                style={{ 
-                                    gap: 'clamp(0.75rem, 1vmin + 0.5vw, 2rem)', 
-                                    padding: 'clamp(12px, 1.5vh + 0.5vw, 24px) 0',
+                            <div
+                                className="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+                                style={{
+                                    gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)',
+                                    padding: 'clamp(10px, 1.2vh + 0.4vw, 18px) 0',
                                     gridAutoRows: '1fr',
                                     alignContent: 'start',
                                     height: '100%'
@@ -461,19 +507,10 @@ export default function ArtistsSection({
                                 ))}
                             </div>
                         ) : (
-                            <div className="h-full" style={{ padding: '16px 0' }}>
-                                <div className="w-full h-full grid place-items-center">
-                                    <div className="text-center max-w-prose">
-                                        <p className="font-semibold" style={{ color: "var(--fg)", fontSize: 'clamp(1rem, 1.2vmin + 0.6vw, 1.125rem)' }}>No artists match your filters.</p>
-                                        <p className="mt-1.5" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)", fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>
-                                            Try adjusting filters or keywords to broaden your search.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                            <EmptyArtists />
                         )}
                     </div>
-                </div>
+                </LazyReveal>
             </div>
         </div>
     );

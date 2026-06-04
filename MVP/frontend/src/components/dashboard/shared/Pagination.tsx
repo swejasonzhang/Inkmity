@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 
 type Props = {
     currentPage: number;
@@ -18,17 +18,19 @@ const Pagination: React.FC<Props> = ({
     className,
     desktopEnabled = true,
 }) => {
-    const atStart = currentPage === 1;
-    const atEnd = currentPage === totalPages;
+    const total = Math.max(1, totalPages);
+    const atStart = currentPage <= 1;
+    const atEnd = currentPage >= total;
+
+    const btn =
+        "grid place-items-center rounded-full border border-app bg-card text-app transition " +
+        "hover:bg-elevated active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30 " +
+        "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-card";
 
     return (
-        <div
-            className={[
-                className || "",
-            ].join(" ")}
-        >
+        <div className={className || ""}>
             <div
-                className="hidden md:flex justify-center items-center gap-2 text-app pointer-events-auto"
+                className="hidden md:flex items-center gap-2 pointer-events-auto select-none"
                 role="navigation"
                 aria-label="Pagination"
                 aria-disabled={!desktopEnabled}
@@ -40,28 +42,19 @@ const Pagination: React.FC<Props> = ({
                     onClick={onPrev}
                     disabled={atStart}
                     aria-label="Previous page"
-                    className={[
-                        "h-[38px] w-[38px] flex items-center justify-center rounded-full leading-none",
-                        "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
-                        "focus:outline-none focus:ring-2 focus:ring-app",
-                        "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100",
-                    ].join(" ")}
+                    className={`${btn} h-9 w-9`}
                 >
-                    <ChevronLeft size={30} aria-hidden className="block" />
+                    <ChevronLeft size={18} aria-hidden className="block" />
                 </button>
 
                 <span
-                    className={[
-                        "inline-flex items-center justify-center",
-                        "h-[38px] min-w-[10rem] px-6",
-                        "rounded-full border-2 border-app bg-app text-bg",
-                        "text-xl leading-none",
-                    ].join(" ")}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-app bg-card text-sm leading-none"
                     aria-live="polite"
                 >
-                    Page <span className="ml-2 font-semibold">{currentPage}</span>
-                    <span className="mx-2 text-subtle">of</span>
-                    <span className="font-semibold">{Math.max(1, totalPages)}</span>
+                    <span className="text-subtle text-xs uppercase tracking-wide">Page</span>
+                    <span className="font-semibold tabular-nums text-app">{currentPage}</span>
+                    <span className="text-subtle">/</span>
+                    <span className="font-semibold tabular-nums text-app">{total}</span>
                 </span>
 
                 <button
@@ -69,40 +62,37 @@ const Pagination: React.FC<Props> = ({
                     onClick={onNext}
                     disabled={atEnd}
                     aria-label="Next page"
-                    className={[
-                        "h-[38px] w-[38px] flex items-center justify-center rounded-full leading-none",
-                        "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
-                        "focus:outline-none focus:ring-2 focus:ring-app",
-                        "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100",
-                    ].join(" ")}
+                    className={`${btn} h-9 w-9`}
                 >
-                    <ChevronRight size={30} aria-hidden className="block" />
+                    <ChevronRight size={18} aria-hidden className="block" />
                 </button>
             </div>
 
             <div className="md:hidden pointer-events-auto">
                 <div
-                    className="grid place-items-center w-full"
+                    className="flex items-center justify-center gap-2"
                     role="navigation"
                     aria-label="Pagination (mobile)"
                     style={{ minHeight: 48 }}
                 >
-                    <div className="flex flex-col items-center justify-center gap-2 text-app">
-                        <button
-                            type="button"
-                            onClick={onNext}
-                            disabled={atEnd}
-                            aria-label="Next page"
-                            className={[
-                                "h-12 w-12 grid place-items-center rounded-full",
-                                "border-2 border-app bg-app text-bg hover:brightness-110 active:scale-[0.99]",
-                                "focus:outline-none focus:ring-2 focus:ring-app",
-                                "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100",
-                            ].join(" ")}
-                        >
-                            <ChevronDown size={22} aria-hidden />
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={onPrev}
+                        disabled={atStart}
+                        aria-label="Previous"
+                        className={`${btn} h-11 w-11`}
+                    >
+                        <ChevronUp size={20} aria-hidden />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onNext}
+                        disabled={atEnd}
+                        aria-label="Next"
+                        className={`${btn} h-11 w-11`}
+                    >
+                        <ChevronDown size={20} aria-hidden />
+                    </button>
                 </div>
             </div>
         </div>

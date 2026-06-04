@@ -6,6 +6,7 @@ import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
+import CookieConsent from "@/components/access/CookieConsent";
 import SignupFormCard from "@/components/access/SignupFormCard";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
@@ -516,6 +517,7 @@ export default function SignUp() {
             </div>
           </motion.div>
       </main>
+      <CookieConsent />
     </div>
   );
 }

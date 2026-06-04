@@ -15,6 +15,7 @@ import ForArtists from "@/components/landing/ForArtists";
 import BottomCTA from "@/components/landing/BottomCTA";
 import Divider from "@/components/landing/Divider";
 import VideoBackground from "@/components/VideoBackground";
+import CookieConsent from "@/components/access/CookieConsent";
 
 const Landing: React.FC = () => {
     const prefersReduced = useReducedMotion();
@@ -106,6 +107,7 @@ const Landing: React.FC = () => {
                     </div>
                 </LazyMotion>
             </MotionConfig>
+            <CookieConsent />
         </>
     );
 };
