@@ -30,9 +30,9 @@ export default function Login() {
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive, isLoaded: signInLoaded } = useSignIn();
-  const { userId, isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { userId, isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
   const { onboarded } = useOnboarded();
-  const effectivelySignedIn = !!isSignedIn && onboarded === true;
+  const staleSessionRef = useRef<boolean | null>(null);
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
   const [authError, setAuthError] = useState("");
   const pwdRef = useRef<HTMLInputElement | null>(null);
@@ -64,6 +64,24 @@ export default function Login() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!authLoaded) return;
+    if (staleSessionRef.current === null) staleSessionRef.current = !!isSignedIn;
+  }, [authLoaded, isSignedIn]);
+
+  useEffect(() => {
+    if (authLoaded && staleSessionRef.current === true && isSignedIn && onboarded === false) {
+      if (redirectTimerRef.current !== null) {
+        window.clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+      isRedirectingRef.current = false;
+      setShowSuccess(false);
+      setSuccessType(null);
+      signOut();
+    }
+  }, [authLoaded, isSignedIn, onboarded, signOut]);
 
   useEffect(() => {
     const mm = (e: MouseEvent) => {
@@ -128,7 +146,7 @@ export default function Login() {
 
   useEffect(() => {
     if (!authLoaded) return;
-    if (effectivelySignedIn) {
+    if (isSignedIn) {
       if (justLoggedInRef.current || intendedSuccessTypeRef.current === "login" || successType === "login") {
         return;
       }
@@ -153,7 +171,7 @@ export default function Login() {
       }
       intendedSuccessTypeRef.current = null;
     }
-  }, [authLoaded, effectivelySignedIn, beginRedirect, successType, showSuccess]);
+  }, [authLoaded, isSignedIn, beginRedirect, successType, showSuccess]);
 
   const triggerMascotError = () => {
     setMascotError(true);
@@ -359,15 +377,15 @@ export default function Login() {
       <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 md:px-8 py-4">
           <motion.div variants={container} initial="hidden" animate="show" className="relative w-full max-w-3xl mx-auto">
             <GateNotice />
-            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !effectivelySignedIn ? "" : "justify-center"}`}>
-              {showInfo && !showSuccess && authLoaded && !effectivelySignedIn && (
-                <motion.div layout={!showSuccess && !effectivelySignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="hidden sm:flex w-full sm:w-1/2">
+            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !isSignedIn ? "" : "justify-center"}`}>
+              {showInfo && !showSuccess && authLoaded && !isSignedIn && (
+                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="hidden sm:flex w-full sm:w-1/2">
                   <div className="w-full h-full">
                     <InfoPanel show={showInfo} prefersReduced={prefersReduced} hasError={mascotError} isPasswordHidden={mascotEyesClosed} mode="login" />
                   </div>
                 </motion.div>
               )}
-              {!authLoaded ? null : effectivelySignedIn ? (
+              {!authLoaded ? null : isSignedIn ? (
                 <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} className="w-full max-w-md p-0">
                   <div className="relative rounded-3xl w-full mx-auto bg-card border border-app overflow-hidden shadow-[0_24px_60px_-18px_rgba(0,0,0,0.6)] ring-1 ring-[color-mix(in_srgb,var(--fg)_12%,transparent)]">
                     <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-28" style={{ background: "linear-gradient(to bottom, color-mix(in srgb, var(--fg) 8%, transparent), transparent)" }} />
@@ -375,7 +393,7 @@ export default function Login() {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div layout={!showSuccess && !effectivelySignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && (!authLoaded || !effectivelySignedIn) ? "w-full sm:w-1/2" : "w-full max-w-md"} p-0`}>
+                <motion.div layout={!showSuccess && !isSignedIn} transition={{ type: "spring", stiffness: 300, damping: 30 }} className={`${showInfo && !showSuccess && (!authLoaded || !isSignedIn) ? "w-full sm:w-1/2" : "w-full max-w-md"} p-0`}>
                   <LoginFormCard
                     showInfo={showInfo}
                     hasError={mascotError}
