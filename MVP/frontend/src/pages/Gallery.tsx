@@ -67,7 +67,7 @@ const Gallery: React.FC = () => {
   ];
 
   return (
-    <div className="h-svh overflow-y-auto overflow-x-hidden bg-app text-app">
+    <div className="h-full overflow-hidden bg-app text-app">
       <Header />
 
       <main className="w-full max-w-[1600px] mx-auto px-3 sm:px-6 py-8 sm:py-10 pb-16">
