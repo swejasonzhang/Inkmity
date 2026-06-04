@@ -58,7 +58,8 @@ const Artists: React.FC = () => {
   async function loadArtists(opts: { page: number; reset: boolean }) {
     const { page, reset } = opts
     try {
-      reset ? setLoading(true) : setLoadingMore(true)
+      if (reset) setLoading(true)
+      else setLoadingMore(true)
       setError(null)
 
       const res = await fetchArtists({

@@ -228,7 +228,7 @@ export default function Login() {
             setTimeout(() => {
               justLoggedInRef.current = false;
             }, 1000);
-          } catch (activeErr: any) {
+          } catch {
             setAuthError("Login failed. Please check your credentials and try again.");
             triggerMascotError();
           }

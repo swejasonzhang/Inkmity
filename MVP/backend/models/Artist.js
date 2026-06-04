@@ -28,6 +28,13 @@ const ArtistSchema = new Schema(
     shopAddress: { type: String, default: "" },
     shopLat: { type: Number },
     shopLng: { type: Number },
+
+    // Stripe Connect (Express) — marketplace payouts
+    stripeConnectAccountId: { type: String, index: true },
+    chargesEnabled: { type: Boolean, default: false, index: true },
+    payoutsEnabled: { type: Boolean, default: false },
+    onboardingCompletedAt: { type: Date },
+    connectRequirementsDue: { type: [String], default: [] },
   },
   { timestamps: true }
 );

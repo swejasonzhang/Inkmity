@@ -10,12 +10,16 @@ const BillingSchema = new mongoose.Schema({
     default: "platform_fee",
     index: true,
   },
-  amountCents: { type: Number, default: 1000, min: 0 },
+  amountCents: { type: Number, default: 0, min: 0 },
+  // Platform (application) fee taken from this charge, in cents.
+  platformFeeCents: { type: Number, default: 0, min: 0 },
+  // Connect account the funds were transferred to (the artist).
+  stripeConnectAccountId: { type: String, index: true },
   currency: { type: String, default: "usd" },
   paidBy: { type: String, enum: ["client"], default: "client", index: true },
   status: {
     type: String,
-    enum: ["pending", "paid", "refunded"],
+    enum: ["pending", "paid", "refunded", "failed"],
     default: "pending",
     index: true,
   },
@@ -23,6 +27,8 @@ const BillingSchema = new mongoose.Schema({
   stripeCheckoutSessionId: { type: String, index: true },
   stripePaymentIntentId: { type: String, index: true },
   stripeChargeId: { type: String, index: true },
+  stripeTransferId: { type: String },
+  stripeApplicationFeeId: { type: String },
   stripeRefundIds: { type: [String], default: [] },
   receiptUrl: { type: String },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
