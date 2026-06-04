@@ -139,10 +139,10 @@ export default function Onboarding() {
     );
 
     return (
-        <div className="relative min-h-svh flex flex-col text-app">
+        <div className="relative h-full overflow-hidden flex flex-col text-app">
             <VideoBackground />
             <Header />
-            <main className="flex-1 flex items-start sm:items-center justify-center px-4 sm:px-6 py-6 overflow-y-auto">
+            <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-6 overflow-hidden">
                 <div className="w-full max-w-2xl mx-auto rounded-3xl bg-card border border-app p-5 sm:p-7">
                     <div className="text-center mb-5">
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-1 text-xs text-app/70 mb-2">

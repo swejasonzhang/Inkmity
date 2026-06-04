@@ -20,7 +20,7 @@ import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
   return (
-    <div id="public-scope" className={themeClass} data-ink="dark" data-ink-no-theme="true">
+    <div id="public-scope" className={`${themeClass} h-dvh max-h-dvh overflow-hidden`} data-ink="dark" data-ink-no-theme="true">
       <Outlet />
     </div>
   );
@@ -29,7 +29,7 @@ const PublicScope: React.FC = () => {
 const DashboardScope: React.FC = () => {
   const { themeClass } = useTheme();
   return (
-    <div id="dashboard-scope" className={`${themeClass} theme-smooth`}>
+    <div id="dashboard-scope" className={`${themeClass} theme-smooth h-dvh max-h-dvh overflow-hidden`}>
       <SignedIn>
         <Outlet />
       </SignedIn>

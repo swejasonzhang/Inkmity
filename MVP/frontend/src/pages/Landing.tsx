@@ -56,11 +56,11 @@ const Landing: React.FC = () => {
             <VideoBackground />
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
-                    <div className="relative z-10 text-app flex flex-col min-h-[100svh]">
+                    <div className="relative z-10 text-app flex flex-col h-full overflow-hidden">
                         <Header />
 
-                        <main className="flex-1">
-                            <section className="relative flex items-center justify-center min-h-svh px-4 sm:px-6 lg:px-8">
+                        <main className="flex-1 min-h-0 overflow-hidden">
+                            <section className="relative flex items-center justify-center h-full px-4 sm:px-6 lg:px-8">
                                 <m.div
                                     variants={introStagger}
                                     initial="hidden"
