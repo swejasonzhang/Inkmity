@@ -75,6 +75,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
   const [statusReady, setStatusReady] = useState(false);
   const [userRefreshTick, setUserRefreshTick] = useState(0);
+  const [isOnboarded, setIsOnboarded] = useState<boolean>(() => !!getCachedUsername());
   const API_BASE = API_URL;
 
   useEffect(() => {
@@ -104,6 +105,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     if (!isSignedIn) {
       setUserLabel("");
       userLabelRef.current = "";
+      setIsOnboarded(false);
       return;
     }
     if (userLabelRef.current) {
@@ -135,6 +137,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         const finalName = name || "User";
         userLabelRef.current = finalName;
         setUserLabel(finalName);
+        setIsOnboarded(data?.onboardingComplete === true);
         if (name) setCachedUsername(name);
         else clearCachedUsername();
         if (data?.role && (data.role === "client" || data.role === "artist")) {
@@ -153,6 +156,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           clearCachedUsername();
           setUserLabel("User");
           userLabelRef.current = "User";
+          setIsOnboarded(false);
         } else {
           const cached = getCachedUsername() ?? "User";
           setUserLabel(cached);
@@ -220,8 +224,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   };
 
   const homeHref = "/landing";
-  const cachedSignedIn = useMemo(() => !!getCachedRole() || !!getCachedUsername(), []);
-  const effectiveSignedIn = isLoaded ? !!isSignedIn : cachedSignedIn;
+  const cachedSignedIn = useMemo(() => !!getCachedUsername(), []);
+  const effectiveSignedIn = (isLoaded ? !!isSignedIn : cachedSignedIn) && isOnboarded;
   const navLocked = disableDashboardLink || !effectiveSignedIn;
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
@@ -376,7 +380,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               </button>
             </div>
             <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
             </div>
           </div>
         </div>
@@ -396,7 +400,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         </div>
 
         <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-hidden">
-          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
         </div>
 
         <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
