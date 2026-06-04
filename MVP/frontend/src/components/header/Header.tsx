@@ -74,6 +74,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const [isOnline, setIsOnline] = useState<boolean>(false);
   const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
   const [statusReady, setStatusReady] = useState(false);
+  const [userRefreshTick, setUserRefreshTick] = useState(0);
   const API_BASE = API_URL;
 
   useEffect(() => {
@@ -86,6 +87,16 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   }, [isLoaded, isSignedIn]);
 
   const userLabelRef = useRef<string>(getCachedUsername() ?? "");
+
+  useEffect(() => {
+    const onUserUpdated = () => {
+      userLabelRef.current = "";
+      setUserRefreshTick((n) => n + 1);
+    };
+    window.addEventListener("inkmity:user-updated", onUserUpdated);
+    return () => window.removeEventListener("inkmity:user-updated", onUserUpdated);
+  }, []);
+
   useEffect(() => {
     if (!isLoaded) {
       return;
@@ -145,7 +156,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       cancelled = true;
       ac.abort();
     };
-  }, [isLoaded, isSignedIn, getToken]);
+  }, [isLoaded, isSignedIn, getToken, userRefreshTick]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) {
