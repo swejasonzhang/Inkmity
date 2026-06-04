@@ -6,11 +6,13 @@ import IntakeForm from "../models/IntakeForm.js";
 import Project from "../models/Project.js";
 import BookingCooldown from "../models/BookingCooldown.js";
 import Client from "../models/Client.js";
+import Artist from "../models/Artist.js";
 import { dayBoundsUTC } from "../utils/date.js";
 import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
 import { getIO } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail } from "../services/emailService.js";
+import { recordCompletedBooking } from "../services/rewardsService.js";
 import { randomBytes } from "crypto";
 
 const DEFAULT_TIMEZONE = "America/New_York";
@@ -30,6 +32,12 @@ function genCode() {
   for (let i = 0; i < 6; i++)
     s += chars[Math.floor(Math.random() * chars.length)];
   return s;
+}
+
+// A client can only book an artist who can actually receive marketplace payouts.
+async function artistCanReceivePayments(artistId) {
+  const artist = await Artist.findOne({ clerkId: String(artistId) });
+  return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
 }
 
 function computeDepositCents(policy, priceCents, appointmentType) {
@@ -272,12 +280,19 @@ export async function createBooking(req, res) {
     });
     
     if (!permission || !permission.enabled) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "bookings_disabled",
         message: "Appointments are not enabled for you. Please contact the artist to enable appointments."
       });
     }
-    
+
+    if (!(await artistCanReceivePayments(artistId))) {
+      return res.status(409).json({
+        error: "artist_not_onboarded",
+        message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+
     const depositRequiredCents = computeDepositCents(
       policy,
       priceCents,
@@ -579,6 +594,11 @@ export async function completeBooking(req, res) {
     doc.status = "completed";
     doc.completedAt = new Date();
     await doc.save();
+    try {
+      await recordCompletedBooking(doc.clientId);
+    } catch (e) {
+      console.error("recordCompletedBooking failed:", e.message);
+    }
     res.json(doc);
   } catch {
     res.status(500).json({ error: "complete_failed" });
@@ -620,12 +640,21 @@ export async function verifyBookingCode(req, res) {
     } else {
       return res.status(400).json({ error: "bad_role" });
     }
-    if (doc.clientVerifiedAt && doc.artistVerifiedAt) {
+    let justCompleted = false;
+    if (doc.clientVerifiedAt && doc.artistVerifiedAt && doc.status !== "completed") {
       doc.matchedAt = new Date();
       doc.status = "completed";
       doc.completedAt = new Date();
+      justCompleted = true;
     }
     await doc.save();
+    if (justCompleted) {
+      try {
+        await recordCompletedBooking(doc.clientId);
+      } catch (e) {
+        console.error("recordCompletedBooking failed:", e.message);
+      }
+    }
     res.json(doc);
   } catch {
     res.status(500).json({ error: "verify_failed" });
@@ -909,9 +938,16 @@ export async function createTattooSession(req, res) {
     });
     
     if (!permission || !permission.enabled) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "bookings_disabled",
         message: "Appointments are not enabled for you. Please contact the artist to enable appointments."
+      });
+    }
+
+    if (!(await artistCanReceivePayments(artistId))) {
+      return res.status(409).json({
+        error: "artist_not_onboarded",
+        message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
       });
     }
 

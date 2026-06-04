@@ -54,10 +54,35 @@ import imageRoutes from "./routes/images.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import artistPolicyRoutes from "./routes/artistPolicy.js";
 import reviewRoutes from "./routes/reviews.js";
+import connectRoutes from "./routes/connect.js";
+import rewardsRoutes from "./routes/rewards.js";
 import { mountStripeWebhook } from "./controllers/billingController.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
 
+const isProd = ENV === "production";
+
+// In production, refuse to boot without the secrets that make the marketplace
+// work — silently running degraded is worse than failing the deploy.
+if (isProd) {
+  const prodRequired = [
+    "MONGO_URI",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "CLERK_SECRET_KEY",
+    "APP_URL",
+  ];
+  const prodMissing = prodRequired.filter((k) => !process.env[k]);
+  if (prodMissing.length > 0) {
+    console.error(
+      `[fatal] Missing required production env vars: ${prodMissing.join(", ")}`
+    );
+    process.exit(1);
+  }
+}
+
 const app = express();
+// Behind Render/Railway's proxy — needed for correct client IPs (rate limiting).
+app.set("trust proxy", 1);
 const server = createServer(app);
 
 // Mount Stripe webhook BEFORE express.json so raw body is preserved
@@ -108,6 +133,8 @@ app.use("/images", imageRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/artist-policy", artistPolicyRoutes);
 app.use("/reviews", reviewRoutes);
+app.use("/connect", connectRoutes);
+app.use("/rewards", rewardsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
@@ -128,6 +155,8 @@ async function startServer() {
     if (process.env.MONGO_URI) {
       await mongoose.connect(process.env.MONGO_URI);
       console.log("✅ MongoDB connected");
+    } else if (isProd) {
+      throw new Error("MONGO_URI is required in production");
     } else {
       console.warn("⚠️  MONGO_URI not set, running without database");
     }
@@ -139,8 +168,14 @@ async function startServer() {
       console.log(`💾 Database: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
     });
   } catch (error) {
-    console.warn("⚠️  Database connection failed, starting server anyway:", error.message);
+    // In production a database is non-negotiable — fail the deploy rather than
+    // serving a broken marketplace.
+    if (isProd) {
+      console.error("[fatal] Database connection failed:", error.message);
+      process.exit(1);
+    }
 
+    console.warn("⚠️  Database connection failed, starting server anyway:", error.message);
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT} (without database)`);
       console.log(`📱 Frontend: ${process.env.FRONTEND_URL || "http://localhost:3000"}`);

@@ -119,9 +119,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       const gate = await getBookingGate(artistId, clientId);
       setBookingGate(gate);
       setBookingGateReady(true);
-    } catch (e) {
-      if (!isAbortError(e)) {
-      }
+    } catch {
       setBookingGateReady(true);
     }
   }, [artist?.clerkId, user?.id]);

@@ -1,5 +1,6 @@
 import ArtistPolicy from "../models/ArtistPolicy.js";
 import ClientBookingPermission from "../models/ClientBookingPermission.js";
+import Artist from "../models/Artist.js";
 
 export async function getArtistPolicy(req, res) {
   try {
@@ -80,10 +81,10 @@ export async function getBookingGate(req, res) {
     }
     
     const deposit = policy.deposit || {};
-    const depositConfigured = 
+    const depositConfigured =
       (deposit.mode === "flat" && deposit.amountCents > 0) ||
       (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
-    
+
     let clientEnabled = false;
     if (clientId) {
       const permission = await ClientBookingPermission.findOne({
@@ -92,15 +93,24 @@ export async function getBookingGate(req, res) {
       });
       clientEnabled = permission ? Boolean(permission.enabled) : false;
     }
-    
+
+    // The artist must have finished Stripe Connect onboarding before any client
+    // can pay (and therefore book).
+    const artist = await Artist.findOne({ clerkId: String(artistId) });
+    const payoutsReady = Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
+
+    const enabled = clientEnabled && payoutsReady;
     res.json({
-      enabled: clientEnabled,
+      enabled,
       depositConfigured,
-      message: clientEnabled
-        ? "You can book appointments"
-        : depositConfigured
-          ? "The artist needs to enable appointments for you"
-          : "The artist needs to configure deposit and enable appointments for you"
+      payoutsReady,
+      message: !payoutsReady
+        ? "This artist hasn't finished payment setup yet."
+        : enabled
+          ? "You can book appointments"
+          : depositConfigured
+            ? "The artist needs to enable appointments for you"
+            : "The artist needs to configure deposit and enable appointments for you"
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch booking gate status" });

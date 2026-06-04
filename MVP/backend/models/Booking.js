@@ -34,6 +34,7 @@ const BookingSchema = new mongoose.Schema(
     priceCents: { type: Number, default: 0, min: 0 },
     depositRequiredCents: { type: Number, default: 0, min: 0 },
     depositPaidCents: { type: Number, default: 0, min: 0 },
+    platformFeeCents: { type: Number, default: 0, min: 0 },
     clientCode: { type: String },
     artistCode: { type: String },
     codeIssuedAt: { type: Date },

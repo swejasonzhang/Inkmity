@@ -599,7 +599,7 @@ export default function ClientProfile() {
                                         }
                                         if (e.key === 'Escape') {
                                             setEditedClient(prev => {
-                                                const { username, ...rest } = prev;
+                                                const { username: _username, ...rest } = prev;
                                                 return rest;
                                             });
                                             setIsEditingUsername(false);

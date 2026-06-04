@@ -16,6 +16,8 @@ import {
   submitIntakeForm,
   getArtistPolicy,
   getBooking,
+  getMyRewards,
+  type RewardsSummary,
 } from "@/api";
 import { useApi } from "@/api";
 
@@ -99,6 +101,28 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       bookingData.appointmentType
     );
   }, [depositPolicy, bookingData.priceCents, bookingData.appointmentType]);
+
+  // Platform fee preview (added on top of the deposit). Uses the client's reward
+  // tier rate so loyal clients see their reduced fee.
+  const [rewards, setRewards] = useState<RewardsSummary | null>(null);
+  useEffect(() => {
+    const ac = new AbortController();
+    (async () => {
+      try {
+        const token = await getToken();
+        setRewards(await getMyRewards(token ?? undefined, ac.signal));
+      } catch {
+        setRewards(null);
+      }
+    })();
+    return () => ac.abort();
+  }, [getToken]);
+
+  const platformFeeCents = useMemo(() => {
+    if (!rewards) return 0;
+    const raw = Math.round((bookingData.priceCents || 0) * rewards.currentFeePct);
+    return Math.max(raw, rewards.platformFeeMinCents || 0);
+  }, [rewards, bookingData.priceCents]);
 
   const willRequireDeposit = useMemo(() => {
     if (!bookingData.appointmentType) return false;
@@ -310,6 +334,20 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Deposit (artist-set):</span>
                 <span className="font-medium">${(depositPreviewCents / 100).toFixed(2)}</span>
+              </div>
+              {platformFeeCents > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Platform fee{rewards?.tier?.label ? ` (${rewards.tier.label})` : ""}:
+                  </span>
+                  <span className="font-medium">${(platformFeeCents / 100).toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t pt-2 mt-2">
+                <span className="font-semibold">Total due now:</span>
+                <span className="font-semibold">
+                  ${((depositPreviewCents + platformFeeCents) / 100).toFixed(2)}
+                </span>
               </div>
               {bookingData.priceCents > 0 && (
                 <div className="flex justify-between text-xs text-muted-foreground">

@@ -5,6 +5,10 @@ import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
 import { sendAppointmentConfirmationEmail } from "../services/emailService.js";
 import { config } from "../config/index.js";
+import {
+  getEffectiveFeePct,
+  recordFeePaid,
+} from "../services/rewardsService.js";
 
 let WebhookEvent;
 (async () => {
@@ -12,50 +16,28 @@ let WebhookEvent;
   WebhookEvent = module.default;
 })();
 
-const PLATFORM_FEE_CENTS = 1000;
-const CURRENCY = "usd";
+const CURRENCY = config.stripe.currency || "usd";
 
-function ensureMinimumAmount(amountCents) {
-  const minAmount = config.stripe.testMode 
-    ? config.stripe.testMinAmountCents 
-    : 50; 
-  
-  return Math.max(amountCents, minAmount);
+// Platform (application) fee taken from the client: max(price * pct, minCents).
+function computePlatformFeeCents(priceCents, effectivePct, minCents) {
+  const base = Math.max(0, Number(priceCents || 0));
+  const pct = Math.max(0, Math.min(1, Number(effectivePct)));
+  return Math.max(Math.round(base * pct), Math.max(0, Number(minCents || 0)));
 }
 
-const STRIPE_APPEARANCE = {
-  theme: "night",
-  variables: {
-    colorPrimary: "#000000",
-    colorBackground: "#0b0b0b",
-    colorText: "#f5f5f5",
-    colorDanger: "#ef4444",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    borderRadius: "12px",
-  },
-  rules: {
-    ".Input": {
-      backgroundColor: "#1a1a1a",
-      borderColor: "rgba(255, 255, 255, 0.2)",
-      color: "#f5f5f5",
-    },
-    ".Input:focus": {
-      borderColor: "#000000",
-      boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.3)",
-    },
-    ".Label": {
-      color: "#f5f5f5",
-    },
-    ".Tab": {
-      backgroundColor: "#1a1a1a",
-      color: "#f5f5f5",
-    },
-    ".Tab--selected": {
-      backgroundColor: "#000000",
-      color: "#ffffff",
-    },
-  },
-};
+// Resolve the artist's Connect account by clerkId (booking.artistId is a clerkId).
+// Returns the connected account id, or throws a 409 if the artist can't accept payouts yet.
+async function requireArtistConnectAccount(artistId) {
+  const artist = await Artist.findOne({ clerkId: String(artistId) });
+  if (!artist?.stripeConnectAccountId || !artist.chargesEnabled) {
+    const e = new Error("artist_not_onboarded");
+    e.status = 409;
+    e.publicMessage =
+      "This artist hasn't finished payment setup yet, so payments can't be processed.";
+    throw e;
+  }
+  return artist.stripeConnectAccountId;
+}
 
 function requireBooking(booking) {
   if (!booking) {
@@ -65,66 +47,15 @@ function requireBooking(booking) {
   }
 }
 
-export async function checkoutPlatformFee(req, res) {
-  try {
-    const { bookingId } = req.body || {};
-    if (!bookingId) return res.status(400).json({ error: "bookingId required" });
-
-    const booking = await Booking.findById(bookingId);
-    requireBooking(booking);
-
-    const customer = await stripe.customers.create({
-      metadata: { clientId: String(booking.clientId) },
-    });
-
-    const platformFeeAmount = config.stripe.testMode
-      ? Math.max(PLATFORM_FEE_CENTS, config.stripe.testMinAmountCents)
-      : PLATFORM_FEE_CENTS;
-
-    const bill = await Billing.create({
-      bookingId,
-      artistId: booking.artistId,
-      clientId: booking.clientId,
-      type: "platform_fee",
-      amountCents: platformFeeAmount,
-      currency: CURRENCY,
-      stripeCustomerId: customer.id,
-      status: "pending",
-      metadata: {},
-    });
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer: customer.id,
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: CURRENCY,
-            product_data: { name: "Booking platform fee" },
-            unit_amount: platformFeeAmount,
-          },
-          quantity: 1,
-        },
-      ],
-      appearance: STRIPE_APPEARANCE,
-      metadata: {
-        billingId: String(bill._id),
-        bookingId: String(booking._id),
-        type: "platform_fee",
-      },
-      success_url: `${process.env.APP_URL}/booking/${bookingId}?paid=platform_fee`,
-      cancel_url: `${process.env.APP_URL}/booking/${bookingId}?cancelled=platform_fee`,
-    });
-
-    bill.stripeCheckoutSessionId = session.id;
-    await bill.save();
-
-    res.json({ url: session.url, id: session.id });
-  } catch (err) {
-    console.error("checkoutPlatformFee error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
-  }
+// DEPRECATED: standalone flat platform-fee checkout. The platform fee is now
+// collected as the Stripe Connect application fee on the deposit payment, so this
+// endpoint is no longer part of the booking flow.
+export async function checkoutPlatformFee(_req, res) {
+  return res.status(410).json({
+    error: "deprecated",
+    message:
+      "The platform fee is now collected automatically on the deposit. This endpoint is no longer used.",
+  });
 }
 
 export async function checkoutDeposit(req, res) {
@@ -146,6 +77,16 @@ export async function checkoutDeposit(req, res) {
   if (config.stripe.testMode && amount < config.stripe.testMinAmountCents) {
     amount = config.stripe.testMinAmountCents;
   }
+
+  // Marketplace: the platform fee is added on top of the deposit. The artist's
+  // Connect account receives the deposit; the platform keeps the fee.
+  const connectAccountId = await requireArtistConnectAccount(booking.artistId);
+  const effectivePct = await getEffectiveFeePct(booking.clientId);
+  const platformFeeCents = computePlatformFeeCents(
+    booking.priceCents,
+    effectivePct,
+    config.platformFee.minCents
+  );
 
   let customer;
   try {
@@ -179,36 +120,57 @@ export async function checkoutDeposit(req, res) {
     artistId: booking.artistId,
     clientId: booking.clientId,
     type: "deposit",
-    amountCents: amount,
+    amountCents: amount + platformFeeCents,
+    platformFeeCents,
+    stripeConnectAccountId: connectAccountId,
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
     metadata: {
       appointmentType,
+      depositCents: amount,
       nonRefundable: true,
     },
   });
+
+  booking.platformFeeCents = platformFeeCents;
+  await booking.save();
+
+  const lineItems = [
+    {
+      price_data: {
+        currency: CURRENCY,
+        product_data: {
+          name: productName,
+          description: `Deposit for appointment on ${new Date(
+            booking.startAt
+          ).toLocaleDateString()}. This deposit is non-refundable and will be applied to your final cost.`,
+        },
+        unit_amount: amount,
+      },
+      quantity: 1,
+    },
+  ];
+  if (platformFeeCents > 0) {
+    lineItems.push({
+      price_data: {
+        currency: CURRENCY,
+        product_data: { name: "Platform service fee" },
+        unit_amount: platformFeeCents,
+      },
+      quantity: 1,
+    });
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer: customer.id,
     payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: CURRENCY,
-          product_data: {
-            name: productName,
-            description: `Deposit for appointment on ${new Date(
-              booking.startAt
-            ).toLocaleDateString()}. This deposit is non-refundable and will be applied to your final cost.`,
-          },
-          unit_amount: amount,
-        },
-        quantity: 1,
-      },
-    ],
-    appearance: STRIPE_APPEARANCE,
+    payment_intent_data: {
+      application_fee_amount: platformFeeCents,
+      transfer_data: { destination: connectAccountId },
+    },
+    line_items: lineItems,
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
@@ -249,6 +211,18 @@ export async function createDepositPaymentIntent(req, res) {
     amount = config.stripe.testMinAmountCents;
   }
 
+  // Marketplace: the platform fee is added on top of the deposit. The client
+  // pays (deposit + fee); the artist's Connect account receives the deposit; the
+  // platform keeps the fee as the application fee.
+  const connectAccountId = await requireArtistConnectAccount(booking.artistId);
+  const effectivePct = await getEffectiveFeePct(booking.clientId);
+  const platformFeeCents = computePlatformFeeCents(
+    booking.priceCents,
+    effectivePct,
+    config.platformFee.minCents
+  );
+  const chargeAmount = amount + platformFeeCents;
+
   let customer;
   try {
     const existingBills = await Billing.find({
@@ -281,25 +255,34 @@ export async function createDepositPaymentIntent(req, res) {
     artistId: booking.artistId,
     clientId: booking.clientId,
     type: "deposit",
-    amountCents: amount,
+    amountCents: chargeAmount,
+    platformFeeCents,
+    stripeConnectAccountId: connectAccountId,
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
     metadata: {
       appointmentType,
+      depositCents: amount,
       nonRefundable: true,
     },
   });
 
+  booking.platformFeeCents = platformFeeCents;
+  await booking.save();
+
   const paymentIntent = await stripe.paymentIntents.create({
-    amount,
+    amount: chargeAmount,
     currency: CURRENCY,
     customer: customer.id,
+    application_fee_amount: platformFeeCents,
+    transfer_data: { destination: connectAccountId },
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
       type: "deposit",
       appointmentType,
+      platformFeeCents: String(platformFeeCents),
     },
     description: productName,
     automatic_payment_methods: {
@@ -314,10 +297,15 @@ export async function createDepositPaymentIntent(req, res) {
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
     billingId: String(bill._id),
+    depositCents: amount,
+    platformFeeCents,
+    totalChargedCents: chargeAmount,
   });
   } catch (err) {
     console.error("createDepositPaymentIntent error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return res
+      .status(err.status || 500)
+      .json({ error: err.message || "Internal error", message: err.publicMessage });
   }
 }
 
@@ -400,6 +388,10 @@ export async function createFinalPaymentIntent(req, res) {
     remainingCents = config.stripe.testMinAmountCents;
   }
 
+  // Final payment transfers entirely to the artist — the platform fee was
+  // already collected on the deposit.
+  const connectAccountId = await requireArtistConnectAccount(booking.artistId);
+
   let customer;
   try {
     const existingBills = await Billing.find({
@@ -433,6 +425,8 @@ export async function createFinalPaymentIntent(req, res) {
     clientId: booking.clientId,
     type: "final_payment",
     amountCents: remainingCents,
+    platformFeeCents: 0,
+    stripeConnectAccountId: connectAccountId,
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
@@ -447,6 +441,7 @@ export async function createFinalPaymentIntent(req, res) {
     amount: remainingCents,
     currency: CURRENCY,
     customer: customer.id,
+    transfer_data: { destination: connectAccountId },
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
@@ -473,7 +468,9 @@ export async function createFinalPaymentIntent(req, res) {
   });
   } catch (err) {
     console.error("createFinalPaymentIntent error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return res
+      .status(err.status || 500)
+      .json({ error: err.message || "Internal error", message: err.publicMessage });
   }
 }
 
@@ -520,17 +517,21 @@ export async function stripeWebhook(req, res) {
           const { billingId, bookingId, type } = s.metadata || {};
           const paymentIntent = s.payment_intent;
 
+          let feeCents = 0;
           if (billingId) {
             const bill = await Billing.findById(billingId);
-            if (bill && bill.status !== "paid") {
-              bill.status = "paid";
-              bill.stripePaymentIntentId =
-                typeof paymentIntent === "string"
-                  ? paymentIntent
-                  : paymentIntent?.id;
-              bill.paidAt = new Date();
-              bill.receiptUrl = s.invoice || bill.receiptUrl || "";
-              await bill.save();
+            if (bill) {
+              feeCents = Number(bill.platformFeeCents || 0);
+              if (bill.status !== "paid") {
+                bill.status = "paid";
+                bill.stripePaymentIntentId =
+                  typeof paymentIntent === "string"
+                    ? paymentIntent
+                    : paymentIntent?.id;
+                bill.paidAt = new Date();
+                bill.receiptUrl = s.invoice || bill.receiptUrl || "";
+                await bill.save();
+              }
             }
           }
           if (type === "deposit" && bookingId) {
@@ -540,6 +541,11 @@ export async function stripeWebhook(req, res) {
               book.status = "confirmed";
               book.confirmedAt = new Date();
               await book.save();
+              try {
+                await recordFeePaid(book.clientId, feeCents);
+              } catch (e) {
+                console.error("recordFeePaid failed:", e.message);
+              }
             }
           }
           break;
@@ -548,14 +554,18 @@ export async function stripeWebhook(req, res) {
           const pi = event.data.object;
           const { billingId, bookingId, type } = pi.metadata || {};
 
+          let feeCents = 0;
           if (billingId) {
             const bill = await Billing.findById(billingId);
-            if (bill && bill.status !== "paid") {
-              bill.status = "paid";
-              bill.stripePaymentIntentId = pi.id;
-              bill.stripeChargeId = pi.latest_charge || null;
-              bill.paidAt = new Date();
-              await bill.save();
+            if (bill) {
+              feeCents = Number(bill.platformFeeCents || 0);
+              if (bill.status !== "paid") {
+                bill.status = "paid";
+                bill.stripePaymentIntentId = pi.id;
+                bill.stripeChargeId = pi.latest_charge || null;
+                bill.paidAt = new Date();
+                await bill.save();
+              }
             }
           }
           if (type === "deposit" && bookingId) {
@@ -567,10 +577,16 @@ export async function stripeWebhook(req, res) {
               await book.save();
 
               try {
+                await recordFeePaid(book.clientId, feeCents);
+              } catch (e) {
+                console.error("recordFeePaid failed:", e.message);
+              }
+
+              try {
                 let clientEmail = null;
                 let clientName = "Valued Client";
                 if (book.clientId) {
-                  const client = await Client.findById(book.clientId);
+                  const client = await Client.findOne({ clerkId: String(book.clientId) });
                   if (client) {
                     clientEmail = client.email;
                     clientName = client.username || client.handle || "Valued Client";
@@ -584,6 +600,37 @@ export async function stripeWebhook(req, res) {
                 console.error("Failed to send confirmation email:", emailError);
               }
             }
+          }
+          break;
+        }
+        case "payment_intent.payment_failed": {
+          const pi = event.data.object;
+          const { billingId } = pi.metadata || {};
+          if (billingId) {
+            const bill = await Billing.findById(billingId);
+            if (bill && bill.status === "pending") {
+              bill.status = "failed";
+              await bill.save();
+            }
+          }
+          break;
+        }
+        case "account.updated": {
+          // Connect account onboarding/capability changes — keep Artist flags in sync.
+          const account = event.data.object;
+          const artist = await Artist.findOne({ stripeConnectAccountId: account.id });
+          if (artist) {
+            artist.chargesEnabled = Boolean(account.charges_enabled);
+            artist.payoutsEnabled = Boolean(account.payouts_enabled);
+            artist.connectRequirementsDue = account.requirements?.currently_due || [];
+            if (
+              account.charges_enabled &&
+              account.payouts_enabled &&
+              !artist.onboardingCompletedAt
+            ) {
+              artist.onboardingCompletedAt = new Date();
+            }
+            await artist.save();
           }
           break;
         }
@@ -609,7 +656,7 @@ export async function stripeWebhook(req, res) {
 
 export function mountStripeWebhook(app) {
   app.post(
-    "/api/billing/webhook",
+    "/billing/webhook",
     (req, _res, next) => {
       let data = Buffer.alloc(0);
       req.on("data", (chunk) => (data = Buffer.concat([data, chunk])));

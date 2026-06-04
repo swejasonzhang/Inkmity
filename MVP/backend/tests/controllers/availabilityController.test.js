@@ -11,8 +11,13 @@ const app = express();
 app.use(express.json());
 
 const mockAuth = (req, res, next) => {
-  req.user = { clerkId: req.headers["x-test-user-id"] || "test-user-id" };
-  req.auth = { userId: req.headers["x-test-user-id"] || "test-user-id" };
+  // Only attach an identity when a test supplies one, so the unauthenticated
+  // case (no header) actually reaches the controller's 401 path.
+  const id = req.headers["x-test-user-id"];
+  if (id) {
+    req.user = { clerkId: id };
+    req.auth = { userId: id };
+  }
   next();
 };
 

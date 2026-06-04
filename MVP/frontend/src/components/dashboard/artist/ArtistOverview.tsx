@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { Booking } from "@/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import PayoutSetup from "./PayoutSetup";
 
 export type AppointmentWithUsers = Booking & {
   client?: { username: string; avatarUrl?: string } | null;
@@ -119,6 +120,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
 
   return (
     <div className="flex flex-col h-full gap-3 sm:gap-4">
+      <PayoutSetup />
       <div className="grid grid-cols-4 gap-1.5 sm:gap-2 flex-shrink-0">
         {stats.map(({ label, value, Icon }) => (
           <div
