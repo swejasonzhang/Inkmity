@@ -136,8 +136,6 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
     artistId = "artist-123";
     clientId = "client-456";
 
-    // Tattoo sessions require: an onboarded artist (Connect chargesEnabled) and
-    // an explicit per-client booking permission.
     await Artist.create({
       clerkId: artistId,
       email: `${artistId}@example.com`,

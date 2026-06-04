@@ -6,6 +6,7 @@ import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
 import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
 
@@ -21,7 +22,10 @@ export default function Onboarding() {
 
     const [checking, setChecking] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [username, setUsername] = useState("");
     const [role, setRole] = useState<Role>("client");
+
+    const usernameValid = username.trim().length >= 2;
     const [client, setClient] = useState({ ...CLIENT_DEFAULTS });
     const [artist, setArtist] = useState({ ...ARTIST_DEFAULTS });
 
@@ -62,7 +66,7 @@ export default function Onboarding() {
     };
 
     const finish = async (useDefaults: boolean) => {
-        if (!user || submitting) return;
+        if (!user || submitting || !usernameValid) return;
         setSubmitting(true);
         try {
             const token = await getToken();
@@ -72,7 +76,6 @@ export default function Onboarding() {
                 "";
             const fn = user.firstName?.trim() || "";
             const ln = user.lastName?.trim() || "";
-            const username = `${fn} ${ln}`.trim() || email.split("@")[0] || `user-${user.id.slice(-6)}`;
 
             const src = useDefaults ? null : role === "artist" ? artist : client;
             const profile =
@@ -98,7 +101,7 @@ export default function Onboarding() {
                 clerkId: user.id,
                 email,
                 role,
-                username,
+                username: username.trim(),
                 firstName: fn,
                 lastName: ln,
                 profile,
@@ -142,8 +145,25 @@ export default function Onboarding() {
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-1 text-xs text-app/70 mb-2">
                             ✦ <span>Welcome to Inkmity</span>
                         </div>
-                        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app">Tell us what you're looking for</h1>
-                        <p className="text-subtle text-xs sm:text-sm mt-1">A few quick details help us tailor your experience. You can change these anytime.</p>
+                        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app">Choose your username</h1>
+                        <p className="text-subtle text-xs sm:text-sm mt-1">Pick a display name, then add a few details. You can change these anytime.</p>
+                    </div>
+
+                    <div className="mb-5">
+                        <label htmlFor="onboard-username" className="block text-sm text-white/80 mb-1.5 text-center">Username</label>
+                        <Input
+                            id="onboard-username"
+                            name="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Enter a username"
+                            maxLength={40}
+                            autoFocus
+                            className="h-11 rounded-xl text-center"
+                        />
+                        {!usernameValid && username.length > 0 && (
+                            <p className="text-xs text-red-400 mt-1.5 text-center">Username must be at least 2 characters.</p>
+                        )}
                     </div>
 
                     <div className="mb-5">
@@ -166,15 +186,15 @@ export default function Onboarding() {
                         <Button
                             type="button"
                             onClick={() => finish(true)}
-                            disabled={submitting}
-                            className="h-11 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition"
+                            disabled={submitting || !usernameValid}
+                            className="h-11 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
                         >
                             Skip for now
                         </Button>
                         <Button
                             type="button"
                             onClick={() => finish(false)}
-                            disabled={submitting}
+                            disabled={submitting || !usernameValid}
                             className="flex-1 h-11 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
                         >
                             {submitting ? "Saving…" : "Continue to dashboard"}

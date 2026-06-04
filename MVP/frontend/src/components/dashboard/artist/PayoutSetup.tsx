@@ -9,8 +9,6 @@ import {
   type ConnectStatus,
 } from "@/api";
 
-// Artist-facing banner that drives Stripe Connect onboarding. Until the artist
-// finishes onboarding (chargesEnabled), clients cannot book or pay them.
 export default function PayoutSetup() {
   const { getToken } = useAuth();
   const [status, setStatus] = useState<ConnectStatus | null>(null);

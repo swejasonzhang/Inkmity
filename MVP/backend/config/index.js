@@ -28,18 +28,11 @@ export const config = {
     testMinAmountCents: 50,
   },
 
-  // Marketplace platform fee taken from the client (collected as the Stripe
-  // Connect application fee on the deposit). fee = max(round(price * pct), minCents).
   platformFee: {
     pct: Number(process.env.PLATFORM_FEE_PCT ?? 0.10),
     minCents: Number(process.env.PLATFORM_FEE_MIN_CENTS ?? 500),
   },
 
-  // Local testing escape hatch: bypass marketplace gates (artist Connect
-  // onboarding, per-client booking permission, cooldowns) so the full workflow
-  // can be exercised without setup. Hard-disabled in production.
-  // A getter (not a fixed value) so it reflects env loaded after this module is
-  // imported — under ESM, imports are hoisted before server.js loads its .env.
   dev: {
     get bypassGates() {
       return (
@@ -49,8 +42,6 @@ export const config = {
     },
   },
 
-  // Milestone rewards: a client's completed-booking count maps to a reduced
-  // platform-fee rate. Ordered ascending by `bookings` threshold.
   rewards: {
     tiers: [
       { key: 'bronze', label: 'Bronze', bookings: 0, feePct: 0.10 },

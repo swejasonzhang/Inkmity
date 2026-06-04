@@ -18,17 +18,12 @@ let WebhookEvent;
 
 const CURRENCY = config.stripe.currency || "usd";
 
-// Platform (application) fee taken from the client: max(price * pct, minCents).
 function computePlatformFeeCents(priceCents, effectivePct, minCents) {
   const base = Math.max(0, Number(priceCents || 0));
   const pct = Math.max(0, Math.min(1, Number(effectivePct)));
   return Math.max(Math.round(base * pct), Math.max(0, Number(minCents || 0)));
 }
 
-// Resolve the artist's Connect account by clerkId (booking.artistId is a clerkId).
-// Returns the connected account id when the artist is onboarded. Returns null in
-// dev-bypass mode (charge the platform test account directly, no transfer);
-// otherwise throws a 409 if the artist can't accept payouts yet.
 async function resolveArtistPayoutAccount(artistId) {
   const artist = await Artist.findOne({ clerkId: String(artistId) });
   if (artist?.stripeConnectAccountId && artist.chargesEnabled) {
@@ -50,9 +45,6 @@ function requireBooking(booking) {
   }
 }
 
-// DEPRECATED: standalone flat platform-fee checkout. The platform fee is now
-// collected as the Stripe Connect application fee on the deposit payment, so this
-// endpoint is no longer part of the booking flow.
 export async function checkoutPlatformFee(_req, res) {
   return res.status(410).json({
     error: "deprecated",
@@ -81,8 +73,6 @@ export async function checkoutDeposit(req, res) {
     amount = config.stripe.testMinAmountCents;
   }
 
-  // Marketplace: the platform fee is added on top of the deposit. The artist's
-  // Connect account receives the deposit; the platform keeps the fee.
   const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
   const effectivePct = await getEffectiveFeePct(booking.clientId);
   const platformFeeCents = computePlatformFeeCents(
@@ -218,10 +208,6 @@ export async function createDepositPaymentIntent(req, res) {
     amount = config.stripe.testMinAmountCents;
   }
 
-  // Marketplace: the platform fee is added on top of the deposit. The client
-  // pays (deposit + fee); the artist's Connect account receives the deposit; the
-  // platform keeps the fee as the application fee. (Dev bypass: no Connect
-  // account — the whole charge stays on the platform test account.)
   const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
   const effectivePct = await getEffectiveFeePct(booking.clientId);
   const platformFeeCents = computePlatformFeeCents(
@@ -399,8 +385,6 @@ export async function createFinalPaymentIntent(req, res) {
     remainingCents = config.stripe.testMinAmountCents;
   }
 
-  // Final payment transfers entirely to the artist — the platform fee was
-  // already collected on the deposit. (Dev bypass: stays on the platform account.)
   const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
 
   let customer;
@@ -630,7 +614,6 @@ export async function stripeWebhook(req, res) {
           break;
         }
         case "account.updated": {
-          // Connect account onboarding/capability changes — keep Artist flags in sync.
           const account = event.data.object;
           const artist = await Artist.findOne({ stripeConnectAccountId: account.id });
           if (artist) {

@@ -7,8 +7,6 @@ const mockUser = {
   findOneAndUpdate: jest.fn(),
   countDocuments: jest.fn(),
   aggregate: jest.fn(),
-  // userRepository imports Client.js/Artist.js, which register discriminators on
-  // the (mocked) User model at load time.
   discriminator: jest.fn(),
 };
 

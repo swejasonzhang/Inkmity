@@ -72,7 +72,6 @@ export async function getBookingGate(req, res) {
 
     if (!artistId) return res.status(400).json({ error: "missing_artistId" });
 
-    // Dev bypass: unblock the booking UI without onboarding/permission setup.
     if (config.dev.bypassGates) {
       return res.json({
         enabled: true,
@@ -105,8 +104,6 @@ export async function getBookingGate(req, res) {
       clientEnabled = permission ? Boolean(permission.enabled) : false;
     }
 
-    // The artist must have finished Stripe Connect onboarding before any client
-    // can pay (and therefore book).
     const artist = await Artist.findOne({ clerkId: String(artistId) });
     const payoutsReady = Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
 

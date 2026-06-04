@@ -1,8 +1,6 @@
 import { tierForCount, nextTierForCount } from "../../services/rewardsService.js";
 import { config } from "../../config/index.js";
 
-// Pure tier-mapping logic (no DB / Stripe). Validates the milestone rewards
-// thresholds defined in config/index.js.
 describe("rewardsService — milestone tiers", () => {
   const tiers = config.rewards.tiers;
   const top = tiers[tiers.length - 1];
@@ -16,8 +14,6 @@ describe("rewardsService — milestone tiers", () => {
   test("crossing a threshold promotes to the matching tier", () => {
     for (const tier of tiers) {
       expect(tierForCount(tier.bookings).key).toBe(
-        // the resolved tier at exactly `bookings` is this tier (or higher if
-        // two share a threshold — config uses distinct thresholds)
         tier.key
       );
     }

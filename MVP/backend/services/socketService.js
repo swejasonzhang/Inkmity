@@ -143,8 +143,6 @@ export const initSocket = (ioInstance) => {
   });
 };
 
-// Returns null (not throws) when sockets aren't initialized so callers can treat
-// realtime emission as best-effort: `const io = getIO(); if (io) { ... }`.
 export const getIO = () => io || null;
 export const isUserOnline = (clerkId) => {
   return onlineUsers.has(clerkId);

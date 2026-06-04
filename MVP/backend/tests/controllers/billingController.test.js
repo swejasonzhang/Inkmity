@@ -6,9 +6,6 @@ import mongoose from "mongoose";
 const conditionalDescribe =
   process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
 
-// ESM-safe module mock for Stripe. Must be registered before the controller is
-// dynamically imported so the controller binds to this mock (jest.mock does not
-// hoist under native ES modules).
 const stripeMock = {
   customers: { create: jest.fn(), retrieve: jest.fn() },
   paymentIntents: { create: jest.fn() },
@@ -27,7 +24,7 @@ const WebhookEvent = (await import("../../models/WebhookEvent.js")).default;
 await import("../../models/Artist.js");
 await import("../../models/Client.js");
 
-const PLATFORM_FEE_MIN_CENTS = 500; // config default (max(price*pct, min))
+const PLATFORM_FEE_MIN_CENTS = 500;
 
 const app = express();
 app.use(express.json());
@@ -49,7 +46,6 @@ app.post(
   stripeWebhook
 );
 
-// A Connect-onboarded artist is required before any client can pay them.
 async function createOnboardedArtist(artistId) {
   const Artist = mongoose.model("artist");
   return Artist.create({
@@ -109,7 +105,6 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
     expect(response.status).toBe(200);
     expect(response.body.clientSecret).toBe("pi_test123_secret");
     expect(response.body.paymentIntentId).toBe("pi_test123");
-    // priceCents = 0, so the fee floors at the configured minimum.
     expect(response.body.depositCents).toBe(1000);
     expect(response.body.platformFeeCents).toBe(PLATFORM_FEE_MIN_CENTS);
     expect(response.body.totalChargedCents).toBe(1000 + PLATFORM_FEE_MIN_CENTS);
@@ -222,7 +217,6 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
         }),
       })
     );
-    // No platform fee on the final payment.
     const callArg = stripeMock.paymentIntents.create.mock.calls[0][0];
     expect(callArg.application_fee_amount).toBeUndefined();
   });

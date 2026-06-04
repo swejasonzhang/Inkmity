@@ -1,25 +1,5 @@
-import dotenv from "dotenv";
-import path from "node:path";
+import { ENV_NAME as ENV } from "./loadEnv.js";
 import process from "node:process";
-
-const ENV = process.env.NODE_ENV || "development";
-const tryEnv = (p) => {
-  if (!p) return false;
-  const abs = path.resolve(process.cwd(), p);
-  const res = dotenv.config({ path: abs });
-  return !res.error;
-};
-
-if (
-  !tryEnv(`.env.${ENV}`) &&
-  !tryEnv(`.env`) &&
-  !tryEnv(path.join("..", `.env.${ENV}`)) &&
-  !tryEnv(path.join("..", `.env`))
-) {
-  console.warn(
-    `[env] No .env file found (NODE_ENV=${ENV}). Relying on process env.`
-  );
-}
 
 const REQUIRED = [
   "MONGO_URI",
@@ -61,8 +41,6 @@ import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
 
 const isProd = ENV === "production";
 
-// In production, refuse to boot without the secrets that make the marketplace
-// work — silently running degraded is worse than failing the deploy.
 if (isProd) {
   const prodRequired = [
     "MONGO_URI",
@@ -81,11 +59,9 @@ if (isProd) {
 }
 
 const app = express();
-// Behind Render/Railway's proxy — needed for correct client IPs (rate limiting).
 app.set("trust proxy", 1);
 const server = createServer(app);
 
-// Mount Stripe webhook BEFORE express.json so raw body is preserved
 mountStripeWebhook(app);
 
 const frontendOrigins = process.env.FRONTEND_URL 
@@ -168,8 +144,6 @@ async function startServer() {
       console.log(`💾 Database: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
     });
   } catch (error) {
-    // In production a database is non-negotiable — fail the deploy rather than
-    // serving a broken marketplace.
     if (isProd) {
       console.error("[fatal] Database connection failed:", error.message);
       process.exit(1);

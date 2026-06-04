@@ -29,7 +29,6 @@ async function requireArtist(req, res) {
   return artist;
 }
 
-// Mirror the latest Stripe account flags onto the Artist document.
 function syncAccountFlags(artist, account) {
   artist.chargesEnabled = Boolean(account.charges_enabled);
   artist.payoutsEnabled = Boolean(account.payouts_enabled);
@@ -39,7 +38,6 @@ function syncAccountFlags(artist, account) {
   }
 }
 
-// POST /connect/account — create (or reuse) the artist's Express account.
 export async function createConnectAccount(req, res) {
   try {
     const artist = await requireArtist(req, res);
@@ -71,7 +69,6 @@ export async function createConnectAccount(req, res) {
   }
 }
 
-// POST /connect/account-link — hosted onboarding URL (creates the account if missing).
 export async function createAccountLink(req, res) {
   try {
     const artist = await requireArtist(req, res);
@@ -110,7 +107,6 @@ export async function createAccountLink(req, res) {
   }
 }
 
-// GET /connect/status — onboarding/payout status for the artist dashboard.
 export async function getConnectStatus(req, res) {
   try {
     const artist = await requireArtist(req, res);
@@ -125,8 +121,6 @@ export async function getConnectStatus(req, res) {
       });
     }
 
-    // Refresh flags from Stripe so the dashboard reflects reality even if a
-    // webhook was missed.
     try {
       const account = await stripe.accounts.retrieve(artist.stripeConnectAccountId);
       syncAccountFlags(artist, account);
@@ -148,7 +142,6 @@ export async function getConnectStatus(req, res) {
   }
 }
 
-// POST /connect/login-link — Express dashboard link to view payouts.
 export async function createLoginLink(req, res) {
   try {
     const artist = await requireArtist(req, res);
