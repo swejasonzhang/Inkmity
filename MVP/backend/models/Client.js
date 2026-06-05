@@ -14,6 +14,8 @@ const ClientSchema = new Schema(
     rewardsPoints: { type: Number, default: 0, index: true },
     lifetimeDiscountUsd: { type: Number, default: 0 },
     lastRewardAt: Date,
+    completedBookingsCount: { type: Number, default: 0, index: true },
+    rewardsTier: { type: String, default: "bronze", index: true },
   },
   { timestamps: true }
 );

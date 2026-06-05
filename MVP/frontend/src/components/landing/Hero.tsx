@@ -1,6 +1,7 @@
 import React from "react";
 import { m } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useOnboarded } from "@/hooks/useOnboarded";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
 
@@ -12,6 +13,9 @@ type HeroProps = {
 };
 
 const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal }) => {
+    const { onboarded } = useOnboarded();
+    const isOnboarded = onboarded === true;
+    const findArtistTo = isOnboarded ? "/login" : "/signup";
     const gradientInitial = { backgroundPositionX: "100%" as const };
     const gradientAnimate  = { backgroundPositionX: "0%" as const };
     const gradientTransition = {
@@ -60,7 +64,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
                     asChild
                     className="rounded-xl px-fluid-md py-3 h-auto text-fluid-base font-semibold bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-90 transition-opacity focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                 >
-                    <Link to="/signup" aria-label="Create your Inkmity account">
+                    <Link to={findArtistTo} aria-label={isOnboarded ? "Go to your dashboard" : "Create your Inkmity account"}>
                         Find your artist
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>

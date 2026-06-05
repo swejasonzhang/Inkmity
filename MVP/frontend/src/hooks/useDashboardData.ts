@@ -80,9 +80,6 @@ export function useDashboardData() {
     } catch (e: any) {
       const errorMessage = e?.body?.message || e?.message || "Error loading artists";
       setError(errorMessage);
-      toast.error(errorMessage, {
-        position: "bottom-right",
-      });
       setArtists([]);
       setTotal(0);
       setHasMore(false);
@@ -107,9 +104,6 @@ export function useDashboardData() {
     } catch (e: any) {
       const errorMessage = e?.body?.message || e?.message || "Error loading more artists";
       setError(errorMessage);
-      toast.error(errorMessage, {
-        position: "bottom-right",
-      });
     } finally {
       setLoading(false);
     }

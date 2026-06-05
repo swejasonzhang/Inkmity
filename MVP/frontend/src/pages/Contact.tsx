@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import VideoBackground from "@/components/VideoBackground";
 
 const ZWSP = "​";
-const rmZWSP = (s: string) => s.replace(/​/g, "");
+const rmZWSP = (s: string) => s.replace(/\u200B/g, "");
 
 function InputClearPlaceholder(
     props: React.ComponentProps<typeof Input> & { keepCenter?: boolean }

@@ -1,0 +1,78 @@
+# Render blueprint for Inkmity (backend web service + frontend static site).
+# Secrets are intentionally NOT in this file — set them in the Render dashboard
+# (Environment tab) for each service. See DEPLOYMENT.md for the full checklist.
+services:
+  # --- Backend: Express + Socket.io (long-running; do NOT use serverless) ---
+  - type: web
+    name: inkmity-api
+    runtime: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      # Secrets / connections — set these in the dashboard (sync:false keeps them
+      # out of git and out of preview environments).
+      - key: MONGO_URI
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+      # URLs — APP_URL/FRONTEND_URL must be the deployed frontend origin.
+      - key: APP_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      # Platform fee tuning (optional — defaults: 10% / $5 floor).
+      - key: PLATFORM_FEE_PCT
+        value: "0.10"
+      - key: PLATFORM_FEE_MIN_CENTS
+        value: "500"
+
+  # --- Frontend: Vite static build ---
+  - type: web
+    name: inkmity-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      # SPA fallback so client-side routes resolve.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_SOCKET_URL
+        sync: false
+      - key: VITE_CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: VITE_CLOUDINARY_UPLOAD_PRESET
+        sync: false

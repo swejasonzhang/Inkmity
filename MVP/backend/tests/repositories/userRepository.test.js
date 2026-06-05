@@ -7,6 +7,7 @@ const mockUser = {
   findOneAndUpdate: jest.fn(),
   countDocuments: jest.fn(),
   aggregate: jest.fn(),
+  discriminator: jest.fn(),
 };
 
 const mockCache = {

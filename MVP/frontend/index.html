@@ -7,43 +7,23 @@
     <title>Inkmity</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <script>
-      (function() {
+      (function () {
         try {
-          const path = window.location.pathname;
-          if (path.startsWith("/dashboard")) {
-            const theme = localStorage.getItem("dashboard-theme");
-            if (theme === "light" || theme === "dark") {
-              const html = document.documentElement;
-              const body = document.body;
-              if (html) {
-                if (theme === "light") {
-                  html.classList.add("ink-light");
-                  html.setAttribute("data-ink", "light");
-                  if (body) {
-                    body.style.backgroundColor = "#ffffff";
-                    body.style.color = "#111111";
-                  }
-                } else {
-                  html.classList.remove("ink-light");
-                  html.setAttribute("data-ink", "dark");
-                  if (body) {
-                    body.style.backgroundColor = "#0b0b0b";
-                    body.style.color = "#f5f5f5";
-                  }
-                }
-              }
-            }
+          var path = window.location.pathname;
+          var themed = /^\/(dashboard|profile|appointments|portfolio)(\/|$)/.test(path);
+          var stored = localStorage.getItem("inkmity-theme") || localStorage.getItem("dashboard-theme");
+          var theme = themed && stored === "light" ? "light" : "dark";
+          var html = document.documentElement;
+          if (theme === "light") {
+            html.classList.add("ink-light");
+            html.setAttribute("data-ink", "light");
+            html.style.backgroundColor = "#ffffff";
+            html.style.color = "#111111";
           } else {
-            const html = document.documentElement;
-            const body = document.body;
-            if (html) {
-              html.classList.remove("ink-light");
-              html.setAttribute("data-ink", "dark");
-              if (body) {
-                body.style.backgroundColor = "#0b0b0b";
-                body.style.color = "#f5f5f5";
-              }
-            }
+            html.classList.remove("ink-light");
+            html.setAttribute("data-ink", "dark");
+            html.style.backgroundColor = "#0b0b0b";
+            html.style.color = "#f5f5f5";
           }
         } catch (e) {}
       })();

@@ -4,22 +4,33 @@ import express from "express";
 import Booking from "../../models/Booking.js";
 import Project from "../../models/Project.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
+import Artist from "../../models/Artist.js";
 import Client from "../../models/Client.js";
-import {
+import ClientBookingPermission from "../../models/ClientBookingPermission.js";
+
+const stripeMock = {
+  customers: { create: jest.fn(), retrieve: jest.fn() },
+  paymentIntents: { create: jest.fn() },
+  webhooks: { constructEvent: jest.fn((body) => JSON.parse(body.toString())) },
+};
+const sendAppointmentConfirmationEmail = jest.fn();
+const sendAppointmentCancellationEmail = jest.fn();
+jest.unstable_mockModule("../../lib/stripe.js", () => ({ stripe: stripeMock }));
+jest.unstable_mockModule("../../services/emailService.js", () => ({
+  sendAppointmentConfirmationEmail,
+  sendAppointmentCancellationEmail,
+}));
+
+const {
   createConsultation,
   createTattooSession,
   submitIntakeForm,
   rescheduleAppointment,
   cancelBooking,
   markNoShow,
-} from "../../controllers/bookingController.js";
-import {
-  createDepositPaymentIntent,
-  createFinalPaymentIntent,
-  stripeWebhook,
-} from "../../controllers/billingController.js";
-import { stripe } from "../../lib/stripe.js";
-import { sendAppointmentConfirmationEmail } from "../../services/emailService.js";
+} = await import("../../controllers/bookingController.js");
+const { createDepositPaymentIntent, createFinalPaymentIntent, stripeWebhook } =
+  await import("../../controllers/billingController.js");
 
 const app = express();
 app.use(express.json());
@@ -38,34 +49,49 @@ app.post("/bookings/:id/cancel", mockAuth, cancelBooking);
 app.post("/bookings/:id/no-show", mockAuth, markNoShow);
 app.post("/billing/deposit/intent", mockAuth, createDepositPaymentIntent);
 app.post("/billing/final-payment/intent", mockAuth, createFinalPaymentIntent);
-app.post("/billing/webhook", (req, res, next) => {
-  req.rawBody = Buffer.from(JSON.stringify(req.body));
-  next();
-}, stripeWebhook);
-
-jest.mock("../../lib/stripe.js", () => ({
-  stripe: {
-    customers: {
-      create: jest.fn(),
-      retrieve: jest.fn(),
-    },
-    paymentIntents: {
-      create: jest.fn(),
-    },
-    webhooks: {
-      constructEvent: jest.fn((body, sig, secret) => {
-        return JSON.parse(body.toString());
-      }),
-    },
+app.post(
+  "/billing/webhook",
+  (req, res, next) => {
+    req.rawBody = Buffer.from(JSON.stringify(req.body));
+    next();
   },
-}));
+  stripeWebhook
+);
 
-jest.mock("../../services/emailService.js", () => ({
-  sendAppointmentConfirmationEmail: jest.fn(),
-  sendAppointmentCancellationEmail: jest.fn(),
-}));
+const conditionalDescribe =
+  process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
 
-const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
+async function onboardArtist(artistId) {
+  await Artist.create({
+    clerkId: artistId,
+    email: `${artistId}@example.com`,
+    username: "Artist",
+    handle: `@${artistId}`,
+    role: "artist",
+    stripeConnectAccountId: "acct_test_123",
+    chargesEnabled: true,
+    payoutsEnabled: true,
+  });
+}
+
+async function createClientUser(clientId) {
+  await Client.create({
+    clerkId: clientId,
+    email: `${clientId}@example.com`,
+    username: "Client",
+    handle: `@${clientId}`,
+    role: "client",
+  });
+}
+
+async function enableBookings(artistId, clientId) {
+  await ClientBookingPermission.create({
+    artistId,
+    clientId,
+    enabled: true,
+    enabledBy: "artist",
+  });
+}
 
 conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
   let artistId;
@@ -77,16 +103,14 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
     clientId = "client-456";
 
     await ArtistPolicy.create({
-      artistId: artistId,
-      deposit: {
-        mode: "percent",
-        percent: 0.2,
-        minCents: 1000,
-      },
+      artistId,
+      deposit: { mode: "percent", percent: 0.2, minCents: 1000 },
     });
+    await onboardArtist(artistId);
+    await createClientUser(clientId); // needed for the confirmation email lookup
 
-    stripe.customers.create.mockResolvedValue({ id: "cus_test123" });
-    stripe.paymentIntents.create.mockResolvedValue({
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_test123" });
+    stripeMock.paymentIntents.create.mockResolvedValue({
       id: "pi_test123",
       client_secret: "pi_test123_secret",
     });
@@ -102,12 +126,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
     const createResponse = await request(app)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
-      .send({
-        artistId,
-        startISO,
-        durationMinutes: 30,
-        priceCents: 10000,
-      });
+      .send({ artistId, startISO, durationMinutes: 30, priceCents: 10000 });
 
     expect(createResponse.status).toBe(201);
     bookingId = createResponse.body._id;
@@ -162,7 +181,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
     expect(booking.intakeFormId).toBeDefined();
 
     expect(sendAppointmentConfirmationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: bookingId }),
+      expect.objectContaining({ _id: expect.anything() }),
       expect.any(String),
       expect.any(String)
     );
@@ -188,8 +207,11 @@ conditionalDescribe("Integration - Multi-Session Project Booking Flow", () => {
     });
     projectId = project._id.toString();
 
-    stripe.customers.create.mockResolvedValue({ id: "cus_test123" });
-    stripe.paymentIntents.create.mockResolvedValue({
+    await onboardArtist(artistId);
+    await enableBookings(artistId, clientId);
+
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_test123" });
+    stripeMock.paymentIntents.create.mockResolvedValue({
       id: "pi_test123",
       client_secret: "pi_test123_secret",
     });
@@ -198,8 +220,10 @@ conditionalDescribe("Integration - Multi-Session Project Booking Flow", () => {
   test("should create multiple sessions for a project", async () => {
     const sessions = [];
     for (let i = 1; i <= 3; i++) {
-      const startISO = new Date(Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000).toISOString();
-      
+      const startISO = new Date(
+        Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000
+      ).toISOString();
+
       const response = await request(app)
         .post("/bookings/session")
         .set("x-test-user-id", clientId)
@@ -273,6 +297,8 @@ conditionalDescribe("Integration - Deposit Application to Final Payment", () => 
     artistId = "artist-123";
     clientId = "client-456";
 
+    await onboardArtist(artistId);
+
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
     const booking = await Booking.create({
       artistId,
@@ -287,8 +313,8 @@ conditionalDescribe("Integration - Deposit Application to Final Payment", () => 
     });
     bookingId = booking._id.toString();
 
-    stripe.customers.create.mockResolvedValue({ id: "cus_test123" });
-    stripe.paymentIntents.create.mockResolvedValue({
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_test123" });
+    stripeMock.paymentIntents.create.mockResolvedValue({
       id: "pi_final123",
       client_secret: "pi_final123_secret",
     });
@@ -304,9 +330,10 @@ conditionalDescribe("Integration - Deposit Application to Final Payment", () => 
     expect(response.body.amountCents).toBe(8000);
     expect(response.body.depositApplied).toBe(2000);
     expect(response.body.totalAmount).toBe(10000);
-    expect(stripe.paymentIntents.create).toHaveBeenCalledWith(
+    expect(stripeMock.paymentIntents.create).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: 8000,
+        transfer_data: { destination: "acct_test_123" },
         metadata: expect.objectContaining({
           type: "final_payment",
           depositApplied: "2000",

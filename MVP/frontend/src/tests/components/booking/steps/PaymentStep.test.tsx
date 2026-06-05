@@ -34,6 +34,7 @@ jest.unstable_mockModule("@/api", () => ({
   cancelBooking: jest.fn(),
   completeBooking: jest.fn(),
   getBooking: jest.fn(),
+  getMyRewards: jest.fn<() => Promise<any>>().mockResolvedValue(null),
   startCheckout: jest.fn(),
   checkoutDeposit: jest.fn(),
   refundByBooking: jest.fn(),

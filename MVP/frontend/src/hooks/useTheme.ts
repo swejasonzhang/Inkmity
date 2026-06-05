@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 export const THEME_MS = 300;
@@ -51,9 +51,9 @@ export function useTheme() {
     themed ? readStored() : "dark"
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     applyToDom(themed ? theme : "dark", false);
-  }, [themed]);
+  }, [themed, theme]);
 
   useEffect(() => {
     if (!themed && theme !== "dark") setTheme("dark");

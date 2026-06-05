@@ -5,6 +5,8 @@ const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe
 import Booking from "../../models/Booking.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
 import Project from "../../models/Project.js";
+import Artist from "../../models/Artist.js";
+import ClientBookingPermission from "../../models/ClientBookingPermission.js";
 import {
   createConsultation,
   createTattooSession,
@@ -130,9 +132,26 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   let artistId;
   let clientId;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     artistId = "artist-123";
     clientId = "client-456";
+
+    await Artist.create({
+      clerkId: artistId,
+      email: `${artistId}@example.com`,
+      username: "Artist",
+      handle: `@${artistId}`,
+      role: "artist",
+      stripeConnectAccountId: "acct_test_123",
+      chargesEnabled: true,
+      payoutsEnabled: true,
+    });
+    await ClientBookingPermission.create({
+      artistId,
+      clientId,
+      enabled: true,
+      enabledBy: "artist",
+    });
   });
 
   test("should create tattoo session with custom duration", async () => {

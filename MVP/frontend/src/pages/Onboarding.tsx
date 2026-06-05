@@ -2,10 +2,13 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getMe, syncUser } from "@/api";
+import { setCachedUsername } from "@/lib/roleCache";
+import { markOnboarded } from "@/hooks/useOnboarded";
 import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
 import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
 
@@ -17,11 +20,15 @@ const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100",
 export default function Onboarding() {
     const navigate = useNavigate();
     const { isLoaded, isSignedIn, user } = useUser();
-    const { getToken } = useAuth();
+    const { getToken, signOut } = useAuth();
 
     const [checking, setChecking] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [completing, setCompleting] = useState(false);
+    const [username, setUsername] = useState("");
     const [role, setRole] = useState<Role>("client");
+
+    const usernameValid = username.trim().length >= 2;
     const [client, setClient] = useState({ ...CLIENT_DEFAULTS });
     const [artist, setArtist] = useState({ ...ARTIST_DEFAULTS });
 
@@ -35,8 +42,10 @@ export default function Onboarding() {
         (async () => {
             try {
                 const token = await getToken();
-                await getMe({ token: token ?? undefined });
-                if (active) navigate("/dashboard", { replace: true });
+                const me = await getMe({ token: token ?? undefined });
+                if (!active) return;
+                if (me?.onboardingComplete === true) navigate("/dashboard", { replace: true });
+                else setChecking(false);
             } catch {
                 if (active) setChecking(false);
             }
@@ -62,8 +71,9 @@ export default function Onboarding() {
     };
 
     const finish = async (useDefaults: boolean) => {
-        if (!user || submitting) return;
+        if (!user || submitting || !usernameValid) return;
         setSubmitting(true);
+        setCompleting(true);
         try {
             const token = await getToken();
             const email =
@@ -72,7 +82,6 @@ export default function Onboarding() {
                 "";
             const fn = user.firstName?.trim() || "";
             const ln = user.lastName?.trim() || "";
-            const username = `${fn} ${ln}`.trim() || email.split("@")[0] || `user-${user.id.slice(-6)}`;
 
             const src = useDefaults ? null : role === "artist" ? artist : client;
             const profile =
@@ -98,18 +107,22 @@ export default function Onboarding() {
                 clerkId: user.id,
                 email,
                 role,
-                username,
+                username: username.trim(),
                 firstName: fn,
                 lastName: ln,
                 profile,
             });
-            navigate("/dashboard", { replace: true });
+            setCachedUsername(username.trim());
+            markOnboarded(user.id);
+            window.dispatchEvent(new Event("inkmity:user-updated"));
+            setTimeout(() => navigate("/dashboard", { replace: true }), 1100);
         } catch {
             setSubmitting(false);
+            setCompleting(false);
         }
     };
 
-    if (!isLoaded || checking) {
+    if (completing) {
         return (
             <div className="relative h-svh flex flex-col items-center justify-center text-app">
                 <VideoBackground />
@@ -121,40 +134,68 @@ export default function Onboarding() {
         );
     }
 
+    if (!isLoaded || checking) {
+        return (
+            <div className="relative h-svh flex flex-col text-app">
+                <VideoBackground />
+            </div>
+        );
+    }
+
     const roleBtn = (r: Role, label: string) => (
         <Button
             type="button"
             variant="secondary"
             onClick={() => setRole(r)}
-            className={`flex-1 h-11 rounded-xl text-sm ${role === r ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+            className={`flex-1 h-10 rounded-xl text-sm ${role === r ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
         >
             {label}
         </Button>
     );
 
     return (
-        <div className="relative min-h-svh flex flex-col text-app">
+        <div className="relative h-svh overflow-hidden flex flex-col text-app">
             <VideoBackground />
             <Header />
-            <main className="flex-1 flex items-start sm:items-center justify-center px-4 sm:px-6 py-6 overflow-y-auto">
-                <div className="w-full max-w-2xl mx-auto rounded-3xl bg-card border border-app p-5 sm:p-7">
-                    <div className="text-center mb-5">
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-1 text-xs text-app/70 mb-2">
-                            ✦ <span>Welcome to Inkmity</span>
-                        </div>
-                        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-app">Tell us what you're looking for</h1>
-                        <p className="text-subtle text-xs sm:text-sm mt-1">A few quick details help us tailor your experience. You can change these anytime.</p>
+            <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-3 overflow-hidden">
+                <div className="w-full max-w-xl mx-auto max-h-full overflow-hidden rounded-2xl bg-card border border-app p-4 sm:p-5">
+                    <div className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-center">
+                        <p className="text-[11px] sm:text-xs font-semibold text-amber-300">
+                            Finish setting up your account to continue.
+                        </p>
                     </div>
 
-                    <div className="mb-5">
-                        <div className="block text-sm text-white/80 mb-1.5 text-center">I'm joining as</div>
+                    <div className="mb-2">
+                        <label htmlFor="onboard-username" className="block text-xs text-white/80 mb-1 text-center">
+                            Username <span className="text-red-400">*</span> <span className="text-app/50">(required)</span>
+                        </label>
+                        <Input
+                            id="onboard-username"
+                            name="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Enter a username to continue"
+                            maxLength={40}
+                            autoFocus
+                            aria-required="true"
+                            className={`h-10 rounded-xl text-center ${!usernameValid && username.length > 0 ? "border-red-400" : ""}`}
+                        />
+                        <p className={`text-[11px] mt-1 text-center ${!usernameValid && username.length > 0 ? "text-red-400" : "text-app/50"}`}>
+                            {!usernameValid && username.length > 0
+                                ? "Username must be at least 2 characters."
+                                : "Required to continue."}
+                        </p>
+                    </div>
+
+                    <div className="mb-2">
+                        <div className="block text-xs text-white/80 mb-1 text-center">I'm joining as</div>
                         <div className="flex gap-2">
                             {roleBtn("client", "Client")}
                             {roleBtn("artist", "Artist")}
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-2">
                         {role === "client" ? (
                             <ClientDetailsStep client={client} onChange={handleClient} />
                         ) : (
@@ -166,19 +207,29 @@ export default function Onboarding() {
                         <Button
                             type="button"
                             onClick={() => finish(true)}
-                            disabled={submitting}
-                            className="h-11 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition"
+                            disabled={submitting || !usernameValid}
+                            className="h-10 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
                         >
                             Skip for now
                         </Button>
                         <Button
                             type="button"
                             onClick={() => finish(false)}
-                            disabled={submitting}
-                            className="flex-1 h-11 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
+                            disabled={submitting || !usernameValid}
+                            className="flex-1 h-10 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
                         >
                             {submitting ? "Saving…" : "Continue to dashboard"}
                         </Button>
+                    </div>
+
+                    <div className="mt-3 text-center">
+                        <button
+                            type="button"
+                            onClick={() => signOut({ redirectUrl: "/login" })}
+                            className="text-[11px] text-app/50 hover:text-app/80 underline underline-offset-2 transition"
+                        >
+                            Not you? Sign out
+                        </button>
                     </div>
                 </div>
             </main>

@@ -383,7 +383,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     if (!isClient) return;
     const handleProfileUpdate = () => {
       if (!currentUserId) return;
-      let mounted = true;
+      const mounted = true;
       (async () => {
         try {
           const res = await authFetch(`/messages/user/${currentUserId}`, { method: "GET" });

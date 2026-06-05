@@ -143,10 +143,7 @@ export const initSocket = (ioInstance) => {
   });
 };
 
-export const getIO = () => {
-  if (!io) throw new Error("Socket.io not initialized");
-  return io;
-};
+export const getIO = () => io || null;
 export const isUserOnline = (clerkId) => {
   return onlineUsers.has(clerkId);
 };

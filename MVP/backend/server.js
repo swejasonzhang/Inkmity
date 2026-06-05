@@ -1,25 +1,5 @@
-import dotenv from "dotenv";
-import path from "node:path";
+import { ENV_NAME as ENV } from "./loadEnv.js";
 import process from "node:process";
-
-const ENV = process.env.NODE_ENV || "development";
-const tryEnv = (p) => {
-  if (!p) return false;
-  const abs = path.resolve(process.cwd(), p);
-  const res = dotenv.config({ path: abs });
-  return !res.error;
-};
-
-if (
-  !tryEnv(`.env.${ENV}`) &&
-  !tryEnv(`.env`) &&
-  !tryEnv(path.join("..", `.env.${ENV}`)) &&
-  !tryEnv(path.join("..", `.env`))
-) {
-  console.warn(
-    `[env] No .env file found (NODE_ENV=${ENV}). Relying on process env.`
-  );
-}
 
 const REQUIRED = [
   "MONGO_URI",
@@ -54,13 +34,34 @@ import imageRoutes from "./routes/images.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import artistPolicyRoutes from "./routes/artistPolicy.js";
 import reviewRoutes from "./routes/reviews.js";
+import connectRoutes from "./routes/connect.js";
+import rewardsRoutes from "./routes/rewards.js";
 import { mountStripeWebhook } from "./controllers/billingController.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
 
+const isProd = ENV === "production";
+
+if (isProd) {
+  const prodRequired = [
+    "MONGO_URI",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "CLERK_SECRET_KEY",
+    "APP_URL",
+  ];
+  const prodMissing = prodRequired.filter((k) => !process.env[k]);
+  if (prodMissing.length > 0) {
+    console.error(
+      `[fatal] Missing required production env vars: ${prodMissing.join(", ")}`
+    );
+    process.exit(1);
+  }
+}
+
 const app = express();
+app.set("trust proxy", 1);
 const server = createServer(app);
 
-// Mount Stripe webhook BEFORE express.json so raw body is preserved
 mountStripeWebhook(app);
 
 const frontendOrigins = process.env.FRONTEND_URL 
@@ -108,6 +109,8 @@ app.use("/images", imageRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/artist-policy", artistPolicyRoutes);
 app.use("/reviews", reviewRoutes);
+app.use("/connect", connectRoutes);
+app.use("/rewards", rewardsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
@@ -128,6 +131,8 @@ async function startServer() {
     if (process.env.MONGO_URI) {
       await mongoose.connect(process.env.MONGO_URI);
       console.log("✅ MongoDB connected");
+    } else if (isProd) {
+      throw new Error("MONGO_URI is required in production");
     } else {
       console.warn("⚠️  MONGO_URI not set, running without database");
     }
@@ -139,8 +144,12 @@ async function startServer() {
       console.log(`💾 Database: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
     });
   } catch (error) {
-    console.warn("⚠️  Database connection failed, starting server anyway:", error.message);
+    if (isProd) {
+      console.error("[fatal] Database connection failed:", error.message);
+      process.exit(1);
+    }
 
+    console.warn("⚠️  Database connection failed, starting server anyway:", error.message);
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT} (without database)`);
       console.log(`📱 Frontend: ${process.env.FRONTEND_URL || "http://localhost:3000"}`);

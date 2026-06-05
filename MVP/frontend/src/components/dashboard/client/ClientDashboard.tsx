@@ -63,7 +63,7 @@ export default function ClientDashboard() {
     );
 
     const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(user?.id ?? "", authFetch);
-    const { artists, loading, initialized, error, loadFirst } = useDashboardData();
+    const { artists, loading } = useDashboardData();
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -174,102 +174,31 @@ export default function ClientDashboard() {
                 />
             </div>
             <main className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ padding: '0 clamp(12px, 1.5vw, 24px)' }}>
-                {error && !initialized ? (
-                    <div className="flex-1 min-h-0 w-full flex items-center justify-center" style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
-                        <div className="w-full max-w-2xl rounded-lg border border-red-500/30 bg-red-500/10" style={{ padding: 'clamp(1.5rem, 2vmin + 1vw, 2.5rem)' }}>
-                            <div className="flex flex-col items-center text-center" style={{ gap: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }}>
-                                <div className="w-full">
-                                    <h2 className="font-semibold text-red-300 mb-2" style={{ fontSize: 'clamp(1rem, 1.3vmin + 0.7vw, 1.25rem)' }}>Error Loading Dashboard</h2>
-                                    <p className="text-red-200/90" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>{error}</p>
-                                    {error.includes("Too many requests") && (
-                                        <p className="text-red-200/70 mt-2" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>Please wait a moment and try again later.</p>
-                                    )}
-                                </div>
-                                <div className="flex flex-wrap justify-center" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
-                                    <button
-                                        onClick={() => {
-                                            setPage(1);
-                                            loadFirst({});
-                                        }}
-                                        className="font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
-                                        style={{ padding: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.875rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
-                                    >
-                                        Retry
-                                    </button>
-                                    <button
-                                        onClick={() => window.location.reload()}
-                                        className="font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors"
-                                        style={{ padding: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.875rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
-                                    >
-                                        Reload Page
-                                    </button>
-                                    <button
-                                        onClick={() => navigate("/landing")}
-                                        className="font-medium rounded border border-app bg-card text-app hover:bg-elevated transition-colors"
-                                        style={{ padding: 'clamp(0.5rem, 0.7vmin + 0.4vw, 0.875rem) clamp(1rem, 1.5vmin + 0.8vw, 2rem)', fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}
-                                    >
-                                        Go to Home
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        {error && initialized && (
-                            <div className="rounded-lg border border-red-500/30 bg-red-500/10 flex-shrink-0" style={{ margin: '16px 0', padding: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
-                                <div className="flex items-start" style={{ gap: 'clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)' }}>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-red-300 mb-1" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>Error Loading Artists</h3>
-                                        <p className="text-red-200/90" style={{ fontSize: 'clamp(0.875rem, 1vmin + 0.5vw, 1rem)' }}>{error}</p>
-                                        {error.includes("Too many requests") && (
-                                            <p className="text-red-200/70 mt-2" style={{ fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}>Please wait a moment and try again later.</p>
-                                        )}
+                <div className="flex-1 min-h-0 flex">
+                    <div className="w-full h-full" style={{ padding: '0' }}>
+                        <Suspense
+                            fallback={
+                                <div style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }} className="space-y-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.5rem)' }}>
+                                        {Array.from({ length: 8 }).map((_, i) => (
+                                            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                                        ))}
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            setPage(1);
-                                            loadFirst({});
-                                        }}
-                                        className="font-medium rounded border border-red-500/30 bg-red-500/20 text-red-200 hover:bg-red-500/30 transition-colors flex-shrink-0"
-                                        style={{ padding: 'clamp(0.375rem, 0.6vmin + 0.3vw, 0.75rem) clamp(0.75rem, 1.2vmin + 0.6vw, 1.5rem)', fontSize: 'clamp(0.75rem, 0.9vmin + 0.4vw, 0.875rem)' }}
-                                    >
-                                        Retry
-                                    </button>
                                 </div>
-                            </div>
-                        )}
-                        <div className="flex-1 min-h-0 flex">
-                            <div className="w-full h-full" style={{ padding: '0' }}>
-                                <Suspense
-                                    fallback={
-                                        <div style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }} className="space-y-4">
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.5rem)' }}>
-                                                {Array.from({ length: 8 }).map((_, i) => (
-                                                    <Skeleton key={i} className="h-48 w-full rounded-xl" />
-                                                ))}
-                                            </div>
-                                            <div className="flex items-center justify-center" style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)' }}>
-                                                <Skeleton className="h-8 w-20 rounded" />
-                                                <Skeleton className="h-8 w-20 rounded" />
-                                            </div>
-                                        </div>
-                                    }
-                                >
-                                    <ArtistsSection
-                                        artists={filtered.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
-                                        loading={loading}
-                                        showArtists
-                                        onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
-                                        page={page}
-                                        totalPages={totalPages}
-                                        onPageChange={handlePageChange}
-                                    />
-                                </Suspense>
-                            </div>
-                        </div>
-                    </>
-                )}
+                            }
+                        >
+                            <ArtistsSection
+                                artists={filtered.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
+                                loading={loading}
+                                showArtists
+                                onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+                                page={page}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                        </Suspense>
+                    </div>
+                </div>
             </main>
             <div className="shrink-0" style={{ padding: 'clamp(12px, 1.5vw, 24px)' }}>
                 <FloatingBar
