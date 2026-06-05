@@ -124,9 +124,28 @@ export function useDashboardData() {
       void loadFirst(lastFilters.current);
     };
 
+    const setPresence = (clerkId: string, isOnline: boolean, lastActive?: number) => {
+      if (!clerkId) return;
+      setArtists((prev) =>
+        prev.map((a) =>
+          (a as any).clerkId === clerkId
+            ? { ...a, isOnline, ...(lastActive ? { lastActive } : {}) }
+            : a
+        )
+      );
+    };
+
+    const handleOnline = (p: { clerkId?: string }) => setPresence(p?.clerkId || "", true, Date.now());
+    const handleOffline = (p: { clerkId?: string }) => setPresence(p?.clerkId || "", false, Date.now());
+    const handleActivity = (p: { userId?: string; lastActive?: number }) =>
+      setPresence(p?.userId || "", true, p?.lastActive || Date.now());
+
     const setupListener = () => {
       if (!listenerAdded) {
         socket.on("artist:profile:updated", handleProfileUpdate);
+        socket.on("user:online", handleOnline);
+        socket.on("user:offline", handleOffline);
+        socket.on("user:activity:updated", handleActivity);
         listenerAdded = true;
       }
     };
@@ -152,6 +171,9 @@ export function useDashboardData() {
     return () => {
       if (listenerAdded) {
         socket.off("artist:profile:updated", handleProfileUpdate);
+        socket.off("user:online", handleOnline);
+        socket.off("user:offline", handleOffline);
+        socket.off("user:activity:updated", handleActivity);
       }
     };
   }, [isLoaded, isSignedIn, user, getToken, loadFirst]);
