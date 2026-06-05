@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { Award, Check, Crown, Sparkles, Star } from "lucide-react";
 import Header from "@/components/header/Header";
+import VideoBackground from "@/components/VideoBackground";
 import { useRole } from "@/hooks/useRole";
-import { useTheme } from "@/hooks/useTheme";
 import { getMe, getMyRewards, fetchArtistById, type RewardsSummary } from "@/api";
 
 type ClientTier = { key: string; label: string; threshold: number; feePct: number; perks: string[] };
@@ -46,16 +46,12 @@ function artistTierForStats(bookings: number, rating: number): string {
 
 export default function Tiers() {
   const { role, isLoaded } = useRole();
-  const { theme } = useTheme();
   const { getToken } = useAuth();
 
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
   const [artistTierKey, setArtistTierKey] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const loadedRef = useRef(false);
-
-  const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
-  const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
   useEffect(() => {
     if (!isLoaded || loadedRef.current) return;
@@ -75,7 +71,7 @@ export default function Tiers() {
           if (active) setRewards(data);
         }
       } catch {
-        /* show the ladder without a "current" highlight on failure */
+        // ignore
       } finally {
         if (active) setReady(true);
       }
@@ -84,8 +80,6 @@ export default function Tiers() {
   }, [isLoaded, role, getToken]);
 
   const isArtist = role === "artist";
-  // Always resolve to at least the starting tier so the "current" indicator
-  // shows even if the rewards/stats fetch is empty or fails.
   const currentKey = isArtist
     ? artistTierKey ?? ARTIST_TIERS[0].key
     : rewards?.tier?.key ?? CLIENT_TIERS[0].key;
@@ -97,7 +91,8 @@ export default function Tiers() {
   const tiers = useMemo(() => (isArtist ? ARTIST_TIERS : CLIENT_TIERS), [isArtist]);
 
   return (
-    <div id="dashboard-scope" className="ink-scope h-dvh overflow-hidden flex flex-col" style={{ background: shellBg, color: shellFg }}>
+    <div className="h-svh overflow-hidden flex flex-col text-app">
+      <VideoBackground />
       <Header />
       <main
         className="flex-1 min-h-0 overflow-y-auto"
@@ -152,7 +147,7 @@ export default function Tiers() {
                   {isCurrent && (
                     <span
                       className="absolute left-1/2 -translate-x-1/2 -top-3 inline-flex items-center gap-1 rounded-full border-2 px-2.5 py-0.5 text-[11px] font-semibold"
-                      style={{ borderColor: "var(--fg)", background: shellBg, color: "var(--fg)" }}
+                      style={{ borderColor: "var(--fg)", background: "var(--bg)", color: "var(--fg)" }}
                     >
                       <Check className="h-3 w-3" /> Your tier
                     </span>

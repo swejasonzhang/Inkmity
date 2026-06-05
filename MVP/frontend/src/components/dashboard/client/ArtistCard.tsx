@@ -131,8 +131,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   const showStatus = isOnline || (!!lastActiveText && lastActiveText !== "Never active");
 
   const shellClass = fullScreen
-    ? "group w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl border bg-card/90 transition"
-    : "group w-full h-full flex flex-col overflow-hidden rounded-3xl border bg-card/90 cursor-pointer";
+    ? "group w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl border transition"
+    : "group w-full h-full flex flex-col overflow-hidden rounded-3xl border cursor-pointer";
 
   return (
     <div
@@ -143,15 +143,15 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           : ({ minHeight: 0 } as React.CSSProperties)
       }
     >
-      <div className={shellClass} style={{ borderColor: "var(--border)", minHeight: 0 }} data-artist-card="true" data-testid="artist-card" onClick={!fullScreen ? openProfile : undefined}>
+      <div className={shellClass} style={{ borderColor: "var(--border)", minHeight: 0, background: "linear-gradient(155deg, color-mix(in srgb, var(--card) 86%, var(--fg) 14%) 0%, var(--card) 42%, color-mix(in srgb, var(--card) 80%, var(--fg) 20%) 100%)" }} data-artist-card="true" data-testid="artist-card" onClick={!fullScreen ? openProfile : undefined}>
         <div className={`relative w-full flex-shrink-0 flex items-center justify-center ${fullScreen ? "px-3 pt-2" : ""}`}>
           <div 
             className={`relative flex-shrink-0 w-full rounded-2xl overflow-hidden ${fullScreen ? "" : ""}`} 
             style={fullScreen ? {
-              height: "clamp(6rem, 16vh, 11rem)",
+              height: "clamp(8.5rem, 26vh, 15rem)",
               background: "var(--elevated)"
             } : {
-              height: 'clamp(7rem, 9vh + 1.5vw, 11rem)',
+              height: 'clamp(9.5rem, 14vh + 2.5vw, 16rem)',
               background: "var(--elevated)"
             } as React.CSSProperties}
           >

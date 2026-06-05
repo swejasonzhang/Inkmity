@@ -200,8 +200,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     };
   }, [isLoaded, isSignedIn, user?.id, getToken]);
 
-  // Always reflect the user as online; auto-mark "away" after 5 minutes idle,
-  // and restore to online on the next interaction.
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     const IDLE_MS = 5 * 60 * 1000;
@@ -212,7 +210,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         const token = await getToken();
         await updateVisibility(v, token ?? undefined);
       } catch {
-        /* non-blocking */
+        // ignore
       }
     };
 

@@ -100,6 +100,12 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
         e.preventDefault();
     };
 
+    const frost: React.CSSProperties = {
+        background: "color-mix(in srgb, var(--card) 82%, transparent)",
+        borderColor: "color-mix(in srgb, var(--fg) 25%, transparent)",
+        color: "var(--fg)",
+    };
+
     return (
         <div
             className="fixed inset-0 z-[1300] flex items-center justify-center"
@@ -112,32 +118,37 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
             <div className="absolute inset-0 backdrop-blur-sm" aria-hidden />
 
             <div
-                className="relative w-screen h-screen flex items-center justify-center px-2 sm:px-4"
+                className="relative w-screen h-screen flex flex-col items-center justify-center gap-2 sm:gap-3 px-2 sm:px-4"
                 onClick={stop}
             >
-                <div
-                    className="absolute left-1/2 -translate-x-1/2 top-3 sm:top-4 rounded-full shadow-sm z-[9999] pointer-events-none fullscreen-zoom__count"
-                >
-                    <div className="flex items-center gap-2 px-5 py-2 font-semibold">
-                        <span>{count}</span>
+                <div className="flex items-center justify-between gap-3 w-full max-w-[920px]">
+                    <div className="rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-md border shadow-lg" style={frost}>
+                        {count}
                     </div>
+                    <button
+                        onClick={(e) => { stop(e); onClose(); }}
+                        className="h-8 w-8 rounded-full border backdrop-blur-md shadow-lg grid place-items-center transition active:scale-90"
+                        style={frost}
+                        aria-label="Close image"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
                 </div>
 
-                <div className="mt-4 flex w-full flex-col items-center gap-4 px-3 sm:mt-6 sm:flex-row sm:items-center sm:justify-center sm:gap-6">
+                <div className="flex items-center justify-center gap-1.5 sm:gap-3 w-full">
                     <button
                         onClick={(e) => { stop(e); onPrev(); }}
-                        className="group order-2 flex w-full items-center justify-center gap-2 rounded-full border bg-card/80 px-5 py-3 text-sm font-semibold shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl sm:order-1 sm:w-auto sm:px-6"
-                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                        className="shrink-0 h-8 w-8 sm:h-11 sm:w-11 rounded-full border backdrop-blur-md shadow-lg grid place-items-center transition active:scale-90"
+                        style={frost}
                         aria-label="Previous image"
                     >
-                        <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
-                        Previous
+                        <ChevronLeft className="h-5 w-5" />
                     </button>
 
                     <div
                         ref={wrapRef}
-                        className="order-1 relative inline-flex overflow-hidden sm:order-2"
-                        style={{ maxHeight: "calc(100vh - 160px)", maxWidth: "min(92vw, 900px)" }}
+                        className="relative inline-flex overflow-hidden rounded-2xl border"
+                        style={{ maxHeight: "calc(100vh - 96px)", maxWidth: "min(85vw, 1200px)", borderColor: "var(--border)" }}
                         onPointerDown={onPointerDown}
                         onPointerMove={onPointerMove}
                         onPointerEnter={onPointerEnter}
@@ -182,23 +193,13 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
 
                     <button
                         onClick={(e) => { stop(e); onNext(); }}
-                        className="group order-3 flex w-full items-center justify-center gap-2 rounded-full border bg-card/80 px-5 py-3 text-sm font-semibold shadow-lg backdrop-blur transition hover:-translate-y-0.5 hover:shadow-xl sm:order-3 sm:w-auto sm:px-6"
-                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                        className="shrink-0 h-8 w-8 sm:h-11 sm:w-11 rounded-full border backdrop-blur-md shadow-lg grid place-items-center transition active:scale-90"
+                        style={frost}
                         aria-label="Next image"
                     >
-                        Next
-                        <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+                        <ChevronRight className="h-5 w-5" />
                     </button>
                 </div>
-
-                <button
-                    onClick={onClose}
-                    className="absolute top-3 right-3 sm:top-4 sm:right-4 h-12 w-12 rounded-full border backdrop-blur bg-card/75 shadow-xl grid place-items-center z-20"
-                    style={{ borderColor: "var(--border)", color: "var(--fg)" }}
-                    aria-label="Close image"
-                >
-                    <X className="h-8 w-8" />
-                </button>
             </div>
         </div>
     );

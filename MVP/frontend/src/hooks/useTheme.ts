@@ -11,7 +11,8 @@ export function isThemedPath(pathname: string): boolean {
     pathname.startsWith("/profile") ||
     pathname.startsWith("/appointments") ||
     pathname.startsWith("/portfolio") ||
-    pathname.startsWith("/tiers")
+    pathname.startsWith("/gallery") ||
+    pathname.startsWith("/artist/")
   );
 }
 
@@ -29,7 +30,6 @@ function readStored(): Theme {
   return "dark";
 }
 
-// --- Shared theme store (single source of truth across all useTheme consumers) ---
 let store: Theme = readStored();
 const listeners = new Set<() => void>();
 
@@ -61,14 +61,19 @@ if (typeof window !== "undefined") {
       notify();
     }
   });
+
+  if (isThemedPath(window.location.pathname)) {
+    const html = document.documentElement;
+    html.setAttribute("data-ink", store);
+    html.setAttribute("data-ink-themed", "true");
+    html.classList.toggle("ink-light", store === "light");
+  }
 }
 
 function applyToDom(t: Theme, animate: boolean) {
   const html = document.documentElement;
   const dash = document.getElementById("dashboard-scope");
   if (!dash) {
-    // Off the themed dashboard (public/onboarding): keep <html> neutral so the
-    // theme never carries over to pages without the switch.
     html.removeAttribute("data-ink-themed");
     html.classList.remove("ink-light");
     html.setAttribute("data-ink", "dark");
