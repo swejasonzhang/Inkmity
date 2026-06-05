@@ -408,8 +408,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               <Menu strokeWidth={1.75} className={mobileIconCls} />
             </button>
 
-            {themed && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />}
-
             {effectiveSignedIn && userRole === "client" && <HeaderRewards />}
 
             {effectiveSignedIn ? (
@@ -522,6 +520,11 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   </div>
                 </div>
                 <div className="mt-3 text-xs opacity-70 text-app text-center">{greeting}</div>
+                {themed && (
+                  <div className="mt-3 flex items-center justify-center">
+                    <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
+                  </div>
+                )}
               </div>
             );
           })()}
