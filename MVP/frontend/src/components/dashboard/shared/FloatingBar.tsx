@@ -160,7 +160,10 @@ export default function FloatingBar({
   const bottomGapPx = Math.max(vvBottom, isMdUp ? 20 : 10);
   const DESKTOP_OPEN_H = vp.h - desktopOpenTop - bottomGapPx;
 
-  const convW = isMdUp ? (open ? DESKTOP_OPEN_W + (role === "Artist" ? PANEL_W : 0) : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
+  // Both roles get the same conversation footprint. The artist spends the extra
+  // PANEL_W on the Message-requests column inside ChatWindow; the client has no
+  // requests panel, so that width goes to a roomier conversation + chat instead.
+  const convW = isMdUp ? (open ? DESKTOP_OPEN_W + PANEL_W : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
   const convH = isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
 
   const centerRef = useRef<HTMLDivElement | null>(null);

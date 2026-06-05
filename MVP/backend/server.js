@@ -38,6 +38,7 @@ import connectRoutes from "./routes/connect.js";
 import rewardsRoutes from "./routes/rewards.js";
 import { mountStripeWebhook } from "./controllers/billingController.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
+import { initSocket } from "./services/socketService.js";
 
 const isProd = ENV === "production";
 
@@ -75,6 +76,11 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+
+// Wire up the socket connection handler (register/rooms, send_message relay,
+// and online/last-active presence). Without this the io instance has no
+// handlers, getIO() stays null, and nothing real-time works.
+initSocket(io);
 
 app.use(helmet());
 

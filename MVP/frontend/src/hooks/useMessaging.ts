@@ -542,26 +542,22 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
             },
           };
         }
-        const msgs = [...prev.messages];
-        for (let i = msgs.length - 1; i >= 0; i--) {
-          const msg = msgs[i];
+        const msgs = prev.messages.map((msg) => {
           const isMyMessage = msg.senderId === currentUserId;
           const shouldUpdate = isViewer ? isMyMessage : !isMyMessage;
-          
-          if (shouldUpdate) {
-            const next = { ...msg };
-            if (p.seen) {
-              next.seen = true;
-              if (p.seenAt) next.seenAt = p.seenAt;
-            }
-            if (p.delivered) {
-              next.delivered = true;
-              if (p.deliveredAt) next.deliveredAt = p.deliveredAt;
-            }
-            msgs[i] = next;
-            break;
+          if (!shouldUpdate) return msg;
+          const next = { ...msg };
+          if (p.seen) {
+            next.seen = true;
+            next.seenAt = p.seenAt ?? next.seenAt ?? Date.now();
+            next.delivered = true;
           }
-        }
+          if (p.delivered) {
+            next.delivered = true;
+            if (p.deliveredAt) next.deliveredAt = p.deliveredAt;
+          }
+          return next;
+        });
         return { ...prev, messages: msgs };
       });
       

@@ -436,9 +436,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   }, [authFetch]);
 
+  const lastMessageTs = useCallback((c: Conversation) => {
+    const last = c.messages[c.messages.length - 1];
+    const t = last?.timestamp;
+    return typeof t === "number" ? t : t ? new Date(t).getTime() : 0;
+  }, []);
+
+  const sortedConversations = useMemo(
+    () => [...conversations].sort((a, b) => lastMessageTs(b) - lastMessageTs(a)),
+    [conversations, lastMessageTs]
+  );
+
   const activeConv = useMemo(
-    () => conversations.find(c => c.participantId === expandedId) || conversations[0],
-    [conversations, expandedId]
+    () => conversations.find(c => c.participantId === expandedId) || sortedConversations[0],
+    [conversations, expandedId, sortedConversations]
   );
 
   useEffect(() => {
@@ -1113,7 +1124,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   </button>
                 )}
                 <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-app bg-card p-1.5 flex flex-col items-center gap-2 w-full">
-                  {conversations.map(c => {
+                  {sortedConversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     return (
                       <div key={c.participantId} className="relative group flex-shrink-0">
@@ -1146,7 +1157,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
               </div>
               <div className="flex-1 min-w-0 min-h-0">
                   <section className="h-full rounded-xl border border-app bg-card flex flex-col min-h-0">
-                    <header className="px-3 py-2.5 border-b border-app flex flex-wrap items-center justify-between gap-2">
+                    <header className="px-3 py-2.5 border-b border-app flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {conversations.length > 0 ? (
                           <div className="flex items-center gap-2 min-w-0 flex-1 w-full">
@@ -1182,16 +1193,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        {isClient && activeConv && (
-                          <button
-                            type="button"
-                            onClick={openBooking}
-                            title="Open booking"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 border-primary/90 bg-primary text-primary-foreground font-semibold text-xs shadow-sm hover:shadow focus:outline-none"
-                          >
-                            Ready to Book?
-                          </button>
-                        )}
+                        {isClient && activeConv && (() => {
+                          const bookingAllowed = !!activeConv?.meta?.allowed;
+                          return (
+                            <button
+                              type="button"
+                              onClick={bookingAllowed ? openBooking : undefined}
+                              disabled={!bookingAllowed}
+                              title={bookingAllowed ? "Open booking" : "Booking unlocks once the artist enables it for you"}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                            >
+                              Ready to Book?
+                            </button>
+                          );
+                        })()}
                         {role === "artist" && activeConv && (() => {
                           const raw = activeConv?.meta?.lastStatus ?? null;
                           const ov = gateOverride[activeConv?.participantId || ""];
@@ -1461,7 +1476,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
             <div className="hidden md:grid gap-3 h-full min-h-0 flex-1 w-full" style={{ gridTemplateColumns: 'clamp(180px, 15vw, 260px) minmax(0, 1fr)' }}>
               <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto">
                 <ul className="divide-y divide-white/60">
-                  {conversations.map(c => {
+                  {sortedConversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     const lastMsg = c.messages[c.messages.length - 1];
                     return (
@@ -1525,7 +1540,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                 </ul>
               </aside>
               <section className="h-full rounded-xl border border-app bg-card flex flex-col min-h-0">
-                <header className="px-3 md:px-4 py-3 border-b border-app flex flex-wrap items-center justify-between gap-2">
+                <header className="px-3 md:px-4 py-3 border-b border-app flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 md:gap-3 min-w-0">
                     <div className="md:hidden" style={{ minWidth: 'clamp(160px, 40vw, 240px)', maxWidth: '60vw' }}>
                       <Select
@@ -1539,7 +1554,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           <SelectValue placeholder="Select conversation" />
                         </SelectTrigger>
                         <SelectContent className="max-h-[50vh]">
-                          {conversations.map(c => (
+                          {sortedConversations.map(c => (
                             <SelectItem key={c.participantId} value={c.participantId}>
                               {displayNameFromUsername(c.username)}
                             </SelectItem>
@@ -1578,16 +1593,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {isClient && (
-                      <button
-                        type="button"
-                        onClick={openBooking}
-                        title="Open booking"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-primary/90 bg-primary text-primary-foreground font-semibold text-xs shadow-sm hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-                      >
-                        Ready to Book?
-                      </button>
-                    )}
+                    {isClient && activeConv && (() => {
+                      const bookingAllowed = !!activeConv?.meta?.allowed;
+                      return (
+                        <button
+                          type="button"
+                          onClick={bookingAllowed ? openBooking : undefined}
+                          disabled={!bookingAllowed}
+                          title={bookingAllowed ? "Open booking" : "Booking unlocks once the artist enables it for you"}
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                        >
+                          Ready to Book?
+                        </button>
+                      );
+                    })()}
                     {role === "artist" && activeConv && (() => {
                       const raw = activeConv?.meta?.lastStatus ?? null;
                       const ov = gateOverride[activeConv?.participantId || ""];
@@ -1829,7 +1848,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
               </section>
               <aside className="md:hidden rounded-xl border border-app bg-card overflow-x-auto">
                 <ul className="flex gap-2 p-2">
-                  {conversations.map(c => {
+                  {sortedConversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     return (
                       <li key={c.participantId}>
