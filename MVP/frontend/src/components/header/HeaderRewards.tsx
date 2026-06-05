@@ -15,7 +15,6 @@ function pctLabel(p: number) {
   return `${((p * 100) % 1 === 0 ? (p * 100).toFixed(0) : (p * 100).toFixed(1))}%`;
 }
 
-// Keep the shimmer up for the same duration as the username shimmer in the header.
 const SHIMMER_MS = 2000;
 
 export default function HeaderRewards() {

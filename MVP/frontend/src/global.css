@@ -187,9 +187,6 @@ html.ink-light {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-/* --- Dashboard inputs & Radix selects follow the active theme (override the
-   forced black/white defaults above; scoped to the dashboard so public/login/
-   onboarding pages keep their existing styling). --- */
 #dashboard-scope input,
 #dashboard-scope textarea,
 #dashboard-scope select:not([multiple]),
@@ -217,8 +214,6 @@ html.ink-light {
   color: var(--muted) !important;
 }
 
-/* Portaled select popups render at <body> (outside the scope); theme them via
-   the <html> mirror so they only flip on the dashboard, not on onboarding. */
 html[data-ink-themed] [data-slot="select-content"],
 html[data-ink-themed] [data-slot="select-content"] [data-slot="select-scroll-up-button"],
 html[data-ink-themed] [data-slot="select-content"] [data-slot="select-scroll-down-button"] {
@@ -232,6 +227,11 @@ html[data-ink-themed] [data-slot="select-item"] {
 html[data-ink-themed] [data-slot="select-item"]:hover,
 html[data-ink-themed] [data-slot="select-item"][data-highlighted] {
   background-color: var(--elevated) !important;
+  color: var(--fg) !important;
+}
+
+[data-ink-modal-portal] [data-slot="select-trigger"],
+[data-ink-modal-portal] [data-slot="select-value"] {
   color: var(--fg) !important;
 }
 
@@ -926,11 +926,11 @@ input::-moz-focus-inner {
 .ink-shimmer {
   position: relative;
   overflow: hidden;
-  background-color: color-mix(in srgb, var(--fg) 8%, transparent);
+  background-color: color-mix(in srgb, var(--fg) 12%, transparent);
   background-image: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, var(--fg) 12%, transparent) 50%,
+    color-mix(in srgb, var(--fg) 28%, transparent) 50%,
     transparent 100%
   );
   background-size: 200% 100%;

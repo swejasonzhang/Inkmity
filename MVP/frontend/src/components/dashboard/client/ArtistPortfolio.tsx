@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Maximize2, MapPin, Clock, Star, Images } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Maximize2, MapPin, Clock, Star, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
@@ -9,6 +9,7 @@ import FullscreenZoom from "./FullscreenZoom";
 export type ArtistWithGroups = {
     _id: string;
     clerkId: string;
+    handle?: string;
     username: string;
     bio?: string;
     portfolioImages?: string[];
@@ -29,6 +30,7 @@ export type PortfolioProps = {
 };
 
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
+    const navigate = useNavigate();
     const recent = useMemo(() => (artist?.portfolioImages ?? []).filter(Boolean), [artist]);
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
@@ -77,14 +79,14 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                         <button
                             key={`${src}-${i}`}
                             onClick={() => openZoom(images, i, label)}
-                            className="group relative w-full rounded-2xl border shadow-sm overflow-hidden flex items-center justify-center ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="group relative w-full aspect-[4/3] rounded-2xl border shadow-sm overflow-hidden ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
                             aria-label={`Open ${imgAltPrefix} ${i + 1}`}
                         >
                             <img
                                 src={src}
                                 alt={`${imgAltPrefix} ${i + 1}`}
-                                className="block w-full h-auto object-contain"
+                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 loading={i < 4 ? "eager" : "lazy"}
                                 fetchPriority={i < 4 ? "high" : undefined}
                                 decoding="async"
@@ -119,49 +121,48 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
         };
         if (!images.length) return null;
         const src = images[index];
+        const frost: React.CSSProperties = {
+            background: "color-mix(in srgb, var(--card) 82%, transparent)",
+            borderColor: "color-mix(in srgb, var(--fg) 25%, transparent)",
+            color: "var(--fg)",
+        };
         return (
             <div className="sm:hidden">
-                <div className="w-full">
-                    <div className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border" style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}>
-                        <motion.button
-                            key={src}
-                            drag="x"
-                            dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={0.2}
-                            dragSnapToOrigin
-                            onDragEnd={onDragEnd}
-                            onClick={() => openZoom(images, index, label)}
-                            aria-label={`Open ${imgAltPrefix} ${index + 1}`}
-                            className="block w-full"
-                        >
-                            <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="block max-w-full h-auto object-contain mx-auto" loading="eager" decoding="async" referrerPolicy="no-referrer" />
-                        </motion.button>
-                        <div
-                            className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                            style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
-                        >
-                            <Maximize2 className="h-3.5 w-3.5" /> View
-                        </div>
+                <div className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border" style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}>
+                    <motion.button
+                        key={src}
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.2}
+                        dragSnapToOrigin
+                        onDragEnd={onDragEnd}
+                        onClick={() => openZoom(images, index, label)}
+                        aria-label={`Open ${imgAltPrefix} ${index + 1}`}
+                        className="block w-full"
+                    >
+                        <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="block max-w-full h-auto object-contain mx-auto" loading="eager" decoding="async" referrerPolicy="no-referrer" />
+                    </motion.button>
+
+                    <div className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold backdrop-blur-md border shadow-lg" style={frost}>
+                        <Maximize2 className="h-3.5 w-3.5" /> View
                     </div>
-                    <div className="flex justify-center gap-2 py-4">
-                        {images.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setIndex(i)}
-                                aria-label={`Go to ${label} ${i + 1}`}
-                                className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
-                                style={{ backgroundColor: i === index ? "color-mix(in srgb, var(--fg) 95%, transparent)" : "color-mix(in srgb, var(--fg) 40%, transparent)" }}
-                            />
-                        ))}
-                    </div>
-                    <div className="sm:hidden grid grid-cols-2 gap-3 mt-6">
-                        <Button variant="outline" onClick={() => swipeTo("prev")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
-                            Prev
-                        </Button>
-                        <Button variant="outline" onClick={() => swipeTo("next")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
-                            Next
-                        </Button>
-                    </div>
+
+                    {images.length > 1 && (
+                        <>
+                            <button type="button" aria-label="Previous" onClick={(e) => { e.stopPropagation(); swipeTo("prev"); }} className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border backdrop-blur-md shadow-lg active:scale-90 transition" style={frost}>
+                                <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <button type="button" aria-label="Next" onClick={(e) => { e.stopPropagation(); swipeTo("next"); }} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border backdrop-blur-md shadow-lg active:scale-90 transition" style={frost}>
+                                <ChevronRight className="h-5 w-5" />
+                            </button>
+
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 backdrop-blur-md border shadow-lg" style={frost}>
+                                {images.map((_, i) => (
+                                    <button key={i} type="button" onClick={(e) => { e.stopPropagation(); setIndex(i); }} aria-label={`Go to ${label} ${i + 1}`} className="rounded-full transition-all" style={{ height: 8, width: i === index ? 16 : 8, background: i === index ? "var(--fg)" : "color-mix(in srgb, var(--fg) 35%, transparent)" }} />
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         );
@@ -183,7 +184,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="mx-auto max-w-screen-2xl px-1.5 sm:px-2.5 py-[10px] space-y-4 sm:space-y-5">
+            <div className="mx-auto max-w-screen-2xl px-1.5 sm:px-2.5 pt-[10px] pb-6 space-y-4 sm:space-y-5">
                 <section className="w-full">
                     <Card className="w-full shadow-none overflow-hidden" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", paddingTop: 0, paddingBottom: 0, gap: 0 }}>
                         <div className="relative w-full" style={{ height: "clamp(4.25rem, 10vh, 6.5rem)" }}>
@@ -233,30 +234,40 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                             </div>
 
                             <Separator className="mt-2 mb-0 w-auto -mx-3 sm:-mx-4 self-stretch" style={{ background: "color-mix(in srgb, var(--fg) 12%, transparent)" }} />
-                            <p className="mx-auto max-w-2xl text-sm leading-6" style={{ color: "color-mix(in srgb, var(--fg) 82%, transparent)" }}>
+                            <p className="mx-auto max-w-2xl text-sm leading-6 text-center px-3 sm:px-6 py-2" style={{ color: "color-mix(in srgb, var(--fg) 82%, transparent)" }}>
                                 {bioText}
                             </p>
                         </CardContent>
                     </Card>
                 </section>
 
-                <section className="w-full -mt-4">
-                    <div className="mx-auto flex justify-center px-4">
-                        <span
-                            className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs sm:text-sm"
-                            style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 85%, transparent)", color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}
+                {artist.handle && totalWorks > 0 && (
+                    <section className="w-full flex justify-center">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const b = document.body.style;
+                                b.position = ""; b.top = ""; b.width = ""; b.overflow = ""; b.touchAction = "";
+                                document.documentElement.style.overscrollBehavior = "";
+                                b.overscrollBehavior = "";
+                                navigate(`/artist/${(artist.handle || "").replace(/^@/, "")}`, { state: { artist } });
+                            }}
+                            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition hover:brightness-110 active:scale-[0.99] shadow-sm"
+                            style={{ background: "var(--fg)", color: "var(--bg)" }}
                         >
-                            <Maximize2 className="h-3.5 w-3.5" />
-                            Tap any image to zoom · press &amp; hold to magnify
-                        </span>
-                    </div>
-                </section>
+                            <Images className="h-4 w-4" /> View all {totalWorks} works
+                        </button>
+                    </section>
+                )}
 
                 {recent.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-2 sm:mb-3 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Recent Works</h3>
-                            <span className="text-xs portfolio-section-count">
+                        <header className="mb-2 sm:mb-3 grid items-center gap-2" style={{ gridTemplateColumns: "minmax(0,1fr) auto minmax(0,1fr)" }}>
+                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title whitespace-nowrap justify-self-start">Recent Works</h3>
+                            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] sm:text-xs font-bold whitespace-nowrap justify-self-center shadow-sm" style={{ borderColor: "color-mix(in srgb, var(--fg) 28%, transparent)", background: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)" }}>
+                                <Maximize2 className="h-3 w-3" /> Tap any image to zoom
+                            </span>
+                            <span className="text-xs portfolio-section-count whitespace-nowrap justify-self-end">
                                 {recent.length} image{recent.length === 1 ? "" : "s"}
                             </span>
                         </header>

@@ -307,6 +307,15 @@ export async function fetchArtistById(id: string, signal?: AbortSignal) {
   return apiGet<Artist>(`/users/artists/${id}`, undefined, undefined, signal);
 }
 
+export async function fetchArtistByHandle(handle: string, signal?: AbortSignal) {
+  return apiGet<Artist>(
+    `/users/artists/by-handle/${encodeURIComponent(handle.replace(/^@/, ""))}`,
+    undefined,
+    undefined,
+    signal
+  );
+}
+
 export async function getDashboardData(token?: string, signal?: AbortSignal) {
   return apiGet<{ featuredArtists: DashboardArtist[] }>(
     "/dashboard",

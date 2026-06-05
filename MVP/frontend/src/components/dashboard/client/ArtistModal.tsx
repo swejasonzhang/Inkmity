@@ -383,7 +383,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     }
   }, [open]);
 
-  const isNestedDialogOpen = () => !!document.querySelector('[data-radix-dialog-content][data-state="open"]');
+  const isNestedDialogOpen = () => !!document.querySelector('[data-radix-dialog-content][data-state="open"], [data-radix-popper-content-wrapper]');
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
@@ -537,10 +537,10 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           <button
             onPointerDown={handleClosePointerDown}
             aria-label="Close"
-            className="absolute right-3 top-3 z-40 inline-flex items-center justify-center rounded-full h-9 w-9 border transition hover:bg-[color-mix(in_srgb,var(--fg)_10%,transparent)] active:scale-95"
-            style={{ color: "var(--fg)", borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 80%, transparent)" }}
+            className="absolute right-2.5 top-2.5 sm:right-3 sm:top-3 z-40 inline-flex items-center justify-center rounded-full h-7 w-7 sm:h-9 sm:w-9 border backdrop-blur-md shadow-lg transition hover:brightness-110 active:scale-95"
+            style={{ color: "var(--fg)", borderColor: "color-mix(in srgb, var(--fg) 25%, transparent)", background: "color-mix(in srgb, var(--card) 82%, transparent)" }}
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
           <div className="w-full max-w-[1100px] mx-auto px-6 pt-3 relative flex flex-col items-center">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-center w-full px-12">{artist.username}</h2>
@@ -548,11 +548,9 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           </div>
 
           <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-            <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
+            <div className="mx-auto w-full max-w-[1200px] px-1.5 sm:px-2.5">
               <div className="py-0">
-                <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
-                  <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => { setStep(s); }} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
-                </div>
+                <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => { setStep(s); }} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
               </div>
             </div>
           </div>

@@ -9,9 +9,9 @@ import Appointments from "./pages/Appointments";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Gallery from "./pages/Gallery";
-import Artists from "./pages/Artists";
 import Portfolio from "./pages/Portfolio";
 import Tiers from "./pages/Tiers";
+import ArtistWorks from "./pages/ArtistWorks";
 import Landing from "./pages/Landing";
 import SSOCallback from "./pages/SSOCallback";
 import Onboarding from "./pages/Onboarding";
@@ -64,16 +64,16 @@ const App: React.FC = () => {
       <Route path="/portfolio" element={<DashboardScope />}>
         <Route index element={<Portfolio />} />
       </Route>
-      <Route path="/tiers" element={<DashboardScope />}>
-        <Route index element={<Tiers />} />
+      <Route path="/artist/:handle" element={<DashboardScope />}>
+        <Route index element={<ArtistWorks />} />
       </Route>
+      <Route path="/gallery" element={<Gallery />} />
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/artists" element={<Artists />} />
+        <Route path="/tiers" element={<Tiers />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />

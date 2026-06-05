@@ -253,6 +253,10 @@ export default function ArtistsSection({
 
     const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const listItems = usingExternalPaging ? filtered : clientPageItems;
+    const DESKTOP_PAGE_SIZE = 5;
+    const desktopItems = usingExternalPaging && typeof page === "number"
+        ? filtered.slice((page - 1) * DESKTOP_PAGE_SIZE, page * DESKTOP_PAGE_SIZE)
+        : listItems;
     const isCenterLoading = loading || !showArtists;
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -340,8 +344,6 @@ export default function ArtistsSection({
         }
     };
 
-    // Mobile: the bottom pagination cycles through artists. Broadcast position so
-    // the dashboard's pagination can display it, and respond to its prev/next.
     useEffect(() => {
         if (isMdUp) return;
         window.dispatchEvent(new CustomEvent("inkmity:artist-pager", { detail: { index: currentIndex, total: lastIndex + 1 } }));
@@ -361,7 +363,7 @@ export default function ArtistsSection({
 
     return (
         <div className={`${isMdUp ? "grid grid-rows-[auto,1fr]" : "flex flex-col"} h-full min-h-0 w-full`}>
-            <div ref={filterRef} className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0' }}>
+            <div ref={filterRef} data-artist-filter className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={(v) => {
@@ -461,10 +463,10 @@ export default function ArtistsSection({
                     </div>
 
                     <div className="hidden md:block h-full min-h-0 overflow-hidden" style={{ paddingTop: 'clamp(0.625rem, 1vh + 0.5vw, 1.25rem)' }}>
-                        {listItems.length > 0 ? (
+                        {desktopItems.length > 0 ? (
                             <div
                                 data-artist-scroll
-                                className="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 overflow-y-auto overscroll-contain"
+                                className="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 overflow-hidden"
                                 style={{
                                     gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)',
                                     padding: '0',
@@ -473,7 +475,7 @@ export default function ArtistsSection({
                                     height: '100%'
                                 }}
                             >
-                                {listItems.map((artist, index) => (
+                                {desktopItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
                                         initial={{ opacity: 0 }}
