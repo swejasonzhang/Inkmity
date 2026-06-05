@@ -282,6 +282,9 @@ export type Me = {
   clerkId: string;
   role: "client" | "artist";
   username: string;
+  handle?: string;
+  usernameUpdatedAt?: string;
+  onboardingComplete?: boolean;
   portfolioImages?: string[];
   bio?: string;
   avatar?: { url?: string };
@@ -665,6 +668,7 @@ export async function updateArtistPolicy(
 export type BookingGate = {
   enabled: boolean;
   depositConfigured: boolean;
+  payoutsReady?: boolean;
   message: string;
 };
 
@@ -704,4 +708,43 @@ export async function checkConsultationStatus(
     token,
     signal
   );
+}
+
+export type ConnectStatus = {
+  connected: boolean;
+  accountId?: string;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  requirementsDue: string[];
+};
+
+export async function getConnectStatus(token?: string, signal?: AbortSignal) {
+  return apiGet<ConnectStatus>("/connect/status", undefined, token, signal);
+}
+
+export async function startConnectOnboarding(token?: string, signal?: AbortSignal) {
+  return apiPost<{ url: string }>("/connect/account-link", undefined, token, signal);
+}
+
+export async function getConnectLoginLink(token?: string, signal?: AbortSignal) {
+  return apiPost<{ url: string }>("/connect/login-link", undefined, token, signal);
+}
+
+export type RewardsSummary = {
+  completedBookings: number;
+  tier: { key: string; label: string; feePct: number };
+  nextTier: {
+    key: string;
+    label: string;
+    feePct: number;
+    bookingsToNextTier: number;
+  } | null;
+  currentFeePct: number;
+  platformFeeMinCents: number;
+  totalFeesPaidCents: number;
+  lifetimeDiscountUsd: number;
+};
+
+export async function getMyRewards(token?: string, signal?: AbortSignal) {
+  return apiGet<RewardsSummary>("/rewards/me", undefined, token, signal);
 }

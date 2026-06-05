@@ -227,7 +227,7 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     setLoading(false);
     fetchUnread();
     fetchIncomingRequests();
-    } catch (error: any) {
+    } catch {
       setLoading(false);
     }
   }, [

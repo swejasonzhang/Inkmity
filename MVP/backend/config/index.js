@@ -23,10 +23,32 @@ export const config = {
     secretKey: process.env.STRIPE_SECRET_KEY,
     publishableKey: process.env.VITE_STRIPE_PUBLISHABLE_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    platformFeeCents: 1000,
     currency: 'usd',
     testMode: process.env.STRIPE_TEST_MODE === 'true',
-    testMinAmountCents: 50, 
+    testMinAmountCents: 50,
+  },
+
+  platformFee: {
+    pct: Number(process.env.PLATFORM_FEE_PCT ?? 0.10),
+    minCents: Number(process.env.PLATFORM_FEE_MIN_CENTS ?? 500),
+  },
+
+  dev: {
+    get bypassGates() {
+      return (
+        process.env.DEV_BYPASS_GATES === "true" &&
+        (process.env.NODE_ENV || "development") !== "production"
+      );
+    },
+  },
+
+  rewards: {
+    tiers: [
+      { key: 'bronze', label: 'Bronze', bookings: 0, feePct: 0.10 },
+      { key: 'silver', label: 'Silver', bookings: 3, feePct: 0.08 },
+      { key: 'gold', label: 'Gold', bookings: 8, feePct: 0.06 },
+      { key: 'platinum', label: 'Platinum', bookings: 15, feePct: 0.05 },
+    ],
   },
 
   email: {
@@ -42,6 +64,10 @@ export const config = {
       confirmationSubject: 'Appointment Confirmed - Inkmity',
       cancellationSubject: 'Appointment Cancelled - Inkmity',
     },
+  },
+
+  account: {
+    usernameChangeCooldownDays: Number(process.env.USERNAME_CHANGE_COOLDOWN_DAYS ?? 30),
   },
 
   business: {

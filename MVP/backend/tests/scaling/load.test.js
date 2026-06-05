@@ -230,17 +230,19 @@ describe("Scalability Testing - Large Datasets", () => {
 
     await mongoose.model("artist").insertMany(artists);
 
+    const MAX_PAGE_SIZE = 48;
     const startTime = Date.now();
     const response = await request(app)
       .get("/users/artists")
-      .query({ page: 1, pageSize: 50 });
+      .query({ page: 1, pageSize: MAX_PAGE_SIZE });
 
     const endTime = Date.now();
     const duration = endTime - startTime;
 
     expect(response.status).toBe(200);
-    expect(response.body.items).toHaveLength(50);
+    expect(response.body.items).toHaveLength(MAX_PAGE_SIZE);
     expect(response.body.total).toBe(100);
+    expect(response.body.pageSize).toBe(MAX_PAGE_SIZE);
     expect(duration).toBeLessThan(1000);
 
     console.log(`✓ Paginated 100 artists in ${duration}ms`);

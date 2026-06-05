@@ -58,7 +58,8 @@ const Artists: React.FC = () => {
   async function loadArtists(opts: { page: number; reset: boolean }) {
     const { page, reset } = opts
     try {
-      reset ? setLoading(true) : setLoadingMore(true)
+      if (reset) setLoading(true)
+      else setLoadingMore(true)
       setError(null)
 
       const res = await fetchArtists({
@@ -97,10 +98,10 @@ const Artists: React.FC = () => {
   }
 
   const SkeletonCard = () => (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-3 animate-pulse">
-      <div className="h-40 w-full rounded-xl bg-white/10 mb-3" />
-      <div className="h-4 w-2/3 bg-white/10 rounded mb-2" />
-      <div className="h-3 w-1/2 bg-white/10 rounded" />
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+      <div className="h-40 w-full rounded-xl ink-shimmer mb-3" />
+      <div className="h-4 w-2/3 ink-shimmer rounded mb-2" />
+      <div className="h-3 w-1/2 ink-shimmer rounded" />
     </div>
   )
 

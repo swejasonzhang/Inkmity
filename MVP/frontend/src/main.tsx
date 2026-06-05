@@ -4,7 +4,12 @@ import { BrowserRouter, useNavigate } from "react-router-dom";
 import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { PAGE_SCROLL_LOCKED, applyScrollLock } from "./lib/scrollLock";
 import "./global.css";
+
+applyScrollLock(PAGE_SCROLL_LOCKED);
+(window as unknown as { inkScroll: (allow: boolean) => void }).inkScroll = (allow: boolean) =>
+  applyScrollLock(!allow);
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!PUBLISHABLE_KEY) {

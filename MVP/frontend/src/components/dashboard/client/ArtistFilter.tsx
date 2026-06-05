@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Search, SlidersHorizontal } from "lucide-react";
 import clsx from "clsx";
 
 interface Artist {
@@ -100,51 +101,6 @@ const SORT_OPTIONS = [
 ] as const;
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
-const LEGACY_THEME_KEY = "dashboard-theme";
-const THEME_NS = `${LEGACY_THEME_KEY}::`;
-const GUEST_THEME_KEY = `${THEME_NS}guest`;
-
-function readInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "dark";
-  try {
-    const a = localStorage.getItem(LEGACY_THEME_KEY);
-    const b = localStorage.getItem(GUEST_THEME_KEY);
-    if (a === "light" || a === "dark") return a;
-    if (b === "light" || b === "dark") return b;
-  } catch { }
-  return "dark";
-}
-
-function themeVarsSnapshot(t: "light" | "dark"): React.CSSProperties {
-  if (t === "light") {
-    return {
-      "--bg": "#ffffff",
-      "--fg": "#111111",
-      "--card": "#ffffff",
-      "--border": "rgba(17, 17, 17, 0.16)",
-      "--elevated": "rgba(0, 0, 0, 0.06)",
-      "--muted": "rgba(17, 17, 17, 0.56)",
-      "--subtle": "rgba(17, 17, 17, 0.72)",
-      "--background": "0 0% 100%",
-      "--foreground": "0 0% 7%",
-      "--card-h": "0 0% 98%",
-      "--border-h": "0 0% 12% / 0.16",
-    } as React.CSSProperties;
-  }
-  return {
-    "--bg": "#0b0b0b",
-    "--fg": "#f5f5f5",
-    "--card": "#111111",
-    "--border": "rgba(245, 245, 245, 0.2)",
-    "--elevated": "rgba(255, 255, 255, 0.06)",
-    "--muted": "rgba(245, 245, 245, 0.56)",
-    "--subtle": "rgba(245, 245, 245, 0.72)",
-    "--background": "0 0% 4%",
-    "--foreground": "0 0% 96%",
-    "--card-h": "0 0% 7%",
-    "--border-h": "0 0% 76% / 0.2",
-  } as React.CSSProperties;
-}
 
 const getExperienceCategory = (
   value: string | undefined
@@ -197,22 +153,6 @@ const ArtistFilter: React.FC<Props> = ({
   setSearchQuery,
   className,
 }) => {
-  const [noFlash, setNoFlash] = useState(true);
-  const initialTheme = useMemo(readInitialTheme, []);
-  const inlineTheme = noFlash ? { ...themeVarsSnapshot(initialTheme), transition: "none" } : undefined;
-
-  useEffect(() => {
-    const off = () => setNoFlash(false);
-    const id = window.requestAnimationFrame(off);
-    const onBus = (e: Event) => {
-      if ((e as CustomEvent).detail?.key === LEGACY_THEME_KEY) off();
-    };
-    window.addEventListener("ink:theme-change", onBus as EventListener);
-    return () => {
-      window.cancelAnimationFrame(id);
-      window.removeEventListener("ink:theme-change", onBus as EventListener);
-    };
-  }, []);
 
   const uniqueLocations = useMemo(() => {
     const set = new Set<string>();
@@ -229,6 +169,7 @@ const ArtistFilter: React.FC<Props> = ({
   const [localSearch, setLocalSearch] = useState(searchQuery ?? "");
   const debounceRef = useRef<number | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     if (!sort) setSort("highest_rated");
@@ -370,42 +311,48 @@ const ArtistFilter: React.FC<Props> = ({
     };
   }, []);
 
-  const triggerBase = "h-10 sm:h-14 bg-elevated border-app text-xs sm:text-sm rounded-lg text-center justify-center focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0";
-  const contentBase = "bg-card text-app rounded-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
-  const itemCentered = "justify-center text-center outline-none focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0";
-  const FILTER_W = "w-full sm:flex-1";
-  const SEARCH_W = "w-full sm:flex-[1.5]";
+  const triggerBase = "h-10 bg-elevated/60 hover:bg-elevated border border-app/60 text-xs sm:text-sm rounded-full text-center justify-center transition-colors focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 data-[state=open]:bg-elevated data-[state=open]:border-app";
+  const contentBase = "bg-card text-app border border-app rounded-2xl shadow-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
+  const itemCentered = "justify-center text-center rounded-lg outline-none focus:outline-none focus:bg-elevated focus:ring-0 focus-visible:ring-0 ring-0 cursor-pointer";
+  const FILTER_W = "w-full sm:flex-1 sm:min-w-[8.5rem]";
+  const SEARCH_W = "w-full sm:flex-[3] sm:min-w-[15rem]";
+  const PRIMARY_VIS = clsx(showMobileFilters ? "block" : "hidden", "sm:block");
 
   return (
     <section
       className={clsx(
         "w-full max-w-full bg-card border-b border-app mb-3",
-        "sm:border sm:rounded-xl sm:shadow-sm sm:mb-0",
+        "sm:border sm:rounded-2xl sm:shadow-sm sm:mb-0",
+        "sm:bg-[color-mix(in_srgb,var(--card)_85%,transparent)] sm:backdrop-blur-sm",
         "mx-auto overflow-hidden",
         className
       )}
       role="region"
       aria-label="Artist filters"
-      style={{ ...inlineTheme, maxWidth: '100%', width: '100%' }}
+      style={{ maxWidth: '100%', width: '100%' }}
     >
       <div className="sm:hidden border-t border-app" aria-hidden="true" />
       <div className="w-full mx-auto max-w-full overflow-hidden" style={{ maxWidth: '100%', width: '100%' }}>
-        <div className="p-2 sm:p-3 md:p-4 lg:p-5 xl:p-6" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-start sm:gap-2 md:gap-3 lg:gap-4 xl:gap-5 2xl:gap-6 w-full max-w-full min-w-0" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+        <div className="p-2 sm:p-2.5 md:p-3" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:gap-2.5 w-full max-w-full min-w-0" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
             <div className={clsx("relative col-span-2 sm:col-span-1 min-w-0", SEARCH_W)}>
+              <Search
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--fg)]"
+                aria-hidden
+              />
               <Input
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
-                placeholder="Search"
+                placeholder="Search artists, styles, cities…"
                 aria-label="Search artists or tattoo subjects"
                 className={clsx(
-                  "px-3 sm:px-4",
-                  "h-[34px] sm:h-[39px] w-full bg-elevated border-app text-app rounded-lg",
+                  "pl-10 pr-4",
+                  "h-10 w-full bg-elevated/60 border-app/60 text-app rounded-full",
                   "text-xs sm:text-sm placeholder:text-muted-foreground",
-                  "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app/80",
+                  "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app/80 hover:bg-elevated transition-colors",
                   "selection:bg-elevated selection:text-app",
                   "caret-[var(--fg)]",
-                  "text-left sm:text-center"
+                  "text-left"
                 )}
               />
             </div>
@@ -416,60 +363,18 @@ const ArtistFilter: React.FC<Props> = ({
                 aria-expanded={showMobileFilters}
                 onClick={() => setShowMobileFilters((v) => !v)}
                 className={clsx(
-                  "h-[34px] w-full bg-elevated border border-app text-app rounded-lg",
-                  "text-xs px-3 outline-none ring-0 focus:ring-0 focus-visible:ring-0"
+                  "h-10 w-full inline-flex items-center justify-center gap-1.5 rounded-full",
+                  "border border-app/60 text-app text-xs font-medium transition-colors",
+                  showMobileFilters ? "bg-elevated" : "bg-elevated/60 hover:bg-elevated",
+                  "outline-none ring-0 focus:ring-0 focus-visible:ring-0"
                 )}
               >
-                {showMobileFilters ? "Hide Filters" : "Show Filters"}
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                {showMobileFilters ? "Hide" : "Filters"}
               </button>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
-              <Select
-                value={priceFilter}
-                onValueChange={(value) => {
-                  setPriceFilter(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
-                  <SelectValue placeholder="All Prices" />
-                </SelectTrigger>
-                <SelectContent className={contentBase} position="popper" align="start">
-                  {PRICE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
-              <Select
-                value={locationFilter}
-                onValueChange={(value) => {
-                  setLocationFilter(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
-                  <SelectValue placeholder="All Locations" />
-                </SelectTrigger>
-                <SelectContent className={clsx(contentBase)} position="popper" align="start">
-                  <SelectItem value="all" className={itemCentered}>
-                    All Locations
-                  </SelectItem>
-                  {uniqueLocations.map((loc) => (
-                    <SelectItem key={loc} value={loc} className={itemCentered}>
-                      {loc}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1", FILTER_W, PRIMARY_VIS)}>
               <Select
                 value={styleFilter}
                 onValueChange={(value) => {
@@ -493,7 +398,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1", FILTER_W, PRIMARY_VIS)}>
               <Select
                 value={availabilityFilter}
                 onValueChange={(v) => {
@@ -514,7 +419,98 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className={clsx("relative col-span-1", FILTER_W, PRIMARY_VIS)}>
+              <Select
+                value={sort}
+                onValueChange={(v) => {
+                  setSort(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
+                  {SORT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Toggle advanced filters"
+              aria-expanded={showAdvanced}
+              onClick={() => setShowAdvanced((v) => !v)}
+              className={clsx(
+                "hidden sm:inline-flex sm:flex-none items-center justify-center gap-1.5 h-10 px-4 rounded-full",
+                "border text-xs font-semibold transition-colors whitespace-nowrap",
+                showAdvanced
+                  ? "border-app bg-elevated text-app"
+                  : "border-app/60 bg-elevated/60 text-app hover:bg-elevated"
+              )}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              {showAdvanced ? "Less" : "Advanced"}
+            </button>
+          </div>
+
+          <div
+            className={clsx(
+              "gap-2 mt-2 sm:mt-2.5 sm:gap-2.5 w-full max-w-full min-w-0",
+              showMobileFilters ? "grid grid-cols-2" : "hidden",
+              showAdvanced ? "sm:flex sm:flex-nowrap sm:items-center" : "sm:hidden"
+            )}
+          >
+            <div className="relative w-full sm:flex-1 sm:min-w-0">
+              <Select
+                value={priceFilter}
+                onValueChange={(value) => {
+                  setPriceFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
+                  <SelectValue placeholder="All Prices" />
+                </SelectTrigger>
+                <SelectContent className={contentBase} position="popper" align="start">
+                  {PRICE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative w-full sm:flex-1 sm:min-w-0">
+              <Select
+                value={locationFilter}
+                onValueChange={(value) => {
+                  setLocationFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
+                  <SelectValue placeholder="All Locations" />
+                </SelectTrigger>
+                <SelectContent className={clsx(contentBase)} position="popper" align="start">
+                  <SelectItem value="all" className={itemCentered}>
+                    All Locations
+                  </SelectItem>
+                  {uniqueLocations.map((loc) => (
+                    <SelectItem key={loc} value={loc} className={itemCentered}>
+                      {loc}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative w-full sm:flex-1 sm:min-w-0">
               <Select
                 value={experienceFilter}
                 onValueChange={(v) => {
@@ -535,7 +531,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className="relative w-full sm:flex-1 sm:min-w-0">
               <Select
                 value={bookingFilter}
                 onValueChange={(v) => {
@@ -556,7 +552,7 @@ const ArtistFilter: React.FC<Props> = ({
               </Select>
             </div>
 
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
+            <div className="relative w-full sm:flex-1 sm:min-w-0">
               <Select
                 value={travelFilter}
                 onValueChange={(v) => {
@@ -569,27 +565,6 @@ const ArtistFilter: React.FC<Props> = ({
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
                   {TRAVEL_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className={clsx("relative col-span-1", FILTER_W, showMobileFilters ? "block" : "hidden", "sm:block")}>
-              <Select
-                value={sort}
-                onValueChange={(v) => {
-                  setSort(v);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent className={clsx(contentBase)} position="popper" align="start">
-                  {SORT_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value} className={itemCentered}>
                       {opt.label}
                     </SelectItem>

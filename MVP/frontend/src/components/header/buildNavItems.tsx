@@ -16,15 +16,16 @@ export function buildNavItems(
   const gated = (label: string, to: string): NavItem =>
     isSignedIn ? { label, to } : { label, to, disabled: true, onClick: onGate };
 
-  const discover =
-    role === "artist" ? gated("Portfolio", "/portfolio") : gated("Artists", "/artists");
+  const items: NavItem[] = [gated("Dashboard", "/dashboard")];
 
-  return [
-    gated("Dashboard", "/dashboard"),
-    discover,
+  if (isSignedIn && role === "artist") items.push(gated("Portfolio", "/portfolio"));
+
+  items.push(
     gated("Appointments", "/appointments"),
     gated("Gallery", "/gallery"),
     { label: "Contact", to: "/contact" },
-    { label: "About", to: "/about" },
-  ];
+    { label: "About", to: "/about" }
+  );
+
+  return items;
 }

@@ -9,34 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AftercareInstructions from "@/components/dashboard/shared/AftercareInstructions";
+import RewardsPanel from "@/components/dashboard/client/RewardsPanel";
+import LazyReveal from "@/components/ui/LazyReveal";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
-
-const LOAD_MS = 500;
-const FADE_MS = 160;
-
-const Loading: React.FC<{ theme: "light" | "dark" }> = ({ theme }) => {
-  const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
-  const fg = theme === "light" ? "#111111" : "#f5f5f5";
-  return (
-    <div
-      className="fixed inset-0 grid place-items-center"
-      style={{ zIndex: 2147483640, background: bg, color: fg }}
-    >
-      <style>{`
-        @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
-        @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
-      `}</style>
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
-          <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: `ink-fill ${LOAD_MS}ms linear forwards` }} />
-        </div>
-        <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite" }}>
-          Loading
-        </div>
-      </div>
-    </div>
-  );
-};
 
 function formatCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -99,8 +74,6 @@ export default function Appointments() {
   const { getToken } = useAuth();
   const { role, isLoaded: roleLoaded } = useRole();
   const { theme } = useTheme();
-  const [bootDone, setBootDone] = useState(false);
-  const [fadeIn, setFadeIn] = useState(false);
   const [appointments, setAppointments] = useState<AppointmentWithUsers[]>([]);
   const [view, setView] = useState<"pending" | "past">("pending");
   const [loading, setLoading] = useState(true);
@@ -115,23 +88,6 @@ export default function Appointments() {
       document.body.style.backgroundColor = prev;
     };
   }, [theme]);
-
-  useEffect(() => {
-    if (!roleLoaded) {
-      setBootDone(false);
-      setFadeIn(false);
-      return;
-    }
-    
-    setBootDone(false);
-    setFadeIn(false);
-    const t1 = window.setTimeout(() => {
-      setBootDone(true);
-      const t2 = window.setTimeout(() => setFadeIn(true), 0);
-      return () => window.clearTimeout(t2);
-    }, LOAD_MS);
-    return () => window.clearTimeout(t1);
-  }, [roleLoaded]);
 
   const isClient = role === "client";
   const isArtist = role === "artist";
@@ -161,7 +117,6 @@ export default function Appointments() {
       setAppointments(data || []);
     } catch (error: any) {
       console.error("Error loading appointments:", error);
-      toast.error("Failed to load appointments");
     } finally {
       setLoading(false);
     }
@@ -567,11 +522,7 @@ export default function Appointments() {
     <div
       className="min-h-screen flex flex-col bg-app text-app"
     >
-      {!bootDone && <Loading theme={theme} />}
-      <div
-        className="flex-1 min-h-0 w-full"
-        style={{ opacity: bootDone && fadeIn ? 1 : 0, transition: `opacity ${FADE_MS}ms linear` }}
-      >
+      <div className="flex-1 min-h-0 w-full">
       <Header />
       <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8">
         <div className="mb-4 sm:mb-6 text-center">
@@ -583,11 +534,28 @@ export default function Appointments() {
           </p>
         </div>
 
-        {loading ? (
-          <div className="fixed inset-0 grid place-items-center" style={{ zIndex: 2147483639 }}>
-            <Loading theme={theme} />
+        {isClient && (
+          <div className="max-w-2xl mx-auto w-full mb-4 sm:mb-6">
+            <RewardsPanel />
           </div>
-        ) : appointments.length === 0 ? (
+        )}
+
+        <LazyReveal
+          loading={loading}
+          skeleton={
+            <div className="max-w-2xl mx-auto w-full">
+              <div className="mb-5 sm:mb-6 flex justify-center">
+                <div className="ink-shimmer rounded-full h-10 w-44 sm:w-52" />
+              </div>
+              <div className="grid gap-3 sm:gap-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="ink-shimmer rounded-2xl h-40 w-full" />
+                ))}
+              </div>
+            </div>
+          }
+        >
+          {appointments.length === 0 ? (
           <div className="text-center py-16 text-muted text-sm sm:text-base">
             No appointments found
           </div>
@@ -631,6 +599,7 @@ export default function Appointments() {
             )}
           </>
         )}
+        </LazyReveal>
       </div>
       </div>
 

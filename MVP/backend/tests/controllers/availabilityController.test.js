@@ -11,8 +11,11 @@ const app = express();
 app.use(express.json());
 
 const mockAuth = (req, res, next) => {
-  req.user = { clerkId: req.headers["x-test-user-id"] || "test-user-id" };
-  req.auth = { userId: req.headers["x-test-user-id"] || "test-user-id" };
+  const id = req.headers["x-test-user-id"];
+  if (id) {
+    req.user = { clerkId: id };
+    req.auth = { userId: id };
+  }
   next();
 };
 

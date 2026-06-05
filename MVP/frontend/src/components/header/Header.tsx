@@ -10,8 +10,9 @@ import { Nav } from "./Nav";
 import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityStatus } from "./VisibilityDropdown";
+import HeaderRewards from "./HeaderRewards";
 import { API_URL } from "@/api";
-import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername } from "@/lib/roleCache";
+import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername, clearCachedUsername } from "@/lib/roleCache";
 
 export type HeaderProps = {
   disableDashboardLink?: boolean;
@@ -72,9 +73,31 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const [userRole, setUserRole] = useState<"client" | "artist" | null>(() => getCachedRole());
   const [isOnline, setIsOnline] = useState<boolean>(false);
   const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
+  const [statusReady, setStatusReady] = useState(false);
+  const [userRefreshTick, setUserRefreshTick] = useState(0);
+  const [isOnboarded, setIsOnboarded] = useState<boolean>(() => !!getCachedUsername());
   const API_BASE = API_URL;
 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      setStatusReady(false);
+      return;
+    }
+    const t = window.setTimeout(() => setStatusReady(true), 2000);
+    return () => window.clearTimeout(t);
+  }, [isLoaded, isSignedIn]);
+
   const userLabelRef = useRef<string>(getCachedUsername() ?? "");
+
+  useEffect(() => {
+    const onUserUpdated = () => {
+      userLabelRef.current = "";
+      setUserRefreshTick((n) => n + 1);
+    };
+    window.addEventListener("inkmity:user-updated", onUserUpdated);
+    return () => window.removeEventListener("inkmity:user-updated", onUserUpdated);
+  }, []);
+
   useEffect(() => {
     if (!isLoaded) {
       return;
@@ -82,6 +105,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     if (!isSignedIn) {
       setUserLabel("");
       userLabelRef.current = "";
+      setIsOnboarded(false);
       return;
     }
     if (userLabelRef.current) {
@@ -104,14 +128,18 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         const name =
-          (data?.username && String(data.username).trim()) ||
-          (data?.handle && String(data.handle).replace(/^@/, "")) ||
-          "";
+          data?.onboardingComplete === true
+            ? (data?.username && String(data.username).trim()) ||
+              (data?.handle && String(data.handle).replace(/^@/, "")) ||
+              ""
+            : "";
         if (cancelled || ac.signal.aborted) return;
         const finalName = name || "User";
         userLabelRef.current = finalName;
         setUserLabel(finalName);
+        setIsOnboarded(data?.onboardingComplete === true);
         if (name) setCachedUsername(name);
+        else clearCachedUsername();
         if (data?.role && (data.role === "client" || data.role === "artist")) {
           setUserRole(data.role);
           setCachedRole(data.role);
@@ -124,9 +152,16 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       } catch (e: any) {
         if (cancelled || ac.signal.aborted) return;
         if (e?.name === "AbortError") return;
-        const cached = getCachedUsername() ?? "User";
-        setUserLabel(cached);
-        userLabelRef.current = cached;
+        if (String(e?.message) === "404") {
+          clearCachedUsername();
+          setUserLabel("User");
+          userLabelRef.current = "User";
+          setIsOnboarded(false);
+        } else {
+          const cached = getCachedUsername() ?? "User";
+          setUserLabel(cached);
+          userLabelRef.current = cached;
+        }
       }
     }
     run();
@@ -134,7 +169,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       cancelled = true;
       ac.abort();
     };
-  }, [isLoaded, isSignedIn, getToken]);
+  }, [isLoaded, isSignedIn, getToken, userRefreshTick]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) {
@@ -188,16 +223,18 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     return { icon: EyeOff, label: "Invisible", color: "text-zinc-400", dot: "bg-zinc-400" };
   };
 
+  const cachedSignedIn = useMemo(() => !!getCachedUsername(), []);
+  const effectiveSignedIn = (isLoaded ? !!isSignedIn : cachedSignedIn) && isOnboarded;
   const homeHref = "/landing";
-  const navLocked = disableDashboardLink || !isSignedIn;
+  const navLocked = disableDashboardLink || !effectiveSignedIn;
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
 
   const onGate = useCallback<React.MouseEventHandler>((e) => {
     e.preventDefault();
-    navigate("/login", { state: { from: pathname, gate: true } });
-  }, [navigate, pathname]);
+    e.stopPropagation();
+  }, []);
 
-  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(!!isSignedIn, onGate, userRole), [isSignedIn, onGate, userRole]);
+  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(effectiveSignedIn, onGate, userRole), [effectiveSignedIn, onGate, userRole]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -222,7 +259,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const dropdownBtnClasses =
     "relative inline-flex h-11 md:h-12 items-center justify-start px-4 rounded-xl cursor-pointer transition border border-[color-mix(in_srgb,var(--fg)_16%,transparent)] bg-[color-mix(in_srgb,var(--elevated)_75%,transparent)] text-app hover:bg-[color-mix(in_srgb,var(--elevated)_55%,transparent)] text-[17px] whitespace-nowrap backdrop-blur supports-[backdrop-filter]:backdrop-blur-md";
 
-  // Desktop only: hovering a locked link shows a tip near the cursor.
   const onDashMouseMove = (e: React.MouseEvent) => {
     if (!navLocked) return;
     setTip({ show: true, x: e.clientX, y: e.clientY });
@@ -344,7 +380,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               </button>
             </div>
             <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
             </div>
           </div>
         </div>
@@ -364,7 +400,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         </div>
 
         <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-hidden">
-          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={!!isSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
         </div>
 
         <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
@@ -372,7 +408,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               <Menu strokeWidth={1.75} className={mobileIconCls} />
             </button>
 
-            {isLoaded && isSignedIn ? (
+            {effectiveSignedIn && userRole === "client" && <HeaderRewards />}
+
+            {effectiveSignedIn ? (
               <div
                 className="hidden md:flex relative flex-shrink-0 text-app [&_*]:text-app [&_*]:border-app"
               >
@@ -389,7 +427,12 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                     <span className="text-[10px] lg:text-[11px] opacity-60 leading-none">Welcome back,</span>
                     <span className="font-bold truncate max-w-full text-[13px] lg:text-[16px] leading-tight">{userLabel || "User"}</span>
                   </div>
-                  {(() => {
+                  {!statusReady ? (
+                    <span className="ml-2 flex items-center gap-1.5 flex-shrink-0">
+                      <span className="ink-shimmer h-2 w-2 rounded-full" />
+                      <span className="ink-shimmer hidden lg:inline h-3 w-12 rounded" />
+                    </span>
+                  ) : (() => {
                     const visibility = getVisibilityDisplay();
                     return (
                       <span className="ml-2 flex items-center gap-1.5 flex-shrink-0">
@@ -406,7 +449,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
                 <div className="absolute left-0 right-0 top-full h-2" />
               </div>
-            ) : isLoaded && !isSignedIn ? (
+            ) : (
               <div className="hidden md:flex relative flex-shrink-0">
                 <button
                   className={dropdownBtnClasses}
@@ -419,18 +462,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                     <span className="font-bold whitespace-nowrap text-[13px] lg:text-[17px]">Sign In</span>
                   </span>
                 </button>
-              </div>
-            ) : (
-              <div className="hidden md:flex relative flex-shrink-0">
-                <div
-                  className={`${dropdownBtnClasses} opacity-50 pointer-events-none`}
-                  style={{ minWidth: '110px' }}
-                >
-                  <span className="flex items-center justify-center gap-2 w-full">
-                    <span className="font-semibold text-xl leading-none">✦</span>
-                    <span className="font-bold whitespace-nowrap text-[13px] lg:text-[17px]">Loading</span>
-                  </span>
-                </div>
               </div>
             )}
           </div>
