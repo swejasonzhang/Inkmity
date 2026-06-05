@@ -58,7 +58,7 @@ const StepBarRow: React.FC<StepBarRowProps> = ({
     const preventPointerFocus: React.PointerEventHandler = e => e.preventDefault();
 
     return (
-        <div className={`col-span-3 flex items-center justify-between h-full w-full pt-6 sm:pt-14 pb-3 sm:pb-4 ${className}`}>
+        <div className={`col-span-3 flex items-center justify-between h-full w-full pt-2 pb-2 ${className}`}>
             <div className="flex items-center h-full">
                 <div className="flex items-center gap-2 sm:gap-4">
                     {[0, 1, 2].map((i) => (

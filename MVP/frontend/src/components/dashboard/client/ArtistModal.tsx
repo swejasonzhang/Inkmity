@@ -499,9 +499,11 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     <div
       ref={overlayRef}
       key={artist._id}
-      className="fixed inset-0 flex items-center justify-center ink-no-anim"
-      style={{ 
-        background: "color-mix(in srgb, var(--bg) 30%, transparent)", 
+      className="fixed inset-0 flex items-center justify-center ink-no-anim p-3 sm:p-5"
+      style={{
+        background: "color-mix(in srgb, var(--bg) 70%, transparent)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
         overscrollBehavior: "contain",
         transition: "none !important",
         animation: "none !important"
@@ -518,35 +520,36 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       <div className="pointer-events-none w-full h-full flex items-center justify-center">
         <ScrollArea
           ref={panelRef as any}
-          className="pointer-events-auto w-[96vw] max-w-[1400px] h-[86vh] max-h-[900px] rounded-2xl shadow-2xl border flex flex-col items-center text-center ink-no-anim"
+          className="pointer-events-auto w-[96vw] max-w-[1400px] h-[88vh] max-h-[920px] rounded-3xl border flex flex-col items-center text-center ink-no-anim"
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
-          style={{ 
-            background: "var(--card)", 
-            borderColor: "var(--border)", 
+          style={{
+            background: "var(--card)",
+            borderColor: "var(--border)",
             color: "var(--fg)",
+            boxShadow: "0 30px 80px -20px rgba(0,0,0,0.6), 0 0 0 1px color-mix(in srgb, var(--fg) 6%, transparent)",
             transition: "none !important",
             animation: "none !important",
             opacity: 1,
             visibility: "visible"
           } as React.CSSProperties}
         >
-          <div className="w-full max-w-[1100px] mx-auto px-6 pt-5 relative flex flex-col items-center">
-            <h2 className="text-2xl font-extrabold text-center w-full px-10">{artist.username}</h2>
-            <button
-              onPointerDown={handleClosePointerDown}
-              aria-label="Close"
-              className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full p-2 hover:opacity-80"
-              style={{ color: "var(--fg)" }}
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <Separator className="mt-4 w-full" style={{ background: "color-mix(in srgb, var(--fg) 18%, transparent)" }} />
+          <button
+            onPointerDown={handleClosePointerDown}
+            aria-label="Close"
+            className="absolute right-3 top-3 z-40 inline-flex items-center justify-center rounded-full h-9 w-9 border transition hover:bg-[color-mix(in_srgb,var(--fg)_10%,transparent)] active:scale-95"
+            style={{ color: "var(--fg)", borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 80%, transparent)" }}
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="w-full max-w-[1100px] mx-auto px-6 pt-3 relative flex flex-col items-center">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-center w-full px-12">{artist.username}</h2>
+            <Separator className="mt-1.5 w-full" style={{ background: "color-mix(in srgb, var(--fg) 12%, transparent)" }} />
           </div>
 
           <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
             <div className="mx-auto max-w-screen-2xl px-4 sm:px-6">
-              <div className="py-2 sm:py-3">
+              <div className="py-0">
                 <div className="mx-auto w-full max-w-3xl px-2 sm:px-3">
                   <StepBarRow active={stepMeta.active} onGoToStep={(s: 0 | 1 | 2) => { setStep(s); }} rightLabel={stepMeta.rightLabel} onRightClick={stepMeta.onRight} centerHint={stepMeta.centerHint} />
                 </div>
