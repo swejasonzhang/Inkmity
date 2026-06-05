@@ -23,6 +23,7 @@ export function buildNavItems(
   items.push(
     gated("Appointments", "/appointments"),
     gated("Gallery", "/gallery"),
+    { label: "Tiers", to: "/tiers" },
     { label: "Contact", to: "/contact" },
     { label: "About", to: "/about" }
   );

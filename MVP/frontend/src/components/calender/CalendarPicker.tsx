@@ -1,9 +1,5 @@
-import { useMemo, useState } from "react";
 import { Calendar as UIPicker } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
     date: Date | undefined;
@@ -22,20 +18,20 @@ function LegendTile({
     number: string;
     variant: "available" | "unavailable" | "selected";
 }) {
-    const base = "aspect-square h-9 w-9 rounded-md leading-none flex items-center justify-center";
+    const base = "aspect-square h-7 w-7 rounded-md leading-none flex items-center justify-center";
     const ring = variant === "selected" ? "ring-2 ring-[color:var(--fg)]" : "";
     const style =
         variant === "unavailable"
-            ? { color: "color-mix(in srgb, var(--fg) 55%, transparent)" }
+            ? { color: "color-mix(in srgb, var(--fg) 50%, transparent)" }
             : { color: "var(--fg)" };
     return (
-        <div className="inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-1.5">
             <div className={`${base} ${ring}`} style={{ background: "transparent" }}>
-                <span className="text-[12px] font-semibold" style={style}>
+                <span className="text-[11px] font-semibold" style={style}>
                     {number}
                 </span>
             </div>
-            <span className="text-[13px] font-semibold" style={{ color: "var(--fg)" }}>
+            <span className="text-[12px] font-semibold" style={{ color: "var(--fg)" }}>
                 {label}
             </span>
         </div>
@@ -46,113 +42,60 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
     const currentYear = startOfToday.getFullYear();
     const currentMonth = startOfToday.getMonth();
     const todayNumber = String(startOfToday.getDate());
-    const [monthOpen, setMonthOpen] = useState(false);
-    const [yearOpen, setYearOpen] = useState(false);
 
-    const years = useMemo(() => {
-        const toYear = currentYear + 5;
-        return Array.from({ length: toYear - currentYear + 1 }, (_, i) => currentYear + i);
-    }, [currentYear]);
-
-    const handleMonthSelect = (v: string) => {
-        const m = Number(v);
-        let next = new Date(month.getFullYear(), m, 1);
-        if (next < new Date(currentYear, currentMonth, 1)) next = new Date(currentYear, currentMonth, 1);
-        onMonthChange(next);
-        setMonthOpen(false);
-    };
-
-    const handleYearSelect = (v: string) => {
-        let y = Number(v);
-        if (y < currentYear) y = currentYear;
-        const safeMonth = month.getMonth() < currentMonth && y === currentYear ? currentMonth : month.getMonth();
-        onMonthChange(new Date(y, safeMonth, 1));
-        setYearOpen(false);
-    };
+    const guardMonth = new Date(currentYear, currentMonth, 1);
+    const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+    const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    const prevDisabled = prevMonth < guardMonth;
+    const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
     return (
         <div
-            className="flex flex-col items-center justify-center rounded-xl w-full px-2 py-4"
-            style={{ background: "var(--elevated)" }}
+            className="flex flex-col items-center rounded-2xl border w-full h-full px-3 py-4"
+            style={{ background: "var(--elevated)", borderColor: "var(--border)" }}
         >
-            <div className="w-full mx-auto flex flex-col items-stretch gap-3 max-w-[18rem] xs:max-w-[19rem] sm:max-w-[34rem] lg:max-w-[44rem]">
-                <div className="flex flex-col items-center text-center gap-0.5 px-1">
+            <div className="w-full mx-auto flex flex-col items-stretch gap-2.5 max-w-[28rem] h-full min-h-0">
+                <div className="flex flex-col items-center text-center gap-0.5">
                     <h3 className="text-base sm:text-lg font-bold" style={{ color: "var(--fg)" }}>
                         Choose a date
                     </h3>
-                    <p className="text-[12px] sm:text-sm font-medium opacity-80" style={{ color: "var(--fg)" }}>
+                    <p className="text-[12px] sm:text-sm font-medium opacity-70" style={{ color: "var(--fg)" }}>
                         Only dates from today onward are available.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5 sm:flex sm:items-center sm:justify-center sm:gap-2">
-                    <Select value={String(month.getMonth())} onValueChange={handleMonthSelect} open={monthOpen} onOpenChange={setMonthOpen}>
-                        <SelectTrigger
-                            className="h-10 w-full sm:w-36 border-0 rounded-xl px-3 text-base sm:text-lg font-semibold shadow-sm"
-                            style={{ background: "var(--card)", color: "var(--fg)" }}
-                            aria-label="Month"
-                        >
-                            <SelectValue placeholder="Month" />
-                        </SelectTrigger>
-                        <SelectContent
-                            side="bottom"
-                            align="start"
-                            sideOffset={6}
-                            collisionPadding={8}
-                            className="z-[10000] max-h-60 overflow-auto rounded-xl border"
-                            style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
-                        >
-                            {MONTHS.map((m, i) => {
-                                const disable = month.getFullYear() === currentYear && i < currentMonth;
-                                return (
-                                    <SelectItem key={m} value={String(i)} disabled={disable} className="cursor-pointer text-base font-semibold">
-                                        {m}
-                                    </SelectItem>
-                                );
-                            })}
-                        </SelectContent>
-                    </Select>
-
-                    <Select value={String(month.getFullYear())} onValueChange={handleYearSelect} open={yearOpen} onOpenChange={setYearOpen}>
-                        <SelectTrigger
-                            className="h-10 w-full sm:w-28 border-0 rounded-xl px-3 text-base sm:text-lg font-semibold shadow-sm"
-                            style={{ background: "var(--card)", color: "var(--fg)" }}
-                            aria-label="Year"
-                        >
-                            <SelectValue placeholder="Year" />
-                        </SelectTrigger>
-                        <SelectContent
-                            side="bottom"
-                            align="start"
-                            sideOffset={6}
-                            collisionPadding={8}
-                            className="z-[10000] max-h-60 overflow-auto rounded-xl border"
-                            style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
-                        >
-                            {years.map((y) => (
-                                <SelectItem key={y} value={String(y)} disabled={y < currentYear} className="cursor-pointer text-base font-semibold">
-                                    {y}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="w-full text-center px-1">
-                    <span className="text-base sm:text-lg font-bold leading-7" style={{ color: "var(--fg)" }}>
-                        {date
-                            ? date.toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" })
-                            : "Select a date"}
-                    </span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
                     <LegendTile label="Available" number={todayNumber} variant="available" />
                     <LegendTile label="Unavailable" number={todayNumber} variant="unavailable" />
                     <LegendTile label="Selected" number={todayNumber} variant="selected" />
                 </div>
 
-                <div className="w-full flex items-center justify-center">
+                <div className="w-full flex items-center justify-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => onMonthChange(prevMonth)}
+                        disabled={prevDisabled}
+                        aria-label="Previous month"
+                        className="grid place-items-center h-8 w-8 rounded-full border transition hover:brightness-110 active:scale-90 disabled:opacity-35 disabled:cursor-not-allowed"
+                        style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 90%, transparent)", color: "var(--fg)" }}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <span className="text-base sm:text-lg font-bold text-center min-w-[9.5rem]" style={{ color: "var(--fg)" }}>
+                        {monthLabel}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => onMonthChange(nextMonth)}
+                        aria-label="Next month"
+                        className="grid place-items-center h-8 w-8 rounded-full border transition hover:brightness-110 active:scale-90"
+                        style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 90%, transparent)", color: "var(--fg)" }}
+                    >
+                        <ChevronRight className="h-4 w-4" />
+                    </button>
+                </div>
+
+                <div className="w-full flex-1 min-h-0 flex">
                     <UIPicker
                         mode="single"
                         weekStartsOn={0}
@@ -169,42 +112,34 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                         }}
                         fromDate={startOfToday}
                         disabled={{ before: startOfToday }}
-                        showOutsideDays={false}
-                        className="w-full rounded-lg border"
+                        showOutsideDays
+                        className="w-full h-full flex flex-col rounded-xl border p-2.5 sm:p-3"
                         style={{
                             background: "var(--card)",
                             color: "var(--fg)",
                             borderColor: "var(--border)",
-                            ["--cell-size" as any]: "clamp(2rem, 6vw, 3.25rem)",
-                            ["--cell-gap-x" as any]: "clamp(0.2rem, 0.8vw, 0.4rem)",
-                            ["--cell-gap-y" as any]: "clamp(0.2rem, 0.8vw, 0.4rem)"
+                            ["--cell-size" as any]: "2.25rem"
                         }}
                         classNames={{
-                            table: "w-full sm:border-separate sm:[border-spacing:0_10px]",
-                            day:
-                                "h-[var(--cell-size)] w-[var(--cell-size)] mx-[var(--cell-gap-x)] my-[var(--cell-gap-y)] p-0 font-semibold rounded-md outline-none focus:outline-none text-base",
-                            head_cell: "text-[12px] sm:text-sm font-semibold px-2",
-                            caption_label: "text-base sm:text-lg font-bold leading-7"
+                            root: "w-full h-full flex flex-col",
+                            months: "flex flex-col h-full w-full",
+                            month: "flex flex-col h-full w-full gap-2",
+                            nav: "hidden",
+                            month_caption: "hidden",
+                            table: "w-full flex-1 flex flex-col",
+                            weekdays: "flex gap-x-1 sm:gap-x-1.5",
+                            weekday: "flex-1 text-center text-[11px] sm:text-xs font-semibold pb-1",
+                            week: "flex w-full flex-1 gap-x-1 sm:gap-x-1.5 mt-1",
+                            day: "flex-1 min-h-0 p-0 font-semibold text-sm sm:text-base [&>button]:h-full [&>button]:w-full [&>button]:rounded-md [&>button]:flex [&>button]:items-center [&>button]:justify-center",
+                            today: "rounded-md [&>button]:rounded-md",
+                            caption_label: "text-base sm:text-lg font-bold",
+                            button_previous: "rounded-full border border-[color:color-mix(in_srgb,var(--fg)_20%,transparent)] backdrop-blur-sm transition hover:brightness-110 active:scale-90",
+                            button_next: "rounded-full border border-[color:color-mix(in_srgb,var(--fg)_20%,transparent)] backdrop-blur-sm transition hover:brightness-110 active:scale-90"
                         }}
                         modifiersClassNames={{
                             selected: "ring-2 ring-[color:var(--fg)]"
                         }}
                     />
-                </div>
-
-                <div className="w-full flex items-center justify-between pt-1 gap-1.5">
-                    <div className="text-[12px] sm:text-sm font-medium opacity-70 truncate" style={{ color: "var(--fg)" }}>
-                        Times shown in your local timezone.
-                    </div>
-                    <Button
-                        variant="ghost"
-                        className="h-9 rounded-lg px-3 text-base font-semibold"
-                        style={{ color: "var(--fg)" }}
-                        onClick={() => onDateChange(undefined)}
-                        disabled={!date}
-                    >
-                        Clear
-                    </Button>
                 </div>
             </div>
         </div>

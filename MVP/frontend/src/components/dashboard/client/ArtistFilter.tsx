@@ -258,58 +258,6 @@ const ArtistFilter: React.FC<Props> = ({
     } catch { }
   }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const scope = (document.getElementById("ink-root") || document.querySelector<HTMLElement>(".ink-scope")) ?? document.documentElement;
-    const root = document.documentElement;
-    const vars = [
-      "--background",
-      "--foreground",
-      "--card",
-      "--card-h",
-      "--card-foreground",
-      "--popover",
-      "--popover-foreground",
-      "--primary",
-      "--primary-foreground",
-      "--secondary",
-      "--secondary-foreground",
-      "--muted",
-      "--muted2",
-      "--muted-foreground",
-      "--accent",
-      "--accent-h",
-      "--accent-foreground",
-      "--border",
-      "--border-h",
-      "--input",
-      "--ring",
-      "--bg",
-      "--fg",
-      "--subtle",
-      "--elevated",
-    ];
-    const apply = () => {
-      const cs = getComputedStyle(scope);
-      vars.forEach((v) => {
-        const val = cs.getPropertyValue(v);
-        if (val) root.style.setProperty(v, val);
-      });
-      root.setAttribute("data-ink-theme-ts", String(Date.now()));
-    };
-    apply();
-    const mo = new MutationObserver(apply);
-    mo.observe(scope, { attributes: true, attributeFilter: ["class", "style"] });
-    const mql = window.matchMedia?.("(prefers-color-scheme: dark)");
-    const onScheme = () => apply();
-    mql?.addEventListener?.("change", onScheme);
-    window.addEventListener("storage", apply);
-    return () => {
-      mo.disconnect();
-      mql?.removeEventListener?.("change", onScheme);
-      window.removeEventListener("storage", apply);
-    };
-  }, []);
 
   const triggerBase = "h-10 bg-elevated/60 hover:bg-elevated border border-app/60 text-xs sm:text-sm rounded-full text-center justify-center transition-colors focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 data-[state=open]:bg-elevated data-[state=open]:border-app";
   const contentBase = "bg-card text-app border border-app rounded-2xl shadow-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
@@ -337,7 +285,7 @@ const ArtistFilter: React.FC<Props> = ({
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:gap-2.5 w-full max-w-full min-w-0" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
             <div className={clsx("relative col-span-2 sm:col-span-1 min-w-0", SEARCH_W)}>
               <Search
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--fg)]"
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-app"
                 aria-hidden
               />
               <Input

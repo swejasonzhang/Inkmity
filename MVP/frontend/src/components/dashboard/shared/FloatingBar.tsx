@@ -42,6 +42,7 @@ export default function FloatingBar({
   const [vp, setVp] = useState({ w: 375, h: 667 });
   const [vvBottom, setVvBottom] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [filterTop, setFilterTop] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -85,12 +86,20 @@ export default function FloatingBar({
       if (header) {
         setHeaderHeight(header.offsetHeight);
       }
+      const filter = document.querySelector("[data-artist-filter]") as HTMLElement | null;
+      if (filter) {
+        setFilterTop(Math.round(filter.getBoundingClientRect().top));
+      }
     };
     measureHeader();
     const ro = new ResizeObserver(measureHeader);
     const header = document.querySelector("header");
     if (header) {
       ro.observe(header);
+    }
+    const filterEl = document.querySelector("[data-artist-filter]");
+    if (filterEl) {
+      ro.observe(filterEl);
     }
     window.addEventListener("resize", measureHeader);
     return () => {
@@ -110,9 +119,20 @@ export default function FloatingBar({
     pendingRequestIds,
   });
 
+  useEffect(() => {
+    const measureFilter = () => {
+      const filter = document.querySelector("[data-artist-filter]") as HTMLElement | null;
+      if (filter) setFilterTop(Math.round(filter.getBoundingClientRect().top));
+    };
+    measureFilter();
+    const id = window.setTimeout(measureFilter, 120);
+    return () => window.clearTimeout(id);
+  }, [open, isMdUp, vp.h]);
+
+  const gutter = "clamp(12px, 1.5vw, 24px)";
   const pad = {
-    left: isMdUp ? "calc(12px + env(safe-area-inset-left, 0px))" : "calc(6px + env(safe-area-inset-left, 0px))",
-    right: isMdUp ? "calc(12px + env(safe-area-inset-right, 0px))" : "calc(6px + env(safe-area-inset-right, 0px))",
+    left: `calc(${gutter} + env(safe-area-inset-left, 0px))`,
+    right: `calc(${gutter} + env(safe-area-inset-right, 0px))`,
     bottom: `calc(max(${vvBottom}px, ${isMdUp ? 20 : 10}px) + env(safe-area-inset-bottom, 0px))`,
   };
 
@@ -136,7 +156,9 @@ export default function FloatingBar({
   const PANEL_W = 280;
   const DESKTOP_OPEN_W = Math.floor(vp.w * 0.5);
   const DESKTOP_CLOSED_W = 160;
-  const DESKTOP_OPEN_H = vp.h - headerHeight;
+  const desktopOpenTop = filterTop > 0 ? filterTop : headerHeight;
+  const bottomGapPx = Math.max(vvBottom, isMdUp ? 20 : 10);
+  const DESKTOP_OPEN_H = vp.h - desktopOpenTop - bottomGapPx;
 
   const convW = isMdUp ? (open ? DESKTOP_OPEN_W + (role === "Artist" ? PANEL_W : 0) : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
   const convH = isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
@@ -284,7 +306,7 @@ export default function FloatingBar({
                   }),
                   ...(isMdUp || !open ? {
                     width: isMdUp ? convW : Math.max(0, convW - 50),
-                    height: isMdUp ? (open ? vp.h - headerHeight : collapsedHeight) : convH,
+                    height: isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : convH,
                   } : {}),
                   zIndex: !isMdUp && open ? 9999 : undefined
                 }}
