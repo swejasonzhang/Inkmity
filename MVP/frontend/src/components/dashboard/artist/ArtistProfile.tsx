@@ -736,7 +736,7 @@ export default function ArtistProfile() {
                             placeholder="Your name"
                         />
                         {artist?.handle && (
-                            <p className="text-xs text-center text-app/50">
+                            <p className="text-xs text-center text-white/50">
                                 {artist.handle.startsWith("@") ? artist.handle : `@${artist.handle}`} · permanent handle
                             </p>
                         )}
@@ -943,7 +943,7 @@ export default function ArtistProfile() {
                                             {styleStr}
                                             <button
                                                 onClick={() => handleRemoveStyle(styleStr)}
-                                                className="hover:text-red-400 transition-colors hover:scale-110"
+                                                className="hover:text-app transition-colors hover:scale-110"
                                             >
                                                 <X className="h-3.5 w-3.5" />
                                             </button>
@@ -1009,7 +1009,7 @@ export default function ArtistProfile() {
                                         {placement}
                                         <button
                                             onClick={() => handleRemoveRestrictedPlacement(placement)}
-                                            className="hover:text-red-400 transition-colors hover:scale-110"
+                                            className="hover:text-app transition-colors hover:scale-110"
                                         >
                                             <X className="h-3.5 w-3.5" />
                                         </button>
@@ -1049,7 +1049,7 @@ export default function ArtistProfile() {
 
                     <div className="flex flex-col gap-4 pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
                         {usernameNotice && (
-                            <p className="text-xs text-amber-400 text-center">{usernameNotice}</p>
+                            <p className="text-xs text-app text-center">{usernameNotice}</p>
                         )}
                         <div className="flex gap-3 justify-center">
                             <Button
@@ -1167,7 +1167,7 @@ export default function ArtistProfile() {
                                                         )}
                                                         <button
                                                             onClick={() => handleRemovePortfolioImage(i, "recentWorks")}
-                                                            className="bg-red-500/80 hover:bg-red-500 rounded-full p-2 transition-colors"
+                                                            className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
                                                             title="Remove"
                                                         >
                                                             <Trash2 className="h-4 w-4 text-white" />
@@ -1241,7 +1241,7 @@ export default function ArtistProfile() {
                                                         )}
                                                         <button
                                                             onClick={() => handleRemovePortfolioImage(i, "pastWorks")}
-                                                            className="bg-red-500/80 hover:bg-red-500 rounded-full p-2 transition-colors"
+                                                            className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
                                                             title="Remove"
                                                         >
                                                             <Trash2 className="h-4 w-4 text-white" />
@@ -1315,7 +1315,7 @@ export default function ArtistProfile() {
                                                         )}
                                                         <button
                                                             onClick={() => handleRemovePortfolioImage(i, "sketches")}
-                                                            className="bg-red-500/80 hover:bg-red-500 rounded-full p-2 transition-colors"
+                                                            className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
                                                             title="Remove"
                                                         >
                                                             <Trash2 className="h-4 w-4 text-white" />

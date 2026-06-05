@@ -15,7 +15,7 @@ import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
 type Role = "client" | "artist";
 
 const CLIENT_DEFAULTS = { budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", style: "all", availability: "all" };
-const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100", bookingPreference: "open" as const, travelFrequency: "rare" as const, portfolio: "", styles: [] as string[], bio: "" };
+const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open" as const, travelFrequency: "rare" as const, portfolio: "", styles: [] as string[], bio: "" };
 
 export default function Onboarding() {
     const navigate = useNavigate();
@@ -90,6 +90,7 @@ export default function Onboarding() {
                           location: (src as typeof artist)?.location || "New York, NY",
                           years: Number((src as typeof artist)?.years) || 0,
                           baseRate: Number((src as typeof artist)?.baseRate) || 100,
+                          baseRateMax: Number((src as typeof artist)?.baseRateMax) || 200,
                           bookingPreference: (src as typeof artist)?.bookingPreference || "open",
                           travelFrequency: (src as typeof artist)?.travelFrequency || "rare",
                           styles: (src as typeof artist)?.styles || [],
@@ -159,15 +160,15 @@ export default function Onboarding() {
             <Header />
             <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-3 overflow-hidden">
                 <div className="w-full max-w-xl mx-auto max-h-full overflow-hidden rounded-2xl bg-card border border-app p-4 sm:p-5">
-                    <div className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-center">
-                        <p className="text-[11px] sm:text-xs font-semibold text-amber-300">
+                    <div className="mb-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-center">
+                        <p className="text-[11px] sm:text-xs font-semibold text-white/80">
                             Finish setting up your account to continue.
                         </p>
                     </div>
 
                     <div className="mb-2">
                         <label htmlFor="onboard-username" className="block text-xs text-white/80 mb-1 text-center">
-                            Username <span className="text-red-400">*</span> <span className="text-app/50">(required)</span>
+                            Username <span className="text-white">*</span> <span className="text-app/50">(required)</span>
                         </label>
                         <Input
                             id="onboard-username"
@@ -178,9 +179,9 @@ export default function Onboarding() {
                             maxLength={40}
                             autoFocus
                             aria-required="true"
-                            className={`h-10 rounded-xl text-center ${!usernameValid && username.length > 0 ? "border-red-400" : ""}`}
+                            className={`h-10 rounded-xl text-center bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 ${!usernameValid && username.length > 0 ? "!border-white" : ""}`}
                         />
-                        <p className={`text-[11px] mt-1 text-center ${!usernameValid && username.length > 0 ? "text-red-400" : "text-app/50"}`}>
+                        <p className={`text-[11px] mt-1 text-center ${!usernameValid && username.length > 0 ? "text-white" : "text-app/50"}`}>
                             {!usernameValid && username.length > 0
                                 ? "Username must be at least 2 characters."
                                 : "Required to continue."}
@@ -203,6 +204,11 @@ export default function Onboarding() {
                         )}
                     </div>
 
+                    {role === "artist" && artist.styles.length < 1 && (
+                        <p className="mb-2 text-center text-[11px] text-app/60">
+                            Pick at least one specialty style to continue — or use “Skip now” to set everything to default.
+                        </p>
+                    )}
                     <div className="flex items-center gap-2">
                         <Button
                             type="button"
@@ -210,12 +216,12 @@ export default function Onboarding() {
                             disabled={submitting || !usernameValid}
                             className="h-10 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
                         >
-                            Skip for now
+                            Skip now
                         </Button>
                         <Button
                             type="button"
                             onClick={() => finish(false)}
-                            disabled={submitting || !usernameValid}
+                            disabled={submitting || !usernameValid || (role === "artist" && artist.styles.length < 1)}
                             className="flex-1 h-10 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
                         >
                             {submitting ? "Saving…" : "Continue to dashboard"}

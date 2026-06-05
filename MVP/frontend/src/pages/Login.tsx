@@ -426,11 +426,11 @@ export default function Login() {
                               if (authError) setAuthError("");
                               if (invalid.email) setInvalid((p) => ({ ...p, email: false }));
                             }}
-                            className={`w-full h-11 rounded-xl bg-white border border-black/10 text-black placeholder:text-black px-4 text-center text-sm sm:text-base outline-none focus:ring-2 focus:ring-black/20 transition ${invalid.email ? "ink-flash" : ""}`}
+                            className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 text-center text-sm sm:text-base outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.email ? "ink-flash" : ""}`}
                             autoComplete="email"
                             aria-describedby="email-help"
                           />
-                          <p id="email-help" className={`mt-1 text-xs sm:text-sm text-center ${emailOk ? "text-subtle" : "text-red-400"}`}>{emailHelp}</p>
+                          <p id="email-help" className={`mt-1 text-xs sm:text-sm text-center ${emailOk ? "text-subtle" : "text-white"}`}>{emailHelp}</p>
                         </div>
                         <div className="w-full">
                           <label className="block text-sm font-semibold text-app mb-1.5 text-center" htmlFor="password">Password</label>
@@ -448,7 +448,7 @@ export default function Login() {
                                 if (authError) setAuthError("");
                                 if (invalid.password) setInvalid((p) => ({ ...p, password: false }));
                               }}
-                              className={`w-full h-11 rounded-xl bg-white border border-black/10 text-black placeholder:text-black px-4 pr-11 text-center text-sm sm:text-base outline-none focus:ring-2 focus:ring-black/20 transition ${invalid.password ? "ink-flash" : ""}`}
+                              className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 pr-11 text-center text-sm sm:text-base outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.password ? "ink-flash" : ""}`}
                               autoComplete="current-password"
                               aria-describedby="password-help auth-help"
                             />
@@ -456,7 +456,7 @@ export default function Login() {
                               type="button"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={togglePwd}
-                              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-black/50 hover:text-black hover:bg-black/5 transition"
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-white hover:text-white hover:bg-white/10 transition"
                               aria-label={showPassword ? "Hide password" : "Show password"}
                             >
                               {showPassword ? (
@@ -473,8 +473,8 @@ export default function Login() {
                               <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
                             </button>
                           </div>
-                          <p id="password-help" className={`mt-1 text-xs sm:text-sm text-center ${pwdOk ? "text-subtle" : "text-red-400"}`}>{pwdHelp}</p>
-                          {authError ? <p id="auth-help" className="mt-1 text-xs sm:text-sm text-center text-red-400">{authError}</p> : null}
+                          <p id="password-help" className={`mt-1 text-xs sm:text-sm text-center ${pwdOk ? "text-subtle" : "text-white"}`}>{pwdHelp}</p>
+                          {authError ? <p id="auth-help" className="mt-1 text-xs sm:text-sm text-center text-white">{authError}</p> : null}
                         </div>
                         <Button type="submit" className="w-full h-11 rounded-xl text-sm sm:text-base font-semibold bg-neutral-700 hover:bg-neutral-600 text-white transition mt-1" disabled={loading || !signInLoaded || !signIn}>
                           {loading ? "Signing In..." : "Sign In"}

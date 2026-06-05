@@ -163,7 +163,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
           )}
 
           {!depositConfigured && (
-            <p className="text-sm text-amber-600 dark:text-amber-400">
+            <p className="text-sm text-app dark:text-app">
               Please configure deposit settings to enable appointments.
             </p>
           )}

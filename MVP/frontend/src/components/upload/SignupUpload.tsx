@@ -26,8 +26,8 @@ type Props = {
     hint?: string;
 };
 
-const MAX_PARALLEL_UPLOADS = 3;
-const MAX_ITEMS = 3;
+const MAX_PARALLEL_UPLOADS = 4;
+const MAX_ITEMS = 4;
 
 export default function SignupUpload({
     label,
@@ -42,7 +42,7 @@ export default function SignupUpload({
     const inputRef = useRef<HTMLInputElement | null>(null);
     const dropRef = useRef<HTMLDivElement | null>(null);
 
-    const [slots, setSlots] = useState<Slot[]>(() => value.slice(0, MAX_ITEMS).map((url) => ({ id: `init-${url}`, url })));
+    const [slots, setSlots] = useState<Slot[]>(() => value.filter(Boolean).slice(0, MAX_ITEMS).map((url) => ({ id: `init-${url}`, url })));
     const [isDragging, setIsDragging] = useState(false);
     const [queue, setQueue] = useState<string[]>([]);
     const [activeUploads, setActiveUploads] = useState(0);
@@ -62,7 +62,7 @@ export default function SignupUpload({
     useEffect(() => {
         setSlots((prev) => {
             const cap = MAX_ITEMS;
-            const fromProps = value.slice(0, cap).map<Slot>((u) => ({ id: `prop-${u}`, url: u }));
+            const fromProps = value.filter(Boolean).slice(0, cap).map<Slot>((u) => ({ id: `prop-${u}`, url: u }));
             const nonRemote = prev.filter((s) => s.file && !s.url);
             const remain = Math.max(0, cap - fromProps.length);
             return [...fromProps, ...nonRemote.slice(0, remain)];
@@ -335,7 +335,7 @@ export default function SignupUpload({
 
                                             {s.uploading && <div className="absolute inset-0 grid place-items-center bg-black/35 text-xs">Uploading…</div>}
                                             {isQueued && <div className="absolute inset-x-0 bottom-0 px-2 py-1 text-[11px] text-white/90 bg-black/45 text-center">Queued</div>}
-                                            {s.error && <div className="absolute inset-x-0 bottom-0 p-2 text-[11px] text-red-300 bg-black/60">{s.error}</div>}
+                                            {s.error && <div className="absolute inset-x-0 bottom-0 p-2 text-[11px] text-app bg-black/60">{s.error}</div>}
                                         </div>
                                     );
                                 })}

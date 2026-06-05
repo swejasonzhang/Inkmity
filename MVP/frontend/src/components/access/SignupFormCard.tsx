@@ -19,6 +19,7 @@ type ArtistProfile = {
   location: string;
   years: string;
   baseRate: string;
+  baseRateMax?: string;
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
   portfolio: string;
@@ -57,6 +58,7 @@ type SignupProps = BaseProps & {
   isLoaded: boolean;
   onNext: () => void;
   onBack: () => void;
+  onSkip?: () => void;
   onStartVerification: () => void;
   onVerify: () => void;
   onEmailBlur?: () => void;
@@ -95,6 +97,7 @@ export default function SignupFormCard(props: SignupProps) {
     isLoaded,
     onNext,
     onBack,
+    onSkip,
     onStartVerification,
     onVerify,
     onPasswordVisibilityChange,
@@ -205,6 +208,7 @@ export default function SignupFormCard(props: SignupProps) {
                             onChange={onSharedChange}
                             onPasswordVisibilityChange={onPasswordVisibilityChange}
                             onEmailBlur={onEmailBlur}
+                            emailTaken={emailTaken}
                             invalidFields={invalidFields}
                             flashToken={flashToken}
                             confirmPassword={confirmPassword}
@@ -216,11 +220,11 @@ export default function SignupFormCard(props: SignupProps) {
                       {slides[step].key === "artist-1" && <ArtistDetailsStep artist={artist} onChange={onArtistChange} />}
                       {slides[step].key === "upload" && (
                         <SignupUpload
-                          label="Showcase your top 3 pieces"
+                          label="Showcase your top 4 pieces"
                           kind="artist_portfolio"
                           value={artistPortfolioImgs}
                           onChange={setArtistPortfolioImgs}
-                          hint="Pick your three strongest works to feature now — you can add your full portfolio anytime after you finish signing up."
+                          hint="Pick your four strongest works to feature now — you can add your full portfolio anytime after you finish signing up."
                         />
                       )}
                       {slides[step].key === "review" && (
@@ -231,6 +235,17 @@ export default function SignupFormCard(props: SignupProps) {
                       {step > 0 && (
                         <Button type="button" onClick={onBack} className="flex-1 bg-elevated border border-app text-app hover:bg-elevated/70 h-9 text-xs rounded-lg">
                           Back
+                        </Button>
+                      )}
+                      {(slides[step].key === "artist-1" || slides[step].key === "client-1" || slides[step].key === "upload") && onSkip && (
+                        <Button
+                          type="button"
+                          onClick={onSkip}
+                          disabled={loading}
+                          className="flex-1 bg-elevated border border-app text-app hover:bg-elevated/70 h-9 text-xs rounded-lg font-semibold"
+                          title="Set everything to default and continue"
+                        >
+                          Skip now
                         </Button>
                       )}
                       {step < slides.length - 1 && (

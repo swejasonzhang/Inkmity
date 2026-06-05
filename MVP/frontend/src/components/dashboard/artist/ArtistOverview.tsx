@@ -62,15 +62,15 @@ function fmtMoney(cents: number) {
 function statusChip(status: string): string {
   switch (status) {
     case "pending":
-      return "border-amber-500/30 bg-amber-500/10 text-amber-300";
+      return "border-white/50 bg-white/20 text-app";
     case "completed":
-      return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+      return "border-white/40 bg-white/15 text-app";
     case "cancelled":
     case "denied":
     case "no-show":
-      return "border-red-500/30 bg-red-500/10 text-red-300";
+      return "border-white/30 bg-white/10 text-white/85";
     default:
-      return "border-app/60 bg-card text-app";
+      return "border-white/60 bg-card text-app";
   }
 }
 

@@ -14,7 +14,7 @@ import { resetActivityTimer } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
 import { API_URL } from "@/api";
 import VideoBackground from "@/components/VideoBackground";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 type Role = "client" | "artist";
@@ -25,6 +25,7 @@ type ArtistProfile = {
   shop: string;
   years: string;
   baseRate: string;
+  baseRateMax?: string;
   bookingPreference?: "open" | "waitlist" | "closed" | "referral" | "guest";
   travelFrequency?: "rare" | "sometimes" | "often" | "touring" | "guest_only";
   portfolio: string;
@@ -113,12 +114,13 @@ export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [step, setStep] = useState(0);
+  const [detailsSkipped, setDetailsSkipped] = useState(false);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "" });
-  const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, NY", shop: "", years: "0", baseRate: "100", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
+  const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, NY", shop: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
-  const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", ""]);
+  const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", "", ""]);
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [signUpAttempt, setSignUpAttempt] = useState<SignUpResource | null>(null);
   const [loading, setLoading] = useState(false);
@@ -141,6 +143,8 @@ export default function SignUp() {
   const navigate = useNavigate();
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [flashToken, setFlashToken] = useState(0);
+  const [emailTaken, setEmailTaken] = useState(false);
+  const lastCheckedEmailRef = useRef<string>("");
 
   useEffect(() => {
     if (!authLoaded) return;
@@ -238,6 +242,31 @@ export default function SignUp() {
     }
   };
 
+  const handleShared = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === "email") setEmailTaken(false);
+    setShared((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const checkEmailTaken = async () => {
+    const email = shared.email.trim().toLowerCase();
+    if (!validateEmail(email)) {
+      setEmailTaken(false);
+      return;
+    }
+    if (email === lastCheckedEmailRef.current) return;
+    lastCheckedEmailRef.current = email;
+    try {
+      const res = await fetch(apiUrl("/auth/check-email", { email }));
+      if (!res.ok) return;
+      const data = await res.json();
+      // Guard against a stale response if the user edited the field meanwhile.
+      if (shared.email.trim().toLowerCase() === email) setEmailTaken(!!data?.exists);
+    } catch {
+      // Network failure shouldn't block signup; the create call still guards it.
+    }
+  };
+
   const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim() && shared.password === confirmPassword;
   const allClientValid = !!client.location;
   const allArtistValid =
@@ -252,20 +281,23 @@ export default function SignUp() {
     artist.baseRate !== "__unset__" &&
     Number.isFinite(Number(artist.baseRate));
 
+  const effectiveClientValid = detailsSkipped || allClientValid;
+  const effectiveArtistValid = detailsSkipped || allArtistValid;
+
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
     return role === "client"
       ? [
         { key: "role", valid: allSharedValid },
-        { key: "client-1", valid: allClientValid },
-        { key: "review", valid: allSharedValid && allClientValid }
+        { key: "client-1", valid: effectiveClientValid },
+        { key: "review", valid: allSharedValid && effectiveClientValid }
       ]
       : [
         { key: "role", valid: allSharedValid },
-        { key: "artist-1", valid: allArtistValid },
+        { key: "artist-1", valid: effectiveArtistValid },
         { key: "upload", valid: true },
-        { key: "review", valid: allSharedValid && allArtistValid }
+        { key: "review", valid: allSharedValid && effectiveArtistValid }
       ];
-  }, [role, allSharedValid, allClientValid, allArtistValid]);
+  }, [role, allSharedValid, effectiveClientValid, effectiveArtistValid]);
 
   const isLastFormSlide = step === slides.length - 1;
 
@@ -299,11 +331,29 @@ export default function SignUp() {
     if (!isLastFormSlide) setStep((s) => s + 1);
   };
 
-  const handleBack = () => setStep((s) => Math.max(0, s - 1));
+  const handleBack = () => {
+    setDetailsSkipped(false);
+    setStep((s) => Math.max(0, s - 1));
+  };
+
+  const skipDetails = () => {
+    const key = slides[step].key;
+    if (key === "artist-1") {
+      setArtist({ location: "New York, NY", shop: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
+    } else if (key === "client-1") {
+      setClient({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "" });
+      setClientRefs(["", "", ""]);
+    } else if (key === "upload") {
+      setArtistPortfolioImgs(["", "", "", ""]);
+    }
+    setInvalidFields([]);
+    setDetailsSkipped(true);
+    setStep((s) => Math.min(s + 1, slides.length - 1));
+  };
 
   const startVerification = async () => {
     if (loading) return;
-    const tips = collectIssues({ role, step: 3, shared, client, artist, confirmPassword });
+    const tips = detailsSkipped ? [] : collectIssues({ role, step: 3, shared, client, artist, confirmPassword });
     if (tips.length) {
       setInvalidFields([]);
       setFlashToken((t) => t + 1);
@@ -314,10 +364,12 @@ export default function SignUp() {
       return;
     }
     setLoading(true);
-    setAwaitingCode(true);
+    setCode("");
 
     if (userId) {
-      signOut().catch(() => { });
+      try {
+        await signOut();
+      } catch { }
     }
 
     try {
@@ -329,20 +381,34 @@ export default function SignUp() {
         (await signUp.create({ emailAddress: shared.email.trim().toLowerCase(), password: shared.password, unsafeMetadata } as any));
       setSignUpAttempt(attempt as SignUpResource);
 
-      attempt.prepareEmailAddressVerification({ strategy: "email_code" })
-        .catch((error) => {
-          console.error("Error sending verification code:", error);
-          setAwaitingCode(false);
-          triggerMascotError();
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } catch (error) {
-      console.error("Error in startVerification:", error);
+      await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
+
+      // Only advance to the OTP step once the code has actually been sent, so a
+      // send failure never bounces the user out of step 5.
+      setAwaitingCode(true);
+    } catch (error: any) {
+      console.error("Error sending verification code:", error);
       setAwaitingCode(false);
-      setLoading(false);
+
+      const clerkErr = error?.errors?.[0];
+      const emailIsTaken =
+        clerkErr?.code === "form_identifier_exists" ||
+        /taken|already (exists|registered|in use)/i.test(clerkErr?.message || error?.message || "");
+
+      if (emailIsTaken) {
+        // Discard the stale attempt so a retry with a different email starts fresh.
+        setSignUpAttempt(null);
+        setEmailTaken(true);
+        lastCheckedEmailRef.current = shared.email.trim().toLowerCase();
+        setStep(0);
+        setInvalidFields(["email"]);
+        setFlashToken((t) => t + 1);
+        toast.error("That email address is already registered. Try logging in, or use a different email.");
+      }
+
       triggerMascotError();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -444,6 +510,8 @@ export default function SignUp() {
 
   return (
     <div className="relative h-svh overflow-hidden flex flex-col text-app">
+      {/* Clerk Smart CAPTCHA mounts its bot-protection widget here during sign-up. */}
+      <div id="clerk-captcha" />
       <ToastContainer position="top-center" theme="dark" newestOnTop closeOnClick hideProgressBar style={{ zIndex: 2147483647 }} />
       <VideoBackground />
       <Header />
@@ -503,7 +571,7 @@ export default function SignUp() {
                     shared={shared}
                     client={client}
                     artist={artist}
-                    onSharedChange={(e) => setShared({ ...shared, [e.target.name]: e.target.value })}
+                    onSharedChange={handleShared}
                     onClientChange={handleClient}
                     onArtistChange={handleArtist}
                     awaitingCode={awaitingCode}
@@ -513,10 +581,12 @@ export default function SignUp() {
                     isLoaded={isLoaded as boolean}
                     onNext={handleNext}
                     onBack={handleBack}
+                    onSkip={skipDetails}
                     onStartVerification={startVerification}
                     onVerify={verifyCode}
                     onPasswordVisibilityChange={handlePasswordVisibilityChange}
-                    emailTaken={false}
+                    onEmailBlur={checkEmailTaken}
+                    emailTaken={emailTaken}
                     className="h-full"
                     clientRefs={clientRefs}
                     setClientRefs={setClientRefs}

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
@@ -70,7 +71,32 @@ export const bioText = (username, bio) =>
 export async function getMe(req, res) {
   const clerkId = getClerkId(req);
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-  const me = await User.findOne({ clerkId }).lean();
+  let me = await User.findOne({ clerkId }).lean();
+  if (!me) {
+    // The DB record may exist under a stale clerkId (e.g. the Clerk account was
+    // recreated, or the DB/Clerk got out of sync during testing). Relink it by
+    // the Clerk-verified email so the user isn't bounced back to onboarding on
+    // every login instead of going to their dashboard.
+    try {
+      const cu = await clerkClient.users.getUser(clerkId);
+      const email = String(
+        cu?.primaryEmailAddress?.emailAddress ||
+          cu?.emailAddresses?.[0]?.emailAddress ||
+          ""
+      )
+        .trim()
+        .toLowerCase();
+      if (email) {
+        const byEmail = await User.findOne({ email }).lean();
+        if (byEmail) {
+          await User.updateOne({ _id: byEmail._id }, { $set: { clerkId } });
+          me = { ...byEmail, clerkId };
+        }
+      }
+    } catch {
+      // Ignore lookup failures and fall through to 404.
+    }
+  }
   if (!me) return res.status(404).json({ error: "Not found" });
   res.json(me);
 }
@@ -307,7 +333,14 @@ export async function syncUser(req, res) {
         .status(400)
         .json({ error: "clerkId, email, role are required" });
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
-    const existing = await User.findOne({ clerkId }).lean();
+    // Match by clerkId first; otherwise reclaim a record that already owns this
+    // (Clerk-verified) email but was created under a different Clerk id. Without
+    // this, the unique-email index makes the upsert below fail with a duplicate
+    // key, the account never gets provisioned under the current identity, and the
+    // user is bounced back to onboarding on every login.
+    const existingByClerk = await User.findOne({ clerkId }).lean();
+    const existing =
+      existingByClerk || (await User.findOne({ email }).lean());
     const requestedUsername =
       String(bodyUsername || "").trim() || existing?.username || "user";
 
@@ -396,6 +429,7 @@ export async function syncUser(req, res) {
     } else {
       const years = Number(profile.years ?? profile.yearsExperience ?? 0);
       const baseRate = Number(profile.baseRate ?? 0);
+      const baseRateMax = Number(profile.baseRateMax ?? profile.baseRate ?? 0);
       const bookingPreference = profile.bookingPreference || "open";
       const travelFrequency = profile.travelFrequency || "rare";
       const shop = profile.shop || "";
@@ -408,7 +442,7 @@ export async function syncUser(req, res) {
       )
         .map((u) => String(u || "").trim())
         .filter(Boolean)
-        .slice(0, 3);
+        .slice(0, 4);
       const restrictedPlacements = Array.isArray(profile.restrictedPlacements)
         ? profile.restrictedPlacements
             .map((p) => String(p || "").trim())
@@ -422,6 +456,7 @@ export async function syncUser(req, res) {
         ...(shopLng !== undefined ? { shopLng } : {}),
         yearsExperience: Number.isFinite(years) ? Math.max(0, years) : 0,
         baseRate: Number.isFinite(baseRate) ? Math.max(0, baseRate) : 0,
+        baseRateMax: Number.isFinite(baseRateMax) ? Math.max(0, baseRateMax) : 0,
         bookingPreference,
         travelFrequency,
         ...(coverImage ? { coverImage } : {}),
@@ -429,10 +464,20 @@ export async function syncUser(req, res) {
         ...(restrictedPlacements.length ? { restrictedPlacements } : {}),
       });
     }
+    // Reclaiming a record created under a different role would not match the
+    // role-specific discriminator filter — surface that clearly instead of
+    // silently failing and looping the user back to onboarding.
+    if (existing && existing.role !== role) {
+      return res.status(409).json({
+        error: "ROLE_MISMATCH",
+        message: `This email is already registered as a ${existing.role}.`,
+      });
+    }
+
     const Model =
       role === "client" ? mongoose.model("client") : mongoose.model("artist");
     const user = await Model.findOneAndUpdate(
-      { clerkId },
+      existing ? { _id: existing._id } : { clerkId },
       { $set: setDoc },
       {
         new: true,

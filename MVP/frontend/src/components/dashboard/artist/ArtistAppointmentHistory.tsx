@@ -117,28 +117,28 @@ export default function ArtistAppointmentHistory() {
         if (isPast) {
             switch (status) {
                 case "completed":
-                    return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+                    return "bg-white/10 text-app border-white/25";
                 case "cancelled":
                 case "no-show":
-                    return "bg-red-500/20 text-red-500 border-red-500/30";
+                    return "bg-white/5 text-white/80 border-white/25";
                 default:
-                    return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+                    return "bg-white/10 text-app border-white/25";
             }
         } else {
             switch (status) {
                 case "confirmed":
                 case "booked":
                 case "matched":
-                    return "bg-white/20 text-white border-white/30";
+                    return "bg-white/20 text-app border-white/40";
                 case "pending":
-                    return "bg-white/20 text-white border-white/30";
+                    return "bg-white/15 text-app border-white/30";
                 case "in-progress":
-                    return "bg-white/20 text-white border-white/30";
+                    return "bg-white/20 text-app border-white/40";
                 case "cancelled":
                 case "no-show":
-                    return "bg-red-500/20 text-red-500 border-red-500/30";
+                    return "bg-white/5 text-white/80 border-white/25";
                 default:
-                    return "bg-white/20 text-white border-white/30";
+                    return "bg-white/10 text-app border-white/25";
             }
         }
     };

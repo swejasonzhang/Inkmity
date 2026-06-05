@@ -127,7 +127,7 @@ export default function OtpStep({
         <div className="grid gap-5 w-full">
             <div className="text-center">
                 <p className="text-sm font-semibold text-app">Enter your verification code</p>
-                <p className="mt-1 text-xs text-app/60">We sent a 6-digit code to your email.</p>
+                <p className="mt-1 text-xs text-white/60">We sent a 6-digit code to your email.</p>
             </div>
 
             <div className="flex items-center justify-center gap-2" onPaste={handlePaste}>
@@ -143,14 +143,14 @@ export default function OtpStep({
                         onChange={(e) => handleChange(i, e)}
                         onKeyDown={(e) => handleKeyDown(i, e)}
                         onFocus={(e) => e.currentTarget.select()}
-                        className="h-12 w-10 sm:w-11 rounded-xl bg-white border border-black/10 text-black text-center text-lg font-bold outline-none focus:ring-2 focus:ring-black/30 transition"
+                        className="h-12 w-10 sm:w-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center text-lg font-bold outline-none focus:ring-2 focus:ring-white/30 transition"
                         aria-label={`Digit ${i + 1}`}
                     />
                 ))}
             </div>
 
-            <div className="flex items-center justify-center gap-3 text-xs text-app/60 -mt-1">
-                <span className={expired ? "text-red-400" : ""}>
+            <div className="flex items-center justify-center gap-3 text-xs text-white/60 -mt-1">
+                <span className={expired ? "text-app" : ""}>
                     {expired ? "Code expired" : `Expires in ${fmtMMSS(secsLeft)}`}
                 </span>
                 <span aria-hidden>·</span>
@@ -178,7 +178,7 @@ export default function OtpStep({
                     disabled={loading || !codeOk}
                     className="flex-1 h-11 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {loading ? "Verifying…" : "Verify & Continue"}
+                    {loading ? (codeOk ? "Verifying…" : "Sending…") : "Verify & Continue"}
                 </button>
             </div>
         </div>

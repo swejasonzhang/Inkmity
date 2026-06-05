@@ -12,6 +12,7 @@ body,
   min-height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
 html.ink-no-scroll,
@@ -118,73 +119,13 @@ html.ink-light {
     stroke var(--ui-ms) ease, box-shadow var(--ui-ms) ease;
 }
 
-.ink-scope textarea,
-.ink-scope input[type="text"],
-.ink-scope input[type="email"],
-.ink-scope input[type="password"],
-.ink-scope input[type="number"],
-.ink-scope input[type="search"],
-.ink-scope input[type="tel"],
-.ink-scope input[type="url"],
-.ink-scope input:not([type]),
-.ink-scope select {
-  color: #000 !important;
-  background-color: #fff !important;
-}
-
-.ink-scope textarea[style*="color"],
-.ink-scope input[style*="color"],
-.ink-scope select[style*="color"],
-.ink-scope textarea[class*="text-"],
-.ink-scope input[class*="text-"],
-.ink-scope select[class*="text-"] {
-  color: #000 !important;
-}
-
-.ink-scope textarea::placeholder,
-.ink-scope input::placeholder {
-  color: #000 !important;
-  opacity: 0.75;
-}
-
-.ink-scope select option {
-  color: #000 !important;
-  background-color: #fff;
-}
-
-.ink-scope select:not([multiple]) {
-  color: var(--fg) !important;
-}
-
-.ink-scope [data-slot="select-trigger"],
-.ink-scope [data-slot="select-content"],
-.ink-scope [data-slot="select-item"],
-.ink-scope [data-slot="select-value"] {
-  color: #000 !important;
-}
-
-.ink-scope [data-slot="select-trigger"],
-.ink-scope [data-slot="select-content"] {
-  background-color: #fff;
-}
-
-.ink-scope [data-slot="select-item"]:hover,
-.ink-scope [data-slot="select-item"][data-highlighted] {
-  background-color: #262626;
-  color: #fff !important;
-}
-
-.ink-scope [data-slot="select-trigger"][data-placeholder],
-.ink-scope [data-slot="select-value"][data-placeholder] {
-  color: rgba(0, 0, 0, 0.55) !important;
-}
-
-.ink-scope [data-slot="select-label"] {
-  color: rgba(0, 0, 0, 0.6) !important;
-}
-
-.ink-scope [data-slot="select-separator"] {
-  background-color: rgba(0, 0, 0, 0.1);
+[data-slot="select-trigger"],
+[data-slot="select-value"],
+[data-slot="select-item"],
+[data-slot="select-label"],
+select,
+select option {
+  text-transform: capitalize;
 }
 
 #dashboard-scope input,
@@ -796,13 +737,13 @@ input::-moz-focus-inner {
 
 @keyframes ink-flash {
   0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
   }
   20% {
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.95);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
   }
 }
 .ink-flash {

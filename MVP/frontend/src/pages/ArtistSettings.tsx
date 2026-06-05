@@ -26,7 +26,7 @@ export default function ArtistSettings({ artistId }: Props) {
     };
   }, [artistId]);
 
-  if (err) return <div className="text-red-400">{err}</div>;
+  if (err) return <div className="text-app">{err}</div>;
   if (!initial) return <div>Loading availability…</div>;
   return <AvailabilityEditor artistId={artistId} initial={initial} />;
 }

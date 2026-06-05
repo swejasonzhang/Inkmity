@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { MapPin, DollarSign, Brush, Clock, Crosshair, Ruler } from "lucide-react";
 
 type ClientProfile = {
     budgetMin: string;
@@ -182,10 +183,6 @@ export default function ClientDetailsStep({
         savePreset({ low: l, high: h });
     };
 
-    const percent = (val: number) => ((val - MIN) / (MAX - MIN)) * 100;
-    const leftPct = percent(low);
-    const rightPct = 100 - percent(high);
-
     const fallbackCities = useMemo(
         () => [
             "New York, NY",
@@ -284,38 +281,51 @@ export default function ClientDetailsStep({
         } catch { }
     }, []);
 
+    const fieldCls = "space-y-1.5 md:space-y-1 flex flex-col items-center rounded-2xl md:rounded-xl border border-white/10 bg-black/40 px-3 py-3 md:px-2.5 md:py-2 transition hover:border-white/20";
+    const labelCls = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-semibold capitalize text-white/90 text-center";
+    const triggerCls =
+        "relative h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
+        "data-[placeholder]:text-white/45 " +
+        "[&>svg]:absolute [&>svg]:right-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:text-white/70 [&>svg]:opacity-100 " +
+        "[&_[data-slot=select-value]]:w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center [&_[data-slot=select-value]]:truncate";
+    const contentCls =
+        "w-[var(--radix-select-trigger-width)] rounded-xl max-h-72 overflow-y-auto border-white/10 bg-neutral-900 text-white " +
+        "[&_[data-slot=select-item]]:justify-center [&_[data-slot=select-item]]:text-center [&_[data-slot=select-item]]:pl-8 [&_[data-slot=select-item]]:truncate [&_[data-slot=select-item]]:text-xs [&_[data-slot=select-item]]:capitalize [&_[data-slot=select-item]]:text-white";
+    const sliderCls =
+        "w-full [&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-white/15 [&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-white [&_[data-slot=slider-thumb]]:bg-neutral-900 [&_[data-slot=slider-thumb]]:shadow-lg [&_[data-slot=slider-thumb]]:ring-white/30";
+
     return (
-        <div className="w-full h-full grid place-items-center">
-            <div className="w-full max-w-2xl mx-auto grid gap-2 text-center justify-items-stretch">
-                <div className="w-full">
-                    <label className="mb-1 block text-xs text-white/70 text-center">Estimated budget (USD) <span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
-                    <div className="relative pb-2 pt-3">
-                        <div className="pointer-events-none absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/10" />
-                        <div className="pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/40" style={{ left: `${leftPct}%`, right: `${rightPct}%` }} />
-                        <div className="relative z-10 max-w-xl mx-auto">
-                            <Slider
-                                min={MIN}
-                                max={MAX}
-                                step={STEP}
-                                value={[low, high]}
-                                onValueChange={handleSliderChange}
-                                minStepsBetweenThumbs={Math.ceil(MIN_GAP / STEP)}
-                                aria-label="Budget range"
-                            />
+        <div className="w-full space-y-3 md:space-y-2">
+            <div className="grid grid-cols-2 gap-2.5 md:gap-1.5">
+                <div className={`${fieldCls} col-span-2`}>
+                    <label className={labelCls}><DollarSign className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Budget range</label>
+                    <div className="w-full max-w-md px-1 pt-2">
+                        <Slider
+                            min={MIN}
+                            max={MAX}
+                            step={STEP}
+                            value={[low, high]}
+                            onValueChange={handleSliderChange}
+                            minStepsBetweenThumbs={Math.ceil(MIN_GAP / STEP)}
+                            aria-label="Budget range"
+                            className={sliderCls}
+                        />
+                        <div className="mt-3 flex items-stretch justify-center gap-2">
+                            <div className="flex-1 max-w-[7.5rem] flex flex-col items-center gap-0.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-1.5">
+                                <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">Min</span>
+                                <span className="text-base font-bold leading-none tabular-nums text-white">${low.toLocaleString()}</span>
+                            </div>
+                            <div className="flex-1 max-w-[7.5rem] flex flex-col items-center gap-0.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-1.5">
+                                <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">Max</span>
+                                <span className="text-base font-bold leading-none tabular-nums text-white">${high.toLocaleString()}{high >= MAX ? "+" : ""}</span>
+                            </div>
                         </div>
+                        <p className="mt-1.5 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">USD budget · optional</p>
                     </div>
-                    <div className="mt-1 max-w-xl mx-auto flex items-center justify-between text-xs text-white/60">
-                        <span>${MIN.toLocaleString()}</span>
-                        <span>${low.toLocaleString()} – ${high.toLocaleString()}</span>
-                        <span>${MAX.toLocaleString()}+</span>
-                    </div>
-                    <p className="mt-2 text-xs text-white/45">
-                        Most preferences can be edited later in <span className="underline">Dashboard → Filters</span>. Some core profile settings may be restricted from frequent changes.
-                    </p>
                 </div>
 
-                <div className="w-full">
-                    <label className="mb-2 block text-xs text-white/70 text-center">Your city</label>
+                <div className={`${fieldCls} col-span-2`}>
+                    <label className={labelCls}><MapPin className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />City</label>
                     <Select
                         open={openCity}
                         onOpenChange={setOpenCity}
@@ -325,103 +335,86 @@ export default function ClientDetailsStep({
                             savePreset({ location: val });
                         }}
                     >
-                        <SelectTrigger className="h-9 w-full rounded-xl border border-black/10 bg-white px-4 text-black mx-auto justify-center text-center [&_span]:w-full [&_span]:text-center">
+                        <SelectTrigger className={triggerCls}>
                             <SelectValue placeholder="Choose your city" className="text-center" />
                         </SelectTrigger>
-                        <SelectContent position="popper" side="bottom" align="center" sideOffset={6} avoidCollisions={false} className="max-h-72 overflow-y-auto border-black/10 bg-white text-black text-center">
+                        <SelectContent position="popper" side="bottom" align="center" sideOffset={6} avoidCollisions={false} className={contentCls}>
                             {cities.map((c) => (
-                                <SelectItem key={c} value={c} className="text-black text-center justify-center">
-                                    {c}
-                                </SelectItem>
+                                <SelectItem key={c} value={c} className="text-center justify-center">{c}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
-                    <p className="mt-2 text-xs text-white/45">You can update your city later in <span className="underline">Settings → Profile</span>.</p>
                 </div>
 
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-stretch text-center">
-                    <div className="w-full">
-                        <label className="mb-1 block text-xs text-white/70 text-center">Preferred style<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
-                        <Select
-                            value={prefStyle}
-                            onValueChange={(v) => {
-                                setPrefStyle(v);
-                                emit("style", v);
-                                savePreset({ style: v });
-                            }}
-                        >
-                            <SelectTrigger className="h-9 w-full rounded-xl border border-black/10 bg-white px-4 text-black justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="No preference" className="text-center" />
-                            </SelectTrigger>
-                            <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl max-h-72 overflow-y-auto border-black/10 bg-white text-black text-center">
-                                <SelectItem value="all" className="text-black text-center justify-center">
-                                    No preference
-                                </SelectItem>
-                                {STYLE_OPTIONS.slice(1).map((s) => (
-                                    <SelectItem key={s} value={s} className="text-black text-center justify-center">
-                                        {s}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="w-full">
-                        <label className="mb-1 block text-xs text-white/70 text-center">Availability<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
-                        <Select
-                            value={prefAvail}
-                            onValueChange={(v) => {
-                                setPrefAvail(v);
-                                emit("availability", v);
-                                savePreset({ avail: v });
-                            }}
-                        >
-                            <SelectTrigger className="h-9 w-full rounded-xl border border-black/10 bg-white px-4 text-black justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="No preference" className="text-center" />
-                            </SelectTrigger>
-                            <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl border-black/10 bg-white text-black text-center">
-                                {AVAILABILITY_OPTIONS.map((a) => (
-                                    <SelectItem key={a.value} value={a.value} className="text-black text-center justify-center">
-                                        {a.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className={fieldCls}>
+                    <label className={labelCls}><Brush className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Style</label>
+                    <Select
+                        value={prefStyle}
+                        onValueChange={(v) => {
+                            setPrefStyle(v);
+                            emit("style", v);
+                            savePreset({ style: v });
+                        }}
+                    >
+                        <SelectTrigger className={triggerCls}>
+                            <SelectValue placeholder="No preference" className="text-center" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" align="center" side="bottom" className={contentCls}>
+                            <SelectItem value="all" className="text-center justify-center">No preference</SelectItem>
+                            {STYLE_OPTIONS.slice(1).map((s) => (
+                                <SelectItem key={s} value={s} className="text-center justify-center">{s}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-stretch text-center">
-                    <div className="w-full">
-                        <label className="mb-1 block text-xs text-white/70 text-center">Placement<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
-                        <Select value={client.placement && client.placement !== "" ? client.placement : undefined} onValueChange={(v) => emit("placement", v)}>
-                            <SelectTrigger className="h-9 w-full rounded-xl border border-black/10 bg-white px-4 text-black justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="Select placement" className="text-center" />
-                            </SelectTrigger>
-                            <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl max-h-72 overflow-y-auto border-black/10 bg-white text-black text-center">
-                                {PLACEMENT_OPTIONS.map((p) => (
-                                    <SelectItem key={p} value={p} className="text-black text-center justify-center">
-                                        {p}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className={fieldCls}>
+                    <label className={labelCls}><Clock className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Availability</label>
+                    <Select
+                        value={prefAvail}
+                        onValueChange={(v) => {
+                            setPrefAvail(v);
+                            emit("availability", v);
+                            savePreset({ avail: v });
+                        }}
+                    >
+                        <SelectTrigger className={triggerCls}>
+                            <SelectValue placeholder="No preference" className="text-center" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" align="center" side="bottom" className={contentCls}>
+                            {AVAILABILITY_OPTIONS.map((a) => (
+                                <SelectItem key={a.value} value={a.value} className="text-center justify-center">{a.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                    <div className="w-full">
-                        <label className="mb-1 block text-xs text-white/70 text-center">Approximate size<span className="block text-xs text-white/45 mt-0.5">(optional)</span></label>
-                        <Select value={client.size && client.size !== "" ? client.size : undefined} onValueChange={(v) => emit("size", v)}>
-                            <SelectTrigger className="h-9 w-full rounded-xl border border-black/10 bg-white px-4 text-black justify-center text-center [&_span]:w-full [&_span]:text-center">
-                                <SelectValue placeholder="Select size" className="text-center" />
-                            </SelectTrigger>
-                            <SelectContent position="popper" align="center" side="bottom" className="rounded-2xl max-h-72 overflow-y-auto border-black/10 bg-white text-black text-center">
-                                {SIZE_OPTIONS.map((s) => (
-                                    <SelectItem key={s.value} value={s.value} className="text-black text-center justify-center">
-                                        {s.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className={fieldCls}>
+                    <label className={labelCls}><Crosshair className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Placement</label>
+                    <Select value={client.placement && client.placement !== "" ? client.placement : undefined} onValueChange={(v) => emit("placement", v)}>
+                        <SelectTrigger className={triggerCls}>
+                            <SelectValue placeholder="Placement" className="text-center" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" align="center" side="bottom" className={contentCls}>
+                            {PLACEMENT_OPTIONS.map((p) => (
+                                <SelectItem key={p} value={p} className="text-center justify-center">{p}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className={fieldCls}>
+                    <label className={labelCls}><Ruler className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Size</label>
+                    <Select value={client.size && client.size !== "" ? client.size : undefined} onValueChange={(v) => emit("size", v)}>
+                        <SelectTrigger className={triggerCls}>
+                            <SelectValue placeholder="Size" className="text-center" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" align="center" side="bottom" className={contentCls}>
+                            {SIZE_OPTIONS.map((s) => (
+                                <SelectItem key={s.value} value={s.value} className="text-center justify-center">{s.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
         </div>

@@ -103,14 +103,14 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
       <div className={`rounded-2xl border p-6 ${isLightTheme ? "border-black/20 bg-white" : "border-white/20 bg-card"}`}>
         {isPaid ? (
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className={`p-3 rounded-full ${isLightTheme ? "bg-green-50" : "bg-green-900/20"}`}>
-              <CheckCircle2 className={`w-8 h-8 ${isLightTheme ? "text-green-600" : "text-green-400"}`} />
+            <div className={`p-3 rounded-full ${isLightTheme ? "bg-elevated" : "bg-white/20"}`}>
+              <CheckCircle2 className={`w-8 h-8 ${isLightTheme ? "text-app" : "text-app"}`} />
             </div>
             <div>
               <h3 className={`text-xl font-semibold mb-2 ${isLightTheme ? "text-black" : "text-app"}`}>
                 Deposit Paid
               </h3>
-              <p className={`text-sm ${isLightTheme ? "text-black/70" : "text-app/70"}`}>
+              <p className={`text-sm ${isLightTheme ? "text-black/70" : "text-white/70"}`}>
                 Your deposit of {formatCurrency(depositPaid)} has been successfully paid.
               </p>
             </div>
@@ -134,7 +134,7 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
               </h3>
               <div className={`space-y-3 mb-4 p-4 rounded-lg ${isLightTheme ? "bg-black/5" : "bg-white/5"}`}>
                 <div className="flex justify-between items-center">
-                  <span className={`text-sm ${isLightTheme ? "text-black/70" : "text-app/70"}`}>
+                  <span className={`text-sm ${isLightTheme ? "text-black/70" : "text-white/70"}`}>
                     Appointment Date
                   </span>
                   <span className={`text-sm font-medium ${isLightTheme ? "text-black" : "text-app"}`}>
@@ -142,7 +142,7 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className={`text-sm ${isLightTheme ? "text-black/70" : "text-app/70"}`}>
+                  <span className={`text-sm ${isLightTheme ? "text-black/70" : "text-white/70"}`}>
                     Time
                   </span>
                   <span className={`text-sm font-medium ${isLightTheme ? "text-black" : "text-app"}`}>
@@ -151,7 +151,7 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
                 </div>
                 {artistName && (
                   <div className="flex justify-between items-center">
-                    <span className={`text-sm ${isLightTheme ? "text-black/70" : "text-app/70"}`}>
+                    <span className={`text-sm ${isLightTheme ? "text-black/70" : "text-white/70"}`}>
                       Artist
                     </span>
                     <span className={`text-sm font-medium ${isLightTheme ? "text-black" : "text-app"}`}>
@@ -161,14 +161,14 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
                 )}
               </div>
 
-              <div className={`p-4 rounded-lg border ${isLightTheme ? "border-black/20 bg-amber-50" : "border-amber-500/30 bg-amber-900/10"}`}>
+              <div className={`p-4 rounded-lg border ${isLightTheme ? "border-black/20 bg-elevated" : "border-white/30 bg-white/10"}`}>
                 <div className="flex items-start gap-3">
-                  <AlertCircle className={`w-5 h-5 mt-0.5 ${isLightTheme ? "text-amber-600" : "text-amber-400"}`} />
+                  <AlertCircle className={`w-5 h-5 mt-0.5 ${isLightTheme ? "text-app" : "text-app"}`} />
                   <div className="flex-1">
-                    <p className={`text-sm font-medium mb-1 ${isLightTheme ? "text-amber-900" : "text-amber-100"}`}>
+                    <p className={`text-sm font-medium mb-1 ${isLightTheme ? "text-app" : "text-app"}`}>
                       Deposit Required
                     </p>
-                    <p className={`text-xs ${isLightTheme ? "text-amber-800" : "text-amber-200"}`}>
+                    <p className={`text-xs ${isLightTheme ? "text-app" : "text-app"}`}>
                       A non-refundable deposit is required to secure your appointment. This deposit will be applied to your final cost.
                     </p>
                   </div>
@@ -178,7 +178,7 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
 
             <div className={`mb-6 p-4 rounded-lg border ${isLightTheme ? "border-black/20 bg-black/5" : "border-white/20 bg-white/5"}`}>
               <div className="flex justify-between items-center mb-2">
-                <span className={`text-base ${isLightTheme ? "text-black/80" : "text-app/80"}`}>
+                <span className={`text-base ${isLightTheme ? "text-black/80" : "text-white/80"}`}>
                   Deposit Amount
                 </span>
                 <span className={`text-2xl font-bold ${isLightTheme ? "text-black" : "text-app"}`}>
@@ -186,15 +186,15 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
                 </span>
               </div>
               {depositPaid > 0 && (
-                <div className={`text-xs ${isLightTheme ? "text-black/60" : "text-app/60"}`}>
+                <div className={`text-xs ${isLightTheme ? "text-black/60" : "text-white/60"}`}>
                   Previously paid: {formatCurrency(depositPaid)} of {formatCurrency(depositRequired)}
                 </div>
               )}
             </div>
 
             {error && (
-              <div className={`mb-4 p-3 rounded-lg border ${isLightTheme ? "border-red-200 bg-red-50" : "border-red-500/30 bg-red-900/20"}`}>
-                <p className={`text-sm ${isLightTheme ? "text-red-800" : "text-red-200"}`}>
+              <div className={`mb-4 p-3 rounded-lg border ${isLightTheme ? "border-app bg-elevated" : "border-white/30 bg-white/20"}`}>
+                <p className={`text-sm ${isLightTheme ? "text-app" : "text-app"}`}>
                   {error}
                 </p>
               </div>
@@ -238,7 +238,7 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
               </Button>
             </div>
 
-            <p className={`mt-4 text-xs text-center ${isLightTheme ? "text-black/50" : "text-app/50"}`}>
+            <p className={`mt-4 text-xs text-center ${isLightTheme ? "text-black/50" : "text-white/50"}`}>
               You will be redirected to a secure payment page to complete your deposit payment.
             </p>
           </>

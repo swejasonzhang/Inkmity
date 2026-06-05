@@ -67,7 +67,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
         {(fullScreen ? images.slice(0, 3) : images).map((src, i) => (
           <div
             key={`${src}-${i}`}
-            className="relative aspect-square w-full overflow-hidden rounded-lg border shadow-[0_6px_16px_-8px_rgba(0,0,0,0.5)]"
+            className="relative aspect-[4/5] w-full overflow-hidden rounded-lg border shadow-[0_6px_16px_-8px_rgba(0,0,0,0.5)]"
             style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
           >
             <img
@@ -151,7 +151,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               height: "clamp(8.5rem, 26vh, 15rem)",
               background: "var(--elevated)"
             } : {
-              height: 'clamp(9.5rem, 14vh + 2.5vw, 16rem)',
+              aspectRatio: '16 / 10',
+              maxHeight: 'clamp(9.5rem, 14vh + 2.5vw, 16rem)',
               background: "var(--elevated)"
             } as React.CSSProperties}
           >
@@ -263,7 +264,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
                   title={isOnline ? "Currently active" : lastActiveText}
                 >
                   <span
-                    className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-emerald-500" : ""}`}
+                    className={`h-1.5 w-1.5 rounded-full ${isOnline ? "bg-white" : ""}`}
                     style={isOnline ? undefined : { background: "color-mix(in srgb, var(--fg) 40%, transparent)" }}
                   />
                   {isOnline ? "Online" : lastActiveText}

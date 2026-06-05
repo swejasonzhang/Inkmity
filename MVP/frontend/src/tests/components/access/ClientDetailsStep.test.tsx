@@ -23,16 +23,16 @@ describe("ClientDetailsStep", () => {
 
   test("should render client details form", () => {
     const { container } = render(<ClientDetailsStep {...defaultProps} />);
-    const budgetText = screen.queryByText(/Budget/i) || container.querySelector('label');
+    const budgetText = screen.queryByText(/Budget range/i) || container.querySelector('label');
     expect(budgetText).toBeInTheDocument();
-    const locationLabels = screen.queryAllByText(/Your city/i);
+    const locationLabels = screen.queryAllByText(/^City$/i);
     const locationText = locationLabels.length > 0 ? locationLabels[0] : container.querySelector('select');
     expect(locationText).toBeInTheDocument();
   });
 
   test("should display style selector", () => {
     render(<ClientDetailsStep {...defaultProps} />);
-    expect(screen.getByText(/Preferred style/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Style$/i)).toBeInTheDocument();
   });
 
   test("should display placement selector", () => {

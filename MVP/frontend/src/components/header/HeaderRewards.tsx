@@ -18,10 +18,12 @@ function pctLabel(p: number) {
 const SHIMMER_MS = 2000;
 
 export default function HeaderRewards() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [data, setData] = useState<RewardsSummary | null>(null);
   const [ready, setReady] = useState(false);
   const [minElapsed, setMinElapsed] = useState(false);
+
+  const authed = isLoaded && isSignedIn;
 
   const load = useCallback(async () => {
     try {
@@ -34,16 +36,23 @@ export default function HeaderRewards() {
   }, [getToken]);
 
   useEffect(() => {
+    if (!authed) return;
     load();
     const onRefresh = () => load();
     window.addEventListener("rewards:refresh", onRefresh);
     return () => window.removeEventListener("rewards:refresh", onRefresh);
-  }, [load]);
+  }, [load, authed]);
 
   useEffect(() => {
+    if (!authed) return;
     const t = window.setTimeout(() => setMinElapsed(true), SHIMMER_MS);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [authed]);
+
+  // Never render anything (not even the shimmer) until Clerk confirms a real
+  // session. This prevents the tier pill from flashing on refresh when we don't
+  // actually have an account yet (stale cached sign-in state).
+  if (!authed) return null;
 
   if (!ready || !minElapsed) {
     return (

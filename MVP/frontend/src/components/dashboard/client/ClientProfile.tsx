@@ -964,14 +964,14 @@ export default function ClientProfile() {
                                                     referenceInputRef.current?.click();
                                                 }}
                                                 disabled={uploading}
-                                                className="bg-blue-500/80 hover:bg-blue-500 rounded-full p-2 transition-colors"
+                                                className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
                                                 title="Replace image"
                                             >
                                                 <Camera className="h-4 w-4 text-white" />
                                             </button>
                                             <button
                                                 onClick={() => handleRemoveReference(index)}
-                                                className="bg-red-500/80 hover:bg-red-500 rounded-full p-2 transition-colors"
+                                                className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
                                                 title="Delete image"
                                             >
                                                 <Trash2 className="h-4 w-4 text-white" />
@@ -999,7 +999,7 @@ export default function ClientProfile() {
                         </div>
                         <div className="flex flex-col gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
                             {usernameNotice && (
-                                <p className="text-xs text-amber-400 text-center">{usernameNotice}</p>
+                                <p className="text-xs text-app text-center">{usernameNotice}</p>
                             )}
                             <div className="flex gap-3 justify-end">
                                 <Button
