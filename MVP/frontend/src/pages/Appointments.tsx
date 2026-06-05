@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AftercareInstructions from "@/components/dashboard/shared/AftercareInstructions";
-import RewardsPanel from "@/components/dashboard/client/RewardsPanel";
 import LazyReveal from "@/components/ui/LazyReveal";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
 
@@ -533,12 +532,6 @@ export default function Appointments() {
             Manage your consultation and tattoo session requests
           </p>
         </div>
-
-        {isClient && (
-          <div className="max-w-2xl mx-auto w-full mb-4 sm:mb-6">
-            <RewardsPanel />
-          </div>
-        )}
 
         <LazyReveal
           loading={loading}

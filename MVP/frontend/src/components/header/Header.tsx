@@ -11,7 +11,7 @@ import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityStatus } from "./VisibilityDropdown";
 import HeaderRewards from "./HeaderRewards";
-import { API_URL } from "@/api";
+import { API_URL, updateVisibility } from "@/api";
 import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername, clearCachedUsername } from "@/lib/roleCache";
 
 export type HeaderProps = {
@@ -71,8 +71,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const [userLabel, setUserLabel] = useState<string>(() => getCachedUsername() ?? "User");
   const [userRole, setUserRole] = useState<"client" | "artist" | null>(() => getCachedRole());
-  const [isOnline, setIsOnline] = useState<boolean>(false);
   const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
+  const idleTimerRef = useRef<number | null>(null);
+  const autoAwayRef = useRef<boolean>(false);
   const [statusReady, setStatusReady] = useState(false);
   const [userRefreshTick, setUserRefreshTick] = useState(0);
   const [isOnboarded, setIsOnboarded] = useState<boolean>(() => !!getCachedUsername());
@@ -173,19 +174,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) {
-      setIsOnline(false);
       return;
     }
 
     const socket = getSocket();
-    const updateOnlineStatus = () => {
-      setIsOnline(socket.connected);
-    };
-    const handleDisconnect = () => setIsOnline(false);
-
-    updateOnlineStatus();
-    socket.on("connect", updateOnlineStatus);
-    socket.on("disconnect", handleDisconnect);
 
     const handleVisibilityUpdate = (data: { userId: string; visibility: VisibilityStatus }) => {
       if (data.userId === user.id) {
@@ -203,12 +195,59 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     }
 
     return () => {
-      socket.off("connect", updateOnlineStatus);
-      socket.off("disconnect", handleDisconnect);
       socket.off("user:visibility:updated", handleVisibilityUpdate);
       socket.off("user:visibility:changed", handleVisibilityUpdate);
     };
   }, [isLoaded, isSignedIn, user?.id, getToken]);
+
+  // Always reflect the user as online; auto-mark "away" after 5 minutes idle,
+  // and restore to online on the next interaction.
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    const IDLE_MS = 5 * 60 * 1000;
+    let lastReset = 0;
+
+    const setVis = async (v: VisibilityStatus) => {
+      try {
+        const token = await getToken();
+        await updateVisibility(v, token ?? undefined);
+      } catch {
+        /* non-blocking */
+      }
+    };
+
+    const goAway = () => {
+      setUserVisibility((prev) => {
+        if (prev === "invisible" || prev === "away") return prev;
+        autoAwayRef.current = true;
+        void setVis("away");
+        return "away";
+      });
+    };
+
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - lastReset > 1000) {
+        lastReset = now;
+        if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = window.setTimeout(goAway, IDLE_MS);
+      }
+      if (autoAwayRef.current) {
+        autoAwayRef.current = false;
+        setUserVisibility("online");
+        void setVis("online");
+      }
+    };
+
+    const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "wheel"];
+    events.forEach((e) => window.addEventListener(e, onActivity, { passive: true }));
+    onActivity();
+
+    return () => {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      events.forEach((e) => window.removeEventListener(e, onActivity));
+    };
+  }, [isLoaded, isSignedIn, getToken]);
 
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
@@ -217,7 +256,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   };
 
   const getVisibilityDisplay = () => {
-    const displayStatus = isOnline ? userVisibility : "invisible";
+    const displayStatus = userVisibility;
     if (displayStatus === "online") return { icon: Circle, label: "Online", color: "text-emerald-500", dot: "bg-emerald-500" };
     if (displayStatus === "away") return { icon: Clock, label: "Away", color: "text-amber-500", dot: "bg-amber-500" };
     return { icon: EyeOff, label: "Invisible", color: "text-zinc-400", dot: "bg-zinc-400" };
@@ -391,19 +430,19 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="flex w-full relative items-center justify-between z-[100] px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px' }}>
-        <div className="flex-shrink-0 relative z-10">
+      <header className="grid w-full relative items-center z-[100] px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}>
+        <div className="col-start-1 justify-self-start flex-shrink-0 relative z-10">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
             <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 sm:h-20 lg:h-24 w-auto object-contain flex-shrink-0" draggable={false} />
             <span className="sr-only">Inkmity</span>
           </Link>
         </div>
 
-        <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-hidden">
+        <div className="col-start-2 justify-self-center hidden md:flex justify-center overflow-hidden min-w-0">
           <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
         </div>
 
-        <div className="flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
+        <div className="col-start-3 justify-self-end flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
             <button type="button" aria-label="Open menu" className={mobileBtnCls} onClick={() => setMobileMenuOpen(true)}>
               <Menu strokeWidth={1.75} className={mobileIconCls} />
             </button>
@@ -425,14 +464,15 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   <span className="mr-2.5 text-lg lg:text-xl leading-none flex-shrink-0">✦</span>
                   <div className="flex flex-col items-start leading-tight min-w-0 flex-1">
                     <span className="text-[10px] lg:text-[11px] opacity-60 leading-none">Welcome back,</span>
-                    <span className="font-bold truncate max-w-full text-[13px] lg:text-[16px] leading-tight">{userLabel || "User"}</span>
-                  </div>
-                  {!statusReady ? (
-                    <span className="ml-2 flex items-center gap-1.5 flex-shrink-0">
-                      <span className="ink-shimmer h-2 w-2 rounded-full" />
-                      <span className="ink-shimmer hidden lg:inline h-3 w-12 rounded" />
+                    <span className="flex items-center h-[18px] lg:h-[22px] w-16 lg:w-20">
+                      {!statusReady ? (
+                        <span className="ink-shimmer h-3 w-full rounded" />
+                      ) : (
+                        <span className="font-bold truncate w-full text-[13px] lg:text-[16px] leading-tight">{userLabel || "User"}</span>
+                      )}
                     </span>
-                  ) : (() => {
+                  </div>
+                  {(() => {
                     const visibility = getVisibilityDisplay();
                     return (
                       <span className="ml-2 flex items-center gap-1.5 flex-shrink-0">

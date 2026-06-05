@@ -337,7 +337,7 @@ const ArtistFilter: React.FC<Props> = ({
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:gap-2.5 w-full max-w-full min-w-0" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
             <div className={clsx("relative col-span-2 sm:col-span-1 min-w-0", SEARCH_W)}>
               <Search
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--fg)]"
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-app"
                 aria-hidden
               />
               <Input

@@ -78,7 +78,8 @@ html.ink-no-scroll .ink-page-scroll {
 }
 
 .ink-scope[data-ink="light"],
-.ink-scope.ink-light {
+.ink-scope.ink-light,
+html.ink-light {
   --bg: #ffffff !important;
   --fg: #111111 !important;
   --muted: rgba(17, 17, 17, 0.56) !important;
@@ -184,6 +185,54 @@ html.ink-no-scroll .ink-page-scroll {
 
 .ink-scope [data-slot="select-separator"] {
   background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* --- Dashboard inputs & Radix selects follow the active theme (override the
+   forced black/white defaults above; scoped to the dashboard so public/login/
+   onboarding pages keep their existing styling). --- */
+#dashboard-scope input,
+#dashboard-scope textarea,
+#dashboard-scope select:not([multiple]),
+#dashboard-scope [data-slot="select-trigger"] {
+  color: var(--fg) !important;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%),
+    color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%)
+  ) !important;
+  border-color: var(--border) !important;
+}
+#dashboard-scope [data-slot="select-value"] {
+  color: var(--fg) !important;
+  background: transparent !important;
+}
+#dashboard-scope input::placeholder,
+#dashboard-scope textarea::placeholder {
+  color: var(--muted) !important;
+  opacity: 1;
+}
+#dashboard-scope [data-slot="select-trigger"][data-placeholder],
+#dashboard-scope [data-slot="select-value"][data-placeholder],
+#dashboard-scope [data-slot="select-label"] {
+  color: var(--muted) !important;
+}
+
+/* Portaled select popups render at <body> (outside the scope); theme them via
+   the <html> mirror so they only flip on the dashboard, not on onboarding. */
+html[data-ink-themed] [data-slot="select-content"],
+html[data-ink-themed] [data-slot="select-content"] [data-slot="select-scroll-up-button"],
+html[data-ink-themed] [data-slot="select-content"] [data-slot="select-scroll-down-button"] {
+  background-color: var(--card) !important;
+  color: var(--fg) !important;
+  border-color: var(--border) !important;
+}
+html[data-ink-themed] [data-slot="select-item"] {
+  color: var(--fg) !important;
+}
+html[data-ink-themed] [data-slot="select-item"]:hover,
+html[data-ink-themed] [data-slot="select-item"][data-highlighted] {
+  background-color: var(--elevated) !important;
+  color: var(--fg) !important;
 }
 
 .ink-scope.ink-theming {

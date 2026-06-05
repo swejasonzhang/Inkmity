@@ -110,9 +110,10 @@ export default function FloatingBar({
     pendingRequestIds,
   });
 
+  const gutter = "clamp(12px, 1.5vw, 24px)";
   const pad = {
-    left: isMdUp ? "calc(12px + env(safe-area-inset-left, 0px))" : "calc(6px + env(safe-area-inset-left, 0px))",
-    right: isMdUp ? "calc(12px + env(safe-area-inset-right, 0px))" : "calc(6px + env(safe-area-inset-right, 0px))",
+    left: `calc(${gutter} + env(safe-area-inset-left, 0px))`,
+    right: `calc(${gutter} + env(safe-area-inset-right, 0px))`,
     bottom: `calc(max(${vvBottom}px, ${isMdUp ? 20 : 10}px) + env(safe-area-inset-bottom, 0px))`,
   };
 
