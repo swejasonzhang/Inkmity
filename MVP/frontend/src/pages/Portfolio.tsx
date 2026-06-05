@@ -228,7 +228,7 @@ export default function Portfolio() {
                     type="button"
                     onClick={() => removeAt(i)}
                     title="Remove"
-                    className="grid place-items-center h-7 w-7 rounded-full bg-red-500/90 text-white hover:bg-red-500 transition"
+                    className="grid place-items-center h-7 w-7 rounded-full bg-white/90 text-white hover:bg-neutral-700 transition"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -246,7 +246,7 @@ export default function Portfolio() {
 
 const EmptyState: React.FC<{ title: string; body: string; action?: React.ReactNode }> = ({ title, body, action }) => (
   <div className="flex flex-col items-center justify-center text-center gap-3 rounded-2xl border border-app bg-card px-6 py-16">
-    <span className="grid place-items-center h-12 w-12 rounded-2xl border border-app/40 bg-elevated">
+    <span className="grid place-items-center h-12 w-12 rounded-2xl border border-white/40 bg-elevated">
       <ImageIcon className="h-5 w-5 text-subtle" />
     </span>
     <h2 className="text-base font-bold text-app">{title}</h2>

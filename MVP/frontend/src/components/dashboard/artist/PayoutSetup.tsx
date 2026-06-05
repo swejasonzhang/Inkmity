@@ -66,7 +66,7 @@ export default function PayoutSetup() {
     return (
       <div className="rounded-xl border border-app bg-elevated px-3 sm:px-4 py-2.5 flex items-center justify-between gap-3 flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+          <CheckCircle2 className="h-4 w-4 text-app shrink-0" />
           <span className="text-[11px] sm:text-xs text-app truncate">
             Payouts active — you can accept bookings.
             {!status?.payoutsEnabled && " (payout details pending)"}
@@ -81,17 +81,17 @@ export default function PayoutSetup() {
   }
 
   return (
-    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
+    <div className="rounded-xl border border-app bg-card px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
       <div className="flex items-start gap-2 min-w-0">
-        <Wallet className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+        <Wallet className="h-4 w-4 text-app mt-0.5 shrink-0" />
         <div className="min-w-0">
           <p className="text-xs sm:text-sm font-semibold text-app">Finish payment setup to accept bookings</p>
           <p className="text-[11px] sm:text-xs text-muted">
             Connect your bank with Stripe so clients can pay deposits and you get paid out.
           </p>
           {error && (
-            <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
-              <AlertCircle className="h-3 w-3" /> {error}
+            <p className="text-[11px] text-white/80 mt-1 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3 shrink-0" /> {error}
             </p>
           )}
         </div>

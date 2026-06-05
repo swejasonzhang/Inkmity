@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Maximize2, MapPin, Clock, Star, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
 
 export type ArtistWithGroups = {
@@ -54,7 +54,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
     const InfoChip: React.FC<{ icon?: React.ComponentType<{ className?: string }>; text: string }> = ({ icon: Icon, text }) => (
         <span
-            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs sm:text-sm font-medium whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs sm:text-sm font-medium whitespace-nowrap capitalize"
             style={{
                 borderColor: "var(--border)",
                 background: "linear-gradient(135deg, color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%), color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%))",
@@ -79,7 +79,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                         <button
                             key={`${src}-${i}`}
                             onClick={() => openZoom(images, i, label)}
-                            className="group relative w-full aspect-[4/3] rounded-2xl border shadow-sm overflow-hidden ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="group relative w-full aspect-[5/4] rounded-2xl border shadow-sm overflow-hidden ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
                             aria-label={`Open ${imgAltPrefix} ${i + 1}`}
                         >
@@ -187,12 +187,12 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
             <div className="mx-auto max-w-screen-2xl px-1.5 sm:px-2.5 pt-[10px] pb-6 space-y-4 sm:space-y-5">
                 <section className="w-full">
                     <Card className="w-full shadow-none overflow-hidden" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", paddingTop: 0, paddingBottom: 0, gap: 0 }}>
-                        <div className="relative w-full" style={{ height: "clamp(4.25rem, 10vh, 6.5rem)" }}>
+                        <div className="relative w-full overflow-hidden" style={{ background: "var(--elevated)" }}>
                             {bgOk && artist.coverImage ? (
                                 <img
                                     src={artist.coverImage}
                                     alt={`${artist.username} cover`}
-                                    className="absolute inset-0 h-full w-full object-cover"
+                                    className="absolute inset-0 h-full w-full object-cover object-center"
                                     loading="lazy"
                                     referrerPolicy="no-referrer"
                                     onError={() => setBgOk(false)}
@@ -200,44 +200,44 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                             ) : (
                                 <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 82%, var(--fg) 18%), color-mix(in srgb, var(--bg) 70%, var(--fg) 30%))" }} />
                             )}
-                            <div className="absolute inset-x-0 bottom-0 h-2/3" style={{ background: "linear-gradient(to top, var(--card), transparent)" }} />
+                            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, color-mix(in srgb, var(--card) 18%, transparent) 0%, transparent 30%, color-mix(in srgb, var(--card) 80%, transparent) 72%, var(--card) 100%)" }} />
+
+                            <div className="relative px-3 sm:px-4 pb-3 pt-[clamp(2.75rem,9vh,5rem)] flex flex-col items-center text-center">
+                                {artist.avatarUrl ? (
+                                    <img
+                                        src={artist.avatarUrl}
+                                        alt={`${artist.username} profile picture`}
+                                        className="h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 rounded-full object-cover ring-4"
+                                        style={{ ['--tw-ring-color' as any]: "var(--card)", boxShadow: "0 10px 26px -10px rgba(0,0,0,0.5)" }}
+                                        loading="eager"
+                                        decoding="async"
+                                        referrerPolicy="no-referrer"
+                                    />
+                                ) : (
+                                    <div
+                                        className="h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 rounded-full grid place-items-center ring-4 text-2xl font-semibold"
+                                        style={{ ['--tw-ring-color' as any]: "var(--card)", backgroundColor: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)", boxShadow: "0 10px 26px -10px rgba(0,0,0,0.5)" }}
+                                        aria-label={`${artist.username} profile placeholder`}
+                                    >
+                                        {initials}
+                                    </div>
+                                )}
+                                <h2 className="mt-1.5 text-xl sm:text-2xl font-extrabold tracking-tight" style={{ color: "var(--fg)" }}>{artist.username}</h2>
+
+                                <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
+                                    {hasRating && <InfoChip icon={Star} text={`${ratingValue.toFixed(1)}${artist.reviewsCount ? ` (${artist.reviewsCount})` : ""}`} />}
+                                    {loc && <InfoChip icon={MapPin} text={loc} />}
+                                    {years && <InfoChip icon={Clock} text={years} />}
+                                    {totalWorks > 0 && <InfoChip icon={Images} text={`${totalWorks} works`} />}
+                                    {stylesClean.map((s) => <InfoChip key={s} text={s} />)}
+                                </div>
+                            </div>
                         </div>
 
-                        <CardContent className="relative px-3 sm:px-4 pb-3 -mt-10 flex flex-col items-center text-center">
-                            {artist.avatarUrl ? (
-                                <img
-                                    src={artist.avatarUrl}
-                                    alt={`${artist.username} profile picture`}
-                                    className="h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 rounded-full object-cover ring-4"
-                                    style={{ ['--tw-ring-color' as any]: "var(--card)", boxShadow: "0 10px 26px -10px rgba(0,0,0,0.5)" }}
-                                    loading="eager"
-                                    decoding="async"
-                                    referrerPolicy="no-referrer"
-                                />
-                            ) : (
-                                <div
-                                    className="h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 rounded-full grid place-items-center ring-4 text-2xl font-semibold"
-                                    style={{ ['--tw-ring-color' as any]: "var(--card)", backgroundColor: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)", boxShadow: "0 10px 26px -10px rgba(0,0,0,0.5)" }}
-                                    aria-label={`${artist.username} profile placeholder`}
-                                >
-                                    {initials}
-                                </div>
-                            )}
-                            <h2 className="mt-1.5 text-xl sm:text-2xl font-extrabold tracking-tight" style={{ color: "var(--fg)" }}>{artist.username}</h2>
-
-                            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
-                                {hasRating && <InfoChip icon={Star} text={`${ratingValue.toFixed(1)}${artist.reviewsCount ? ` (${artist.reviewsCount})` : ""}`} />}
-                                {loc && <InfoChip icon={MapPin} text={loc} />}
-                                {years && <InfoChip icon={Clock} text={years} />}
-                                {totalWorks > 0 && <InfoChip icon={Images} text={`${totalWorks} works`} />}
-                                {stylesClean.map((s) => <InfoChip key={s} text={s} />)}
-                            </div>
-
-                            <Separator className="mt-2 mb-0 w-auto -mx-3 sm:-mx-4 self-stretch" style={{ background: "color-mix(in srgb, var(--fg) 12%, transparent)" }} />
-                            <p className="mx-auto max-w-2xl text-sm leading-6 text-center px-3 sm:px-6 py-2" style={{ color: "color-mix(in srgb, var(--fg) 82%, transparent)" }}>
-                                {bioText}
-                            </p>
-                        </CardContent>
+                        <Separator className="w-full" style={{ background: "color-mix(in srgb, var(--fg) 12%, transparent)" }} />
+                        <p className="mx-auto max-w-2xl text-sm leading-6 text-center px-3 sm:px-6 py-2" style={{ color: "color-mix(in srgb, var(--fg) 82%, transparent)" }}>
+                            {bioText}
+                        </p>
                     </Card>
                 </section>
 

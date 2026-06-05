@@ -53,13 +53,13 @@ export default function AppointmentHealthInstructions({ open, onContinue }: Prop
         <div className="space-y-6">
           <div>
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-app" />
               What to Do
             </h3>
             <ul className="space-y-2">
               {doItems.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-app mt-0.5 flex-shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}
@@ -68,22 +68,22 @@ export default function AppointmentHealthInstructions({ open, onContinue }: Prop
 
           <div>
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
+              <XCircle className="h-5 w-5 text-app" />
               What NOT to Do
             </h3>
             <ul className="space-y-2">
               {dontItems.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-2 text-sm">
-                  <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <XCircle className="h-4 w-4 text-app mt-0.5 flex-shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+          <div className="bg-white/10 border border-white/30 rounded-lg p-4">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="h-5 w-5 text-app mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-semibold text-sm mb-1">Important Reminder</p>
                 <p className="text-sm">

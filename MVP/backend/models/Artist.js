@@ -22,6 +22,7 @@ const ArtistSchema = new Schema(
       default: "rare",
     },
     baseRate: { type: Number, default: 0 },
+    baseRateMax: { type: Number, default: 0 },
     portfolioImages: { type: [String], default: [] },
     coverImage: { type: String, default: "" },
     restrictedPlacements: { type: [String], default: [] },

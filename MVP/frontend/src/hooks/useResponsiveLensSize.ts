@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
 const getLensSize = (width: number) => {
-  if (width < 480) return 80;
-  if (width < 768) return 100;
-  if (width < 1024) return 120;
-  return 150;
+  if (width < 480) return 56;
+  if (width < 768) return 68;
+  if (width < 1024) return 84;
+  return 104;
 };
 
 export default function useResponsiveLensSize() {

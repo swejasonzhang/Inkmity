@@ -544,8 +544,8 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           </button>
           <div className="w-full max-w-[1100px] mx-auto px-6 pt-3 relative flex flex-col items-center">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-center w-full px-12">{artist.username}</h2>
-            <Separator className="mt-1.5 w-full" style={{ background: "color-mix(in srgb, var(--fg) 12%, transparent)" }} />
           </div>
+          <Separator className="mt-1.5 w-full" style={{ background: "color-mix(in srgb, var(--fg) 12%, transparent)" }} />
 
           <div className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingTop: "env(safe-area-inset-top)" }}>
             <div className="mx-auto w-full max-w-[1200px] px-1.5 sm:px-2.5">

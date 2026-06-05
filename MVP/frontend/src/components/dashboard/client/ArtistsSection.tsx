@@ -440,7 +440,7 @@ export default function ArtistsSection({
                             <>
                                 <div
                                     ref={mobileListRef}
-                                    className="h-full w-full snap-y snap-mandatory overscroll-contain"
+                                    className="h-full min-h-0 w-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
                                     style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}
                                     onScroll={handleMobileScroll}
                                     onTouchStart={handleTouchStart}

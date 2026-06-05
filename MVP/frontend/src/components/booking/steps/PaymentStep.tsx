@@ -256,8 +256,8 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       <div className="space-y-6">
         <Card className="p-6 space-y-4">
           <div className="flex flex-col items-center text-center gap-3">
-            <div className="rounded-full bg-green-500/10 p-4">
-              <CreditCard className="h-8 w-8 text-green-600" />
+            <div className="rounded-full bg-white/10 p-4">
+              <CreditCard className="h-8 w-8 text-app" />
             </div>
             <h3 className="text-lg font-semibold">Booking Confirmed!</h3>
             <p className="text-sm text-muted-foreground">
@@ -384,10 +384,10 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+            <div className="mt-4 p-3 bg-white/10 border border-white/20 rounded-md">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                <div className="text-xs text-yellow-800 dark:text-yellow-200">
+                <AlertCircle className="h-4 w-4 text-app mt-0.5" />
+                <div className="text-xs text-app dark:text-app">
                   <p className="font-medium mb-1">Deposit Policy</p>
                   <p>
                     Deposits are non-refundable and will be applied to your final cost.

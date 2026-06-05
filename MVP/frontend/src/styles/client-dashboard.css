@@ -3,7 +3,8 @@
 }
 
 .client-dashboard-messages {
-  height: 800px;
+  height: 100%;
+  min-height: 0;
 }
 
 .client-dashboard-assistant {

@@ -83,10 +83,10 @@ export default function CalendarView({
     };
 
     const dotColor = (status: string, startDate: Date): string => {
-        if (status === "cancelled" || status === "no-show" || status === "denied") return "bg-red-400";
-        if (status === "pending") return "bg-amber-400";
-        if (isPastDay(startDate)) return "bg-muted-foreground/50";
-        return "bg-emerald-400";
+        if (status === "cancelled" || status === "no-show" || status === "denied") return "bg-white/35";
+        if (status === "pending") return "bg-white/60";
+        if (isPastDay(startDate)) return "bg-white/35";
+        return "bg-white";
     };
 
     const changeMonth = (delta: number) =>
@@ -195,7 +195,7 @@ export default function CalendarView({
                                     className={[
                                         "grid place-items-center text-[10px] sm:text-xs font-medium leading-none mt-0.5",
                                         isToday
-                                            ? "h-5 w-5 rounded-full bg-app text-[color:var(--bg)] font-bold"
+                                            ? "h-5 w-5 rounded-full bg-white text-black font-bold"
                                             : "text-app",
                                     ].join(" ")}
                                 >
@@ -223,9 +223,9 @@ export default function CalendarView({
                 </div>
 
                 <div className="flex items-center justify-center gap-3 flex-shrink-0 text-[9px] sm:text-[10px] text-muted">
-                    <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Upcoming</span>
-                    <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Pending</span>
-                    <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" /> Past</span>
+                    <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-white" /> Upcoming</span>
+                    <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-white/60" /> Pending</span>
+                    <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-white/35" /> Past</span>
                 </div>
             </div>
 
@@ -262,7 +262,7 @@ export default function CalendarView({
                                             {fmtTime(b.start)} – {fmtTime(b.end)}
                                         </span>
                                         {b.status && (
-                                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium border border-app/60 bg-card capitalize text-app">
+                                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium border border-white/60 bg-card capitalize text-app">
                                                 {b.status}
                                             </span>
                                         )}

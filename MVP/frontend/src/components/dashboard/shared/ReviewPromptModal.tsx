@@ -78,7 +78,7 @@ export default function ReviewPromptModal({ open, onClose, artistId, artistName,
                   <Star
                     className={`h-8 w-8 transition-colors ${
                       value <= rating
-                        ? "fill-yellow-400 text-yellow-400"
+                        ? "fill-app text-app"
                         : "fill-transparent text-gray-400"
                     }`}
                   />

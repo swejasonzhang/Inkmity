@@ -312,9 +312,9 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                 !cell.inMonth
                                     ? "opacity-40"
                                     : isBlocked
-                                    ? "bg-red-500/10 border-red-500/30 hover:bg-red-500/20"
+                                    ? "bg-white/10 border-white/30 hover:bg-white/20"
                                     : isPartiallyBlocked
-                                    ? "bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/20"
+                                    ? "bg-white/10 border-white/30 hover:bg-white/20"
                                     : "hover:bg-white/5"
                             }`}
                             style={{ 
@@ -352,13 +352,13 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                     {cell.dayNum}
                                 </span>
                                 {isToday && (
-                                    <span className="text-xs px-1 py-0.5 rounded bg-blue-500/20 text-blue-300">
+                                    <span className="text-xs px-1 py-0.5 rounded bg-white/20 text-app">
                                         Today
                                     </span>
                                 )}
                             </div>
                             {isBlocked && (
-                                <div className="flex items-center gap-1 text-xs text-red-300 mb-1">
+                                <div className="flex items-center gap-1 text-xs text-app mb-1">
                                     <Ban className="h-3 w-3" />
                                     <span>Blocked</span>
                                 </div>
@@ -402,11 +402,11 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
 
                     <div className="space-y-4 mt-4">
                         {selectedDayBlocked && (
-                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                            <div className="p-3 rounded-lg bg-white/10 border border-white/30">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Ban className="h-5 w-5 text-red-300" />
-                                        <span className="font-medium text-red-300">This day is fully blocked</span>
+                                        <Ban className="h-5 w-5 text-app" />
+                                        <span className="font-medium text-app">This day is fully blocked</span>
                                     </div>
                                     <Button
                                         onClick={() => handleUnblockDay(selectedDateStr)}

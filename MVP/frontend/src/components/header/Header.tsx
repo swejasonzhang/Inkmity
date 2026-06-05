@@ -250,18 +250,22 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const handleLogout = async () => {
     localStorage.setItem("lastLogout", Date.now().toString());
     localStorage.removeItem("trustedDevice");
+    clearCachedUsername();
     await signOut({ redirectUrl: "/login" });
   };
 
   const getVisibilityDisplay = () => {
     const displayStatus = userVisibility;
-    if (displayStatus === "online") return { icon: Circle, label: "Online", color: "text-emerald-500", dot: "bg-emerald-500" };
-    if (displayStatus === "away") return { icon: Clock, label: "Away", color: "text-amber-500", dot: "bg-amber-500" };
-    return { icon: EyeOff, label: "Invisible", color: "text-zinc-400", dot: "bg-zinc-400" };
+    if (displayStatus === "online") return { icon: Circle, label: "Online", color: "text-app", dot: "bg-white" };
+    if (displayStatus === "away") return { icon: Clock, label: "Away", color: "text-white/80", dot: "bg-white/65" };
+    return { icon: EyeOff, label: "Invisible", color: "text-white/65", dot: "bg-white/45" };
   };
 
-  const cachedSignedIn = useMemo(() => !!getCachedUsername(), []);
-  const effectiveSignedIn = (isLoaded ? !!isSignedIn : cachedSignedIn) && isOnboarded;
+  // Only treat the user as signed in once Clerk has confirmed a real session.
+  // We intentionally do NOT fall back to cached state during the loading window,
+  // so the nav locks stay visible and the username div stays gated on refresh
+  // whenever the user isn't actually logged in.
+  const effectiveSignedIn = isLoaded && !!isSignedIn && isOnboarded;
   const homeHref = "/landing";
   const navLocked = disableDashboardLink || !effectiveSignedIn;
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
@@ -508,7 +512,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       {navLocked && tip.show && (
         <div className="hidden md:block fixed z-[2147483600] pointer-events-none ink-gate-tip" style={{ left: tip.x, top: tip.y, transform: "translate(-50%, 18px)" }}>
           <div className="flex items-center gap-2 rounded-xl border border-app bg-card px-4 py-2.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)] ring-1 ring-[color-mix(in_srgb,var(--fg)_25%,transparent)]">
-            <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-elevated p-1.5">
+            <span className="inline-grid place-items-center rounded-lg border border-white/40 bg-elevated p-1.5">
               <Lock className="h-3.5 w-3.5 text-app" />
             </span>
             <span className="text-[13px] font-bold text-app whitespace-nowrap">Sign in to access this page</span>

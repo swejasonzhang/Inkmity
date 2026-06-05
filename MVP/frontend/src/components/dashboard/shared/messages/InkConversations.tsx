@@ -131,7 +131,7 @@ export const InkConversations: React.FC<Props> = ({
             </div>
           </div>
           <div className="flex-1 min-h-0">
-            <div className={`h-full ${!isMdUp ? "text-center px-4" : ""}`}>{messagesContent}</div>
+            <div className={`h-full pt-2 pb-2 ${!isMdUp ? "text-center px-4" : "px-3"}`}>{messagesContent}</div>
           </div>
         </div>
       )}

@@ -46,6 +46,6 @@ describe("ArtistDetailsStep", () => {
 
   test("should display styles selector", () => {
     render(<ArtistDetailsStep {...defaultProps} />);
-    expect(screen.getByText(/Specialty styles/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Styles$/i)).toBeInTheDocument();
   });
 });

@@ -83,7 +83,7 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
         <div className="space-y-6">
         <div>
           <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <CheckCircle2 className="h-5 w-5 text-app" />
             Aftercare Steps
           </h3>
           <ol className="space-y-2 list-decimal list-inside">
@@ -98,13 +98,13 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
 
         <div>
           <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <XCircle className="h-5 w-5 text-red-500" />
+            <XCircle className="h-5 w-5 text-app" />
             What to Avoid
           </h3>
           <ul className="space-y-2">
             {avoidItems.map((item, idx) => (
               <li key={idx} className="text-sm flex items-start gap-2">
-                <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                <XCircle className="h-4 w-4 text-app mt-0.5 flex-shrink-0" />
                 <span>{item}</span>
               </li>
             ))}
@@ -113,7 +113,7 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
 
         <div>
           <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-blue-500" />
+            <ShoppingBag className="h-5 w-5 text-app" />
             Recommended Products
           </h3>
           <div className="space-y-3">
@@ -130,7 +130,7 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
           </div>
         </div>
 
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <div className="bg-white/10 border border-white/30 rounded-lg p-4">
           <p className="text-sm font-semibold mb-1">Healing Timeline</p>
           <ul className="text-xs space-y-1 opacity-90">
             <li>• Days 1-3: Initial healing, may ooze plasma/ink</li>
@@ -141,7 +141,7 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
           </ul>
         </div>
 
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+        <div className="bg-white/10 border border-white/30 rounded-lg p-4">
           <p className="text-sm">
             <strong>Warning Signs:</strong> If you experience excessive redness, swelling, pus, fever, or signs of infection, contact your artist or seek medical attention immediately.
           </p>

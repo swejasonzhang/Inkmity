@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } fr
 import { Spinner } from "@/components/ui/spinner";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import { formatActivityStatus } from "@/utils/activity";
@@ -13,7 +14,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
 import { socket } from "@/lib/socket";
 import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
-import { enableClientBookings, checkConsultationStatus, getArtistPolicy } from "@/api";
+import { enableClientBookings, getArtistPolicy } from "@/api";
 import DepositPolicyModal from "./DepositPolicyModal";
 import "@/styles/ink-conversations.css";
 
@@ -582,21 +583,14 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   };
 
-  const [consultationStatus, setConsultationStatus] = useState<Record<string, { hasCompletedConsultation: boolean }>>({});
   const [depositPolicyStatus, setDepositPolicyStatus] = useState<Record<string, boolean>>({});
+  const navigate = useNavigate();
+  const openArtistProfile = useCallback(() => {
+    if (!isClient || !activeConv?.handle) return;
+    navigate(`/artist/${activeConv.handle}`);
+  }, [isClient, activeConv?.handle, navigate]);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [depositModalClientId, setDepositModalClientId] = useState<string | null>(null);
-
-  const checkConsultationForClient = useCallback(async (clientId: string) => {
-    if (isClient) return;
-    try {
-      const token = await getToken();
-      const status = await checkConsultationStatus(currentUserId, clientId, token);
-      setConsultationStatus(prev => ({ ...prev, [clientId]: status }));
-    } catch (err) {
-      console.error("Failed to check consultation status:", err);
-    }
-  }, [currentUserId, isClient, getToken]);
 
   const checkDepositPolicy = useCallback(async () => {
     if (isClient) return;
@@ -616,11 +610,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
     if (isClient || !currentUserId) return;
     checkDepositPolicy();
   }, [currentUserId, isClient, checkDepositPolicy]);
-
-  useEffect(() => {
-    if (!activeConv || isClient) return;
-    checkConsultationForClient(activeConv.participantId);
-  }, [activeConv?.participantId, isClient, checkConsultationForClient]);
 
   const sendMessage = useCallback(async (participantId: string, text: string, imageUrls: string[] = []) => {
     try {
@@ -651,56 +640,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   }, [authFetch, onMarkRead, conversations]);
 
-  const handleOfferConsultation = async (clientId: string) => {
-    if (isClient) return;
-    try {
-      const userRes = await authFetch("/api/users/me", { method: "GET" });
-      const userData = userRes.ok ? await userRes.json() : null;
-      const artistHandle = userData?.handle || currentUserId;
-      const portfolioUrl = `${window.location.origin}/artists/${artistHandle}/portfolio`;
-      const messageText = `I'd like to schedule a consultation with you. Please view my portfolio and book a consultation time that works for you: ${portfolioUrl}`;
-      
-      const allImageUrls = [...new Set(getUrlsFromText(messageText))];
-      const meta: Record<string, any> = {
-        ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
-      };
-      const res = await authFetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ receiverId: clientId, text: messageText, meta, referenceUrls: allImageUrls })
-      });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        if (res.status === 403 && errorData?.error === "blocked_by_declines") {
-          throw new Error("Messaging has been disabled for this artist. They have declined your request.");
-        }
-        throw new Error(`Server returned ${res.status}`);
-      }
-      
-      const newMessage: Message = await res.json();
-      setConversations(prev => {
-        return prev.map(conv => {
-          if (conv.participantId !== clientId) return conv;
-          const msgExists = conv.messages.some(
-            m => m.timestamp === newMessage.timestamp && m.senderId === newMessage.senderId
-          );
-          if (msgExists) return conv;
-          const updatedMessages = [...conv.messages, newMessage].sort((a, b) => a.timestamp - b.timestamp);
-          return {
-            ...conv,
-            messages: updatedMessages,
-          };
-        });
-      });
-      
-      requestAnimationFrame(() => scrollToBottom());
-      onMarkRead(clientId);
-      setSendError(null);
-    } catch (e: any) {
-      setSendError(e?.message || "Failed to send message.");
-    }
-  };
-
   const handleOfferAppointment = async (clientId: string) => {
     if (isClient) return;
     
@@ -719,7 +658,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         throw new Error(result?.message || "Failed to enable appointments");
       }
       
-      const messageText = "Great! I've enabled appointments for you. You can now book tattoo sessions with me!";
+      const messageText = "Great! I've enabled booking for you. You can now book consultations and appointments with me!";
       await sendMessage(clientId, messageText, []);
       
       window.dispatchEvent(new CustomEvent("ink:booking-enabled", {
@@ -782,7 +721,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     
     return (
       <div className="flex flex-col items-center justify-center gap-3 h-full bg-card rounded-2xl p-6 text-center">
-        <span className="grid place-items-center h-12 w-12 rounded-2xl border border-app/40 bg-elevated">
+        <span className="grid place-items-center h-12 w-12 rounded-2xl border border-white/40 bg-elevated">
           <MessageSquare className="h-5 w-5 text-muted-foreground" />
         </span>
         <p className="text-muted-foreground whitespace-pre-line max-w-xs text-sm leading-relaxed">
@@ -1169,7 +1108,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   >
                     <Inbox size={16} />
                     {requestCount > 0 && (
-                      <span className="absolute -top-1 -right-1 grid place-items-center min-w-[1rem] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-semibold">{requestCount}</span>
+                      <span className="absolute -top-1 -right-1 grid place-items-center min-w-[1rem] h-4 px-1 rounded-full bg-white text-black text-[9px] font-semibold">{requestCount}</span>
                     )}
                   </button>
                 )}
@@ -1188,17 +1127,17 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         >
                           {avatarFor(c, { border: false })}
                         </button>
-                        {c.isOnline && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card pointer-events-none" />}
+                        {c.isOnline && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-white ring-2 ring-card pointer-events-none" />}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             requestDelete(c.participantId);
                           }}
-                          className="absolute -top-1.5 -right-1.5 grid place-items-center h-5 w-5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition shadow leading-none"
+                          className="absolute -top-1.5 -right-1.5 flex items-center justify-center h-5 w-5 rounded-full bg-neutral-700 text-white opacity-0 group-hover:opacity-100 hover:bg-neutral-600 transition shadow leading-none"
                           aria-label="Delete conversation"
                           title="Delete conversation"
                         >
-                          <X size={12} strokeWidth={2.5} className="block" />
+                          <X size={12} strokeWidth={2.5} className="block shrink-0" />
                         </button>
                       </div>
                     );
@@ -1213,9 +1152,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           <div className="flex items-center gap-2 min-w-0 flex-1 w-full">
                             {activeConv && avatarFor(activeConv, { border: false })}
                             <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-sm font-semibold text-app truncate">
-                                {activeConv ? displayNameFromUsername(activeConv.username) : "Select a conversation"}
-                              </span>
+                              {activeConv && isClient && activeConv.handle ? (
+                                <button
+                                  type="button"
+                                  onClick={openArtistProfile}
+                                  className="text-sm font-semibold text-app truncate text-left hover:underline focus:outline-none"
+                                  title={`View ${displayNameFromUsername(activeConv.username)}'s profile`}
+                                >
+                                  {displayNameFromUsername(activeConv.username)}
+                                </button>
+                              ) : (
+                                <span className="text-sm font-semibold text-app truncate">
+                                  {activeConv ? displayNameFromUsername(activeConv.username) : "Select a conversation"}
+                                </span>
+                              )}
                               {activeConv && (
                                 <span className="text-[10px] text-muted-foreground truncate">
                                   {formatActivityStatus(activeConv.isOnline, activeConv.lastActive)}
@@ -1248,8 +1198,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           const v = (ov ?? raw) as GateStatus | null;
                           const needs = v === "pending" && !(ov === "accepted" || !!activeConv?.meta?.allowed);
                           const isAccepted = (ov === "accepted" || !!activeConv?.meta?.allowed) || v === "accepted";
-                          const hasConsultation = consultationStatus[activeConv.participantId]?.hasCompletedConsultation || false;
-                          
                           if (!needs && !isAccepted) return null;
                           return (
                             <div className="flex items-center gap-2">
@@ -1271,38 +1219,16 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                   </button>
                                 </>
                               )}
-                              {isAccepted && !hasConsultation && (
+                              {isAccepted && (
                                 <button
                                   type="button"
-                                  onClick={() => handleOfferConsultation(activeConv.participantId)}
+                                  onClick={() => handleOfferAppointment(activeConv.participantId)}
                                   className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
-                                  title="Offer consultation to this client"
+                                  title="Allow this client to book consultations and appointments"
                                 >
-                                  <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                                  Offer Consultation
+                                  <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
+                                  Allow Booking
                                 </button>
-                              )}
-                              {isAccepted && hasConsultation && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOfferConsultation(activeConv.participantId)}
-                                    className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs flex items-center gap-1"
-                                    title="Offer another consultation"
-                                  >
-                                    <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                                    Consultation
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOfferAppointment(activeConv.participantId)}
-                                    className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
-                                    title="Enable appointments for this client"
-                                  >
-                                    <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                                    Offer Appointment
-                                  </button>
-                                </>
                               )}
                             </div>
                           );
@@ -1489,7 +1415,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           onChange={e =>
                             activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
                           }
-                          className="flex-1 min-w-0 h-10 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-app/60"
+                          className="flex-1 min-w-0 h-10 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
                           placeholder={
                             isMessagingDisabled
                               ? "Messaging disabled - artist declined your request"
@@ -1534,7 +1460,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
             </div>
             <div className="hidden md:grid gap-3 h-full min-h-0 flex-1 w-full" style={{ gridTemplateColumns: 'clamp(180px, 15vw, 260px) minmax(0, 1fr)' }}>
               <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto">
-                <ul className="divide-y divide-app/60">
+                <ul className="divide-y divide-white/60">
                   {conversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     const lastMsg = c.messages[c.messages.length - 1];
@@ -1563,7 +1489,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <div className="text-sm text-app truncate">{displayNameFromUsername(c.username)}</div>
                                 {c.isOnline && (
-                                  <span className="shrink-0 w-2 h-2 rounded-full bg-emerald-500" title="Currently active" />
+                                  <span className="shrink-0 w-2 h-2 rounded-full bg-white" title="Currently active" />
                                 )}
                               </div>
                               <div className="text-[13px] shrink-0">{lastMsg ? fmtTime(lastMsg.timestamp) : ""}</div>
@@ -1582,7 +1508,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           )}
                           <button
                             type="button"
-                            className="shrink-0 grid place-items-center h-7 w-7 rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-app hover:bg-card transition"
+                            className="shrink-0 flex items-center justify-center h-7 w-7 rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-app hover:bg-card transition"
                             onClick={e => {
                               e.stopPropagation();
                               requestDelete(c.participantId);
@@ -1590,7 +1516,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             aria-label="Delete conversation"
                             title="Delete conversation"
                           >
-                            <X size={14} />
+                            <X size={14} className="block shrink-0" />
                           </button>
                         </div>
                       </li>
@@ -1625,11 +1551,22 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       {activeConv && avatarFor(activeConv)}
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <div className="text-sm font-semibold text-app truncate">
-                            {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
-                          </div>
+                          {activeConv && isClient && activeConv.handle ? (
+                            <button
+                              type="button"
+                              onClick={openArtistProfile}
+                              className="text-sm font-semibold text-app truncate text-left hover:underline focus:outline-none"
+                              title={`View ${displayNameFromUsername(activeConv.username)}'s profile`}
+                            >
+                              {displayNameFromUsername(activeConv.username)}
+                            </button>
+                          ) : (
+                            <div className="text-sm font-semibold text-app truncate">
+                              {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
+                            </div>
+                          )}
                           {activeConv?.isOnline && (
-                            <span className="shrink-0 w-2 h-2 rounded-full bg-emerald-500" title="Currently active" />
+                            <span className="shrink-0 w-2 h-2 rounded-full bg-white" title="Currently active" />
                           )}
                         </div>
                         {activeConv && (
@@ -1678,44 +1615,17 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               </button>
                             </>
                           )}
-                          {isAccepted && (() => {
-                            const hasConsultation = consultationStatus[activeConv.participantId]?.hasCompletedConsultation || false;
-                            if (!hasConsultation) {
-                              return (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOfferConsultation(activeConv.participantId)}
-                                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
-                                  title="Offer consultation to this client"
-                                >
-                                  <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                                  Offer Consultation
-                                </button>
-                              );
-                            }
-                            return (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOfferConsultation(activeConv.participantId)}
-                                  className="px-2 py-1 rounded-md bg-elevated hover:bg-elevated/80 text-app text-xs flex items-center gap-1"
-                                  title="Offer another consultation"
-                                >
-                                  <MessageSquare size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                                  Consultation
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOfferAppointment(activeConv.participantId)}
-                                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
-                                  title="Enable appointments for this client"
-                                >
-                                  <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                                  Offer Appointment
-                                </button>
-                              </>
-                            );
-                          })()}
+                          {isAccepted && (
+                            <button
+                              type="button"
+                              onClick={() => handleOfferAppointment(activeConv.participantId)}
+                              className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
+                              title="Allow this client to book consultations and appointments"
+                            >
+                              <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
+                              Allow Booking
+                            </button>
+                          )}
                         </div>
                       );
                     })()}
@@ -1887,7 +1797,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       onChange={e =>
                         activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
                       }
-                      className="flex-1 min-w-0 h-11 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-app/60"
+                      className="flex-1 min-w-0 h-11 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
                       placeholder={
                         isMessagingDisabled
                           ? "Messaging disabled - artist declined your request"
@@ -1935,7 +1845,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs truncate">{displayNameFromUsername(c.username)}</span>
                               {c.isOnline && (
-                                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500" title="Currently active" />
+                                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-white" title="Currently active" />
                               )}
                             </div>
                             <span className="text-[10px] text-muted-foreground truncate">
