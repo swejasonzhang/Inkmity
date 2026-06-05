@@ -11,6 +11,7 @@ import {
   saveMyPortfolio,
   getArtists,
   getArtistById,
+  getArtistByHandle,
   checkHandleAvailability,
   updateMyBio,
   getMyDefaultBio,
@@ -32,6 +33,7 @@ router.get("/references/signature", requireAuth(), getReferenceSignature);
 router.put("/me/references", requireAuth(), saveMyReferences);
 router.put("/me/portfolio", requireAuth(), saveMyPortfolio);
 router.get("/artists", getArtists);
+router.get("/artists/by-handle/:handle", getArtistByHandle);
 router.get("/artists/:id", getArtistById);
 
 export default router;

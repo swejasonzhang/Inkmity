@@ -98,11 +98,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     }
   }, [])
 
-  const dateLabel = useMemo(() => {
-    if (!date) return ""
-    return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })
-  }, [date])
-
   const refreshSlots = useCallback(async () => {
     if (!artistId || !date) return
     const d = date.toISOString().slice(0, 10)
@@ -265,52 +260,76 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     }
   }
 
-  const chipBase = "px-3 py-1 text-sm sm:text-base rounded-md focus:outline-none focus-visible:ring-2"
-  const chipInactiveCls = isLightTheme
-    ? "bg-transparent text-black border border-black/30"
-    : "bg-transparent text-app border border-white/40"
-  const chipActiveCls = "bg-black text-white border border-white"
-
   const durationMins = useMemo(() => {
     if (!selected) return null
     const ms = new Date(selected.endISO).getTime() - new Date(selected.startISO).getTime()
     return Math.max(0, Math.round(ms / 60000))
   }, [selected])
 
+  const PERIODS: { label: string; test: (h: number) => boolean }[] = [
+    { label: "Morning", test: (h) => h < 12 },
+    { label: "Afternoon", test: (h) => h >= 12 && h < 17 },
+    { label: "Evening", test: (h) => h >= 17 },
+  ]
+
+  const renderSlot = (t: Date) => {
+    const key = timeKeyLocal(t)
+    const avail = availableStartsByKey.get(key)
+    const isDisabled = !avail
+    const isActive = !!avail && selected?.startISO === avail.startISO
+    return (
+      <button
+        key={t.toISOString()}
+        onClick={() => { if (avail) setSelected(avail) }}
+        disabled={isDisabled}
+        aria-disabled={isDisabled}
+        className="px-2.5 py-1 rounded-lg text-sm text-center outline-none border transition focus-visible:ring-2 disabled:pointer-events-none"
+        style={{
+          cursor: isDisabled ? "not-allowed" : "pointer",
+          borderColor: isActive ? "var(--fg)" : "var(--border)",
+          background: isActive ? "var(--fg)" : "transparent",
+          color: isActive ? "var(--bg)" : isDisabled ? "color-mix(in srgb, var(--fg) 38%, transparent)" : "var(--fg)",
+          opacity: isDisabled ? 0.6 : 1,
+        }}
+      >
+        {t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      </button>
+    )
+  }
+
   return (
-    <div ref={scopeRef} className="grid place-items-center">
+    <div ref={scopeRef} className="w-full">
       <div ref={portalRef} />
-      <div className="grid place-items-center text-center rounded-2xl p-4 sm:p-5 gap-4">
+      <div className="flex flex-col items-center text-center rounded-2xl p-3 sm:p-4 gap-3 w-full">
         <div className="grid gap-2 place-items-center">
-          <h2 className="text-lg sm:text-xl font-semibold">Book a Time</h2>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {!!dateLabel && (
-              <span
-                className={`text-sm px-2 py-1 rounded-md border ${isLightTheme ? "border-black/30 text-black/85" : "border-white/40 text-app/85"}`}
-              >
-                {dateLabel}
-              </span>
-            )}
-            <span
-              className={`text-sm px-2 py-1 rounded-md border ${isLightTheme ? "border-black/30 text-black/85" : "border-white/40 text-app/85"}`}
-            >
-              Times shown in <strong className={isLightTheme ? "text-black" : "text-app"}>{browserTz}</strong>
-            </span>
-          </div>
+          <h2 className="text-lg sm:text-xl font-bold" style={{ color: "var(--fg)" }}>Book a Time</h2>
+          <span
+            className="text-xs px-2.5 py-1 rounded-full border"
+            style={{ borderColor: "var(--border)", color: "color-mix(in srgb, var(--fg) 75%, transparent)" }}
+          >
+            Times shown in <strong style={{ color: "var(--fg)" }}>{browserTz}</strong>
+          </span>
         </div>
 
         <div className="grid place-items-center gap-1.5">
-          <span className={isLightTheme ? "text-sm text-black/80" : "text-sm text-app/80"}>Type</span>
+          <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 75%, transparent)" }}>Type</span>
           <div
-            className={`inline-flex items-center gap-2 bg-transparent p-1 rounded-lg border ${isLightTheme ? "border-black/30" : "border-white/40"}`}
+            className="relative grid grid-cols-2 w-[17rem] max-w-full p-1 rounded-full border select-none"
+            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
             role="group"
             aria-label="Booking type"
           >
+            <span
+              aria-hidden
+              className="absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-full transition-all duration-200 ease-out"
+              style={{ background: "var(--fg)", left: kind === "consultation" ? "0.25rem" : "50%" }}
+            />
             <button
               type="button"
               aria-pressed={kind === "consultation"}
               onClick={() => setKind("consultation")}
-              className={`${chipBase} ${kind === "consultation" ? chipActiveCls : chipInactiveCls}`}
+              className="relative z-10 py-1.5 text-sm font-semibold rounded-full transition-colors"
+              style={{ color: kind === "consultation" ? "var(--bg)" : "var(--fg)" }}
             >
               Consultation
             </button>
@@ -318,7 +337,8 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
               type="button"
               aria-pressed={kind === "appointment"}
               onClick={() => setKind("appointment")}
-              className={`${chipBase} ${kind === "appointment" ? chipActiveCls : chipInactiveCls}`}
+              className="relative z-10 py-1.5 text-sm font-semibold rounded-full transition-colors"
+              style={{ color: kind === "appointment" ? "var(--bg)" : "var(--fg)" }}
             >
               Appointment
             </button>
@@ -326,85 +346,56 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
         </div>
 
         <div
-          className={`grid gap-2 rounded-lg border p-3 sm:p-3.5 text-left ${isLightTheme ? "border-black/30 bg-white" : "border-white/40 bg-card"}`}
+          className="text-xs sm:text-sm rounded-full border px-3.5 py-1.5 max-w-[34rem]"
+          style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 50%, transparent)", color: "color-mix(in srgb, var(--fg) 72%, transparent)" }}
           aria-live="polite"
         >
-          {kind === "consultation" ? (
-            <>
-              <div className={isLightTheme ? "text-sm sm:text-base text-black/90" : "text-sm sm:text-base text-app/90"}>
-                You’re picking the <strong>start time</strong> of a consultation. Typical length: <strong>15–30 min</strong>
-              </div>
-              <div className={isLightTheme ? "text-xs sm:text-sm text-black/70" : "text-xs sm:text-sm text-app/80"}>
-                What can extend it: size/placement complexity, number of references, decision-making, video vs in-person, paperwork.
-              </div>
-            </>
-          ) : (
-            <>
-              <div className={isLightTheme ? "text-sm sm:text-base text-black/90" : "text-sm sm:text-base text-app/90"}>
-                You’re picking the <strong>start time</strong> of your appointment. Some artists require a <strong>non-refundable deposit</strong>.
-              </div>
-              <div className={isLightTheme ? "text-xs sm:text-sm text-black/70" : "text-xs sm:text-sm text-app/80"}>
-                Cancellation policy: within <strong>72 hours</strong> of start date; <strong>deposits and booking fees may not be refunded.</strong>
-              </div>
-            </>
-          )}
+          {kind === "consultation"
+            ? "Pick a start time · consultations run ~15–30 min"
+            : "Pick a start time · a non-refundable deposit may be required"}
         </div>
 
-        <div>
+        <div className="text-xs sm:text-sm font-medium" style={{ color: "color-mix(in srgb, var(--fg) 58%, transparent)" }}>
+          Select a time below · scroll for more options
+        </div>
+
+        <div className="w-full relative mx-auto max-w-[34rem]">
           <div
-            className={`rounded-lg border p-2 sm:p-2.5 mx-auto bg-transparent ${isLightTheme ? "border-black/30" : "border-white/40"}`}
+            className="rounded-xl border p-3 w-full max-h-[240px] overflow-y-auto"
+            style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 40%, transparent)" }}
           >
-            <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
-              {combinedTimes.map((t) => {
-                const key = timeKeyLocal(t)
-                const avail = availableStartsByKey.get(key)
-                const isDisabled = !avail
-                const isActive = !!avail && selected?.startISO === avail.startISO
-
-                const slotBase = "px-2.5 py-[2.5px] rounded-lg text-sm sm:text-base text-center outline-none"
-                const slotEnabled = isLightTheme
-                  ? "bg-transparent text-black border border-black/30 focus-visible:ring-2"
-                  : "bg-transparent text-app border border-white/40 focus-visible:ring-2"
-                const slotActive = "bg-black text-white border border-white"
-                const slotDisabled = isLightTheme
-                  ? "bg-white text-black/60 border border-black/15 opacity-60 saturate-50 pointer-events-none"
-                  : "bg-elevated text-app/55 border border-white/20 opacity-60 saturate-50 pointer-events-none"
-
+            {combinedTimes.length === 0 ? (
+              <div className="text-center text-sm sm:text-base py-2" style={{ color: "color-mix(in srgb, var(--fg) 65%, transparent)" }}>
+                No times for this day.
+              </div>
+            ) : (
+              PERIODS.map((p) => {
+                const items = combinedTimes.filter((t) => p.test(t.getHours()))
+                if (!items.length) return null
                 return (
-                  <button
-                    key={t.toISOString()}
-                    onClick={() => { if (avail) setSelected(avail) }}
-                    disabled={isDisabled}
-                    aria-disabled={isDisabled}
-                    className={`${slotBase} ${isDisabled ? slotDisabled : isActive ? slotActive : slotEnabled}`}
-                    style={{ cursor: isDisabled ? "not-allowed" : "pointer" }}
-                  >
-                    {t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </button>
+                  <div key={p.label} className="mb-3 last:mb-0">
+                    <div className="text-[11px] font-bold uppercase tracking-wider mb-2 text-center" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
+                      {p.label}
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {items.map(renderSlot)}
+                    </div>
+                  </div>
                 )
-              })}
-              {combinedTimes.length === 0 && (
-                <div className={isLightTheme ? "text-center text-sm sm:text-base py-2 text-black/70" : "text-center text-sm sm:text-base py-2 text-app/70"}>
-                  No times for this day.
-                </div>
-              )}
-            </div>
+              })
+            )}
           </div>
         </div>
 
-        <div className={isLightTheme ? "text-sm sm:text-base text-black/80" : "text-sm sm:text-base text-app/80"}>
-          {selected ? (
-            <>
-              Selected:{" "}
-              <span className={isLightTheme ? "font-medium text-black" : "font-medium text-app"}>
-                {new Date(selected.startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>{" "}
-              • <span className="font-medium capitalize">{kind}</span>
-            </>
-          ) : (
-            "Select a time above."
-          )}
-        </div>
+        {selected && (
+          <div className="text-sm sm:text-base" style={{ color: "color-mix(in srgb, var(--fg) 75%, transparent)" }}>
+            Selected:{" "}
+            <span className="font-semibold" style={{ color: "var(--fg)" }}>
+              {new Date(selected.startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>{" "}
+            • <span className="font-semibold capitalize" style={{ color: "var(--fg)" }}>{kind}</span>
+          </div>
+        )}
 
         <Button
           disabled={!canConfirm}

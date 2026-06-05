@@ -4,9 +4,9 @@ import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Pagination from "@/components/dashboard/shared/Pagination";
 import { Star, X } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
-import { displayNameFromUsername } from "@/lib/format";
 
 export type Review = {
     _id: string;
@@ -56,8 +56,7 @@ Stars.displayName = "Stars";
 
 const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`;
 
-const INITIAL_BATCH = 12;
-const BATCH_SIZE = 12;
+const PER_PAGE = 6;
 
 const mapReview = (raw: any): Review => {
     const author = raw?.authorName || raw?.reviewerName || raw?.reviewer?.username || raw?.reviewer?.email || "Client";
@@ -109,6 +108,23 @@ const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React
 });
 ReviewCard.displayName = "ReviewCard";
 
+const ReviewCardSkeleton: React.FC = () => (
+    <Card className="w-full h-full flex flex-col shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
+        <CardHeader className="text-left">
+            <div className="flex items-center justify-between gap-2">
+                <span className="ink-shimmer h-4 w-1/2 rounded" />
+                <span className="ink-shimmer h-4 w-20 rounded-full" />
+            </div>
+            <span className="ink-shimmer h-3 w-2/3 rounded mt-2" />
+        </CardHeader>
+        <CardContent className="space-y-2">
+            <span className="ink-shimmer block h-3 w-full rounded" />
+            <span className="ink-shimmer block h-3 w-5/6 rounded" />
+            <span className="ink-shimmer block h-3 w-3/4 rounded" />
+        </CardContent>
+    </Card>
+);
+
 export default function ArtistReviews({ artist, reviews = [], averageRating }: ReviewsProps) {
     const { getToken } = useAuth();
     const [sort, setSort] = useState<"recent" | "high" | "low">("recent");
@@ -116,7 +132,8 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
     const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [loadErr, setLoadErr] = useState<string | null>(null);
-    const [visibleCount, setVisibleCount] = useState<number>(INITIAL_BATCH);
+    const [page, setPage] = useState<number>(1);
+    const [minElapsed, setMinElapsed] = useState<boolean>(false);
     const cacheRef = useRef<Map<string, Review[]>>(new Map());
     const abortRef = useRef<AbortController | null>(null);
     const [isSorting, startTransition] = useTransition();
@@ -125,6 +142,11 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
         const onEsc = (e: KeyboardEvent) => e.key === "Escape" && setZoomSrc(null);
         window.addEventListener("keydown", onEsc);
         return () => window.removeEventListener("keydown", onEsc);
+    }, []);
+
+    useEffect(() => {
+        const t = window.setTimeout(() => setMinElapsed(true), 2000);
+        return () => window.clearTimeout(t);
     }, []);
 
     useEffect(() => {
@@ -146,7 +168,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
         const cached = cacheRef.current.get(artist._id);
         if (cached) {
             setRemoteReviews(cached);
-            setVisibleCount(INITIAL_BATCH);
+            setPage(1);
             setLoadErr(null);
             return;
         }
@@ -162,7 +184,6 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                 const res = await fetch(url, {
                     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                     signal: controller.signal,
-                    cache: "force-cache"
                 });
                 const ctype = res.headers.get("content-type") || "";
                 if (!res.ok) {
@@ -178,7 +199,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                 if (!cancelled) {
                     cacheRef.current.set(artist._id, list);
                     setRemoteReviews(list);
-                    setVisibleCount(INITIAL_BATCH);
+                    setPage(1);
                 }
             } catch (e: any) {
                 if (!cancelled) setLoadErr(e?.message || "Failed to load reviews");
@@ -212,8 +233,10 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
     }, [effectiveReviews, sort]);
 
     const deferredSorted = useDeferredValue(sorted);
-    const visible = Math.min(deferredSorted.length, visibleCount);
-    const canShowMore = visible < deferredSorted.length;
+    const totalPages = Math.max(1, Math.ceil(deferredSorted.length / PER_PAGE));
+    const safePage = Math.min(page, totalPages);
+    const pageItems = deferredSorted.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
+    const pending = !reviews.length && (loading || !minElapsed);
 
     const avgDisplay = useMemo(() => {
         if (typeof averageRating === "number") return averageRating;
@@ -223,68 +246,63 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
     }, [effectiveReviews, averageRating]);
 
     const onChangeSort = useCallback((v: "recent" | "high" | "low") => {
-        startTransition(() => setSort(v));
+        startTransition(() => { setSort(v); setPage(1); });
     }, [startTransition]);
 
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
-                <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                    <CardHeader className="text-center space-y-1 px-3 sm:px-6">
-                        <CardTitle className="text-base sm:text-lg">{displayNameFromUsername(artist.username)} — Reviews</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 sm:px-6">
-                        <div className="w-full flex flex-col items-center gap-2 text-center">
-                            <div className="flex items-center gap-2 flex-wrap justify-center">
-                                <Stars value={avgDisplay} />
-                                <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
-                                    {avgDisplay ? `${avgDisplay} / 5` : "No ratings yet"}
-                                </span>
-                                {effectiveReviews.length > 0 && (
-                                    <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
-                                        • {effectiveReviews.length} review{effectiveReviews.length === 1 ? "" : "s"}
+            <div className="mx-auto max-w-screen-2xl px-1.5 sm:px-2.5 pt-[10px] pb-6 space-y-4 sm:space-y-5">
+                <Card className="w-full shadow-none overflow-hidden" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", paddingTop: 0, paddingBottom: 0, gap: 0 }}>
+                    <CardContent className="flex flex-col items-center gap-3 px-4 sm:px-6 py-5 text-center">
+                        <div className="inline-flex items-center gap-2 text-base sm:text-lg font-bold" style={{ color: "var(--fg)" }}>
+                            <Star style={{ width: 18, height: 18 }} /> Client Reviews
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap justify-center">
+                            {pending ? (
+                                <>
+                                    <span className="ink-shimmer h-4 w-24 rounded" />
+                                    <span className="ink-shimmer h-4 w-16 rounded" />
+                                </>
+                            ) : (
+                                <>
+                                    <Stars value={avgDisplay} />
+                                    <span className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+                                        {avgDisplay ? `${avgDisplay} / 5` : "No ratings yet"}
                                     </span>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-2 mt-2 w-full justify-center">
-                                <label className="text-sm text-center" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
-                                    Sort:
-                                </label>
-
-                                <Select
-                                    value={sort}
-                                    onValueChange={(v) => onChangeSort(v as typeof sort)}
-                                >
-                                    <SelectTrigger className="w-auto sm:w-[180px] text-sm justify-center" style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}>
-                                        <SelectValue placeholder="Sort by" className="text-center" />
-                                    </SelectTrigger>
-                                    <SelectContent 
-                                        position="popper" 
-                                        align="center"
-                                        sideOffset={4}
-                                        className="z-[2000] p-1"
-                                        style={{ background: "#000000", color: "var(--fg)", borderColor: "var(--border)" }}
-                                    >
-                                        <SelectItem value="recent" className="text-center justify-center my-1 px-3 py-2 rounded-md border bg-black" style={{ background: "#000000", borderColor: "var(--border)" }}>
-                                            Most recent
-                                        </SelectItem>
-                                        <SelectItem value="high" className="text-center justify-center my-1 px-3 py-2 rounded-md border bg-black" style={{ background: "#000000", borderColor: "var(--border)" }}>
-                                            Highest rating
-                                        </SelectItem>
-                                        <SelectItem value="low" className="text-center justify-center my-1 px-3 py-2 rounded-md border bg-black" style={{ background: "#000000", borderColor: "var(--border)" }}>
-                                            Lowest rating
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {isSorting && (
-                                <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>
-                                    Optimizing…
-                                </div>
+                                    {effectiveReviews.length > 0 && (
+                                        <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
+                                            · {effectiveReviews.length} review{effectiveReviews.length === 1 ? "" : "s"}
+                                        </span>
+                                    )}
+                                </>
                             )}
                         </div>
+
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>Sort</span>
+                            <Select value={sort} onValueChange={(v) => onChangeSort(v as typeof sort)}>
+                                <SelectTrigger className="w-[160px] text-sm justify-center rounded-full" style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}>
+                                    <SelectValue placeholder="Sort by" className="text-center" />
+                                </SelectTrigger>
+                                <SelectContent
+                                    position="popper"
+                                    align="center"
+                                    sideOffset={4}
+                                    className="z-[2000] p-1 rounded-xl"
+                                    style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
+                                >
+                                    <SelectItem value="recent" className="text-center justify-center rounded-md">Most recent</SelectItem>
+                                    <SelectItem value="high" className="text-center justify-center rounded-md">Highest rating</SelectItem>
+                                    <SelectItem value="low" className="text-center justify-center rounded-md">Lowest rating</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {isSorting && (
+                            <div className="text-xs" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>
+                                Optimizing…
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -299,15 +317,11 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                     </Card>
                 ) : null}
 
-                {loading && !effectiveReviews.length ? (
-                    <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                        <CardContent className="px-4 py-3">
-                            <div className="text-sm" style={{ color: "var(--fg)" }}>Loading reviews…</div>
-                        </CardContent>
-                    </Card>
-                ) : null}
-
-                {deferredSorted.length === 0 ? (
+                {pending ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                        {Array.from({ length: 6 }).map((_, i) => <ReviewCardSkeleton key={i} />)}
+                    </div>
+                ) : deferredSorted.length === 0 ? (
                     <Card className="w-full shadow-none" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
                         <CardContent className="px-4 py-3">
                             <div className="text-sm" style={{ color: "color-mix(in srgb, var(--fg) 65%, transparent)" }}>No reviews yet.</div>
@@ -316,18 +330,16 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
                 ) : (
                     <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                            {deferredSorted.slice(0, visible).map(r => <ReviewCard key={r._id} r={r} onZoom={setZoomSrc} />)}
+                            {pageItems.map(r => <ReviewCard key={r._id} r={r} onZoom={setZoomSrc} />)}
                         </div>
-                        {canShowMore && (
+                        {totalPages > 1 && (
                             <div className="pt-2 w-full flex justify-center">
-                                <Button
-                                    onClick={() => setVisibleCount(c => c + BATCH_SIZE)}
-                                    variant="outline"
-                                    className="rounded-lg px-4 py-2 text-sm font-medium w-auto"
-                                    style={{ background: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)", border: `1px solid var(--border)` }}
-                                >
-                                    Show more
-                                </Button>
+                                <Pagination
+                                    currentPage={safePage}
+                                    totalPages={totalPages}
+                                    onPrev={() => setPage(p => Math.max(1, p - 1))}
+                                    onNext={() => setPage(p => Math.min(totalPages, p + 1))}
+                                />
                             </div>
                         )}
                     </>

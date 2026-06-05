@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/header/Header";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
 import { Bot, X } from "lucide-react";
@@ -21,7 +21,7 @@ import "@/styles/client-dashboard.css";
 const ArtistsSection = lazy(() => import("@/components/dashboard/client/ArtistsSection"));
 const ArtistModal = lazy(() => import("@/components/dashboard/client/ArtistModal"));
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 5;
 
 export default function ClientDashboard() {
     const { isSignedIn, isLoaded, user } = useUser();
@@ -31,6 +31,22 @@ export default function ClientDashboard() {
 
     const [assistantOpen, setAssistantOpen] = useState(false);
     const [page, setPage] = useState(1);
+    const [isMdUp, setIsMdUp] = useState(false);
+    const [artistPager, setArtistPager] = useState({ index: 0, total: 0 });
+
+    useEffect(() => {
+        const mq = window.matchMedia("(min-width: 768px)");
+        const on = () => setIsMdUp(mq.matches);
+        on();
+        mq.addEventListener?.("change", on);
+        return () => mq.removeEventListener?.("change", on);
+    }, []);
+
+    useEffect(() => {
+        const onPager = (e: Event) => setArtistPager((e as CustomEvent).detail);
+        window.addEventListener("inkmity:artist-pager", onPager);
+        return () => window.removeEventListener("inkmity:artist-pager", onPager);
+    }, []);
 
     const [priceFilter, setPriceFilter] = useState("all");
     const [locationFilter, setLocationFilter] = useState("all");
@@ -75,6 +91,37 @@ export default function ClientDashboard() {
     }, [isLoaded, isSignedIn, navigate]);
 
     const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
+
+    const location = useLocation();
+    const reopenHandledRef = useRef(false);
+    useEffect(() => {
+        if (reopenHandledRef.current) return;
+        const st = location.state as { reopenArtistId?: string; reopenArtist?: ArtistDto } | null;
+        if (!st?.reopenArtistId && !st?.reopenArtist) return;
+        const fromList = st.reopenArtistId ? artists.find((a) => a._id === st.reopenArtistId) : undefined;
+        const target = fromList ?? st.reopenArtist;
+        if (!target && st.reopenArtistId && !artists.length) return; // wait for list to load
+        if (target) {
+            setSelectedArtist(target);
+            reopenHandledRef.current = true;
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state, artists]);
+
+    const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+        if (selectedArtist) return;
+        const grid = document.querySelector<HTMLElement>("[data-artist-scroll]");
+        if (!grid) return;
+        const target = e.target as HTMLElement;
+        if (grid.contains(target)) return;
+        let node: HTMLElement | null = target;
+        while (node && node !== e.currentTarget) {
+            const oy = window.getComputedStyle(node).overflowY;
+            if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight) return;
+            node = node.parentElement;
+        }
+        grid.scrollTop += e.deltaY;
+    }, [selectedArtist]);
 
     const filtered = useMemo(() => {
         const txt = searchQuery.trim().toLowerCase();
@@ -146,7 +193,7 @@ export default function ClientDashboard() {
                     }
                 }
             `}</style>
-            <div className="h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root">
+            <div className="h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root" onWheel={handleWheel}>
             <Header />
             <div className="sm:hidden" style={{ padding: '0 clamp(12px, 1.5vw, 24px)', marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
                 <ArtistFilter
@@ -200,7 +247,7 @@ export default function ClientDashboard() {
                     </div>
                 </div>
             </main>
-            <div className="shrink-0" style={{ padding: 'clamp(12px, 1.5vw, 24px)' }}>
+            <div className="shrink-0" style={{ padding: 'clamp(6px, 0.9vw, 12px) clamp(12px, 1.5vw, 24px)' }}>
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
@@ -211,10 +258,14 @@ export default function ClientDashboard() {
                     pendingRequestsCount={pendingRequestsCount}
                     rightContent={
                         <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPrev={() => handlePageChange(page - 1)}
-                            onNext={() => handlePageChange(page + 1)}
+                            currentPage={isMdUp ? page : artistPager.index + 1}
+                            totalPages={isMdUp ? totalPages : Math.max(1, artistPager.total)}
+                            onPrev={isMdUp
+                                ? () => handlePageChange(page - 1)
+                                : () => window.dispatchEvent(new CustomEvent("inkmity:artist-nav", { detail: { dir: "prev" } }))}
+                            onNext={isMdUp
+                                ? () => handlePageChange(page + 1)
+                                : () => window.dispatchEvent(new CustomEvent("inkmity:artist-nav", { detail: { dir: "next" } }))}
                         />
                     }
                 />
@@ -264,6 +315,7 @@ export default function ClientDashboard() {
                         artist={{
                             _id: selectedArtist._id,
                             clerkId: (selectedArtist as any).clerkId,
+                            handle: (selectedArtist as any).handle,
                             username: displayNameFromUsername(selectedArtist.username),
                             bio: (selectedArtist as any).bio,
                             portfolioImages: ((selectedArtist as any).portfolioImages ?? []).filter(Boolean),
@@ -271,7 +323,12 @@ export default function ClientDashboard() {
                             healedWorks: ((selectedArtist as any).healedWorks ?? []).filter(Boolean),
                             sketches: ((selectedArtist as any).sketches ?? []).filter(Boolean),
                             avatarUrl: (selectedArtist as any).profileImage || (selectedArtist as any).avatar?.url || (selectedArtist as any).avatarUrl,
-                            coverImage: (selectedArtist as any).coverImage
+                            coverImage: (selectedArtist as any).coverImage,
+                            styles: (selectedArtist as any).styles,
+                            location: (selectedArtist as any).location,
+                            yearsExperience: (selectedArtist as any).yearsExperience,
+                            rating: (selectedArtist as any).rating,
+                            reviewsCount: (selectedArtist as any).reviewsCount
                         }}
                         onClose={() => setSelectedArtist(null)}
                         onMessage={async a => {

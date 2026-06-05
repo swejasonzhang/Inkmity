@@ -31,6 +31,12 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
 jest.unstable_mockModule("@/api", () => ({
   updateVisibility: mockUpdateVisibility,
   getMe: jest.fn<() => Promise<any>>().mockResolvedValue({ role: "client" }),
+  getMyRewards: jest.fn<() => Promise<any>>().mockResolvedValue({
+    tier: { key: "bronze", label: "Bronze" },
+    currentFeePct: 0.1,
+    completedBookings: 0,
+    nextTier: null,
+  }),
   apiGet: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiPost: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiRequest: jest.fn<() => Promise<any>>().mockResolvedValue({}),

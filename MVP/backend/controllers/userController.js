@@ -234,7 +234,14 @@ export async function getArtists(req, res) {
 export async function getArtistById(req, res) {
   const { id } = req.params;
   const Artist = mongoose.model("artist");
-  const doc = await Artist.findById(id).select("+lastActive +visibility").lean();
+  const doc = await Artist.findById(id)
+    .select("+lastActive +visibility")
+    .populate({
+      path: "reviews",
+      options: { sort: { createdAt: -1 } },
+      populate: { path: "reviewer", select: "username handle" },
+    })
+    .lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
@@ -246,6 +253,23 @@ export async function getArtistById(req, res) {
     lastActive: doc.lastActive ? doc.lastActive.getTime() : null,
   };
   res.json(docWithProfileImage);
+}
+
+export async function getArtistByHandle(req, res) {
+  const handle = String(req.params.handle || "").replace(/^@/, "").trim().toLowerCase();
+  if (!handle) return res.status(400).json({ error: "handle_required" });
+  const Artist = mongoose.model("artist");
+  const doc = await Artist.findOne({ handle }).select("+lastActive +visibility").lean();
+  if (!doc) return res.status(404).json({ error: "not_found" });
+  const { getOnlineUsers } = await import("../services/socketService.js");
+  const onlineUsersSet = getOnlineUsers();
+  res.json({
+    ...doc,
+    profileImage: doc.avatar?.url || doc.profileImage || null,
+    avatarUrl: doc.avatar?.url || doc.avatarUrl || null,
+    isOnline: onlineUsersSet.has(doc.clerkId) && doc.visibility !== "invisible",
+    lastActive: doc.lastActive ? doc.lastActive.getTime() : null,
+  });
 }
 
 export async function checkHandleAvailability(req, res) {

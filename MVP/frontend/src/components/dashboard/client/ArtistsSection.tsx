@@ -3,8 +3,7 @@ import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
 import LazyReveal from "@/components/ui/LazyReveal";
 import { motion } from "framer-motion";
-import { ChevronUp, ChevronDown, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import type { Artist } from "@/api";
 
 type Props = {
@@ -254,6 +253,10 @@ export default function ArtistsSection({
 
     const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const listItems = usingExternalPaging ? filtered : clientPageItems;
+    const DESKTOP_PAGE_SIZE = 5;
+    const desktopItems = usingExternalPaging && typeof page === "number"
+        ? filtered.slice((page - 1) * DESKTOP_PAGE_SIZE, page * DESKTOP_PAGE_SIZE)
+        : listItems;
     const isCenterLoading = loading || !showArtists;
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -341,12 +344,26 @@ export default function ArtistsSection({
         }
     };
 
-    const atStart = currentIndex === 0;
-    const atEnd = currentIndex >= lastIndex;
+    useEffect(() => {
+        if (isMdUp) return;
+        window.dispatchEvent(new CustomEvent("inkmity:artist-pager", { detail: { index: currentIndex, total: lastIndex + 1 } }));
+    }, [currentIndex, lastIndex, isMdUp]);
+
+    useEffect(() => {
+        if (isMdUp) return;
+        const onNav = (e: Event) => {
+            const dir = (e as CustomEvent).detail?.dir;
+            if (dir === "next") handleNext();
+            else if (dir === "prev") handlePrev();
+        };
+        window.addEventListener("inkmity:artist-nav", onNav);
+        return () => window.removeEventListener("inkmity:artist-nav", onNav);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMdUp, currentIndex, lastIndex]);
 
     return (
         <div className={`${isMdUp ? "grid grid-rows-[auto,1fr]" : "flex flex-col"} h-full min-h-0 w-full`}>
-            <div ref={filterRef} className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0' }}>
+            <div ref={filterRef} data-artist-filter className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={(v) => {
@@ -439,59 +456,26 @@ export default function ArtistsSection({
                                         </div>
                                     ))}
                                 </div>
-                                {listItems.length > 1 && (
-                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-10 pointer-events-none">
-                                        <Button
-                                            type="button"
-                                            onClick={handlePrev}
-                                            disabled={atStart}
-                                            className="pointer-events-auto rounded-full h-12 w-12 p-0 shadow-lg"
-                                            style={{
-                                                borderColor: "var(--border)",
-                                                backgroundColor: atStart ? "color-mix(in srgb, var(--elevated) 60%, transparent)" : "color-mix(in srgb, var(--card) 95%, transparent)",
-                                                color: "var(--fg)",
-                                                opacity: atStart ? 0.5 : 1,
-                                            }}
-                                            aria-label="Previous artist"
-                                        >
-                                            <ChevronUp className="h-5 w-5" />
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            onClick={handleNext}
-                                            disabled={atEnd}
-                                            className="pointer-events-auto rounded-full h-12 w-12 p-0 shadow-lg"
-                                            style={{
-                                                borderColor: "var(--border)",
-                                                backgroundColor: atEnd ? "color-mix(in srgb, var(--elevated) 60%, transparent)" : "color-mix(in srgb, var(--card) 95%, transparent)",
-                                                color: "var(--fg)",
-                                                opacity: atEnd ? 0.5 : 1,
-                                            }}
-                                            aria-label="Next artist"
-                                        >
-                                            <ChevronDown className="h-5 w-5" />
-                                        </Button>
-                                    </div>
-                                )}
                             </>
                         ) : (
                             <EmptyArtists />
                         )}
                     </div>
 
-                    <div className="hidden md:block h-full min-h-0 overflow-hidden">
-                        {listItems.length > 0 ? (
+                    <div className="hidden md:block h-full min-h-0 overflow-hidden" style={{ paddingTop: 'clamp(0.625rem, 1vh + 0.5vw, 1.25rem)' }}>
+                        {desktopItems.length > 0 ? (
                             <div
-                                className="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+                                data-artist-scroll
+                                className="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 overflow-hidden"
                                 style={{
                                     gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)',
-                                    padding: 'clamp(10px, 1.2vh + 0.4vw, 18px) 0',
-                                    gridAutoRows: '1fr',
+                                    padding: '0',
+                                    gridAutoRows: '100%',
                                     alignContent: 'start',
                                     height: '100%'
                                 }}
                             >
-                                {listItems.map((artist, index) => (
+                                {desktopItems.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
                                         initial={{ opacity: 0 }}

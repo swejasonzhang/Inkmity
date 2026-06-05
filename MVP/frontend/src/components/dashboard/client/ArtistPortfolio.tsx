@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Maximize2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Maximize2, MapPin, Clock, Star, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
 
 export type ArtistWithGroups = {
     _id: string;
     clerkId: string;
+    handle?: string;
     username: string;
     bio?: string;
     portfolioImages?: string[];
@@ -17,6 +18,11 @@ export type ArtistWithGroups = {
     sketches?: string[];
     avatarUrl?: string;
     coverImage?: string;
+    styles?: string[] | string;
+    location?: string;
+    yearsExperience?: number;
+    rating?: number;
+    reviewsCount?: number;
 };
 
 export type PortfolioProps = {
@@ -24,6 +30,7 @@ export type PortfolioProps = {
 };
 
 const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
+    const navigate = useNavigate();
     const recent = useMemo(() => (artist?.portfolioImages ?? []).filter(Boolean), [artist]);
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
@@ -32,6 +39,33 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
     const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }>(null);
     const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
 
+    const stylesClean = useMemo(() => {
+        const raw = artist?.styles ?? [];
+        const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[;,/]+/) : [];
+        return arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 4);
+    }, [artist]);
+    const totalWorks = recent.length + past.length + healed.length + sketches.length;
+    const ratingValue = typeof artist.rating === "number" ? artist.rating : Number(artist.rating ?? 0);
+    const hasRating = Number.isFinite(ratingValue) && ratingValue > 0;
+    const years = typeof artist.yearsExperience === "number" && artist.yearsExperience >= 0
+        ? `${artist.yearsExperience} yr${artist.yearsExperience === 1 ? "" : "s"} exp`
+        : "";
+    const loc = (artist.location || "").trim();
+
+    const InfoChip: React.FC<{ icon?: React.ComponentType<{ className?: string }>; text: string }> = ({ icon: Icon, text }) => (
+        <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs sm:text-sm font-medium whitespace-nowrap"
+            style={{
+                borderColor: "var(--border)",
+                background: "linear-gradient(135deg, color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%), color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%))",
+                color: "var(--fg)",
+            }}
+        >
+            {Icon ? <Icon className="h-3.5 w-3.5 opacity-70" /> : null}
+            {text}
+        </span>
+    );
+
     const openZoom = (items: string[], index: number, label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches") => setZoom({ items, index, label });
     const closeZoom = () => setZoom(null);
     const goPrev = () => setZoom(z => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
@@ -39,20 +73,20 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
     const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) =>
         images.length ? (
-            <div className="w-full hidden sm:flex justify-center">
-                <div className="mx-auto grid justify-items-center gap-5 max-w-[calc(4*22rem+3*1.25rem)] grid-cols-[repeat(auto-fit,minmax(22rem,1fr))]">
+            <div className="w-full hidden sm:block">
+                <div className="grid gap-3 w-full grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
                     {images.map((src, i) => (
                         <button
                             key={`${src}-${i}`}
                             onClick={() => openZoom(images, i, label)}
-                            className="group relative w-full max-w-[360px] rounded-3xl border shadow-sm overflow-hidden flex items-center justify-center ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="group relative w-full aspect-[4/3] rounded-2xl border shadow-sm overflow-hidden ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
                             aria-label={`Open ${imgAltPrefix} ${i + 1}`}
                         >
                             <img
                                 src={src}
                                 alt={`${imgAltPrefix} ${i + 1}`}
-                                className="block max-w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[0.97]"
+                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 loading={i < 4 ? "eager" : "lazy"}
                                 fetchPriority={i < 4 ? "high" : undefined}
                                 decoding="async"
@@ -87,49 +121,48 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
         };
         if (!images.length) return null;
         const src = images[index];
+        const frost: React.CSSProperties = {
+            background: "color-mix(in srgb, var(--card) 82%, transparent)",
+            borderColor: "color-mix(in srgb, var(--fg) 25%, transparent)",
+            color: "var(--fg)",
+        };
         return (
             <div className="sm:hidden">
-                <div className="w-full">
-                    <div className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border" style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}>
-                        <motion.button
-                            key={src}
-                            drag="x"
-                            dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={0.2}
-                            dragSnapToOrigin
-                            onDragEnd={onDragEnd}
-                            onClick={() => openZoom(images, index, label)}
-                            aria-label={`Open ${imgAltPrefix} ${index + 1}`}
-                            className="block w-full"
-                        >
-                            <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="block max-w-full h-auto object-contain mx-auto" loading="eager" decoding="async" referrerPolicy="no-referrer" />
-                        </motion.button>
-                        <div
-                            className="pointer-events-none absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                            style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
-                        >
-                            <Maximize2 className="h-3.5 w-3.5" /> View
-                        </div>
+                <div className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border" style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}>
+                    <motion.button
+                        key={src}
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.2}
+                        dragSnapToOrigin
+                        onDragEnd={onDragEnd}
+                        onClick={() => openZoom(images, index, label)}
+                        aria-label={`Open ${imgAltPrefix} ${index + 1}`}
+                        className="block w-full"
+                    >
+                        <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="block max-w-full h-auto object-contain mx-auto" loading="eager" decoding="async" referrerPolicy="no-referrer" />
+                    </motion.button>
+
+                    <div className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold backdrop-blur-md border shadow-lg" style={frost}>
+                        <Maximize2 className="h-3.5 w-3.5" /> View
                     </div>
-                    <div className="flex justify-center gap-2 py-4">abs
-                        {images.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setIndex(i)}
-                                aria-label={`Go to ${label} ${i + 1}`}
-                                className={`h-2.5 w-6 rounded-full ${i === index ? "opacity-90" : "opacity-40"}`}
-                                style={{ backgroundColor: i === index ? "color-mix(in srgb, var(--fg) 95%, transparent)" : "color-mix(in srgb, var(--fg) 40%, transparent)" }}
-                            />
-                        ))}
-                    </div>
-                    <div className="sm:hidden grid grid-cols-2 gap-3 mt-6">
-                        <Button variant="outline" onClick={() => swipeTo("prev")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
-                            Prev
-                        </Button>
-                        <Button variant="outline" onClick={() => swipeTo("next")} className="rounded-xl" style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 96%, transparent)", color: "var(--fg)" }}>
-                            Next
-                        </Button>
-                    </div>
+
+                    {images.length > 1 && (
+                        <>
+                            <button type="button" aria-label="Previous" onClick={(e) => { e.stopPropagation(); swipeTo("prev"); }} className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border backdrop-blur-md shadow-lg active:scale-90 transition" style={frost}>
+                                <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <button type="button" aria-label="Next" onClick={(e) => { e.stopPropagation(); swipeTo("next"); }} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border backdrop-blur-md shadow-lg active:scale-90 transition" style={frost}>
+                                <ChevronRight className="h-5 w-5" />
+                            </button>
+
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 backdrop-blur-md border shadow-lg" style={frost}>
+                                {images.map((_, i) => (
+                                    <button key={i} type="button" onClick={(e) => { e.stopPropagation(); setIndex(i); }} aria-label={`Go to ${label} ${i + 1}`} className="rounded-full transition-all" style={{ height: 8, width: i === index ? 16 : 8, background: i === index ? "var(--fg)" : "color-mix(in srgb, var(--fg) 35%, transparent)" }} />
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         );
@@ -151,71 +184,90 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
-            <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-12">
-                <section className="w-full mt-1">
-                    <Card className="w-full shadow-none relative overflow-hidden" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ background: "var(--elevated)" }}>
+            <div className="mx-auto max-w-screen-2xl px-1.5 sm:px-2.5 pt-[10px] pb-6 space-y-4 sm:space-y-5">
+                <section className="w-full">
+                    <Card className="w-full shadow-none overflow-hidden" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", paddingTop: 0, paddingBottom: 0, gap: 0 }}>
+                        <div className="relative w-full" style={{ height: "clamp(4.25rem, 10vh, 6.5rem)" }}>
                             {bgOk && artist.coverImage ? (
                                 <img
                                     src={artist.coverImage}
-                                    alt={`${artist.username} background`}
+                                    alt={`${artist.username} cover`}
                                     className="absolute inset-0 h-full w-full object-cover"
                                     loading="lazy"
                                     referrerPolicy="no-referrer"
                                     onError={() => setBgOk(false)}
                                 />
                             ) : (
-                                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 85%, var(--fg) 15%), color-mix(in srgb, var(--bg) 78%, var(--fg) 22%))" }} />
+                                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 82%, var(--fg) 18%), color-mix(in srgb, var(--bg) 70%, var(--fg) 30%))" }} />
                             )}
-                            <div className="absolute inset-0" style={{ background: "radial-gradient(80% 80% at 50% 35%, transparent 0%, transparent 55%, color-mix(in srgb, var(--bg) 18%, transparent) 100%)" }} />
-                            <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ height: "6rem", background: "linear-gradient(to top, color-mix(in srgb, var(--bg) 90%, transparent), transparent)" }} />
+                            <div className="absolute inset-x-0 bottom-0 h-2/3" style={{ background: "linear-gradient(to top, var(--card), transparent)" }} />
                         </div>
-                        <CardHeader className="text-center space-y-1 px-3 sm:px-6 relative z-10">
-                            <CardTitle className="text-base sm:text-lg break-words">About {artist.username}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-5 sm:px-9 relative z-10">
-                            <div className="flex flex-col items-center gap-4 sm:gap-5 mb-4 sm:mb-6">
-                                {artist.avatarUrl ? (
-                                    <img
-                                        src={artist.avatarUrl}
-                                        alt={`${artist.username} profile picture`}
-                                        className="h-32 w-32 sm:h-40 sm:w-40 rounded-full object-cover border shadow"
-                                        style={{ borderColor: "var(--border)" }}
-                                        loading="eager"
-                                        decoding="async"
-                                        referrerPolicy="no-referrer"
-                                    />
-                                ) : (
-                                    <div
-                                        className="h-32 w-32 sm:h-40 sm:w-40 rounded-full grid place-items-center border shadow text-3xl sm:text-4xl font-semibold"
-                                        style={{ borderColor: "var(--border)", backgroundColor: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
-                                        aria-label={`${artist.username} profile placeholder`}
-                                    >
-                                        {initials}
-                                    </div>
-                                )}
+
+                        <CardContent className="relative px-3 sm:px-4 pb-3 -mt-10 flex flex-col items-center text-center">
+                            {artist.avatarUrl ? (
+                                <img
+                                    src={artist.avatarUrl}
+                                    alt={`${artist.username} profile picture`}
+                                    className="h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 rounded-full object-cover ring-4"
+                                    style={{ ['--tw-ring-color' as any]: "var(--card)", boxShadow: "0 10px 26px -10px rgba(0,0,0,0.5)" }}
+                                    loading="eager"
+                                    decoding="async"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <div
+                                    className="h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 rounded-full grid place-items-center ring-4 text-2xl font-semibold"
+                                    style={{ ['--tw-ring-color' as any]: "var(--card)", backgroundColor: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)", boxShadow: "0 10px 26px -10px rgba(0,0,0,0.5)" }}
+                                    aria-label={`${artist.username} profile placeholder`}
+                                >
+                                    {initials}
+                                </div>
+                            )}
+                            <h2 className="mt-1.5 text-xl sm:text-2xl font-extrabold tracking-tight" style={{ color: "var(--fg)" }}>{artist.username}</h2>
+
+                            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
+                                {hasRating && <InfoChip icon={Star} text={`${ratingValue.toFixed(1)}${artist.reviewsCount ? ` (${artist.reviewsCount})` : ""}`} />}
+                                {loc && <InfoChip icon={MapPin} text={loc} />}
+                                {years && <InfoChip icon={Clock} text={years} />}
+                                {totalWorks > 0 && <InfoChip icon={Images} text={`${totalWorks} works`} />}
+                                {stylesClean.map((s) => <InfoChip key={s} text={s} />)}
                             </div>
-                            <Separator className="my-4 sm:my-5 opacity-60" />
-                            <p className="mx-auto max-w-2xl text-base sm:text-lg leading-7 text-center" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
+
+                            <Separator className="mt-2 mb-0 w-auto -mx-3 sm:-mx-4 self-stretch" style={{ background: "color-mix(in srgb, var(--fg) 12%, transparent)" }} />
+                            <p className="mx-auto max-w-2xl text-sm leading-6 text-center px-3 sm:px-6 py-2" style={{ color: "color-mix(in srgb, var(--fg) 82%, transparent)" }}>
                                 {bioText}
                             </p>
                         </CardContent>
                     </Card>
                 </section>
 
-                <section className="w-full -mt-2">
-                    <div className="mx-auto max-w-4xl text-center px-4">
-                        <p className="text-lg sm:text-xl font-bold leading-relaxed" style={{ color: "color-mix(in srgb, var(--fg) 88%, transparent)" }}>
-                            View the gallery below and click any image to zoom. Press and hold while zoomed for magnification.
-                        </p>
-                    </div>
-                </section>
+                {artist.handle && totalWorks > 0 && (
+                    <section className="w-full flex justify-center">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const b = document.body.style;
+                                b.position = ""; b.top = ""; b.width = ""; b.overflow = ""; b.touchAction = "";
+                                document.documentElement.style.overscrollBehavior = "";
+                                b.overscrollBehavior = "";
+                                navigate(`/artist/${(artist.handle || "").replace(/^@/, "")}`, { state: { artist } });
+                            }}
+                            className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition hover:brightness-110 active:scale-[0.99] shadow-sm"
+                            style={{ background: "var(--fg)", color: "var(--bg)" }}
+                        >
+                            <Images className="h-4 w-4" /> View all {totalWorks} works
+                        </button>
+                    </section>
+                )}
 
                 {recent.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Recent Works</h3>
-                            <span className="text-xs portfolio-section-count">
+                        <header className="mb-2 sm:mb-3 grid items-center gap-2" style={{ gridTemplateColumns: "minmax(0,1fr) auto minmax(0,1fr)" }}>
+                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title whitespace-nowrap justify-self-start">Recent Works</h3>
+                            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] sm:text-xs font-bold whitespace-nowrap justify-self-center shadow-sm" style={{ borderColor: "color-mix(in srgb, var(--fg) 28%, transparent)", background: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)" }}>
+                                <Maximize2 className="h-3 w-3" /> Tap any image to zoom
+                            </span>
+                            <span className="text-xs portfolio-section-count whitespace-nowrap justify-self-end">
                                 {recent.length} image{recent.length === 1 ? "" : "s"}
                             </span>
                         </header>
@@ -226,7 +278,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
                 {past.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                        <header className="mb-2 sm:mb-3 flex items-end justify-between">
                             <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Past Works</h3>
                             <span className="text-xs portfolio-section-count">
                                 {past.length} image{past.length === 1 ? "" : "s"}
@@ -239,7 +291,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
                 {healed.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                        <header className="mb-2 sm:mb-3 flex items-end justify-between">
                             <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Healed Works</h3>
                             <span className="text-xs portfolio-section-count">
                                 {healed.length} image{healed.length === 1 ? "" : "s"}
@@ -252,7 +304,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
 
                 {sketches.length > 0 && (
                     <section className="w-full">
-                        <header className="mb-4 sm:mb-5 flex items-end justify-between">
+                        <header className="mb-2 sm:mb-3 flex items-end justify-between">
                             <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Upcoming Sketches & Ideas</h3>
                             <span className="text-xs portfolio-section-count">
                                 {sketches.length} image{sketches.length === 1 ? "" : "s"}
