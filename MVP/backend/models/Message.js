@@ -30,6 +30,7 @@ const MessageSchema = new mongoose.Schema(
       workRefs: { type: [String], default: [] },
       kind: { type: String },
       status: { type: String },
+      clientId: { type: String },
     },
     threadKey: { type: String, index: true },
   },

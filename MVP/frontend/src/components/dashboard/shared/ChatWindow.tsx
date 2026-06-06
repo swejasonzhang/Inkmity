@@ -235,12 +235,16 @@ const ChatWindow: FC<ChatWindowProps> = ({
       deliveredAt?: number;
       seenAt?: number;
     }) => {
-      const pid = p.participantId;
       const isViewer = p.viewerId === currentUserId;
       const isParticipant = p.participantId === currentUserId;
-      
+
       if (!isViewer && !isParticipant) return;
-      
+
+      // The conversation is always keyed by the OTHER party. From the sender's
+      // side the ack's participantId is the sender's own id, so keying by it
+      // matched nothing and the bubble never flipped to Delivered/Seen.
+      const pid = isViewer ? p.participantId : p.viewerId;
+
       setConversations(prev => prev.map(conv => {
         if (conv.participantId !== pid) return conv;
         const msgs = conv.messages.map(msg => {
@@ -276,9 +280,18 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }) => {
       const msg = p.message;
       const pid = msg.senderId === currentUserId ? msg.receiverId : msg.senderId;
+      const cid = msg.meta?.clientId;
       setConversations(prev => {
         const existing = prev.find(c => c.participantId === pid);
         if (!existing) return prev;
+        // Reconcile the echo of a message we already rendered optimistically.
+        if (cid && existing.messages.some(m => m.meta?.clientId === cid)) {
+          return prev.map(conv =>
+            conv.participantId === pid
+              ? { ...conv, messages: conv.messages.map(m => (m.meta?.clientId === cid ? { ...msg } : m)).sort((a, b) => a.timestamp - b.timestamp) }
+              : conv
+          );
+        }
         const msgExists = existing.messages.some(
           m => m.timestamp === msg.timestamp && m.senderId === msg.senderId
         );
@@ -598,7 +611,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const navigate = useNavigate();
   const openArtistProfile = useCallback(() => {
     if (!isClient || !activeConv?.handle) return;
-    navigate(`/artist/${activeConv.handle}`);
+    navigate(`/artist/${(activeConv.handle || "").replace(/^@/, "")}`);
   }, [isClient, activeConv?.handle, navigate]);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [depositModalClientId, setDepositModalClientId] = useState<string | null>(null);
@@ -758,13 +771,33 @@ const ChatWindow: FC<ChatWindowProps> = ({
     setExpandedId(participantId);
     setMessageInput(prev => ({ ...prev, [participantId]: "" }));
     setPendingImages(prev => ({ ...prev, [participantId]: [] }));
-    
+
+    const imageUrls = getUrlsFromText(text);
+    const allImageUrls = [...new Set([...imageUrls, ...images])];
+    const clientId = `c-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const meta: Record<string, any> = {
+      clientId,
+      ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
+    };
+
+    // Render the message instantly (optimistic), then reconcile with the server.
+    const optimistic: Message = {
+      senderId: currentUserId,
+      receiverId: participantId,
+      text,
+      timestamp: Date.now(),
+      delivered: false,
+      seen: false,
+      meta,
+    };
+    setConversations(prev => prev.map(conv =>
+      conv.participantId === participantId
+        ? { ...conv, messages: [...conv.messages, optimistic].sort((a, b) => a.timestamp - b.timestamp) }
+        : conv
+    ));
+    requestAnimationFrame(() => scrollToBottom());
+
     try {
-      const imageUrls = getUrlsFromText(text);
-      const allImageUrls = [...new Set([...imageUrls, ...images])];
-      const meta: Record<string, any> = {
-        ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
-      };
       const res = await authFetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -777,27 +810,31 @@ const ChatWindow: FC<ChatWindowProps> = ({
         }
         throw new Error(`Server returned ${res.status}`);
       }
-      
+
       const newMessage: Message = await res.json();
-      setConversations(prev => {
-        return prev.map(conv => {
-          if (conv.participantId !== participantId) return conv;
-          const msgExists = conv.messages.some(
-            m => m.timestamp === newMessage.timestamp && m.senderId === newMessage.senderId
-          );
-          if (msgExists) return conv;
-          const updatedMessages = [...conv.messages, newMessage].sort((a, b) => a.timestamp - b.timestamp);
-          return {
-            ...conv,
-            messages: updatedMessages,
-          };
+      setConversations(prev => prev.map(conv => {
+        if (conv.participantId !== participantId) return conv;
+        let replaced = false;
+        const msgs = conv.messages.map(m => {
+          if (m.meta?.clientId && m.meta.clientId === clientId) {
+            replaced = true;
+            return { ...newMessage, meta: { ...(newMessage.meta || {}), clientId } };
+          }
+          return m;
         });
-      });
-      
-      requestAnimationFrame(() => scrollToBottom());
-      
+        const dup = msgs.some(m => m !== newMessage && m.timestamp === newMessage.timestamp && m.senderId === newMessage.senderId && m.meta?.clientId !== clientId);
+        if (!replaced && !dup) msgs.push(newMessage);
+        return { ...conv, messages: msgs.sort((a, b) => a.timestamp - b.timestamp) };
+      }));
+
       onMarkRead(participantId);
     } catch (err: any) {
+      // Roll back the optimistic message and restore the draft.
+      setConversations(prev => prev.map(conv =>
+        conv.participantId === participantId
+          ? { ...conv, messages: conv.messages.filter(m => m.meta?.clientId !== clientId) }
+          : conv
+      ));
       setSendError(err?.message || "Failed to send message.");
       setMessageInput(prev => ({ ...prev, [participantId]: text }));
       setPendingImages(prev => ({ ...prev, [participantId]: images }));
@@ -1162,7 +1199,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         {conversations.length > 0 ? (
                           <div className="flex items-center gap-2 min-w-0 flex-1 w-full">
                             {activeConv && avatarFor(activeConv, { border: false })}
-                            <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex flex-col min-w-0 flex-1 items-start text-left">
                               {activeConv && isClient && activeConv.handle ? (
                                 <button
                                   type="button"
@@ -1283,7 +1320,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           
                           let timestampText = "";
                           let statusText = "";
-                          if (isMe) {
+                          const isLastMsg = idx === activeConv.messages.length - 1;
+                          if (isMe && isLastMsg) {
                             if (msg.seen) {
                               const seenTimestamp = msg.seenAt || (msg.deliveredAt && msg.seen ? msg.deliveredAt : msg.timestamp);
                               timestampText = fmtDateTime(seenTimestamp);
@@ -1359,7 +1397,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     ))}
                                   </div>
                                 )}
-                                <div className={`mt-1 text-[10px] ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                                <div className={`mt-1 text-[10px] ${isMe ? "text-right text-primary-foreground/70" : "text-left text-muted-foreground"}`}>
                                   {timestampText}{statusText}
                                 </div>
                               </div>
@@ -1564,7 +1602,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     </div>
                     <div className="hidden md:flex items-center gap-3">
                       {activeConv && avatarFor(activeConv)}
-                      <div className="flex flex-col min-w-0">
+                      <div className="flex flex-col min-w-0 items-start text-left">
                         <div className="flex items-center gap-1.5">
                           {activeConv && isClient && activeConv.handle ? (
                             <button
@@ -1673,7 +1711,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       
                       let timestampText = "";
                       let statusText = "";
-                      if (isMe) {
+                      const isLastMsg = idx === (activeConv?.messages?.length ?? 0) - 1;
+                      if (isMe && isLastMsg) {
                         if (msg.seen) {
                           const seenTimestamp = msg.seenAt || (msg.deliveredAt && msg.seen ? msg.deliveredAt : msg.timestamp);
                           timestampText = fmtDateTime(seenTimestamp);

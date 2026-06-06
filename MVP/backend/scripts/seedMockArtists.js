@@ -128,7 +128,7 @@ async function run() {
       clerkId: m.clerkId,
       email: m.email,
       username: m.username,
-      handle: m.handle,
+      handle: m.handle.startsWith("@") ? m.handle : `@${m.handle}`,
       role: "artist",
       location: m.location,
       bio: m.bio,

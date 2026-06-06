@@ -522,29 +522,23 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
       deliveredAt?: number;
       seenAt?: number;
     }) => {
-      const pid = p.participantId;
       const isViewer = p.viewerId === currentUserId;
       const isParticipant = p.participantId === currentUserId;
-      
+
       if (!isViewer && !isParticipant) return;
-      
+
+      // The conversation is always keyed by the OTHER party. The viewer (reader)
+      // is talking to participantId; the participant (the one being notified that
+      // their messages were read) is talking to viewerId.
+      const pid = isViewer ? p.participantId : p.viewerId;
+
       upsert(pid, (prev?: Conversation) => {
-        if (!prev) {
-          return {
-            participantId: pid,
-            username: "Conversation",
-            messages: [],
-            meta: {
-              allowed: false,
-              lastStatus: null,
-              declines: 0,
-              blocked: false,
-            },
-          };
-        }
+        if (!prev) return prev as unknown as Conversation;
         const msgs = prev.messages.map((msg) => {
           const isMyMessage = msg.senderId === currentUserId;
-          const shouldUpdate = isViewer ? isMyMessage : !isMyMessage;
+          // The reader marks the other party's messages seen; the sender being
+          // notified marks their OWN sent messages seen.
+          const shouldUpdate = isParticipant ? isMyMessage : !isMyMessage;
           if (!shouldUpdate) return msg;
           const next = { ...msg };
           if (p.seen) {

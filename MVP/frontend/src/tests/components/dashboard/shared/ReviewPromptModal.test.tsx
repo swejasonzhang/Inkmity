@@ -116,7 +116,7 @@ describe("ReviewPromptModal", () => {
     await user.click(threeStarButton);
 
     const stars = screen.getAllByRole("button", { name: /Rate \d+ stars/i });
-    expect(stars[2].querySelector("svg")).toHaveClass("fill-yellow-400");
+    expect(stars[2].querySelector("svg")).toHaveClass("fill-app");
   });
 
   test("should have textarea for review comment", async () => {
