@@ -29,7 +29,7 @@ async function run() {
   const Artist = mongoose.model("artist");
   const Client = mongoose.model("client");
 
-  const kenji = await Artist.findOne({ handle: "kenji.mori" });
+  const kenji = await Artist.findOne({ handle: { $in: ["kenji.mori", "@kenji.mori"] } });
   if (!kenji) {
     console.error("Kenji (handle kenji.mori) not found. Run seedMockArtists.js first.");
     await disconnectDB();

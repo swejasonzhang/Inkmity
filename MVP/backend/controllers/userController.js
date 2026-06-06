@@ -285,7 +285,11 @@ export async function getArtistByHandle(req, res) {
   const handle = String(req.params.handle || "").replace(/^@/, "").trim().toLowerCase();
   if (!handle) return res.status(400).json({ error: "handle_required" });
   const Artist = mongoose.model("artist");
-  const doc = await Artist.findOne({ handle }).select("+lastActive +visibility").lean();
+  // Handles are stored inconsistently — seeded accounts are bare ("kenji") while
+  // signup accounts are stored with a leading "@" ("@kenji"). Match either.
+  const doc = await Artist.findOne({ handle: { $in: [handle, `@${handle}`] } })
+    .select("+lastActive +visibility")
+    .lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
