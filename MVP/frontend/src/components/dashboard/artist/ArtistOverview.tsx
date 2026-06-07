@@ -10,6 +10,10 @@ import {
   Wallet,
   TrendingUp,
   PiggyBank,
+  Clock,
+  CalendarX2,
+  Sunrise,
+  Coins,
 } from "lucide-react";
 import type { Booking } from "@/api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +57,17 @@ function fmtTime(date: string) {
   return new Date(date).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+function fmtRelative(date: string) {
+  const ms = new Date(date).getTime() - Date.now();
+  if (ms <= 0) return "now";
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `in ${mins}m`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `in ${hrs}h`;
+  const days = Math.round(hrs / 24);
+  return days === 1 ? "tomorrow" : `in ${days}d`;
+}
+
 function fmtMoney(cents: number) {
   const dollars = cents / 100;
   if (dollars >= 1000) return `$${(dollars / 1000).toFixed(dollars % 1000 === 0 ? 0 : 1)}k`;
@@ -77,10 +92,12 @@ function statusChip(status: string): string {
 export default function ArtistOverview({ appointments, loading }: Props) {
   const data = appointments ?? [];
 
-  const { stats, money, upcoming } = useMemo(() => {
+  const { stats, money, next, upcoming } = useMemo(() => {
     const now = new Date();
     const weekAhead = new Date(now.getTime() + 7 * 86400000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const todayStart = startOfDay(now).getTime();
+    const todayEnd = todayStart + 86400000;
 
     const upcomingList = data
       .filter(
@@ -93,6 +110,11 @@ export default function ArtistOverview({ appointments, loading }: Props) {
       (a) => new Date(a.startAt).getTime() <= weekAhead.getTime()
     ).length;
     const completed = data.filter((a) => a.status === "completed");
+    const noShowCount = data.filter((a) => a.status === "no-show").length;
+    const todayCount = upcomingList.filter((a) => {
+      const t = new Date(a.startAt).getTime();
+      return t >= todayStart && t < todayEnd;
+    }).length;
 
     const earnedThisMonth = completed
       .filter((a) => new Date(a.startAt).getTime() >= monthStart)
@@ -101,27 +123,66 @@ export default function ArtistOverview({ appointments, loading }: Props) {
     const depositsHeld = data
       .filter((a) => ACTIVE_STATUSES.has(a.status) || a.status === "pending")
       .reduce((sum, a) => sum + (a.depositPaidCents ?? 0), 0);
+    const valued = completed.filter((a) => (a.priceCents ?? 0) > 0);
+    const avgValue = valued.length
+      ? Math.round(valued.reduce((sum, a) => sum + (a.priceCents ?? 0), 0) / valued.length)
+      : 0;
 
     return {
       stats: [
+        { label: "Today", value: todayCount, Icon: Sunrise },
         { label: "Upcoming", value: upcomingList.length, Icon: CalendarClock },
         { label: "Pending", value: pendingCount, Icon: Hourglass },
         { label: "This week", value: thisWeekCount, Icon: CalendarRange },
         { label: "Completed", value: completed.length, Icon: CheckCircle2 },
+        { label: "No-shows", value: noShowCount, Icon: CalendarX2 },
       ],
       money: [
         { label: "Earned this month", value: fmtMoney(earnedThisMonth), Icon: Wallet },
         { label: "Upcoming value", value: fmtMoney(upcomingValue), Icon: TrendingUp },
         { label: "Deposits held", value: fmtMoney(depositsHeld), Icon: PiggyBank },
+        { label: "Avg / booking", value: fmtMoney(avgValue), Icon: Coins },
       ],
-      upcoming: upcomingList.slice(0, 6),
+      next: upcomingList[0] ?? null,
+      upcoming: upcomingList.slice(1, 7),
     };
   }, [data]);
 
   return (
-    <div className="flex flex-col h-full gap-3 sm:gap-4">
+    <div className="flex flex-col h-full gap-2.5 sm:gap-3">
       <PayoutSetup />
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-2 flex-shrink-0">
+
+      <div className="rounded-xl border border-app bg-elevated px-3 py-2.5 flex items-center gap-3 flex-shrink-0">
+        <div className="grid place-items-center h-10 w-10 rounded-full bg-card border border-app shrink-0">
+          <Clock className="h-4 w-4 text-app" />
+        </div>
+        {loading ? (
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+        ) : next ? (
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase tracking-wide text-muted">
+              Next up · {fmtRelative(next.startAt)}
+            </div>
+            <div className="text-sm font-semibold text-app truncate">
+              {next.client?.username ?? "Client"}
+              <span className="text-muted font-normal"> · {next.appointmentType === "consultation" ? "Consultation" : "Tattoo session"}</span>
+            </div>
+            <div className="text-[11px] text-muted truncate">
+              {fmtDay(next.startAt)} · {fmtTime(next.startAt)} – {fmtTime(next.endAt)}
+            </div>
+          </div>
+        ) : (
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase tracking-wide text-muted">Next up</div>
+            <div className="text-sm font-medium text-app">Nothing scheduled yet</div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 flex-shrink-0">
         {stats.map(({ label, value, Icon }) => (
           <div
             key={label}
@@ -145,9 +206,9 @@ export default function ArtistOverview({ appointments, loading }: Props) {
             Earnings &amp; deposits
           </span>
         </div>
-        <div className="grid grid-cols-3 divide-x divide-[color:var(--border)]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px" style={{ background: "var(--border)" }}>
           {money.map(({ label, value }) => (
-            <div key={label} className="px-2 py-2.5 sm:py-3 flex flex-col items-center text-center min-w-0">
+            <div key={label} className="bg-elevated px-2 py-2.5 sm:py-3 flex flex-col items-center text-center min-w-0">
               {loading ? (
                 <Skeleton className="h-6 w-12" />
               ) : (
@@ -159,7 +220,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 rounded-xl border border-app bg-elevated flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-[120px] rounded-xl border border-app bg-elevated flex flex-col overflow-hidden">
         <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b border-app flex-shrink-0">
           <div className="text-xs sm:text-sm font-semibold text-app">Upcoming appointments</div>
           <Link
@@ -170,7 +231,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
           </Link>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 space-y-2">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-center p-2 sm:p-3 space-y-2">
           {loading ? (
             Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-14 w-full rounded-lg" />
@@ -178,9 +239,13 @@ export default function ArtistOverview({ appointments, loading }: Props) {
           ) : upcoming.length === 0 ? (
             <div className="h-full min-h-[140px] flex flex-col items-center justify-center text-center gap-2 px-4 py-8">
               <Inbox className="h-7 w-7 text-muted" />
-              <div className="text-sm font-medium text-app">No upcoming appointments</div>
+              <div className="text-sm font-medium text-app">
+                {next ? "You're all caught up after this one" : "No upcoming appointments"}
+              </div>
               <div className="text-[11px] sm:text-xs text-muted max-w-[260px]">
-                Confirmed bookings with clients will appear here as they come in.
+                {next
+                  ? "Your next appointment is shown above. New confirmed bookings will appear here."
+                  : "Confirmed bookings with clients will appear here as they come in."}
               </div>
             </div>
           ) : (

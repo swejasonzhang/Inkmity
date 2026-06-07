@@ -652,12 +652,12 @@ export default function ArtistProfile() {
                 }}
             />
             <div className="w-full max-w-3xl mx-auto flex flex-col h-full min-h-0 items-stretch">
-                <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative overflow-hidden p-8 items-center justify-center" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
-                    <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 overflow-y-auto">
+                <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative overflow-hidden p-5 sm:p-8 items-center justify-center" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
+                    <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 min-h-0 overflow-y-auto">
 
-                    <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-6">Artist Profile</h2>
+                    <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-4 sm:mb-6">Artist Profile</h2>
 
-                    <div className="relative mb-8 w-full flex items-center justify-center">
+                    <div className="relative mb-5 sm:mb-8 w-full flex items-center justify-center">
                         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                             {bgOk && currentCoverImage ? (
                                 <img

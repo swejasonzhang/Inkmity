@@ -7,6 +7,7 @@ import ArtistPortfolio, { ArtistWithGroups } from "./ArtistPortfolio";
 import ArtistBooking from "./ArtistBooking";
 import ArtistReviews from "./ArtistReviews";
 import StepBarRow from "./StepBarRow";
+import { fetchArtistByHandle, fetchArtistById } from "@/api";
 import "@/styles/artist-modal.css";
 
 declare global {
@@ -25,6 +26,49 @@ type Props = {
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
+  // The dashboard list only carries a thumbnail's worth of data (portfolioImages
+  // at most), so the modal would otherwise render no Past/Healed/Sketch works.
+  // Hydrate the full artist document on open and merge in the complete galleries.
+  const [hydrated, setHydrated] = useState<ArtistWithGroups>(artist);
+  useEffect(() => {
+    setHydrated(artist);
+  }, [artist._id]);
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    const ac = new AbortController();
+    (async () => {
+      try {
+        const handle = (artist.handle || "").replace(/^@/, "").trim();
+        let full: any = null;
+        if (handle) full = await fetchArtistByHandle(handle, ac.signal);
+        else if (/^[a-f0-9]{24}$/i.test(artist._id)) full = await fetchArtistById(artist._id, ac.signal);
+        if (!active || !full) return;
+        const pick = (a?: unknown[], b?: unknown[]) => (Array.isArray(a) && a.length ? a : b ?? []);
+        setHydrated((prev) => ({
+          ...prev,
+          bio: prev.bio ?? full.bio,
+          coverImage: prev.coverImage ?? full.coverImage,
+          avatarUrl: prev.avatarUrl ?? full.avatar?.url ?? full.avatarUrl,
+          styles: prev.styles ?? full.styles,
+          location: prev.location ?? full.location,
+          yearsExperience: prev.yearsExperience ?? full.yearsExperience,
+          rating: prev.rating ?? full.rating,
+          reviewsCount: prev.reviewsCount ?? full.reviewsCount,
+          portfolioImages: pick(full.portfolioImages, prev.portfolioImages) as string[],
+          pastWorks: pick(full.pastWorks, prev.pastWorks) as string[],
+          healedWorks: pick(full.healedWorks, prev.healedWorks) as string[],
+          sketches: pick(full.sketches, prev.sketches) as string[],
+        }));
+      } catch {
+        /* keep the lightweight artist we already have */
+      }
+    })();
+    return () => {
+      active = false;
+      ac.abort();
+    };
+  }, [open, artist._id, artist.handle]);
   const portalRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -564,17 +608,17 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
               visibility: "visible"
             } as React.CSSProperties}
           >
-            {step === 0 && <ArtistPortfolio artist={artist} />}
+            {step === 0 && <ArtistPortfolio artist={hydrated} />}
             {step === 1 && (
               <ArtistBooking
-                artist={artist}
+                artist={hydrated}
                 onBack={() => { setStep(0); }}
                 onClose={onClose}
                 onGoToStep={s => { setStep(s); }}
                 onMessage={onMessage}
               />
             )}
-            {step === 2 && <ArtistReviews artist={artist} />}
+            {step === 2 && <ArtistReviews artist={hydrated} />}
           </div>
         </ScrollArea>
       </div>

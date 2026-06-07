@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/header/Header";
 import FloatingBar from "@/components/dashboard/shared/FloatingBar";
 import { Bot, X } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ArtistCardSkeleton } from "@/components/dashboard/client/ArtistCardSkeleton";
 import ChatWindow from "@/components/dashboard/shared/ChatWindow";
 import ChatBot from "@/components/dashboard/shared/ChatBot";
 import { toast } from "react-toastify";
@@ -90,7 +90,15 @@ export default function ClientDashboard() {
         }
     }, [isLoaded, isSignedIn, navigate]);
 
-    const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(null);
+    // Read the reopen target synchronously from history so the modal is requested
+    // on the very first render — otherwise the dashboard flashes for a frame
+    // before an effect reopens it when returning from the full-works page.
+    const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(() => {
+        const st = (typeof window !== "undefined" ? window.history.state?.usr : null) as
+            | { reopenArtist?: ArtistDto }
+            | null;
+        return st?.reopenArtist ?? null;
+    });
 
     const location = useLocation();
     const reopenHandledRef = useRef(false);
@@ -217,7 +225,7 @@ export default function ClientDashboard() {
             `}</style>
             <div className="h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root" onWheel={handleWheel}>
             <Header />
-            <div className="sm:hidden" style={{ padding: '0 clamp(12px, 1.5vw, 24px)', marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+            <div className="sm:hidden" style={{ marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={setPriceFilter}
@@ -242,16 +250,24 @@ export default function ClientDashboard() {
                     className="mb-3"
                 />
             </div>
-            <main className="flex-1 min-h-0 flex flex-col overflow-hidden" style={{ padding: '0 clamp(12px, 1.5vw, 24px)' }}>
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 flex">
                     <div className="w-full h-full" style={{ padding: '0' }}>
                         <Suspense
                             fallback={
-                                <div style={{ padding: 'clamp(1rem, 1.5vmin + 0.8vw, 2rem)' }} className="space-y-4">
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: 'clamp(0.75rem, 1vmin + 0.5vw, 1.5rem)' }}>
-                                        {Array.from({ length: 8 }).map((_, i) => (
-                                            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+                                <div className="h-full w-full">
+                                    <div
+                                        className="hidden md:grid md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 w-full h-full"
+                                        style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)', padding: 'clamp(10px, 1.2vh + 0.4vw, 18px) 0', gridAutoRows: '1fr', alignContent: 'start' }}
+                                    >
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <ArtistCardSkeleton key={i} />
                                         ))}
+                                    </div>
+                                    <div className="md:hidden h-full w-full grid place-items-center" style={{ padding: '6px' }}>
+                                        <div className="w-full h-full max-w-md">
+                                            <ArtistCardSkeleton />
+                                        </div>
                                     </div>
                                 </div>
                             }
@@ -269,7 +285,9 @@ export default function ClientDashboard() {
                     </div>
                 </div>
             </main>
-            <div className="shrink-0" style={{ padding: 'clamp(6px, 0.9vw, 12px) clamp(12px, 1.5vw, 24px)' }}>
+            {/* Reserves the fixed floating bar's footprint so the content above
+                stops at the bar instead of sliding under it. */}
+            <div className="shrink-0" style={{ height: 'calc(44px + clamp(0.625rem, 1vh + 0.5vw, 1.25rem) + env(safe-area-inset-bottom, 0px))' }}>
                 <FloatingBar
                     role="Client"
                     onAssistantOpen={() => setAssistantOpen(true)}
@@ -329,6 +347,18 @@ export default function ClientDashboard() {
                     </>
                 )}
             </AnimatePresence>
+
+            {selectedArtist && (
+                <div
+                    aria-hidden
+                    className="fixed inset-0 z-[1190]"
+                    style={{
+                        background: "color-mix(in srgb, var(--bg) 70%, transparent)",
+                        backdropFilter: "blur(10px)",
+                        WebkitBackdropFilter: "blur(10px)",
+                    }}
+                />
+            )}
 
             <Suspense fallback={null}>
                 {selectedArtist && (

@@ -112,7 +112,7 @@ export default function CalendarPicker({ date, month, onDateChange, onMonthChang
                         }}
                         fromDate={startOfToday}
                         disabled={{ before: startOfToday }}
-                        showOutsideDays
+                        showOutsideDays={false}
                         className="w-full h-full flex flex-col rounded-xl border p-2.5 sm:p-3"
                         style={{
                             background: "var(--card)",

@@ -36,6 +36,17 @@ html.ink-no-scroll .ink-page-scroll {
   overflow: hidden !important;
 }
 
+/* ── Global edge frame (left/right only) ────────────────────────────────
+   Inset foreground content from the left/right screen edges by a consistent
+   gutter. Horizontal-only, so it never affects viewport heights. Full-bleed
+   background video/images are portaled to <body> with fixed positioning, so
+   their containing block is the viewport (not body's padding box) and they
+   remain edge-to-edge. */
+body {
+  padding-left: var(--ink-edge-l);
+  padding-right: var(--ink-edge-r);
+}
+
 :root {
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial;
@@ -76,6 +87,11 @@ html.ink-no-scroll .ink-page-scroll {
   --veil-ms: 300ms;
   --video-blend: normal;
   --video-opacity: 0.35;
+  /* Global edge frame: consistent left/right gutter that pushes foreground
+     content in from the screen sides (max() folds in device safe-area insets). */
+  --ink-edge: clamp(0.5rem, 1.2vw, 1.25rem);
+  --ink-edge-l: max(var(--ink-edge), env(safe-area-inset-left, 0px));
+  --ink-edge-r: max(var(--ink-edge), env(safe-area-inset-right, 0px));
 }
 
 .ink-scope[data-ink="light"],
@@ -876,7 +892,9 @@ input::-moz-focus-inner {
   );
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: ink-shimmer 1.4s ease-in-out infinite;
+  /* One sweep per second → exactly two clean sweeps inside the 2s lazy window,
+     finishing in lockstep with the ink-reveal fade. */
+  animation: ink-shimmer 1s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .ink-shimmer {

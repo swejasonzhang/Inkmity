@@ -118,10 +118,10 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-md p-0 overflow-hidden gap-0 rounded-2xl"
-        style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
+        className="max-w-md p-0 overflow-hidden gap-0 rounded-2xl flex flex-col"
+        style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)", maxHeight: "90dvh" }}
       >
-        <DialogHeader className="space-y-2 px-5 pt-5 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
+        <DialogHeader className="shrink-0 space-y-2 px-5 pt-5 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center justify-center gap-2.5">
             <span className="grid place-items-center h-9 w-9 rounded-xl" style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
               <Wallet className="h-4 w-4" />
@@ -133,7 +133,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-5 py-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
           {/* Mode segmented toggle */}
           <div className="grid grid-cols-2 gap-1 rounded-xl p-1" style={{ background: "var(--elevated)" }}>
             {([
@@ -275,7 +275,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
           </div>
         </div>
 
-        <DialogFooter className="px-5 py-4 border-t gap-2 sm:justify-center" style={{ borderColor: "var(--border)" }}>
+        <DialogFooter className="shrink-0 px-5 py-4 border-t gap-2 sm:justify-center" style={{ borderColor: "var(--border)" }}>
           <Button variant="outline" onClick={onClose} disabled={loading} className="rounded-xl">
             Cancel
           </Button>
