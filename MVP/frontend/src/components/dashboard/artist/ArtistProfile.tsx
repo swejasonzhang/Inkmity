@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
-import { Save, Edit2, X, Plus, Camera, Briefcase, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Save, Edit2, X, Plus, Camera, Briefcase, Trash2, ArrowUp, ArrowDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DepositPolicyModal from "@/components/dashboard/shared/DepositPolicyModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -194,7 +195,6 @@ interface Artist {
 export default function ArtistProfile() {
     const { getToken } = useAuth();
     const { user } = useUser();
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [usernameNotice, setUsernameNotice] = useState<string | null>(null);
     const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
@@ -214,6 +214,8 @@ export default function ArtistProfile() {
 
     const [depositDollars, setDepositDollars] = useState<string>("50.00");
     const [depositPolicySaving, setDepositPolicySaving] = useState(false);
+    const [depositModalOpen, setDepositModalOpen] = useState(false);
+    const [depositReloadKey, setDepositReloadKey] = useState(0);
 
     useEffect(() => {
         let active = true;
@@ -236,7 +238,7 @@ export default function ArtistProfile() {
         return () => {
             active = false;
         };
-    }, [user?.id]);
+    }, [user?.id, depositReloadKey]);
 
     const saveDepositPolicy = async () => {
         if (!user?.id) return;
@@ -321,8 +323,6 @@ export default function ArtistProfile() {
             setBgOk(Boolean(artistData.coverImage));
         } catch (error) {
             console.error("Failed to load profile:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -622,21 +622,7 @@ export default function ArtistProfile() {
             </div>
         ) : null;
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>Loading profile...</div>
-            </div>
-        );
-    }
-
-    if (!artist) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>No profile data available</div>
-            </div>
-        );
-    }
+    if (!artist) return null;
 
     return (
         <div className="h-full min-h-0 w-full overflow-y-auto flex items-start justify-center py-4 px-4">
@@ -897,7 +883,7 @@ export default function ArtistProfile() {
                             <p className="text-xs text-center" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
                                 Clients must pay this deposit to book a tattoo session. Minimum $50.00.
                             </p>
-                            <div className="pt-2 flex justify-center">
+                            <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
                                 <Button
                                     onClick={saveDepositPolicy}
                                     disabled={depositPolicySaving}
@@ -908,9 +894,28 @@ export default function ArtistProfile() {
                                     <Save className="h-4 w-4 mr-2" />
                                     {depositPolicySaving ? "Saving..." : "Save Deposit"}
                                 </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => setDepositModalOpen(true)}
+                                    variant="outline"
+                                    size="sm"
+                                    className="font-semibold"
+                                >
+                                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                                    Edit full policy
+                                </Button>
                             </div>
                         </div>
                     </div>
+
+                    {user?.id && (
+                        <DepositPolicyModal
+                            artistId={user.id}
+                            open={depositModalOpen}
+                            onClose={() => setDepositModalOpen(false)}
+                            onSuccess={() => setDepositReloadKey((k) => k + 1)}
+                        />
+                    )}
 
                     <div className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{

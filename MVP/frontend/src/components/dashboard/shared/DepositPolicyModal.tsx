@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Wallet, Percent, DollarSign, ShieldCheck, Clock } from "lucide-react";
+import { Wallet, Percent, DollarSign, ShieldCheck, Clock, Gift, Building2 } from "lucide-react";
 import { updateArtistPolicy, getArtistPolicy, type ArtistPolicy } from "@/api";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
@@ -33,13 +33,22 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
     maxCents: 30000,
     nonRefundable: true,
     cutoffHours: 48,
+    consultationFree: true,
   });
 
   const loadPolicy = useCallback(async () => {
     try {
       const current = await getArtistPolicy(artistId);
       if (current?.deposit) {
-        setPolicy((p) => ({ ...p, ...(current.deposit as NonNullable<ArtistPolicy["deposit"]>) }));
+        const d = current.deposit as NonNullable<ArtistPolicy["deposit"]>;
+        setPolicy((p) => ({
+          ...p,
+          ...d,
+          // An auto-created policy comes back with 0 min/max; keep sensible
+          // defaults so the saved policy stays "configured".
+          minCents: Number(d.minCents) > 0 ? Number(d.minCents) : p.minCents,
+          maxCents: Number(d.maxCents) > 0 ? Number(d.maxCents) : p.maxCents,
+        }));
       }
     } catch (err) {
       console.error("Failed to load policy:", err);
@@ -90,7 +99,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
         placeholder={placeholder}
         value={value ? value / 100 : ""}
         onChange={(e) => onChange(Math.max(0, Math.round((parseFloat(e.target.value) || 0) * 100)))}
-        className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+        className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-3 text-center text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
         style={{ borderColor: "var(--border)", color: "var(--fg)" }}
       />
     </div>
@@ -157,19 +166,19 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
                   <Slider
                     value={[Math.round((policy.percent ?? 0) * 100)]}
                     min={0}
-                    max={100}
+                    max={50}
                     step={1}
-                    onValueChange={([v]) => set({ percent: Math.min(1, Math.max(0, v / 100)) })}
+                    onValueChange={([v]) => set({ percent: Math.min(0.5, Math.max(0, v / 100)) })}
                     className="flex-1"
                   />
                   <div className="relative w-20 shrink-0">
                     <input
                       type="number"
                       min={0}
-                      max={100}
+                      max={50}
                       value={Math.round((policy.percent ?? 0) * 100)}
-                      onChange={(e) => set({ percent: Math.min(1, Math.max(0, (parseFloat(e.target.value) || 0) / 100)) })}
-                      className="h-10 w-full rounded-xl border bg-transparent pl-3 pr-7 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                      onChange={(e) => set({ percent: Math.min(0.5, Math.max(0, (parseFloat(e.target.value) || 0) / 100)) })}
+                      className="h-10 w-full rounded-xl border bg-transparent pl-3 pr-7 text-center text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                       style={{ borderColor: "var(--border)", color: "var(--fg)" }}
                     />
                     <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm opacity-50">%</span>
@@ -192,20 +201,36 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
             </Field>
           )}
 
-          {/* Non-refundable toggle */}
-          <div className="flex items-center justify-between rounded-xl border px-3.5 py-3" style={{ borderColor: "var(--border)" }}>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <ShieldCheck className="h-4 w-4 opacity-70 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm font-semibold">Non-refundable</div>
-                <div className="text-[11px] opacity-55 truncate">Deposit is kept if the client cancels late</div>
-              </div>
+          {/* Non-refundable */}
+          <div className="rounded-xl border px-4 py-3 text-center" style={{ borderColor: "var(--border)" }}>
+            <div className="flex items-center justify-center gap-2">
+              <ShieldCheck className="h-4 w-4 opacity-70" />
+              <span className="text-sm font-semibold">Non-refundable deposit</span>
+              <Switch checked={!!policy.nonRefundable} onCheckedChange={(v) => set({ nonRefundable: v })} />
             </div>
-            <Switch checked={!!policy.nonRefundable} onCheckedChange={(v) => set({ nonRefundable: v })} />
+            <p className="mt-1.5 text-[11px] leading-relaxed opacity-55">
+              {policy.nonRefundable
+                ? "The deposit is kept if the client cancels or reschedules inside the cutoff window below."
+                : "The deposit is fully refunded if the client cancels."}
+            </p>
+          </div>
+
+          {/* Free consultations */}
+          <div className="rounded-xl border px-4 py-3 text-center" style={{ borderColor: "var(--border)" }}>
+            <div className="flex items-center justify-center gap-2">
+              <Gift className="h-4 w-4 opacity-70" />
+              <span className="text-sm font-semibold">Free consultations</span>
+              <Switch checked={policy.consultationFree ?? true} onCheckedChange={(v) => set({ consultationFree: v })} />
+            </div>
+            <p className="mt-1.5 text-[11px] leading-relaxed opacity-55">
+              {(policy.consultationFree ?? true)
+                ? "Clients can book a consultation with you at no charge."
+                : "Consultations require the deposit above, just like tattoo sessions."}
+            </p>
           </div>
 
           {/* Cancellation cutoff */}
-          <Field label="Free-cancellation cutoff" hint="hours before the appointment">
+          <Field label="Cancellation cutoff" hint="hours before the appointment">
             <div className="relative">
               <Clock className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
               <input
@@ -214,7 +239,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
                 step={1}
                 value={policy.cutoffHours ?? 0}
                 onChange={(e) => set({ cutoffHours: Math.max(0, Math.round(parseFloat(e.target.value) || 0)) })}
-                className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-12 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-12 text-center text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                 style={{ borderColor: "var(--border)", color: "var(--fg)" }}
               />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-50">hrs</span>
@@ -239,13 +264,22 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
               Set a {policy.mode === "percent" ? "percentage and minimum" : "flat amount"} to enable appointments.
             </p>
           )}
+
+          {/* Deposit-only + studio-compliance acknowledgment */}
+          <div className="flex items-start gap-2 rounded-xl border px-3.5 py-3 text-left" style={{ borderColor: "var(--border)" }}>
+            <Building2 className="h-4 w-4 mt-0.5 opacity-70 shrink-0" />
+            <p className="text-[11px] leading-relaxed opacity-65">
+              Deposits only hold the booking — the remaining balance is paid directly with you at the studio.
+              By saving, you confirm you're allowed to accept platform deposits under your studio's agreement.
+            </p>
+          </div>
         </div>
 
         <DialogFooter className="px-5 py-4 border-t gap-2 sm:justify-center" style={{ borderColor: "var(--border)" }}>
           <Button variant="outline" onClick={onClose} disabled={loading} className="rounded-xl">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={loading || !depositConfigured} className="rounded-xl">
+          <Button onClick={handleSave} disabled={loading} className="rounded-xl">
             {loading ? "Saving…" : "Save policy"}
           </Button>
         </DialogFooter>

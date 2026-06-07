@@ -43,24 +43,29 @@ async function artistCanReceivePayments(artistId) {
 
 export function computeDepositCents(policy, priceCents, appointmentType) {
   const p = policy?.deposit || {};
+  // The artist decides whether consultations are free (default: free).
+  if (appointmentType === "consultation" && (p.consultationFree ?? true)) return 0;
+  const price = Math.max(0, Number(priceCents || 0));
   const mode = p.mode || "percent";
+  let result;
   if (mode === "flat") {
     const base = Math.max(0, Number(p.amountCents || 0));
-    if (appointmentType === "tattoo_session") {
-      return Math.max(base, 5000);
-    }
-    return base;
+    result = appointmentType === "tattoo_session" ? Math.max(base, 5000) : base;
+  } else {
+    const percent = Math.max(0, Math.min(1, Number(p.percent || 0.2)));
+    const minCents = Math.max(
+      0,
+      Number(p.minCents || 0),
+      appointmentType === "tattoo_session" ? 5000 : 0
+    );
+    const maxCents = Math.max(0, Number(p.maxCents || Infinity));
+    const raw = Math.round(price * percent);
+    result = Math.min(Math.max(raw, minCents), maxCents);
   }
-  const percent = Math.max(0, Math.min(1, Number(p.percent || 0.2)));
-  const minCents = Math.max(
-    0,
-    Number(p.minCents || 0),
-    appointmentType === "tattoo_session" ? 5000 : 0
-  );
-  const maxCents = Math.max(0, Number(p.maxCents || Infinity));
-  const base = Math.max(0, Number(priceCents || 0));
-  const raw = Math.round(base * percent);
-  return Math.min(Math.max(raw, minCents), maxCents);
+  // Deposit-only guardrail: the platform never collects more than the session
+  // price — the remaining balance is settled with the artist at the studio.
+  if (price > 0) result = Math.min(result, price);
+  return result;
 }
 
 function isRefundEligible(startAtISO, now = new Date()) {

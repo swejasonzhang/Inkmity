@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, CalendarDays, Clock, Info, ArrowLeft } from "lucide-react";
+import { X, CalendarDays, Clock, Info, ArrowLeft, ChevronRight } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 
@@ -35,6 +35,15 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
     const [date, setDate] = useState<Date | undefined>(today);
     const username = artist?.username ?? "the artist";
     const artistId = artist?.clerkId ?? null;
+
+    const openPortfolio = () => {
+        if (!artistId) return;
+        onClose();
+        // Open the artist's modal on the Booking step (step 1).
+        window.dispatchEvent(new CustomEvent("ink:open-artist-modal", {
+            detail: { clerkId: artistId, handle: artist?.handle, username: artist?.username, step: 1 },
+        }));
+    };
     const initial = (username || "A").trim().charAt(0).toUpperCase();
 
     const rangeLabel = useMemo(() => {
@@ -141,9 +150,22 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                                         <DayChip key={d.toISOString()} d={d} />
                                     ))}
                                 </div>
-                                <div className="flex items-start gap-2 text-[11px] leading-relaxed opacity-60">
-                                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                                    <span>Booking further out than two weeks? Open the artist’s full portfolio to pick any date.</span>
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-start gap-2 text-[11px] leading-relaxed opacity-60">
+                                        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                        <span>Booking further out than two weeks? Pick any date from the full portfolio.</span>
+                                    </div>
+                                    {artistId && (
+                                        <button
+                                            type="button"
+                                            onClick={openPortfolio}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-90 shrink-0"
+                                            style={{ background: "var(--fg)", color: "var(--bg)" }}
+                                        >
+                                            View full portfolio
+                                            <ChevronRight className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
                                 </div>
                             </section>
 

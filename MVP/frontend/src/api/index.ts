@@ -650,6 +650,7 @@ export type ArtistPolicy = {
     maxCents?: number;
     nonRefundable?: boolean;
     cutoffHours?: number;
+    consultationFree?: boolean;
   };
   bookingEnabled?: boolean;
   createdAt?: string;
