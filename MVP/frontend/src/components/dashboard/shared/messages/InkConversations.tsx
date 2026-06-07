@@ -29,7 +29,7 @@ export const InkConversations: React.FC<Props> = ({
   derivedTotal,
   messagesContent,
 }) => {
-  const wrapperWidth = !isMdUp && !open ? "auto" : width;
+  const wrapperWidth = width;
   const badgeH = isMdUp ? 22 : 16;
   const badgeMinW = badgeH;
   const badgePadX = isMdUp ? 6 : 4;
@@ -37,7 +37,7 @@ export const InkConversations: React.FC<Props> = ({
 
   return (
     <div
-      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex w-full" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} pointer-events-auto border border-app/40 shadow-md transition`}
+      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} pointer-events-auto border border-app/40 shadow-md transition`}
       aria-label={open ? "Messages" : "Open messages"}
       aria-expanded={open}
       style={{
@@ -52,7 +52,6 @@ export const InkConversations: React.FC<Props> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        ...(!isMdUp && open ? { maxWidth: "100%", minWidth: "100%" } : {})
       }}
     >
       {!open ? (
@@ -90,7 +89,7 @@ export const InkConversations: React.FC<Props> = ({
       ) : (
         <div className="flex flex-col h-full w-full">
           <div
-            className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-4 py-3"} border-b border-app/40`}
+            className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-2 py-3"} border-b border-app/40`}
             style={!isMdUp ? { minHeight: "50px" } : undefined}
           >
             <div
@@ -131,7 +130,7 @@ export const InkConversations: React.FC<Props> = ({
             </div>
           </div>
           <div className="flex-1 min-h-0">
-            <div className={`h-full pt-2 pb-2 ${!isMdUp ? "text-center px-4" : "px-3"}`}>{messagesContent}</div>
+            <div className={`h-full pt-2 pb-2 ${!isMdUp ? "px-0" : "px-3"}`}>{messagesContent}</div>
           </div>
         </div>
       )}

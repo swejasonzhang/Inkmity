@@ -281,7 +281,7 @@ export default function FloatingBar({
           to a fixed/absolute panel when it expands) */}
       <div
         ref={btnRef}
-        className="ink-solid-controls flex items-center justify-center justify-self-end"
+        className="ink-solid-controls flex items-end justify-end justify-self-end"
         style={{
           pointerEvents: "auto",
           ...(open
@@ -289,7 +289,7 @@ export default function FloatingBar({
                 position: isMdUp ? "absolute" : "fixed",
                 ...(isMdUp
                   ? { right: 0, bottom: 0, width: convW, height: DESKTOP_OPEN_H }
-                  : { top: headerHeight || MOBILE_HEADER_HEIGHT, left: 0, right: 0, width: "100vw", height: MOBILE_OPEN_H }),
+                  : { right: 0, bottom: 0, width: "100vw", height: MOBILE_OPEN_H }),
                 zIndex: !isMdUp ? 9999 : undefined,
               }
             : {

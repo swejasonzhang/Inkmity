@@ -4,6 +4,7 @@ import { API_URL } from "@/api";
 import { Save, Edit2, X, Plus, Camera, Briefcase, Trash2, ArrowUp, ArrowDown, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DepositPolicyModal from "@/components/dashboard/shared/DepositPolicyModal";
+import PayoutSetup from "@/components/dashboard/artist/PayoutSetup";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -652,8 +653,8 @@ export default function ArtistProfile() {
                 }}
             />
             <div className="w-full max-w-3xl mx-auto flex flex-col h-full min-h-0 items-stretch">
-                <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative overflow-hidden p-5 sm:p-8 items-center justify-center" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
-                    <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 min-h-0 overflow-y-auto">
+                <div className="group w-full h-full flex flex-col rounded-3xl border border-app transition relative overflow-hidden p-6 sm:p-8 items-center justify-center" style={{ background: "var(--card)", boxShadow: "0 12px 44px -16px color-mix(in srgb, var(--fg) 16%, transparent)" }}>
+                    <div className="flex flex-col items-center justify-center text-center gap-1 w-full max-w-2xl relative flex-1 min-h-0 overflow-y-auto px-1 sm:px-0 pb-6 sm:pb-8">
 
                     <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-4 sm:mb-6">Artist Profile</h2>
 
@@ -1050,6 +1051,17 @@ export default function ArtistProfile() {
                                 Add
                             </Button>
                         </div>
+                    </div>
+
+                    <div className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full max-w-2xl mb-4"
+                        style={{
+                            background: "color-mix(in srgb, var(--card) 80%, transparent)",
+                            borderColor: "var(--border)"
+                        }}>
+                        <Label className="ink-flash-title text-xs mb-4 w-full" style={{ color: "var(--fg)" }}>
+                            Payouts
+                        </Label>
+                        <PayoutSetup />
                     </div>
 
                     <div className="flex flex-col gap-4 pt-4 border-t w-full mt-4" style={{ borderColor: "var(--border)" }}>
