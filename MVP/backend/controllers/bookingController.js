@@ -41,7 +41,7 @@ async function artistCanReceivePayments(artistId) {
   return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
 }
 
-function computeDepositCents(policy, priceCents, appointmentType) {
+export function computeDepositCents(policy, priceCents, appointmentType) {
   const p = policy?.deposit || {};
   const mode = p.mode || "percent";
   if (mode === "flat") {

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
+import { X, CalendarDays, Clock, Info, ArrowLeft } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 
 type BookingProps = {
@@ -24,10 +24,6 @@ function addDays(d: Date, n: number) {
     return startOfDay(x);
 }
 
-function fmtShort(d: Date) {
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
 function fmtDow(d: Date) {
     return d.toLocaleDateString(undefined, { weekday: "short" });
 }
@@ -35,20 +31,60 @@ function fmtDow(d: Date) {
 export default function QuickBooking({ open, artist, onBack, onClose }: BookingProps) {
     const today = useMemo(() => startOfDay(), []);
     const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(today, i)), [today]);
-    const row1 = days.slice(0, 7);
-    const row2 = days.slice(7, 14);
 
     const [date, setDate] = useState<Date | undefined>(today);
     const username = artist?.username ?? "the artist";
     const artistId = artist?.clerkId ?? null;
+    const initial = (username || "A").trim().charAt(0).toUpperCase();
+
+    const rangeLabel = useMemo(() => {
+        const last = days[days.length - 1];
+        const start = today.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        const end = last.toLocaleDateString(undefined, {
+            month: last.getMonth() === today.getMonth() ? undefined : "short",
+            day: "numeric",
+        });
+        return `${start} – ${end}`;
+    }, [days, today]);
+
+    const selectedLabel = date
+        ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
+        : "Pick a date";
 
     if (typeof window === "undefined") return null;
+
+    const DayChip = ({ d }: { d: Date }) => {
+        const selected = !!date && d.getTime() === date.getTime();
+        const isToday = d.getTime() === today.getTime();
+        return (
+            <button
+                type="button"
+                onClick={() => setDate(d)}
+                aria-pressed={selected}
+                className="group relative flex flex-col items-center justify-center gap-0.5 rounded-xl border py-2 transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+                style={{
+                    background: selected ? "var(--fg)" : "transparent",
+                    color: selected ? "var(--bg)" : "var(--fg)",
+                    borderColor: selected ? "var(--fg)" : "var(--border)",
+                }}
+            >
+                <span className="text-[9px] font-medium uppercase tracking-wide opacity-60">{fmtDow(d)}</span>
+                <span className="text-sm font-bold leading-none">{d.getDate()}</span>
+                {isToday && (
+                    <span
+                        className="absolute bottom-1 h-1 w-1 rounded-full"
+                        style={{ background: selected ? "var(--bg)" : "var(--fg)" }}
+                    />
+                )}
+            </button>
+        );
+    };
 
     return createPortal(
         <AnimatePresence>
             {open && (
                 <motion.div
-                    className="fixed inset-0 z-[100000] flex items-center justify-center"
+                    className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -56,106 +92,97 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                     role="dialog"
                     onClick={onClose}
                 >
-                    <button type="button" className="absolute inset-0 bg-black/60" aria-label="Close dialog" />
+                    <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" aria-hidden />
                     <motion.div
-                        className="relative w-[min(1000px,95vw)] max-h-[92vh] overflow-y-auto overflow-x-hidden rounded-2xl border"
+                        className="relative w-[min(720px,100%)] max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border shadow-2xl"
                         style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
-                        initial={{ scale: 0.96, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.96, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 240, damping: 22 }}
+                        initial={{ scale: 0.96, opacity: 0, y: 12 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.96, opacity: 0, y: 12 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 24 }}
                         onClick={e => e.stopPropagation()}
                     >
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            aria-label="Close"
-                            className="absolute top-3 right-3 h-9 w-9 rounded-full grid place-items-center border"
-                            style={{ background: "var(--elevated)", borderColor: "var(--border)", color: "var(--fg)" }}
-                        >
-                            ×
-                        </button>
+                        {/* Header */}
+                        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b" style={{ borderColor: "var(--border)" }}>
+                            <span
+                                className="grid place-items-center h-11 w-11 rounded-full text-base font-bold shrink-0"
+                                style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}
+                            >
+                                {initial}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <div className="text-[11px] uppercase tracking-wide opacity-50">Book a session</div>
+                                <h2 className="text-base sm:text-lg font-bold leading-tight truncate">{username}</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                aria-label="Close"
+                                className="grid place-items-center h-9 w-9 rounded-full border transition hover:opacity-80 shrink-0"
+                                style={{ background: "var(--elevated)", borderColor: "var(--border)", color: "var(--fg)" }}
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
 
-                        <Card className="w-full shadow-none border-0 bg-transparent" style={{ color: "inherit" }}>
-                            <CardHeader className="text-center space-y-1 px-3 sm:px-6">
-                                <CardTitle className="text-base sm:text-lg break-words">Quick book with {username}</CardTitle>
-                            </CardHeader>
-
-                            <CardContent className="p-2 sm:p-5">
-                                <div className="flex flex-col gap-4">
-                                    <div className="space-y-2 overflow-x-hidden">
-                                        <div className="grid grid-cols-7 gap-2">
-                                            {row1.map(d => {
-                                                const selected = date && d.getTime() === date.getTime();
-                                                return (
-                                                    <button
-                                                        key={`r1-${d.toISOString()}`}
-                                                        type="button"
-                                                        onClick={() => setDate(d)}
-                                                        className={`px-2 py-2 rounded-md border text-xs sm:text-sm flex flex-col items-center justify-center ${selected ? "font-medium" : ""}`}
-                                                        style={{
-                                                            background: selected ? "var(--elevated)" : "transparent",
-                                                            color: "var(--fg)",
-                                                            borderColor: "var(--border)",
-                                                        }}
-                                                    >
-                                                        <span className="opacity-80">{fmtDow(d)}</span>
-                                                        <span>{fmtShort(d)}</span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                        <div className="grid grid-cols-7 gap-2">
-                                            {row2.map(d => {
-                                                const selected = date && d.getTime() === date.getTime();
-                                                return (
-                                                    <button
-                                                        key={`r2-${d.toISOString()}`}
-                                                        type="button"
-                                                        onClick={() => setDate(d)}
-                                                        className={`px-2 py-2 rounded-md border text-xs sm:text-sm flex flex-col items-center justify-center ${selected ? "font-medium" : ""}`}
-                                                        style={{
-                                                            background: selected ? "var(--elevated)" : "transparent",
-                                                            color: "var(--fg)",
-                                                            borderColor: "var(--border)",
-                                                        }}
-                                                    >
-                                                        <span className="opacity-80">{fmtDow(d)}</span>
-                                                        <span>{fmtShort(d)}</span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                        {/* Body */}
+                        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 flex flex-col gap-5">
+                            {/* Date picker */}
+                            <section className="flex flex-col gap-2.5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm font-semibold">
+                                        <CalendarDays className="h-4 w-4 opacity-70" />
+                                        <span>Choose a date</span>
                                     </div>
-
-                                    <p
-                                        className="mx-auto w-full max-w-[560px] text-center px-4 py-4 rounded-md border font-semibold leading-relaxed"
-                                        style={{ background: "var(--elevated)", borderColor: "var(--border)", color: "var(--fg)" }}
-                                    >
-                                        Booking past two weeks? Use the artist’s full portfolio to book.
-                                    </p>
-
-                                    <div className="min-h-[500px] sm:min-h-[480px] rounded-md px-2 overflow-x-hidden" style={{ background: "var(--elevated)" }}>
-                                        <div className="w-full max-w-[920px] mx-auto p-2 sm:p-3">
-                                            {artistId && artist ? <BookingPicker artistId={artistId} date={date} artistName={artist.username} /> : <p className="text-sm opacity-80">Loading availability…</p>}
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-1 flex justify-end gap-2">
-                                        {onBack ? (
-                                            <button
-                                                type="button"
-                                                onClick={onBack}
-                                                className="px-3 py-2 rounded-md border"
-                                                style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}
-                                            >
-                                                Back
-                                            </button>
-                                        ) : null}
-                                    </div>
+                                    <span className="text-xs opacity-50">{rangeLabel}</span>
                                 </div>
-                            </CardContent>
-                        </Card>
+                                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                                    {days.map(d => (
+                                        <DayChip key={d.toISOString()} d={d} />
+                                    ))}
+                                </div>
+                                <div className="flex items-start gap-2 text-[11px] leading-relaxed opacity-60">
+                                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                    <span>Booking further out than two weeks? Open the artist’s full portfolio to pick any date.</span>
+                                </div>
+                            </section>
+
+                            {/* Availability */}
+                            <section className="flex flex-col gap-2.5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm font-semibold">
+                                        <Clock className="h-4 w-4 opacity-70" />
+                                        <span>Availability</span>
+                                    </div>
+                                    <span className="text-xs opacity-50 truncate max-w-[55%] text-right">{selectedLabel}</span>
+                                </div>
+                                <div
+                                    className="rounded-2xl border min-h-[420px] p-2 sm:p-3"
+                                    style={{ background: "var(--elevated)", borderColor: "var(--border)" }}
+                                >
+                                    {artistId && artist ? (
+                                        <BookingPicker artistId={artistId} date={date} artistName={artist.username} />
+                                    ) : (
+                                        <div className="h-[400px] grid place-items-center text-sm opacity-60">Loading availability…</div>
+                                    )}
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Footer */}
+                        {onBack && (
+                            <div className="px-4 sm:px-6 py-3 border-t flex items-center" style={{ borderColor: "var(--border)" }}>
+                                <button
+                                    type="button"
+                                    onClick={onBack}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-sm font-medium transition hover:opacity-80"
+                                    style={{ background: "var(--elevated)", color: "var(--fg)", borderColor: "var(--border)" }}
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                    Back
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
                 </motion.div>
             )}

@@ -2,6 +2,7 @@ import ArtistPolicy from "../models/ArtistPolicy.js";
 import ClientBookingPermission from "../models/ClientBookingPermission.js";
 import Artist from "../models/Artist.js";
 import { config } from "../config/index.js";
+import { getIO, userRoom } from "../services/socketService.js";
 
 export async function getArtistPolicy(req, res) {
   try {
@@ -164,9 +165,16 @@ export async function enableClientBookings(req, res) {
       },
       { new: true, upsert: true }
     );
-    
-    res.json({ 
-      ok: true, 
+
+    // Notify the client in real time so their "Ready to Book" button unlocks
+    // without a refresh.
+    const io = getIO();
+    if (io) {
+      io.to(userRoom(clientId)).emit("booking:enabled", { artistId, clientId });
+    }
+
+    res.json({
+      ok: true,
       permission,
       message: "Appointments enabled for this client"
     });

@@ -4,7 +4,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox } from "lucide-react";
+import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox, Lock } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import { formatActivityStatus } from "@/utils/activity";
 import QuickBooking from "../client/QuickBooking";
@@ -44,7 +44,7 @@ export type Conversation = {
   avatarUrl?: string;
   handle?: string;
   messages: Message[];
-  meta?: { lastStatus?: "pending" | "accepted" | "declined" | null; allowed?: boolean; blocked?: boolean };
+  meta?: { lastStatus?: "pending" | "accepted" | "declined" | null; allowed?: boolean; blocked?: boolean; bookingEnabled?: boolean };
   isTyping?: boolean;
   isOnline?: boolean;
   lastActive?: number | null;
@@ -129,7 +129,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const messagesContainerRefDesktop = useRef<HTMLDivElement | null>(null);
 
   const appRef = useRef<HTMLDivElement | null>(null);
-  
+  const [bookTip, setBookTip] = useState<{ show: boolean; x: number; y: number }>({ show: false, x: 0, y: 0 });
+
   const scrollToBottom = () => {
     if (messagesContainerRefMobile.current) {
       messagesContainerRefMobile.current.scrollTop = messagesContainerRefMobile.current.scrollHeight;
@@ -360,11 +361,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
     
     const handleActivityUpdate = (data: { userId: string; lastActive: number }) => {
-      setConversations(prev => prev.map(c => 
+      setConversations(prev => prev.map(c =>
         c.participantId === data.userId ? { ...c, lastActive: data.lastActive } : c
       ));
     };
-    
+
+    const handleBookingEnabled = (data: { artistId: string; clientId: string }) => {
+      if (data.clientId !== currentUserId) return;
+      setConversations(prev => prev.map(c =>
+        c.participantId === data.artistId
+          ? { ...c, meta: { ...(c.meta || {}), bookingEnabled: true } }
+          : c
+      ));
+    };
+
     socket.on("conversation:ack", onAck);
     socket.on("message:new", onMessageNew);
     socket.on("conversation:declined", onDeclined);
@@ -372,6 +382,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     socket.on("user:online", handleUserOnline);
     socket.on("user:offline", handleUserOffline);
     socket.on("user:activity:updated", handleActivityUpdate);
+    socket.on("booking:enabled", handleBookingEnabled);
     return () => {
       socket.off("conversation:ack", onAck);
       socket.off("message:new", onMessageNew);
@@ -380,6 +391,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       socket.off("user:online", handleUserOnline);
       socket.off("user:offline", handleUserOffline);
       socket.off("user:activity:updated", handleActivityUpdate);
+      socket.off("booking:enabled", handleBookingEnabled);
     };
   }, [currentUserId, authFetch, isArtist, isClient]);
 
@@ -472,10 +484,18 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }, [expandedId, activeConv, onMarkRead]);
 
   useLayoutEffect(() => {
-    if (expandedId && (messagesContainerRefMobile.current || messagesContainerRefDesktop.current)) {
-      scrollToBottom();
-    }
-  }, [expandedId]);
+    if (!expandedId) return;
+    // Jump to the latest message whenever a conversation loads or is switched.
+    // Re-run across a couple of frames + a short delay so layout and any images
+    // have settled before we land on the bottom.
+    scrollToBottom();
+    const raf = requestAnimationFrame(() => scrollToBottom());
+    const t = window.setTimeout(() => scrollToBottom(), 150);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, [expandedId, activeConv?.participantId]);
 
   useEffect(() => {
     if (activeConv?.messages?.length) {
@@ -1199,23 +1219,23 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         {conversations.length > 0 ? (
                           <div className="flex items-center gap-2 min-w-0 flex-1 w-full">
                             {activeConv && avatarFor(activeConv, { border: false })}
-                            <div className="flex flex-col min-w-0 flex-1 items-start text-left">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
                               {activeConv && isClient && activeConv.handle ? (
                                 <button
                                   type="button"
                                   onClick={openArtistProfile}
-                                  className="text-sm font-semibold text-app truncate text-left hover:underline focus:outline-none"
+                                  className="text-sm font-semibold text-app truncate text-left hover:underline focus:outline-none min-w-0"
                                   title={`View ${displayNameFromUsername(activeConv.username)}'s profile`}
                                 >
                                   {displayNameFromUsername(activeConv.username)}
                                 </button>
                               ) : (
-                                <span className="text-sm font-semibold text-app truncate">
+                                <span className="text-sm font-semibold text-app truncate min-w-0">
                                   {activeConv ? displayNameFromUsername(activeConv.username) : "Select a conversation"}
                                 </span>
                               )}
                               {activeConv && (
-                                <span className="text-[10px] text-muted-foreground truncate">
+                                <span className="shrink-0 text-[11px] text-app whitespace-nowrap">
                                   {formatActivityStatus(activeConv.isOnline, activeConv.lastActive)}
                                 </span>
                               )}
@@ -1229,19 +1249,24 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2.5 shrink-0">
                         {isClient && activeConv && (() => {
-                          const bookingAllowed = !!activeConv?.meta?.allowed;
+                          const bookingAllowed = !!activeConv?.meta?.bookingEnabled;
                           return (
-                            <button
-                              type="button"
-                              onClick={bookingAllowed ? openBooking : undefined}
-                              disabled={!bookingAllowed}
-                              title={bookingAllowed ? "Open booking" : "Booking unlocks once the artist enables it for you"}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                            <div
+                              className="relative"
+                              onMouseMove={!bookingAllowed ? (e) => setBookTip({ show: true, x: e.clientX, y: e.clientY }) : undefined}
+                              onMouseLeave={!bookingAllowed ? () => setBookTip((t) => ({ ...t, show: false })) : undefined}
                             >
-                              Ready to Book?
-                            </button>
+                              <button
+                                type="button"
+                                onClick={bookingAllowed ? openBooking : undefined}
+                                disabled={!bookingAllowed}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                              >
+                                Ready to Book?
+                              </button>
+                            </div>
                           );
                         })()}
                         {role === "artist" && activeConv && (() => {
@@ -1287,13 +1312,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         })()}
                       </div>
                     </header>
-                    <div 
-                      ref={(el) => {
-                        messagesContainerRefMobile.current = el;
-                        if (el && expandedId) {
-                          el.scrollTop = el.scrollHeight;
-                        }
-                      }} 
+                    <div
+                      ref={(el) => { messagesContainerRefMobile.current = el; }}
                       className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
                     >
                       {!activeConv ? (
@@ -1339,7 +1359,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           }
 
                           return (
-                            <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
+                            <div key={idx} className={`w-full flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                               <div
                                 className={`px-3 py-1.5 rounded-2xl w-fit break-words whitespace-pre-wrap border text-[13px] leading-snug overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
                                 style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
@@ -1397,9 +1417,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     ))}
                                   </div>
                                 )}
-                                <div className={`mt-1 text-[10px] ${isMe ? "text-right text-primary-foreground/70" : "text-left text-muted-foreground"}`}>
-                                  {timestampText}{statusText}
-                                </div>
+                              </div>
+                              <div className={`mt-0.5 px-1 text-[10px] text-muted-foreground ${isMe ? "text-right" : "text-left"}`}>
+                                {timestampText}{statusText}
                               </div>
                             </div>
                           );
@@ -1618,31 +1638,33 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
                             </div>
                           )}
-                          {activeConv?.isOnline && (
-                            <span className="shrink-0 w-2 h-2 rounded-full bg-white" title="Currently active" />
+                          {activeConv && (
+                            <span className="shrink-0 text-[11px] text-app whitespace-nowrap">
+                              {formatActivityStatus(activeConv.isOnline, activeConv.lastActive)}
+                            </span>
                           )}
                         </div>
-                        {activeConv && (
-                          <span className="text-[10px] text-muted-foreground truncate">
-                            {formatActivityStatus(activeConv.isOnline, activeConv.lastActive)}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2.5 shrink-0">
                     {isClient && activeConv && (() => {
-                      const bookingAllowed = !!activeConv?.meta?.allowed;
+                      const bookingAllowed = !!activeConv?.meta?.bookingEnabled;
                       return (
-                        <button
-                          type="button"
-                          onClick={bookingAllowed ? openBooking : undefined}
-                          disabled={!bookingAllowed}
-                          title={bookingAllowed ? "Open booking" : "Booking unlocks once the artist enables it for you"}
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                        <div
+                          className="relative"
+                          onMouseMove={!bookingAllowed ? (e) => setBookTip({ show: true, x: e.clientX, y: e.clientY }) : undefined}
+                          onMouseLeave={!bookingAllowed ? () => setBookTip((t) => ({ ...t, show: false })) : undefined}
                         >
-                          Ready to Book?
-                        </button>
+                          <button
+                            type="button"
+                            onClick={bookingAllowed ? openBooking : undefined}
+                            disabled={!bookingAllowed}
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                          >
+                            Ready to Book?
+                          </button>
+                        </div>
                       );
                     })()}
                     {role === "artist" && activeConv && (() => {
@@ -1688,13 +1710,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     })()}
                   </div>
                 </header>
-                <div 
-                  ref={(el) => {
-                    messagesContainerRefDesktop.current = el;
-                    if (el && expandedId) {
-                      el.scrollTop = el.scrollHeight;
-                    }
-                  }} 
+                <div
+                  ref={(el) => { messagesContainerRefDesktop.current = el; }}
                   className="flex-1 overflow-y-auto px-3 md:px-4 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
                 >
                   {(!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
@@ -1730,7 +1747,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       }
 
                       return (
-                        <div key={idx} className={`w-full flex ${isMe ? "justify-end" : "justify-start"}`}>
+                        <div key={idx} className={`w-full flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                           <div
                             className={`px-3 py-1.5 rounded-2xl w-fit break-words whitespace-pre-wrap border leading-snug overflow-hidden shadow-sm ${isMe ? "bg-primary text-primary-foreground border-primary/80 rounded-br-md" : "bg-elevated text-app border-app rounded-bl-md"}`}
                             style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.8125rem, 0.9vw, 0.875rem)' }}
@@ -1788,9 +1805,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 ))}
                               </div>
                             )}
-                            <div className={`mt-1 text-[10px] ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                              {timestampText}{statusText}
-                            </div>
+                          </div>
+                          <div className={`mt-0.5 px-1 text-[10px] text-muted-foreground ${isMe ? "text-right" : "text-left"}`}>
+                            {timestampText}{statusText}
                           </div>
                         </div>
                       );
@@ -1922,6 +1939,20 @@ const ChatWindow: FC<ChatWindowProps> = ({
       </div>
       {typeof window !== "undefined" ? createPortal(modal, document.body) : null}
       {typeof window !== "undefined" ? createPortal(imageViewer, document.body) : null}
+      {bookTip.show && typeof window !== "undefined" && createPortal(
+        <div
+          className="fixed z-[2147483600] pointer-events-none ink-gate-tip"
+          style={{ left: bookTip.x, top: bookTip.y, transform: "translate(-50%, 18px)" }}
+        >
+          <div className="flex items-center gap-2 rounded-xl border border-app bg-card px-3 py-2 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)] ring-1 ring-[color-mix(in_srgb,var(--fg)_25%,transparent)]">
+            <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-elevated p-1.5">
+              <Lock className="h-3.5 w-3.5 text-app" />
+            </span>
+            <span className="text-[12px] font-bold text-app whitespace-nowrap">Wait for the artist to allow booking</span>
+          </div>
+        </div>,
+        document.body
+      )}
       <QuickBooking
         open={qbOpen}
         artist={qbArtist ? ({ username: qbArtist.username, clerkId: qbArtist.clerkId } as any) : undefined}
