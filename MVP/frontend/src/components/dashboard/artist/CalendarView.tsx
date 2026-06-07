@@ -20,6 +20,7 @@ type Booking = {
 type CalendarViewProps = {
     bookings?: Booking[];
     onSelectBooking?: (b: Booking) => void;
+    loading?: boolean;
 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -27,6 +28,7 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export default function CalendarView({
     bookings = [],
     onSelectBooking = () => { },
+    loading = false,
 }: CalendarViewProps) {
     const [cursor, setCursor] = useState(() => {
         const d = new Date();
@@ -120,11 +122,52 @@ export default function CalendarView({
         return n;
     }, [cells, bookingsByDay]);
 
+    if (loading) {
+        return (
+            <div className="flex flex-col h-full min-h-0 gap-2 sm:gap-3">
+                <div className="flex items-center justify-between gap-2 flex-shrink-0">
+                    <div className="min-w-0 space-y-1.5">
+                        <div className="ink-shimmer h-4 sm:h-5 w-32 rounded" />
+                        <div className="ink-shimmer h-2.5 w-24 rounded" />
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="ink-shimmer h-8 w-8 rounded-lg" />
+                        <div className="ink-shimmer h-8 w-14 rounded-lg" />
+                        <div className="ink-shimmer h-8 w-8 rounded-lg" />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-7 flex-shrink-0">
+                    {WEEKDAYS.map((d) => (
+                        <div key={d} className="py-1 flex justify-center">
+                            <span className="ink-shimmer h-2.5 w-6 rounded" />
+                        </div>
+                    ))}
+                </div>
+
+                <div
+                    className="grid grid-cols-7 gap-1 sm:gap-1.5 flex-1 min-h-0"
+                    style={{ gridTemplateRows: `repeat(${weekRows}, minmax(0, 1fr))` }}
+                >
+                    {cells.map((_, i) => (
+                        <div key={i} className="ink-shimmer rounded-lg" />
+                    ))}
+                </div>
+
+                <div className="flex items-center justify-center gap-3 flex-shrink-0">
+                    <span className="ink-shimmer h-2.5 w-16 rounded" />
+                    <span className="ink-shimmer h-2.5 w-16 rounded" />
+                    <span className="ink-shimmer h-2.5 w-12 rounded" />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <div className="flex flex-col h-full min-h-0 gap-2 sm:gap-3">
                 <div className="flex items-center justify-between gap-2 flex-shrink-0">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1 text-center md:flex-initial md:text-left">
                         <div className="text-sm sm:text-base font-bold text-app leading-tight truncate">
                             {cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
                         </div>
