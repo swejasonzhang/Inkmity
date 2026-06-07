@@ -134,6 +134,20 @@ export const getAllMessagesForUser = async (req, res) => {
         },
       ])
     );
+    const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
+    const perms = await ClientBookingPermission.find({
+      enabled: true,
+      $or: [
+        { clientId: userId, artistId: { $in: participantIds } },
+        { artistId: userId, clientId: { $in: participantIds } },
+      ],
+    })
+      .select("artistId clientId")
+      .lean();
+    const bookingEnabledSet = new Set(
+      perms.map((p) => (String(p.clientId) === String(userId) ? p.artistId : p.clientId))
+    );
+
     const convs = [];
     for (const pid of participantIds) {
       if (deletedParticipantIds.has(pid)) continue;
@@ -165,6 +179,7 @@ export const getAllMessagesForUser = async (req, res) => {
           lastStatus,
           declines,
           blocked,
+          bookingEnabled: bookingEnabledSet.has(pid),
           unread: unreadSet.has(pid) ? 1 : 0,
         },
       });

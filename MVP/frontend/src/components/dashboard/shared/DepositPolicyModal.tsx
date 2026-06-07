@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTheme } from "@/hooks/useTheme";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Wallet, Percent, DollarSign, ShieldCheck, Clock } from "lucide-react";
 import { updateArtistPolicy, getArtistPolicy, type ArtistPolicy } from "@/api";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
@@ -16,11 +15,15 @@ type Props = {
   onSuccess: () => void;
 };
 
+const SAMPLE_CENTS = 40000; // $400 example session
+
+function fmtMoney(cents: number) {
+  return `$${(Math.max(0, cents) / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
 export default function DepositPolicyModal({ artistId, open, onClose, onSuccess }: Props) {
   const { getToken } = useAuth();
-  const { theme } = useTheme();
-  const isLightTheme = theme === "light";
-  
+
   const [loading, setLoading] = useState(false);
   const [policy, setPolicy] = useState<NonNullable<ArtistPolicy["deposit"]>>({
     mode: "percent",
@@ -36,7 +39,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
     try {
       const current = await getArtistPolicy(artistId);
       if (current?.deposit) {
-        setPolicy(current.deposit as NonNullable<ArtistPolicy["deposit"]>);
+        setPolicy((p) => ({ ...p, ...(current.deposit as NonNullable<ArtistPolicy["deposit"]>) }));
       }
     } catch (err) {
       console.error("Failed to load policy:", err);
@@ -44,17 +47,29 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
   }, [artistId]);
 
   useEffect(() => {
-    if (open) {
-      loadPolicy();
-    }
+    if (open) loadPolicy();
   }, [open, loadPolicy]);
+
+  const set = (patch: Partial<NonNullable<ArtistPolicy["deposit"]>>) => setPolicy((p) => ({ ...p, ...patch }));
+
+  const depositConfigured =
+    (policy.mode === "flat" && (policy.amountCents ?? 0) > 0) ||
+    (policy.mode === "percent" && (policy.percent ?? 0) > 0 && (policy.minCents ?? 0) > 0);
+
+  const previewCents = useMemo(() => {
+    if (policy.mode === "flat") return policy.amountCents ?? 0;
+    const raw = Math.round(SAMPLE_CENTS * (policy.percent ?? 0));
+    const min = policy.minCents ?? 0;
+    const max = policy.maxCents ?? Number.MAX_SAFE_INTEGER;
+    return Math.min(Math.max(raw, min), max);
+  }, [policy]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const token = await getToken();
       await updateArtistPolicy(artistId, policy, undefined, token);
-      toast.success("Deposit policy saved successfully");
+      toast.success("Deposit policy saved");
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -64,117 +79,174 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
     }
   };
 
-  const depositConfigured = 
-    (policy.mode === "flat" && (policy.amountCents ?? 0) > 0) ||
-    (policy.mode === "percent" && (policy.percent ?? 0) > 0 && (policy.minCents ?? 0) > 0);
+  const MoneyInput = ({ value, onChange, placeholder }: { value: number | undefined; onChange: (cents: number) => void; placeholder?: string }) => (
+    <div className="relative">
+      <DollarSign className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
+      <input
+        type="number"
+        min={0}
+        step={1}
+        inputMode="decimal"
+        placeholder={placeholder}
+        value={value ? value / 100 : ""}
+        onChange={(e) => onChange(Math.max(0, Math.round((parseFloat(e.target.value) || 0) * 100)))}
+        className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+      />
+    </div>
+  );
+
+  const Field = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-center gap-2 text-center">
+        <label className="text-xs font-semibold">{label}</label>
+        {hint && <span className="text-[11px] opacity-50">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-md"
-        style={{
-          background: isLightTheme ? "#ffffff" : "var(--card)",
-          color: isLightTheme ? "#000000" : "var(--fg)",
-        }}
+        className="max-w-md p-0 overflow-hidden gap-0 rounded-2xl"
+        style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
       >
-        <DialogHeader>
-          <DialogTitle>Set Deposit Policy</DialogTitle>
-          <DialogDescription>
-            Configure your deposit requirements before offering appointments to clients.
+        <DialogHeader className="space-y-2 px-5 pt-5 pb-4 border-b" style={{ borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-center gap-2.5">
+            <span className="grid place-items-center h-9 w-9 rounded-xl" style={{ background: "var(--elevated)", border: "1px solid var(--border)" }}>
+              <Wallet className="h-4 w-4" />
+            </span>
+            <DialogTitle className="text-base font-bold">Deposit policy</DialogTitle>
+          </div>
+          <DialogDescription className="text-xs opacity-60 text-center">
+            Clients pay this up front to confirm a booking. Set it before offering appointments.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Deposit Type</Label>
-            <Select
-              value={policy.mode}
-              onValueChange={(value: "percent" | "flat") => {
-                setPolicy({ ...policy, mode: value });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="percent">Percentage</SelectItem>
-                <SelectItem value="flat">Flat Fee</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="px-5 py-4 space-y-4">
+          {/* Mode segmented toggle */}
+          <div className="grid grid-cols-2 gap-1 rounded-xl p-1" style={{ background: "var(--elevated)" }}>
+            {([
+              { key: "percent", label: "Percentage", Icon: Percent },
+              { key: "flat", label: "Flat fee", Icon: DollarSign },
+            ] as const).map(({ key, label, Icon }) => {
+              const active = policy.mode === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => set({ mode: key })}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold transition"
+                  style={{
+                    background: active ? "var(--fg)" : "transparent",
+                    color: active ? "var(--bg)" : "var(--fg)",
+                  }}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {policy.mode === "percent" ? (
             <>
-              <div className="space-y-2">
-                <Label>Percentage (0-100%)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={policy.percent ? (policy.percent * 100) : ""}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setPolicy({ ...policy, percent: Math.min(1, Math.max(0, val / 100)) });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Minimum Deposit ($)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={policy.minCents ? (policy.minCents / 100) : ""}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setPolicy({ ...policy, minCents: Math.max(0, Math.round(val * 100)) });
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Maximum Deposit ($)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={policy.maxCents ? (policy.maxCents / 100) : ""}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setPolicy({ ...policy, maxCents: Math.max(0, Math.round(val * 100)) });
-                  }}
-                />
+              <Field label="Deposit percentage" hint={`${Math.round((policy.percent ?? 0) * 100)}% of the price`}>
+                <div className="flex items-center gap-3">
+                  <Slider
+                    value={[Math.round((policy.percent ?? 0) * 100)]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={([v]) => set({ percent: Math.min(1, Math.max(0, v / 100)) })}
+                    className="flex-1"
+                  />
+                  <div className="relative w-20 shrink-0">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={Math.round((policy.percent ?? 0) * 100)}
+                      onChange={(e) => set({ percent: Math.min(1, Math.max(0, (parseFloat(e.target.value) || 0) / 100)) })}
+                      className="h-10 w-full rounded-xl border bg-transparent pl-3 pr-7 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                      style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                    />
+                    <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm opacity-50">%</span>
+                  </div>
+                </div>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Minimum" hint="floor">
+                  <MoneyInput value={policy.minCents} onChange={(c) => set({ minCents: c })} placeholder="50" />
+                </Field>
+                <Field label="Maximum" hint="cap">
+                  <MoneyInput value={policy.maxCents} onChange={(c) => set({ maxCents: c })} placeholder="300" />
+                </Field>
               </div>
             </>
           ) : (
-            <div className="space-y-2">
-              <Label>Flat Deposit Amount ($)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={policy.amountCents ? (policy.amountCents / 100) : ""}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value) || 0;
-                  setPolicy({ ...policy, amountCents: Math.max(0, Math.round(val * 100)) });
-                }}
-              />
-            </div>
+            <Field label="Flat deposit amount">
+              <MoneyInput value={policy.amountCents} onChange={(c) => set({ amountCents: c })} placeholder="100" />
+            </Field>
           )}
 
+          {/* Non-refundable toggle */}
+          <div className="flex items-center justify-between rounded-xl border px-3.5 py-3" style={{ borderColor: "var(--border)" }}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ShieldCheck className="h-4 w-4 opacity-70 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">Non-refundable</div>
+                <div className="text-[11px] opacity-55 truncate">Deposit is kept if the client cancels late</div>
+              </div>
+            </div>
+            <Switch checked={!!policy.nonRefundable} onCheckedChange={(v) => set({ nonRefundable: v })} />
+          </div>
+
+          {/* Cancellation cutoff */}
+          <Field label="Free-cancellation cutoff" hint="hours before the appointment">
+            <div className="relative">
+              <Clock className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={policy.cutoffHours ?? 0}
+                onChange={(e) => set({ cutoffHours: Math.max(0, Math.round(parseFloat(e.target.value) || 0)) })}
+                className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-12 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-50">hrs</span>
+            </div>
+          </Field>
+
+          {/* Live preview */}
+          <div className="rounded-xl border px-4 py-3 text-center" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-xs opacity-60">On a {fmtMoney(SAMPLE_CENTS)} session</span>
+              <span className="text-2xl font-bold">{fmtMoney(previewCents)}</span>
+            </div>
+            <div className="mt-1 text-[11px] opacity-55 text-center">
+              {policy.mode === "percent"
+                ? `${Math.round((policy.percent ?? 0) * 100)}% deposit, ${fmtMoney(policy.minCents ?? 0)}–${fmtMoney(policy.maxCents ?? 0)} range`
+                : "Flat deposit on every booking"}
+            </div>
+          </div>
+
           {!depositConfigured && (
-            <p className="text-sm text-app dark:text-app">
-              Please configure deposit settings to enable appointments.
+            <p className="text-xs font-medium opacity-70 text-center">
+              Set a {policy.mode === "percent" ? "percentage and minimum" : "flat amount"} to enable appointments.
             </p>
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+        <DialogFooter className="px-5 py-4 border-t gap-2 sm:justify-center" style={{ borderColor: "var(--border)" }}>
+          <Button variant="outline" onClick={onClose} disabled={loading} className="rounded-xl">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={loading || !depositConfigured}>
-            {loading ? "Saving..." : "Save Policy"}
+          <Button onClick={handleSave} disabled={loading || !depositConfigured} className="rounded-xl">
+            {loading ? "Saving…" : "Save policy"}
           </Button>
         </DialogFooter>
       </DialogContent>
