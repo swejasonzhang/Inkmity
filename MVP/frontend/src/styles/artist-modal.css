@@ -103,11 +103,23 @@
 
 #inkmity-modal-root .ink-shimmer,
 #inkmity-modal-root[data-ink-no-anim-permanent="true"] .ink-shimmer {
-  animation: ink-shimmer 1.4s ease-in-out infinite !important;
+  animation: ink-shimmer 1s ease-in-out infinite !important;
+}
+/* The portal blanket-kills animations; re-enable the lazy reveal fade so the
+   booking step (and any lazy content inside the modal) shares the same
+   shimmer → reveal handoff as the rest of the app. */
+#inkmity-modal-root .ink-reveal,
+#inkmity-modal-root[data-ink-no-anim-permanent="true"] .ink-reveal {
+  animation: ink-reveal 0.8s ease both !important;
 }
 @media (prefers-reduced-motion: reduce) {
   #inkmity-modal-root .ink-shimmer,
   #inkmity-modal-root[data-ink-no-anim-permanent="true"] .ink-shimmer {
     animation: none !important;
+  }
+  #inkmity-modal-root .ink-reveal,
+  #inkmity-modal-root[data-ink-no-anim-permanent="true"] .ink-reveal {
+    animation: none !important;
+    opacity: 1 !important;
   }
 }

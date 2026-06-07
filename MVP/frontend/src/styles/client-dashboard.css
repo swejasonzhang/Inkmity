@@ -1,7 +1,3 @@
-.client-dashboard-root {
-  padding-bottom: var(--fb-safe, 0px);
-}
-
 .client-dashboard-messages {
   height: 100%;
   min-height: 0;

@@ -129,11 +129,14 @@ export default function FloatingBar({
     return () => window.clearTimeout(id);
   }, [open, isMdUp, vp.h]);
 
-  const gutter = "clamp(12px, 1.5vw, 24px)";
+  // Align the bar's left/right elements to the same global edge gutter the
+  // rest of the app content uses, so they sit flush on the global border.
   const pad = {
-    left: `calc(${gutter} + env(safe-area-inset-left, 0px))`,
-    right: `calc(${gutter} + env(safe-area-inset-right, 0px))`,
-    bottom: `calc(max(${vvBottom}px, ${isMdUp ? 20 : 10}px) + env(safe-area-inset-bottom, 0px))`,
+    left: "var(--ink-edge-l)",
+    right: "var(--ink-edge-r)",
+    // Match the dashboards' content gutter so the bar's gap from the bottom
+    // equals the main container's top padding.
+    bottom: `calc(max(${vvBottom}px, clamp(0.625rem, 1vh + 0.5vw, 1.25rem)) + env(safe-area-inset-bottom, 0px))`,
   };
 
   const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border-2";
@@ -215,129 +218,109 @@ export default function FloatingBar({
   portalRootRef.current = targetEl;
 
   const ui = (
-    <>
-      <div className="fixed z-[200]" style={{ left: pad.left, bottom: pad.bottom, height: collapsedHeight }}>
-        <Button
-          type="button"
-          onClick={assistantLocked ? undefined : onAssistantOpen}
-          className={assistantBtnClass}
-          aria-label={assistantLocked ? "Assistant locked" : "Open assistant"}
-          aria-disabled={assistantLocked}
-          disabled={assistantLocked}
-          title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
-          style={{
-            height: collapsedHeight,
-            boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in srgb, var(--app) 70%, transparent)"
-          }}
-          variant="outline"
-        >
-          <Bot size={18} aria-hidden />
-          <span className="text-sm hidden md:inline">Assistant</span>
-          {assistantLocked && (
-            <>
-              <span className="hidden md:inline-block ml-1 opacity-90">
-                <Lock size={14} aria-hidden />
-              </span>
-              <span className="md:hidden ml-1">
-                <Lock size={14} aria-hidden />
-              </span>
-            </>
-          )}
-        </Button>
-      </div>
+    <div
+      className="fixed grid items-center"
+      style={{
+        left: pad.left,
+        right: pad.right,
+        bottom: 0,
+        // Fill the bottom strip (bar + the matching gap + safe area) so the
+        // grid's items-center vertically centers the elements within it.
+        height: `calc(${Math.max(wrapperH, collapsedHeight)}px + clamp(0.625rem, 1vh + 0.5vw, 1.25rem) + env(safe-area-inset-bottom, 0px))`,
+        gridTemplateColumns: "1fr auto 1fr",
+        pointerEvents: "none",
+        zIndex: !isMdUp && open ? 9999 : 200,
+      }}
+    >
+      <style>{`
+        .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
+        .ink-assistant-btn { backdrop-filter: none; }
+        .ink-solid-controls :is(button, [role="button"], .btn),
+        .ink-solid-controls :is(nav button, nav a),
+        .ink-solid-controls [data-pagination] :is(button, a) {
+          background: var(--card);
+          color: var(--fg);
+          border: 1px solid var(--app, var(--border));
+          font-weight: 600;
+          border-radius: 9999px;
+        }
+        .ink-solid-controls :is(button, [role="button"], .btn) { padding: 0.5rem 0.75rem; }
+      `}</style>
 
+      {/* Assistant — left */}
+      <Button
+        type="button"
+        onClick={assistantLocked ? undefined : onAssistantOpen}
+        className={`${assistantBtnClass} justify-self-start`}
+        aria-label={assistantLocked ? "Assistant locked" : "Open assistant"}
+        aria-disabled={assistantLocked}
+        disabled={assistantLocked}
+        title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
+        style={{
+          height: collapsedHeight,
+          pointerEvents: "auto",
+          boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in srgb, var(--app) 70%, transparent)",
+        }}
+        variant="outline"
+      >
+        <Bot size={18} aria-hidden />
+        <span className="text-sm hidden md:inline">Assistant</span>
+        {assistantLocked && (
+          <span className="ml-1 opacity-90">
+            <Lock size={14} aria-hidden />
+          </span>
+        )}
+      </Button>
+
+      {/* Pagination — center */}
       <div
-        className="fixed inset-x-0 pointer-events-none"
-        style={{ 
-          bottom: pad.bottom, 
-          marginTop: isMdUp ? 0 : 2,
-          zIndex: !isMdUp && open ? 9999 : 190
+        ref={centerRef}
+        className="ink-solid-controls flex items-center justify-center justify-self-center"
+        style={{
+          paddingInline: 4,
+          pointerEvents: rightContent && (!open || isMdUp) ? "auto" : "none",
+          opacity: !isMdUp && open ? 0 : 1,
+          visibility: !isMdUp && open ? "hidden" : "visible",
         }}
       >
-        <style>{`
-          .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
-          .ink-assistant-btn { backdrop-filter: none; }
-          .ink-solid-controls :is(button, [role="button"], .btn),
-          .ink-solid-controls :is(nav button, nav a),
-          .ink-solid-controls [data-pagination] :is(button, a) {
-            background: var(--card);
-            color: var(--fg);
-            border: 1px solid var(--app, var(--border));
-            font-weight: 600;
-            border-radius: 9999px;
-          }
-          .ink-solid-controls :is(button, [role="button"], .btn) { padding: 0.5rem 0.75rem; }
-        `}</style>
-        <div className="relative w-full" style={{ height: Math.max(wrapperH, collapsedHeight) }}>
-          <div className="grid items-center" style={{ gridTemplateColumns: "auto 1fr auto" }}>
-            <div style={{ width: 0, height: collapsedHeight }} />
-            <div
-              ref={centerRef}
-              className="ink-solid-controls flex items-center justify-center"
-              style={{ 
-                paddingInline: 4, 
-                pointerEvents: rightContent && (!open || isMdUp) ? "auto" : "none",
-                opacity: !isMdUp && open ? 0 : 1,
-                visibility: !isMdUp && open ? "hidden" : "visible"
-              }}
-            >
-              {rightContent}
-            </div>
-            <div
-              className="pointer-events-none"
-              style={{
-                height: collapsedHeight,
-                position: "relative"
-              }}
-            >
-              <div
-                className="pointer-events-auto flex items-center justify-center"
-                style={{
-                  position: isMdUp ? "absolute" : (open ? "fixed" : "absolute"),
-                  ...(isMdUp ? {
-                    right: pad.right,
-                    bottom: 0,
-                  } : open ? {
-                    top: headerHeight || MOBILE_HEADER_HEIGHT,
-                    left: 0,
-                    right: 0,
-                    width: "100vw",
-                    height: MOBILE_OPEN_H,
-                  } : {
-                    right: pad.right,
-                    bottom: 0,
-                  }),
-                  ...(isMdUp || !open ? {
-                    width: isMdUp ? convW : Math.max(0, convW - 50),
-                    height: isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : convH,
-                  } : {}),
-                  zIndex: !isMdUp && open ? 9999 : undefined
-                }}
-              >
-                <div 
-                  ref={btnRef} 
-                  className={`ink-solid-controls flex items-center justify-center ${!isMdUp && open ? "w-full h-full" : ""}`}
-                  style={!isMdUp && open ? { width: "100%", height: "100%" } : undefined}
-                >
-                  <InkConversations
-                    role={role}
-                    isMdUp={isMdUp}
-                    width={isMdUp ? convW : (open ? vp.w : Math.max(0, convW - 50))}
-                    height={isMdUp ? convH : (open ? MOBILE_OPEN_H : convH)}
-                    open={open}
-                    setOpen={setOpen}
-                    unreadConvoCount={unreadConvoCount}
-                    requestCount={requestCount}
-                    derivedTotal={derivedTotal}
-                    messagesContent={messagesContent}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {rightContent}
       </div>
-    </>
+
+      {/* Messages — right (a centered grid item when collapsed; breaks out
+          to a fixed/absolute panel when it expands) */}
+      <div
+        ref={btnRef}
+        className="ink-solid-controls flex items-center justify-center justify-self-end"
+        style={{
+          pointerEvents: "auto",
+          ...(open
+            ? {
+                position: isMdUp ? "absolute" : "fixed",
+                ...(isMdUp
+                  ? { right: 0, bottom: 0, width: convW, height: DESKTOP_OPEN_H }
+                  : { top: headerHeight || MOBILE_HEADER_HEIGHT, left: 0, right: 0, width: "100vw", height: MOBILE_OPEN_H }),
+                zIndex: !isMdUp ? 9999 : undefined,
+              }
+            : {
+                width: isMdUp ? convW : Math.max(0, convW - 50),
+                height: collapsedHeight,
+              }),
+        }}
+      >
+        <InkConversations
+          role={role}
+          isMdUp={isMdUp}
+          width={isMdUp ? convW : (open ? vp.w : Math.max(0, convW - 50))}
+          height={isMdUp ? convH : (open ? MOBILE_OPEN_H : convH)}
+          open={open}
+          setOpen={setOpen}
+          unreadConvoCount={unreadConvoCount}
+          requestCount={requestCount}
+          derivedTotal={derivedTotal}
+          messagesContent={messagesContent}
+        />
+      </div>
+    </div>
   );
 
   if (typeof document === "undefined") return <div data-testid="floating-bar-placeholder" />;

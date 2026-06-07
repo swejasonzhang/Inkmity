@@ -3,6 +3,7 @@ import BookingPicker from "../../calender/BookingPicker";
 import CalendarPicker from "../../calender/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import LazyReveal from "@/components/ui/LazyReveal";
 import { useApi, isAbortError, getBookingGate, type BookingGate, API_URL } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 import { ToastContainer } from "react-toastify";
@@ -357,11 +358,44 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
             Book an appointment
           </div>
           <CardContent className="p-3 sm:p-5 ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
-            {!bookingGateReady ? (
-              <div className="min-h-[360px] sm:min-h-[480px] flex items-center justify-center">
-                <p className="text-sm" style={{ color: "var(--fg)" }}>Loading...</p>
-              </div>
-            ) : bookingGate?.enabled ? (
+            <LazyReveal
+              group="artist-booking"
+              loading={!bookingGateReady}
+              skeleton={
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 items-stretch">
+                  <div className="min-h-[300px] rounded-2xl border p-3 flex flex-col gap-2" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                    <div className="ink-shimmer h-5 w-32 mx-auto rounded flex-shrink-0" />
+                    <div className="flex items-center justify-center gap-3 flex-shrink-0">
+                      <div className="ink-shimmer h-4 w-16 rounded" />
+                      <div className="ink-shimmer h-4 w-16 rounded" />
+                      <div className="ink-shimmer h-4 w-16 rounded" />
+                    </div>
+                    <div className="ink-shimmer h-7 w-40 mx-auto rounded flex-shrink-0" />
+                    <div className="grid grid-cols-7 gap-1 flex-shrink-0">
+                      {Array.from({ length: 7 }).map((_, i) => (
+                        <div key={i} className="ink-shimmer h-3 w-full rounded" />
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 grid-rows-6 gap-1 flex-1 min-h-0">
+                      {Array.from({ length: 42 }).map((_, i) => (
+                        <div key={i} className="ink-shimmer w-full h-full rounded-md" />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="min-h-[300px] rounded-2xl border p-3 space-y-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                    <div className="ink-shimmer h-6 w-32 mx-auto rounded-full" />
+                    <div className="ink-shimmer h-10 w-full rounded-xl" />
+                    <div className="grid grid-cols-3 gap-2">
+                      {Array.from({ length: 9 }).map((_, i) => (
+                        <div key={i} className="ink-shimmer h-10 w-full rounded-lg" />
+                      ))}
+                    </div>
+                    <div className="ink-shimmer h-11 w-full rounded-full mt-2" />
+                  </div>
+                </div>
+              }
+            >
+            {bookingGate?.enabled ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 items-stretch ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                 <div className="min-h-[300px] flex ink-no-anim" style={{ transition: "none !important", animation: "none !important" } as React.CSSProperties}>
                   <CalendarPicker date={date} month={month} onDateChange={setDate} onMonthChange={setMonth} startOfToday={startOfToday} />
@@ -392,6 +426,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
                 </div>
               </div>
             )}
+            </LazyReveal>
           </CardContent>
         </Card>
       </div>

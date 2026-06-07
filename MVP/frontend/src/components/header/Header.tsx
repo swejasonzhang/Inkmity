@@ -432,7 +432,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="grid w-full relative items-center z-[100] px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}>
+      <header className="grid w-full relative items-center z-[100] py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}>
         <div className="col-start-1 justify-self-start flex-shrink-0 relative z-10">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
             <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 sm:h-20 lg:h-24 w-auto object-contain flex-shrink-0" draggable={false} />

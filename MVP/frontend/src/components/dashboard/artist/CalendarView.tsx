@@ -47,7 +47,9 @@ export default function CalendarView({
     }, [cursor]);
 
     const cells = useMemo(() => {
-        const totalCells = Math.ceil((monthMeta.firstWeekday + monthMeta.days) / 7) * 7;
+        // Always render a fixed 6-week (42-cell) grid so the calendar height is
+        // constant month-to-month and matches the loading skeleton exactly.
+        const totalCells = 42;
         return Array.from({ length: totalCells }).map((_, i) => {
             const dayNum = i - monthMeta.firstWeekday + 1;
             const inMonth = dayNum >= 1 && dayNum <= monthMeta.days;
@@ -193,9 +195,9 @@ export default function CalendarView({
                             >
                                 <span
                                     className={[
-                                        "grid place-items-center text-[10px] sm:text-xs font-medium leading-none mt-0.5",
+                                        "grid place-items-center text-xs sm:text-sm font-semibold leading-none mt-1",
                                         isToday
-                                            ? "h-5 w-5 rounded-full bg-white text-black font-bold"
+                                            ? "h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-white text-black font-bold"
                                             : "text-app",
                                     ].join(" ")}
                                 >
@@ -204,15 +206,15 @@ export default function CalendarView({
 
                                 {hasBookings && (
                                     <>
-                                        <div className="mt-1 flex items-center justify-center gap-0.5 flex-wrap">
+                                        <div className="mt-1.5 flex items-center justify-center gap-1 flex-wrap">
                                             {dayBookings.slice(0, 3).map((b, bi) => (
                                                 <span
                                                     key={bi}
-                                                    className={`h-1.5 w-1.5 rounded-full ${dotColor(b.status ?? "", new Date(b.start))}`}
+                                                    className={`h-2 w-2 rounded-full ${dotColor(b.status ?? "", new Date(b.start))}`}
                                                 />
                                             ))}
                                         </div>
-                                        <span className="mt-auto hidden sm:block text-[9px] text-muted leading-none pb-0.5">
+                                        <span className="mt-auto hidden sm:block text-[10px] text-muted leading-none pb-1">
                                             {count} {count === 1 ? "appt" : "appts"}
                                         </span>
                                     </>

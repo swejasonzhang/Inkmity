@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { useAuth } from "@clerk/clerk-react"
-import { apiGet, apiPost } from "@/api/index.ts"
+import { apiGet, apiPost, getArtistPolicy } from "@/api/index.ts"
 import { Button } from "@/components/ui/button"
+import { X, Wallet, Gift } from "lucide-react"
 import { socket, connectSocket } from "@/lib/socket"
 import {
   Dialog as RDialog,
@@ -87,6 +88,32 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
   const [pendingBooking, setPendingBooking] = useState<any>(null)
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [lastBooking, setLastBooking] = useState<any>(null)
+
+  const [depositPolicy, setDepositPolicy] = useState<any>(null)
+  useEffect(() => {
+    if (!artistId) return
+    const ac = new AbortController()
+    Promise.resolve(getArtistPolicy(artistId, ac.signal)).then(p => setDepositPolicy(p?.deposit || null)).catch(() => { })
+    return () => ac.abort()
+  }, [artistId])
+
+  // Deposit the client pays now for the chosen appointment type (mirrors the
+  // backend computeDepositCents — consultations are free unless the artist opts in).
+  const depositCents = useMemo(() => {
+    const p = depositPolicy || {}
+    const appt = kind === "appointment" ? "tattoo_session" : "consultation"
+    if (appt === "consultation" && (p.consultationFree ?? true)) return 0
+    const mode = p.mode || "percent"
+    if (mode === "flat") {
+      const base = Math.max(0, Number(p.amountCents || 0))
+      return appt === "tattoo_session" ? Math.max(base, 5000) : base
+    }
+    const minCents = Math.max(0, Number(p.minCents || 0), appt === "tattoo_session" ? 5000 : 0)
+    const maxCents = Math.max(0, Number(p.maxCents || Infinity))
+    // Session price isn't known at booking time, so the percentage resolves to
+    // the artist's minimum deposit.
+    return Math.min(minCents, maxCents)
+  }, [depositPolicy, kind])
 
   const canConfirm = Boolean(selected && date)
 
@@ -419,90 +446,91 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           />
           <RDialogContent
             showCloseButton={false}
-            className="z-[2147483646] border rounded-2xl p-5 sm:p-6 text-center flex flex-col items-center justify-items-center"
+            className="z-[2147483646] border rounded-2xl p-4 sm:p-6 text-center flex flex-col items-center justify-items-center"
             aria-describedby="confirm-desc"
             style={{
-              background: isLightTheme ? "#ffffff" : "var(--card)",
-              color: isLightTheme ? "#000000" : "var(--fg)",
-              borderColor: isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)",
+              background: "var(--card)",
+              color: "var(--fg)",
+              borderColor: "var(--border)",
+              width: "100%",
+              maxWidth: "min(92vw, 26rem)",
+              maxHeight: "90dvh",
               overflowY: "auto"
             }}
             onPointerDownCapture={(ev) => ev.stopPropagation()}
           >
             <button
               aria-label="Close"
-              className="absolute top-4 right-4 rounded-md px-2 py-1 text-sm hover:bg-elevated/50 transition-colors"
+              className="absolute top-3.5 right-3.5 grid place-items-center h-8 w-8 rounded-full border hover:bg-elevated/60 transition-colors"
               onClick={() => {
                 swallowGestureTail()
                 setConfirmOpen(false)
               }}
-              style={{ 
-                color: isLightTheme ? "#000000" : "var(--fg)",
-                zIndex: 10
-              }}
+              style={{ color: "var(--fg)", borderColor: "var(--border)", background: "var(--elevated)", zIndex: 10 }}
             >
-              ×
+              <X className="h-4 w-4" />
             </button>
 
-            <RDialogHeader className="space-y-2 flex flex-col items-center text-center">
-              <RDialogTitle className="text-xl sm:text-2xl font-semibold">
+            <RDialogHeader className="space-y-1.5 flex flex-col items-center text-center">
+              <RDialogTitle className="text-lg sm:text-2xl font-semibold">
                 Confirm your {kind}
               </RDialogTitle>
               <RDialogDescription
                 id="confirm-desc"
-                className={`text-sm ${isLightTheme ? "text-black/60" : "text-app/70"}`}
+                className={`text-[13px] sm:text-sm ${isLightTheme ? "text-black/60" : "text-app/70"}`}
               >
                 Review the details below. If everything looks good, accept to book this time. You can go back to choose a different slot.
               </RDialogDescription>
             </RDialogHeader>
 
-            <div className="mt-4 grid place-items-center gap-3" aria-describedby="confirm-desc">
+            <div className="mt-3 sm:mt-4 w-full grid place-items-center gap-2.5" aria-describedby="confirm-desc">
               {selected && (
                 <>
-                  <div className="text-lg sm:text-xl font-semibold">
-                    {new Date(selected.startISO).toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  <div className="w-full max-w-sm rounded-2xl border px-4 py-4 text-center" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                    <div className="text-base sm:text-lg font-bold">
+                      {new Date(selected.startISO).toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
+                    </div>
+                    <div className="mt-0.5 text-sm font-medium opacity-80">
+                      {new Date(selected.startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – {new Date(selected.endISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                    <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-full border text-[11px]" style={{ borderColor: "var(--border)" }}>{browserTz}</span>
+                      {durationMins != null && (
+                        <span className="px-2 py-0.5 rounded-full border text-[11px]" style={{ borderColor: "var(--border)" }}>{durationMins} min</span>
+                      )}
+                      <span className="px-2 py-0.5 rounded-full border text-[11px] capitalize" style={{ borderColor: "var(--border)" }}>{kind}</span>
+                    </div>
                   </div>
-                  <div className="text-base sm:text-lg font-medium">
-                    {new Date(selected.startISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – {new Date(selected.endISO).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </div>
-                  <div className="inline-flex flex-wrap items-center justify-center gap-2">
-                    <span
-                      className="px-2.5 py-1 rounded-md border text-xs sm:text-sm"
-                      style={{ borderColor: isLightTheme ? "rgba(0,0,0,0.3)" : "var(--border)" }}
-                    >
-                      {browserTz}
+
+                  <div className="w-full max-w-sm flex items-center justify-between rounded-2xl border px-4 py-3" style={{ borderColor: "var(--border)" }}>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      {depositCents > 0 ? <Wallet className="h-4 w-4 opacity-70" /> : <Gift className="h-4 w-4 opacity-70" />}
+                      Deposit due now
                     </span>
-                    {durationMins != null && (
-                      <span
-                        className="px-2.5 py-1 rounded-md border text-xs sm:text-sm"
-                        style={{ borderColor: isLightTheme ? "rgba(0,0,0,0.3)" : "var(--border)" }}
-                      >
-                        {durationMins} min
-                      </span>
-                    )}
-                    <span
-                      className="px-2.5 py-1 rounded-md border text-xs sm:text-sm capitalize"
-                      style={{ borderColor: isLightTheme ? "rgba(0,0,0,0.3)" : "var(--border)" }}
-                    >
-                      {kind}
+                    <span className="text-base font-bold">
+                      {depositCents > 0 ? `$${(depositCents / 100).toFixed(2)}` : "Free"}
                     </span>
                   </div>
-                  <div className={isLightTheme ? "text-xs sm:text-sm text-black/55" : "text-xs sm:text-sm text-app/70"}>
-                    You’ll see payment or deposit steps later if required by the artist’s policy.
-                  </div>
+                  <p className="text-[11px] opacity-60 max-w-sm text-center">
+                    {depositCents > 0
+                      ? "Holds your booking and is applied to your final cost — the balance is paid with the artist at the studio."
+                      : kind === "consultation"
+                        ? "This artist offers consultations at no charge."
+                        : "No deposit is required for this booking."}
+                  </p>
                 </>
               )}
             </div>
 
-            <RDialogFooter className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <RDialogFooter className="mt-5 sm:mt-6 w-full flex flex-col-reverse sm:flex-row items-center justify-center gap-2.5">
               <Button
                 variant="outline"
                 onClick={() => {
                   swallowGestureTail()
                   setConfirmOpen(false)
                 }}
-                className="text-base sm:text-lg rounded-xl bg-transparent"
-                style={{ borderColor: isLightTheme ? "rgba(0,0,0,0.35)" : "var(--border)", color: isLightTheme ? "#000" : "var(--fg)" }}
+                className="w-full sm:w-auto text-sm sm:text-base rounded-xl bg-transparent"
+                style={{ borderColor: "var(--border)", color: "var(--fg)" }}
                 disabled={submitting}
               >
                 Cancel
@@ -512,11 +540,11 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
                   ev.stopPropagation()
                   handleAccept()
                 }}
-                className="text-base sm:text-lg rounded-xl"
-                style={{ background: "#000000", color: "#ffffff", border: "1px solid #ffffff" }}
+                className="w-full sm:w-auto text-sm sm:text-base rounded-xl hover:opacity-90"
+                style={{ background: "var(--fg)", color: "var(--bg)", border: "1px solid var(--fg)" }}
                 disabled={submitting}
               >
-                {submitting ? "Booking..." : "Confirm"}
+                {submitting ? "Booking..." : `Confirm${depositCents > 0 ? ` · $${(depositCents / 100).toFixed(2)}` : ""}`}
               </Button>
             </RDialogFooter>
           </RDialogContent>

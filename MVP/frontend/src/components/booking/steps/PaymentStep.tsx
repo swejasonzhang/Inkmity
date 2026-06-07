@@ -5,7 +5,7 @@ import { stripePromise } from "@/lib/stripe";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { CreditCard, AlertCircle, Loader2 } from "lucide-react";
+import { CreditCard, AlertCircle, Loader2, Gift } from "lucide-react";
 import type { Artist, Booking } from "@/api";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
@@ -49,29 +49,33 @@ type DepositPolicy = {
   maxCents?: number;
   nonRefundable?: boolean;
   cutoffHours?: number;
+  consultationFree?: boolean;
 };
 
+// Mirrors the backend computeDepositCents (free consultations + price cap).
 function computeDepositPreviewCents(
   deposit: DepositPolicy | undefined,
   priceCents: number,
   appointmentType: BookingFlowData["appointmentType"]
 ) {
   const p = deposit || {};
+  if (appointmentType === "consultation" && (p.consultationFree ?? true)) return 0;
+  const price = Math.max(0, Number(priceCents || 0));
   const mode = p.mode || "percent";
-
+  let result: number;
   if (mode === "flat") {
     const base = Math.max(0, Number(p.amountCents || 0));
-    if (appointmentType === "tattoo_session") return Math.max(base, 5000);
-    return base;
+    result = appointmentType === "tattoo_session" ? Math.max(base, 5000) : base;
+  } else {
+    const percent = Math.max(0, Math.min(1, Number(p.percent ?? 0.2)));
+    const enforcedMin = appointmentType === "tattoo_session" ? 5000 : 0;
+    const minCents = Math.max(0, Number(p.minCents || 0), enforcedMin);
+    const maxCents = Math.max(0, Number(p.maxCents || Infinity));
+    const raw = Math.round(price * percent);
+    result = Math.min(Math.max(raw, minCents), maxCents);
   }
-
-  const percent = Math.max(0, Math.min(1, Number(p.percent ?? 0.2)));
-  const enforcedMin = appointmentType === "tattoo_session" ? 5000 : 0;
-  const minCents = Math.max(0, Number(p.minCents || 0), enforcedMin);
-  const maxCents = Math.max(0, Number(p.maxCents || Infinity));
-  const base = Math.max(0, Number(priceCents || 0));
-  const raw = Math.round(base * percent);
-  return Math.min(Math.max(raw, minCents), maxCents);
+  if (price > 0) result = Math.min(result, price);
+  return result;
 }
 
 function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitting }: Props) {
@@ -317,6 +321,14 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
                 </span>
               </div>
             )}
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">
+                Deposit{bookingData.appointmentType === "consultation" ? " (consultation)" : " (session)"}:
+              </span>
+              <span className="font-semibold">
+                {depositPreviewCents > 0 ? `$${(depositPreviewCents / 100).toFixed(2)}` : "Free"}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -341,9 +353,9 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
                   <span className="font-medium">${(platformFeeCents / 100).toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between border-t pt-2 mt-2">
-                <span className="font-semibold">Total due now:</span>
-                <span className="font-semibold">
+              <div className="flex items-center justify-between rounded-lg border px-3 py-2 mt-2" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                <span className="font-semibold">Total due now</span>
+                <span className="text-lg font-bold">
                   ${((depositPreviewCents + platformFeeCents) / 100).toFixed(2)}
                 </span>
               </div>
@@ -358,9 +370,9 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
             </div>
 
             <div className="space-y-3">
-              <div className="p-4 border rounded-md bg-background">
-                <label className="text-sm font-medium mb-2 block text-center">Card Details</label>
-                <div className="p-3 border rounded-md bg-white dark:bg-gray-900">
+              <div className="p-4 border rounded-xl" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                <label className="text-sm font-medium mb-2 block text-center">Card details</label>
+                <div className="p-3.5 border rounded-xl bg-white" style={{ borderColor: "var(--border)" }}>
                   <CardElement
                     options={{
                       style: {
@@ -384,26 +396,32 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-white/10 border border-white/20 rounded-md">
+            <div className="mt-4 p-3 rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-app mt-0.5" />
-                <div className="text-xs text-app dark:text-app">
-                  <p className="font-medium mb-1">Deposit Policy</p>
+                <AlertCircle className="h-4 w-4 mt-0.5 opacity-70 shrink-0" />
+                <div className="text-[11px] leading-relaxed opacity-75">
+                  <p className="font-semibold mb-0.5 opacity-100">Deposit policy</p>
                   <p>
-                    Deposits are non-refundable and will be applied to your final cost.
-                    Cancellation requires 48-72 hours notice or deposit is forfeited.
+                    The deposit holds your booking and is applied to your final cost. The
+                    remaining balance is paid with the artist at the studio. Cancellations
+                    inside the artist's cutoff window forfeit the deposit.
                   </p>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div>
-            <h4 className="font-semibold mb-3">Payment</h4>
-            <p className="text-sm text-muted-foreground">
+          <div className="rounded-xl border px-4 py-4 text-center" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+            <div className="flex items-center justify-center gap-2">
+              <Gift className="h-4 w-4 opacity-70" />
+              <span className="font-semibold">
+                {bookingData.appointmentType === "consultation" ? "Free consultation" : "No deposit required"}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
               {bookingData.appointmentType === "consultation"
-                ? "No deposit required for consultations. Payment will be collected at the appointment."
-                : "No deposit required for this appointment."}
+                ? "This artist offers consultations at no charge — nothing is collected now."
+                : "Nothing is collected now for this appointment."}
             </p>
           </div>
         )}

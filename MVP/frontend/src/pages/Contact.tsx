@@ -225,7 +225,7 @@ export default function Contact() {
 
             <Header />
 
-            <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-4">
+            <main className="flex-1 min-h-0 overflow-y-auto grid place-items-center px-4 sm:px-6 py-4">
                 <motion.div
                     initial={{ opacity: 0, y: 18, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}

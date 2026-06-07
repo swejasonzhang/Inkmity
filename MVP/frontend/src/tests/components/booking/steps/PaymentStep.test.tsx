@@ -188,8 +188,8 @@ describe("PaymentStep", () => {
       />
     );
 
-    expect(screen.getByText(/Deposit Policy/i)).toBeInTheDocument();
-    expect(screen.getByText(/non-refundable/i)).toBeInTheDocument();
+    expect(screen.getByText(/Deposit policy/i)).toBeInTheDocument();
+    expect(screen.getByText(/applied to your final cost/i)).toBeInTheDocument();
   });
 
   test("should not render CardElement when no deposit required", () => {
