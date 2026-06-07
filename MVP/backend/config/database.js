@@ -21,7 +21,7 @@ export async function initDatabase() {
 
     isConnected = true;
     logger.info('MongoDB connected successfully', {
-      uri: config.database.uri.replace(/\/\/.*@/, '//***:***@') // Mask credentials in logs
+      uri: config.database.uri.replace(/\/\/.*@/, '//***:***@')
     });
 
     mongoose.connection.on('error', (error) => {

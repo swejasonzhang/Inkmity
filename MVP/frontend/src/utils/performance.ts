@@ -14,7 +14,7 @@ class PerformanceMonitor {
     try {
       const startTime = performance.now();
       this.marks.set(name, startTime);
-      
+
       if (performance.mark) {
         performance.mark(`${name}-start`);
       }

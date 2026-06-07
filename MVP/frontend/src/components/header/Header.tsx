@@ -184,10 +184,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         setUserVisibility(data.visibility);
       }
     };
-    
+
     socket.on("user:visibility:updated", handleVisibilityUpdate);
     socket.on("user:visibility:changed", handleVisibilityUpdate);
-    
+
     if (!socket.connected && user?.id) {
       connectSocket(getToken, user.id).catch(console.error);
     } else if (socket.connected && user?.id) {
@@ -261,10 +261,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     return { icon: EyeOff, label: "Invisible", color: "text-white/65", dot: "bg-white/45" };
   };
 
-  // Only treat the user as signed in once Clerk has confirmed a real session.
-  // We intentionally do NOT fall back to cached state during the loading window,
-  // so the nav locks stay visible and the username div stays gated on refresh
-  // whenever the user isn't actually logged in.
   const effectiveSignedIn = isLoaded && !!isSignedIn && isOnboarded;
   const homeHref = "/landing";
   const navLocked = disableDashboardLink || !effectiveSignedIn;
@@ -285,12 +281,12 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     const bodyStyle = document.body.style;
     const originalOverflow = bodyStyle.overflow;
     const originalPaddingRight = bodyStyle.paddingRight;
-    
+
     bodyStyle.overflow = "hidden";
     if (scrollbarWidth > 0) {
       bodyStyle.paddingRight = `${scrollbarWidth}px`;
     }
-    
+
     return () => {
       bodyStyle.overflow = originalOverflow;
       bodyStyle.paddingRight = originalPaddingRight;
@@ -340,10 +336,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     };
 
     updatePosition();
-    
+
     window.addEventListener('scroll', updatePosition, true);
     window.addEventListener('resize', updatePosition);
-    
+
     return () => {
       window.removeEventListener('scroll', updatePosition, true);
       window.removeEventListener('resize', updatePosition);
@@ -357,9 +353,9 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     };
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      
+
       const isInStatusDropdown = target.closest('[data-slot="dropdown-menu"]') ||
-                                  target.closest('[data-slot="dropdown-menu-content"]') || 
+                                  target.closest('[data-slot="dropdown-menu-content"]') ||
                                   target.closest('[data-slot="dropdown-menu-trigger"]') ||
                                   target.closest('[data-slot="dropdown-menu-radio-group"]') ||
                                   target.closest('[data-slot="dropdown-menu-radio-item"]') ||
@@ -371,10 +367,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                                   target.closest('[data-radix-portal]') ||
                                   target.closest('[data-radix-dropdown-menu-content]') ||
                                   target.closest('[data-radix-dropdown-menu-trigger]');
-      
+
       const isInMainDropdown = dropdownRef.current && dropdownRef.current.contains(target);
       const isInTrigger = triggerRef.current && triggerRef.current.contains(target);
-      
+
       if (!isInMainDropdown && !isInTrigger && !isInStatusDropdown) {
         setShowDropdown(false);
       }
@@ -527,11 +523,11 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           ref={dropdownRef}
           role="menu"
           aria-label="User menu"
-          style={{ 
+          style={{
             position: 'fixed',
             top: `${dropdownPosition.top}px`,
             right: `${dropdownPosition.right}px`,
-            width: triggerWidth || undefined, 
+            width: triggerWidth || undefined,
             minWidth: triggerWidth || undefined,
             maxWidth: triggerWidth || undefined,
             zIndex: 2147483600,

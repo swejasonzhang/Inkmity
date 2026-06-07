@@ -12,7 +12,6 @@ export default function GateNotice() {
 
   useEffect(() => {
     if ((location.state as { gate?: boolean } | null)?.gate) {
-      // Clear the flag so a refresh doesn't replay the notice.
       navigate(location.pathname, { replace: true, state: {} });
       window.clearTimeout(hideTimer.current);
       window.clearTimeout(unmountTimer.current);

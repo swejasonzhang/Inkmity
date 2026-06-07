@@ -26,9 +26,6 @@ type Props = {
 
 const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initialStep = 0 }) => {
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
-  // The dashboard list only carries a thumbnail's worth of data (portfolioImages
-  // at most), so the modal would otherwise render no Past/Healed/Sketch works.
-  // Hydrate the full artist document on open and merge in the complete galleries.
   const [hydrated, setHydrated] = useState<ArtistWithGroups>(artist);
   useEffect(() => {
     setHydrated(artist);
@@ -130,12 +127,12 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
 
     if (!portalRef.current) {
       const getThemedAncestor = () => {
-        return document.getElementById("dashboard-scope") || 
-               document.getElementById("ink-root") || 
+        return document.getElementById("dashboard-scope") ||
+               document.getElementById("ink-root") ||
                document.querySelector<HTMLElement>(".ink-scope") ||
                document.documentElement;
       };
-      
+
       const themeVars = [
         "--background",
         "--foreground",
@@ -165,7 +162,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         "--danger",
         "--danger-foreground",
       ];
-      
+
       const waitForTheme = (callback: () => void) => {
         const check = () => {
           const themedAncestor = getThemedAncestor();
@@ -173,13 +170,13 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             requestAnimationFrame(check);
             return;
           }
-          
+
           const hasThemeAttr = themedAncestor.getAttribute("data-ink");
           const hasThemeClass = themedAncestor.classList.contains("ink-light");
           const cs = getComputedStyle(themedAncestor);
           const hasBg = cs.getPropertyValue("--bg").trim();
           const hasCard = cs.getPropertyValue("--card").trim();
-          
+
           if ((hasThemeAttr || hasThemeClass) && hasBg && hasCard) {
             callback();
           } else {
@@ -188,17 +185,17 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         };
         check();
       };
-      
+
       waitForTheme(() => {
         const themedAncestor = getThemedAncestor();
         if (!themedAncestor) {
           setMounted(false);
           return;
         }
-        
+
         const isLight = themedAncestor.classList.contains("ink-light") || themedAncestor.getAttribute("data-ink") === "light";
         const cs = getComputedStyle(themedAncestor);
-        
+
         const el = document.createElement("div");
         el.id = "inkmity-modal-root";
         el.style.position = "fixed";
@@ -214,14 +211,14 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         el.classList.add("ink-scope", "ink-no-anim");
         el.setAttribute("data-ink-no-anim-permanent", "true");
         el.setAttribute("data-ink-modal-portal", "true");
-        
+
         if (isLight) {
           el.classList.add("ink-light");
           el.setAttribute("data-ink", "light");
         } else {
           el.setAttribute("data-ink", "dark");
         }
-        
+
         themeVars.forEach((v) => {
           const val = cs.getPropertyValue(v).trim();
           if (val) {
@@ -230,16 +227,16 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         });
         el.style.setProperty("--danger", cs.getPropertyValue("--danger") || cs.getPropertyValue("--destructive") || "");
         el.style.setProperty("--danger-foreground", cs.getPropertyValue("--danger-foreground") || cs.getPropertyValue("--destructive-foreground") || "");
-        
+
         portalRef.current = el;
-      
+
         const syncTheme = () => {
           const themedAncestor = getThemedAncestor();
           if (!themedAncestor) return;
-          
-          const isLight = themedAncestor.classList.contains("ink-light") || 
+
+          const isLight = themedAncestor.classList.contains("ink-light") ||
                          themedAncestor.getAttribute("data-ink") === "light";
-          
+
           if (isLight) {
             el.classList.add("ink-light");
             el.setAttribute("data-ink", "light");
@@ -247,7 +244,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             el.classList.remove("ink-light");
             el.setAttribute("data-ink", "dark");
           }
-          
+
           const cs = getComputedStyle(themedAncestor);
           themeVars.forEach((v) => {
             const val = cs.getPropertyValue(v).trim();
@@ -255,17 +252,17 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
               el.style.setProperty(v, val);
             }
           });
-          
+
           el.style.setProperty("--danger", cs.getPropertyValue("--danger") || cs.getPropertyValue("--destructive") || "");
           el.style.setProperty("--danger-foreground", cs.getPropertyValue("--danger-foreground") || cs.getPropertyValue("--destructive-foreground") || "");
         };
-        
+
         const forceNoAnim = () => {
           if (portalRef.current && !portalRef.current.classList.contains('ink-no-anim')) {
             portalRef.current.classList.add('ink-no-anim');
           }
         };
-        
+
         const portalObserver = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -274,30 +271,30 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           });
           forceNoAnim();
         });
-        
+
         const themeObserver = new MutationObserver(() => {
           syncTheme();
         });
-        
+
         const ancestorForObserver = getThemedAncestor();
         if (ancestorForObserver) {
-          themeObserver.observe(ancestorForObserver, { 
-            attributes: true, 
-            attributeFilter: ['class', 'data-ink', 'style'] 
+          themeObserver.observe(ancestorForObserver, {
+            attributes: true,
+            attributeFilter: ['class', 'data-ink', 'style']
           });
         }
-      
+
         const handleThemeChange = () => {
           syncTheme();
         };
         window.addEventListener("ink:theme-change", handleThemeChange);
         window.addEventListener("storage", handleThemeChange);
-        
+
         document.body.appendChild(el);
         portalObserver.observe(el, { attributes: true, attributeFilter: ['class'], subtree: true });
-        
+
         const intervalId = setInterval(forceNoAnim, 50);
-        
+
         syncTheme();
         const checkAndShow = () => {
           if (!portalRef.current) return;
@@ -305,7 +302,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           const bgVal = portalCs.getPropertyValue("--bg").trim();
           const cardVal = portalCs.getPropertyValue("--card").trim();
           const fgVal = portalCs.getPropertyValue("--fg").trim();
-          
+
           if (bgVal && cardVal && fgVal) {
             syncTheme();
             requestAnimationFrame(() => {
@@ -322,9 +319,9 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             requestAnimationFrame(checkAndShow);
           }
         };
-        
+
         requestAnimationFrame(checkAndShow);
-        
+
         return () => {
           portalObserver.disconnect();
           themeObserver.disconnect();
@@ -349,12 +346,12 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       });
     } else if (portalRef.current) {
       const getThemedAncestor = () => {
-        return document.getElementById("dashboard-scope") || 
-               document.getElementById("ink-root") || 
+        return document.getElementById("dashboard-scope") ||
+               document.getElementById("ink-root") ||
                document.querySelector<HTMLElement>(".ink-scope") ||
                document.documentElement;
       };
-      
+
       const themeVars = [
         "--background",
         "--foreground",
@@ -384,15 +381,15 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
         "--danger",
         "--danger-foreground",
       ];
-      
+
       const syncTheme = () => {
         if (!portalRef.current) return;
         const themedAncestor = getThemedAncestor();
         if (!themedAncestor) return;
-        
-        const isLight = themedAncestor.classList.contains("ink-light") || 
+
+        const isLight = themedAncestor.classList.contains("ink-light") ||
                        themedAncestor.getAttribute("data-ink") === "light";
-        
+
         if (isLight) {
           portalRef.current.classList.add("ink-light");
           portalRef.current.setAttribute("data-ink", "light");
@@ -400,7 +397,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           portalRef.current.classList.remove("ink-light");
           portalRef.current.setAttribute("data-ink", "dark");
         }
-        
+
         const cs = getComputedStyle(themedAncestor);
         themeVars.forEach((v) => {
           const val = cs.getPropertyValue(v).trim();
@@ -408,19 +405,19 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             portalRef.current.style.setProperty(v, val);
           }
         });
-        
+
         if (portalRef.current) {
           portalRef.current.style.setProperty("--danger", cs.getPropertyValue("--danger") || cs.getPropertyValue("--destructive") || "");
           portalRef.current.style.setProperty("--danger-foreground", cs.getPropertyValue("--danger-foreground") || cs.getPropertyValue("--destructive-foreground") || "");
         }
       };
-      
+
       syncTheme();
       requestAnimationFrame(() => {
         syncTheme();
         setMounted(true);
       });
-      
+
       return () => {
         setMounted(false);
       };
@@ -500,7 +497,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     }
     return null;
   }
-  
+
   if (!mounted || !portalRef.current) return null;
 
   const handleOverlayPointerDown: React.PointerEventHandler<HTMLDivElement> = e => {
@@ -599,9 +596,9 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
             </div>
           </div>
 
-          <div 
-            className="w-full max-w-[1200px] mx-auto ink-no-anim" 
-            style={{ 
+          <div
+            className="w-full max-w-[1200px] mx-auto ink-no-anim"
+            style={{
               transition: "none !important",
               animation: "none !important",
               opacity: 1,

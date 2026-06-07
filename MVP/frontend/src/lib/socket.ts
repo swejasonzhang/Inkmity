@@ -19,13 +19,8 @@ export function getSocket() {
 }
 
 let subscriberCount = 0;
-// The id we should present to the server as "online". Kept across reconnects.
 let registeredUserId = "";
 
-// Register on every (re)connect — not just when a component happens to run while
-// already connected. Without this, a fresh page load connects the socket but the
-// server never learns who we are, so we appear offline (and presence/lastActive
-// never update in real time).
 socket.on("connect", () => {
   if (registeredUserId) socket.emit("register", registeredUserId);
 });
@@ -38,8 +33,6 @@ export async function connectSocket(
   if (userId) registeredUserId = userId;
 
   if (socket.connected) {
-    // Already connected (e.g. navigating between pages) — make sure the server
-    // still has us registered as online.
     if (registeredUserId) socket.emit("register", registeredUserId);
     return;
   }

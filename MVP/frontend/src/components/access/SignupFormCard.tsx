@@ -124,7 +124,7 @@ export default function SignupFormCard(props: SignupProps) {
 
   if (success) {
     return (
-      <motion.div 
+      <motion.div
         className={`relative w-full ${className ?? ""}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -154,7 +154,7 @@ export default function SignupFormCard(props: SignupProps) {
 
   if (!shouldShowForm && !success) {
     return (
-      <motion.div 
+      <motion.div
         className={`relative w-full ${className ?? ""}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

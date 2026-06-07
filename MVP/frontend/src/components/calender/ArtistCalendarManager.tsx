@@ -54,7 +54,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
         try {
             const token = await getToken();
             const startOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-            
+
             const response = await fetch(
                 `${API_URL}/bookings?artistId=${artistId}&date=${startOfMonth.toISOString().slice(0, 10)}`,
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -85,10 +85,10 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
         const handleAvailabilityUpdated = () => {
             loadAvailability();
         };
-        
+
         socket.on("booking:created", handleBookingCreated);
         socket.on("availability:updated", handleAvailabilityUpdated);
-        
+
         return () => {
             socket.off("booking:created", handleBookingCreated);
             socket.off("availability:updated", handleAvailabilityUpdated);
@@ -143,19 +143,19 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
 
     const handleBlockTime = async () => {
         if (!selectedDate) return;
-        
+
         setSaving(true);
         try {
             const token = await getToken();
             const dateStr = dateKey(selectedDate);
             const newExceptions = { ...exceptions };
-            
+
             if (!newExceptions[dateStr]) {
                 newExceptions[dateStr] = [];
             }
-            
+
             newExceptions[dateStr].push({ start: blockStart, end: blockEnd });
-            
+
             const response = await fetch(`${API_URL}/availability/${artistId}`, {
                 method: "PUT",
                 headers: {
@@ -167,7 +167,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                     timezone,
                 }),
             });
-            
+
             if (response.ok) {
                 setExceptions(newExceptions);
                 setBlockTimeModal(false);
@@ -184,14 +184,14 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
 
     const handleBlockFullDay = async () => {
         if (!selectedDate) return;
-        
+
         setSaving(true);
         try {
             const token = await getToken();
             const dateStr = dateKey(selectedDate);
             const newExceptions = { ...exceptions };
             newExceptions[dateStr] = [];
-            
+
             const response = await fetch(`${API_URL}/availability/${artistId}`, {
                 method: "PUT",
                 headers: {
@@ -203,7 +203,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                     timezone,
                 }),
             });
-            
+
             if (response.ok) {
                 setExceptions(newExceptions);
                 setModalOpen(false);
@@ -222,7 +222,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
             const token = await getToken();
             const newExceptions = { ...exceptions };
             delete newExceptions[dateStr];
-            
+
             const response = await fetch(`${API_URL}/availability/${artistId}`, {
                 method: "PUT",
                 headers: {
@@ -234,7 +234,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                     timezone,
                 }),
             });
-            
+
             if (response.ok) {
                 setExceptions(newExceptions);
             }
@@ -317,8 +317,8 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                     ? "bg-white/10 border-white/30 hover:bg-white/20"
                                     : "hover:bg-white/5"
                             }`}
-                            style={{ 
-                                borderColor: "var(--border)", 
+                            style={{
+                                borderColor: "var(--border)",
                                 background: cell.inMonth ? "var(--card)" : undefined,
                                 filter: "none !important",
                                 transform: "none !important",
@@ -337,9 +337,9 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                             tabIndex={-1}
                         >
                             <div className="flex items-center justify-between mb-1">
-                                <span 
-                                    className="text-sm font-medium" 
-                                    style={{ 
+                                <span
+                                    className="text-sm font-medium"
+                                    style={{
                                         color: "var(--fg)",
                                         filter: "none !important",
                                         transform: "none !important",
@@ -364,9 +364,9 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
                                 </div>
                             )}
                             {dayBookings.length > 0 && (
-                                <div 
-                                    className="text-xs" 
-                                    style={{ 
+                                <div
+                                    className="text-xs"
+                                    style={{
                                         color: "var(--fg)",
                                         filter: "none !important",
                                         transform: "none !important",

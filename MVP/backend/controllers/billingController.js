@@ -203,7 +203,7 @@ export async function createDepositPaymentIntent(req, res) {
   let amount = Number(booking.depositRequiredCents || 0);
   if (amount <= 0)
     return res.status(400).json({ error: "no_deposit_required" });
-  
+
   if (config.stripe.testMode && amount < config.stripe.testMinAmountCents) {
     amount = config.stripe.testMinAmountCents;
   }
@@ -380,7 +380,7 @@ export async function createFinalPaymentIntent(req, res) {
       message: "Deposit covers full amount",
     });
   }
-  
+
   if (config.stripe.testMode && remainingCents > 0 && remainingCents < config.stripe.testMinAmountCents) {
     remainingCents = config.stripe.testMinAmountCents;
   }

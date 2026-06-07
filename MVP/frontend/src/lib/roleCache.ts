@@ -22,7 +22,7 @@ export function setCachedRole(role: CachedRole): void {
   try {
     localStorage.setItem(KEY, role);
   } catch {
-    
+
   }
 }
 
@@ -57,6 +57,6 @@ export function clearCachedRole(): void {
     localStorage.removeItem(KEY);
     localStorage.removeItem(NAME_KEY);
   } catch {
-    
+
   }
 }

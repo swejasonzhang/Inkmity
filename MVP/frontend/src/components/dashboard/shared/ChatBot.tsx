@@ -6,18 +6,18 @@ const ChatBot: React.FC = () => {
     <div
       className={[
         "fixed z-[1002] pointer-events-auto",
-        "right-4 left-4 md:left-auto",               
+        "right-4 left-4 md:left-auto",
       ].join(" ")}
       style={{
         bottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)",
-        width: "min(400px, calc(100vw - 32px))",      
+        width: "min(400px, calc(100vw - 32px))",
       }}
     >
       <div
         className="bg-card text-app border border-app rounded-3xl p-5 shadow-2xl flex flex-col gap-4"
         style={{
-          height: "420px",                            
-          maxHeight: "min(75vh, 520px)",             
+          height: "420px",
+          maxHeight: "min(75vh, 520px)",
         }}
       >
         <div className="text-app font-bold text-lg w-full flex items-center justify-between">

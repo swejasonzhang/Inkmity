@@ -160,7 +160,7 @@ export function sanitizeInput(fields = []) {
       if (req.body[field]) {
         req.body[field] = req.body[field]
           .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-          .replace(/<[^>]*>/g, '') // Remove all HTML tags for now
+          .replace(/<[^>]*>/g, '')
           .trim();
       }
     });

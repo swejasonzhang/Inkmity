@@ -99,7 +99,7 @@ export function useInactivityLogout() {
     const events = ["mousedown", "keypress", "scroll", "touchstart", "click"];
     let lastUpdate = 0;
     const THROTTLE_MS = 60000;
-    
+
     const handleActivity = () => {
       const now = Date.now();
       if (now - lastUpdate >= THROTTLE_MS) {

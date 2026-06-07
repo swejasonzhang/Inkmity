@@ -129,13 +129,9 @@ export default function FloatingBar({
     return () => window.clearTimeout(id);
   }, [open, isMdUp, vp.h]);
 
-  // Align the bar's left/right elements to the same global edge gutter the
-  // rest of the app content uses, so they sit flush on the global border.
   const pad = {
     left: "var(--ink-edge-l)",
     right: "var(--ink-edge-r)",
-    // Match the dashboards' content gutter so the bar's gap from the bottom
-    // equals the main container's top padding.
     bottom: `calc(max(${vvBottom}px, clamp(0.625rem, 1vh + 0.5vw, 1.25rem)) + env(safe-area-inset-bottom, 0px))`,
   };
 
@@ -163,9 +159,6 @@ export default function FloatingBar({
   const bottomGapPx = Math.max(vvBottom, isMdUp ? 20 : 10);
   const DESKTOP_OPEN_H = vp.h - desktopOpenTop - bottomGapPx;
 
-  // Both roles get the same conversation footprint. The artist spends the extra
-  // PANEL_W on the Message-requests column inside ChatWindow; the client has no
-  // requests panel, so that width goes to a roomier conversation + chat instead.
   const convW = isMdUp ? (open ? DESKTOP_OPEN_W + PANEL_W : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
   const convH = isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
 
@@ -224,8 +217,6 @@ export default function FloatingBar({
         left: pad.left,
         right: pad.right,
         bottom: 0,
-        // Fill the bottom strip (bar + the matching gap + safe area) so the
-        // grid's items-center vertically centers the elements within it.
         height: `calc(${Math.max(wrapperH, collapsedHeight)}px + clamp(0.625rem, 1vh + 0.5vw, 1.25rem) + env(safe-area-inset-bottom, 0px))`,
         gridTemplateColumns: "1fr auto 1fr",
         pointerEvents: "none",

@@ -43,7 +43,6 @@ async function artistCanReceivePayments(artistId) {
 
 export function computeDepositCents(policy, priceCents, appointmentType) {
   const p = policy?.deposit || {};
-  // The artist decides whether consultations are free (default: free).
   if (appointmentType === "consultation" && (p.consultationFree ?? true)) return 0;
   const price = Math.max(0, Number(priceCents || 0));
   const mode = p.mode || "percent";
@@ -62,8 +61,6 @@ export function computeDepositCents(policy, priceCents, appointmentType) {
     const raw = Math.round(price * percent);
     result = Math.min(Math.max(raw, minCents), maxCents);
   }
-  // Deposit-only guardrail: the platform never collects more than the session
-  // price — the remaining balance is settled with the artist at the studio.
   if (price > 0) result = Math.min(result, price);
   return result;
 }
@@ -278,13 +275,13 @@ export async function createBooking(req, res) {
     } catch {
       policy = null;
     }
-    
+
     const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
     const permission = await ClientBookingPermission.findOne({
       artistId,
       clientId: String(userId),
     });
-    
+
     if (!config.dev.bypassGates && (!permission || !permission.enabled)) {
       return res.status(403).json({
         error: "bookings_disabled",
@@ -808,7 +805,7 @@ export async function createConsultation(req, res) {
 
     if (activeCooldown) {
       const hoursRemaining = (activeCooldown.expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60);
-      return res.status(429).json({ 
+      return res.status(429).json({
         error: "cooldown_active",
         message: `You must wait ${Math.ceil(hoursRemaining)} hours before booking with this artist again after cancelling or denying an appointment.`,
         expiresAt: activeCooldown.expiresAt
@@ -938,7 +935,7 @@ export async function createTattooSession(req, res) {
       artistId,
       clientId: String(userId),
     });
-    
+
     if (!config.dev.bypassGates && (!permission || !permission.enabled)) {
       return res.status(403).json({
         error: "bookings_disabled",
@@ -1321,9 +1318,9 @@ export async function acceptAppointment(req, res) {
     }
 
     if (booking.status !== "pending") {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Appointment is not pending",
-        currentStatus: booking.status 
+        currentStatus: booking.status
       });
     }
 
@@ -1362,15 +1359,15 @@ export async function denyAppointment(req, res) {
 
     const isClient = String(booking.clientId) === userId;
     const isArtist = String(booking.artistId) === userId;
-    
+
     if (!isClient && !isArtist) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
     if (booking.status !== "pending") {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Appointment is not pending",
-        currentStatus: booking.status 
+        currentStatus: booking.status
       });
     }
 

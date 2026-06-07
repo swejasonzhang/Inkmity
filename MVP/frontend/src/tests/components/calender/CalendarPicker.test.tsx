@@ -27,8 +27,6 @@ describe("CalendarPicker", () => {
 
   test("should display current month", () => {
     render(<CalendarPicker {...defaultProps} />);
-    // The nav row renders month + year together, e.g. "June 2026" (the
-    // day-picker also keeps a CSS-hidden caption with the same label).
     const label = new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" });
     expect(screen.getAllByText(label).length).toBeGreaterThan(0);
   });

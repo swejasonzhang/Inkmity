@@ -13,7 +13,7 @@ export function useRole() {
   const fetchedUserIdRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inFlightRef = useRef<Promise<void> | null>(null);
-  
+
   if (typeof jest !== "undefined") {
     fetchedUserIdRef.current = null;
   }
@@ -28,17 +28,17 @@ export function useRole() {
       inFlightRef.current = null;
       return;
     }
-    
+
     const userId = user?.id;
     if (!userId) return;
-    
+
     if (fetchedUserIdRef.current === userId) {
       if (!ready) {
         setReady(true);
       }
       return;
     }
-    
+
     if (inFlightRef.current) {
       inFlightRef.current.then(() => {
         if (fetchedUserIdRef.current === userId && !ready) {
@@ -47,11 +47,11 @@ export function useRole() {
       }).catch(() => {});
       return;
     }
-    
+
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
     const ac = abortControllerRef.current;
-    
+
     let cancelled = false;
     const requestPromise = (async () => {
       try {
@@ -91,9 +91,9 @@ export function useRole() {
         }
       }
     })();
-    
+
     inFlightRef.current = requestPromise;
-    
+
     return () => {
       cancelled = true;
       ac.abort();

@@ -18,19 +18,19 @@ function formatCurrency(cents: number): string {
 
 function formatDate(date: string | Date): string {
   const d = new Date(date);
-  return d.toLocaleDateString([], { 
-    weekday: "short", 
-    month: "short", 
-    day: "numeric", 
-    year: "numeric" 
+  return d.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric"
   });
 }
 
 function formatTime(date: string | Date): string {
   const d = new Date(date);
-  return d.toLocaleTimeString([], { 
-    hour: "2-digit", 
-    minute: "2-digit" 
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
 
@@ -169,7 +169,7 @@ export default function Appointments() {
     const isCompleted = appointment.status === "completed";
     const isConsultation = appointment.appointmentType === "consultation";
     const isTattooSession = appointment.appointmentType === "tattoo_session";
-    
+
     const otherUser = isClient ? appointment.artist : appointment.client;
     const duration = calculateDuration(appointment.startAt, appointment.endAt);
     const canAccept = isArtist && isPending;
@@ -177,8 +177,8 @@ export default function Appointments() {
     const canDeny = isArtist && isPending;
     const hasRescheduled = appointment.rescheduledAt && appointment.rescheduledFrom;
     const hasReferenceImages = appointment.referenceImageIds && appointment.referenceImageIds.length > 0;
-    const remainingBalance = appointment.priceCents && appointment.depositPaidCents 
-      ? appointment.priceCents - appointment.depositPaidCents 
+    const remainingBalance = appointment.priceCents && appointment.depositPaidCents
+      ? appointment.priceCents - appointment.depositPaidCents
       : undefined;
 
     const getStatusBadgeStyle = (): React.CSSProperties => {
@@ -282,47 +282,47 @@ export default function Appointments() {
             </div>
           )}
         </CardHeader>
-        
+
         <CardContent className="p-0 space-y-2 flex-1">
-          <div 
+          <div
             className="border-t pt-3 grid grid-cols-2 gap-x-2 gap-y-0.5"
             style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}
           >
-            <DetailRow 
-              icon={Calendar} 
-              label="Date" 
-              value={formatDate(appointment.startAt)} 
+            <DetailRow
+              icon={Calendar}
+              label="Date"
+              value={formatDate(appointment.startAt)}
             />
-            <DetailRow 
-              icon={Clock} 
-              label="Time" 
-              value={`${formatTime(appointment.startAt)} – ${formatTime(appointment.endAt)}`} 
+            <DetailRow
+              icon={Clock}
+              label="Time"
+              value={`${formatTime(appointment.startAt)} – ${formatTime(appointment.endAt)}`}
             />
-            <DetailRow 
-              icon={Clock} 
-              label="Duration" 
-              value={formatDuration(duration)} 
+            <DetailRow
+              icon={Clock}
+              label="Duration"
+              value={formatDuration(duration)}
             />
 
             {isTattooSession && appointment.sessionNumber && (
-              <DetailRow 
-                icon={Hash} 
-                label="Session Number" 
-                value={`#${appointment.sessionNumber}`} 
+              <DetailRow
+                icon={Hash}
+                label="Session Number"
+                value={`#${appointment.sessionNumber}`}
               />
             )}
 
             {isTattooSession && appointment.priceCents !== undefined && appointment.priceCents > 0 && (
               <>
-                <DetailRow 
-                  icon={DollarSign} 
-                  label="Total Price" 
-                  value={formatCurrency(appointment.priceCents)} 
+                <DetailRow
+                  icon={DollarSign}
+                  label="Total Price"
+                  value={formatCurrency(appointment.priceCents)}
                 />
                 {appointment.depositRequiredCents !== undefined && appointment.depositRequiredCents > 0 && (
-                  <DetailRow 
-                    icon={DollarSign} 
-                    label="Deposit" 
+                  <DetailRow
+                    icon={DollarSign}
+                    label="Deposit"
                     value={
                       <div className="space-y-0.5">
                         <div>Required: {formatCurrency(appointment.depositRequiredCents)}</div>
@@ -337,65 +337,65 @@ export default function Appointments() {
                   </div>
                 )}
               </div>
-                    } 
+                    }
                   />
                 )}
               </>
             )}
 
             {isConsultation && (
-              <DetailRow 
-                icon={CheckCircle} 
-                label="Fee" 
-                value="No charge for consultations" 
+              <DetailRow
+                icon={CheckCircle}
+                label="Fee"
+                value="No charge for consultations"
               />
             )}
 
             {hasReferenceImages && (
-              <DetailRow 
-                icon={Image} 
-                label="Reference Images" 
-                value={`${appointment.referenceImageIds?.length || 0} image${(appointment.referenceImageIds?.length || 0) !== 1 ? 's' : ''} attached`} 
+              <DetailRow
+                icon={Image}
+                label="Reference Images"
+                value={`${appointment.referenceImageIds?.length || 0} image${(appointment.referenceImageIds?.length || 0) !== 1 ? 's' : ''} attached`}
               />
             )}
 
             {appointment.projectId && (
-              <DetailRow 
-                icon={FileText} 
-                label="Project" 
-                value={`Project ID: ${appointment.projectId}`} 
+              <DetailRow
+                icon={FileText}
+                label="Project"
+                value={`Project ID: ${appointment.projectId}`}
               />
             )}
 
             {isAccepted && appointment.confirmedAt && (
-              <DetailRow 
-                icon={CheckCircle} 
-                label="Confirmed" 
-                value={formatDateTime(appointment.confirmedAt)} 
+              <DetailRow
+                icon={CheckCircle}
+                label="Confirmed"
+                value={formatDateTime(appointment.confirmedAt)}
               />
             )}
 
             {isCompleted && (
-              <DetailRow 
-                icon={CheckCircle} 
-                label="Completed" 
-                value={formatDateTime(appointment.endAt)} 
+              <DetailRow
+                icon={CheckCircle}
+                label="Completed"
+                value={formatDateTime(appointment.endAt)}
               />
             )}
 
             {appointment.note && (
-              <DetailRow 
-                icon={FileText} 
-                label="Note" 
-                value={<span className="italic">{appointment.note}</span>} 
+              <DetailRow
+                icon={FileText}
+                label="Note"
+                value={<span className="italic">{appointment.note}</span>}
                 className="col-span-2"
               />
             )}
 
             {hasRescheduled && (
-              <DetailRow 
-                icon={RefreshCw} 
-                label="Rescheduled" 
+              <DetailRow
+                icon={RefreshCw}
+                label="Rescheduled"
                 value={
                   <div className="space-y-0.5">
                     <div>From: {formatDateTime(appointment.rescheduledFrom!)}</div>
@@ -409,9 +409,9 @@ export default function Appointments() {
             )}
 
             {isDenied && appointment.cancelledAt && (
-              <DetailRow 
-                icon={XCircle} 
-                label={appointment.cancelledBy === "client" ? "Cancelled" : "Denied"} 
+              <DetailRow
+                icon={XCircle}
+                label={appointment.cancelledBy === "client" ? "Cancelled" : "Denied"}
                 value={
                   <div className="space-y-0.5">
                     <div>{formatDateTime(appointment.cancelledAt)}</div>
@@ -427,9 +427,9 @@ export default function Appointments() {
             )}
 
             {appointment.status === "no-show" && appointment.noShowMarkedAt && (
-              <DetailRow 
-                icon={AlertCircle} 
-                label="No-Show" 
+              <DetailRow
+                icon={AlertCircle}
+                label="No-Show"
                 value={
                   <div className="space-y-0.5">
                     <div>Marked: {formatDateTime(appointment.noShowMarkedAt)}</div>
@@ -454,8 +454,8 @@ export default function Appointments() {
                 }}
                 variant="outline"
                 className="w-full h-9 text-sm font-medium transition-all hover:scale-[1.02]"
-                style={{ 
-                  borderColor: "var(--border)", 
+                style={{
+                  borderColor: "var(--border)",
                   color: "var(--fg)",
                   background: "var(--card)"
                 }}

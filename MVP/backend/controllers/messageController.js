@@ -48,7 +48,7 @@ export const getAllMessagesForUser = async (req, res) => {
     if (authId !== userId) return res.status(403).json({ error: "Forbidden" });
     const deletedConvs = await DeletedConversation.find({ userId }).lean();
     const deletedParticipantIds = new Set(deletedConvs.map(dc => dc.participantId));
-    
+
     const chats = await Message.find({
       type: "message",
       $or: [{ senderId: userId }, { receiverId: userId }],
@@ -291,17 +291,17 @@ export const deleteConversationForUser = async (req, res) => {
     const authUserId = String(req.user?.clerkId || req.auth?.userId || "");
     if (authUserId && authUserId !== userId)
       return res.status(403).json({ error: "Forbidden" });
-    
+
     await DeletedConversation.findOneAndUpdate(
       { userId, participantId },
       { userId, participantId },
       { upsert: true, new: true }
     );
-    
+
     const user = await User.findOne({ clerkId: userId }).lean();
     const userName = user?.username || "This user";
     const threadKey = [userId, participantId].sort().join(":");
-    
+
     const systemMessage = await Message.create({
       senderId: userId,
       receiverId: participantId,
@@ -315,7 +315,7 @@ export const deleteConversationForUser = async (req, res) => {
         deletedBy: userId,
       },
     });
-    
+
     const payload = {
       senderId: systemMessage.senderId,
       receiverId: systemMessage.receiverId,
@@ -325,16 +325,16 @@ export const deleteConversationForUser = async (req, res) => {
       delivered: true,
       seen: false,
     };
-    
+
     const io = getIO();
     if (io) {
       io.to(userRoom(participantId))
         .to(threadRoom(threadKey))
         .emit("message:new", { convoId: threadKey, message: payload });
-      
+
       io.to(userRoom(participantId)).emit("unread:update");
     }
-    
+
     res.status(200).json({ ok: true, userId, participantId });
   } catch (e) {
     console.error("Error deleting conversation:", e);
@@ -489,13 +489,13 @@ export const declineMessageRequest = async (req, res) => {
     if (!msg) return res.status(404).json({ error: "not_found" });
     msg.requestStatus = "declined";
     await msg.save();
-    
+
     const clientId = msg.senderId;
     const artist = await User.findOne({ clerkId: artistId }).lean();
     const artistUsername = artist?.username || "the artist";
-    
+
     const presetMessage = `Thank you for your interest. Unfortunately, ${artistUsername} is not able to take on this project at this time. We appreciate your understanding.`;
-    
+
     const declineNotification = await Message.create({
       senderId: artistId,
       receiverId: clientId,
@@ -508,7 +508,7 @@ export const declineMessageRequest = async (req, res) => {
         kind: "decline_notification",
       },
     });
-    
+
     const declinePayload = {
       senderId: declineNotification.senderId,
       receiverId: declineNotification.receiverId,
@@ -518,7 +518,7 @@ export const declineMessageRequest = async (req, res) => {
       delivered: true,
       seen: false,
     };
-    
+
     const declines = await declineCount(clientId, artistId);
     const blocked = declines >= MAX_DECLINES;
     const io = getIO();
@@ -526,14 +526,14 @@ export const declineMessageRequest = async (req, res) => {
       io.to(userRoom(clientId))
         .to(threadRoom(msg.threadKey))
         .emit("message:new", { convoId: msg.threadKey, message: declinePayload });
-      
+
       io.to(userRoom(clientId)).emit("conversation:declined", {
         convoId: msg.threadKey,
         declines,
         blocked,
         remainingRequests: blocked ? 0 : MAX_DECLINES - declines,
       });
-      
+
       io.to(userRoom(clientId))
         .to(userRoom(artistId))
         .to(threadRoom(msg.threadKey))

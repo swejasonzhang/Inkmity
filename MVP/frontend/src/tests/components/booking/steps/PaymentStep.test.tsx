@@ -238,8 +238,8 @@ describe("PaymentStep", () => {
     );
 
     const buttons = screen.getAllByRole("button");
-    const submitButton = buttons.find((btn: HTMLElement) => 
-      btn.textContent?.includes("Deposit") || 
+    const submitButton = buttons.find((btn: HTMLElement) =>
+      btn.textContent?.includes("Deposit") ||
       btn.textContent?.includes("Complete") ||
       btn.textContent?.includes("Processing")
     );

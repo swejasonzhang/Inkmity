@@ -239,22 +239,19 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
       if (!isViewer && !isParticipant) return;
 
-      // The conversation is always keyed by the OTHER party. From the sender's
-      // side the ack's participantId is the sender's own id, so keying by it
-      // matched nothing and the bubble never flipped to Delivered/Seen.
       const pid = isViewer ? p.participantId : p.viewerId;
 
       setConversations(prev => prev.map(conv => {
         if (conv.participantId !== pid) return conv;
         const msgs = conv.messages.map(msg => {
           let shouldUpdate = false;
-          
+
           if (isViewer) {
             shouldUpdate = msg.senderId === pid && msg.receiverId === currentUserId;
           } else if (isParticipant) {
             shouldUpdate = msg.senderId === currentUserId && msg.receiverId === p.viewerId;
           }
-          
+
           if (shouldUpdate) {
             const next = { ...msg };
             if (p.seen && !next.seen) {
@@ -283,7 +280,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
       setConversations(prev => {
         const existing = prev.find(c => c.participantId === pid);
         if (!existing) return prev;
-        // Reconcile the echo of a message we already rendered optimistically.
         if (cid && existing.messages.some(m => m.meta?.clientId === cid)) {
           return prev.map(conv =>
             conv.participantId === pid
@@ -347,17 +343,17 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
 
     const handleUserOnline = (data: { clerkId: string }) => {
-      setConversations(prev => prev.map(c => 
+      setConversations(prev => prev.map(c =>
         c.participantId === data.clerkId ? { ...c, isOnline: true } : c
       ));
     };
-    
+
     const handleUserOffline = (data: { clerkId: string }) => {
-      setConversations(prev => prev.map(c => 
+      setConversations(prev => prev.map(c =>
         c.participantId === data.clerkId ? { ...c, isOnline: false } : c
       ));
     };
-    
+
     const handleActivityUpdate = (data: { userId: string; lastActive: number }) => {
       setConversations(prev => prev.map(c =>
         c.participantId === data.userId ? { ...c, lastActive: data.lastActive } : c
@@ -481,7 +477,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   }, [expandedId, activeConv, onMarkRead]);
 
-  // On open / conversation switch: force a jump to the latest message.
   useLayoutEffect(() => {
     if (!expandedId) return;
     stickToBottomRef.current = true;
@@ -494,15 +489,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
   }, [expandedId, activeConv?.participantId]);
 
-  // New message: stay pinned to the bottom unless the user scrolled up to read.
   useEffect(() => {
     if (activeConv?.messages?.length && stickToBottomRef.current) {
       requestAnimationFrame(() => scrollToBottom());
     }
   }, [activeConv?.messages?.length, activeConv?.participantId]);
 
-  // Track stick-to-bottom and re-pin when the panel becomes visible or resizes
-  // (e.g. opening the messages popup, which doesn't change the active conversation).
   useEffect(() => {
     const els = [messagesContainerRefMobile.current, messagesContainerRefDesktop.current]
       .filter(Boolean) as HTMLDivElement[];
@@ -662,7 +654,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     try {
       const policy = await getArtistPolicy(currentUserId, undefined);
       const deposit = policy?.deposit || {};
-      const configured = 
+      const configured =
         (deposit.mode === "flat" && (deposit.amountCents ?? 0) > 0) ||
         (deposit.mode === "percent" && (deposit.percent ?? 0) > 0 && (deposit.minCents ?? 0) > 0);
       setDepositPolicyStatus(prev => ({ ...prev, [currentUserId]: configured }));
@@ -682,7 +674,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       if (conv?.meta?.blocked) {
         throw new Error("Messaging has been disabled for this artist. They have declined your request.");
       }
-      
+
       const allImageUrls = [...new Set([...getUrlsFromText(text), ...imageUrls])];
       const meta: Record<string, any> = {
         ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
@@ -717,7 +709,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
       window.dispatchEvent(new CustomEvent("ink:booking-enabled", {
         detail: { artistId: currentUserId, clientId }
       }));
-      // Reflect on the artist's side so the "Allow Booking" button disables.
       setConversations(prev => prev.map(c =>
         c.participantId === clientId ? { ...c, meta: { ...(c.meta || {}), bookingEnabled: true } } : c
       ));
@@ -738,9 +729,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
   };
 
   const handleDepositPolicySaved = () => {
-    // The artist just saved a policy — treat it as configured and continue
-    // straight to enabling the client. Do NOT re-run handleOfferAppointment
-    // (its captured depositPolicyStatus is stale and would re-open the modal).
     setDepositPolicyStatus((prev) => ({ ...prev, [currentUserId]: true }));
     const clientId = depositModalClientId;
     setDepositModalClientId(null);
@@ -784,10 +772,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
   }
 
   if (!conversations || conversations.length === 0) {
-    const emptyMessage = isClient 
+    const emptyMessage = isClient
       ? "No conversations currently.\nPlease click an artist to start one."
       : "No conversations with a client just yet, they will reach out to you.";
-    
+
     return (
       <div className="flex flex-col items-center justify-center gap-3 h-full bg-card rounded-2xl p-6 text-center">
         <span className="grid place-items-center h-12 w-12 rounded-2xl border border-white/40 bg-elevated">
@@ -803,15 +791,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const handleSend = async (participantId: string) => {
     const text = messageInput[participantId]?.trim() || "";
     const images = pendingImages[participantId] || [];
-    
+
     if (!text && images.length === 0) return;
-    
+
     const conv = conversations.find(c => c.participantId === participantId);
     if (conv?.meta?.blocked) {
       setSendError("Messaging has been disabled for this artist. They have declined your request.");
       return;
     }
-    
+
     setSendError(null);
     setExpandedId(participantId);
     setMessageInput(prev => ({ ...prev, [participantId]: "" }));
@@ -825,7 +813,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
       ...(allImageUrls.length > 0 ? { referenceUrls: allImageUrls } : {}),
     };
 
-    // Render the message instantly (optimistic), then reconcile with the server.
     const optimistic: Message = {
       senderId: currentUserId,
       receiverId: participantId,
@@ -840,7 +827,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
         ? { ...conv, messages: [...conv.messages, optimistic].sort((a, b) => a.timestamp - b.timestamp) }
         : conv
     ));
-    // Sending always returns you to the latest message.
     stickToBottomRef.current = true;
     requestAnimationFrame(() => scrollToBottom());
 
@@ -876,7 +862,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
       onMarkRead(participantId);
     } catch (err: any) {
-      // Roll back the optimistic message and restore the draft.
       setConversations(prev => prev.map(conv =>
         conv.participantId === participantId
           ? { ...conv, messages: conv.messages.filter(m => m.meta?.clientId !== clientId) }
@@ -935,7 +920,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       .join("");
     const avatarUrl = conversation.avatarUrl;
     const withBorder = border !== false;
-    
+
     if (avatarUrl && !imgError) {
       return (
         <img
@@ -947,7 +932,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
         />
       );
     }
-    
+
     return (
       <span
         className={`rounded-full grid place-items-center bg-elevated text-app font-semibold ${withBorder ? "border border-app" : ""}`}
@@ -1350,9 +1335,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       {!activeConv ? (
                         <div className="flex items-center justify-center h-full">
                           <p className="text-sm text-muted-foreground text-center">
-                            {conversations.length > 0 
+                            {conversations.length > 0
                               ? "Select a conversation from the list above"
-                              : (isClient 
+                              : (isClient
                                   ? "No conversations currently. Please click an artist to start one."
                                   : "No conversations with a client just yet, they will reach out to you.")}
                           </p>
@@ -1368,7 +1353,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             .concat(msg.meta?.refs ?? []);
                           const fromText = getUrlsFromText(msg.text);
                           const merged = Array.from(new Set([...fromMetaRef, ...fromText])).slice(0, 3);
-                          
+
                           let timestampText = "";
                           let statusText = "";
                           const isLastMsg = idx === activeConv.messages.length - 1;
@@ -1396,7 +1381,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
                               >
                                 <div className="whitespace-pre-wrap break-words">
-                                  {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => 
+                                  {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
                                     part.match(/^https?:\/\//) ? (
                                       <a
                                         key={i}
@@ -1409,7 +1394,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                         }}
                                       >
                                         {getFaviconUrl(part) && (
-                                          <img 
+                                          <img
                                             src={getFaviconUrl(part)!}
                                             alt=""
                                             className="w-4 h-4 flex-shrink-0"
@@ -1760,7 +1745,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                         .concat(msg.meta?.refs ?? []);
                       const fromText = getUrlsFromText(msg.text);
                       const merged = Array.from(new Set([...fromMetaRef, ...fromText])).slice(0, 3);
-                      
+
                       let timestampText = "";
                       let statusText = "";
                       const isLastMsg = idx === (activeConv?.messages?.length ?? 0) - 1;
@@ -1788,7 +1773,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.8125rem, 0.9vw, 0.875rem)' }}
                           >
                             <div className="whitespace-pre-wrap break-words">
-                              {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => 
+                              {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
                                 part.match(/^https?:\/\//) ? (
                                   <a
                                     key={i}
@@ -1801,7 +1786,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     }}
                                   >
                                         {getFaviconUrl(part) && (
-                                          <img 
+                                          <img
                                             src={getFaviconUrl(part)!}
                                             alt=""
                                             className="w-4 h-4 flex-shrink-0"

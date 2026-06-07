@@ -1,5 +1,3 @@
-// Shared so the lazy-chunk fallback (ClientDashboard) and the data-load skeleton
-// (ArtistsSection) render the exact same card shape/dimensions as a real ArtistCard.
 export const ArtistCardSkeleton = () => (
     <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-3xl border border-app bg-card/90">
         <div className="relative w-full flex-shrink-0" style={{ height: 'clamp(7rem, 9vh + 1.5vw, 11rem)' }}>

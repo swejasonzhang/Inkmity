@@ -14,7 +14,7 @@ describe("StepBarRow", () => {
     const user = userEvent.setup();
     const onGoToStep = jest.fn();
     render(<StepBarRow active={0} onGoToStep={onGoToStep} />);
-    
+
     const buttons = screen.getAllByRole("button");
     if (buttons.length > 0) {
       await user.click(buttons[0]);

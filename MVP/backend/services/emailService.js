@@ -50,7 +50,6 @@ function isEmailConfigured() {
   return !!config.email.resendApiKey || (!!config.email.smtp.host && !!config.email.smtp.user);
 }
 
-/** Wrap body content in the branded, mobile-friendly Inkmity email shell. */
 function renderShell({ preheader = '', heading, body }) {
   const year = new Date().getFullYear();
   return `<!DOCTYPE html>

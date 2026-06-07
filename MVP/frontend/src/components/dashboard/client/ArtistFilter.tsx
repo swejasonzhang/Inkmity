@@ -258,7 +258,6 @@ const ArtistFilter: React.FC<Props> = ({
     } catch { }
   }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
-
   const triggerBase = "h-10 bg-elevated/60 hover:bg-elevated border border-app/60 text-xs sm:text-sm rounded-full text-center justify-center transition-colors focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 data-[state=open]:bg-elevated data-[state=open]:border-app";
   const contentBase = "bg-card text-app border border-app rounded-2xl shadow-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
   const itemCentered = "justify-center text-center rounded-lg outline-none focus:outline-none focus:bg-elevated focus:ring-0 focus-visible:ring-0 ring-0 cursor-pointer";

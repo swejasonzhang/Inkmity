@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-// Shared lazy-load window. Every LazyReveal in the same group shimmers for this
-// long and then reveals together — so the shimmer and the reveal fade are
-// "connected": all skeletons in a group start and finish at the same instant.
 export const LAZY_MS = 2000;
 
 type GroupState = {
@@ -15,9 +12,6 @@ type GroupState = {
   timer: number | null;
 };
 
-// One registry shared by every LazyReveal. Instances that name the same `group`
-// reveal in lockstep; a group resets once its last member unmounts, so a screen
-// (or a freshly opened modal step) always plays a clean lazy cycle.
 const groups = new Map<string, GroupState>();
 
 function getGroup(key: string, minMs: number): GroupState {
@@ -60,7 +54,6 @@ type Props = {
   children: ReactNode;
   minSkeletonMs?: number;
   className?: string;
-  /** Instances sharing a group reveal at the same moment. */
   group?: string;
 };
 

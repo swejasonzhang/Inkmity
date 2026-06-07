@@ -27,12 +27,12 @@ export default function Profile() {
       setFadeIn(false);
       return;
     }
-    
+
     setFadeIn(false);
     const timer = setTimeout(() => {
       setFadeIn(true);
     }, 50);
-    
+
     return () => clearTimeout(timer);
   }, [isLoaded, role]);
 
@@ -60,14 +60,14 @@ export default function Profile() {
       style={{ background: shellBg, color: shellFg }}
     >
       <Header />
-      <main 
+      <main
         className="flex-1 flex items-start justify-center min-h-0 overflow-y-auto"
-        style={{ 
-          opacity: fadeIn ? 1 : 0, 
+        style={{
+          opacity: fadeIn ? 1 : 0,
           transition: `opacity ${FADE_MS}ms ease-in-out`,
         }}
       >
-        <div 
+        <div
           className="w-full max-w-7xl flex items-stretch justify-center"
           style={{
             paddingLeft: 'clamp(0.75rem, 2vw, 2.5rem)',

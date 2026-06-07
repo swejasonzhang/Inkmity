@@ -54,8 +54,8 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent 
-        className="max-w-3xl max-h-[90vh] overflow-y-auto relative" 
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] overflow-y-auto relative"
         showCloseButton={false}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}

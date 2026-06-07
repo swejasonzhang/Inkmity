@@ -157,7 +157,7 @@ describe("User Service - TDD", () => {
 
     test("should truncate long bio", async () => {
       const longBio = "a".repeat(700);
-      
+
       mockUserRepository.updateByClerkId.mockResolvedValue({
         clerkId: "test-123",
         bio: longBio.slice(0, 600),

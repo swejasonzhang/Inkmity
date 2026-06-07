@@ -74,19 +74,19 @@ export default function ArtistAppointmentHistory() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString(undefined, { 
-            weekday: "short", 
-            month: "short", 
-            day: "numeric", 
-            year: "numeric" 
+        return date.toLocaleDateString(undefined, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric"
         });
     };
 
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleTimeString(undefined, { 
-            hour: "2-digit", 
-            minute: "2-digit" 
+        return date.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit"
         });
     };
 
@@ -157,7 +157,7 @@ export default function ArtistAppointmentHistory() {
         const isConsultation = booking.appointmentType === "consultation";
         const isAppointment = booking.appointmentType === "tattoo_session";
         const appointmentTypeLabel = isConsultation ? "Consultation" : isAppointment ? "Appointment" : "Booking";
-        
+
         return (
             <div
                 className="rounded-xl border p-4"
@@ -191,7 +191,7 @@ export default function ArtistAppointmentHistory() {
                                 {booking.client?.username || "Unknown Client"}
                             </h4>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <span className="text-xs font-medium px-2 py-0.5 rounded border" style={{ 
+                                <span className="text-xs font-medium px-2 py-0.5 rounded border" style={{
                                     color: isConsultation ? "rgba(255, 255, 255, 0.7)" : isAppointment ? "white" : "var(--fg)",
                                     borderColor: isConsultation ? "rgba(255, 255, 255, 0.4)" : isAppointment ? "rgba(255, 255, 255, 0.6)" : "var(--border)",
                                     background: "transparent"
@@ -220,7 +220,7 @@ export default function ArtistAppointmentHistory() {
                             ({formatDuration(booking.startAt, booking.endAt)})
                         </span>
                     </div>
-                    
+
                     {isAppointment && booking.priceCents !== undefined && booking.priceCents > 0 && (
                         <div className="flex items-center gap-2 text-sm pt-1">
                             <DollarSign className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }} />
@@ -229,7 +229,7 @@ export default function ArtistAppointmentHistory() {
                             </span>
                         </div>
                     )}
-                    
+
                     {isAppointment && booking.depositRequiredCents !== undefined && booking.depositRequiredCents > 0 && (
                         <div className="flex items-center gap-2 text-sm">
                             <CreditCard className="h-4 w-4 flex-shrink-0" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }} />
@@ -243,7 +243,7 @@ export default function ArtistAppointmentHistory() {
                             </span>
                         </div>
                     )}
-                    
+
                     {booking.note && (
                         <div className="mt-2 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
                             <p className="text-xs leading-relaxed" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>

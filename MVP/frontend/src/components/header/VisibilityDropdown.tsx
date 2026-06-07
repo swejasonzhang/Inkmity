@@ -66,7 +66,7 @@ export const VisibilityDropdown = ({
       const isLight = dash?.classList.contains("ink-light") || dash?.getAttribute("data-ink") === "light";
       setCurrentTheme(isLight ? "light" : "dark");
     };
-    
+
     handleThemeChange();
     window.addEventListener("ink:theme-change", handleThemeChange);
     return () => {
@@ -111,10 +111,10 @@ export const VisibilityDropdown = ({
           <ChevronDown size={14} className="opacity-50" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="center" 
+      <DropdownMenuContent
+        align="center"
         side="bottom"
-        style={{ 
+        style={{
           width: width || undefined,
           minWidth: width || undefined,
           maxWidth: width || undefined

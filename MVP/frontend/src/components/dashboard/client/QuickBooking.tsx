@@ -39,7 +39,6 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
     const openPortfolio = () => {
         if (!artistId) return;
         onClose();
-        // Open the artist's modal on the Booking step (step 1).
         window.dispatchEvent(new CustomEvent("ink:open-artist-modal", {
             detail: { clerkId: artistId, handle: artist?.handle, username: artist?.username, step: 1 },
         }));

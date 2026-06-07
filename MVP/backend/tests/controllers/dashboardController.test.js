@@ -21,7 +21,7 @@ const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe
 conditionalDescribe("Dashboard Controller - getDashboardData", () => {
   test("should return user and featured artists", async () => {
     const userId = "test-user-id";
-    
+
     await mongoose.model("client").create({
       clerkId: userId,
       email: "test@example.com",
@@ -71,7 +71,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
 
   test("should return featured artists sorted by rating", async () => {
     const userId = "test-user-2";
-    
+
     await mongoose.model("client").create({
       clerkId: userId,
       email: "test2@example.com",
@@ -113,7 +113,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.featuredArtists.length).toBeGreaterThan(0);
-    
+
     const ratings = response.body.featuredArtists.map((a) => a.rating);
     for (let i = 1; i < ratings.length; i++) {
       expect(ratings[i - 1]).toBeGreaterThanOrEqual(ratings[i]);
@@ -131,7 +131,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
 
   test("should limit featured artists to 5", async () => {
     const userId = "test-user-3";
-    
+
     await mongoose.model("client").create({
       clerkId: userId,
       email: "test3@example.com",

@@ -27,7 +27,7 @@ describe("RequestsPanel", () => {
     mockAuthFetch.mockImplementation(() => new Promise(() => {}));
 
     render(<RequestsPanel authFetch={mockAuthFetch} />);
-    
+
     await waitFor(() => {
       expect(screen.getByText("Loading…")).toBeInTheDocument();
     });

@@ -65,7 +65,7 @@ const server = createServer(app);
 
 mountStripeWebhook(app);
 
-const frontendOrigins = process.env.FRONTEND_URL 
+const frontendOrigins = process.env.FRONTEND_URL
   ? (Array.isArray(process.env.FRONTEND_URL) ? process.env.FRONTEND_URL : [process.env.FRONTEND_URL])
   : ["http://localhost:3000", "http://localhost:5173"];
 
@@ -77,9 +77,6 @@ const io = new Server(server, {
   },
 });
 
-// Wire up the socket connection handler (register/rooms, send_message relay,
-// and online/last-active presence). Without this the io instance has no
-// handlers, getIO() stays null, and nothing real-time works.
 initSocket(io);
 
 app.use(helmet());

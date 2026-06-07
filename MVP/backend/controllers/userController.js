@@ -73,10 +73,6 @@ export async function getMe(req, res) {
   if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
   let me = await User.findOne({ clerkId }).lean();
   if (!me) {
-    // The DB record may exist under a stale clerkId (e.g. the Clerk account was
-    // recreated, or the DB/Clerk got out of sync during testing). Relink it by
-    // the Clerk-verified email so the user isn't bounced back to onboarding on
-    // every login instead of going to their dashboard.
     try {
       const cu = await clerkClient.users.getUser(clerkId);
       const email = String(
@@ -229,7 +225,7 @@ export async function getArtists(req, res) {
       : { rating: -1, reviewsCount: -1, createdAt: -1 };
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
-  
+
   const [total, items] = await Promise.all([
     Artist.countDocuments(filter),
     Artist.find(filter)
@@ -285,8 +281,6 @@ export async function getArtistByHandle(req, res) {
   const handle = String(req.params.handle || "").replace(/^@/, "").trim().toLowerCase();
   if (!handle) return res.status(400).json({ error: "handle_required" });
   const Artist = mongoose.model("artist");
-  // Handles are stored inconsistently — seeded accounts are bare ("kenji") while
-  // signup accounts are stored with a leading "@" ("@kenji"). Match either.
   const doc = await Artist.findOne({ handle: { $in: [handle, `@${handle}`] } })
     .select("+lastActive +visibility")
     .lean();
@@ -337,11 +331,6 @@ export async function syncUser(req, res) {
         .status(400)
         .json({ error: "clerkId, email, role are required" });
     const role = SAFE_ROLES.has(rawRole) ? rawRole : "client";
-    // Match by clerkId first; otherwise reclaim a record that already owns this
-    // (Clerk-verified) email but was created under a different Clerk id. Without
-    // this, the unique-email index makes the upsert below fail with a duplicate
-    // key, the account never gets provisioned under the current identity, and the
-    // user is bounced back to onboarding on every login.
     const existingByClerk = await User.findOne({ clerkId }).lean();
     const existing =
       existingByClerk || (await User.findOne({ email }).lean());
@@ -468,9 +457,6 @@ export async function syncUser(req, res) {
         ...(restrictedPlacements.length ? { restrictedPlacements } : {}),
       });
     }
-    // Reclaiming a record created under a different role would not match the
-    // role-specific discriminator filter — surface that clearly instead of
-    // silently failing and looping the user back to onboarding.
     if (existing && existing.role !== role) {
       return res.status(409).json({
         error: "ROLE_MISMATCH",
@@ -524,20 +510,20 @@ export async function updateMyVisibility(req, res) {
   try {
     const clerkId = getClerkId(req);
     if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
-    
+
     const { visibility } = req.body || {};
     if (!visibility || !["online", "away", "invisible"].includes(visibility)) {
       return res.status(400).json({ error: "Invalid visibility status" });
     }
-    
+
     const user = await User.findOneAndUpdate(
       { clerkId },
       { $set: { visibility } },
       { new: true }
     ).lean();
-    
+
     if (!user) return res.status(404).json({ error: "User not found" });
-    
+
     const { getIO, userRoom } = await import("../services/socketService.js");
     const io = getIO();
     if (io) {
@@ -550,7 +536,7 @@ export async function updateMyVisibility(req, res) {
         visibility: user.visibility,
       });
     }
-    
+
     res.json({ ok: true, visibility: user.visibility });
   } catch (e) {
     res.status(500).json({ error: "UPDATE_VISIBILITY_FAILED", message: e?.message || String(e) });

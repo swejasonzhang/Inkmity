@@ -89,11 +89,11 @@ export const InkConversations: React.FC<Props> = ({
         </Button>
       ) : (
         <div className="flex flex-col h-full w-full">
-          <div 
+          <div
             className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-4 py-3"} border-b border-app/40`}
             style={!isMdUp ? { minHeight: "50px" } : undefined}
           >
-            <div 
+            <div
               className={`flex items-center gap-2 font-semibold cursor-pointer ${!isMdUp ? "h-10" : ""}`}
               style={!isMdUp ? { minHeight: "40px" } : undefined}
               onClick={() => setOpen(false)}

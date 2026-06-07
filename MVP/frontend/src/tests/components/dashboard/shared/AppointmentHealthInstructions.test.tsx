@@ -62,14 +62,14 @@ describe("AppointmentHealthInstructions", () => {
     const user = userEvent.setup();
     const onContinue = jest.fn();
     render(<AppointmentHealthInstructions {...defaultProps} onContinue={onContinue} />);
-    
+
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /I Understand, Continue/i })).toBeInTheDocument();
     });
-    
+
     const continueButton = screen.getByRole("button", { name: /I Understand, Continue/i });
     await user.click(continueButton);
-    
+
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
@@ -85,11 +85,11 @@ describe("AppointmentHealthInstructions", () => {
 
   test("should not close when clicking outside", async () => {
     render(<AppointmentHealthInstructions {...defaultProps} />);
-    
+
     await waitFor(() => {
       expect(screen.getByText("Pre-Appointment Instructions (Required)")).toBeInTheDocument();
     });
-    
+
     const dialog = screen.getByText("Pre-Appointment Instructions (Required)").closest('[role="dialog"]');
     expect(dialog).toBeInTheDocument();
   });
