@@ -50,9 +50,11 @@ export default function RequestPanel({ authFetch, onOpenConversation }: Props) {
     }
 
     return (
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="h-full overflow-y-auto p-2">
             {items.length === 0 ? (
-                <div className="text-xs text-muted-foreground px-2 py-3 text-center">No requests</div>
+                <div className="h-full grid place-items-center">
+                    <div className="text-xs text-muted-foreground px-2 text-center">No requests</div>
+                </div>
             ) : (
                 <div className="flex flex-col items-center">
                     <ul className="space-y-2 w-full max-w-md">

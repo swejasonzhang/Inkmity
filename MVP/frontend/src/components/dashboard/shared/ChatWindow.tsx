@@ -909,7 +909,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     if (prevExpandedRef.current) setExpandedId(prevExpandedRef.current);
   };
 
-  const AvatarComponent: FC<{ conversation: Conversation; border?: boolean }> = ({ conversation, border = true }) => {
+  const AvatarComponent: FC<{ conversation: Conversation; border?: boolean; fill?: boolean }> = ({ conversation, border = true, fill = false }) => {
     const [imgError, setImgError] = useState(false);
     const name = displayNameFromUsername(conversation.username || "");
     const initials = name
@@ -919,15 +919,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
       .map(ch => ch[0]?.toUpperCase())
       .join("");
     const avatarUrl = conversation.avatarUrl;
-    const withBorder = border !== false;
+    const withBorder = border !== false && !fill;
 
     if (avatarUrl && !imgError) {
       return (
         <img
           src={avatarUrl}
           alt={name}
-          className={`rounded-full object-cover ${withBorder ? "border border-app" : ""}`}
-        style={{ width: 'clamp(1.5rem, 2vw, 1.75rem)', height: 'clamp(1.5rem, 2vw, 1.75rem)' }}
+          className={`rounded-full object-cover ${fill ? "absolute inset-0 block h-full w-full" : ""} ${withBorder ? "border border-app" : ""}`}
+          style={fill ? undefined : { width: 'clamp(1.5rem, 2vw, 1.75rem)', height: 'clamp(1.5rem, 2vw, 1.75rem)' }}
           onError={() => setImgError(true)}
         />
       );
@@ -935,16 +935,16 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
     return (
       <span
-        className={`rounded-full grid place-items-center bg-elevated text-app font-semibold ${withBorder ? "border border-app" : ""}`}
-        style={{ width: 'clamp(1.5rem, 2vw, 1.75rem)', height: 'clamp(1.5rem, 2vw, 1.75rem)', fontSize: 'clamp(0.5rem, 0.8vw, 0.625rem)' }}
+        className={`rounded-full grid place-items-center bg-elevated text-app font-semibold ${fill ? "absolute inset-0 h-full w-full text-xs" : ""} ${withBorder ? "border border-app" : ""}`}
+        style={fill ? undefined : { width: 'clamp(1.5rem, 2vw, 1.75rem)', height: 'clamp(1.5rem, 2vw, 1.75rem)', fontSize: 'clamp(0.5rem, 0.8vw, 0.625rem)' }}
       >
         {initials || "?"}
       </span>
     );
   };
 
-  const avatarFor = (c: Conversation, opts?: { border?: boolean }) => {
-    return <AvatarComponent conversation={c} border={opts?.border} />;
+  const avatarFor = (c: Conversation, opts?: { border?: boolean; fill?: boolean }) => {
+    return <AvatarComponent conversation={c} border={opts?.border} fill={opts?.fill} />;
   };
 
   const modal = (
@@ -1176,7 +1176,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
             </aside>
           )}
           <div className="flex-1 min-w-0 flex min-h-0">
-            <div className="w-full h-full flex md:hidden gap-2 min-h-0 relative">
+            <div className="w-full h-full flex md:hidden gap-1 min-h-0 relative">
               <div className="w-12 flex-shrink-0 flex flex-col items-center gap-2 min-h-0">
                 {isArtist && (
                   <button
@@ -1192,7 +1192,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     )}
                   </button>
                 )}
-                <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-app bg-card p-1.5 flex flex-col items-center gap-2 w-full">
+                <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl bg-card p-1.5 flex flex-col items-center gap-2 w-full">
                   {sortedConversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     return (
@@ -1202,12 +1202,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             if (expandedId !== c.participantId) setExpandedId(c.participantId);
                             onMarkRead(c.participantId);
                           }}
-                          className={`grid place-items-center h-10 w-10 rounded-full border overflow-hidden transition ${isActive ? "border-app ring-2 ring-app" : "border-app hover:bg-elevated/60"}`}
+                          className={`relative block h-10 w-10 rounded-full overflow-hidden p-0 transition ${isActive ? "ring-2 ring-app" : "hover:bg-elevated/60"}`}
                           title={displayNameFromUsername(c.username)}
                         >
-                          {avatarFor(c, { border: false })}
+                          {avatarFor(c, { border: false, fill: true })}
                         </button>
-                        {c.isOnline && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-white ring-2 ring-card pointer-events-none" />}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1226,12 +1225,12 @@ const ChatWindow: FC<ChatWindowProps> = ({
               </div>
               <div className="flex-1 min-w-0 min-h-0">
                   <section className="h-full rounded-xl border border-app bg-card flex flex-col min-h-0">
-                    <header className="px-3 py-2.5 border-b border-app flex items-center justify-between gap-2">
+                    <header className="px-2 py-2.5 border-b border-app flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {conversations.length > 0 ? (
                           <div className="flex items-center gap-2 min-w-0 flex-1 w-full">
                             {activeConv && avatarFor(activeConv, { border: false })}
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex flex-col items-start gap-0.5 min-w-0 flex-1">
                               {activeConv && isClient && activeConv.handle ? (
                                 <button
                                   type="button"
@@ -1330,7 +1329,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     </header>
                     <div
                       ref={(el) => { messagesContainerRefMobile.current = el; }}
-                      className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
+                      className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
                     >
                       {!activeConv ? (
                         <div className="flex items-center justify-center h-full">
@@ -1537,8 +1536,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                 <div className="absolute inset-0 z-20 rounded-xl border border-app bg-card flex flex-col">
                   <div className="px-3 py-2.5 border-b border-app flex items-center justify-between">
                     <span className="text-sm font-semibold">Message requests</span>
-                    <button type="button" onClick={() => setMobileRequestsOpen(false)} className="grid place-items-center h-8 w-8 rounded-full hover:bg-elevated" aria-label="Close requests">
-                      <X size={16} />
+                    <button type="button" onClick={() => setMobileRequestsOpen(false)} className="flex items-center justify-center h-10 w-10 p-0 rounded-full hover:bg-elevated shrink-0" aria-label="Close requests">
+                      <X size={26} strokeWidth={2.5} />
                     </button>
                   </div>
                   <div className="flex-1 min-h-0 overflow-y-auto">
@@ -1583,11 +1582,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               </div>
                               <div className="text-[13px] shrink-0">{lastMsg ? fmtTime(lastMsg.timestamp) : ""}</div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className="text-xs text-muted-foreground truncate flex-1">{lastMsg?.text || "No messages"}</div>
-                              <span className="text-[10px] text-muted-foreground shrink-0">
-                                {formatActivityStatus(c.isOnline, c.lastActive)}
-                              </span>
+                            <div className="text-[10px] text-muted-foreground truncate">
+                              {formatActivityStatus(c.isOnline, c.lastActive)}
                             </div>
                           </div>
                           {!!unreadMap[c.participantId] && (
@@ -1639,7 +1635,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     <div className="hidden md:flex items-center gap-3">
                       {activeConv && avatarFor(activeConv)}
                       <div className="flex flex-col min-w-0 items-start text-left">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-col items-start gap-0.5">
                           {activeConv && isClient && activeConv.handle ? (
                             <button
                               type="button"

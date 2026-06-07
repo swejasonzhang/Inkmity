@@ -408,7 +408,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </video>
           <div className="absolute inset-0 bg-black/55" />
           <div className="relative z-10 flex flex-col h-full">
-            <div className="flex items-center justify-between pt-3 pb-2 sm:pt-5 sm:pb-3 flex-shrink-0">
+            <div className="flex items-center justify-between pl-[var(--ink-edge-l)] pr-[var(--ink-edge-r)] py-1.5 sm:py-2 flex-shrink-0">
               <Link to={homeHref} onClick={() => setMobileMenuOpen(false)} className="flex-shrink-0">
                 <img src={WhiteLogo} alt="Inkmity Logo" className={mobileLogoCls} draggable={false} />
               </Link>
@@ -441,6 +441,11 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         </div>
 
         <div className="col-start-3 justify-self-end flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
+            {themed && (
+              <div className="md:hidden flex items-center">
+                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />
+              </div>
+            )}
             <button type="button" aria-label="Open menu" className={mobileBtnCls} onClick={() => setMobileMenuOpen(true)}>
               <Menu strokeWidth={1.75} className={mobileIconCls} />
             </button>
