@@ -13,6 +13,7 @@ import { DateTime, Interval } from "luxon";
 import { getIO } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
+import { captureBookingBalance } from "../services/balanceCaptureService.js";
 import { config } from "../config/index.js";
 import { randomBytes } from "crypto";
 
@@ -39,6 +40,24 @@ async function artistCanReceivePayments(artistId) {
   if (config.dev.bypassGates) return true;
   const artist = await Artist.findOne({ clerkId: String(artistId) });
   return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
+}
+
+async function studioReadyForArtist(artistId) {
+  if (config.dev.bypassGates) return { ok: true };
+  const { getArtistStudioMembership } = await import("../services/studioService.js");
+  const ctx = await getArtistStudioMembership(artistId);
+  if (!ctx) return { ok: true };
+  const studio = ctx.studio;
+  const ready =
+    studio.verificationStatus === "verified" &&
+    Boolean(studio.stripeConnectAccountId && studio.chargesEnabled);
+  return ready
+    ? { ok: true }
+    : {
+        ok: false,
+        message:
+          "This artist's studio is still completing setup, so bookings aren't available yet.",
+      };
 }
 
 export function computeDepositCents(policy, priceCents, appointmentType) {
@@ -293,6 +312,14 @@ export async function createBooking(req, res) {
       return res.status(409).json({
         error: "artist_not_onboarded",
         message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+
+    const studioReady = await studioReadyForArtist(artistId);
+    if (!studioReady.ok) {
+      return res.status(409).json({
+        error: "studio_not_ready",
+        message: studioReady.message,
       });
     }
 
@@ -604,6 +631,45 @@ export async function completeBooking(req, res) {
   }
 }
 
+export async function setFinalPrice(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const finalPriceCents = Math.max(0, Math.round(Number(req.body?.finalPriceCents || 0)));
+
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+    if (String(booking.artistId) !== actorId)
+      return res.status(403).json({ error: "Only the artist can set the final price" });
+    if (["completed", "cancelled", "denied", "no-show"].includes(booking.status))
+      return res.status(400).json({ error: "Cannot change price for this appointment" });
+    if (finalPriceCents < Number(booking.depositPaidCents || 0))
+      return res.status(400).json({
+        error: "price_below_deposit",
+        message: "Final price cannot be less than the deposit already paid.",
+      });
+
+    booking.priceCents = finalPriceCents;
+    booking.finalPriceSetAt = new Date();
+    await booking.save();
+
+    try {
+      await Message.create({
+        senderId: String(booking.artistId),
+        receiverId: String(booking.clientId),
+        text: `Final price set to $${(finalPriceCents / 100).toFixed(2)}. Your remaining balance will be charged automatically once you both confirm completion.`,
+        meta: { kind: "final_price_set", bookingId: String(booking._id), finalPriceCents },
+      });
+    } catch {}
+
+    res.json(booking);
+  } catch {
+    res.status(500).json({ error: "set_final_price_failed" });
+  }
+}
+
 export async function verifyBookingCode(req, res) {
   try {
     const { id } = req.params;
@@ -652,6 +718,25 @@ export async function verifyBookingCode(req, res) {
         await recordCompletedBooking(doc.clientId);
       } catch (e) {
         console.error("recordCompletedBooking failed:", e.message);
+      }
+      if (!config.dev.bypassGates) {
+        try {
+          const result = await captureBookingBalance(doc);
+          if (result && !result.ok && !result.skipped) {
+            await Message.create({
+              senderId: String(doc.artistId),
+              receiverId: String(doc.clientId),
+              text: "We couldn't automatically charge your remaining balance. Please complete the payment from your appointment.",
+              meta: {
+                kind: "balance_capture_failed",
+                bookingId: String(doc._id),
+                reason: result.reason,
+              },
+            });
+          }
+        } catch (e) {
+          console.error("captureBookingBalance failed:", e.message);
+        }
       }
     }
     res.json(doc);
@@ -947,6 +1032,14 @@ export async function createTattooSession(req, res) {
       return res.status(409).json({
         error: "artist_not_onboarded",
         message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+
+    const studioReady = await studioReadyForArtist(artistId);
+    if (!studioReady.ok) {
+      return res.status(409).json({
+        error: "studio_not_ready",
+        message: studioReady.message,
       });
     }
 
