@@ -11,7 +11,7 @@ export type NavItem = {
 export function buildNavItems(
   isSignedIn: boolean,
   onGate: (e: React.MouseEvent) => void,
-  role?: "client" | "artist" | null
+  role?: "client" | "artist" | "studio" | null
 ): NavItem[] {
   const gated = (label: string, to: string): NavItem =>
     isSignedIn ? { label, to } : { label, to, disabled: true, onClick: onGate };
@@ -20,6 +20,8 @@ export function buildNavItems(
 
   if (isSignedIn && role === "artist") {
     items.push(gated("Portfolio", "/portfolio"));
+  }
+  if (isSignedIn && (role === "artist" || role === "studio")) {
     items.push(gated("Studios", "/studios"));
   }
 

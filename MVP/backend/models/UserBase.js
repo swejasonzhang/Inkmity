@@ -24,7 +24,7 @@ const UserBaseSchema = new Schema(
     role: {
       type: String,
       required: true,
-      enum: ["client", "artist"],
+      enum: ["client", "artist", "studio"],
       index: true,
     },
     location: { type: String, default: "" },

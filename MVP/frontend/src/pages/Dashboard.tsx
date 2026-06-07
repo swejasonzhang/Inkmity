@@ -59,6 +59,12 @@ const Dashboard: React.FC = () => {
     }
   }, [isLoaded, isSignedIn, navigate]);
 
+  useEffect(() => {
+    if (isLoaded && isSignedIn && role === "studio") {
+      navigate("/studios", { replace: true });
+    }
+  }, [isLoaded, isSignedIn, role, navigate]);
+
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
     document.body.style.backgroundColor = theme === "light" ? "#ffffff" : "#0b0b0b";
@@ -87,7 +93,7 @@ const Dashboard: React.FC = () => {
     >
       <div className="flex-1 min-h-0 w-full">
         <Suspense fallback={null}>
-          {isLoaded ? (roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />) : null}
+          {isLoaded && role !== "studio" ? (roleToUse === "artist" ? <ArtistDashboard /> : <ClientDashboard />) : null}
         </Suspense>
       </div>
     </div>

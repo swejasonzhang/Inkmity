@@ -602,6 +602,14 @@ export default function SignUp() {
                 </motion.div>
               )}
             </div>
+            {authLoaded && !userId && !showSuccess && (
+              <p className="mt-3 text-center text-xs text-app/70">
+                Setting up a tattoo studio?{" "}
+                <a href="/signup/studio" className="underline">
+                  Create a studio account
+                </a>
+              </p>
+            )}
           </motion.div>
       </main>
       <CookieConsent />

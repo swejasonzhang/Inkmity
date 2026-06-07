@@ -70,7 +70,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const themed = isThemedPath(pathname);
 
   const [userLabel, setUserLabel] = useState<string>(() => getCachedUsername() ?? "User");
-  const [userRole, setUserRole] = useState<"client" | "artist" | null>(() => getCachedRole());
+  const [userRole, setUserRole] = useState<"client" | "artist" | "studio" | null>(() => getCachedRole());
   const [userVisibility, setUserVisibility] = useState<VisibilityStatus>("online");
   const idleTimerRef = useRef<number | null>(null);
   const autoAwayRef = useRef<boolean>(false);
@@ -408,7 +408,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </video>
           <div className="absolute inset-0 bg-black/55" />
           <div className="relative z-10 flex flex-col h-full">
-            <div className="flex items-center justify-between px-3 sm:px-4 lg:px-5 pt-3 pb-2 sm:pt-5 sm:pb-3 flex-shrink-0">
+            <div className="flex items-center justify-between py-1.5 sm:py-2 flex-shrink-0">
               <Link to={homeHref} onClick={() => setMobileMenuOpen(false)} className="flex-shrink-0">
                 <img src={WhiteLogo} alt="Inkmity Logo" className={mobileLogoCls} draggable={false} />
               </Link>

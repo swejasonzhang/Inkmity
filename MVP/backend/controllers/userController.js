@@ -3,11 +3,13 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
+import "../models/StudioAccount.js";
+import Studio from "../models/Studio.js";
 import cloudinary from "../lib/cloudinary.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
 import { config } from "../config/index.js";
 
-const SAFE_ROLES = new Set(["client", "artist"]);
+const SAFE_ROLES = new Set(["client", "artist", "studio"]);
 
 const authObj = (req) =>
   typeof req.auth === "function" ? req.auth() : req.auth;
@@ -395,7 +397,11 @@ export async function syncUser(req, res) {
       ...(usernameUpdatedAt ? { usernameUpdatedAt } : {}),
       ...(styles.length ? { styles } : {}),
     };
-    if (role === "client") {
+    if (role === "studio") {
+      Object.assign(setDoc, {
+        location: profile.city ?? profile.location ?? "",
+      });
+    } else if (role === "client") {
       const min = Number(profile.budgetMin ?? 100);
       const max = Number(profile.budgetMax ?? 200);
       const budgetMin = Number.isFinite(min)
@@ -465,7 +471,11 @@ export async function syncUser(req, res) {
     }
 
     const Model =
-      role === "client" ? mongoose.model("client") : mongoose.model("artist");
+      role === "client"
+        ? mongoose.model("client")
+        : role === "studio"
+        ? mongoose.model("studio")
+        : mongoose.model("artist");
     const user = await Model.findOneAndUpdate(
       existing ? { _id: existing._id } : { clerkId },
       { $set: setDoc },
@@ -476,6 +486,26 @@ export async function syncUser(req, res) {
         setDefaultsOnInsert: true,
       }
     ).lean();
+
+    if (role === "studio") {
+      let studioDoc = await Studio.findOne({ ownerClerkId: clerkId });
+      if (!studioDoc) {
+        studioDoc = await Studio.create({
+          name: profile.studioName || finalUsername || "My Studio",
+          ownerClerkId: clerkId,
+          email,
+          city: profile.city ?? profile.location ?? "",
+          address: profile.address ?? "",
+        });
+      }
+      if (String(user.ownedStudioId || "") !== String(studioDoc._id)) {
+        await mongoose
+          .model("studio")
+          .updateOne({ _id: user._id }, { $set: { ownedStudioId: studioDoc._id } });
+        user.ownedStudioId = studioDoc._id;
+      }
+    }
+
     res.status(200).json({ ...user, usernameChange });
   } catch (e) {
     console.error("[syncUser] failed:", e);
