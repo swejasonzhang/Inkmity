@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   value: "consultation" | "tattoo_session" | null;
+  consultationFree?: boolean;
   onChange: (
     type: "consultation" | "tattoo_session",
     durationMinutes: number,
@@ -14,7 +15,7 @@ type Props = {
   ) => void;
 };
 
-export default function AppointmentTypeStep({ value, onChange }: Props) {
+export default function AppointmentTypeStep({ value, onChange, consultationFree = true }: Props) {
   const [duration, setDuration] = useState(30);
   const [price, setPrice] = useState(0);
 
@@ -56,10 +57,22 @@ export default function AppointmentTypeStep({ value, onChange }: Props) {
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
                 <span className="font-semibold">Consultation</span>
+                <span
+                  className={cn(
+                    "ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full",
+                    consultationFree
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-elevated text-muted-foreground border border-app/30"
+                  )}
+                >
+                  {consultationFree ? "Free" : "Deposit required"}
+                </span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Initial meeting to discuss your tattoo idea, placement, size, and design.
-                Typically 15-60 minutes. Some artists may require a deposit.
+                Initial meeting to discuss your tattoo idea, placement, size, and design. Typically 15–60 minutes.{" "}
+                {consultationFree
+                  ? "This artist offers consultations at no charge."
+                  : "This artist requires a deposit for consultations."}
               </p>
             </div>
           </div>

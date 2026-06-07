@@ -1,9 +1,9 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ProgressDots from "@/components/access/ProgressDots";
-import type { Artist, Booking } from "@/api";
+import { getArtistPolicy, type Artist, type Booking } from "@/api";
 import AppointmentTypeStep from "./steps/AppointmentTypeStep";
 import TimeSlotStep from "./steps/TimeSlotStep";
 import IntakeFormStep from "./steps/IntakeFormStep";
@@ -58,6 +58,17 @@ export default function AppointmentBookingFlow({
     referenceImageIds: [],
     intakeForm: null,
   });
+
+  const [consultationFree, setConsultationFree] = useState(true);
+  useEffect(() => {
+    let active = true;
+    const aid = artist.clerkId || artist._id;
+    if (!aid) return;
+    Promise.resolve(getArtistPolicy(aid))
+      .then((p) => { if (active) setConsultationFree(p?.deposit?.consultationFree ?? true); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [artist.clerkId, artist._id]);
 
   const updateBookingData = useCallback((updates: Partial<BookingFlowData>) => {
     setBookingData((prev) => ({ ...prev, ...updates }));
@@ -121,6 +132,7 @@ export default function AppointmentBookingFlow({
             >
               <AppointmentTypeStep
                 value={bookingData.appointmentType}
+                consultationFree={consultationFree}
                 onChange={(type, duration, price) => {
                   updateBookingData({
                     appointmentType: type,

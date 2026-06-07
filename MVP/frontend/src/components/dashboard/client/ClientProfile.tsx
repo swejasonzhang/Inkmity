@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { useTheme } from "@/hooks/useTheme";
 import { API_URL } from "@/api";
 import { Save, X, Camera, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -139,18 +138,14 @@ const priceBucketFromRange = (lo: number, hi: number) => {
 export default function ClientProfile() {
     const { getToken } = useAuth();
     const { user } = useUser();
-    const { theme } = useTheme();
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [usernameNotice, setUsernameNotice] = useState<string | null>(null);
     const [client, setClient] = useState<Client | null>(null);
     const [editedClient, setEditedClient] = useState<Partial<Client>>({});
     const [uploading, setUploading] = useState(false);
     const [cities, setCities] = useState<string[]>(fallbackCities);
-    const [profileLoaded, setProfileLoaded] = useState(false);
     const [bgOk, setBgOk] = useState(false);
     const [isEditingUsername, setIsEditingUsername] = useState(false);
-    const loadStartTimeRef = useRef<number>(Date.now());
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const referenceInputRef = useRef<HTMLInputElement>(null);
@@ -166,19 +161,8 @@ export default function ClientProfile() {
     const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
 
     useEffect(() => {
-        loadStartTimeRef.current = Date.now();
         loadProfile();
     }, []);
-
-    useEffect(() => {
-        if (profileLoaded) {
-            const elapsed = Date.now() - loadStartTimeRef.current;
-            const remaining = Math.max(0, 400 - elapsed);
-            setTimeout(() => {
-                setLoading(false);
-            }, remaining);
-        }
-    }, [profileLoaded]);
 
     useEffect(() => {
         let active = true;
@@ -243,7 +227,6 @@ export default function ClientProfile() {
             setClient(clientData);
             setEditedClient({});
             setBgOk(Boolean(clientData.coverImage));
-            setProfileLoaded(true);
             prevValuesRef.current = {
                 budgetMin: clientData.budgetMin ?? 100,
                 budgetMax: clientData.budgetMax ?? 200,
@@ -254,7 +237,6 @@ export default function ClientProfile() {
             };
         } catch (error) {
             console.error("Failed to load profile:", error);
-            setProfileLoaded(true);
         }
     };
 
@@ -475,38 +457,7 @@ export default function ClientProfile() {
         }
     }, [currentMessage]);
 
-    if (loading) {
-        const LOAD_MS = 500;
-        const bg = theme === "light" ? "#ffffff" : "#0b0b0b";
-        const fg = theme === "light" ? "#111111" : "#f5f5f5";
-        return (
-            <div
-                className="fixed inset-0 grid place-items-center"
-                style={{ zIndex: 2147483640, background: bg, color: fg }}
-            >
-                <style>{`
-                    @keyframes ink-fill { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
-                    @keyframes ink-pulse { 0%,100% { opacity:.4;} 50% {opacity:1;} }
-                `}</style>
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-56 h-2 rounded overflow-hidden" style={{ background: "rgba(0,0,0,0.1)" }}>
-                        <div className="h-full origin-left" style={{ background: fg, transform: "scaleX(0)", animation: `ink-fill ${LOAD_MS}ms linear forwards` }} />
-                    </div>
-                    <div className="text-xs tracking-widest uppercase" style={{ letterSpacing: "0.2em", opacity: 0.8, animation: "ink-pulse 1.2s ease-in-out infinite" }}>
-                        Loading
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (!client) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>No profile data available</div>
-            </div>
-        );
-    }
+    if (!client) return null;
 
     return (
         <div className="h-full min-h-0 w-full overflow-hidden flex items-start justify-center p-4">

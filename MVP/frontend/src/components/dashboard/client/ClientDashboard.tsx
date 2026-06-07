@@ -108,6 +108,28 @@ export default function ClientDashboard() {
         }
     }, [location.state, artists]);
 
+    const [modalStep, setModalStep] = useState<0 | 1 | 2>(0);
+    useEffect(() => {
+        const onOpenArtist = (e: Event) => {
+            const d = (e as CustomEvent).detail || {};
+            const norm = (h: any) => String(h || "").replace(/^@/, "").toLowerCase();
+            const found = artists.find((a) =>
+                (a as any).clerkId === d.clerkId ||
+                (norm((a as any).handle) && norm((a as any).handle) === norm(d.handle))
+            );
+            const target = (found ?? {
+                _id: d.clerkId,
+                clerkId: d.clerkId,
+                handle: d.handle,
+                username: d.username || "Artist",
+            }) as ArtistDto;
+            setModalStep(((d.step ?? 0) as 0 | 1 | 2));
+            setSelectedArtist(target);
+        };
+        window.addEventListener("ink:open-artist-modal", onOpenArtist);
+        return () => window.removeEventListener("ink:open-artist-modal", onOpenArtist);
+    }, [artists]);
+
     const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
         if (selectedArtist) return;
         const grid = document.querySelector<HTMLElement>("[data-artist-scroll]");
@@ -238,7 +260,7 @@ export default function ClientDashboard() {
                                 artists={filtered.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
                                 loading={loading}
                                 showArtists
-                                onSelectArtist={(artist: ArtistDto) => setSelectedArtist(artist)}
+                                onSelectArtist={(artist: ArtistDto) => { setModalStep(0); setSelectedArtist(artist); }}
                                 page={page}
                                 totalPages={totalPages}
                                 onPageChange={handlePageChange}
@@ -312,6 +334,7 @@ export default function ClientDashboard() {
                 {selectedArtist && (
                     <ArtistModal
                         open={Boolean(selectedArtist)}
+                        initialStep={modalStep}
                         artist={{
                             _id: selectedArtist._id,
                             clerkId: (selectedArtist as any).clerkId,

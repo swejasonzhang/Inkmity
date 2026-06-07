@@ -34,6 +34,7 @@ export async function upsertArtistPolicy(req, res) {
         maxCents: Math.max(0, Number(depositPayload.maxCents ?? 30000)),
         nonRefundable: Boolean(depositPayload.nonRefundable ?? true),
         cutoffHours: Math.max(0, Number(depositPayload.cutoffHours ?? 48)),
+        consultationFree: Boolean(depositPayload.consultationFree ?? true),
       },
     };
 

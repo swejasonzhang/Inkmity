@@ -119,7 +119,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const prevExpandedRef = useRef<string | null>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [qbOpen, setQbOpen] = useState(false);
-  const [qbArtist, setQbArtist] = useState<{ username: string; clerkId: string } | null>(null);
+  const [qbArtist, setQbArtist] = useState<{ username: string; clerkId: string; handle?: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pendingImages, setPendingImages] = useState<Record<string, string[]>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -131,13 +131,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const appRef = useRef<HTMLDivElement | null>(null);
   const [bookTip, setBookTip] = useState<{ show: boolean; x: number; y: number }>({ show: false, x: 0, y: 0 });
 
+  const stickToBottomRef = useRef(true);
   const scrollToBottom = () => {
-    if (messagesContainerRefMobile.current) {
-      messagesContainerRefMobile.current.scrollTop = messagesContainerRefMobile.current.scrollHeight;
-    }
-    if (messagesContainerRefDesktop.current) {
-      messagesContainerRefDesktop.current.scrollTop = messagesContainerRefDesktop.current.scrollHeight;
-    }
+    [messagesContainerRefMobile.current, messagesContainerRefDesktop.current].forEach((el) => {
+      if (el) el.scrollTop = el.scrollHeight;
+    });
   };
   const overlayActive = confirmOpen || declineConfirmOpen || !!viewerUrl;
 
@@ -306,7 +304,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
           };
         });
       });
-      requestAnimationFrame(() => scrollToBottom());
+      if (stickToBottomRef.current) requestAnimationFrame(() => scrollToBottom());
     };
 
     const onDeclined = (p: {
@@ -483,11 +481,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   }, [expandedId, activeConv, onMarkRead]);
 
+  // On open / conversation switch: force a jump to the latest message.
   useLayoutEffect(() => {
     if (!expandedId) return;
-    // Jump to the latest message whenever a conversation loads or is switched.
-    // Re-run across a couple of frames + a short delay so layout and any images
-    // have settled before we land on the bottom.
+    stickToBottomRef.current = true;
     scrollToBottom();
     const raf = requestAnimationFrame(() => scrollToBottom());
     const t = window.setTimeout(() => scrollToBottom(), 150);
@@ -497,11 +494,35 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
   }, [expandedId, activeConv?.participantId]);
 
+  // New message: stay pinned to the bottom unless the user scrolled up to read.
   useEffect(() => {
-    if (activeConv?.messages?.length) {
+    if (activeConv?.messages?.length && stickToBottomRef.current) {
       requestAnimationFrame(() => scrollToBottom());
     }
   }, [activeConv?.messages?.length, activeConv?.participantId]);
+
+  // Track stick-to-bottom and re-pin when the panel becomes visible or resizes
+  // (e.g. opening the messages popup, which doesn't change the active conversation).
+  useEffect(() => {
+    const els = [messagesContainerRefMobile.current, messagesContainerRefDesktop.current]
+      .filter(Boolean) as HTMLDivElement[];
+    if (!els.length) return;
+    const onScroll = (e: Event) => {
+      const el = e.currentTarget as HTMLDivElement;
+      stickToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    };
+    const ro = new ResizeObserver(() => {
+      if (stickToBottomRef.current) scrollToBottom();
+    });
+    els.forEach((el) => {
+      el.addEventListener("scroll", onScroll, { passive: true });
+      ro.observe(el);
+    });
+    return () => {
+      els.forEach((el) => el.removeEventListener("scroll", onScroll));
+      ro.disconnect();
+    };
+  }, [expandedId, activeConv?.participantId, conversations.length]);
 
   const fmtTime = (ts: number) => {
     try {
@@ -684,44 +705,48 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   }, [authFetch, onMarkRead, conversations]);
 
-  const handleOfferAppointment = async (clientId: string) => {
-    if (isClient) return;
-    
-    const hasPolicy = depositPolicyStatus[currentUserId];
-    if (!hasPolicy) {
-      setDepositModalClientId(clientId);
-      setDepositModalOpen(true);
-      return;
-    }
-
+  const enableBookingForClient = async (clientId: string) => {
     try {
       const token = await getToken();
       const result = await enableClientBookings(currentUserId, clientId, token);
-      
       if (!result?.ok) {
         throw new Error(result?.message || "Failed to enable appointments");
       }
-      
       const messageText = "Great! I've enabled booking for you. You can now book consultations and appointments with me!";
       await sendMessage(clientId, messageText, []);
-      
       window.dispatchEvent(new CustomEvent("ink:booking-enabled", {
         detail: { artistId: currentUserId, clientId }
       }));
-      
+      // Reflect on the artist's side so the "Allow Booking" button disables.
+      setConversations(prev => prev.map(c =>
+        c.participantId === clientId ? { ...c, meta: { ...(c.meta || {}), bookingEnabled: true } } : c
+      ));
       setSendError(null);
     } catch (e: any) {
       setSendError(e?.message || "Failed to enable appointments.");
     }
   };
 
-  const handleDepositPolicySaved = () => {
-    checkDepositPolicy();
-    if (depositModalClientId) {
-      setTimeout(() => {
-        handleOfferAppointment(depositModalClientId);
-      }, 500);
+  const handleOfferAppointment = async (clientId: string) => {
+    if (isClient) return;
+    if (!depositPolicyStatus[currentUserId]) {
+      setDepositModalClientId(clientId);
+      setDepositModalOpen(true);
+      return;
     }
+    await enableBookingForClient(clientId);
+  };
+
+  const handleDepositPolicySaved = () => {
+    // The artist just saved a policy — treat it as configured and continue
+    // straight to enabling the client. Do NOT re-run handleOfferAppointment
+    // (its captured depositPolicyStatus is stale and would re-open the modal).
+    setDepositPolicyStatus((prev) => ({ ...prev, [currentUserId]: true }));
+    const clientId = depositModalClientId;
+    setDepositModalClientId(null);
+    setDepositModalOpen(false);
+    checkDepositPolicy();
+    if (clientId) void enableBookingForClient(clientId);
   };
 
   const removeConversation = useCallback((participantId: string) => {
@@ -815,6 +840,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
         ? { ...conv, messages: [...conv.messages, optimistic].sort((a, b) => a.timestamp - b.timestamp) }
         : conv
     ));
+    // Sending always returns you to the latest message.
+    stickToBottomRef.current = true;
     requestAnimationFrame(() => scrollToBottom());
 
     try {
@@ -1130,7 +1157,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const openBooking = () => {
     if (!activeConv) return;
-    setQbArtist({ username: activeConv.username, clerkId: activeConv.participantId });
+    setQbArtist({ username: activeConv.username, clerkId: activeConv.participantId, handle: activeConv.handle });
     setQbOpen(true);
   };
 
@@ -1296,17 +1323,21 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                   </button>
                                 </>
                               )}
-                              {isAccepted && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOfferAppointment(activeConv.participantId)}
-                                  className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
-                                  title="Allow this client to book consultations and appointments"
-                                >
-                                  <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                                  Allow Booking
-                                </button>
-                              )}
+                              {isAccepted && (() => {
+                                const enabled = !!activeConv?.meta?.bookingEnabled;
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={enabled ? undefined : () => handleOfferAppointment(activeConv.participantId)}
+                                    disabled={enabled}
+                                    className={`px-2 py-1 rounded-md text-xs flex items-center gap-1 ${enabled ? "bg-elevated text-muted-foreground opacity-70 cursor-default" : "bg-primary text-primary-foreground"}`}
+                                    title={enabled ? "Booking is already enabled for this client" : "Allow this client to book consultations and appointments"}
+                                  >
+                                    <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
+                                    {enabled ? "Booking Enabled" : "Allow Booking"}
+                                  </button>
+                                );
+                              })()}
                             </div>
                           );
                         })()}
@@ -1694,17 +1725,21 @@ const ChatWindow: FC<ChatWindowProps> = ({
                               </button>
                             </>
                           )}
-                          {isAccepted && (
-                            <button
-                              type="button"
-                              onClick={() => handleOfferAppointment(activeConv.participantId)}
-                              className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs flex items-center gap-1"
-                              title="Allow this client to book consultations and appointments"
-                            >
-                              <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
-                              Allow Booking
-                            </button>
-                          )}
+                          {isAccepted && (() => {
+                            const enabled = !!activeConv?.meta?.bookingEnabled;
+                            return (
+                              <button
+                                type="button"
+                                onClick={enabled ? undefined : () => handleOfferAppointment(activeConv.participantId)}
+                                disabled={enabled}
+                                className={`px-2 py-1 rounded-md text-xs flex items-center gap-1 ${enabled ? "bg-elevated text-muted-foreground opacity-70 cursor-default" : "bg-primary text-primary-foreground"}`}
+                                title={enabled ? "Booking is already enabled for this client" : "Allow this client to book consultations and appointments"}
+                              >
+                                <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
+                                {enabled ? "Booking Enabled" : "Allow Booking"}
+                              </button>
+                            );
+                          })()}
                         </div>
                       );
                     })()}
@@ -1955,7 +1990,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       )}
       <QuickBooking
         open={qbOpen}
-        artist={qbArtist ? ({ username: qbArtist.username, clerkId: qbArtist.clerkId } as any) : undefined}
+        artist={qbArtist ? ({ username: qbArtist.username, clerkId: qbArtist.clerkId, handle: qbArtist.handle } as any) : undefined}
         onClose={() => setQbOpen(false)}
       />
       {role === "artist" && currentUserId && (
