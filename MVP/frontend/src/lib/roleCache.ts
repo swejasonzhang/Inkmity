@@ -1,4 +1,4 @@
-export type CachedRole = "client" | "artist";
+export type CachedRole = "client" | "artist" | "studio";
 
 const KEY = "inkmity-role";
 const NAME_KEY = "inkmity-username-v2";
@@ -12,7 +12,7 @@ try {
 export function getCachedRole(): CachedRole | null {
   try {
     const v = localStorage.getItem(KEY);
-    return v === "client" || v === "artist" ? v : null;
+    return v === "client" || v === "artist" || v === "studio" ? v : null;
   } catch {
     return null;
   }
