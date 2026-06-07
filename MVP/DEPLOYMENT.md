@@ -8,10 +8,17 @@ live on **Render** (or Railway — same env vars, different dashboard).
 - **Frontend**: Vite/React static site.
 - **Backend**: Express + Socket.io — must run on a **long-running** host (not
   serverless), because of WebSockets and the Stripe webhook raw-body handler.
-- **Money flow**: Stripe Connect (Express accounts). Clients pay deposit + a
-  **platform fee on top**; the deposit transfers to the artist's connected
-  account, the platform keeps the fee as the Connect application fee. The final
-  payment transfers 100% to the artist.
+- **Money flow**: Stripe Connect with the **platform as merchant of record**
+  (separate charges + transfers). Clients pay the deposit + a **platform fee on
+  top**; the deposit charge saves the card (`setup_future_usage`). On payment
+  success the platform **transfers** each party's cut — artist only (solo) or
+  artist + studio (per the studio commission split) — under a per-booking
+  `transfer_group`, keeping its fee by not transferring it.
+- **Balance on completion**: when both client and artist verify completion, the
+  saved card is charged **off-session** for the remaining balance (artist sets
+  the final price first), then the same split transfer runs.
+- **Chargeback clawback**: `charge.dispute.created` reverses the artist/studio
+  transfers so a dispute hits the payees, not the platform.
 
 ## 1. Stripe (live mode)
 
@@ -21,12 +28,16 @@ live on **Render** (or Railway — same env vars, different dashboard).
    platform branding/business profile Stripe requires before live onboarding.
 3. Create a **webhook endpoint**: `https://<inkmity-api>/billing/webhook`
    (note: `/billing/webhook`, mounted with the raw body — not `/api/...`).
-   Subscribe to at least:
-   - `payment_intent.succeeded`
+   Subscribe to **all** of these (the handler switches on each):
+   - `payment_intent.succeeded`  ← confirms booking, runs split payouts
    - `payment_intent.payment_failed`
-   - `checkout.session.completed`
-   - `account.updated`  ← keeps artist `chargesEnabled`/`payoutsEnabled` in sync
+   - `checkout.session.completed`  ← deposit via Checkout, runs split payouts
+   - `account.updated`  ← keeps artist **and studio** `chargesEnabled`/`payoutsEnabled` in sync
+   - `charge.dispute.created`  ← clawback: reverses artist/studio transfers
    Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+4. **Connect capabilities**: connected accounts (artists *and* studios) need
+   the `transfers` capability (to receive split payouts) and `card_payments`
+   (so `charges_enabled` is true, which the readiness gates check).
 
 ## 2. Clerk (production instance)
 
@@ -65,6 +76,8 @@ live on **Render** (or Railway — same env vars, different dashboard).
 | `RESEND_API_KEY`, `FROM_EMAIL` | email |
 | `PLATFORM_FEE_PCT` | optional, default `0.10` |
 | `PLATFORM_FEE_MIN_CENTS` | optional, default `500` |
+| `STUDIO_DEFAULT_COMMISSION_PCT` | optional, default `0.30` (studio's cut; overridable per artist) |
+| `ADMIN_CLERK_IDS` | comma-separated Clerk IDs allowed to verify studios |
 
 **Frontend (`inkmity-web`)**
 | Var | Notes |
@@ -82,10 +95,20 @@ live on **Render** (or Railway — same env vars, different dashboard).
    complete Stripe Express onboarding → banner flips to "Payouts active"
    (driven by the `account.updated` webhook).
 3. Sign up as a **client**, get the artist to enable bookings, book a tattoo
-   session, pay the deposit. Confirm in Stripe: the PaymentIntent shows the
-   `application_fee_amount` and a transfer to the artist's connected account.
-4. Confirm the rewards panel shows the client's tier/fee and updates after
+   session, pay the deposit. Confirm in Stripe: the PaymentIntent has a
+   `transfer_group` and saved the card; on success a **Transfer** to the
+   artist's connected account appears (and a second transfer to the studio if
+   the artist is a studio member).
+4. **Completion**: artist sets the final price, both parties verify completion,
+   and confirm the saved card is charged off-session for the balance with a
+   matching transfer.
+5. **Dispute (optional)**: open a test dispute on a charge and confirm the
+   artist/studio transfers are reversed (`charge.dispute.created`).
+6. Confirm the rewards panel shows the client's tier/fee and updates after
    completed bookings.
+
+> **Studio bookings** require the studio to be **verified** (admin sets
+> `verificationStatus: verified`) and payout-ready, or the booking is blocked.
 
 ## Tuning knobs
 
