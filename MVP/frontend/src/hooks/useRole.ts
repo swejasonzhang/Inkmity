@@ -3,7 +3,7 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { getMe } from "@/api";
 import { getCachedRole, setCachedRole, clearCachedRole } from "@/lib/roleCache";
 
-type Role = "client" | "artist";
+type Role = "client" | "artist" | "studio";
 
 export function useRole() {
   const { user, isSignedIn, isLoaded: clerkLoaded } = useUser();
@@ -59,11 +59,9 @@ export function useRole() {
         if (cancelled || ac.signal.aborted) return;
         const me = await getMe({ token: token ?? undefined, signal: ac.signal });
         if (cancelled || ac.signal.aborted) return;
-        const r =
-          me?.role === "artist"
-            ? "artist"
-            : me?.role === "client"
-            ? "client"
+        const r: Role | null =
+          me?.role === "artist" || me?.role === "client" || me?.role === "studio"
+            ? me.role
             : null;
         if (cancelled || ac.signal.aborted) return;
         if (r) {
@@ -72,7 +70,7 @@ export function useRole() {
           fetchedUserIdRef.current = userId;
         } else {
           const md = (user?.publicMetadata?.role as string | undefined) || "";
-          const fallbackRole = md === "artist" ? "artist" : "client";
+          const fallbackRole: Role = md === "artist" || md === "studio" ? md : "client";
           setRole(fallbackRole);
           setCachedRole(fallbackRole);
           fetchedUserIdRef.current = userId;
@@ -80,7 +78,7 @@ export function useRole() {
       } catch (e: any) {
         if (cancelled || ac.signal.aborted || e?.name === "AbortError") return;
         const md = (user?.publicMetadata?.role as string | undefined) || "";
-        const fallbackRole = md === "artist" ? "artist" : "client";
+        const fallbackRole: Role = md === "artist" || md === "studio" ? md : "client";
         setRole(fallbackRole);
         setCachedRole(fallbackRole);
         fetchedUserIdRef.current = userId;
