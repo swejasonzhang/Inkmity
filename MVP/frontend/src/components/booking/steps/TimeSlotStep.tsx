@@ -53,7 +53,7 @@ export default function TimeSlotStep({
       const availableSlots = await apiGet<Array<{ startISO: string; endISO: string }>>(
         `/availability/${artistId}/slots?date=${dateStr}`
       );
-      
+
       const filteredSlots = availableSlots.filter((slot) => {
         const start = new Date(slot.startISO);
         const end = new Date(slot.endISO);

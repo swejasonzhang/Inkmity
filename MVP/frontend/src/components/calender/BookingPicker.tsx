@@ -97,8 +97,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     return () => ac.abort()
   }, [artistId])
 
-  // Deposit the client pays now for the chosen appointment type (mirrors the
-  // backend computeDepositCents — consultations are free unless the artist opts in).
   const depositCents = useMemo(() => {
     const p = depositPolicy || {}
     const appt = kind === "appointment" ? "tattoo_session" : "consultation"
@@ -110,8 +108,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     }
     const minCents = Math.max(0, Number(p.minCents || 0), appt === "tattoo_session" ? 5000 : 0)
     const maxCents = Math.max(0, Number(p.maxCents || Infinity))
-    // Session price isn't known at booking time, so the percentage resolves to
-    // the artist's minimum deposit.
     return Math.min(minCents, maxCents)
   }, [depositPolicy, kind])
 
@@ -153,24 +149,24 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     window.addEventListener("ink:booking-created", onBooked as EventListener)
     window.addEventListener("ink:booking-cancelled", onCancelled as EventListener)
     window.addEventListener("ink:booking-denied", onDenied as EventListener)
-    
+
     const handleSocketCancelled = (data: { artistId: string; date: string }) => {
       if (data.artistId === artistId && date && data.date === date.toISOString().slice(0, 10)) {
         window.dispatchEvent(new CustomEvent("ink:booking-cancelled"))
         refreshSlots()
       }
     }
-    
+
     const handleSocketDenied = (data: { artistId: string; date: string }) => {
       if (data.artistId === artistId && date && data.date === date.toISOString().slice(0, 10)) {
         window.dispatchEvent(new CustomEvent("ink:booking-denied"))
         refreshSlots()
       }
     }
-    
+
     socket.on("booking:cancelled", handleSocketCancelled)
     socket.on("booking:denied", handleSocketDenied)
-    
+
     return () => {
       window.removeEventListener("ink:booking-created", onBooked as EventListener)
       window.removeEventListener("ink:booking-cancelled", onCancelled as EventListener)
@@ -241,10 +237,10 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           priceCents: 0
         })
         window.dispatchEvent(new CustomEvent("ink:booking-created", { detail: booking }))
-        
+
         const depositRequired = booking?.depositRequiredCents && booking.depositRequiredCents > 0
         const depositPaid = booking?.depositPaidCents && booking.depositPaidCents >= booking.depositRequiredCents
-        
+
         if (depositRequired && !depositPaid) {
           setPendingBooking(booking)
           swallowGestureTail()
@@ -254,7 +250,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           setSubmitting(false)
           return
         }
-        
+
         setLastBooking(booking)
         swallowGestureTail()
         setSelected(null)
@@ -576,7 +572,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
                 swallowGestureTail()
                 setDepositStepOpen(false)
               }}
-              style={{ 
+              style={{
                 color: isLightTheme ? "#000000" : "var(--fg)",
                 zIndex: 10
               }}

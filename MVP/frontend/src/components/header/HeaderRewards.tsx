@@ -49,9 +49,6 @@ export default function HeaderRewards() {
     return () => window.clearTimeout(t);
   }, [authed]);
 
-  // Never render anything (not even the shimmer) until Clerk confirms a real
-  // session. This prevents the tier pill from flashing on refresh when we don't
-  // actually have an account yet (stale cached sign-in state).
   if (!authed) return null;
 
   if (!ready || !minElapsed) {

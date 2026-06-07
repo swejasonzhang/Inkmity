@@ -26,7 +26,7 @@ describe("FormInput", () => {
     const user = userEvent.setup();
     const onChange = jest.fn();
     render(<FormInput {...defaultProps} onChange={onChange} />);
-    
+
     const input = screen.getByRole("textbox");
     await user.type(input, "test");
     expect(onChange).toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe("FormInput", () => {
         onTogglePassword={onTogglePassword}
       />
     );
-    
+
     const toggleButton = screen.getByText(/Show/i);
     await user.click(toggleButton);
     expect(onTogglePassword).toHaveBeenCalled();

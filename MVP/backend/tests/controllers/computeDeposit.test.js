@@ -5,19 +5,16 @@ const policy = (deposit) => ({ deposit });
 describe("computeDepositCents (deposit policy → deposit amount)", () => {
   test("percent: takes the percentage of the price", () => {
     const p = policy({ mode: "percent", percent: 0.2, minCents: 5000, maxCents: 30000 });
-    // 20% of $400 = $80, inside the $50–$300 range
     expect(computeDepositCents(p, 40000, "tattoo_session")).toBe(8000);
   });
 
   test("percent: applies the minimum floor", () => {
     const p = policy({ mode: "percent", percent: 0.05, minCents: 5000, maxCents: 30000 });
-    // 5% of $400 = $20 → floored to the $50 minimum
     expect(computeDepositCents(p, 40000, "tattoo_session")).toBe(5000);
   });
 
   test("percent: applies the maximum cap", () => {
     const p = policy({ mode: "percent", percent: 0.5, minCents: 5000, maxCents: 10000 });
-    // 50% of $400 = $200 → capped at the $100 maximum
     expect(computeDepositCents(p, 40000, "tattoo_session")).toBe(10000);
   });
 
@@ -38,7 +35,6 @@ describe("computeDepositCents (deposit policy → deposit amount)", () => {
 
   test("consultations charge the policy when the artist disables free consultations", () => {
     const p = policy({ mode: "percent", percent: 0.2, minCents: 5000, maxCents: 30000, consultationFree: false });
-    // 20% of $400 = $80 (no tattoo $50 floor on consultations)
     expect(computeDepositCents(p, 40000, "consultation")).toBe(8000);
   });
 

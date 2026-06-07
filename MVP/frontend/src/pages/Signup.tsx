@@ -260,7 +260,6 @@ export default function SignUp() {
       const res = await fetch(apiUrl("/auth/check-email", { email }));
       if (!res.ok) return;
       const data = await res.json();
-      // Guard against a stale response if the user edited the field meanwhile.
       if (shared.email.trim().toLowerCase() === email) setEmailTaken(!!data?.exists);
     } catch {
       // Network failure shouldn't block signup; the create call still guards it.
@@ -383,8 +382,6 @@ export default function SignUp() {
 
       await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      // Only advance to the OTP step once the code has actually been sent, so a
-      // send failure never bounces the user out of step 5.
       setAwaitingCode(true);
     } catch (error: any) {
       console.error("Error sending verification code:", error);
@@ -396,7 +393,6 @@ export default function SignUp() {
         /taken|already (exists|registered|in use)/i.test(clerkErr?.message || error?.message || "");
 
       if (emailIsTaken) {
-        // Discard the stale attempt so a retry with a different email starts fresh.
         setSignUpAttempt(null);
         setEmailTaken(true);
         lastCheckedEmailRef.current = shared.email.trim().toLowerCase();

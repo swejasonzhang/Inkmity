@@ -45,7 +45,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
 
   test("should create consultation with 15-60 minute duration", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     const response = await request(app)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
@@ -65,7 +65,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
 
   test("should reject consultation with duration outside 15-60 minute range", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     const response = await request(app)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
@@ -94,7 +94,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
     });
 
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     const response = await request(app)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
@@ -111,7 +111,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
 
   test("should set status to pending until deposit paid", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     const response = await request(app)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
@@ -156,7 +156,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
 
   test("should create tattoo session with custom duration", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     const response = await request(app)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
@@ -183,7 +183,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
     });
 
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     const response = await request(app)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
@@ -203,7 +203,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
 
   test("should set sessionNumber correctly", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    
+
     const response = await request(app)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
@@ -291,7 +291,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
   beforeEach(async () => {
     artistId = "artist-123";
     clientId = "client-456";
-    
+
     const startISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const booking = await Booking.create({
       artistId,
@@ -354,7 +354,7 @@ conditionalDescribe("Booking Controller - Cancellation", () => {
   beforeEach(async () => {
     artistId = "artist-123";
     clientId = "client-456";
-    
+
     const startISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const booking = await Booking.create({
       artistId,
@@ -406,7 +406,7 @@ conditionalDescribe("Booking Controller - No-Show", () => {
   beforeEach(async () => {
     artistId = "artist-123";
     clientId = "client-456";
-    
+
     const startISO = new Date(Date.now() - 2 * 60 * 60 * 1000);
     const booking = await Booking.create({
       artistId,
@@ -456,7 +456,7 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
   beforeEach(async () => {
     artistId = "artist-123";
     clientId = "client-456";
-    
+
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
     const booking = await Booking.create({
       artistId,

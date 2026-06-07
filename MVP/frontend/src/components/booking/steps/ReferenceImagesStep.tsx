@@ -28,7 +28,7 @@ export default function ReferenceImagesStep({ value, onChange }: Props) {
       const uploadedIds = await Promise.all(uploadPromises);
       const newIds = [...value, ...uploadedIds];
       onChange(newIds);
-      
+
       const newPreviews = Array.from(files).slice(0, 5).map((file) =>
         URL.createObjectURL(file)
       );

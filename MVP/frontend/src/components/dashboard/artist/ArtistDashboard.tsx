@@ -82,8 +82,6 @@ export default function ArtistDashboard() {
 
   const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(user?.id ?? "", authFetch);
 
-  // Skeletons mirror the real components' structure/dimensions so the
-  // shimmer occupies the exact space the loaded content will, with no shift.
   const calendarSkeleton = (
     <div className="h-full flex flex-col gap-2 sm:gap-3">
       <div className="flex items-center justify-between gap-2 flex-shrink-0">
@@ -277,4 +275,4 @@ export default function ArtistDashboard() {
       </div>
     </div>
   );
-} 
+}

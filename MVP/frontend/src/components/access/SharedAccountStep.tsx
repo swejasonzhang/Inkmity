@@ -57,9 +57,6 @@ export default function SharedAccountStep({
 
     useEffect(() => {
         if (!flashToken) return;
-        // Clear first so the CSS animation restarts even when a field was already
-        // flashing — otherwise re-adding the same class is a no-op and rapid
-        // repeated failures wouldn't re-flash the borders.
         setFlashUser(false);
         setFlashEmail(false);
         setFlashPwd(false);

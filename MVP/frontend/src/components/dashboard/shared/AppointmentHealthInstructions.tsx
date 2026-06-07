@@ -29,8 +29,8 @@ export default function AppointmentHealthInstructions({ open, onContinue }: Prop
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent 
-        className="max-w-2xl max-h-[90vh] overflow-y-auto relative" 
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto relative"
         showCloseButton={false}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}

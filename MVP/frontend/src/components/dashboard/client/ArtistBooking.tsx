@@ -42,7 +42,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
   const lastArtistIdRef = useRef<string | undefined>(undefined);
   const requestRef = useRef(request);
   const initialRenderRef = useRef(true);
-  
+
   useEffect(() => {
     requestRef.current = request;
   }, [request]);
@@ -56,11 +56,11 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     const artistId = artist?.clerkId;
     const artistChanged = lastArtistIdRef.current !== artistId;
     const isInitialRender = initialRenderRef.current;
-    
+
     if (isInitialRender) {
       initialRenderRef.current = false;
     }
-    
+
     if (artistChanged) {
       lastArtistIdRef.current = artistId;
       setGate(null);
@@ -68,23 +68,23 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
         setGateReady(false);
       }
     }
-    
+
     if (fetchingRef.current) {
       return;
     }
-    
+
     if (gateReady && gate !== null && !artistChanged && !isInitialRender) {
       return;
     }
-    
+
     if (!artistId) {
       return;
     }
-    
+
     const ac = new AbortController();
     let mounted = true;
     fetchingRef.current = true;
-    
+
     (async () => {
       try {
         const g = await requestRef.current(`${API_URL}/messages/gate/${artistId}`, {
@@ -109,7 +109,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
         if (mounted) fetchingRef.current = false;
       }
     })();
-    
+
     return () => {
       mounted = false;
       fetchingRef.current = false;
@@ -121,7 +121,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     const artistId = artist?.clerkId;
     const clientId = user?.id;
     if (!artistId || !clientId) return;
-    
+
     try {
       const gate = await getBookingGate(artistId, clientId);
       setBookingGate(gate);
@@ -135,7 +135,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
     const artistId = artist?.clerkId;
     const clientId = user?.id;
     if (!artistId || !clientId) return;
-    
+
     refreshBookingGate();
   }, [artist?.clerkId, user?.id, refreshBookingGate]);
 
@@ -293,13 +293,13 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       setErrorMsg(msg);
     }
   };
-  
+
   return (
-    <div 
-      className="w-full ink-scope ink-no-anim" 
+    <div
+      className="w-full ink-scope ink-no-anim"
       data-ink-no-theme="true"
-      style={{ 
-        background: "var(--card)", 
+      style={{
+        background: "var(--card)",
         color: "var(--fg)",
         transition: "none !important",
         animation: "none !important"

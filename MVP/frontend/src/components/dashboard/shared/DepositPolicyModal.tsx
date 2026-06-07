@@ -15,7 +15,7 @@ type Props = {
   onSuccess: () => void;
 };
 
-const SAMPLE_CENTS = 40000; // $400 example session
+const SAMPLE_CENTS = 40000;
 
 function fmtMoney(cents: number) {
   return `$${(Math.max(0, cents) / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
@@ -44,8 +44,6 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
         setPolicy((p) => ({
           ...p,
           ...d,
-          // An auto-created policy comes back with 0 min/max; keep sensible
-          // defaults so the saved policy stays "configured".
           minCents: Number(d.minCents) > 0 ? Number(d.minCents) : p.minCents,
           maxCents: Number(d.maxCents) > 0 ? Number(d.maxCents) : p.maxCents,
         }));

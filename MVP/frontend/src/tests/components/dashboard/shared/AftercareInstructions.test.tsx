@@ -86,14 +86,14 @@ describe("AftercareInstructions", () => {
     const user = userEvent.setup();
     const onClose = jest.fn();
     render(<AftercareInstructions {...defaultProps} onClose={onClose} />);
-    
+
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /I Understand/i })).toBeInTheDocument();
     });
-    
+
     const understandButton = screen.getByRole("button", { name: /I Understand/i });
     await user.click(understandButton);
-    
+
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -111,16 +111,16 @@ describe("AftercareInstructions", () => {
     const user = userEvent.setup();
     const onClose = jest.fn();
     render(<AftercareInstructions {...defaultProps} onClose={onClose} />);
-    
+
     await waitFor(() => {
       expect(screen.getByText("Tattoo Aftercare Instructions (Required)")).toBeInTheDocument();
     });
-    
+
     const dialog = screen.getByText("Tattoo Aftercare Instructions (Required)").closest('[role="dialog"]');
     if (dialog) {
       await user.click(dialog);
     }
-    
+
     expect(onClose).not.toHaveBeenCalled();
   });
 });

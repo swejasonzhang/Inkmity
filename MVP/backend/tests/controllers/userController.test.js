@@ -69,7 +69,7 @@ conditionalDescribe("User Controller - getMe", () => {
     const appNoAuth = express();
     appNoAuth.use(express.json());
     appNoAuth.get("/users/me", getMe);
-    
+
     const response = await request(appNoAuth).get("/users/me");
 
     expect(response.status).toBe(401);

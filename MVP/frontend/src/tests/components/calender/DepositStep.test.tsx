@@ -76,7 +76,7 @@ describe("DepositStep", () => {
     const user = userEvent.setup();
     const onCancel = jest.fn();
     render(<DepositStep {...defaultProps} onCancel={onCancel} />);
-    
+
     const cancelButton = screen.getByText(/Cancel/i);
     await user.click(cancelButton);
     expect(onCancel).toHaveBeenCalled();

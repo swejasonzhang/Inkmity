@@ -92,7 +92,7 @@ export const config = {
     ttl: {
       user: 300,
       booking: 60,
-      availability: 300, 
+      availability: 300,
     },
   },
 

@@ -33,7 +33,7 @@ export default function RewardsPanel({ className = "" }: { className?: string })
 
   let progress = 100;
   if (nextTier) {
-    const span = nextTier.bookingsToNextTier + completedBookings; // next threshold
+    const span = nextTier.bookingsToNextTier + completedBookings;
     progress = span > 0 ? Math.min(100, Math.round((completedBookings / span) * 100)) : 0;
   }
 

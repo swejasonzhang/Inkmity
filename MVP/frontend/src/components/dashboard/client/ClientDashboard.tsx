@@ -90,9 +90,6 @@ export default function ClientDashboard() {
         }
     }, [isLoaded, isSignedIn, navigate]);
 
-    // Read the reopen target synchronously from history so the modal is requested
-    // on the very first render — otherwise the dashboard flashes for a frame
-    // before an effect reopens it when returning from the full-works page.
     const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(() => {
         const st = (typeof window !== "undefined" ? window.history.state?.usr : null) as
             | { reopenArtist?: ArtistDto }
@@ -108,7 +105,7 @@ export default function ClientDashboard() {
         if (!st?.reopenArtistId && !st?.reopenArtist) return;
         const fromList = st.reopenArtistId ? artists.find((a) => a._id === st.reopenArtistId) : undefined;
         const target = fromList ?? st.reopenArtist;
-        if (!target && st.reopenArtistId && !artists.length) return; // wait for list to load
+        if (!target && st.reopenArtistId && !artists.length) return;
         if (target) {
             setSelectedArtist(target);
             reopenHandledRef.current = true;

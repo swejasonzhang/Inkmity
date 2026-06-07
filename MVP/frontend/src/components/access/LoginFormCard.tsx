@@ -16,7 +16,7 @@ type Props = {
 
 export default function LoginFormCard({ showInfo, hasError, titleOverride, subtitleOverride, children, className, hideHeader }: Props) {
     const { isSignedIn, isLoaded } = useAuth();
-    
+
     const title = titleOverride ?? "Welcome Back!";
     const subtitle = subtitleOverride ?? "Login to continue exploring artists, styles, and your tattoo journey.";
 

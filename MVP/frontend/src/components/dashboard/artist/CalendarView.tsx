@@ -47,8 +47,6 @@ export default function CalendarView({
     }, [cursor]);
 
     const cells = useMemo(() => {
-        // Always render a fixed 6-week (42-cell) grid so the calendar height is
-        // constant month-to-month and matches the loading skeleton exactly.
         const totalCells = 42;
         return Array.from({ length: totalCells }).map((_, i) => {
             const dayNum = i - monthMeta.firstWeekday + 1;

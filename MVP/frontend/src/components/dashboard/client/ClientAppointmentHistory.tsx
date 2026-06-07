@@ -70,19 +70,19 @@ export default function ClientAppointmentHistory() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString(undefined, { 
-            weekday: "short", 
-            month: "short", 
-            day: "numeric", 
-            year: "numeric" 
+        return date.toLocaleDateString(undefined, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            year: "numeric"
         });
     };
 
     const formatTime = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleTimeString(undefined, { 
-            hour: "2-digit", 
-            minute: "2-digit" 
+        return date.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit"
         });
     };
 

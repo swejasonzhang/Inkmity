@@ -52,7 +52,6 @@ type DepositPolicy = {
   consultationFree?: boolean;
 };
 
-// Mirrors the backend computeDepositCents (free consultations + price cap).
 function computeDepositPreviewCents(
   deposit: DepositPolicy | undefined,
   priceCents: number,

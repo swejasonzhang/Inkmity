@@ -40,7 +40,7 @@ export default function OAuthButtons({ mode }: Props) {
                 if (set.size > 0) return set;
             }
         } catch {
-            
+
         }
         return null;
     })();

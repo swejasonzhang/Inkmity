@@ -200,7 +200,7 @@ export default function Login() {
     setLoading(true);
     try {
       const result = await signIn.create({ identifier: email.trim().toLowerCase(), password });
-      
+
       if (result.status === "complete") {
         if (!result.createdSessionId) {
           setAuthError("Login failed: No session created. Please try again.");
@@ -208,7 +208,7 @@ export default function Login() {
           setLoading(false);
           return;
         }
-        
+
         try {
           await setActive({ session: result.createdSessionId });
         } catch (activeErr: any) {
@@ -217,9 +217,9 @@ export default function Login() {
           setLoading(false);
           return;
         }
-        
+
         resetActivityTimer();
-        
+
         try {
           sessionStorage.setItem("authRedirect", "1");
         } catch { }
@@ -266,7 +266,7 @@ export default function Login() {
       }
     } catch (err: any) {
       let errorMessage = "Login failed. Please check your credentials and try again.";
-      
+
       if (err?.errors && Array.isArray(err.errors) && err.errors.length > 0) {
         const firstError = err.errors[0];
         errorMessage = firstError.message || firstError.longMessage || firstError.code || errorMessage;
@@ -275,18 +275,18 @@ export default function Login() {
       } else if (typeof err === "string") {
         errorMessage = err;
       }
-      
+
       const lowerMessage = errorMessage.toLowerCase();
-      
-      if (lowerMessage.includes("form_identifier_not_found") || 
-          lowerMessage.includes("form_password_incorrect") || 
+
+      if (lowerMessage.includes("form_identifier_not_found") ||
+          lowerMessage.includes("form_password_incorrect") ||
           lowerMessage.includes("form_param_format_invalid") ||
           lowerMessage.includes("identifier_not_found") ||
           lowerMessage.includes("password_incorrect")) {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
-      } else if (lowerMessage.includes("two-factor") || 
-                 lowerMessage.includes("2fa") || 
-                 lowerMessage.includes("second factor") || 
+      } else if (lowerMessage.includes("two-factor") ||
+                 lowerMessage.includes("2fa") ||
+                 lowerMessage.includes("second factor") ||
                  lowerMessage.includes("needs_second_factor")) {
         errorMessage = "Login failed. Please check your credentials and try again.";
       } else if (lowerMessage.includes("identifier") || lowerMessage.includes("password")) {
@@ -294,7 +294,7 @@ export default function Login() {
       } else if (err?.status === 401 || err?.statusCode === 401) {
         errorMessage = "Invalid email or password. Please check your credentials and try again.";
       }
-      
+
       setAuthError(errorMessage);
       triggerMascotError();
     } finally {

@@ -15,8 +15,6 @@ function makeWrapper(path: string) {
 
 function resetThemeToDark() {
   localStorage.setItem(STORAGE_KEY, "dark");
-  // The hook module keeps a shared store; the storage listener is the public
-  // reset path back to a known state between tests.
   window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY, newValue: "dark" }));
 }
 
@@ -63,7 +61,6 @@ describe("useTheme workflow", () => {
     const html = document.documentElement;
     const scope = getScope();
 
-    // dark -> light
     act(() => result.current.toggleTheme());
 
     expect(result.current.theme).toBe("light");
@@ -74,7 +71,6 @@ describe("useTheme workflow", () => {
     expect(scope.classList.contains("ink-light")).toBe(true);
     expect(result.current.logoSrc).toBe(BLACK_LOGO);
 
-    // light -> dark (the regression: this direction used to get stuck on light)
     act(() => result.current.toggleTheme());
 
     expect(result.current.theme).toBe("dark");
@@ -90,11 +86,9 @@ describe("useTheme workflow", () => {
     const { result } = renderHook(() => useTheme(), { wrapper: makeWrapper("/dashboard") });
     const html = document.documentElement;
 
-    act(() => result.current.toggleTheme()); // light
-    act(() => result.current.toggleTheme()); // back to dark
+    act(() => result.current.toggleTheme());
+    act(() => result.current.toggleTheme());
 
-    // The old bug copied computed light vars onto <html> inline, which beat the
-    // non-!important dark :root vars and inherited down, locking the UI in light.
     expect(html.style.getPropertyValue("--bg")).toBe("");
     expect(html.style.getPropertyValue("--fg")).toBe("");
     expect(html.style.getPropertyValue("--card")).toBe("");
@@ -102,7 +96,7 @@ describe("useTheme workflow", () => {
 
   test("persists the selected theme across a remount", () => {
     const first = renderHook(() => useTheme(), { wrapper: makeWrapper("/dashboard") });
-    act(() => first.result.current.toggleTheme()); // -> light
+    act(() => first.result.current.toggleTheme());
     expect(localStorage.getItem(STORAGE_KEY)).toBe("light");
     first.unmount();
 
@@ -125,16 +119,13 @@ describe("useTheme workflow", () => {
   });
 
   test("a themed selection does not leak its variables onto a non-themed route", () => {
-    // Select light on the dashboard...
     const themed = renderHook(() => useTheme(), { wrapper: makeWrapper("/dashboard") });
     act(() => themed.result.current.toggleTheme());
     expect(themed.result.current.theme).toBe("light");
     themed.unmount();
 
-    // Remove the dashboard scope, as a non-themed page would have none.
     getScope().remove();
 
-    // ...then a non-themed route resolves dark and clears the themed markers.
     const plain = renderHook(() => useTheme(), { wrapper: makeWrapper("/about") });
     expect(plain.result.current.theme).toBe("dark");
     expect(document.documentElement.getAttribute("data-ink")).toBe("dark");

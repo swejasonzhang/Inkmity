@@ -85,13 +85,13 @@ export async function getBookingGate(req, res) {
 
     const policy = await ArtistPolicy.findOne({ artistId });
     if (!policy) {
-      return res.json({ 
-        enabled: false, 
+      return res.json({
+        enabled: false,
         depositConfigured: false,
         message: "Artist booking policy not found"
       });
     }
-    
+
     const deposit = policy.deposit || {};
     const depositConfigured =
       (deposit.mode === "flat" && deposit.amountCents > 0) ||
@@ -131,32 +131,32 @@ export async function enableClientBookings(req, res) {
   try {
     const { artistId, clientId } = req.body || {};
     const actorId = req.user?.clerkId || req.auth?.userId;
-    
+
     if (!artistId || !clientId) {
       return res.status(400).json({ error: "artistId and clientId required" });
     }
-    
+
     if (String(actorId) !== String(artistId)) {
       return res.status(403).json({ error: "Only the artist can enable bookings for clients" });
     }
-    
+
     const policy = await ArtistPolicy.findOne({ artistId });
     if (!policy) {
       return res.status(400).json({ error: "Artist policy not found. Please configure deposit first." });
     }
-    
+
     const deposit = policy.deposit || {};
-    const depositConfigured = 
+    const depositConfigured =
       (deposit.mode === "flat" && deposit.amountCents > 0) ||
       (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
-    
+
     if (!depositConfigured) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "deposit_required",
         message: "Deposit must be configured before enabling bookings for clients"
       });
     }
-    
+
     const permission = await ClientBookingPermission.findOneAndUpdate(
       { artistId, clientId },
       {
@@ -167,8 +167,6 @@ export async function enableClientBookings(req, res) {
       { new: true, upsert: true }
     );
 
-    // Notify the client in real time so their "Ready to Book" button unlocks
-    // without a refresh.
     const io = getIO();
     if (io) {
       io.to(userRoom(clientId)).emit("booking:enabled", { artistId, clientId });

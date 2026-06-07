@@ -107,7 +107,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
       deposit: { mode: "percent", percent: 0.2, minCents: 1000 },
     });
     await onboardArtist(artistId);
-    await createClientUser(clientId); // needed for the confirmation email lookup
+    await createClientUser(clientId);
 
     stripeMock.customers.create.mockResolvedValue({ id: "cus_test123" });
     stripeMock.paymentIntents.create.mockResolvedValue({
