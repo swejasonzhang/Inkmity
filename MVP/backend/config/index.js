@@ -33,6 +33,17 @@ export const config = {
     minCents: Number(process.env.PLATFORM_FEE_MIN_CENTS ?? 500),
   },
 
+  studio: {
+    defaultCommissionPct: Number(process.env.STUDIO_DEFAULT_COMMISSION_PCT ?? 0.30),
+  },
+
+  admin: {
+    clerkIds: (process.env.ADMIN_CLERK_IDS || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  },
+
   dev: {
     get bypassGates() {
       return (

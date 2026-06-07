@@ -12,9 +12,11 @@ import Gallery from "./pages/Gallery";
 import Portfolio from "./pages/Portfolio";
 import Tiers from "./pages/Tiers";
 import ArtistWorks from "./pages/ArtistWorks";
+import Studios from "./pages/Studios";
 import Landing from "./pages/Landing";
 import SSOCallback from "./pages/SSOCallback";
 import Onboarding from "./pages/Onboarding";
+import StudioSignup from "./pages/StudioSignup";
 import { useTheme } from "@/hooks/useTheme";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
@@ -64,12 +66,16 @@ const App: React.FC = () => {
       <Route path="/portfolio" element={<DashboardScope />}>
         <Route index element={<Portfolio />} />
       </Route>
+      <Route path="/studios" element={<DashboardScope />}>
+        <Route index element={<Studios />} />
+      </Route>
       <Route path="/artist/:handle" element={<DashboardScope />}>
         <Route index element={<ArtistWorks />} />
       </Route>
       <Route path="/gallery" element={<Gallery />} />
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/signup/studio" element={<StudioSignup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
