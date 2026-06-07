@@ -9,6 +9,11 @@ import {
   getEffectiveFeePct,
   recordFeePaid,
 } from "../services/rewardsService.js";
+import { executePayouts, reversePayouts } from "../services/payoutService.js";
+
+function bookingTransferGroup(bookingId) {
+  return `booking_${String(bookingId)}`;
+}
 
 let WebhookEvent;
 (async () => {
@@ -17,6 +22,25 @@ let WebhookEvent;
 })();
 
 const CURRENCY = config.stripe.currency || "usd";
+
+async function runPayoutsForBill(bill) {
+  if (!bill) return;
+  try {
+    const transferable =
+      bill.type === "deposit"
+        ? Math.max(0, Number(bill.amountCents || 0) - Number(bill.platformFeeCents || 0))
+        : Number(bill.amountCents || 0);
+    await executePayouts({
+      billing: bill,
+      artistId: bill.artistId,
+      transferableCents: transferable,
+      transferGroup: bill.transferGroup || bookingTransferGroup(bill.bookingId),
+      currency: bill.currency || CURRENCY,
+    });
+  } catch (e) {
+    console.error("runPayoutsForBill failed:", e.code || e.message);
+  }
+}
 
 function computePlatformFeeCents(priceCents, effectivePct, minCents) {
   const base = Math.max(0, Number(priceCents || 0));
@@ -108,6 +132,8 @@ export async function checkoutDeposit(req, res) {
       ? "Consultation deposit"
       : "Tattoo appointment deposit";
 
+  const transferGroup = bookingTransferGroup(booking._id);
+
   const bill = await Billing.create({
     bookingId,
     artistId: booking.artistId,
@@ -116,6 +142,7 @@ export async function checkoutDeposit(req, res) {
     amountCents: amount + platformFeeCents,
     platformFeeCents,
     stripeConnectAccountId: connectAccountId,
+    transferGroup,
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
@@ -159,14 +186,10 @@ export async function checkoutDeposit(req, res) {
     mode: "payment",
     customer: customer.id,
     payment_method_types: ["card"],
-    ...(connectAccountId
-      ? {
-          payment_intent_data: {
-            application_fee_amount: platformFeeCents,
-            transfer_data: { destination: connectAccountId },
-          },
-        }
-      : {}),
+    payment_intent_data: {
+      transfer_group: transferGroup,
+      setup_future_usage: "off_session",
+    },
     line_items: lineItems,
     metadata: {
       billingId: String(bill._id),
@@ -244,6 +267,8 @@ export async function createDepositPaymentIntent(req, res) {
       ? "Consultation deposit"
       : "Tattoo appointment deposit";
 
+  const transferGroup = bookingTransferGroup(booking._id);
+
   const bill = await Billing.create({
     bookingId,
     artistId: booking.artistId,
@@ -252,6 +277,7 @@ export async function createDepositPaymentIntent(req, res) {
     amountCents: chargeAmount,
     platformFeeCents,
     stripeConnectAccountId: connectAccountId,
+    transferGroup,
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
@@ -269,6 +295,8 @@ export async function createDepositPaymentIntent(req, res) {
     amount: chargeAmount,
     currency: CURRENCY,
     customer: customer.id,
+    transfer_group: transferGroup,
+    setup_future_usage: "off_session",
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
@@ -281,10 +309,6 @@ export async function createDepositPaymentIntent(req, res) {
       enabled: true,
     },
   };
-  if (connectAccountId) {
-    depositIntentParams.application_fee_amount = platformFeeCents;
-    depositIntentParams.transfer_data = { destination: connectAccountId };
-  }
   const paymentIntent = await stripe.paymentIntents.create(depositIntentParams);
 
   bill.stripePaymentIntentId = paymentIntent.id;
@@ -414,6 +438,8 @@ export async function createFinalPaymentIntent(req, res) {
       ? "Consultation final payment"
       : "Tattoo appointment final payment";
 
+  const transferGroup = bookingTransferGroup(booking._id);
+
   const bill = await Billing.create({
     bookingId,
     artistId: booking.artistId,
@@ -422,6 +448,7 @@ export async function createFinalPaymentIntent(req, res) {
     amountCents: remainingCents,
     platformFeeCents: 0,
     stripeConnectAccountId: connectAccountId,
+    transferGroup,
     currency: CURRENCY,
     stripeCustomerId: customer.id,
     status: "pending",
@@ -436,6 +463,7 @@ export async function createFinalPaymentIntent(req, res) {
     amount: remainingCents,
     currency: CURRENCY,
     customer: customer.id,
+    transfer_group: transferGroup,
     metadata: {
       billingId: String(bill._id),
       bookingId: String(booking._id),
@@ -448,9 +476,6 @@ export async function createFinalPaymentIntent(req, res) {
       enabled: true,
     },
   };
-  if (connectAccountId) {
-    finalIntentParams.transfer_data = { destination: connectAccountId };
-  }
   const paymentIntent = await stripe.paymentIntents.create(finalIntentParams);
 
   bill.stripePaymentIntentId = paymentIntent.id;
@@ -516,8 +541,9 @@ export async function stripeWebhook(req, res) {
           const paymentIntent = s.payment_intent;
 
           let feeCents = 0;
+          let bill = null;
           if (billingId) {
-            const bill = await Billing.findById(billingId);
+            bill = await Billing.findById(billingId);
             if (bill) {
               feeCents = Number(bill.platformFeeCents || 0);
               if (bill.status !== "paid") {
@@ -545,6 +571,7 @@ export async function stripeWebhook(req, res) {
                 console.error("recordFeePaid failed:", e.message);
               }
             }
+            await runPayoutsForBill(bill);
           }
           break;
         }
@@ -553,8 +580,9 @@ export async function stripeWebhook(req, res) {
           const { billingId, bookingId, type } = pi.metadata || {};
 
           let feeCents = 0;
+          let bill = null;
           if (billingId) {
-            const bill = await Billing.findById(billingId);
+            bill = await Billing.findById(billingId);
             if (bill) {
               feeCents = Number(bill.platformFeeCents || 0);
               if (bill.status !== "paid") {
@@ -599,6 +627,9 @@ export async function stripeWebhook(req, res) {
               }
             }
           }
+          if (type === "deposit" || type === "final_payment") {
+            await runPayoutsForBill(bill);
+          }
           break;
         }
         case "payment_intent.payment_failed": {
@@ -632,6 +663,29 @@ export async function stripeWebhook(req, res) {
               owner.onboardingCompletedAt = new Date();
             }
             await owner.save();
+          }
+          break;
+        }
+        case "charge.dispute.created": {
+          const dispute = event.data.object;
+          const chargeId = dispute.charge;
+          const piId = dispute.payment_intent;
+          const or = [];
+          if (chargeId) or.push({ stripeChargeId: chargeId });
+          if (piId) or.push({ stripePaymentIntentId: piId });
+          const bill = or.length ? await Billing.findOne({ $or: or }) : null;
+          if (bill) {
+            bill.disputeStatus = "disputed";
+            await bill.save();
+            try {
+              await reversePayouts(bill);
+              bill.disputeStatus = "reversed";
+              await bill.save();
+            } catch (e) {
+              console.error("dispute clawback failed:", e.message);
+              bill.disputeStatus = "reversal_failed";
+              await bill.save();
+            }
           }
           break;
         }
