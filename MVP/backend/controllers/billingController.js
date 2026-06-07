@@ -9,7 +9,7 @@ import {
   getEffectiveFeePct,
   recordFeePaid,
 } from "../services/rewardsService.js";
-import { executePayouts } from "../services/payoutService.js";
+import { executePayouts, reversePayouts } from "../services/payoutService.js";
 
 function bookingTransferGroup(bookingId) {
   return `booking_${String(bookingId)}`;
@@ -663,6 +663,29 @@ export async function stripeWebhook(req, res) {
               owner.onboardingCompletedAt = new Date();
             }
             await owner.save();
+          }
+          break;
+        }
+        case "charge.dispute.created": {
+          const dispute = event.data.object;
+          const chargeId = dispute.charge;
+          const piId = dispute.payment_intent;
+          const or = [];
+          if (chargeId) or.push({ stripeChargeId: chargeId });
+          if (piId) or.push({ stripePaymentIntentId: piId });
+          const bill = or.length ? await Billing.findOne({ $or: or }) : null;
+          if (bill) {
+            bill.disputeStatus = "disputed";
+            await bill.save();
+            try {
+              await reversePayouts(bill);
+              bill.disputeStatus = "reversed";
+              await bill.save();
+            } catch (e) {
+              console.error("dispute clawback failed:", e.message);
+              bill.disputeStatus = "reversal_failed";
+              await bill.save();
+            }
           }
           break;
         }
