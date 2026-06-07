@@ -18,7 +18,10 @@ export function buildNavItems(
 
   const items: NavItem[] = [gated("Dashboard", "/dashboard")];
 
-  if (isSignedIn && role === "artist") items.push(gated("Portfolio", "/portfolio"));
+  if (isSignedIn && role === "artist") {
+    items.push(gated("Portfolio", "/portfolio"));
+    items.push(gated("Studios", "/studios"));
+  }
 
   items.push(
     gated("Appointments", "/appointments"),

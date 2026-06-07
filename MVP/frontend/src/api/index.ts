@@ -123,6 +123,27 @@ export async function apiPost<T = any>(
   );
 }
 
+export async function apiPatch<T = any>(
+  path: string,
+  body?: any,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiRequest<T>(
+    path,
+    { method: "PATCH", body: body ? JSON.stringify(body) : undefined, signal },
+    token
+  );
+}
+
+export async function apiDelete<T = any>(
+  path: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiRequest<T>(path, { method: "DELETE", signal }, token);
+}
+
 export function useApi() {
   const { getToken, isSignedIn } = useAuth();
   async function request(path: string, init: RequestInit = {}) {
@@ -738,6 +759,179 @@ export async function startConnectOnboarding(token?: string, signal?: AbortSigna
 
 export async function getConnectLoginLink(token?: string, signal?: AbortSignal) {
   return apiPost<{ url: string }>("/connect/login-link", undefined, token, signal);
+}
+
+export type Studio = {
+  _id: string;
+  name: string;
+  ownerClerkId: string;
+  slug?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  bio?: string;
+  logo?: { url: string; publicId?: string };
+  defaultCommissionPct: number;
+  verificationStatus?: "pending" | "verified" | "rejected";
+  verifiedAt?: string;
+  stripeConnectAccountId?: string;
+  chargesEnabled?: boolean;
+  payoutsEnabled?: boolean;
+  active?: boolean;
+};
+
+export type StudioMembership = {
+  _id: string;
+  studioId: string;
+  artistClerkId: string;
+  role: "owner" | "manager" | "artist";
+  status: "invited" | "active" | "declined" | "removed";
+  commissionPct: number | null;
+  effectiveCommissionPct?: number;
+  artist?: {
+    clerkId: string;
+    username?: string;
+    handle?: string;
+    avatar?: { url?: string } | null;
+  } | null;
+  studio?: { _id: string; name: string; city?: string; logo?: any } | null;
+};
+
+export async function createStudio(
+  input: Partial<Studio>,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Studio>("/studios", input, token, signal);
+}
+
+export async function getMyStudios(token?: string, signal?: AbortSignal) {
+  return apiGet<Studio[]>("/studios/mine", undefined, token, signal);
+}
+
+export async function getStudio(
+  studioId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<Studio>(`/studios/${studioId}`, undefined, token, signal);
+}
+
+export async function updateStudio(
+  studioId: string,
+  patch: Partial<Studio>,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPatch<Studio>(`/studios/${studioId}`, patch, token, signal);
+}
+
+export async function listStudioMembers(
+  studioId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<StudioMembership[]>(
+    `/studios/${studioId}/members`,
+    undefined,
+    token,
+    signal
+  );
+}
+
+export async function inviteArtistToStudio(
+  studioId: string,
+  input: { handle?: string; artistClerkId?: string; commissionPct?: number | null },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<StudioMembership>(
+    `/studios/${studioId}/invite`,
+    input,
+    token,
+    signal
+  );
+}
+
+export async function updateStudioMember(
+  studioId: string,
+  artistClerkId: string,
+  patch: { commissionPct?: number | null; role?: "manager" | "artist" },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPatch<StudioMembership>(
+    `/studios/${studioId}/members/${artistClerkId}`,
+    patch,
+    token,
+    signal
+  );
+}
+
+export async function removeStudioMember(
+  studioId: string,
+  artistClerkId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiDelete<{ ok: boolean }>(
+    `/studios/${studioId}/members/${artistClerkId}`,
+    token,
+    signal
+  );
+}
+
+export async function getMyStudioMemberships(
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<StudioMembership[]>(
+    "/studios/memberships/mine",
+    undefined,
+    token,
+    signal
+  );
+}
+
+export async function respondToStudioInvite(
+  membershipId: string,
+  action: "accept" | "decline",
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<StudioMembership>(
+    `/studios/memberships/${membershipId}/respond`,
+    { action },
+    token,
+    signal
+  );
+}
+
+export async function getStudioConnectStatus(
+  studioId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<ConnectStatus>(
+    `/studios/${studioId}/connect/status`,
+    undefined,
+    token,
+    signal
+  );
+}
+
+export async function startStudioConnectOnboarding(
+  studioId: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<{ url: string }>(
+    `/studios/${studioId}/connect/account-link`,
+    undefined,
+    token,
+    signal
+  );
 }
 
 export type RewardsSummary = {

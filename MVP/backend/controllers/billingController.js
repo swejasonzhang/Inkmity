@@ -615,19 +615,23 @@ export async function stripeWebhook(req, res) {
         }
         case "account.updated": {
           const account = event.data.object;
-          const artist = await Artist.findOne({ stripeConnectAccountId: account.id });
-          if (artist) {
-            artist.chargesEnabled = Boolean(account.charges_enabled);
-            artist.payoutsEnabled = Boolean(account.payouts_enabled);
-            artist.connectRequirementsDue = account.requirements?.currently_due || [];
+          const owner =
+            (await Artist.findOne({ stripeConnectAccountId: account.id })) ||
+            (await (await import("../models/Studio.js")).default.findOne({
+              stripeConnectAccountId: account.id,
+            }));
+          if (owner) {
+            owner.chargesEnabled = Boolean(account.charges_enabled);
+            owner.payoutsEnabled = Boolean(account.payouts_enabled);
+            owner.connectRequirementsDue = account.requirements?.currently_due || [];
             if (
               account.charges_enabled &&
               account.payouts_enabled &&
-              !artist.onboardingCompletedAt
+              !owner.onboardingCompletedAt
             ) {
-              artist.onboardingCompletedAt = new Date();
+              owner.onboardingCompletedAt = new Date();
             }
-            await artist.save();
+            await owner.save();
           }
           break;
         }
