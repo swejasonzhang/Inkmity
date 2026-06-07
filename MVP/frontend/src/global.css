@@ -96,7 +96,7 @@ html.ink-light {
   --subtle: rgba(17, 17, 17, 0.72) !important;
   --card: #ffffff !important;
   --overlay: rgba(0, 0, 0, 0.45) !important;
-  --border: rgba(17, 17, 17, 0.16) !important;
+  --border: rgba(17, 17, 17, 0.3) !important;
   --elevated: rgba(0, 0, 0, 0.06) !important;
   --background: 0 0% 100% !important;
   --foreground: 0 0% 7% !important;
@@ -114,7 +114,7 @@ html.ink-light {
   --accent-foreground: 0 0% 100% !important;
   --destructive: 0 72% 46% !important;
   --destructive-foreground: 0 0% 98% !important;
-  --border-h: 0 0% 12% / 0.16 !important;
+  --border-h: 0 0% 12% / 0.3 !important;
   --input: var(--border-h) !important;
   --ring: var(--primary) !important;
   --video-blend: normal !important;

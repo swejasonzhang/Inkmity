@@ -6,7 +6,6 @@ import {
   CalendarRange,
   CheckCircle2,
   ChevronRight,
-  Inbox,
   Wallet,
   TrendingUp,
   PiggyBank,
@@ -74,21 +73,6 @@ function fmtMoney(cents: number) {
   return `$${Math.round(dollars).toLocaleString()}`;
 }
 
-function statusChip(status: string): string {
-  switch (status) {
-    case "pending":
-      return "border-white/50 bg-white/20 text-app";
-    case "completed":
-      return "border-white/40 bg-white/15 text-app";
-    case "cancelled":
-    case "denied":
-    case "no-show":
-      return "border-white/30 bg-white/10 text-white/85";
-    default:
-      return "border-white/60 bg-card text-app";
-  }
-}
-
 export default function ArtistOverview({ appointments, loading }: Props) {
   const data = appointments ?? [];
 
@@ -150,7 +134,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
 
   return (
     <div className="flex flex-col h-full gap-2.5 sm:gap-3">
-      <PayoutSetup />
+      <PayoutSetup redirectToProfile />
 
       <div className="rounded-xl border border-app bg-elevated px-3 py-2.5 flex items-center gap-3 flex-shrink-0">
         <div className="grid place-items-center h-10 w-10 rounded-full bg-card border border-app shrink-0">
@@ -158,8 +142,9 @@ export default function ArtistOverview({ appointments, loading }: Props) {
         </div>
         {loading ? (
           <div className="min-w-0 flex-1 space-y-1.5">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-2.5 w-24" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-2/3" />
           </div>
         ) : next ? (
           <div className="min-w-0 flex-1">
@@ -220,7 +205,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-[120px] rounded-xl border border-app bg-elevated flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 md:min-h-[120px] rounded-xl border border-app bg-elevated flex flex-col overflow-hidden">
         <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b border-app flex-shrink-0">
           <div className="text-xs sm:text-sm font-semibold text-app">Upcoming appointments</div>
           <Link
@@ -231,52 +216,26 @@ export default function ArtistOverview({ appointments, loading }: Props) {
           </Link>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-center p-2 sm:p-3 space-y-2">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-center p-2 sm:p-3 gap-1.5">
           {loading ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-lg" />
+            Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full rounded-lg" />
             ))
           ) : upcoming.length === 0 ? (
-            <div className="h-full min-h-[140px] flex flex-col items-center justify-center text-center gap-2 px-4 py-8">
-              <Inbox className="h-7 w-7 text-muted" />
-              <div className="text-sm font-medium text-app">
-                {next ? "You're all caught up after this one" : "No upcoming appointments"}
-              </div>
-              <div className="text-[11px] sm:text-xs text-muted max-w-[260px]">
-                {next
-                  ? "Your next appointment is shown above. New confirmed bookings will appear here."
-                  : "Confirmed bookings with clients will appear here as they come in."}
-              </div>
+            <div className="text-center text-xs sm:text-sm text-muted px-4">
+              No upcoming appointments
             </div>
           ) : (
             upcoming.map((a) => {
               const name = a.client?.username ?? "Client";
-              const isConsult = a.appointmentType === "consultation";
               return (
                 <div
                   key={a._id}
-                  className="flex items-center gap-3 rounded-lg border border-app bg-card px-2.5 sm:px-3 py-2.5"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-app bg-card px-2.5 py-1.5"
                 >
-                  <div className="grid place-items-center h-9 w-9 shrink-0 rounded-full bg-elevated border border-app text-xs font-semibold text-app uppercase">
-                    {name[0] ?? "?"}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm font-medium text-app truncate">{name}</span>
-                      <span className="text-[10px] text-muted truncate">
-                        {isConsult ? "Consultation" : "Tattoo session"}
-                      </span>
-                    </div>
-                    <div className="text-[11px] sm:text-xs text-muted truncate">
-                      {fmtDay(a.startAt)} · {fmtTime(a.startAt)} – {fmtTime(a.endAt)}
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 text-[9px] sm:text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${statusChip(
-                      a.status
-                    )}`}
-                  >
-                    {a.status}
+                  <span className="text-xs sm:text-sm font-medium text-app truncate">{name}</span>
+                  <span className="text-[11px] text-muted shrink-0 whitespace-nowrap">
+                    {fmtDay(a.startAt)}
                   </span>
                 </div>
               );
