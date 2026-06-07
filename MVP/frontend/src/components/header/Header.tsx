@@ -141,7 +141,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         setIsOnboarded(data?.onboardingComplete === true);
         if (name) setCachedUsername(name);
         else clearCachedUsername();
-        if (data?.role && (data.role === "client" || data.role === "artist")) {
+        if (data?.role && (data.role === "client" || data.role === "artist" || data.role === "studio")) {
           setUserRole(data.role);
           setCachedRole(data.role);
         }
@@ -408,7 +408,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </video>
           <div className="absolute inset-0 bg-black/55" />
           <div className="relative z-10 flex flex-col h-full">
-            <div className="flex items-center justify-between py-1.5 sm:py-2 flex-shrink-0">
+            <div className="flex items-center justify-between pt-3 pb-2 sm:pt-5 sm:pb-3 flex-shrink-0">
               <Link to={homeHref} onClick={() => setMobileMenuOpen(false)} className="flex-shrink-0">
                 <img src={WhiteLogo} alt="Inkmity Logo" className={mobileLogoCls} draggable={false} />
               </Link>
