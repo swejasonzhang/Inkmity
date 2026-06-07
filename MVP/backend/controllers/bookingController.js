@@ -41,6 +41,24 @@ async function artistCanReceivePayments(artistId) {
   return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
 }
 
+async function studioReadyForArtist(artistId) {
+  if (config.dev.bypassGates) return { ok: true };
+  const { getArtistStudioMembership } = await import("../services/studioService.js");
+  const ctx = await getArtistStudioMembership(artistId);
+  if (!ctx) return { ok: true };
+  const studio = ctx.studio;
+  const ready =
+    studio.verificationStatus === "verified" &&
+    Boolean(studio.stripeConnectAccountId && studio.chargesEnabled);
+  return ready
+    ? { ok: true }
+    : {
+        ok: false,
+        message:
+          "This artist's studio is still completing setup, so bookings aren't available yet.",
+      };
+}
+
 export function computeDepositCents(policy, priceCents, appointmentType) {
   const p = policy?.deposit || {};
   if (appointmentType === "consultation" && (p.consultationFree ?? true)) return 0;
@@ -293,6 +311,14 @@ export async function createBooking(req, res) {
       return res.status(409).json({
         error: "artist_not_onboarded",
         message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+
+    const studioReady = await studioReadyForArtist(artistId);
+    if (!studioReady.ok) {
+      return res.status(409).json({
+        error: "studio_not_ready",
+        message: studioReady.message,
       });
     }
 
@@ -947,6 +973,14 @@ export async function createTattooSession(req, res) {
       return res.status(409).json({
         error: "artist_not_onboarded",
         message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+
+    const studioReady = await studioReadyForArtist(artistId);
+    if (!studioReady.ok) {
+      return res.status(409).json({
+        error: "studio_not_ready",
+        message: studioReady.message,
       });
     }
 

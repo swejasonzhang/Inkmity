@@ -28,6 +28,21 @@ const BillingSchema = new mongoose.Schema({
   stripeTransferId: { type: String },
   stripeApplicationFeeId: { type: String },
   stripeRefundIds: { type: [String], default: [] },
+  transferGroup: { type: String, index: true },
+  studioId: { type: String },
+  transfers: {
+    type: [
+      {
+        _id: false,
+        destination: String,
+        amountCents: Number,
+        kind: { type: String, enum: ["artist", "studio"] },
+        stripeTransferId: String,
+        status: { type: String, default: "paid" },
+      },
+    ],
+    default: [],
+  },
   receiptUrl: { type: String },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
   createdAt: { type: Date, default: Date.now, index: true },
