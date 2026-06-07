@@ -42,13 +42,13 @@ const Pagination: React.FC<Props> = ({
                     onClick={onPrev}
                     disabled={atStart}
                     aria-label="Previous page"
-                    className={`${btn} h-9 w-9`}
+                    className={`${btn} h-10 w-10`}
                 >
                     <ChevronLeft size={18} aria-hidden className="block" />
                 </button>
 
                 <span
-                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-app bg-card text-sm leading-none"
+                    className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-app bg-card text-sm leading-none"
                     aria-live="polite"
                 >
                     <span className="text-subtle text-xs uppercase tracking-wide">Page</span>
@@ -62,7 +62,7 @@ const Pagination: React.FC<Props> = ({
                     onClick={onNext}
                     disabled={atEnd}
                     aria-label="Next page"
-                    className={`${btn} h-9 w-9`}
+                    className={`${btn} h-10 w-10`}
                 >
                     <ChevronRight size={18} aria-hidden className="block" />
                 </button>
