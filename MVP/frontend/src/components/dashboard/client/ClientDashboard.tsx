@@ -91,6 +91,7 @@ export default function ClientDashboard() {
     }, [isLoaded, isSignedIn, navigate]);
 
     const [selectedArtist, setSelectedArtist] = useState<ArtistDto | null>(() => {
+        try { if (sessionStorage.getItem("inkmity_reopen_conversation")) return null; } catch { }
         const st = (typeof window !== "undefined" ? window.history.state?.usr : null) as
             | { reopenArtist?: ArtistDto }
             | null;
@@ -101,6 +102,13 @@ export default function ClientDashboard() {
     const reopenHandledRef = useRef(false);
     useEffect(() => {
         if (reopenHandledRef.current) return;
+        try {
+            if (sessionStorage.getItem("inkmity_reopen_conversation")) {
+                reopenHandledRef.current = true;
+                window.history.replaceState({}, document.title);
+                return;
+            }
+        } catch { }
         const st = location.state as { reopenArtistId?: string; reopenArtist?: ArtistDto } | null;
         if (!st?.reopenArtistId && !st?.reopenArtist) return;
         const fromList = st.reopenArtistId ? artists.find((a) => a._id === st.reopenArtistId) : undefined;
@@ -112,6 +120,16 @@ export default function ClientDashboard() {
             window.history.replaceState({}, document.title);
         }
     }, [location.state, artists]);
+
+    useEffect(() => {
+        let id: string | null = null;
+        try { id = sessionStorage.getItem("inkmity_reopen_conversation"); } catch { }
+        if (!id) return;
+        const t = setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("ink:open-messages", { detail: { participantId: id } }));
+        }, 80);
+        return () => clearTimeout(t);
+    }, []);
 
     const [modalStep, setModalStep] = useState<0 | 1 | 2>(0);
     useEffect(() => {

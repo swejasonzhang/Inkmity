@@ -644,8 +644,18 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const navigate = useNavigate();
   const openArtistProfile = useCallback(() => {
     if (!isClient || !activeConv?.handle) return;
+    try { sessionStorage.setItem("inkmity_reopen_conversation", activeConv.participantId); } catch { }
     navigate(`/artist/${(activeConv.handle || "").replace(/^@/, "")}`);
-  }, [isClient, activeConv?.handle, navigate]);
+  }, [isClient, activeConv?.handle, activeConv?.participantId, navigate]);
+
+  useEffect(() => {
+    let id: string | null = null;
+    try { id = sessionStorage.getItem("inkmity_reopen_conversation"); } catch { }
+    if (id) {
+      setExpandedId(id);
+      try { sessionStorage.removeItem("inkmity_reopen_conversation"); } catch { }
+    }
+  }, []);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [depositModalClientId, setDepositModalClientId] = useState<string | null>(null);
 
@@ -1273,8 +1283,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 type="button"
                                 onClick={bookingAllowed ? openBooking : undefined}
                                 disabled={!bookingAllowed}
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                                className={`px-2 py-1 rounded-md text-xs flex items-center gap-1 ${bookingAllowed ? "bg-primary text-primary-foreground" : "bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
                               >
+                                <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                                 Ready to Book?
                               </button>
                             </div>
@@ -1633,18 +1644,24 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       </Select>
                     </div>
                     <div className="hidden md:flex items-center gap-3">
-                      {activeConv && avatarFor(activeConv)}
+                      {activeConv && (
+                        <div className="relative h-9 w-9 rounded-full overflow-hidden border border-app shrink-0">
+                          {avatarFor(activeConv, { border: false, fill: true })}
+                        </div>
+                      )}
                       <div className="flex flex-col min-w-0 items-start text-left">
                         <div className="flex flex-col items-start gap-0.5">
                           {activeConv && isClient && activeConv.handle ? (
-                            <button
-                              type="button"
+                            <span
+                              role="link"
+                              tabIndex={0}
                               onClick={openArtistProfile}
-                              className="text-sm font-semibold text-app truncate text-left hover:underline focus:outline-none"
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openArtistProfile(); }}
+                              className="text-sm font-semibold text-app truncate text-left cursor-pointer hover:underline focus:outline-none"
                               title={`View ${displayNameFromUsername(activeConv.username)}'s profile`}
                             >
                               {displayNameFromUsername(activeConv.username)}
-                            </button>
+                            </span>
                           ) : (
                             <div className="text-sm font-semibold text-app truncate">
                               {activeConv ? displayNameFromUsername(activeConv.username) : "Conversation"}
@@ -1672,8 +1689,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             type="button"
                             onClick={bookingAllowed ? openBooking : undefined}
                             disabled={!bookingAllowed}
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 font-semibold text-xs shadow-sm focus:outline-none transition ${bookingAllowed ? "border-primary/90 bg-primary text-primary-foreground hover:shadow focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary" : "border-app/40 bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
+                            className={`px-2 py-1 rounded-md text-xs flex items-center gap-1 ${bookingAllowed ? "bg-primary text-primary-foreground" : "bg-elevated text-muted-foreground opacity-60 cursor-not-allowed"}`}
                           >
+                            <Calendar size={undefined} style={{ width: 'clamp(0.625rem, 1vw, 0.75rem)', height: 'clamp(0.625rem, 1vw, 0.75rem)' }} />
                             Ready to Book?
                           </button>
                         </div>

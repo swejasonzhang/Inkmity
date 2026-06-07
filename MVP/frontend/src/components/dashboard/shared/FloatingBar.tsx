@@ -43,6 +43,8 @@ export default function FloatingBar({
   const [vvBottom, setVvBottom] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [filterTop, setFilterTop] = useState(0);
+  const [buttonBottom, setButtonBottom] = useState(0);
+  const [mainTop, setMainTop] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -90,6 +92,16 @@ export default function FloatingBar({
       if (filter) {
         setFilterTop(Math.round(filter.getBoundingClientRect().top));
       }
+      const mainEl = document.querySelector("main");
+      if (mainEl) {
+        const card = mainEl.querySelector('[data-slot="card"]') as HTMLElement | null;
+        if (card) {
+          setMainTop(card.getBoundingClientRect().top);
+        } else {
+          const padTop = parseFloat(getComputedStyle(mainEl).paddingTop) || 0;
+          setMainTop(mainEl.getBoundingClientRect().top + padTop);
+        }
+      }
     };
     measureHeader();
     const ro = new ResizeObserver(measureHeader);
@@ -100,6 +112,10 @@ export default function FloatingBar({
     const filterEl = document.querySelector("[data-artist-filter]");
     if (filterEl) {
       ro.observe(filterEl);
+    }
+    const mainObs = document.querySelector("main");
+    if (mainObs) {
+      ro.observe(mainObs);
     }
     window.addEventListener("resize", measureHeader);
     return () => {
@@ -157,7 +173,8 @@ export default function FloatingBar({
   const DESKTOP_CLOSED_W = 160;
   const desktopOpenTop = filterTop > 0 ? filterTop : headerHeight;
   const bottomGapPx = Math.max(vvBottom, isMdUp ? 20 : 10);
-  const DESKTOP_OPEN_H = vp.h - desktopOpenTop - bottomGapPx;
+  const DESKTOP_OPEN_TOP = mainTop > 0 ? mainTop : desktopOpenTop;
+  const DESKTOP_OPEN_H = (buttonBottom > 0 ? buttonBottom : (vp.h - bottomGapPx)) - DESKTOP_OPEN_TOP;
 
   const convW = isMdUp ? (open ? DESKTOP_OPEN_W + PANEL_W : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
   const convH = isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
@@ -173,7 +190,9 @@ export default function FloatingBar({
 
   useLayoutEffect(() => {
     measureCenter();
-  }, [rightContent, isMdUp]);
+    const id = window.setTimeout(measureCenter, 120);
+    return () => window.clearTimeout(id);
+  }, [rightContent, isMdUp, open, vp.h]);
 
   useEffect(() => {
     const ro = new ResizeObserver(() => measureCenter());
@@ -187,6 +206,32 @@ export default function FloatingBar({
       window.removeEventListener("orientationchange", onWin);
     };
   }, []);
+
+  useLayoutEffect(() => {
+    const measureMainTop = () => {
+      const mainEl = document.querySelector("main");
+      if (!mainEl) return;
+      const card = mainEl.querySelector('[data-slot="card"]') as HTMLElement | null;
+      if (card) {
+        setMainTop(card.getBoundingClientRect().top);
+      } else {
+        const padTop = parseFloat(getComputedStyle(mainEl).paddingTop) || 0;
+        setMainTop(mainEl.getBoundingClientRect().top + padTop);
+      }
+    };
+    const measureButton = () => {
+      if (open) return;
+      const el = btnRef.current;
+      if (el) setButtonBottom(el.getBoundingClientRect().bottom);
+    };
+    measureMainTop();
+    measureButton();
+    const id = window.setTimeout(() => {
+      measureMainTop();
+      measureButton();
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [open, isMdUp, vp.h, vvBottom, centerH]);
 
   const wrapperH = Math.max(collapsedHeight, centerH || 0);
 
@@ -286,9 +331,9 @@ export default function FloatingBar({
           pointerEvents: "auto",
           ...(open
             ? {
-                position: isMdUp ? "absolute" : "fixed",
+                position: "fixed",
                 ...(isMdUp
-                  ? { right: 0, bottom: 0, width: convW, height: DESKTOP_OPEN_H }
+                  ? { right: "var(--ink-edge-r)", top: DESKTOP_OPEN_TOP, width: convW, height: DESKTOP_OPEN_H }
                   : { right: 0, bottom: 0, width: "100vw", height: MOBILE_OPEN_H }),
                 zIndex: !isMdUp ? 9999 : undefined,
               }
