@@ -30,6 +30,11 @@ const BillingSchema = new mongoose.Schema({
   stripeRefundIds: { type: [String], default: [] },
   transferGroup: { type: String, index: true },
   studioId: { type: String },
+  disputeStatus: {
+    type: String,
+    enum: [null, "disputed", "reversed", "reversal_failed"],
+    default: null,
+  },
   transfers: {
     type: [
       {

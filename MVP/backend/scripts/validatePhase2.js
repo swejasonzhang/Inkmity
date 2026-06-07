@@ -174,8 +174,15 @@ async function main() {
     ok(`artist transfer ${t1.id} = $${(artistCents / 100).toFixed(2)}`);
     ok(`studio transfer ${t2.id} = $${(studioCents / 100).toFixed(2)}`);
     ok(`both share transfer_group=${transferGroup} (reconcilable to the booking)`);
+
+    // 5) Chargeback clawback: reverse both transfer legs
+    console.log("5) Chargeback clawback (reverse transfers)");
+    const r1 = await stripe.transfers.createReversal(t1.id, { amount: artistCents });
+    const r2 = await stripe.transfers.createReversal(t2.id, { amount: studioCents });
+    ok(`reversed artist transfer (${r1.id})`);
+    ok(`reversed studio transfer (${r2.id}) — funds clawed back from connected accounts`);
   } catch (e) {
-    fail("split transfers failed", e);
+    fail("split transfers / clawback failed", e);
   }
 
   console.log(

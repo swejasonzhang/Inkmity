@@ -21,6 +21,7 @@ import {
   denyAppointment,
   getAppointments,
   checkConsultationStatus,
+  setFinalPrice,
 } from "../controllers/bookingController.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -40,6 +41,7 @@ router.post("/:id/deny", requireAuth(), denyAppointment);
 router.post("/:id/cancel", requireAuth(), cancelBooking);
 router.get("/:id/cancel-link", cancelBookingViaLink);
 router.post("/:id/complete", requireAuth(), completeBooking);
+router.patch("/:id/final-price", requireAuth(), setFinalPrice);
 router.post("/:id/reschedule", requireAuth(), rescheduleAppointment);
 router.post("/:id/no-show", requireAuth(), markNoShow);
 router.post("/:id/verify/start", requireAuth(), startVerification);

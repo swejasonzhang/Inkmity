@@ -79,13 +79,16 @@ export async function executePayouts({
 
   const results = [];
   for (const t of transfers) {
-    const tr = await stripe.transfers.create({
-      amount: t.amountCents,
-      currency,
-      destination: t.destination,
-      transfer_group: transferGroup,
-      metadata: { billingId: String(billing._id), kind: t.kind },
-    });
+    const tr = await stripe.transfers.create(
+      {
+        amount: t.amountCents,
+        currency,
+        destination: t.destination,
+        transfer_group: transferGroup,
+        metadata: { billingId: String(billing._id), kind: t.kind },
+      },
+      { idempotencyKey: `transfer_${billing._id}_${t.kind}` }
+    );
     results.push({ ...t, stripeTransferId: tr.id, status: "paid" });
   }
 
@@ -93,4 +96,27 @@ export async function executePayouts({
   if (split?.studioId) billing.studioId = split.studioId;
   await billing.save();
   return results;
+}
+
+export async function reversePayouts(billing) {
+  if (!billing || !Array.isArray(billing.transfers)) return [];
+  const reversals = [];
+  for (const t of billing.transfers) {
+    if (!t.stripeTransferId || t.status === "reversed") continue;
+    try {
+      const rev = await stripe.transfers.createReversal(
+        t.stripeTransferId,
+        { amount: t.amountCents, metadata: { billingId: String(billing._id), kind: t.kind } },
+        { idempotencyKey: `reversal_${billing._id}_${t.kind}` }
+      );
+      t.status = "reversed";
+      reversals.push({ kind: t.kind, reversalId: rev.id, amountCents: t.amountCents });
+    } catch (e) {
+      console.error(`reversePayouts ${t.kind} failed:`, e.message);
+      throw e;
+    }
+  }
+  billing.markModified?.("transfers");
+  await billing.save();
+  return reversals;
 }
