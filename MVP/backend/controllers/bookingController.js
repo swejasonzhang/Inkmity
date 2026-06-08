@@ -14,6 +14,7 @@ import { getIO } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
+import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
 import { config } from "../config/index.js";
 import { randomBytes } from "crypto";
 
@@ -40,6 +41,11 @@ async function artistCanReceivePayments(artistId) {
   if (config.dev.bypassGates) return true;
   const artist = await Artist.findOne({ clerkId: String(artistId) });
   return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
+}
+
+async function clientWaiverSigned(clientId) {
+  if (config.dev.bypassGates) return true;
+  return hasSignedCurrentDocument(clientId, "client_waiver");
 }
 
 async function studioReadyForArtist(artistId) {
@@ -312,6 +318,14 @@ export async function createBooking(req, res) {
       return res.status(409).json({
         error: "artist_not_onboarded",
         message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+
+    if (!(await clientWaiverSigned(userId))) {
+      return res.status(403).json({
+        error: "waiver_required",
+        docType: "client_waiver",
+        message: "Please review and sign the consent & liability waiver before booking.",
       });
     }
 
@@ -1032,6 +1046,14 @@ export async function createTattooSession(req, res) {
       return res.status(409).json({
         error: "artist_not_onboarded",
         message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+
+    if (!(await clientWaiverSigned(userId))) {
+      return res.status(403).json({
+        error: "waiver_required",
+        docType: "client_waiver",
+        message: "Please review and sign the consent & liability waiver before booking.",
       });
     }
 
