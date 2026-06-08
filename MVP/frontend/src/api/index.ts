@@ -741,6 +741,51 @@ export async function checkConsultationStatus(
   );
 }
 
+export type LegalDocument = {
+  docType: string;
+  version: string;
+  title: string;
+  body: string;
+  roles: ("client" | "artist" | "studio")[];
+  contentHash: string;
+};
+
+export async function getDocument(docType: string, signal?: AbortSignal) {
+  return apiGet<LegalDocument>(`/documents/${docType}`, undefined, undefined, signal);
+}
+
+export async function getSignatureStatus(
+  docType: string,
+  params?: { bookingId?: string },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<{ docType: string; version: string; signed: boolean; signedAt: string | null }>(
+    `/documents/${docType}/status`,
+    params,
+    token,
+    signal
+  );
+}
+
+export async function signDocument(
+  docType: string,
+  input: {
+    signatureName: string;
+    signerRole: "client" | "artist" | "studio";
+    bookingId?: string;
+    studioId?: string;
+  },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost(`/documents/${docType}/sign`, input, token, signal);
+}
+
+export async function listMySignatures(token?: string, signal?: AbortSignal) {
+  return apiGet(`/documents/mine`, undefined, token, signal);
+}
+
 export type ConnectStatus = {
   connected: boolean;
   accountId?: string;
