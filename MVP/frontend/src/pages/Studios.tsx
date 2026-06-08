@@ -30,6 +30,7 @@ import {
   type StudioMembership,
   type ConnectStatus,
 } from "@/api";
+import DocumentSignModal from "@/components/dashboard/shared/DocumentSignModal";
 
 const pctToWhole = (frac: number | null | undefined) =>
   frac === null || frac === undefined ? "" : String(Math.round(frac * 100));
@@ -427,6 +428,7 @@ function StudioPayouts({
 }) {
   const [status, setStatus] = useState<ConnectStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const [agreementOpen, setAgreementOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -446,6 +448,11 @@ function StudioPayouts({
       const { url } = await startStudioConnectOnboarding(studio._id, await token());
       if (url) window.location.href = url;
     } catch (e: any) {
+      if (e?.status === 403 && e?.body?.error === "agreement_required") {
+        setAgreementOpen(true);
+        setBusy(false);
+        return;
+      }
       toast.error(e?.message || "Could not start onboarding", { theme: "dark" });
       setBusy(false);
     }
@@ -455,6 +462,17 @@ function StudioPayouts({
 
   return (
     <Section title="Payouts">
+      <DocumentSignModal
+        open={agreementOpen}
+        docType="studio_agreement"
+        signerRole="studio"
+        studioId={studio._id}
+        onSigned={() => {
+          setAgreementOpen(false);
+          onSetup();
+        }}
+        onClose={() => setAgreementOpen(false)}
+      />
       {ready ? (
         <div className="flex items-center gap-2 text-sm text-app">
           <CheckCircle2 className="h-4 w-4" />

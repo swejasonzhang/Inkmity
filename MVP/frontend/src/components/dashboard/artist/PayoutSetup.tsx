@@ -10,6 +10,7 @@ import {
   getConnectLoginLink,
   type ConnectStatus,
 } from "@/api";
+import DocumentSignModal from "@/components/dashboard/shared/DocumentSignModal";
 
 let cachedConnectStatus: ConnectStatus | null = null;
 
@@ -42,6 +43,7 @@ export default function PayoutSetup({ redirectToProfile = false }: Props) {
   const [loading, setLoading] = useState(cachedConnectStatus === null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agreementOpen, setAgreementOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -68,6 +70,11 @@ export default function PayoutSetup({ redirectToProfile = false }: Props) {
       const { url } = await startConnectOnboarding(token ?? undefined);
       if (url) window.location.href = url;
     } catch (e: any) {
+      if (e?.status === 403 && e?.body?.error === "agreement_required") {
+        setAgreementOpen(true);
+        setBusy(false);
+        return;
+      }
       setError(e?.message || "Could not start onboarding");
       setBusy(false);
     }
@@ -143,6 +150,16 @@ export default function PayoutSetup({ redirectToProfile = false }: Props) {
 
   return (
     <div className="rounded-xl border border-app bg-card px-3 sm:px-4 py-3 flex flex-col items-center text-center gap-1.5 flex-shrink-0">
+      <DocumentSignModal
+        open={agreementOpen}
+        docType="artist_agreement"
+        signerRole="artist"
+        onSigned={() => {
+          setAgreementOpen(false);
+          onSetup();
+        }}
+        onClose={() => setAgreementOpen(false)}
+      />
       <Wallet className="h-4 w-4 text-app shrink-0" />
       <p className="text-xs sm:text-sm font-semibold text-app break-words">
         Finish payment setup to accept bookings.

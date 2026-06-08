@@ -1,5 +1,21 @@
 import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
+import { config } from "../config/index.js";
+import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
+
+async function ensureArtistAgreement(artist, res) {
+  if (config.dev.bypassGates) return true;
+  const signed = await hasSignedCurrentDocument(artist.clerkId, "artist_agreement");
+  if (!signed) {
+    res.status(403).json({
+      error: "agreement_required",
+      docType: "artist_agreement",
+      message: "Please review and sign the Artist Agreement before setting up payouts.",
+    });
+    return false;
+  }
+  return true;
+}
 
 function getActorId(req) {
   return String(
@@ -42,6 +58,7 @@ export async function createConnectAccount(req, res) {
   try {
     const artist = await requireArtist(req, res);
     if (!artist) return;
+    if (!(await ensureArtistAgreement(artist, res))) return;
 
     if (artist.stripeConnectAccountId) {
       return res.json({ accountId: artist.stripeConnectAccountId, existing: true });
@@ -73,6 +90,7 @@ export async function createAccountLink(req, res) {
   try {
     const artist = await requireArtist(req, res);
     if (!artist) return;
+    if (!(await ensureArtistAgreement(artist, res))) return;
 
     let accountId = artist.stripeConnectAccountId;
     if (!accountId) {
