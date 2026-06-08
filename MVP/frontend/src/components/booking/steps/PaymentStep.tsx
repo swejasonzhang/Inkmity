@@ -20,6 +20,7 @@ import {
   type RewardsSummary,
 } from "@/api";
 import { useApi } from "@/api";
+import DocumentSignModal from "@/components/dashboard/shared/DocumentSignModal";
 
 type BookingFlowData = {
   appointmentType: "consultation" | "tattoo_session" | null;
@@ -106,6 +107,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
   }, [depositPolicy, bookingData.priceCents, bookingData.appointmentType]);
 
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
+  const [waiverOpen, setWaiverOpen] = useState(false);
   useEffect(() => {
     const ac = new AbortController();
     (async () => {
@@ -243,7 +245,11 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       onSubmit(booking);
     } catch (error: any) {
       console.error("Booking error:", error);
-      const errorMessage = error?.body?.error || error?.body?.message || error?.message || "Failed to create appointment";
+      if (error?.status === 403 && error?.body?.error === "waiver_required") {
+        setWaiverOpen(true);
+        return;
+      }
+      const errorMessage = error?.body?.message || error?.body?.error || error?.message || "Failed to create appointment";
       toast.error(errorMessage);
       setPaymentError(errorMessage);
     } finally {
@@ -279,6 +285,16 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
 
   return (
     <div className="space-y-6">
+      <DocumentSignModal
+        open={waiverOpen}
+        docType="client_waiver"
+        signerRole="client"
+        onSigned={() => {
+          setWaiverOpen(false);
+          handleSubmit();
+        }}
+        onClose={() => setWaiverOpen(false)}
+      />
       <div>
         <h3 className="text-lg font-semibold mb-2">Review & Payment</h3>
         <p className="text-sm text-muted-foreground mb-4">
