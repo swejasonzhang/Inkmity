@@ -52,6 +52,17 @@ jest.unstable_mockModule("@/api", () => ({
   getBookingGate: jest.fn(),
   enableClientBookings: jest.fn(),
   checkConsultationStatus: jest.fn(),
+  getDocument: jest.fn<() => Promise<any>>().mockResolvedValue({
+    docType: "client_waiver",
+    version: "test",
+    title: "Waiver",
+    body: "body",
+    roles: ["client"],
+    contentHash: "x",
+  }),
+  signDocument: jest.fn<() => Promise<any>>().mockResolvedValue({}),
+  getSignatureStatus: jest.fn(),
+  listMySignatures: jest.fn(),
   API_URL: "http://localhost:5005",
 }));
 
