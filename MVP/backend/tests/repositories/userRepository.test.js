@@ -88,13 +88,7 @@ describe("User Repository - TDD", () => {
       ];
 
       mockUser.countDocuments.mockResolvedValue(2);
-      mockUser.find.mockReturnValue({
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue(mockArtists),
-      });
+      mockUser.aggregate.mockResolvedValue(mockArtists);
 
       const result = await userRepository.default.findArtists({}, {
         page: 1,

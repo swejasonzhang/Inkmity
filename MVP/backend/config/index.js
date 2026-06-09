@@ -62,6 +62,13 @@ export const config = {
     ],
   },
 
+  artistTiers: [
+    { key: 'rising', label: 'Rising', bookings: 0, minRating: 0, payoutSpeed: 'standard' },
+    { key: 'established', label: 'Established', bookings: 10, minRating: 4.0, payoutSpeed: 'standard' },
+    { key: 'pro', label: 'Pro', bookings: 50, minRating: 4.5, payoutSpeed: 'two_day' },
+    { key: 'elite', label: 'Elite', bookings: 150, minRating: 4.8, payoutSpeed: 'instant' },
+  ],
+
   email: {
     resendApiKey: process.env.RESEND_API_KEY,
     smtp: {
