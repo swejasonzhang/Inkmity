@@ -1051,3 +1051,13 @@ export async function leaveWaitlist(id: string, token?: string, signal?: AbortSi
 export async function getMyWaitlist(token?: string, signal?: AbortSignal) {
   return apiGet<WaitlistEntry[]>("/waitlist/mine", undefined, token, signal);
 }
+
+export type ArtistWaitlistEntry = WaitlistEntry & {
+  tierLabel?: string;
+  priorityRank?: number;
+  client?: { username?: string; avatar?: { url?: string } | null } | null;
+};
+
+export async function getArtistWaitlist(token?: string, signal?: AbortSignal) {
+  return apiGet<ArtistWaitlistEntry[]>("/waitlist/artist", undefined, token, signal);
+}
