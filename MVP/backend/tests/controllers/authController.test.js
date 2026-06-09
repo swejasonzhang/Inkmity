@@ -3,7 +3,7 @@ import request from "supertest";
 import express from "express";
 
 const mockGetUserList = jest.fn();
-jest.unstable_mockModule("@clerk/clerk-sdk-node", () => ({
+jest.unstable_mockModule("@clerk/express", () => ({
   clerkClient: {
     users: {
       getUserList: mockGetUserList,

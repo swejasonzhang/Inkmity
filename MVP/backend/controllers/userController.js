@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { clerkClient } from "@clerk/clerk-sdk-node";
+import { clerkClient } from "@clerk/express";
 import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
