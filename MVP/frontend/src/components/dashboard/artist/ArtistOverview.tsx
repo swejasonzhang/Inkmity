@@ -134,13 +134,11 @@ export default function ArtistOverview({ appointments, loading }: Props) {
   }, [data]);
 
   return (
-    <div className="flex flex-col h-full gap-2.5 sm:gap-3">
+    <div className="flex flex-col h-full min-h-0 overflow-y-auto sm:overflow-hidden gap-2 sm:gap-2.5">
       <PayoutSetup redirectToProfile />
 
-      <ArtistInsights />
-
-      <div className="rounded-xl border border-app bg-elevated px-3 py-2.5 flex items-center gap-3 flex-shrink-0">
-        <div className="grid place-items-center h-10 w-10 rounded-full bg-card border border-app shrink-0">
+      <div className="rounded-xl border border-app bg-elevated px-3 py-2 flex items-center gap-3 flex-shrink-0">
+        <div className="grid place-items-center h-9 w-9 rounded-full bg-card border border-app shrink-0">
           <Clock className="h-4 w-4 text-app" />
         </div>
         {loading ? (
@@ -170,22 +168,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 flex-shrink-0">
-        {stats.map(({ label, value, Icon }) => (
-          <div
-            key={label}
-            className="rounded-xl border border-app bg-elevated px-1 py-2 sm:py-2.5 flex flex-col items-center justify-center text-center gap-0.5 min-w-0"
-          >
-            <Icon className="h-3.5 w-3.5 text-muted shrink-0" />
-            {loading ? (
-              <Skeleton className="h-6 w-6" />
-            ) : (
-              <div className="text-lg sm:text-2xl font-bold text-app leading-none">{value}</div>
-            )}
-            <span className="text-[9px] sm:text-[10px] text-muted leading-tight">{label}</span>
-          </div>
-        ))}
-      </div>
+      <ArtistInsights stats={stats} loading={loading} />
 
       <div className="rounded-xl border border-app bg-elevated overflow-hidden flex-shrink-0">
         <div className="px-3 sm:px-4 py-2 border-b border-app flex items-center gap-1.5">
@@ -196,11 +179,11 @@ export default function ArtistOverview({ appointments, loading }: Props) {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-px" style={{ background: "var(--border)" }}>
           {money.map(({ label, value }) => (
-            <div key={label} className="bg-elevated px-2 py-2.5 sm:py-3 flex flex-col items-center text-center min-w-0">
+            <div key={label} className="bg-elevated px-2 py-2 flex flex-col items-center text-center min-w-0">
               {loading ? (
                 <Skeleton className="h-6 w-12" />
               ) : (
-                <div className="text-lg sm:text-xl font-bold text-app leading-none">{value}</div>
+                <div className="text-base sm:text-lg font-bold text-app leading-none">{value}</div>
               )}
               <div className="mt-1 text-[9px] sm:text-[10px] text-muted leading-tight">{label}</div>
             </div>
