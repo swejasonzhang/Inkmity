@@ -87,6 +87,16 @@ export async function recordCompletedBooking(clientId) {
         console.error("loyalty credit grant failed:", e.message);
       }
     }
+    const consultCents = Number(tierCfg?.consultationCreditCents || 0);
+    if (consultCents > 0) {
+      try {
+        await grantCredit(client.clerkId, consultCents, "consultation", {
+          grantedBy: "system",
+        });
+      } catch (e) {
+        console.error("consultation credit grant failed:", e.message);
+      }
+    }
   }
   return client;
 }
