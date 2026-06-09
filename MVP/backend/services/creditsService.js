@@ -1,4 +1,6 @@
 import Credit from "../models/Credit.js";
+import Client from "../models/Client.js";
+import { config } from "../config/index.js";
 
 function activeCreditQuery(clientId) {
   const now = new Date();
@@ -33,6 +35,36 @@ export async function grantCredit(clientId, amountCents, reason = "manual", opts
     grantedBy: opts.grantedBy,
     expiresAt: opts.expiresAt || undefined,
   });
+}
+
+// Lazily grants a once-per-year birthday credit when the client views their
+// rewards/credits on their birthday (no scheduler needed). Idempotent per year
+// via Client.lastBirthdayCreditYear.
+export async function maybeGrantBirthdayCredit(clientId) {
+  try {
+    const amount = Number(config.rewards.birthdayCreditCents || 0);
+    if (!clientId || amount <= 0) return false;
+
+    const client = await Client.findOne({ clerkId: String(clientId) });
+    if (!client?.dob) return false;
+
+    const now = new Date();
+    const dob = new Date(client.dob);
+    const isBirthday =
+      dob.getUTCMonth() === now.getUTCMonth() && dob.getUTCDate() === now.getUTCDate();
+    if (!isBirthday) return false;
+
+    const year = now.getUTCFullYear();
+    if (Number(client.lastBirthdayCreditYear || 0) === year) return false;
+
+    await grantCredit(clientId, amount, "birthday", { grantedBy: "system" });
+    client.lastBirthdayCreditYear = year;
+    await client.save();
+    return true;
+  } catch (e) {
+    console.error("maybeGrantBirthdayCredit failed:", e.message);
+    return false;
+  }
 }
 
 // Consumes up to `amountCents` of the client's active credit, soonest-expiring

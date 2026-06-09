@@ -1,5 +1,9 @@
 import { getRewardsSummary } from "../services/rewardsService.js";
-import { getAvailableCreditCents, grantCredit } from "../services/creditsService.js";
+import {
+  getAvailableCreditCents,
+  grantCredit,
+  maybeGrantBirthdayCredit,
+} from "../services/creditsService.js";
 import { config } from "../config/index.js";
 
 function getActorId(req) {
@@ -12,6 +16,7 @@ export async function getMyCredits(req, res) {
   try {
     const clientId = getActorId(req);
     if (!clientId) return res.status(401).json({ error: "Unauthorized" });
+    await maybeGrantBirthdayCredit(clientId);
     const availableCents = await getAvailableCreditCents(clientId);
     res.json({ availableCents });
   } catch (err) {
@@ -45,6 +50,7 @@ export async function getMyRewards(req, res) {
   try {
     const clientId = getActorId(req);
     if (!clientId) return res.status(401).json({ error: "Unauthorized" });
+    await maybeGrantBirthdayCredit(clientId);
     const summary = await getRewardsSummary(clientId);
     res.json(summary);
   } catch (err) {
