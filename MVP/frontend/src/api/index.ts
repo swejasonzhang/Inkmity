@@ -1061,3 +1061,38 @@ export type ArtistWaitlistEntry = WaitlistEntry & {
 export async function getArtistWaitlist(token?: string, signal?: AbortSignal) {
   return apiGet<ArtistWaitlistEntry[]>("/waitlist/artist", undefined, token, signal);
 }
+
+export type Sketch = {
+  _id: string;
+  bookingId: string;
+  artistId: string;
+  clientId: string;
+  imageUrls: string[];
+  note?: string;
+  status: "pending" | "approved" | "changes_requested";
+  clientNote?: string;
+  respondedAt?: string;
+  createdAt?: string;
+};
+
+export async function getSketches(bookingId: string, token?: string, signal?: AbortSignal) {
+  return apiGet<Sketch[]>("/sketches", { bookingId }, token, signal);
+}
+
+export async function createSketch(
+  input: { bookingId: string; imageUrls: string[]; note?: string },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Sketch>("/sketches", input, token, signal);
+}
+
+export async function respondToSketch(
+  id: string,
+  action: "approve" | "request_changes",
+  note?: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Sketch>(`/sketches/${id}/respond`, { action, note }, token, signal);
+}
