@@ -48,11 +48,18 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
-      # Platform fee tuning (optional — defaults: 10% / $5 floor).
+      # Platform economics (optional — reasonable defaults).
       - key: PLATFORM_FEE_PCT
         value: "0.10"
       - key: PLATFORM_FEE_MIN_CENTS
         value: "500"
+      - key: STUDIO_DEFAULT_COMMISSION_PCT
+        value: "0.30"
+      - key: BIRTHDAY_CREDIT_CENTS
+        value: "1500"
+      # Comma-separated Clerk IDs allowed to verify studios / grant credits.
+      - key: ADMIN_CLERK_IDS
+        sync: false
 
   # --- Frontend: Vite static build ---
   - type: web
