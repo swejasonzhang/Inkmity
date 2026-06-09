@@ -1,4 +1,4 @@
-import { clerkClient } from "@clerk/clerk-sdk-node";
+import { clerkClient } from "@clerk/express";
 
 export const checkEmail = async (req, res) => {
   try {

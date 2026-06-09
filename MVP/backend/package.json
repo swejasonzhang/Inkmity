@@ -15,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@clerk/clerk-sdk-node": "^4.13.23",
     "@clerk/express": "^1.7.34",
     "cloudinary": "^2.7.0",
     "compression": "^1.7.4",
@@ -27,7 +26,7 @@
     "helmet": "^7.1.0",
     "luxon": "^3.7.2",
     "mongoose": "^8.18.0",
-    "nodemailer": "^6.9.7",
+    "nodemailer": "^8.0.10",
     "socket.io": "^4.8.1",
     "stripe": "^18.5.0",
     "uuid": "^13.0.0",
