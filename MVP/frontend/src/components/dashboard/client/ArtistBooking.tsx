@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import LazyReveal from "@/components/ui/LazyReveal";
 import { useApi, isAbortError, getBookingGate, type BookingGate, API_URL } from "@/api";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
+import WaitlistButton from "./WaitlistButton";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Lock, MessageSquare, CalendarDays, Send } from "lucide-react";
@@ -423,6 +424,12 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
                       You already have a conversation with this artist. Check your messages for updates.
                     </p>
                   )}
+                </div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <WaitlistButton artistId={artist.clerkId} />
+                  <p className="text-[11px]" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>
+                    Get notified when a spot opens — higher tiers are alerted first.
+                  </p>
                 </div>
               </div>
             )}
