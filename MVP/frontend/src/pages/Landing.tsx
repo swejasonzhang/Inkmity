@@ -100,6 +100,8 @@ const Landing: React.FC = () => {
                                 <div className="flex items-center gap-4">
                                     <a href="/about" className="hover:text-[color:var(--fg)]/70 transition-colors">About</a>
                                     <a href="/contact" className="hover:text-[color:var(--fg)]/70 transition-colors">Contact</a>
+                                    <a href="/privacy" className="hover:text-[color:var(--fg)]/70 transition-colors">Privacy</a>
+                                    <a href="/terms" className="hover:text-[color:var(--fg)]/70 transition-colors">Terms</a>
                                 </div>
                             </div>
                         </footer>

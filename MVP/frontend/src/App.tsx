@@ -17,6 +17,9 @@ import Landing from "./pages/Landing";
 import SSOCallback from "./pages/SSOCallback";
 import Onboarding from "./pages/Onboarding";
 import StudioSignup from "./pages/StudioSignup";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import NotFound from "./pages/NotFound";
 import { useTheme } from "@/hooks/useTheme";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
@@ -80,6 +83,8 @@ const App: React.FC = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/tiers" element={<Tiers />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />
@@ -96,19 +101,7 @@ const App: React.FC = () => {
             </>
           }
         />
-        <Route
-          path="*"
-          element={
-            <>
-              <SignedIn>
-                <Navigate to="/dashboard" replace />
-              </SignedIn>
-              <SignedOut>
-                <Navigate to="/landing" replace />
-              </SignedOut>
-            </>
-          }
-        />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

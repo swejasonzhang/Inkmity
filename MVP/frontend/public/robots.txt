@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /$
+Allow: /about
+Allow: /contact
+Allow: /tiers
+Allow: /privacy
+Allow: /terms
+Allow: /login
+Allow: /signup
+# Authenticated areas — no value to crawlers
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /appointments
+Disallow: /portfolio
+Disallow: /studios
+Disallow: /onboarding
+Disallow: /sso-callback
+
+Sitemap: https://inkmity.com/sitemap.xml
