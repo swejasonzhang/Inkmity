@@ -33,6 +33,7 @@ const ArtistSchema = new Schema(
     stripeConnectAccountId: { type: String, index: true },
     chargesEnabled: { type: Boolean, default: false, index: true },
     payoutsEnabled: { type: Boolean, default: false },
+    payoutSpeed: { type: String, enum: ["standard", "two_day", "instant"], default: "standard" },
     onboardingCompletedAt: { type: Date },
     connectRequirementsDue: { type: [String], default: [] },
   },

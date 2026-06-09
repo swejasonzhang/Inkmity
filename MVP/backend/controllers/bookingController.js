@@ -15,6 +15,7 @@ import { sendAppointmentCancellationEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
 import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
+import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
 import { config } from "../config/index.js";
 import { randomBytes } from "crypto";
 
@@ -49,6 +50,7 @@ async function incrementArtistBookings(artistId) {
       { clerkId: String(artistId) },
       { $inc: { bookingsCount: 1 } }
     );
+    await applyPayoutScheduleForArtist(artistId);
   } catch (e) {
     console.error("incrementArtistBookings failed:", e.message);
   }
