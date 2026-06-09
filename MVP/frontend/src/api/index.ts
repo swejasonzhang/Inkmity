@@ -1027,3 +1027,27 @@ export async function getMyRewards(token?: string, signal?: AbortSignal) {
 export async function getMyCredits(token?: string, signal?: AbortSignal) {
   return apiGet<{ availableCents: number }>("/rewards/credits", undefined, token, signal);
 }
+
+export type WaitlistEntry = {
+  _id: string;
+  artistId: string;
+  clientId: string;
+  status: "active" | "notified" | "claimed" | "cancelled" | "expired";
+  createdAt?: string;
+};
+
+export async function joinWaitlist(
+  input: { artistId: string; fromISO?: string; toISO?: string; note?: string },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<WaitlistEntry>("/waitlist", input, token, signal);
+}
+
+export async function leaveWaitlist(id: string, token?: string, signal?: AbortSignal) {
+  return apiDelete<{ ok: boolean }>(`/waitlist/${id}`, token, signal);
+}
+
+export async function getMyWaitlist(token?: string, signal?: AbortSignal) {
+  return apiGet<WaitlistEntry[]>("/waitlist/mine", undefined, token, signal);
+}
