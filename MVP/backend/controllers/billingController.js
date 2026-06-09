@@ -333,11 +333,23 @@ export async function createDepositPaymentIntent(req, res) {
 
 export async function refundBilling(req, res) {
   try {
+    const actorId = String(req.user?.clerkId || req.auth?.userId || "").trim();
     const { billingId, bookingId } = req.body || {};
     const byId = billingId ? await Billing.findById(billingId) : null;
     const list = byId
       ? [byId]
       : await Billing.find({ bookingId, type: "platform_fee", status: "paid" });
+
+    // Authorization: only a party to the billing (its client or artist) may
+    // trigger a refund — prevents refunding another user's booking (IDOR).
+    const authorized =
+      !!actorId &&
+      list.every(
+        (b) => b && (String(b.clientId) === actorId || String(b.artistId) === actorId)
+      );
+    if (!authorized) {
+      return res.status(403).json({ error: "forbidden" });
+    }
 
     const refunds = [];
     for (const b of list) {
