@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { MapPin, DollarSign, Brush, Clock, Crosshair, Ruler } from "lucide-react";
+import { MapPin, DollarSign, Brush, Clock, Crosshair, Ruler, Cake } from "lucide-react";
 
 type ClientProfile = {
     budgetMin: string;
@@ -11,6 +11,7 @@ type ClientProfile = {
     size: string;
     style?: string;
     availability?: string;
+    dob?: string;
 };
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
@@ -415,6 +416,19 @@ export default function ClientDetailsStep({
                             ))}
                         </SelectContent>
                     </Select>
+                </div>
+
+                <div className={`${fieldCls} col-span-2`}>
+                    <label className={labelCls}><Cake className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Birthday</label>
+                    <input
+                        type="date"
+                        name="dob"
+                        value={client.dob || ""}
+                        max={new Date().toISOString().slice(0, 10)}
+                        onChange={(e) => emit("dob", e.target.value)}
+                        className="h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 px-3 text-xs text-white text-center [color-scheme:dark]"
+                    />
+                    <p className="text-center text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">For your birthday credit · optional</p>
                 </div>
             </div>
         </div>

@@ -19,7 +19,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
-type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string };
+type ClientProfile = { budgetMin: string; budgetMax: string; location: string; placement: string; size: string; dob?: string };
 type ArtistProfile = {
   location: string;
   shop: string;
@@ -117,7 +117,7 @@ export default function SignUp() {
   const [detailsSkipped, setDetailsSkipped] = useState(false);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "" });
+  const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", dob: "" });
   const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, NY", shop: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
   const [artistPortfolioImgs, setArtistPortfolioImgs] = useState<string[]>(["", "", "", ""]);
@@ -340,7 +340,7 @@ export default function SignUp() {
     if (key === "artist-1") {
       setArtist({ location: "New York, NY", shop: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
     } else if (key === "client-1") {
-      setClient({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "" });
+      setClient({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", dob: "" });
       setClientRefs(["", "", ""]);
     } else if (key === "upload") {
       setArtistPortfolioImgs(["", "", "", ""]);

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { Star, MapPin, Clock, DollarSign, Store, Image as ImageIcon } from "lucide-react";
+import { Star, MapPin, Clock, DollarSign, Store, Image as ImageIcon, BadgeCheck } from "lucide-react";
 import { formatActivityStatus } from "@/utils/activity";
+import { computeArtistTier } from "@/lib/artistTier";
 
 interface Artist {
   _id: string;
@@ -12,6 +13,7 @@ interface Artist {
   priceRange?: { min: number; max: number };
   rating?: number;
   reviewsCount?: number;
+  bookingsCount?: number;
   yearsExperience?: number;
   profileImage?: string;
   coverImage?: string;
@@ -124,6 +126,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   const ratingValue = typeof artist.rating === "number" ? artist.rating : Number(artist.rating ?? 0);
   const reviewsCount = Number(artist.reviewsCount ?? 0);
   const hasRating = Number.isFinite(ratingValue) && ratingValue > 0;
+  const tier = useMemo(
+    () => computeArtistTier((artist as any).bookingsCount, ratingValue),
+    [artist, ratingValue]
+  );
 
   const isOnline = (artist as any).isOnline === true;
   const lastActiveRaw = (artist as any).lastActive;
@@ -253,6 +259,20 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               >
                 {artist.username}
               </h2>
+              {tier.verified && (
+                <span
+                  title={`${tier.label} artist · verified on Inkmity`}
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "color-mix(in srgb, var(--elevated) 80%, transparent)",
+                    color: "var(--fg)",
+                  }}
+                >
+                  <BadgeCheck className="h-3 w-3" />
+                  Verified
+                </span>
+              )}
               {showStatus && (
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium leading-none"

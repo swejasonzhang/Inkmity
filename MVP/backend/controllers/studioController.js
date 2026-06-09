@@ -4,10 +4,25 @@ import Artist from "../models/Artist.js";
 import User from "../models/UserBase.js";
 import { stripe } from "../lib/stripe.js";
 import { effectiveCommissionPct } from "../services/studioService.js";
+import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
 import { config } from "../config/index.js";
 
 function isPlatformAdmin(actorId) {
   return config.admin.clerkIds.includes(String(actorId));
+}
+
+async function ensureStudioAgreement(actorId, res) {
+  if (config.dev.bypassGates) return true;
+  const signed = await hasSignedCurrentDocument(actorId, "studio_agreement");
+  if (!signed) {
+    res.status(403).json({
+      error: "agreement_required",
+      docType: "studio_agreement",
+      message: "Please review and sign the Studio Agreement before setting up payouts.",
+    });
+    return false;
+  }
+  return true;
 }
 
 function getActorId(req) {
@@ -400,6 +415,7 @@ export async function createStudioConnect(req, res) {
     if (!studio) return res.status(404).json({ error: "not_found" });
     if (String(studio.ownerClerkId) !== actorId)
       return res.status(403).json({ error: "Only the studio owner can set up payouts" });
+    if (!(await ensureStudioAgreement(actorId, res))) return;
 
     if (studio.stripeConnectAccountId)
       return res.json({ accountId: studio.stripeConnectAccountId, existing: true });
@@ -435,6 +451,7 @@ export async function createStudioAccountLink(req, res) {
     if (!studio) return res.status(404).json({ error: "not_found" });
     if (String(studio.ownerClerkId) !== actorId)
       return res.status(403).json({ error: "Only the studio owner can set up payouts" });
+    if (!(await ensureStudioAgreement(actorId, res))) return;
 
     let accountId = studio.stripeConnectAccountId;
     if (!accountId) {

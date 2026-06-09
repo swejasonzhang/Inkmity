@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
 import {
   Building2,
@@ -10,6 +10,8 @@ import {
   Wallet,
   Trash2,
   Mail,
+  Bot,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +28,17 @@ import {
   respondToStudioInvite,
   getStudioConnectStatus,
   startStudioConnectOnboarding,
+  API_URL,
   type Studio,
   type StudioMembership,
   type ConnectStatus,
 } from "@/api";
+import DocumentSignModal from "@/components/dashboard/shared/DocumentSignModal";
+import Header from "@/components/header/Header";
+import FloatingBar from "@/components/dashboard/shared/FloatingBar";
+import ChatWindow from "@/components/dashboard/shared/ChatWindow";
+import { useMessaging } from "@/hooks/useMessaging";
+import { useRole } from "@/hooks/useRole";
 
 const pctToWhole = (frac: number | null | undefined) =>
   frac === null || frac === undefined ? "" : String(Math.round(frac * 100));
@@ -60,6 +69,30 @@ const Section: React.FC<{ title: string; children: React.ReactNode; right?: Reac
 
 export default function Studios() {
   const token = useToken();
+  const { user } = useUser();
+  const { getToken } = useAuth();
+  const { role } = useRole();
+  const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+
+  const authFetch = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      const base = API_URL.replace(/\/+$/g, "");
+      const full = url.startsWith("http")
+        ? url
+        : `${base}${url.startsWith("/") ? url : `/${url}`}`;
+      const tok = await getToken();
+      const headers = new Headers(options.headers || {});
+      if (tok) headers.set("Authorization", `Bearer ${tok}`);
+      if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+      return fetch(full, { ...options, headers, credentials: "include" });
+    },
+    [getToken]
+  );
+  const { unreadState, pendingRequestIds, pendingRequestsCount } = useMessaging(
+    user?.id ?? "",
+    authFetch
+  );
 
   const [loading, setLoading] = useState(true);
   const [studios, setStudios] = useState<Studio[]>([]);
@@ -103,16 +136,17 @@ export default function Studios() {
     if (studioParam) setSelectedId(studioParam);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted">
-        <Loader2 className="h-5 w-5 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto h-full w-full max-w-5xl overflow-y-auto px-4 py-6">
+    <div className="h-dvh bg-app text-app flex flex-col overflow-hidden">
+      <Header />
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-5xl px-4 py-6">
+          {loading ? (
+            <div className="flex h-64 items-center justify-center text-muted">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : (
+            <>
       <div className="mb-6 flex items-center gap-2">
         <Building2 className="h-5 w-5 text-app" />
         <h1 className="text-lg font-bold text-app">Studios</h1>
@@ -192,6 +226,55 @@ export default function Studios() {
               Select or create a studio to manage it.
             </div>
           )}
+        </div>
+      </div>
+            </>
+          )}
+        </div>
+      </main>
+
+      <div
+        ref={setPortalEl}
+        id="dashboard-portal-root"
+        className="shrink-0"
+        style={{
+          height:
+            "calc(44px + clamp(0.625rem, 1vh + 0.5vw, 1.25rem) + env(safe-area-inset-bottom, 0px))",
+        }}
+      />
+      <FloatingBar
+        role={role === "artist" ? "Artist" : "Client"}
+        onAssistantOpen={() => setAssistantOpen(true)}
+        portalTarget={portalEl}
+        messagesContent={
+          <ChatWindow
+            currentUserId={user?.id ?? ""}
+            isArtist={role === "artist"}
+            role={role === "artist" ? "artist" : "client"}
+          />
+        }
+        unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
+        unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
+        pendingRequestIds={pendingRequestIds}
+        pendingRequestsCount={pendingRequestsCount}
+      />
+      <div className={`fixed inset-0 z-50 transition-all duration-300 ${assistantOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+        <div
+          className={`absolute inset-0 bg-overlay transition-opacity duration-300 ${assistantOpen ? "opacity-100" : "opacity-0"}`}
+          onClick={() => setAssistantOpen(false)}
+          aria-hidden
+        />
+        <div className={`absolute inset-0 bg-card border-t border-app shadow-2xl flex flex-col transition-transform duration-300 ${assistantOpen ? "translate-y-0" : "translate-y-full"}`}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-app">
+            <div className="flex items-center gap-2 font-semibold">
+              <Bot size={18} />
+              <span>Assistant</span>
+            </div>
+            <button onClick={() => setAssistantOpen(false)} className="p-2 rounded-full hover:bg-elevated" aria-label="Close assistant">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 p-4 text-sm opacity-80">Assistant panel</div>
         </div>
       </div>
     </div>
@@ -427,6 +510,7 @@ function StudioPayouts({
 }) {
   const [status, setStatus] = useState<ConnectStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const [agreementOpen, setAgreementOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -446,6 +530,11 @@ function StudioPayouts({
       const { url } = await startStudioConnectOnboarding(studio._id, await token());
       if (url) window.location.href = url;
     } catch (e: any) {
+      if (e?.status === 403 && e?.body?.error === "agreement_required") {
+        setAgreementOpen(true);
+        setBusy(false);
+        return;
+      }
       toast.error(e?.message || "Could not start onboarding", { theme: "dark" });
       setBusy(false);
     }
@@ -455,6 +544,17 @@ function StudioPayouts({
 
   return (
     <Section title="Payouts">
+      <DocumentSignModal
+        open={agreementOpen}
+        docType="studio_agreement"
+        signerRole="studio"
+        studioId={studio._id}
+        onSigned={() => {
+          setAgreementOpen(false);
+          onSetup();
+        }}
+        onClose={() => setAgreementOpen(false)}
+      />
       {ready ? (
         <div className="flex items-center gap-2 text-sm text-app">
           <CheckCircle2 className="h-4 w-4" />
