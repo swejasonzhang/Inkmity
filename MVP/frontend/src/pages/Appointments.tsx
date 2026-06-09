@@ -10,6 +10,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AftercareInstructions from "@/components/dashboard/shared/AftercareInstructions";
 import LazyReveal from "@/components/ui/LazyReveal";
+import ArtistWaitlist from "@/components/dashboard/artist/ArtistWaitlist";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
 
 function formatCurrency(cents: number): string {
@@ -593,6 +594,7 @@ export default function Appointments() {
           </>
         )}
         </LazyReveal>
+        {isArtist && <ArtistWaitlist />}
       </div>
       </div>
 
