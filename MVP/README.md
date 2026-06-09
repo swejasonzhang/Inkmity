@@ -5,26 +5,42 @@ Inkmity is a comprehensive platform connecting tattoo artists with clients, stre
 ## 🌟 Features
 
 ### For Clients
-- **Smart Artist Discovery** - Browse and filter tattoo artists by style, location, and reviews
+- **Smart Artist Discovery** - Browse and filter tattoo artists by style, location, and reviews, with higher-tier artists surfaced first
 - **Real-Time Availability** - View live availability calendars and book appointments instantly
-- **Secure Payments** - Integrated Stripe payment processing with deposit and final payment options
+- **On-Platform Payments** - Pay a deposit up front (card saved on file); the balance is charged automatically only once both parties confirm the work is complete
+- **Sketch Approval** - Review the artist's sketch and approve it or request changes before the session
+- **Appointment Waitlist** - Join an artist's waitlist when they're full; higher reward tiers are notified first when a slot opens
+- **Rewards & Credits** - Lower platform fees as you climb tiers, plus platform-funded loyalty, birthday, and consultation credits applied at checkout
+- **Consent & Waivers** - Sign the liability/consent waiver in-app before a tattoo session
 - **Appointment Management** - Track upcoming appointments, reschedule, or cancel with ease
 - **Review System** - Rate and review artists to help others find the perfect match
 - **Messaging** - Real-time chat with artists before and during the booking process
 
 ### For Artists
 - **Professional Profile** - Showcase portfolio, services, pricing, and availability
+- **Tiers & Visibility** - Earn a verified badge and boosted search ranking as your completed bookings and rating grow
+- **Direct Payouts** - Stripe Connect onboarding; earnings are transferred to your account, with tier-based payout speed (standard → 2-day → instant)
+- **Studios** - Join a studio (or run one); studio bookings automatically split each payout between artist and studio by commission
+- **Insights** - Lifetime paid-out earnings, completion/no-show rates, rating, and tier at a glance
+- **Sketch Sharing** - Share sketches tied to a booking and get explicit client approval
 - **Appointment Management** - Accept, reschedule, or decline appointments with automatic notifications
-- **Payment Processing** - Secure Stripe integration with customizable deposit policies
-- **Client Communication** - Built-in messaging system for consultation and coordination
-- **Analytics Dashboard** - Track earnings, appointments, and client satisfaction
+- **Custom Deposit Policies** - Configure deposits; bookings gate on a signed artist agreement and completed payout setup
 - **Flexible Scheduling** - Set custom availability with buffer times and blackout dates
 
+### For Studios
+- **Studio Accounts** - Dedicated studio signup/role; manage the studio profile and members
+- **Commission Splits** - Per-artist or default commission; each booking's payout splits automatically between studio and artist
+- **Studio Payouts** - Studio's own Stripe Connect account receives its commission directly
+- **Verification** - Studios are verified before going live; bookings for studio artists require a verified, payout-ready studio
+- **Chargeback Protection** - Disputes claw funds back from the artist/studio transfers rather than the platform
+
 ### Platform Features
+- **Merchant of Record** - Platform-as-merchant via Stripe Connect (separate charges + transfers); split payouts, completion-gated balance capture, and chargeback clawback
+- **Signed Documents** - Versioned, hashed e-signature records (platform terms, client waiver, artist & studio agreements) with timestamp/IP/user-agent audit trail
 - **Real-Time Updates** - Live notifications and status updates via WebSocket
 - **Mobile Responsive** - Fully responsive design that works on all devices
 - **Email Notifications** - Automated confirmation and reminder emails
-- **Secure Authentication** - Clerk-powered authentication with role-based access
+- **Secure Authentication** - Clerk-powered authentication with role-based access (client / artist / studio)
 - **File Upload** - Cloudinary integration for portfolio images and references
 - **Review & Rating System** - Verified reviews to build trust and reputation
 
@@ -117,6 +133,14 @@ Inkmity is a comprehensive platform connecting tattoo artists with clients, stre
    CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
    CLOUDINARY_API_KEY=your_cloudinary_api_key
    CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+   # Platform economics (optional — defaults shown)
+   PLATFORM_FEE_PCT=0.10
+   PLATFORM_FEE_MIN_CENTS=500
+   STUDIO_DEFAULT_COMMISSION_PCT=0.30
+   BIRTHDAY_CREDIT_CENTS=1500
+   # Comma-separated Clerk IDs allowed to verify studios / grant credits
+   ADMIN_CLERK_IDS=
    ```
 
    **Frontend (.env)**
@@ -180,10 +204,39 @@ Inkmity is a comprehensive platform connecting tattoo artists with clients, stre
 - `POST /bookings/:id/deny` - Deny booking (artists)
 
 ### Payment Processing
-- `POST /billing/deposit/intent` - Create deposit payment intent
+- `POST /billing/deposit/intent` - Create deposit payment intent (saves card for the balance)
 - `POST /billing/final-payment/intent` - Create final payment intent
-- `POST /billing/webhook` - Stripe webhook handler
+- `POST /billing/webhook` - Stripe webhook (payment_intent.succeeded/failed, checkout.session.completed, account.updated, charge.dispute.created)
 - `GET /billing/transactions` - Get payment history
+- `PATCH /bookings/:id/final-price` - Artist sets the final price before completion
+- `POST /bookings/:id/verify` - Dual client/artist completion verification (triggers balance capture + split payout)
+
+### Payouts (Stripe Connect)
+- `POST /connect/account-link` - Start/continue artist payout onboarding (gated on signed artist agreement)
+- `GET /connect/status` - Connect account status
+
+### Studios
+- `POST /studios` - Create a studio · `GET /studios/mine` - My studios
+- `POST /studios/:id/invite` - Invite an artist · `PATCH /studios/:id/members/:artistClerkId` - Set member commission
+- `POST /studios/memberships/:id/respond` - Artist accepts/declines an invite
+- `POST /studios/:id/connect/account-link` - Studio payout onboarding (gated on signed studio agreement)
+- `PATCH /studios/:id/verification` - Admin verifies a studio
+
+### Documents (e-signatures)
+- `GET /documents/:docType` - Fetch current document/version
+- `GET /documents/:docType/status` - Whether the user has signed it
+- `POST /documents/:docType/sign` - Record a signature (hash + timestamp/IP/UA)
+
+### Rewards & Credits
+- `GET /rewards/me` - Tier + fee summary · `GET /rewards/credits` - Available credit balance
+- `POST /rewards/credits/grant` - Admin grants a credit
+- `GET /dashboard/artist-analytics` - Artist insights (earnings, completion rate, rating, tier)
+
+### Waitlist
+- `POST /waitlist` - Join · `GET /waitlist/mine` - My entries · `GET /waitlist/artist` - Artist's waitlist (tier-ordered) · `DELETE /waitlist/:id` - Leave
+
+### Sketches
+- `POST /sketches` - Artist shares a sketch · `GET /sketches?bookingId=` - List · `POST /sketches/:id/respond` - Client approves/requests changes
 
 ### Messaging
 - `GET /messages/conversations` - Get user conversations
