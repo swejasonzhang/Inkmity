@@ -54,6 +54,7 @@ export const config = {
   },
 
   rewards: {
+    birthdayCreditCents: Number(process.env.BIRTHDAY_CREDIT_CENTS ?? 1500),
     tiers: [
       { key: 'bronze', label: 'Bronze', bookings: 0, feePct: 0.10, loyaltyCreditCents: 0 },
       { key: 'silver', label: 'Silver', bookings: 3, feePct: 0.08, loyaltyCreditCents: 1000 },
