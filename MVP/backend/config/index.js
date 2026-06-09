@@ -58,7 +58,7 @@ export const config = {
     tiers: [
       { key: 'bronze', label: 'Bronze', bookings: 0, feePct: 0.10, loyaltyCreditCents: 0 },
       { key: 'silver', label: 'Silver', bookings: 3, feePct: 0.08, loyaltyCreditCents: 1000 },
-      { key: 'gold', label: 'Gold', bookings: 8, feePct: 0.06, loyaltyCreditCents: 2500 },
+      { key: 'gold', label: 'Gold', bookings: 8, feePct: 0.06, loyaltyCreditCents: 2500, consultationCreditCents: 2500 },
       { key: 'platinum', label: 'Platinum', bookings: 15, feePct: 0.05, loyaltyCreditCents: 5000 },
     ],
   },
