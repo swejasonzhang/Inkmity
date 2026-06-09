@@ -43,6 +43,17 @@ async function artistCanReceivePayments(artistId) {
   return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
 }
 
+async function incrementArtistBookings(artistId) {
+  try {
+    await Artist.updateOne(
+      { clerkId: String(artistId) },
+      { $inc: { bookingsCount: 1 } }
+    );
+  } catch (e) {
+    console.error("incrementArtistBookings failed:", e.message);
+  }
+}
+
 async function clientWaiverSigned(clientId) {
   if (config.dev.bypassGates) return true;
   return hasSignedCurrentDocument(clientId, "client_waiver");
@@ -639,6 +650,7 @@ export async function completeBooking(req, res) {
     } catch (e) {
       console.error("recordCompletedBooking failed:", e.message);
     }
+    await incrementArtistBookings(doc.artistId);
     res.json(doc);
   } catch {
     res.status(500).json({ error: "complete_failed" });
@@ -733,6 +745,7 @@ export async function verifyBookingCode(req, res) {
       } catch (e) {
         console.error("recordCompletedBooking failed:", e.message);
       }
+      await incrementArtistBookings(doc.artistId);
       if (!config.dev.bypassGates) {
         try {
           const result = await captureBookingBalance(doc);
