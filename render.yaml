@@ -1,6 +1,7 @@
-# Render blueprint for Inkmity (backend web service + frontend static site).
-# Secrets are intentionally NOT in this file — set them in the Render dashboard
-# (Environment tab) for each service. See DEPLOYMENT.md for the full checklist.
+# Render blueprint for Inkmity — backend web service only.
+# The frontend is hosted on Vercel, so no static site is defined here.
+# Secrets are NOT in this file — set them in the Render dashboard (Environment
+# tab). See DEPLOYMENT.md for the full checklist.
 services:
   # --- Backend: Express + Socket.io (long-running; do NOT use serverless) ---
   - type: web
@@ -59,30 +60,4 @@ services:
         value: "1500"
       # Comma-separated Clerk IDs allowed to verify studios / grant credits.
       - key: ADMIN_CLERK_IDS
-        sync: false
-
-  # --- Frontend: Vite static build ---
-  - type: web
-    name: inkmity-web
-    runtime: static
-    rootDir: MVP/frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      # SPA fallback so client-side routes resolve.
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        sync: false
-      - key: VITE_CLERK_PUBLISHABLE_KEY
-        sync: false
-      - key: VITE_STRIPE_PUBLISHABLE_KEY
-        sync: false
-      - key: VITE_SOCKET_URL
-        sync: false
-      - key: VITE_CLOUDINARY_CLOUD_NAME
-        sync: false
-      - key: VITE_CLOUDINARY_UPLOAD_PRESET
         sync: false

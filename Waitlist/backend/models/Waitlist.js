@@ -15,7 +15,7 @@ const WaitlistSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-WaitlistSchema.index({ email: 1 }, { unique: true });
+// (email already has field-level `unique: true, index: true` — no separate index needed)
 
 const Waitlist = mongoose.models.Waitlist ||
   mongoose.model("Waitlist", WaitlistSchema);
