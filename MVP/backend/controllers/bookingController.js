@@ -14,6 +14,9 @@ import { getIO } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
+import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
+import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
+import { notifyWaitlistForArtist } from "../services/waitlistService.js";
 import { config } from "../config/index.js";
 import { randomBytes } from "crypto";
 
@@ -40,6 +43,23 @@ async function artistCanReceivePayments(artistId) {
   if (config.dev.bypassGates) return true;
   const artist = await Artist.findOne({ clerkId: String(artistId) });
   return Boolean(artist?.stripeConnectAccountId && artist.chargesEnabled);
+}
+
+async function incrementArtistBookings(artistId) {
+  try {
+    await Artist.updateOne(
+      { clerkId: String(artistId) },
+      { $inc: { bookingsCount: 1 } }
+    );
+    await applyPayoutScheduleForArtist(artistId);
+  } catch (e) {
+    console.error("incrementArtistBookings failed:", e.message);
+  }
+}
+
+async function clientWaiverSigned(clientId) {
+  if (config.dev.bypassGates) return true;
+  return hasSignedCurrentDocument(clientId, "client_waiver");
 }
 
 async function studioReadyForArtist(artistId) {
@@ -315,6 +335,14 @@ export async function createBooking(req, res) {
       });
     }
 
+    if (!(await clientWaiverSigned(userId))) {
+      return res.status(403).json({
+        error: "waiver_required",
+        docType: "client_waiver",
+        message: "Please review and sign the consent & liability waiver before booking.",
+      });
+    }
+
     const studioReady = await studioReadyForArtist(artistId);
     if (!studioReady.ok) {
       return res.status(409).json({
@@ -544,6 +572,10 @@ export async function cancelBooking(req, res) {
       console.error("Failed to send cancellation email:", emailError);
     }
 
+    try {
+      await notifyWaitlistForArtist(booking.artistId, { dateISO: booking.startAt });
+    } catch {}
+
     res.json(booking);
   } catch (error) {
     res.status(500).json({ error: "cancel_failed" });
@@ -625,6 +657,7 @@ export async function completeBooking(req, res) {
     } catch (e) {
       console.error("recordCompletedBooking failed:", e.message);
     }
+    await incrementArtistBookings(doc.artistId);
     res.json(doc);
   } catch {
     res.status(500).json({ error: "complete_failed" });
@@ -719,6 +752,7 @@ export async function verifyBookingCode(req, res) {
       } catch (e) {
         console.error("recordCompletedBooking failed:", e.message);
       }
+      await incrementArtistBookings(doc.artistId);
       if (!config.dev.bypassGates) {
         try {
           const result = await captureBookingBalance(doc);
@@ -1035,6 +1069,14 @@ export async function createTattooSession(req, res) {
       });
     }
 
+    if (!(await clientWaiverSigned(userId))) {
+      return res.status(403).json({
+        error: "waiver_required",
+        docType: "client_waiver",
+        message: "Please review and sign the consent & liability waiver before booking.",
+      });
+    }
+
     const studioReady = await studioReadyForArtist(artistId);
     if (!studioReady.ok) {
       return res.status(409).json({
@@ -1199,6 +1241,12 @@ export async function rescheduleAppointment(req, res) {
           newStartAt: newStartAt.toISOString(),
           depositForfeited: shouldForfeitDeposit,
         },
+      });
+    } catch {}
+
+    try {
+      await notifyWaitlistForArtist(booking.artistId, {
+        dateISO: booking.rescheduledFrom,
       });
     } catch {}
 
@@ -1509,6 +1557,10 @@ export async function denyAppointment(req, res) {
           deniedBy: isClient ? "client" : "artist",
         },
       });
+    } catch {}
+
+    try {
+      await notifyWaitlistForArtist(booking.artistId, { dateISO: booking.startAt });
     } catch {}
 
     res.json(booking);

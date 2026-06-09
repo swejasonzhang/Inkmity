@@ -1,5 +1,6 @@
 import Client from "../models/Client.js";
 import { config } from "../config/index.js";
+import { grantCredit } from "./creditsService.js";
 
 function sortedTiers() {
   return [...config.rewards.tiers].sort((a, b) => a.bookings - b.bookings);
@@ -68,9 +69,35 @@ export async function getRewardsSummary(clientId) {
 export async function recordCompletedBooking(clientId) {
   const client = await findClient(clientId);
   if (!client) return null;
+  const prevTier = tierForCount(Number(client.completedBookingsCount || 0));
   client.completedBookingsCount = Number(client.completedBookingsCount || 0) + 1;
-  client.rewardsTier = tierForCount(client.completedBookingsCount).key;
+  const newTier = tierForCount(client.completedBookingsCount);
+  client.rewardsTier = newTier.key;
   await client.save();
+
+  if (newTier.key !== prevTier.key) {
+    const tierCfg = config.rewards.tiers.find((t) => t.key === newTier.key);
+    const creditCents = Number(tierCfg?.loyaltyCreditCents || 0);
+    if (creditCents > 0) {
+      try {
+        await grantCredit(client.clerkId, creditCents, "loyalty_tier", {
+          grantedBy: "system",
+        });
+      } catch (e) {
+        console.error("loyalty credit grant failed:", e.message);
+      }
+    }
+    const consultCents = Number(tierCfg?.consultationCreditCents || 0);
+    if (consultCents > 0) {
+      try {
+        await grantCredit(client.clerkId, consultCents, "consultation", {
+          grantedBy: "system",
+        });
+      } catch (e) {
+        console.error("consultation credit grant failed:", e.message);
+      }
+    }
+  }
   return client;
 }
 

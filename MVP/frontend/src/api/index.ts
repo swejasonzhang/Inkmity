@@ -741,6 +741,77 @@ export async function checkConsultationStatus(
   );
 }
 
+export type LegalDocument = {
+  docType: string;
+  version: string;
+  title: string;
+  body: string;
+  roles: ("client" | "artist" | "studio")[];
+  contentHash: string;
+};
+
+export async function getDocument(docType: string, signal?: AbortSignal) {
+  return apiGet<LegalDocument>(`/documents/${docType}`, undefined, undefined, signal);
+}
+
+export async function getSignatureStatus(
+  docType: string,
+  params?: { bookingId?: string },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiGet<{ docType: string; version: string; signed: boolean; signedAt: string | null }>(
+    `/documents/${docType}/status`,
+    params,
+    token,
+    signal
+  );
+}
+
+export async function signDocument(
+  docType: string,
+  input: {
+    signatureName: string;
+    signerRole: "client" | "artist" | "studio";
+    bookingId?: string;
+    studioId?: string;
+  },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost(`/documents/${docType}/sign`, input, token, signal);
+}
+
+export async function listMySignatures(token?: string, signal?: AbortSignal) {
+  return apiGet(`/documents/mine`, undefined, token, signal);
+}
+
+export type ArtistAnalytics = {
+  tier: {
+    key: string;
+    label: string;
+    rank: number;
+    verified: boolean;
+    payoutSpeed: string;
+  };
+  rating: number;
+  reviewsCount: number;
+  bookingsCount: number;
+  bookings: {
+    total: number;
+    completed: number;
+    noShow: number;
+    cancelled: number;
+    completionRate: number;
+  };
+  earnings: { paidOutCents: number };
+  payoutSpeed: string;
+};
+
+export async function getArtistAnalytics(token?: string, signal?: AbortSignal) {
+  return apiGet<ArtistAnalytics>("/dashboard/artist-analytics", undefined, token, signal);
+}
+
 export type ConnectStatus = {
   connected: boolean;
   accountId?: string;
@@ -951,4 +1022,77 @@ export type RewardsSummary = {
 
 export async function getMyRewards(token?: string, signal?: AbortSignal) {
   return apiGet<RewardsSummary>("/rewards/me", undefined, token, signal);
+}
+
+export async function getMyCredits(token?: string, signal?: AbortSignal) {
+  return apiGet<{ availableCents: number }>("/rewards/credits", undefined, token, signal);
+}
+
+export type WaitlistEntry = {
+  _id: string;
+  artistId: string;
+  clientId: string;
+  status: "active" | "notified" | "claimed" | "cancelled" | "expired";
+  createdAt?: string;
+};
+
+export async function joinWaitlist(
+  input: { artistId: string; fromISO?: string; toISO?: string; note?: string },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<WaitlistEntry>("/waitlist", input, token, signal);
+}
+
+export async function leaveWaitlist(id: string, token?: string, signal?: AbortSignal) {
+  return apiDelete<{ ok: boolean }>(`/waitlist/${id}`, token, signal);
+}
+
+export async function getMyWaitlist(token?: string, signal?: AbortSignal) {
+  return apiGet<WaitlistEntry[]>("/waitlist/mine", undefined, token, signal);
+}
+
+export type ArtistWaitlistEntry = WaitlistEntry & {
+  tierLabel?: string;
+  priorityRank?: number;
+  client?: { username?: string; avatar?: { url?: string } | null } | null;
+};
+
+export async function getArtistWaitlist(token?: string, signal?: AbortSignal) {
+  return apiGet<ArtistWaitlistEntry[]>("/waitlist/artist", undefined, token, signal);
+}
+
+export type Sketch = {
+  _id: string;
+  bookingId: string;
+  artistId: string;
+  clientId: string;
+  imageUrls: string[];
+  note?: string;
+  status: "pending" | "approved" | "changes_requested";
+  clientNote?: string;
+  respondedAt?: string;
+  createdAt?: string;
+};
+
+export async function getSketches(bookingId: string, token?: string, signal?: AbortSignal) {
+  return apiGet<Sketch[]>("/sketches", { bookingId }, token, signal);
+}
+
+export async function createSketch(
+  input: { bookingId: string; imageUrls: string[]; note?: string },
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Sketch>("/sketches", input, token, signal);
+}
+
+export async function respondToSketch(
+  id: string,
+  action: "approve" | "request_changes",
+  note?: string,
+  token?: string,
+  signal?: AbortSignal
+) {
+  return apiPost<Sketch>(`/sketches/${id}/respond`, { action, note }, token, signal);
 }

@@ -54,13 +54,21 @@ export const config = {
   },
 
   rewards: {
+    birthdayCreditCents: Number(process.env.BIRTHDAY_CREDIT_CENTS ?? 1500),
     tiers: [
-      { key: 'bronze', label: 'Bronze', bookings: 0, feePct: 0.10 },
-      { key: 'silver', label: 'Silver', bookings: 3, feePct: 0.08 },
-      { key: 'gold', label: 'Gold', bookings: 8, feePct: 0.06 },
-      { key: 'platinum', label: 'Platinum', bookings: 15, feePct: 0.05 },
+      { key: 'bronze', label: 'Bronze', bookings: 0, feePct: 0.10, loyaltyCreditCents: 0 },
+      { key: 'silver', label: 'Silver', bookings: 3, feePct: 0.08, loyaltyCreditCents: 1000 },
+      { key: 'gold', label: 'Gold', bookings: 8, feePct: 0.06, loyaltyCreditCents: 2500, consultationCreditCents: 2500 },
+      { key: 'platinum', label: 'Platinum', bookings: 15, feePct: 0.05, loyaltyCreditCents: 5000 },
     ],
   },
+
+  artistTiers: [
+    { key: 'rising', label: 'Rising', bookings: 0, minRating: 0, payoutSpeed: 'standard' },
+    { key: 'established', label: 'Established', bookings: 10, minRating: 4.0, payoutSpeed: 'standard' },
+    { key: 'pro', label: 'Pro', bookings: 50, minRating: 4.5, payoutSpeed: 'two_day' },
+    { key: 'elite', label: 'Elite', bookings: 150, minRating: 4.8, payoutSpeed: 'instant' },
+  ],
 
   email: {
     resendApiKey: process.env.RESEND_API_KEY,

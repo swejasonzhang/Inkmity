@@ -424,6 +424,7 @@ export async function syncUser(req, res) {
         placement: profile.placement ?? "",
         size: profile.size ?? "",
         ...(refs.length ? { references: refs } : {}),
+        ...(profile.dob ? { dob: new Date(profile.dob) } : {}),
       });
     } else {
       const years = Number(profile.years ?? profile.yearsExperience ?? 0);

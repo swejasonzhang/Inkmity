@@ -4,6 +4,7 @@ import "../models/Client.js";
 import "../models/Artist.js";
 import cache from "../utils/cache.js";
 import { cacheHelpers } from "../utils/cache.js";
+import { tierRankAggExpr } from "../services/artistTierService.js";
 
 const CACHE_TTL = 300000;
 const CACHE_KEY_PREFIX = "user";
@@ -134,10 +135,20 @@ class UserRepository {
         sortQuery = { rating: -1, reviewsCount: -1, createdAt: -1 };
     }
 
+    const boostByTier = !sort || sort === "rating_desc";
+    const tierRank = tierRankAggExpr();
+
     if (search) {
       const pipeline = [
         { $match: query },
-        { $sort: { score: { $meta: "textScore" }, ...sortQuery } },
+        { $addFields: { tierRank } },
+        {
+          $sort: {
+            score: { $meta: "textScore" },
+            ...(boostByTier ? { tierRank: -1 } : {}),
+            ...sortQuery,
+          },
+        },
         { $skip: (page - 1) * pageSize },
         { $limit: pageSize },
         {
@@ -162,6 +173,7 @@ class UserRepository {
             portfolioImages: 1,
             avatar: 1,
             coverImage: 1,
+            tierRank: 1,
             profileImage: { $ifNull: ["$avatar.url", null] },
             avatarUrl: { $ifNull: ["$avatar.url", null] },
           },
@@ -182,30 +194,52 @@ class UserRepository {
       };
     }
 
-    const [total, items] = await Promise.all([
+    const listPipeline = [
+      { $match: query },
+      { $addFields: { tierRank } },
+      { $sort: boostByTier ? { tierRank: -1, ...sortQuery } : sortQuery },
+      { $skip: (page - 1) * pageSize },
+      { $limit: pageSize },
+      {
+        $project: {
+          _id: 1,
+          clerkId: 1,
+          username: 1,
+          handle: 1,
+          role: 1,
+          location: 1,
+          shop: 1,
+          styles: 1,
+          yearsExperience: 1,
+          baseRate: 1,
+          bookingPreference: 1,
+          travelFrequency: 1,
+          rating: 1,
+          reviewsCount: 1,
+          bookingsCount: 1,
+          createdAt: 1,
+          bio: 1,
+          portfolioImages: 1,
+          avatar: 1,
+          coverImage: 1,
+          tierRank: 1,
+          profileImage: { $ifNull: ["$avatar.url", null] },
+          avatarUrl: { $ifNull: ["$avatar.url", null] },
+        },
+      },
+    ];
+
+    const [items, total] = await Promise.all([
+      User.aggregate(listPipeline),
       User.countDocuments(query),
-      User.find(query)
-        .sort(sortQuery)
-        .skip((page - 1) * pageSize)
-        .limit(pageSize)
-        .select(
-          "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages avatar coverImage"
-        )
-        .lean(),
     ]);
 
-    const itemsWithProfileImage = items.map((item) => ({
-      ...item,
-      profileImage: item.avatar?.url || item.profileImage || null,
-      avatarUrl: item.avatar?.url || item.avatarUrl || null,
-    }));
-
     return {
-      items: itemsWithProfileImage,
-      total,
+      items: items || [],
+      total: total || 0,
       page,
       pageSize,
-      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      totalPages: Math.max(1, Math.ceil((total || 0) / pageSize)),
     };
   }
 
@@ -214,11 +248,22 @@ class UserRepository {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
-    const artists = await User.find({ role: "artist" })
-      .sort({ rating: -1 })
-      .limit(limit)
-      .select("_id username location style priceRange rating")
-      .lean();
+    const artists = await User.aggregate([
+      { $match: { role: "artist" } },
+      { $addFields: { tierRank: tierRankAggExpr() } },
+      { $sort: { tierRank: -1, rating: -1 } },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 1,
+          username: 1,
+          location: 1,
+          style: 1,
+          priceRange: 1,
+          rating: 1,
+        },
+      },
+    ]);
 
     cache.set(cacheKey, artists, CACHE_TTL);
     return artists;

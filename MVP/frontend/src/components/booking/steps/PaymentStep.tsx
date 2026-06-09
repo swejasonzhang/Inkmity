@@ -17,9 +17,11 @@ import {
   getArtistPolicy,
   getBooking,
   getMyRewards,
+  getMyCredits,
   type RewardsSummary,
 } from "@/api";
 import { useApi } from "@/api";
+import DocumentSignModal from "@/components/dashboard/shared/DocumentSignModal";
 
 type BookingFlowData = {
   appointmentType: "consultation" | "tattoo_session" | null;
@@ -106,12 +108,20 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
   }, [depositPolicy, bookingData.priceCents, bookingData.appointmentType]);
 
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
+  const [creditCents, setCreditCents] = useState(0);
+  const [waiverOpen, setWaiverOpen] = useState(false);
   useEffect(() => {
     const ac = new AbortController();
     (async () => {
       try {
         const token = await getToken();
         setRewards(await getMyRewards(token ?? undefined, ac.signal));
+        try {
+          const c = await getMyCredits(token ?? undefined, ac.signal);
+          setCreditCents(c.availableCents || 0);
+        } catch {
+          /* credits are optional */
+        }
       } catch {
         setRewards(null);
       }
@@ -243,7 +253,11 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       onSubmit(booking);
     } catch (error: any) {
       console.error("Booking error:", error);
-      const errorMessage = error?.body?.error || error?.body?.message || error?.message || "Failed to create appointment";
+      if (error?.status === 403 && error?.body?.error === "waiver_required") {
+        setWaiverOpen(true);
+        return;
+      }
+      const errorMessage = error?.body?.message || error?.body?.error || error?.message || "Failed to create appointment";
       toast.error(errorMessage);
       setPaymentError(errorMessage);
     } finally {
@@ -279,6 +293,16 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
 
   return (
     <div className="space-y-6">
+      <DocumentSignModal
+        open={waiverOpen}
+        docType="client_waiver"
+        signerRole="client"
+        onSigned={() => {
+          setWaiverOpen(false);
+          handleSubmit();
+        }}
+        onClose={() => setWaiverOpen(false)}
+      />
       <div>
         <h3 className="text-lg font-semibold mb-2">Review & Payment</h3>
         <p className="text-sm text-muted-foreground mb-4">
@@ -363,6 +387,20 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
                   <span>Estimated remaining balance:</span>
                   <span>
                     ${(Math.max(0, bookingData.priceCents - depositPreviewCents) / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {creditCents > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Inkmity credit (applied to balance):</span>
+                  <span className="font-medium">
+                    -$
+                    {(
+                      Math.min(
+                        creditCents,
+                        Math.max(0, bookingData.priceCents - depositPreviewCents)
+                      ) / 100
+                    ).toFixed(2)}
                   </span>
                 </div>
               )}

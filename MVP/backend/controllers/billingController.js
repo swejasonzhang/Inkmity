@@ -10,6 +10,7 @@ import {
   recordFeePaid,
 } from "../services/rewardsService.js";
 import { executePayouts, reversePayouts } from "../services/payoutService.js";
+import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
 
 function bookingTransferGroup(bookingId) {
   return `booking_${String(bookingId)}`;
@@ -663,6 +664,9 @@ export async function stripeWebhook(req, res) {
               owner.onboardingCompletedAt = new Date();
             }
             await owner.save();
+            if (owner.clerkId && account.charges_enabled) {
+              await applyPayoutScheduleForArtist(owner.clerkId);
+            }
           }
           break;
         }
