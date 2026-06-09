@@ -1023,3 +1023,7 @@ export type RewardsSummary = {
 export async function getMyRewards(token?: string, signal?: AbortSignal) {
   return apiGet<RewardsSummary>("/rewards/me", undefined, token, signal);
 }
+
+export async function getMyCredits(token?: string, signal?: AbortSignal) {
+  return apiGet<{ availableCents: number }>("/rewards/credits", undefined, token, signal);
+}
