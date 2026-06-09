@@ -786,6 +786,32 @@ export async function listMySignatures(token?: string, signal?: AbortSignal) {
   return apiGet(`/documents/mine`, undefined, token, signal);
 }
 
+export type ArtistAnalytics = {
+  tier: {
+    key: string;
+    label: string;
+    rank: number;
+    verified: boolean;
+    payoutSpeed: string;
+  };
+  rating: number;
+  reviewsCount: number;
+  bookingsCount: number;
+  bookings: {
+    total: number;
+    completed: number;
+    noShow: number;
+    cancelled: number;
+    completionRate: number;
+  };
+  earnings: { paidOutCents: number };
+  payoutSpeed: string;
+};
+
+export async function getArtistAnalytics(token?: string, signal?: AbortSignal) {
+  return apiGet<ArtistAnalytics>("/dashboard/artist-analytics", undefined, token, signal);
+}
+
 export type ConnectStatus = {
   connected: boolean;
   accountId?: string;

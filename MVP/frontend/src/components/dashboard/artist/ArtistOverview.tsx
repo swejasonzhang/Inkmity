@@ -17,6 +17,7 @@ import {
 import type { Booking } from "@/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import PayoutSetup from "./PayoutSetup";
+import ArtistInsights from "./ArtistInsights";
 
 export type AppointmentWithUsers = Booking & {
   client?: { username: string; avatarUrl?: string } | null;
@@ -135,6 +136,8 @@ export default function ArtistOverview({ appointments, loading }: Props) {
   return (
     <div className="flex flex-col h-full gap-2.5 sm:gap-3">
       <PayoutSetup redirectToProfile />
+
+      <ArtistInsights />
 
       <div className="rounded-xl border border-app bg-elevated px-3 py-2.5 flex items-center gap-3 flex-shrink-0">
         <div className="grid place-items-center h-10 w-10 rounded-full bg-card border border-app shrink-0">
