@@ -2,7 +2,7 @@
 
 > A modern platform for discovering tattoo artists across the US — browse by style, message with full context, book with transparent pricing, and earn rewards as you go.
 
-Inkmity connects tattoo clients and artists in one place: real-time messaging, portfolio-driven discovery, an end-to-end booking flow with deposits and intake forms, and verified reviews. It is in active development; launch timing will be announced as the product matures.
+Inkmity connects tattoo clients, artists, and studios in one place: portfolio-driven discovery with tier-boosted ranking, real-time messaging, and an end-to-end on-platform booking flow. Payments run through the platform as merchant of record — deposit up front, balance captured only once both parties verify completion, payouts split between artist and studio (with chargeback clawback). It also includes signed legal documents (client waiver + artist/studio agreements), reward tiers with platform-funded credits (loyalty/birthday/consultation), verified badges and tier-based payout speed, an appointment waitlist, and in-app sketch approval. It is in active development; launch timing will be announced as the product matures.
 
 ---
 
