@@ -6,7 +6,7 @@ services:
   - type: web
     name: inkmity-api
     runtime: node
-    rootDir: backend
+    rootDir: MVP/backend
     plan: starter
     buildCommand: npm install
     startCommand: npm start
@@ -55,7 +55,7 @@ services:
   - type: web
     name: inkmity-web
     runtime: static
-    rootDir: frontend
+    rootDir: MVP/frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     routes:
