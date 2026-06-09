@@ -16,6 +16,7 @@ import { recordCompletedBooking } from "../services/rewardsService.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
 import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
 import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
+import { notifyWaitlistForArtist } from "../services/waitlistService.js";
 import { config } from "../config/index.js";
 import { randomBytes } from "crypto";
 
@@ -570,6 +571,10 @@ export async function cancelBooking(req, res) {
     } catch (emailError) {
       console.error("Failed to send cancellation email:", emailError);
     }
+
+    try {
+      await notifyWaitlistForArtist(booking.artistId, { dateISO: booking.startAt });
+    } catch {}
 
     res.json(booking);
   } catch (error) {
@@ -1239,6 +1244,12 @@ export async function rescheduleAppointment(req, res) {
       });
     } catch {}
 
+    try {
+      await notifyWaitlistForArtist(booking.artistId, {
+        dateISO: booking.rescheduledFrom,
+      });
+    } catch {}
+
     res.json(booking);
   } catch (error) {
     console.error("Error rescheduling appointment:", error);
@@ -1546,6 +1557,10 @@ export async function denyAppointment(req, res) {
           deniedBy: isClient ? "client" : "artist",
         },
       });
+    } catch {}
+
+    try {
+      await notifyWaitlistForArtist(booking.artistId, { dateISO: booking.startAt });
     } catch {}
 
     res.json(booking);
