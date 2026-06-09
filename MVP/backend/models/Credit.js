@@ -9,7 +9,7 @@ const CreditSchema = new Schema(
     remainingCents: { type: Number, required: true, min: 0 },
     reason: {
       type: String,
-      enum: ["loyalty_annual", "consultation", "birthday", "manual", "promo"],
+      enum: ["loyalty_tier", "loyalty_annual", "consultation", "birthday", "manual", "promo"],
       default: "manual",
     },
     status: {
