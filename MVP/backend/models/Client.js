@@ -10,6 +10,7 @@ const ClientSchema = new Schema(
     placement: String,
     size: String,
     references: { type: [String], default: [] },
+    dob: { type: Date },
     totalFeesPaid: { type: Number, default: 0 },
     rewardsPoints: { type: Number, default: 0, index: true },
     lifetimeDiscountUsd: { type: Number, default: 0 },

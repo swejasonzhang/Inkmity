@@ -14,7 +14,7 @@ import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
 
 type Role = "client" | "artist";
 
-const CLIENT_DEFAULTS = { budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", style: "all", availability: "all" };
+const CLIENT_DEFAULTS = { budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", style: "all", availability: "all", dob: "" };
 const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open" as const, travelFrequency: "rare" as const, portfolio: "", styles: [] as string[], bio: "" };
 
 export default function Onboarding() {
@@ -102,6 +102,7 @@ export default function Onboarding() {
                           location: (src as typeof client)?.location || "New York, NY",
                           placement: (src as typeof client)?.placement || "",
                           size: (src as typeof client)?.size || "",
+                          dob: (src as typeof client)?.dob || undefined,
                       };
 
             await syncUser(token ?? "", {
