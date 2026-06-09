@@ -63,6 +63,7 @@ jest.unstable_mockModule("@/api", () => ({
   signDocument: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   getSignatureStatus: jest.fn(),
   listMySignatures: jest.fn(),
+  getMyCredits: jest.fn<() => Promise<any>>().mockResolvedValue({ availableCents: 0 }),
   API_URL: "http://localhost:5005",
 }));
 

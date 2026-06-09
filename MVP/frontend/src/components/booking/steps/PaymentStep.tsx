@@ -17,6 +17,7 @@ import {
   getArtistPolicy,
   getBooking,
   getMyRewards,
+  getMyCredits,
   type RewardsSummary,
 } from "@/api";
 import { useApi } from "@/api";
@@ -107,6 +108,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
   }, [depositPolicy, bookingData.priceCents, bookingData.appointmentType]);
 
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
+  const [creditCents, setCreditCents] = useState(0);
   const [waiverOpen, setWaiverOpen] = useState(false);
   useEffect(() => {
     const ac = new AbortController();
@@ -114,6 +116,12 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
       try {
         const token = await getToken();
         setRewards(await getMyRewards(token ?? undefined, ac.signal));
+        try {
+          const c = await getMyCredits(token ?? undefined, ac.signal);
+          setCreditCents(c.availableCents || 0);
+        } catch {
+          /* credits are optional */
+        }
       } catch {
         setRewards(null);
       }
@@ -379,6 +387,20 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
                   <span>Estimated remaining balance:</span>
                   <span>
                     ${(Math.max(0, bookingData.priceCents - depositPreviewCents) / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {creditCents > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Inkmity credit (applied to balance):</span>
+                  <span className="font-medium">
+                    -$
+                    {(
+                      Math.min(
+                        creditCents,
+                        Math.max(0, bookingData.priceCents - depositPreviewCents)
+                      ) / 100
+                    ).toFixed(2)}
                   </span>
                 </div>
               )}
