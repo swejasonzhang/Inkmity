@@ -4,15 +4,19 @@ const ENV = process.env.NODE_ENV || "development";
 
 const REQUIRED = [
   "MONGO_URI",
-  "CLOUDINARY_CLOUD_NAME",
-  "CLOUDINARY_API_KEY",
-  "CLOUDINARY_API_SECRET",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "APP_URL",
 ];
 
 const missing = REQUIRED.filter((key) => !process.env[key]);
+// Cloudinary is configured by EITHER CLOUDINARY_URL or the three discrete vars.
+const hasCloudinary =
+  !!process.env.CLOUDINARY_URL ||
+  (!!process.env.CLOUDINARY_CLOUD_NAME &&
+    !!process.env.CLOUDINARY_API_KEY &&
+    !!process.env.CLOUDINARY_API_SECRET);
+if (!hasCloudinary) missing.push("CLOUDINARY_URL (or CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET)");
 if (missing.length > 0) {
   console.warn(`Missing required environment variables: ${missing.join(", ")}`);
   console.warn("Using placeholder values for development...");
