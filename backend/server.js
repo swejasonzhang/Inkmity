@@ -10,7 +10,7 @@ const REQUIRED = [
 ];
 
 const missing = REQUIRED.filter((key) => !process.env[key]);
-// Cloudinary is configured by EITHER CLOUDINARY_URL or the three discrete vars.
+
 const hasCloudinary =
   !!process.env.CLOUDINARY_URL ||
   (!!process.env.CLOUDINARY_CLOUD_NAME &&
