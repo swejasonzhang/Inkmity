@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
@@ -23,6 +23,8 @@ import NotFound from "./pages/NotFound";
 import { useTheme } from "@/hooks/useTheme";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
+import ComingSoon from "./components/access/ComingSoon";
+import { isTestingMode, resolvePreviewAccess } from "@/lib/launch";
 
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
@@ -54,6 +56,9 @@ const DashboardScope: React.FC = () => {
 
 const App: React.FC = () => {
   useInactivityLogout();
+
+  const previewAllowed = useMemo(() => resolvePreviewAccess(), []);
+  if (isTestingMode && !previewAllowed) return <ComingSoon />;
 
   return (
     <Routes>
