@@ -1,8 +1,5 @@
 import process from "node:process";
 
-// Env files are loaded by Node's native --env-file flag in the npm scripts
-// (dev -> .env.development, start -> .env.production), so values are present
-// before any module reads process.env. In production, env comes from the host.
 const ENV = process.env.NODE_ENV || "development";
 
 const REQUIRED = [
@@ -73,8 +70,6 @@ const server = createServer(app);
 
 mountStripeWebhook(app);
 
-// Accept a comma-separated list so the apex domain, www, and Vercel preview
-// URLs can all be allowed (e.g. FRONTEND_URL/CORS_ORIGINS=https://inkmity.com,https://www.inkmity.com).
 const frontendOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || "http://localhost:3000,http://localhost:5173")
   .split(",")
   .map((o) => o.trim())

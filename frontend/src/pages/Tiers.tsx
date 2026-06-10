@@ -71,7 +71,6 @@ export default function Tiers() {
           if (active) setRewards(data);
         }
       } catch {
-        // ignore
       } finally {
         if (active) setReady(true);
       }

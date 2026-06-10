@@ -2,10 +2,6 @@ import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
 import { computeArtistTier } from "./artistTierService.js";
 
-// Maps a tier's payout speed to a Stripe payout schedule. Note: true Instant
-// Payouts (minutes, via stripe.payouts.create method:"instant") require Instant
-// Payout eligibility + a debit card and are a follow-up; here "instant" uses the
-// minimum allowed payout delay as the best-effort schedule.
 export function payoutScheduleForSpeed(speed) {
   switch (speed) {
     case "instant":

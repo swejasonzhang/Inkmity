@@ -516,7 +516,6 @@ function StudioPayouts({
     try {
       setStatus(await getStudioConnectStatus(studio._id, await token()));
     } catch {
-      /* ignore */
     }
   }, [studio._id, token]);
 

@@ -132,7 +132,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
-          {/* Mode segmented toggle */}
+          {}
           <div className="grid grid-cols-2 gap-1 rounded-xl p-1" style={{ background: "var(--elevated)" }}>
             {([
               { key: "percent", label: "Percentage", Icon: Percent },
@@ -199,7 +199,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
             </Field>
           )}
 
-          {/* Non-refundable */}
+          {}
           <div className="rounded-xl border px-4 py-3 text-center" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-center justify-center gap-2">
               <ShieldCheck className="h-4 w-4 opacity-70" />
@@ -213,7 +213,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
             </p>
           </div>
 
-          {/* Free consultations */}
+          {}
           <div className="rounded-xl border px-4 py-3 text-center" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-center justify-center gap-2">
               <Gift className="h-4 w-4 opacity-70" />
@@ -227,7 +227,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
             </p>
           </div>
 
-          {/* Cancellation cutoff */}
+          {}
           <Field label="Cancellation cutoff" hint="hours before the appointment">
             <div className="relative">
               <Clock className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
@@ -244,7 +244,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
             </div>
           </Field>
 
-          {/* Live preview */}
+          {}
           <div className="rounded-xl border px-4 py-3 text-center" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-xs opacity-60">On a {fmtMoney(SAMPLE_CENTS)} session</span>
@@ -263,7 +263,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
             </p>
           )}
 
-          {/* Deposit-only + studio-compliance acknowledgment */}
+          {}
           <div className="flex items-start gap-2 rounded-xl border px-3.5 py-3 text-left" style={{ borderColor: "var(--border)" }}>
             <Building2 className="h-4 w-4 mt-0.5 opacity-70 shrink-0" />
             <p className="text-[11px] leading-relaxed opacity-65">

@@ -144,8 +144,8 @@ export default function ArtistDashboard() {
             </div>
           </div>
         </main>
-        {/* Holds the fixed floating bar AND reserves its footprint at the bottom
-            of the screen, so the content above stops at the bar. */}
+        {
+}
         <div
           ref={setPortalEl}
           id="dashboard-portal-root"

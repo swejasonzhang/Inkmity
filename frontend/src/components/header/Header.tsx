@@ -210,7 +210,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         const token = await getToken();
         await updateVisibility(v, token ?? undefined);
       } catch {
-        // ignore
       }
     };
 

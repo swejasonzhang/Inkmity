@@ -4,9 +4,9 @@ import { sortWaitlistByPriority } from "../../services/waitlistService.js";
 describe("sortWaitlistByPriority", () => {
   test("higher tier comes first", () => {
     const sorted = sortWaitlistByPriority([
-      { _id: "a", priorityRank: 1, createdAt: "2026-01-01" }, // silver
-      { _id: "b", priorityRank: 3, createdAt: "2026-01-02" }, // platinum
-      { _id: "c", priorityRank: 0, createdAt: "2026-01-01" }, // bronze
+      { _id: "a", priorityRank: 1, createdAt: "2026-01-01" },
+      { _id: "b", priorityRank: 3, createdAt: "2026-01-02" },
+      { _id: "c", priorityRank: 0, createdAt: "2026-01-01" },
     ]);
     expect(sorted.map((e) => e._id)).toEqual(["b", "a", "c"]);
   });

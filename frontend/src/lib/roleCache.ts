@@ -6,7 +6,6 @@ const NAME_KEY = "inkmity-username-v2";
 try {
   localStorage.removeItem("inkmity-username");
 } catch {
-  /* ignore */
 }
 
 export function getCachedRole(): CachedRole | null {

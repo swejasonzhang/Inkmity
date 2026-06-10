@@ -1,10 +1,5 @@
 import crypto from "crypto";
 
-// NOTE: These are PLACEHOLDER templates and MUST be replaced with
-// attorney-drafted, jurisdiction-aware text before production use. Tattoo
-// consent/liability law is state-specific. Bumping `version` invalidates prior
-// signatures (signers must re-sign), so version every material text change.
-
 export const DOCUMENTS = {
   platform_terms: {
     version: "2026-06-07",

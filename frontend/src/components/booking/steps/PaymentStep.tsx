@@ -120,7 +120,6 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
           const c = await getMyCredits(token ?? undefined, ac.signal);
           setCreditCents(c.availableCents || 0);
         } catch {
-          /* credits are optional */
         }
       } catch {
         setRewards(null);
