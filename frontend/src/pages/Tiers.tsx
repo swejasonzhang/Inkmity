@@ -3,6 +3,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { Award, Check, Crown, Sparkles, Star } from "lucide-react";
 import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
+import RewardsPanel from "@/components/dashboard/client/RewardsPanel";
 import { useRole } from "@/hooks/useRole";
 import { getMe, getMyRewards, fetchArtistById, type RewardsSummary } from "@/api";
 
@@ -110,20 +111,7 @@ export default function Tiers() {
               {intro}
             </p>
             {!isArtist && ready && rewards && (
-              <div className="w-full max-w-xl mx-auto rounded-2xl border border-app bg-card p-4 sm:p-5 mt-2">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-subtle text-sm">You're currently</span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold" style={pillStyle}>
-                    {rewards.tier.label} · {pctLabel(rewards.currentFeePct)} fee
-                  </span>
-                  <span className="text-subtle text-xs">{rewards.completedBookings} completed booking(s)</span>
-                </div>
-                {rewards.nextTier && (
-                  <p className="text-subtle text-sm mt-3 text-center">
-                    {rewards.nextTier.bookingsToNextTier} more booking(s) → <span className="text-app font-semibold">{rewards.nextTier.label}</span> ({pctLabel(rewards.nextTier.feePct)} fee)
-                  </p>
-                )}
-              </div>
+              <RewardsPanel data={rewards} className="w-full max-w-xl mx-auto mt-2 text-left" />
             )}
           </div>
 
