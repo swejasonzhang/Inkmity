@@ -75,6 +75,7 @@ type SignupProps = BaseProps & {
 };
 
 export default function SignupFormCard(props: SignupProps) {
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const {
     showInfo,
     hasError,
@@ -166,7 +167,6 @@ export default function SignupFormCard(props: SignupProps) {
     );
   }
 
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const isRoleSlide = slides[step].key === "role";
   const isReviewSlide = step === slides.length - 1;
   const disableNextForEmail = isRoleSlide && emailTaken;
