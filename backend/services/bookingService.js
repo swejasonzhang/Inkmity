@@ -1,5 +1,4 @@
-import { bookingRepository, userRepository } from "../repositories/index.js";
-import { DateTime } from "luxon";
+import { bookingRepository } from "../repositories/index.js";
 
 export const bookingService = {
   async createConsultation(artistId, clientId, bookingData) {
