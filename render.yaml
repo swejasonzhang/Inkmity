@@ -7,17 +7,19 @@ services:
   - type: web
     name: inkmity-api
     runtime: node
-    rootDir: app/backend
-    # Free for testing — note: the instance sleeps after ~15m idle, which drops
-    # Socket.io and delays Stripe webhook delivery on cold start. Use "starter"
-    # for production (always-on).
-    plan: free
-    buildCommand: npm install
+    rootDir: backend
+    # Always-on plan: required in production so Socket.io connections stay open
+    # and Stripe webhooks aren't delayed by cold starts. The "free" plan sleeps
+    # after ~15m idle and breaks both — only use it for throwaway testing.
+    plan: starter
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "20"
       - key: PORT
         value: "3001"
       # Secrets / connections — set these in the dashboard (sync:false keeps them
