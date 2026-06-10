@@ -5,18 +5,24 @@ import { Progress } from "@/components/ui/progress";
 import { getMyRewards, type RewardsSummary } from "@/api";
 
 function pctLabel(p: number) {
-  return `${(p * 100).toFixed(p * 100 % 1 === 0 ? 0 : 1)}%`;
+  return `${(p * 100).toFixed((p * 100) % 1 === 0 ? 0 : 1)}%`;
 }
 
-export default function RewardsPanel({ className = "" }: { className?: string }) {
+type Props = {
+  className?: string;
+  data?: RewardsSummary | null;
+};
+
+export default function RewardsPanel({ className = "", data: dataProp }: Props) {
+  const controlled = dataProp !== undefined;
   const { getToken } = useAuth();
-  const [data, setData] = useState<RewardsSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [fetched, setFetched] = useState<RewardsSummary | null>(null);
+  const [loading, setLoading] = useState(!controlled);
 
   const load = useCallback(async () => {
     try {
       const token = await getToken();
-      setData(await getMyRewards(token ?? undefined));
+      setFetched(await getMyRewards(token ?? undefined));
     } catch {
     } finally {
       setLoading(false);
@@ -24,10 +30,11 @@ export default function RewardsPanel({ className = "" }: { className?: string })
   }, [getToken]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!controlled) load();
+  }, [controlled, load]);
 
-  if (loading || !data) return null;
+  const data = controlled ? dataProp : fetched;
+  if ((!controlled && loading) || !data) return null;
 
   const { tier, nextTier, completedBookings, currentFeePct } = data;
 
@@ -38,34 +45,40 @@ export default function RewardsPanel({ className = "" }: { className?: string })
   }
 
   return (
-    <div className={`rounded-xl border border-app bg-elevated px-3 sm:px-4 py-3 flex-shrink-0 ${className}`}>
+    <div className={`rounded-2xl border border-app bg-card px-4 py-4 sm:px-5 sm:py-5 ${className}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Award className="h-4 w-4 text-app shrink-0" />
-          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide text-muted">
+          <Award className="h-4 w-4 text-subtle shrink-0" />
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
             Rewards
           </span>
         </div>
-        <span className="text-xs sm:text-sm font-bold text-app">{tier.label}</span>
+        <span className="inline-flex items-center rounded-full border border-app bg-elevated px-2.5 py-0.5 text-sm font-semibold text-app">
+          {tier.label}
+        </span>
       </div>
 
-      <div className="mt-2 flex items-baseline justify-between gap-2">
-        <span className="text-[11px] sm:text-xs text-muted">Your platform fee</span>
-        <span className="text-base sm:text-lg font-bold text-app">{pctLabel(currentFeePct)}</span>
+      <div className="mt-3 flex items-baseline justify-between gap-2">
+        <span className="text-xs text-subtle">Your platform fee</span>
+        <span className="text-lg font-bold text-app">{pctLabel(currentFeePct)}</span>
       </div>
+
+      <p className="mt-1 text-xs text-subtle">
+        {completedBookings} completed booking{completedBookings === 1 ? "" : "s"}
+      </p>
 
       {nextTier ? (
-        <div className="mt-2">
+        <div className="mt-3">
           <Progress value={progress} className="h-1.5" />
-          <p className="mt-1.5 text-[11px] text-muted flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
+          <p className="mt-2 text-xs text-subtle flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 shrink-0" />
             {nextTier.bookingsToNextTier} more booking{nextTier.bookingsToNextTier === 1 ? "" : "s"} to{" "}
-            {nextTier.label} ({pctLabel(nextTier.feePct)} fee)
+            <span className="text-app font-semibold">{nextTier.label}</span> ({pctLabel(nextTier.feePct)} fee)
           </p>
         </div>
       ) : (
-        <p className="mt-2 text-[11px] text-muted flex items-center gap-1">
-          <Sparkles className="h-3 w-3" /> You've reached the top tier — best rate unlocked.
+        <p className="mt-3 text-xs text-subtle flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5 shrink-0" /> You've reached the top tier — best rate unlocked.
         </p>
       )}
     </div>

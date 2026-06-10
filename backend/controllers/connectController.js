@@ -27,7 +27,7 @@ function frontendBase() {
   return (
     process.env.APP_URL ||
     process.env.FRONTEND_URL ||
-    "http:
+    "http://localhost:3000"
   ).replace(/\/+$/, "");
 }
 
