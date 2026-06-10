@@ -8,6 +8,9 @@ services:
     name: inkmity-api
     runtime: node
     rootDir: backend
+    # Keep the API in the same US-East region as the MongoDB Atlas cluster to
+    # minimize DB round-trip latency. (Region can't be changed after creation.)
+    region: ohio
     # Always-on plan: required in production so Socket.io connections stay open
     # and Stripe webhooks aren't delayed by cold starts. The "free" plan sleeps
     # after ~15m idle and breaks both — only use it for throwaway testing.
