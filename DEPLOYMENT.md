@@ -131,7 +131,33 @@ connecting the repo in Render:
 > **Studio bookings** require the studio to be **verified** (admin sets
 > `verificationStatus: verified`) and payout-ready, or the booking is blocked.
 
+## Scaling & concurrency
+
+The API is built to handle concurrent load on a single always-on instance:
+
+- **Stateless requests** + **Mongo connection pooling** (`maxPoolSize`, tunable via
+  `MONGO_MAX_POOL`/`MONGO_MIN_POOL`) so many requests share a bounded pool.
+- **Indexed hot paths**: compound indexes on bookings (artist/client/status/date),
+  messages, and billing; list/read queries use `.lean()` for low overhead.
+- **gzip compression** + **Helmet** + a global **rate limiter** (`trust proxy` is
+  set so per-IP limits work behind Render's proxy).
+- Load test (`npm run test:load`) exercises 100 concurrent requests and 200
+  rapid sequential requests against the in-memory DB.
+
+**Vertical scaling** (a bigger Render plan) is the simplest next step. Before
+running **multiple backend instances** (horizontal), move three pieces of
+in-process state to a shared store, or requests will see inconsistent state:
+
+1. **Socket.io** → add the Redis adapter (`@socket.io/redis-adapter`) so realtime
+   events fan out across instances.
+2. **Rate limiter** → back `express-rate-limit` with a Redis store (per-instance
+   counters otherwise let limits be exceeded N×).
+3. **Cache** (`utils/cache.js`) → move to Redis so all instances share it.
+
+MongoDB Atlas scales independently; raise its tier and the pool size together.
+
 ## Tuning knobs
 
 - **Platform fee**: `PLATFORM_FEE_PCT` / `PLATFORM_FEE_MIN_CENTS`.
 - **Reward tiers**: `backend/config/index.js` → `rewards.tiers` (thresholds + rates).
+- **DB pool**: `MONGO_MAX_POOL` (default 20) / `MONGO_MIN_POOL` (default 2).

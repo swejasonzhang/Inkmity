@@ -659,5 +659,3 @@ export function useMessaging(currentUserId: string, authFetch: AuthFetch) {
     setExpandedId,
   };
 }
-
-export default useMessaging;
