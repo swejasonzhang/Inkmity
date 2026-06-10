@@ -17,6 +17,17 @@ type Role = "client" | "artist";
 const CLIENT_DEFAULTS = { budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", style: "all", availability: "all", dob: "" };
 const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open" as const, travelFrequency: "rare" as const, portfolio: "", styles: [] as string[], bio: "" };
 
+function ageFromDob(dob?: string): number {
+    if (!dob) return NaN;
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return NaN;
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+    return age;
+}
+
 export default function Onboarding() {
     const navigate = useNavigate();
     const { isLoaded, isSignedIn, user } = useUser();
@@ -31,6 +42,12 @@ export default function Onboarding() {
     const usernameValid = username.trim().length >= 2;
     const [client, setClient] = useState({ ...CLIENT_DEFAULTS });
     const [artist, setArtist] = useState({ ...ARTIST_DEFAULTS });
+    const [confirmAdult, setConfirmAdult] = useState(false);
+    const [agreedTerms, setAgreedTerms] = useState(false);
+
+    const enteredAge = ageFromDob(client.dob);
+    const underage = role === "client" && !Number.isNaN(enteredAge) && enteredAge < 18;
+    const canContinue = confirmAdult && agreedTerms && !underage;
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -72,6 +89,7 @@ export default function Onboarding() {
 
     const finish = async (useDefaults: boolean) => {
         if (!user || submitting || !usernameValid) return;
+        if (!canContinue) return;
         setSubmitting(true);
         setCompleting(true);
         try {
@@ -210,11 +228,42 @@ export default function Onboarding() {
                             Pick at least one specialty style to continue — or use “Skip now” to set everything to default.
                         </p>
                     )}
+
+                    {underage && (
+                        <p className="mb-2 text-center text-[11px] font-semibold text-app">
+                            You must be 18 or older to use Inkmity.
+                        </p>
+                    )}
+                    <div className="mb-2 space-y-1.5">
+                        <label className="flex items-start gap-2 text-[11px] sm:text-xs text-app/80 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={confirmAdult}
+                                onChange={(e) => setConfirmAdult(e.target.checked)}
+                                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
+                            />
+                            <span>I confirm I am 18 years of age or older.</span>
+                        </label>
+                        <label className="flex items-start gap-2 text-[11px] sm:text-xs text-app/80 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={agreedTerms}
+                                onChange={(e) => setAgreedTerms(e.target.checked)}
+                                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
+                            />
+                            <span>
+                                I agree to Inkmity's{" "}
+                                <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Terms of Service</a>{" "}
+                                and{" "}
+                                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Privacy Policy</a>.
+                            </span>
+                        </label>
+                    </div>
                     <div className="flex items-center gap-2">
                         <Button
                             type="button"
                             onClick={() => finish(true)}
-                            disabled={submitting || !usernameValid}
+                            disabled={submitting || !usernameValid || !canContinue}
                             className="h-10 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
                         >
                             Skip now
@@ -222,7 +271,7 @@ export default function Onboarding() {
                         <Button
                             type="button"
                             onClick={() => finish(false)}
-                            disabled={submitting || !usernameValid || (role === "artist" && artist.styles.length < 1)}
+                            disabled={submitting || !usernameValid || !canContinue || (role === "artist" && artist.styles.length < 1)}
                             className="flex-1 h-10 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
                         >
                             {submitting ? "Saving…" : "Continue to dashboard"}
