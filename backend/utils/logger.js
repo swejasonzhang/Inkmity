@@ -1,4 +1,4 @@
-import { config, isDevelopment, isProduction } from '../config/index.js';
+import { isDevelopment, isProduction } from '../config/index.js';
 
 class Logger {
   constructor() {
