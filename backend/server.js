@@ -69,9 +69,12 @@ const server = createServer(app);
 
 mountStripeWebhook(app);
 
-const frontendOrigins = process.env.FRONTEND_URL
-  ? (Array.isArray(process.env.FRONTEND_URL) ? process.env.FRONTEND_URL : [process.env.FRONTEND_URL])
-  : ["http://localhost:3000", "http://localhost:5173"];
+// Accept a comma-separated list so the apex domain, www, and Vercel preview
+// URLs can all be allowed (e.g. FRONTEND_URL/CORS_ORIGINS=https://inkmity.com,https://www.inkmity.com).
+const frontendOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || "http://localhost:3000,http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 const io = new Server(server, {
   cors: {
