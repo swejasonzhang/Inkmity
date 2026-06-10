@@ -5,7 +5,7 @@ export const API_URL: string = (
   "http://localhost:3001"
 ).replace(/\/+$/, "");
 
-export function buildUrl(path: string, params?: Record<string, any>) {
+function buildUrl(path: string, params?: Record<string, any>) {
   if (/^https?:\/\//i.test(path)) return path + (params ? buildQuery(params) : "");
   const clean = path.replace(/^\/+/, "");
   return `${API_URL}/${clean}${params ? buildQuery(params) : ""}`;
@@ -56,7 +56,7 @@ function safeParse(s: string) {
   }
 }
 
-export async function apiRequest<T = any>(
+async function apiRequest<T = any>(
   path: string,
   init: RequestInit = {},
   token?: string | null
@@ -123,7 +123,7 @@ export async function apiPost<T = any>(
   );
 }
 
-export async function apiPatch<T = any>(
+async function apiPatch<T = any>(
   path: string,
   body?: any,
   token?: string | null,
@@ -136,7 +136,7 @@ export async function apiPatch<T = any>(
   );
 }
 
-export async function apiDelete<T = any>(
+async function apiDelete<T = any>(
   path: string,
   token?: string | null,
   signal?: AbortSignal
@@ -337,15 +337,6 @@ export async function fetchArtistByHandle(handle: string, signal?: AbortSignal) 
   );
 }
 
-export async function getDashboardData(token?: string | null, signal?: AbortSignal) {
-  return apiGet<{ featuredArtists: DashboardArtist[] }>(
-    "/dashboard",
-    undefined,
-    token,
-    signal
-  );
-}
-
 export async function addReview(
   token: string | null | undefined,
   reviewData: ReviewInput,
@@ -354,120 +345,12 @@ export async function addReview(
   return apiPost("/reviews", reviewData, token, signal);
 }
 
-export async function fetchConversations(
-  token: string | undefined,
-  userId: string,
-  signal?: AbortSignal
-) {
-  return apiGet<ConversationDTO[]>(
-    `/messages/user/${userId}`,
-    undefined,
-    token,
-    signal
-  );
-}
-
-export async function sendMessage(
-  token: string | undefined,
-  data: MessageDTO,
-  signal?: AbortSignal
-) {
-  return apiPost("/messages", data, token, signal);
-}
-
-export async function deleteConversation(
-  token: string | undefined,
-  userId: string,
-  participantId: string,
-  signal?: AbortSignal
-) {
-  return apiRequest(
-    "/messages/conversations",
-    {
-      method: "DELETE",
-      body: JSON.stringify({ userId, participantId }),
-      signal,
-    },
-    token
-  );
-}
-
-export async function listBookingsForDay(
-  artistId: string,
-  dateISO: string,
-  signal?: AbortSignal
-) {
-  return apiGet<Booking[]>(
-    "/bookings",
-    { artistId, date: dateISO },
-    undefined,
-    signal
-  );
-}
-
-export async function createBooking(
-  input: {
-    artistId: string;
-    clientId: string;
-    serviceId?: string;
-    startISO: string;
-    endISO: string;
-    note?: string;
-  },
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>(
-    "/bookings",
-    {
-      artistId: input.artistId,
-      clientId: input.clientId,
-      serviceId: input.serviceId,
-      startAt: input.startISO,
-      endAt: input.endISO,
-      note: input.note,
-    },
-    token,
-    signal
-  );
-}
-
-export async function cancelBooking(
-  id: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>(`/bookings/${id}/cancel`, undefined, token, signal);
-}
-
-export async function completeBooking(
-  id: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>(`/bookings/${id}/complete`, undefined, token, signal);
-}
-
 export async function getBooking(
   id: string,
   token?: string | null,
   signal?: AbortSignal
 ) {
   return apiGet<Booking>(`/bookings/${id}`, undefined, token, signal);
-}
-
-export async function startCheckout(
-  bookingId: string,
-  label?: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<{
-    ok?: boolean;
-    mode?: "free";
-    url?: string;
-    billingId?: string;
-  }>("/billing/checkout", { bookingId, label }, token, signal);
 }
 
 export async function checkoutDeposit(
@@ -480,19 +363,6 @@ export async function checkoutDeposit(
     id?: string;
     clientSecret?: string;
   }>("/billing/deposit", { bookingId }, token, signal);
-}
-
-export async function refundByBooking(
-  bookingId: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<{ ok: boolean }>(
-    "/billing/refund",
-    { bookingId },
-    token,
-    signal
-  );
 }
 
 export async function getMe(opts?: { token?: string | null; signal?: AbortSignal }) {
@@ -570,19 +440,6 @@ export async function createTattooSession(
   return apiPost<Booking>("/bookings/session", input, token, signal);
 }
 
-export async function rescheduleAppointment(
-  id: string,
-  input: {
-    startISO: string;
-    endISO: string;
-    reason?: string;
-  },
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>(`/bookings/${id}/reschedule`, input, token, signal);
-}
-
 export async function getAppointments(
   role?: "client" | "artist",
   token?: string | null,
@@ -609,15 +466,6 @@ export async function denyAppointment(
   return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
 }
 
-export async function markNoShow(
-  id: string,
-  input?: { reason?: string },
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>(`/bookings/${id}/no-show`, input, token, signal);
-}
-
 export async function submitIntakeForm(
   bookingId: string,
   form: Partial<IntakeForm>,
@@ -625,27 +473,6 @@ export async function submitIntakeForm(
   signal?: AbortSignal
 ) {
   return apiPost<IntakeForm>(`/bookings/${bookingId}/intake`, form, token, signal);
-}
-
-export async function getIntakeForm(
-  bookingId: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiGet<IntakeForm>(`/bookings/${bookingId}/intake`, undefined, token, signal);
-}
-
-export async function getAppointmentDetails(
-  id: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiGet<Booking & { client?: any; artist?: any }>(
-    `/bookings/${id}/details`,
-    undefined,
-    token,
-    signal
-  );
 }
 
 export async function createDepositPaymentIntent(
@@ -727,20 +554,6 @@ export type ConsultationStatus = {
   consultationDate: string | null;
 };
 
-export async function checkConsultationStatus(
-  artistId: string,
-  clientId: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiGet<ConsultationStatus>(
-    `/bookings/consultation-status?artistId=${encodeURIComponent(artistId)}&clientId=${encodeURIComponent(clientId)}`,
-    undefined,
-    token,
-    signal
-  );
-}
-
 export type LegalDocument = {
   docType: string;
   version: string;
@@ -752,20 +565,6 @@ export type LegalDocument = {
 
 export async function getDocument(docType: string, signal?: AbortSignal) {
   return apiGet<LegalDocument>(`/documents/${docType}`, undefined, undefined, signal);
-}
-
-export async function getSignatureStatus(
-  docType: string,
-  params?: { bookingId?: string },
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiGet<{ docType: string; version: string; signed: boolean; signedAt: string | null }>(
-    `/documents/${docType}/status`,
-    params,
-    token,
-    signal
-  );
 }
 
 export async function signDocument(
@@ -780,10 +579,6 @@ export async function signDocument(
   signal?: AbortSignal
 ) {
   return apiPost(`/documents/${docType}/sign`, input, token, signal);
-}
-
-export async function listMySignatures(token?: string | null, signal?: AbortSignal) {
-  return apiGet(`/documents/mine`, undefined, token, signal);
 }
 
 export type ArtistAnalytics = {
@@ -879,14 +674,6 @@ export async function createStudio(
 
 export async function getMyStudios(token?: string | null, signal?: AbortSignal) {
   return apiGet<Studio[]>("/studios/mine", undefined, token, signal);
-}
-
-export async function getStudio(
-  studioId: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiGet<Studio>(`/studios/${studioId}`, undefined, token, signal);
 }
 
 export async function updateStudio(
