@@ -32,15 +32,13 @@ services:
         sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
-      - key: STRIPE_PUBLISHABLE_KEY
+      # Publishable key — the code reads the VITE_-prefixed name on the backend too.
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: CLOUDINARY_CLOUD_NAME
-        sync: false
-      - key: CLOUDINARY_API_KEY
-        sync: false
-      - key: CLOUDINARY_API_SECRET
+      # Cloudinary is configured via a single CLOUDINARY_URL (cloudinary://key:secret@cloud).
+      - key: CLOUDINARY_URL
         sync: false
       - key: RESEND_API_KEY
         sync: false
