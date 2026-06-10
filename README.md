@@ -10,12 +10,10 @@ Inkmity connects tattoo clients, artists, and studios in one place: portfolio-dr
 
 | Path | Description |
 |------|-------------|
-| [`app/`](app) | The main application — full React + Express stack (the active product). |
-| [`app/frontend/`](app/frontend) | React 19 + Vite + TypeScript single-page app. |
-| [`app/backend/`](app/backend) | Node.js + Express 5 API, MongoDB, Socket.io. |
-| [`Waitlist/`](Waitlist) | The earlier standalone waitlist / landing site. |
+| [`frontend/`](frontend) | React 19 + Vite + TypeScript single-page app (deploys to Vercel). |
+| [`backend/`](backend) | Node.js + Express 5 API, MongoDB, Socket.io (deploys to Render). |
 
-The app is the project to run. See [`app/README.md`](app/README.md) for in-depth, app-specific documentation.
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production go-live checklist.
 
 ---
 
@@ -68,7 +66,7 @@ The app is the project to run. See [`app/README.md`](app/README.md) for in-depth
 ### 1. Backend
 
 ```bash
-cd app/backend
+cd backend
 npm install
 # create .env.development (see "Environment variables" below)
 npm run dev        # starts the API on http://localhost:3001
@@ -77,7 +75,7 @@ npm run dev        # starts the API on http://localhost:3001
 ### 2. Frontend
 
 ```bash
-cd app/frontend
+cd frontend
 npm install
 # create .env.development (see "Environment variables" below)
 npm run dev        # starts the app on http://localhost:5173
@@ -87,7 +85,7 @@ npm run dev        # starts the app on http://localhost:5173
 
 These files are git-ignored and must be created locally. **Never commit real keys.**
 
-**`app/backend/.env.development`**
+**`backend/.env.development`**
 ```
 APP_URL=http://localhost:5173
 PORT=3001
@@ -106,7 +104,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 CURRENCY=usd
 ```
 
-**`app/frontend/.env.development`**
+**`frontend/.env.development`**
 ```
 VITE_API_URL=http://localhost:3001
 VITE_SOCKET_URL=http://localhost:3001
@@ -126,6 +124,22 @@ VITE_CLOUDINARY_UPLOAD_PRESET=...
 | `npm run build` | frontend | Type-check and produce a production build |
 | `npm test` | frontend / backend | Run the Jest test suites |
 | `npm start` | backend | Run the API in production mode |
+
+---
+
+## Deployment
+
+The two halves deploy to different hosts, by design:
+
+| Part | Host | Why |
+|------|------|-----|
+| `backend/` | **Render** | Express + Socket.io needs a long-running process, and the Stripe webhook needs a raw-body handler — both break on serverless. |
+| `frontend/` | **Vercel** | The Vite/React app is a static SPA; Vercel handles the CDN, preview deploys, and zero-config builds. |
+
+`render.yaml` is the backend blueprint (`rootDir: backend`); `frontend/vercel.json`
+adds the SPA fallback (set the Vercel project root directory to `frontend`). The
+full checklist — Stripe Connect, Clerk production instance, env vars, and a
+post-deploy smoke test — is in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ---
 

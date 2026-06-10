@@ -1,11 +1,12 @@
 # Inkmity — Production Deployment & Go-Live Checklist
 
 This covers taking the marketplace (auth + Connect payments + booking + rewards)
-live on **Render** (or Railway — same env vars, different dashboard).
+live: the **backend on Render** (long-running) and the **frontend on Vercel**
+(static SPA). See §4 for why the split, and the env-var tables for each host.
 
 ## Architecture recap
 
-- **Frontend**: Vite/React static site.
+- **Frontend**: Vite/React static site (Vercel).
 - **Backend**: Express + Socket.io — must run on a **long-running** host (not
   serverless), because of WebSockets and the Stripe webhook raw-body handler.
 - **Money flow**: Stripe Connect with the **platform as merchant of record**
@@ -51,15 +52,35 @@ live on **Render** (or Railway — same env vars, different dashboard).
 - MongoDB Atlas cluster; put the SRV string in `MONGO_URI`. Allow Render egress
   IPs (or `0.0.0.0/0` for a first pass) in Atlas network access.
 
-## 4. Deploy (Render blueprint)
+## 4. Deploy
 
-`render.yaml` defines both services. After connecting the repo:
+The backend and frontend deploy to **different hosts** — this is deliberate:
 
-1. Render creates `inkmity-api` (backend) and `inkmity-web` (frontend).
-2. Set every `sync:false` env var in each service's **Environment** tab — see
-   the list below. Secrets are never committed.
-3. Set `APP_URL` and `FRONTEND_URL` to the deployed `inkmity-web` URL, and
-   `VITE_API_URL` / `VITE_SOCKET_URL` to the deployed `inkmity-api` URL.
+- **Backend → Render.** Express + Socket.io needs a long-running process, and the
+  Stripe webhook relies on a raw-body handler. Serverless platforms break both,
+  so the backend must run on an always-on host (Render `starter` plan or above;
+  the `free` plan sleeps after ~15m idle and drops WebSockets / delays webhooks).
+- **Frontend → Vercel.** The Vite/React app is a static SPA — Vercel's CDN,
+  preview deploys, and zero-config builds fit it well.
+
+### Backend (Render)
+
+`render.yaml` is a blueprint for the **backend only** (`inkmity-api`). After
+connecting the repo in Render:
+
+1. Render creates `inkmity-api` from `render.yaml` (`rootDir: backend`).
+2. Set every `sync:false` env var in the service's **Environment** tab — see the
+   list below. Secrets are never committed.
+3. Set `APP_URL` and `FRONTEND_URL` to the deployed **Vercel** frontend origin.
+
+### Frontend (Vercel)
+
+1. Import the repo in Vercel and set the project **Root Directory** to `frontend`
+   (it auto-detects Vite; `frontend/vercel.json` adds the SPA fallback rewrite).
+2. Set the `VITE_*` env vars below; point `VITE_API_URL` / `VITE_SOCKET_URL` at
+   the deployed `inkmity-api` URL.
+3. Add the production domain in Clerk's allowed origins and Stripe's redirect
+   allowlist.
 
 ### Required env vars
 
@@ -79,7 +100,7 @@ live on **Render** (or Railway — same env vars, different dashboard).
 | `STUDIO_DEFAULT_COMMISSION_PCT` | optional, default `0.30` (studio's cut; overridable per artist) |
 | `ADMIN_CLERK_IDS` | comma-separated Clerk IDs allowed to verify studios |
 
-**Frontend (`inkmity-web`)**
+**Frontend (Vercel)**
 | Var | Notes |
 |---|---|
 | `VITE_API_URL` | backend URL |
