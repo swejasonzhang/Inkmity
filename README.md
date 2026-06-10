@@ -10,12 +10,12 @@ Inkmity connects tattoo clients, artists, and studios in one place: portfolio-dr
 
 | Path | Description |
 |------|-------------|
-| [`MVP/`](MVP) | The main application — full React + Express stack (the active product). |
-| [`MVP/frontend/`](MVP/frontend) | React 19 + Vite + TypeScript single-page app. |
-| [`MVP/backend/`](MVP/backend) | Node.js + Express 5 API, MongoDB, Socket.io. |
+| [`app/`](app) | The main application — full React + Express stack (the active product). |
+| [`app/frontend/`](app/frontend) | React 19 + Vite + TypeScript single-page app. |
+| [`app/backend/`](app/backend) | Node.js + Express 5 API, MongoDB, Socket.io. |
 | [`Waitlist/`](Waitlist) | The earlier standalone waitlist / landing site. |
 
-The MVP is the project to run. See [`MVP/README.md`](MVP/README.md) for in-depth, app-specific documentation.
+The app is the project to run. See [`app/README.md`](app/README.md) for in-depth, app-specific documentation.
 
 ---
 
@@ -68,7 +68,7 @@ The MVP is the project to run. See [`MVP/README.md`](MVP/README.md) for in-depth
 ### 1. Backend
 
 ```bash
-cd MVP/backend
+cd app/backend
 npm install
 # create .env.development (see "Environment variables" below)
 npm run dev        # starts the API on http://localhost:3001
@@ -77,7 +77,7 @@ npm run dev        # starts the API on http://localhost:3001
 ### 2. Frontend
 
 ```bash
-cd MVP/frontend
+cd app/frontend
 npm install
 # create .env.development (see "Environment variables" below)
 npm run dev        # starts the app on http://localhost:5173
@@ -87,7 +87,7 @@ npm run dev        # starts the app on http://localhost:5173
 
 These files are git-ignored and must be created locally. **Never commit real keys.**
 
-**`MVP/backend/.env.development`**
+**`app/backend/.env.development`**
 ```
 APP_URL=http://localhost:5173
 PORT=3001
@@ -106,7 +106,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 CURRENCY=usd
 ```
 
-**`MVP/frontend/.env.development`**
+**`app/frontend/.env.development`**
 ```
 VITE_API_URL=http://localhost:3001
 VITE_SOCKET_URL=http://localhost:3001
