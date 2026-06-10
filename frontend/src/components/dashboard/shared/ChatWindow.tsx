@@ -16,7 +16,6 @@ import { socket } from "@/lib/socket";
 import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
 import { enableClientBookings, getArtistPolicy } from "@/api";
 import DepositPolicyModal from "./DepositPolicyModal";
-import "@/styles/ink-conversations.css";
 
 export type Message = {
   senderId: string;

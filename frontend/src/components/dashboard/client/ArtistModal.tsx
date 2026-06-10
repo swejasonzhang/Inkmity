@@ -8,7 +8,6 @@ import ArtistBooking from "./ArtistBooking";
 import ArtistReviews from "./ArtistReviews";
 import StepBarRow from "./StepBarRow";
 import { fetchArtistByHandle, fetchArtistById } from "@/api";
-import "@/styles/artist-modal.css";
 
 declare global {
   interface Window {
