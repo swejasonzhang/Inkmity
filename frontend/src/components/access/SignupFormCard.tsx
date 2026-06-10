@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
@@ -166,8 +166,11 @@ export default function SignupFormCard(props: SignupProps) {
     );
   }
 
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const isRoleSlide = slides[step].key === "role";
+  const isReviewSlide = step === slides.length - 1;
   const disableNextForEmail = isRoleSlide && emailTaken;
+  const blockVerification = loading || !isLoaded || !!emailTaken || !agreedToTerms;
   const totalSteps = slides.length + 1;
   const currentIndex = awaitingCode ? slides.length : step;
 
@@ -231,6 +234,22 @@ export default function SignupFormCard(props: SignupProps) {
                         <ReviewStep role={role} shared={shared} client={client} artist={artist} clientImages={clientRefs} artistImages={artistPortfolioImgs} bio={bio} onBioChange={onBioChange} />
                       )}
                     </div>
+                    {isReviewSlide && (
+                      <label className="w-full mt-2 flex items-start gap-2 text-[11px] sm:text-xs text-subtle cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={agreedToTerms}
+                          onChange={(e) => setAgreedToTerms(e.target.checked)}
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
+                        />
+                        <span>
+                          I agree to Inkmity's{" "}
+                          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Terms of Service</a>{" "}
+                          and{" "}
+                          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Privacy Policy</a>.
+                        </span>
+                      </label>
+                    )}
                     <div className={`w-full mt-2 sm:mt-3 flex flex-row gap-2`}>
                       {step > 0 && (
                         <Button type="button" onClick={onBack} className="flex-1 bg-elevated border border-app text-app hover:bg-elevated/70 h-9 text-xs rounded-lg">
@@ -259,7 +278,7 @@ export default function SignupFormCard(props: SignupProps) {
                         </Button>
                       )}
                       {step === slides.length - 1 && (
-                        <Button type="button" onClick={onStartVerification} disabled={loading || !isLoaded || !!emailTaken} className="flex-1 bg-neutral-700 text-white hover:bg-neutral-600 h-9 text-xs rounded-lg font-semibold">
+                        <Button type="button" onClick={onStartVerification} disabled={blockVerification} className={`flex-1 h-9 text-xs rounded-lg font-semibold ${blockVerification ? "bg-elevated text-app/40 cursor-not-allowed" : "bg-neutral-700 text-white hover:bg-neutral-600"}`}>
                           {loading ? "Sending..." : "Send Verification Code"}
                         </Button>
                       )}

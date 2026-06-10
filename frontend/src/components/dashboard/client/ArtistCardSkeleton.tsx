@@ -23,5 +23,3 @@ export const ArtistCardSkeleton = () => (
         </div>
     </div>
 );
-
-export default ArtistCardSkeleton;

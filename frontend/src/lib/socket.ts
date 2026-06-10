@@ -45,8 +45,3 @@ export async function connectSocket(
   }
   if (!socket.connected) socket.connect();
 }
-
-export function disconnectSocket() {
-  subscriberCount = Math.max(0, subscriberCount - 1);
-  if (subscriberCount === 0 && socket.connected) socket.disconnect();
-}
