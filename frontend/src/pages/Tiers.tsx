@@ -96,7 +96,7 @@ export default function Tiers() {
       <Header />
       <main
         className="flex-1 min-h-0 overflow-y-auto"
-        style={{ padding: "clamp(16px, 2.5vw, 40px) clamp(16px, 4vw, 56px) clamp(24px, 4vw, 56px)" }}
+        style={{ padding: "0 clamp(16px, 4vw, 56px)" }}
       >
         <div className="mx-auto w-full max-w-5xl">
           <div className="flex flex-col items-center text-center gap-3 mb-fluid-lg" style={{ marginBottom: "clamp(16px, 2.5vh, 32px)" }}>
