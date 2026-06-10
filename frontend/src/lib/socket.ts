@@ -18,7 +18,6 @@ export function getSocket() {
   return socket;
 }
 
-let subscriberCount = 0;
 let registeredUserId = "";
 
 socket.on("connect", () => {
@@ -29,7 +28,6 @@ export async function connectSocket(
   getToken: () => Promise<string | null>,
   userId?: string
 ) {
-  subscriberCount++;
   if (userId) registeredUserId = userId;
 
   if (socket.connected) {
