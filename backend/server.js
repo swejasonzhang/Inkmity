@@ -1,5 +1,9 @@
-import { ENV_NAME as ENV } from "./loadEnv.js";
 import process from "node:process";
+
+// Env files are loaded by Node's native --env-file flag in the npm scripts
+// (dev -> .env.development, start -> .env.production), so values are present
+// before any module reads process.env. In production, env comes from the host.
+const ENV = process.env.NODE_ENV || "development";
 
 const REQUIRED = [
   "MONGO_URI",

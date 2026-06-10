@@ -16,7 +16,6 @@ import type { Artist as ArtistDto } from "@/api";
 import { AnimatePresence, motion } from "framer-motion";
 import Pagination from "@/components/dashboard/shared/Pagination";
 import ArtistFilter from "@/components/dashboard/client/ArtistFilter";
-import "@/styles/client-dashboard.css";
 
 const ArtistsSection = lazy(() => import("@/components/dashboard/client/ArtistsSection"));
 const ArtistModal = lazy(() => import("@/components/dashboard/client/ArtistModal"));
