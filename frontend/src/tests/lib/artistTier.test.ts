@@ -15,8 +15,8 @@ describe("computeArtistTier", () => {
   });
 
   test("needs BOTH bookings and rating to advance", () => {
-    expect(computeArtistTier(50, 3.9).key).toBe("rising"); // rating too low
-    expect(computeArtistTier(9, 5.0).key).toBe("rising"); // bookings too low
+    expect(computeArtistTier(50, 3.9).key).toBe("rising");
+    expect(computeArtistTier(9, 5.0).key).toBe("rising");
   });
 
   test("elite requires 150 bookings and 4.8 rating", () => {

@@ -124,4 +124,3 @@ describe("AftercareInstructions", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 });
-

@@ -283,7 +283,7 @@ export default function FloatingBar({
         .ink-solid-controls :is(button, [role="button"], .btn) { padding: 0.5rem 0.75rem; }
       `}</style>
 
-      {/* Assistant — left */}
+      {}
       <Button
         type="button"
         onClick={assistantLocked ? undefined : onAssistantOpen}
@@ -308,7 +308,7 @@ export default function FloatingBar({
         )}
       </Button>
 
-      {/* Pagination — center */}
+      {}
       <div
         ref={centerRef}
         className="ink-solid-controls flex items-center justify-center justify-self-center"
@@ -322,8 +322,8 @@ export default function FloatingBar({
         {rightContent}
       </div>
 
-      {/* Messages — right (a centered grid item when collapsed; breaks out
-          to a fixed/absolute panel when it expands) */}
+      {
+}
       <div
         ref={btnRef}
         className="ink-solid-controls flex items-end justify-end justify-self-end"

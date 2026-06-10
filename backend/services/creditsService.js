@@ -37,9 +37,6 @@ export async function grantCredit(clientId, amountCents, reason = "manual", opts
   });
 }
 
-// Lazily grants a once-per-year birthday credit when the client views their
-// rewards/credits on their birthday (no scheduler needed). Idempotent per year
-// via Client.lastBirthdayCreditYear.
 export async function maybeGrantBirthdayCredit(clientId) {
   try {
     const amount = Number(config.rewards.birthdayCreditCents || 0);
@@ -67,8 +64,6 @@ export async function maybeGrantBirthdayCredit(clientId) {
   }
 }
 
-// Consumes up to `amountCents` of the client's active credit, soonest-expiring
-// first (no-expiry credits spent last). Returns the cents actually applied.
 export async function applyCredits(clientId, amountCents) {
   let toApply = Math.max(0, Math.round(Number(amountCents || 0)));
   if (!clientId || toApply <= 0) return 0;

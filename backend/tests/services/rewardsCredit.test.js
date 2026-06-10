@@ -41,7 +41,7 @@ describe("loyalty credit on tier-up", () => {
   });
 
   test("does not grant within the same tier", async () => {
-    mockClient.findOne.mockResolvedValue(clientAt(3)); // 3 -> 4, still Silver
+    mockClient.findOne.mockResolvedValue(clientAt(3));
     await recordCompletedBooking("c1");
     expect(mockGrant).not.toHaveBeenCalled();
   });

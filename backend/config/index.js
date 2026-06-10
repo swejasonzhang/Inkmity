@@ -1,5 +1,3 @@
-// Env is loaded by Node's native --env-file flag (see package.json scripts);
-// in production it comes from the host environment.
 export const config = {
   server: {
     port: process.env.PORT || 3001,

@@ -30,7 +30,6 @@ export default function WaitlistButton({ artistId }: { artistId: string }) {
           ) || null
         );
       } catch {
-        /* optional */
       } finally {
         setLoading(false);
       }

@@ -48,15 +48,13 @@ describe("applyCredits", () => {
   test("consumes soonest-expiring first and marks spent", async () => {
     const soon = { remainingCents: 1000, expiresAt: new Date(Date.now() + 86400000), status: "active", save: jest.fn() };
     const noExpiry = { remainingCents: 5000, expiresAt: null, status: "active", save: jest.fn() };
-    mockCredit.find.mockResolvedValue([noExpiry, soon]); // unsorted on purpose
+    mockCredit.find.mockResolvedValue([noExpiry, soon]);
 
     const applied = await applyCredits("c1", 1500);
 
     expect(applied).toBe(1500);
-    // soonest (soon) fully spent first
     expect(soon.remainingCents).toBe(0);
     expect(soon.status).toBe("spent");
-    // then 500 from the no-expiry credit
     expect(noExpiry.remainingCents).toBe(4500);
     expect(noExpiry.status).toBe("active");
   });

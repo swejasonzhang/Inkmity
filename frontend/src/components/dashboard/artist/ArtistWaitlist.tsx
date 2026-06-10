@@ -15,7 +15,6 @@ export default function ArtistWaitlist() {
         const t = (await getToken()) ?? undefined;
         setEntries(await getArtistWaitlist(t, ac.signal));
       } catch {
-        /* optional */
       } finally {
         setLoaded(true);
       }

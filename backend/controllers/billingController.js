@@ -340,8 +340,6 @@ export async function refundBilling(req, res) {
       ? [byId]
       : await Billing.find({ bookingId, type: "platform_fee", status: "paid" });
 
-    // Authorization: only a party to the billing (its client or artist) may
-    // trigger a refund — prevents refunding another user's booking (IDOR).
     const authorized =
       !!actorId &&
       list.every(

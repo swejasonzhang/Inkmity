@@ -10,7 +10,6 @@ function rankOf(tierKey) {
   return i < 0 ? 0 : i;
 }
 
-// Pure: higher tier first, then earliest join (FIFO) as the tiebreak.
 export function sortWaitlistByPriority(entries) {
   return [...entries].sort(
     (a, b) =>
@@ -98,7 +97,6 @@ export async function getArtistWaitlist(artistId) {
   return sortWaitlistByPriority(await withPriority(entries));
 }
 
-// When a slot frees up, notify the top waitlisted clients (tier-priority order).
 export async function notifyWaitlistForArtist(artistId, { dateISO, limit = 3 } = {}) {
   const entries = await Waitlist.find({ artistId: String(artistId), status: "active" });
   const matching = entries.filter((e) => matchesDate(e, dateISO));
@@ -127,7 +125,6 @@ export async function notifyWaitlistForArtist(artistId, { dateISO, limit = 3 } =
         },
       });
     } catch {
-      /* messaging is best-effort */
     }
     try {
       if (io)
@@ -136,7 +133,6 @@ export async function notifyWaitlistForArtist(artistId, { dateISO, limit = 3 } =
           waitlistId: String(entry._id),
         });
     } catch {
-      /* socket is best-effort */
     }
     notified.push(entry);
   }

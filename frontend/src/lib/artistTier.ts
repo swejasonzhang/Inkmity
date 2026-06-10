@@ -5,7 +5,6 @@ export type ArtistTier = {
   verified: boolean;
 };
 
-// Thresholds mirror the Artist Tiers shown on /tiers and the backend config.
 const TIERS = [
   { key: "rising", label: "Rising", bookings: 0, minRating: 0 },
   { key: "established", label: "Established", bookings: 10, minRating: 4.0 },

@@ -262,7 +262,6 @@ export default function SignUp() {
       const data = await res.json();
       if (shared.email.trim().toLowerCase() === email) setEmailTaken(!!data?.exists);
     } catch {
-      // Network failure shouldn't block signup; the create call still guards it.
     }
   };
 
@@ -506,7 +505,7 @@ export default function SignUp() {
 
   return (
     <div className="relative h-svh overflow-hidden flex flex-col text-app">
-      {/* Clerk Smart CAPTCHA mounts its bot-protection widget here during sign-up. */}
+      {}
       <div id="clerk-captcha" />
       <ToastContainer position="top-center" theme="dark" newestOnTop closeOnClick hideProgressBar style={{ zIndex: 2147483647 }} />
       <VideoBackground />

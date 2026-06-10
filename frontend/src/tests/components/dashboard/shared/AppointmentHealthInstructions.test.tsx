@@ -94,4 +94,3 @@ describe("AppointmentHealthInstructions", () => {
     expect(dialog).toBeInTheDocument();
   });
 });
-

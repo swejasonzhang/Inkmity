@@ -21,8 +21,6 @@ export async function captureBookingBalance(booking) {
 
   const transferGroup = `booking_${String(booking._id)}`;
 
-  // Platform-funded credits reduce what the client pays; the artist/studio
-  // still receive the full balance via transfers (Inkmity absorbs the credit).
   const available = await getAvailableCreditCents(booking.clientId);
   const plannedCredit = Math.min(balance, available);
   const chargeAmount = balance - plannedCredit;
@@ -71,7 +69,6 @@ export async function captureBookingBalance(booking) {
     }
   }
 
-  // Charge succeeded (or fully covered by credit) — now consume the credit.
   const appliedCredit = plannedCredit > 0 ? await applyCredits(booking.clientId, plannedCredit) : 0;
 
   const bill = await Billing.create({

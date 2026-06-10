@@ -18,8 +18,6 @@ export function computeArtistTier(bookingsCount, rating) {
   };
 }
 
-// Mongo aggregation expression that derives a numeric tier rank (0..n) from a
-// document's bookingsCount + rating, so artist search can sort by tier.
 export function tierRankAggExpr() {
   const tiers = config.artistTiers;
   const branches = [];

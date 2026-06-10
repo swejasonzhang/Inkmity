@@ -104,7 +104,6 @@ export default function StudioSignup() {
           localStorage.setItem("lastLogin", Date.now().toString());
           localStorage.removeItem("logoutType");
         } catch {
-          /* ignore */
         }
         toast.success("Studio account created");
         navigate("/studios", { replace: true });
@@ -115,7 +114,6 @@ export default function StudioSignup() {
       try {
         await signOut();
       } catch {
-        /* ignore */
       }
       toast.error(
         e?.errors?.[0]?.message || e?.message || "Verification failed"

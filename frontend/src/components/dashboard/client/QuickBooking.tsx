@@ -110,7 +110,7 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                         transition={{ type: "spring", stiffness: 260, damping: 24 }}
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* Header */}
+                        {}
                         <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b" style={{ borderColor: "var(--border)" }}>
                             <span
                                 className="grid place-items-center h-11 w-11 rounded-full text-base font-bold shrink-0"
@@ -133,9 +133,9 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                             </button>
                         </div>
 
-                        {/* Body */}
+                        {}
                         <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 flex flex-col gap-5">
-                            {/* Date picker */}
+                            {}
                             <section className="flex flex-col gap-2.5">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -168,7 +168,7 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                                 </div>
                             </section>
 
-                            {/* Availability */}
+                            {}
                             <section className="flex flex-col gap-2.5">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -190,7 +190,7 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                             </section>
                         </div>
 
-                        {/* Footer */}
+                        {}
                         {onBack && (
                             <div className="px-4 sm:px-6 py-3 border-t flex items-center" style={{ borderColor: "var(--border)" }}>
                                 <button

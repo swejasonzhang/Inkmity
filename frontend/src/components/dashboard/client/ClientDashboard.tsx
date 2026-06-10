@@ -299,8 +299,8 @@ export default function ClientDashboard() {
                     </div>
                 </div>
             </main>
-            {/* Reserves the fixed floating bar's footprint so the content above
-                stops at the bar instead of sliding under it. */}
+            {
+}
             <div className="shrink-0" style={{ height: 'calc(44px + clamp(0.625rem, 1vh + 0.5vw, 1.25rem) + env(safe-area-inset-bottom, 0px))' }}>
                 <FloatingBar
                     role="Client"
