@@ -1,0 +1,61 @@
+export type CachedRole = "client" | "artist" | "studio";
+
+const KEY = "inkmity-role";
+const NAME_KEY = "inkmity-username-v2";
+
+try {
+  localStorage.removeItem("inkmity-username");
+} catch {
+}
+
+export function getCachedRole(): CachedRole | null {
+  try {
+    const v = localStorage.getItem(KEY);
+    return v === "client" || v === "artist" || v === "studio" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedRole(role: CachedRole): void {
+  try {
+    localStorage.setItem(KEY, role);
+  } catch {
+
+  }
+}
+
+export function getCachedUsername(): string | null {
+  try {
+    const v = localStorage.getItem(NAME_KEY);
+    return v && v.trim() ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedUsername(name: string): void {
+  try {
+    if (name && name.trim()) localStorage.setItem(NAME_KEY, name);
+  } catch {
+
+  }
+}
+
+export function clearCachedUsername(): void {
+  try {
+    localStorage.removeItem(NAME_KEY);
+    localStorage.removeItem("inkmity-username");
+  } catch {
+
+  }
+}
+
+export function clearCachedRole(): void {
+  try {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(NAME_KEY);
+  } catch {
+
+  }
+}
