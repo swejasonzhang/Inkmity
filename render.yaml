@@ -7,7 +7,7 @@ services:
   - type: web
     name: inkmity-api
     runtime: node
-    rootDir: MVP/backend
+    rootDir: app/backend
     # Free for testing — note: the instance sleeps after ~15m idle, which drops
     # Socket.io and delays Stripe webhook delivery on cold start. Use "starter"
     # for production (always-on).
