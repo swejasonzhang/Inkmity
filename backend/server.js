@@ -21,6 +21,7 @@ if (missing.length > 0) {
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import mongoose from "mongoose";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -86,6 +87,7 @@ const io = new Server(server, {
 initSocket(io);
 
 app.use(helmet());
+app.use(compression());
 
 app.use(cors({
   origin: frontendOrigins,
@@ -142,7 +144,13 @@ const PORT = Number(process.env.PORT) || 3001;
 async function startServer() {
   try {
     if (process.env.MONGO_URI) {
-      await mongoose.connect(process.env.MONGO_URI);
+      mongoose.set("strictQuery", true);
+      await mongoose.connect(process.env.MONGO_URI, {
+        maxPoolSize: Number(process.env.MONGO_MAX_POOL || 20),
+        minPoolSize: Number(process.env.MONGO_MIN_POOL || 2),
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      });
       console.log("✅ MongoDB connected");
     } else if (isProd) {
       throw new Error("MONGO_URI is required in production");
