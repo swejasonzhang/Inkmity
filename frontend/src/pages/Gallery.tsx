@@ -81,7 +81,7 @@ const Gallery: React.FC = () => {
             <Sparkles className="h-3.5 w-3.5" />
             Tattoo work only — stencils & finished pieces
           </div>
-          <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight">Gallery</h1>
+          <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight">Explore</h1>
           <p className="mt-2 text-sm text-subtle leading-relaxed">
             Browse real tattoo artistry from the Inkmity community and explore AI-generated
             concepts for inspiration. Everything here is strictly tattoo-related — stencils,

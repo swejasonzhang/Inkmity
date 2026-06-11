@@ -19,8 +19,6 @@ type Props = {
     emailTaken?: boolean;
     invalidFields?: string[];
     flashToken?: number;
-    confirmPassword?: string;
-    setConfirmPassword: (v: string) => void;
 };
 
 export default function SharedAccountStep({
@@ -33,17 +31,12 @@ export default function SharedAccountStep({
     emailTaken = false,
     invalidFields = [],
     flashToken = 0,
-    confirmPassword,
-    setConfirmPassword
 }: Props) {
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const pwdRef = useRef<HTMLInputElement>(null);
-    const confirmPwdRef = useRef<HTMLInputElement>(null);
     const [flashUser, setFlashUser] = useState(false);
     const [flashEmail, setFlashEmail] = useState(false);
     const [flashPwd, setFlashPwd] = useState(false);
-    const [flashConfirmPwd, setFlashConfirmPwd] = useState(false);
 
     const togglePassword = () => {
         const next = !showPassword;
@@ -51,16 +44,11 @@ export default function SharedAccountStep({
         onPasswordVisibilityChange?.(!next);
     };
 
-    const toggleConfirmPassword = () => {
-        setShowConfirmPassword((prev) => !prev);
-    };
-
     useEffect(() => {
         if (!flashToken) return;
         setFlashUser(false);
         setFlashEmail(false);
         setFlashPwd(false);
-        setFlashConfirmPwd(false);
         const timers: number[] = [];
         const raf = requestAnimationFrame(() => {
             if (invalidFields.includes("username")) {
@@ -75,10 +63,6 @@ export default function SharedAccountStep({
                 setFlashPwd(true);
                 timers.push(window.setTimeout(() => setFlashPwd(false), 1400));
             }
-            if (invalidFields.includes("confirmPassword")) {
-                setFlashConfirmPwd(true);
-                timers.push(window.setTimeout(() => setFlashConfirmPwd(false), 1400));
-            }
         });
         return () => {
             cancelAnimationFrame(raf);
@@ -90,20 +74,10 @@ export default function SharedAccountStep({
     const emailFormatOk = shared.email.trim().length > 0 && validateEmail(shared.email);
     const emailOk = emailFormatOk && !emailTaken;
     const pwdOk = shared.password.trim().length > 0 && validatePassword(shared.password);
-    const passwordsMatch = shared.password === (confirmPassword || "");
-    const confirmPwdOk = (confirmPassword || "").trim().length > 0 && passwordsMatch;
 
-    const usernameHelp = usernameOk ? "You can change your username later. Your handle, created from this, cannot be changed." : "Required. Enter a display name.";
-    const emailHelp =
-        shared.email.trim().length === 0
-            ? "Required. Enter your email."
-            : !emailFormatOk
-                ? "Invalid email. Use a format like name@example.com."
-                : emailTaken
-                    ? "This email is already registered. Log in or use another."
-                    : "We'll send confirmations here.";
-    const pwdHelp = shared.password.trim().length === 0 ? "Required. Use at least 8 characters with letters and numbers." : pwdOk ? "Keep this private." : "Password must be at least 8 characters and include letters and numbers.";
-    const confirmPwdHelp = (confirmPassword || "").trim().length === 0 ? "Required. Re-enter your password to confirm." : passwordsMatch ? "Passwords match." : "Passwords do not match.";
+    // Email-already-registered is the one message worth surfacing inline; the rest is
+    // conveyed by the placeholders per the placeholder-only form style.
+    const emailTakenMsg = emailTaken ? "This email is already registered. Log in or use another." : "";
 
     return (
         <div className="grid w-full mx-0 p-0 place-items-stretch text-center">
@@ -135,41 +109,38 @@ export default function SharedAccountStep({
                 </div>
             </div>
 
-            <div className="w-full mt-1">
-                <Label className="block text-xs text-white/80 mb-0.5" htmlFor="username">Username</Label>
+            <div className="w-full mt-3">
                 <Input
                     id="username"
                     type="text"
                     name="username"
                     value={shared.username}
-                    placeholder="Enter a display name"
+                    placeholder="Username"
+                    aria-label="Username"
                     onChange={onChange}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
-                    aria-describedby="username-help"
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/65 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
                     aria-invalid={!usernameOk}
                 />
-                <p id="username-help" className={`mt-0 text-[10px] ${usernameOk ? "text-white/60" : "text-white"}`}>{usernameHelp}</p>
             </div>
 
-            <div className="w-full mt-1">
-                <Label className="block text-xs text-white/80 mb-0.5" htmlFor="email">Email</Label>
+            <div className="w-full mt-3">
                 <Input
                     id="email"
                     type="email"
                     name="email"
                     value={shared.email}
-                    placeholder="name@example.com"
+                    placeholder="Email"
+                    aria-label="Email"
                     onChange={onChange}
                     onBlur={onEmailBlur}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
-                    aria-describedby="email-help"
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/65 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
+                    aria-describedby={emailTakenMsg ? "email-help" : undefined}
                     aria-invalid={!emailOk}
                 />
-                <p id="email-help" className={`mt-0 text-[10px] ${emailOk ? "text-white/60" : "text-white"}`}>{emailHelp}</p>
+                {emailTakenMsg && <p id="email-help" className="mt-0 text-[10px] text-white">{emailTakenMsg}</p>}
             </div>
 
-            <div className="w-full mt-1">
-                <Label className="block text-xs text-white/80 mb-0.5" htmlFor="password">Password</Label>
+            <div className="w-full mt-3">
                 <div className="relative">
                     <Input
                         id="password"
@@ -177,10 +148,10 @@ export default function SharedAccountStep({
                         type={showPassword ? "text" : "password"}
                         name="password"
                         value={shared.password}
-                        placeholder="8+ characters, letters & numbers"
+                        placeholder="Password (8+ chars, 1 number)"
+                        aria-label="Password"
                         onChange={onChange}
-                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
-                        aria-describedby="password-help"
+                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/65 pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
                         aria-invalid={!pwdOk}
                     />
                     <Button
@@ -197,39 +168,6 @@ export default function SharedAccountStep({
                         <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
                     </Button>
                 </div>
-                <p id="password-help" className={`mt-0 text-[10px] ${pwdOk ? "text-white/60" : "text-white"}`}>{pwdHelp}</p>
-            </div>
-
-            <div className="w-full mt-1">
-                <Label className="block text-xs text-white/80 mb-0.5" htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                    <Input
-                        id="confirmPassword"
-                        ref={confirmPwdRef}
-                        type={showConfirmPassword ? "text" : "password"}
-                        name="confirmPassword"
-                        value={confirmPassword || ""}
-                        placeholder="Re-enter your password"
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
-                        aria-describedby="confirm-password-help"
-                        aria-invalid={!confirmPwdOk}
-                    />
-                    <Button
-                        type="button"
-                        onMouseDown={(e) => { e.preventDefault(); }}
-                        onClick={toggleConfirmPassword}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 md:h-8 md:w-8 items-center justify-center rounded-lg text-white hover:text-white bg-transparent hover:bg-white/10"
-                        size="icon"
-                        variant="ghost"
-                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                        aria-pressed={showConfirmPassword}
-                    >
-                        {showConfirmPassword ? <EyeOff className="h-5 w-5 md:h-4 md:w-4" /> : <Eye className="h-5 w-5 md:h-4 md:w-4" />}
-                        <span className="sr-only">{showConfirmPassword ? "Hide" : "Show"}</span>
-                    </Button>
-                </div>
-                <p id="confirm-password-help" className={`mt-0 text-[10px] ${confirmPwdOk ? "text-white/60" : "text-white"}`}>{confirmPwdHelp}</p>
             </div>
         </div>
     );

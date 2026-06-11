@@ -7,6 +7,15 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
   useAuth: () => ({
     getToken: mockGetToken,
   }),
+  useUser: () => ({
+    user: { id: "user-123" },
+    isSignedIn: true,
+    isLoaded: true,
+  }),
+}));
+
+jest.unstable_mockModule("@/hooks/useBookingRealtime", () => ({
+  useBookingRealtime: jest.fn(),
 }));
 
 global.fetch = jest.fn() as any;

@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import StudioLocationPicker from "@/components/studio/StudioLocationPicker";
+import ArtistTierBadge from "@/components/dashboard/shared/ArtistTierBadge";
 
 const PLACEMENT_OPTIONS = [
     "Forearm",
@@ -687,6 +688,8 @@ export default function ArtistProfile() {
                         <Camera className="h-4 w-4 mr-2" />
                         {uploading ? "Uploading..." : (currentCoverImage ? "Change Background" : "Add Background")}
                     </Button>
+
+                    <ArtistTierBadge className="w-full max-w-md mb-4" />
 
                     <div className="space-y-2 w-full max-w-md mb-4">
                         <Label htmlFor="username" className="text-center block w-full text-sm" style={{ color: "var(--fg)" }}>Display Name</Label>

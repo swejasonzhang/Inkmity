@@ -12,7 +12,7 @@ describe("buildNavItems", () => {
   test("should include core destinations in order", () => {
     const items = buildNavItems(true, jest.fn());
     const labels = items.map((i) => i.label);
-    expect(labels).toEqual(["Dashboard", "Appointments", "Gallery", "Tiers", "Contact", "About"]);
+    expect(labels).toEqual(["Dashboard", "Appointments", "Explore", "Tiers", "Contact", "About"]);
   });
 
   test("should lock auth links (with gate handler) when signed out, leaving public links open", () => {
@@ -20,11 +20,11 @@ describe("buildNavItems", () => {
     const items = buildNavItems(false, onGate);
     const byLabel = (label: string) => items.find((i) => i.label === label)!;
 
-    for (const label of ["Dashboard", "Appointments", "Gallery"]) {
+    for (const label of ["Dashboard", "Appointments"]) {
       expect(byLabel(label).disabled).toBe(true);
       expect(byLabel(label).onClick).toBe(onGate);
     }
-    for (const label of ["Tiers", "Contact", "About"]) {
+    for (const label of ["Explore", "Tiers", "Contact", "About"]) {
       expect(byLabel(label).disabled).toBeUndefined();
       expect(byLabel(label).onClick).toBeUndefined();
     }
@@ -42,7 +42,7 @@ describe("buildNavItems", () => {
     const items = buildNavItems(true, jest.fn(), "client");
     const labels = items.map((i) => i.label);
     expect(labels).not.toContain("Artists");
-    expect(labels).toEqual(["Dashboard", "Appointments", "Gallery", "Tiers", "Contact", "About"]);
+    expect(labels).toEqual(["Dashboard", "Appointments", "Explore", "Tiers", "Contact", "About"]);
   });
 
   test("should give artists a Portfolio link as their discovery destination", () => {

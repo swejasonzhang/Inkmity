@@ -3,7 +3,8 @@
 let mapsPromise: Promise<any> | null = null;
 
 export function googleMapsKey(): string | undefined {
-    return import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+    // Guarded so it never throws if import.meta.env is absent (e.g. under tests).
+    return (import.meta as any)?.env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
 }
 
 export function loadGoogleMaps(): Promise<any> {

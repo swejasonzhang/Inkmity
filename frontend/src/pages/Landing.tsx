@@ -12,6 +12,7 @@ import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import Differentiators from "@/components/landing/Differentiators";
+import Pricing from "@/components/landing/Pricing";
 import Roadmap from "@/components/landing/Roadmap";
 import ForArtists from "@/components/landing/ForArtists";
 import BottomCTA from "@/components/landing/BottomCTA";
@@ -93,6 +94,10 @@ const Landing: React.FC = () => {
                                 <Divider />
 
                                 <ForArtists textFadeUp={textFadeUp} wc={wc} />
+
+                                <Divider />
+
+                                <Pricing textFadeUp={textFadeUp} wc={wc} />
 
                                 <Divider />
 

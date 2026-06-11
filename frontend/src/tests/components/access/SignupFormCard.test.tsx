@@ -95,8 +95,6 @@ describe("SignupFormCard", () => {
         onCancelVerification={jest.fn()}
         bio=""
         onBioChange={jest.fn()}
-        confirmPassword=""
-        setConfirmPassword={jest.fn()}
       />
     );
     expect(container.firstChild).toBeInTheDocument();

@@ -198,8 +198,6 @@ export default function Login() {
 
   const emailOk = email.trim().length > 0 && validateEmail(email);
   const pwdOk = password.trim().length > 0;
-  const emailHelp = email.trim().length === 0 ? "Required. Enter your email." : emailOk ? "Looks good." : "Invalid email. Use a format like name@example.com.";
-  const pwdHelp = password.trim().length === 0 ? "Required. Enter your password." : pwdOk ? "Keep this private." : "Password required.";
 
   // Dev-only: skip the signup/login form and sign in as a seeded test account.
   // Uses a Clerk sign-in token (ticket) minted by the backend, which bypasses
@@ -465,7 +463,7 @@ export default function Login() {
                     showInfo={showInfo}
                     hasError={mascotError}
                     titleOverride="Welcome Back!"
-                    subtitleOverride="Login to continue exploring artists, styles, and your tattoo journey."
+                    subtitleOverride="Log in to pick up where you left off."
                     className="w-full h-full"
                     hideHeader={showSuccess}
                   >
@@ -503,14 +501,14 @@ export default function Login() {
                           <span className="h-px flex-1 bg-app/15" />
                         </div>
                         <div className="w-full">
-                          <label className="block text-sm font-semibold text-app mb-1.5 text-center" htmlFor="email">Email</label>
                           <input
                             key={invalid.email ? `email-invalid-${flashToken}` : "email"}
                             id="email"
                             type="email"
                             name="email"
                             value={email}
-                            placeholder="name@example.com"
+                            placeholder="Email"
+                            aria-label="Email"
                             onChange={(e: ChangeEvent<HTMLInputElement>) => {
                               setEmail(e.target.value);
                               if (authError) setAuthError("");
@@ -518,12 +516,9 @@ export default function Login() {
                             }}
                             className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.email ? "ink-flash" : ""}`}
                             autoComplete="email"
-                            aria-describedby="email-help"
                           />
-                          <p id="email-help" className={`mt-1 text-xs sm:text-sm text-center ${emailOk ? "text-subtle" : "text-white"}`}>{emailHelp}</p>
                         </div>
                         <div className="w-full">
-                          <label className="block text-sm font-semibold text-app mb-1.5 text-center" htmlFor="password">Password</label>
                           <div className="relative">
                             <input
                               key={invalid.password ? `pwd-invalid-${flashToken}` : "pwd"}
@@ -532,7 +527,8 @@ export default function Login() {
                               type={showPassword ? "text" : "password"}
                               name="password"
                               value={password}
-                              placeholder="Enter your password"
+                              placeholder="Password"
+                              aria-label="Password"
                               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                                 setPassword(e.target.value);
                                 if (authError) setAuthError("");
@@ -540,7 +536,7 @@ export default function Login() {
                               }}
                               className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 pr-11 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.password ? "ink-flash" : ""}`}
                               autoComplete="current-password"
-                              aria-describedby="password-help auth-help"
+                              aria-describedby="auth-help"
                             />
                             <button
                               type="button"
@@ -563,7 +559,6 @@ export default function Login() {
                               <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
                             </button>
                           </div>
-                          <p id="password-help" className={`mt-1 text-xs sm:text-sm text-center ${pwdOk ? "text-subtle" : "text-white"}`}>{pwdHelp}</p>
                           {authError ? <p id="auth-help" className="mt-1 text-xs sm:text-sm text-center text-white">{authError}</p> : null}
                         </div>
                         <Button type="submit" className="w-full h-11 rounded-xl text-sm sm:text-base font-semibold bg-neutral-700 hover:bg-neutral-600 text-white transition mt-1" disabled={loading || !signInLoaded || !signIn}>
