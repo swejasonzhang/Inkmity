@@ -60,23 +60,23 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
     : [];
 
   return (
-    <div className="rounded-xl border border-app bg-elevated overflow-hidden flex flex-col flex-shrink-0 sm:flex-1 sm:min-h-0">
-      <div className="px-3 sm:px-4 py-1.5 border-b border-app flex items-center justify-between gap-2 flex-shrink-0">
+    <div className="rounded-xl border border-app bg-card overflow-hidden flex flex-col flex-shrink-0 sm:flex-1 sm:min-h-0">
+      <div className="px-2 sm:px-3 py-1.5 border-b border-app flex items-center justify-between gap-2 flex-shrink-0">
         <div className="flex items-center gap-1.5">
           <BarChart3 className="h-3.5 w-3.5 text-muted" />
-          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide text-muted">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
             Insights
           </span>
         </div>
         {data && (
           <div className="flex items-center gap-1.5">
             {data.tier.verified && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-app px-1.5 py-0.5 text-[10px] font-semibold text-app">
+              <span className="inline-flex items-center gap-1 rounded-full border border-app px-1.5 py-0.5 text-xs font-semibold text-app">
                 <BadgeCheck className="h-3 w-3" />
                 {data.tier.label}
               </span>
             )}
-            <span className="inline-flex items-center gap-1 rounded-full border border-app px-1.5 py-0.5 text-[10px] font-semibold text-app">
+            <span className="inline-flex items-center gap-1 rounded-full border border-app px-1.5 py-0.5 text-xs font-semibold text-app">
               <Zap className="h-3 w-3" />
               {payoutLabel[data.payoutSpeed] || "Standard payouts"}
             </span>
@@ -84,16 +84,16 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
         )}
       </div>
 
-      <div className="sm:flex-1 sm:flex sm:flex-col sm:justify-center sm:min-h-0">
+      <div className="sm:flex-1 sm:flex sm:flex-col sm:min-h-0">
         {insightCells.length > 0 && (
-          <div className="grid grid-cols-3 gap-px" style={{ background: "var(--border)" }}>
+          <div className="grid grid-cols-3 gap-px sm:flex-1 auto-rows-fr" style={{ background: "var(--border)" }}>
             {insightCells.map((c) => (
               <div
                 key={c.label}
-                className="bg-elevated px-2 py-1.5 sm:py-3 flex flex-col items-center justify-center text-center min-w-0"
+                className="bg-card px-1 py-1.5 sm:py-3 flex flex-col items-center justify-center text-center min-w-0"
               >
-                <div className="text-sm sm:text-xl font-bold text-app leading-none">{c.value}</div>
-                <div className="mt-0.5 text-[9px] sm:text-[10px] text-muted leading-tight">{c.label}</div>
+                <div className="text-lg font-bold text-app leading-none">{c.value}</div>
+                <div className="mt-0.5 text-xs text-muted leading-tight">{c.label}</div>
               </div>
             ))}
           </div>
@@ -101,21 +101,21 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
 
         {stats.length > 0 && (
           <div
-            className="grid grid-cols-3 sm:grid-cols-6 gap-px border-t border-app"
+            className="grid grid-cols-3 sm:grid-cols-6 gap-px border-t border-app sm:flex-1 auto-rows-fr"
             style={{ background: "var(--border)" }}
           >
             {stats.map(({ label, value, Icon }) => (
               <div
                 key={label}
-                className="bg-elevated px-1 py-1.5 sm:py-3 flex flex-col items-center justify-center text-center gap-0.5 min-w-0"
+                className="bg-card px-1 py-1.5 sm:py-3 flex flex-col items-center justify-center text-center gap-0.5 min-w-0"
               >
                 <Icon className="h-3.5 w-3.5 text-muted shrink-0" />
                 {loading ? (
                   <Skeleton className="h-5 w-6" />
                 ) : (
-                  <div className="text-base sm:text-xl font-bold text-app leading-none">{value}</div>
+                  <div className="text-lg font-bold text-app leading-none">{value}</div>
                 )}
-                <span className="text-[9px] sm:text-[10px] text-muted leading-tight">{label}</span>
+                <span className="text-xs text-muted leading-tight">{label}</span>
               </div>
             ))}
           </div>

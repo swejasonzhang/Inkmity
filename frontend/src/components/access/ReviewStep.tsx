@@ -180,7 +180,7 @@ export default function ReviewStep({
                         onChange={onBioChange}
                         rows={3}
                         placeholder="Notes about style, experience, booking."
-                        className="w-full rounded-lg bg-neutral-900/80 border border-white/15 text-white text-center text-xs placeholder:text-white/40 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                        className="w-full rounded-lg bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                     />
                 </section>
             )}

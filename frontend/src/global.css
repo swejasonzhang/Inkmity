@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Inter:opsz,wght@14..32,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@300..900&family=Inter:opsz,wght@14..32,100..900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -41,8 +41,28 @@ body {
   padding-right: var(--ink-edge-r);
 }
 
+/* Radix dialogs lock body scroll via react-remove-scroll, which rewrites
+   body padding-right and shifts the whole page. Scrollbars are already hidden
+   app-wide, so keep the edge padding stable to prevent the shift. */
+body[data-scroll-locked] {
+  padding-left: var(--ink-edge-l) !important;
+  padding-right: var(--ink-edge-r) !important;
+  margin-right: 0 !important;
+}
+
+/* Form controls inherit their container's font + size by default, so an input,
+   textarea, select, or placeholder matches the surrounding text. Explicit
+   Tailwind size classes on the element still override this (higher specificity),
+   which is how intentionally larger elements stay larger. */
+input,
+textarea,
+select {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
 :root {
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system,
+  --font-display: "Archivo", "Inter", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial;
   --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Helvetica, Arial;
@@ -363,10 +383,11 @@ canvas {
 }
 
 :root {
-  --fluid-base: clamp(0.875rem, 0.85rem + 0.125vw, 1rem);
-  --fluid-xs: clamp(0.75rem, calc(0.7rem + 0.25vw), 0.875rem);
-  --fluid-sm: clamp(0.875rem, calc(0.8rem + 0.375vw), 1rem);
-  --fluid-base: clamp(1rem, calc(0.95rem + 0.25vw), 1.125rem);
+  --fluid-xs: clamp(0.75rem, calc(0.7rem + 0.25vw), 0.9rem);
+  --fluid-sm: clamp(0.875rem, calc(0.8rem + 0.375vw), 1.05rem);
+  /* Drives html root font-size, so all rem-based text scales with the screen.
+     Floor stays at 16px so mobile layout/spacing is unaffected. */
+  --fluid-base: clamp(1rem, calc(0.93rem + 0.45vw), 1.2rem);
   --fluid-lg: clamp(1.125rem, calc(1.05rem + 0.375vw), 1.25rem);
   --fluid-xl: clamp(1.25rem, calc(1.15rem + 0.5vw), 1.5rem);
   --fluid-2xl: clamp(1.5rem, calc(1.35rem + 0.75vw), 1.875rem);
@@ -643,16 +664,17 @@ h3 {
   white-space: pre-wrap;
   word-break: break-word;
   min-height: var(--cen-min-h, 12rem);
-  padding: 0.75rem;
-  background: #fff;
-  color: #000;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
   transition: box-shadow 200ms ease, border-color 200ms ease,
     background 200ms ease;
 }
 .center-area:focus {
-  box-shadow: 0 0 0 2px var(--border);
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5);
 }
 
 .center-wrap {
@@ -664,7 +686,7 @@ h3 {
   display: grid;
   place-items: center;
   pointer-events: none;
-  color: rgba(0, 0, 0, 0.5) !important;
+  color: hsl(var(--muted-foreground)) !important;
 }
 .placeholder-overlay .blink {
   animation: cursorBlink 1s step-end infinite;
@@ -1161,4 +1183,40 @@ input::-moz-focus-inner {
     animation: none !important;
     opacity: 1 !important;
   }
+}
+
+/* Google Places Autocomplete dropdown — themed to match the monochrome UI. */
+.pac-container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  margin-top: 6px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  font-family: inherit;
+  overflow: hidden;
+  z-index: 2147483647;
+}
+.pac-container .pac-item {
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  color: color-mix(in srgb, var(--fg) 75%, transparent);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+.pac-container .pac-item:first-child {
+  border-top: 0;
+}
+.pac-container .pac-item:hover,
+.pac-container .pac-item-selected {
+  background: var(--elevated);
+}
+.pac-container .pac-item-query,
+.pac-container .pac-matched {
+  color: var(--fg);
+}
+.pac-container .pac-icon {
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.6;
+}
+.pac-container:after {
+  display: none !important;
 }

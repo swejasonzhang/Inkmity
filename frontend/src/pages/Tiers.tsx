@@ -98,7 +98,7 @@ export default function Tiers() {
         className="flex-1 min-h-0 overflow-y-auto"
         style={{ padding: "0 clamp(16px, 4vw, 56px)" }}
       >
-        <div className="mx-auto w-full max-w-5xl">
+        <div className="min-h-full flex flex-col justify-center mx-auto w-full max-w-5xl py-6">
           <div className="flex flex-col items-center text-center gap-3 mb-fluid-lg" style={{ marginBottom: "clamp(16px, 2.5vh, 32px)" }}>
             <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold" style={pillStyle}>
               <Award className="h-3.5 w-3.5" />

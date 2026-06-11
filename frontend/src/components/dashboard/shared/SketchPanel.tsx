@@ -141,13 +141,13 @@ export default function SketchPanel({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="Sketch image URL(s), comma-separated"
-              className="h-8 text-xs"
+              className="h-8"
             />
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Note (optional)"
-              className="h-8 text-xs"
+              className="h-8"
             />
             <Button size="sm" disabled={busy || !url.trim()} onClick={share} className="h-8 rounded-lg text-xs self-end">
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}

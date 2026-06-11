@@ -12,6 +12,7 @@ import {
   getArtistBookings,
   createConsultation,
   createTattooSession,
+  createMultiSession,
   rescheduleAppointment,
   markNoShow,
   submitIntakeForm,
@@ -36,6 +37,7 @@ router.get("/:id/details", requireAuth(), getAppointmentDetails);
 router.post("/", requireAuth(), createBooking);
 router.post("/consultation", requireAuth(), createConsultation);
 router.post("/session", requireAuth(), createTattooSession);
+router.post("/multi-session", requireAuth(), createMultiSession);
 router.post("/:id/accept", requireAuth(), acceptAppointment);
 router.post("/:id/deny", requireAuth(), denyAppointment);
 router.post("/:id/cancel", requireAuth(), cancelBooking);

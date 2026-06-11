@@ -97,7 +97,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
         placeholder={placeholder}
         value={value ? value / 100 : ""}
         onChange={(e) => onChange(Math.max(0, Math.round((parseFloat(e.target.value) || 0) * 100)))}
-        className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-3 text-center text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+        className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-3 text-center font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
         style={{ borderColor: "var(--border)", color: "var(--fg)" }}
       />
     </div>
@@ -176,7 +176,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
                       max={50}
                       value={Math.round((policy.percent ?? 0) * 100)}
                       onChange={(e) => set({ percent: Math.min(0.5, Math.max(0, (parseFloat(e.target.value) || 0) / 100)) })}
-                      className="h-10 w-full rounded-xl border bg-transparent pl-3 pr-7 text-center text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                      className="h-10 w-full rounded-xl border bg-transparent pl-3 pr-7 text-center font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                       style={{ borderColor: "var(--border)", color: "var(--fg)" }}
                     />
                     <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sm opacity-50">%</span>
@@ -237,7 +237,7 @@ export default function DepositPolicyModal({ artistId, open, onClose, onSuccess 
                 step={1}
                 value={policy.cutoffHours ?? 0}
                 onChange={(e) => set({ cutoffHours: Math.max(0, Math.round(parseFloat(e.target.value) || 0)) })}
-                className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-12 text-center text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                className="h-10 w-full rounded-xl border bg-transparent pl-8 pr-12 text-center font-medium outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                 style={{ borderColor: "var(--border)", color: "var(--fg)" }}
               />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-50">hrs</span>

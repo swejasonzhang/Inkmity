@@ -53,18 +53,16 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
   ];
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto relative"
         showCloseButton={false}
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
         style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
       >
         <button
           aria-label="Close"
-          className="absolute top-4 right-4 rounded-md p-1 opacity-50 cursor-not-allowed"
-          disabled
+          onClick={onClose}
+          className="absolute top-4 right-4 rounded-md p-1 opacity-60 hover:opacity-100 transition-opacity"
           style={{ color: "var(--fg)", zIndex: 10 }}
         >
           <X className="h-5 w-5" />

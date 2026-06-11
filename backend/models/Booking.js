@@ -22,6 +22,7 @@ const BookingSchema = new mongoose.Schema(
       index: true,
     },
     confirmedAt: { type: Date },
+    autoCompleted: { type: Boolean, default: false },
     reminderSentAt: { type: Date },
     reminderSent24h: { type: Boolean, default: false },
     reminderSent1h: { type: Boolean, default: false },
@@ -73,6 +74,15 @@ BookingSchema.index({ status: 1, startAt: 1 }, { name: "status_date_idx" });
 BookingSchema.index({ createdAt: -1 }, { name: "created_desc_idx" });
 
 BookingSchema.index({ note: "text", requirements: "text", serviceDescription: "text" });
+
+// Emit a realtime update to both participants on every booking save (create,
+// accept, deny, cancel, reschedule, complete, no-show, price/time changes).
+// Dynamic import avoids any model<->service load-order/circular issues.
+BookingSchema.post("save", function (doc) {
+  import("../services/socketService.js")
+    .then(({ emitBookingUpdate }) => emitBookingUpdate(doc, doc.status))
+    .catch(() => {});
+});
 
 export default mongoose.models.Booking ||
   mongoose.model("Booking", BookingSchema);

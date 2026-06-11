@@ -31,7 +31,7 @@ function ageFromDob(dob?: string): number {
 export default function Onboarding() {
     const navigate = useNavigate();
     const { isLoaded, isSignedIn, user } = useUser();
-    const { getToken, signOut } = useAuth();
+    const { getToken } = useAuth();
 
     const [checking, setChecking] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -42,12 +42,11 @@ export default function Onboarding() {
     const usernameValid = username.trim().length >= 2;
     const [client, setClient] = useState({ ...CLIENT_DEFAULTS });
     const [artist, setArtist] = useState({ ...ARTIST_DEFAULTS });
-    const [confirmAdult, setConfirmAdult] = useState(false);
-    const [agreedTerms, setAgreedTerms] = useState(false);
+    const [agreed, setAgreed] = useState(false);
 
     const enteredAge = ageFromDob(client.dob);
     const underage = role === "client" && !Number.isNaN(enteredAge) && enteredAge < 18;
-    const canContinue = confirmAdult && agreedTerms && !underage;
+    const canContinue = agreed && !underage;
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -167,7 +166,7 @@ export default function Onboarding() {
             type="button"
             variant="secondary"
             onClick={() => setRole(r)}
-            className={`flex-1 h-10 rounded-xl text-sm ${role === r ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
+            className={`flex-1 h-9 sm:h-10 rounded-xl text-sm ${role === r ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
         >
             {label}
         </Button>
@@ -177,15 +176,9 @@ export default function Onboarding() {
         <div className="relative h-svh overflow-hidden flex flex-col text-app">
             <VideoBackground />
             <Header />
-            <main className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 py-3 overflow-hidden">
-                <div className="w-full max-w-xl mx-auto max-h-full overflow-hidden rounded-2xl bg-card border border-app p-4 sm:p-5">
-                    <div className="mb-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-center">
-                        <p className="text-[11px] sm:text-xs font-semibold text-white/80">
-                            Finish setting up your account to continue.
-                        </p>
-                    </div>
-
-                    <div className="mb-2">
+            <main className="flex-1 min-h-0 flex items-center justify-center px-3 sm:px-6 py-2 sm:py-3 overflow-hidden">
+                <div className="w-full max-w-sm sm:max-w-xl mx-auto max-h-full overflow-hidden rounded-xl sm:rounded-2xl bg-card border border-app p-2.5 sm:p-5">
+                    <div className="mb-1.5 sm:mb-2">
                         <label htmlFor="onboard-username" className="block text-xs text-white/80 mb-1 text-center">
                             Username <span className="text-white">*</span> <span className="text-app/50">(required)</span>
                         </label>
@@ -198,7 +191,7 @@ export default function Onboarding() {
                             maxLength={40}
                             autoFocus
                             aria-required="true"
-                            className={`h-10 rounded-xl text-center bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 ${!usernameValid && username.length > 0 ? "!border-white" : ""}`}
+                            className={`h-9 sm:h-10 rounded-xl text-center bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 ${!usernameValid && username.length > 0 ? "!border-white" : ""}`}
                         />
                         <p className={`text-[11px] mt-1 text-center ${!usernameValid && username.length > 0 ? "text-white" : "text-app/50"}`}>
                             {!usernameValid && username.length > 0
@@ -207,7 +200,7 @@ export default function Onboarding() {
                         </p>
                     </div>
 
-                    <div className="mb-2">
+                    <div className="mb-1.5 sm:mb-2">
                         <div className="block text-xs text-white/80 mb-1 text-center">I'm joining as</div>
                         <div className="flex gap-2">
                             {roleBtn("client", "Client")}
@@ -215,7 +208,7 @@ export default function Onboarding() {
                         </div>
                     </div>
 
-                    <div className="mb-2">
+                    <div className="mb-1.5 sm:mb-2">
                         {role === "client" ? (
                             <ClientDetailsStep client={client} onChange={handleClient} />
                         ) : (
@@ -224,47 +217,36 @@ export default function Onboarding() {
                     </div>
 
                     {role === "artist" && artist.styles.length < 1 && (
-                        <p className="mb-2 text-center text-[11px] text-app/60">
+                        <p className="mb-1.5 sm:mb-2 text-center text-[11px] text-app/60">
                             Pick at least one specialty style to continue — or use “Skip now” to set everything to default.
                         </p>
                     )}
 
                     {underage && (
-                        <p className="mb-2 text-center text-[11px] font-semibold text-app">
+                        <p className="mb-1.5 sm:mb-2 text-center text-[11px] font-semibold text-app">
                             You must be 18 or older to use Inkmity.
                         </p>
                     )}
-                    <div className="mb-2 space-y-1.5">
-                        <label className="flex items-start gap-2 text-[11px] sm:text-xs text-app/80 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={confirmAdult}
-                                onChange={(e) => setConfirmAdult(e.target.checked)}
-                                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
-                            />
-                            <span>I confirm I am 18 years of age or older.</span>
-                        </label>
-                        <label className="flex items-start gap-2 text-[11px] sm:text-xs text-app/80 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={agreedTerms}
-                                onChange={(e) => setAgreedTerms(e.target.checked)}
-                                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
-                            />
-                            <span>
-                                I agree to Inkmity's{" "}
-                                <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Terms of Service</a>{" "}
-                                and{" "}
-                                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Privacy Policy</a>.
-                            </span>
-                        </label>
-                    </div>
+                    <label className="mb-1.5 sm:mb-2 flex items-start gap-2 text-[11px] text-app/80 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={agreed}
+                            onChange={(e) => setAgreed(e.target.checked)}
+                            className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
+                        />
+                        <span>
+                            I'm 18 or older and agree to Inkmity's{" "}
+                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Terms</a>{" "}
+                            &amp;{" "}
+                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Privacy</a>.
+                        </span>
+                    </label>
                     <div className="flex items-center gap-2">
                         <Button
                             type="button"
                             onClick={() => finish(true)}
                             disabled={submitting || !usernameValid || !canContinue}
-                            className="h-10 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
+                            className="h-9 sm:h-10 rounded-xl px-4 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70 transition disabled:opacity-50"
                         >
                             Skip now
                         </Button>
@@ -272,20 +254,10 @@ export default function Onboarding() {
                             type="button"
                             onClick={() => finish(false)}
                             disabled={submitting || !usernameValid || !canContinue || (role === "artist" && artist.styles.length < 1)}
-                            className="flex-1 h-10 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
+                            className="flex-1 h-9 sm:h-10 rounded-xl text-sm font-semibold bg-neutral-700 text-white hover:bg-neutral-600 transition disabled:opacity-50"
                         >
                             {submitting ? "Saving…" : "Continue to dashboard"}
                         </Button>
-                    </div>
-
-                    <div className="mt-3 text-center">
-                        <button
-                            type="button"
-                            onClick={() => signOut({ redirectUrl: "/login" })}
-                            className="text-[11px] text-app/50 hover:text-app/80 underline underline-offset-2 transition"
-                        >
-                            Not you? Sign out
-                        </button>
                     </div>
                 </div>
             </main>

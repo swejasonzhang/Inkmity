@@ -17,6 +17,6 @@ describe("FeaturesGrid", () => {
   test("should display all feature cards", () => {
     render(<FeaturesGrid textFadeUp={mockTextFadeUp} />);
     expect(screen.getByText(/Chat with full context/i)).toBeInTheDocument();
-    expect(screen.getByText(/Clear pricing and rewards/i)).toBeInTheDocument();
+    expect(screen.getByText(/Clear pricing, no surprises/i)).toBeInTheDocument();
   });
 });

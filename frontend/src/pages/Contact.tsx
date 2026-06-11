@@ -257,7 +257,7 @@ export default function Contact() {
                                         <InputClearPlaceholder
                                             id="name"
                                             keepCenter
-                                            className="text-xs pl-8 pr-3 h-8"
+                                            className="pl-8 pr-3 h-8"
                                             value={form.name}
                                             onChange={onChange("name")}
                                             placeholder="Your name"
@@ -275,7 +275,7 @@ export default function Contact() {
                                             id="email"
                                             type="email"
                                             keepCenter
-                                            className="text-xs pl-8 pr-3 h-8"
+                                            className="pl-8 pr-3 h-8"
                                             value={form.email}
                                             onChange={onChange("email")}
                                             placeholder="you@example.com"
@@ -289,7 +289,7 @@ export default function Contact() {
                                 <InputClearPlaceholder
                                     id="subject"
                                     keepCenter
-                                    className="text-xs px-3 h-8"
+                                    className="px-3 h-8"
                                     value={form.subject}
                                     onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                                     placeholder="What's this about?"

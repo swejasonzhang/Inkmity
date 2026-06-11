@@ -2,7 +2,7 @@
 
 > A modern platform for discovering tattoo artists across the US — browse by style, message with full context, book with transparent pricing, and earn rewards as you go.
 
-Inkmity connects tattoo clients, artists, and studios in one place: portfolio-driven discovery with tier-boosted ranking, real-time messaging, and an end-to-end on-platform booking flow. Payments run through the platform as merchant of record — deposit up front, balance captured only once both parties verify completion, payouts split between artist and studio (with chargeback clawback). It also includes signed legal documents (client waiver + artist/studio agreements), reward tiers with platform-funded credits (loyalty/birthday/consultation), verified badges and tier-based payout speed, an appointment waitlist, and in-app sketch approval. It is in active development; launch timing will be announced as the product matures.
+Inkmity connects tattoo clients, artists, and studios in one place: portfolio-driven discovery with tier-boosted ranking, real-time messaging, and an end-to-end on-platform booking flow. Payments run through the platform as merchant of record — deposit up front, balance captured only once both parties verify completion, payouts split between artist and studio (with chargeback clawback). It also includes signed legal documents (client waiver + artist/studio agreements), reward tiers with platform-funded credits (loyalty/birthday/consultation), an appointment waitlist, and in-app sketch approval. It is in active development — see the [Roadmap](#roadmap) for what's coming next.
 
 ---
 
@@ -13,7 +13,7 @@ Inkmity connects tattoo clients, artists, and studios in one place: portfolio-dr
 | [`frontend/`](frontend) | React 19 + Vite + TypeScript single-page app (deploys to Vercel). |
 | [`backend/`](backend) | Node.js + Express 5 API, MongoDB, Socket.io (deploys to Render). |
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production go-live checklist.
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production deployment guide.
 
 ---
 
@@ -38,6 +38,38 @@ See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production go-live checklist.
 - Cloudinary image uploads
 - Light/dark theming, fully responsive, accessible
 - Jest test suites on both frontend and backend
+
+---
+
+## What makes Inkmity different
+
+Most tattoo apps stop at discovery — they hand off a lead and disappear. Inkmity carries the
+relationship from the first reference to the healed result, with money and trust handled in one place.
+
+- **Booking, not just leads.** The entire transaction runs on-platform — deposit through final balance — instead of dumping you into someone's DMs.
+- **Paid only when it's done right.** The balance is captured after *both* client and artist confirm the session is complete, with payouts split between artist and studio (and chargeback clawback).
+- **Built for skin, not just bookings.** Signed waivers, health intake, and clear consent are part of the flow — protecting clients, artists, and studios from the first message.
+- **One thread, full context.** References, sketch approvals, and every message live in a single conversation. No lost DMs, no screenshots.
+- **Discovery by real style.** Search by technique, healed results, budget, and travel radius — not a feed of pretty pictures.
+- **Transparent by default.** Up-front quotes, verified reviews, and clear cancellation terms shown before you pay.
+
+---
+
+## Roadmap
+
+> **In progress — not live yet.** These are the bets that make Inkmity more than a booking tool. They're
+> being built; this section is a statement of direction, not a list of shipped features.
+
+- **AI booking assistant** — turn saved references into a ready-to-send brief and get matched to the right artist instantly.
+- **In-app automatic translation** — clients and artists who don't share a language can still message, brief, and book without friction.
+- **Going global** — worldwide artists, local currencies, and timezone-aware scheduling, built to work in every city rather than one country.
+- **The collection journey** — every healed piece becomes a personal, lasting record of your work, your artists, and your story.
+- **Aftercare that checks in** — guided, artist-backed healing reminders timed to each piece.
+- **Follow your artists** — see when the artists you love open books or drop flash, and get first dibs on slots.
+- **Studios, fully wired** — deeper commission splits, multi-chair scheduling, and studio payouts in one place.
+- **Earned status & insight** — loyalty tiers, verified badges, faster payouts, and real analytics that reward the people who show up.
+
+…and more on the way — we ship, listen, and build in the direction artists and clients pull us.
 
 ---
 
@@ -112,6 +144,7 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 VITE_CLOUDINARY_CLOUD_NAME=...
 VITE_CLOUDINARY_UPLOAD_PRESET=...
+VITE_GOOGLE_MAPS_API_KEY=...   # Maps JavaScript API + Places API enabled
 ```
 
 ---

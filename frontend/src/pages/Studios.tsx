@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import StudioLocationPicker, { type StudioLocation } from "@/components/studio/StudioLocationPicker";
 import {
   createStudio,
   getMyStudios,
@@ -407,13 +408,25 @@ function StudioSettings({
   token: () => Promise<string | undefined>;
 }) {
   const [name, setName] = useState(studio.name);
-  const [city, setCity] = useState(studio.city || "");
+  const [location, setLocation] = useState<StudioLocation>({
+    address: studio.address || "",
+    city: studio.city || "",
+    lat: studio.lat,
+    lng: studio.lng,
+    placeId: studio.placeId,
+  });
   const [commission, setCommission] = useState(pctToWhole(studio.defaultCommissionPct));
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setName(studio.name);
-    setCity(studio.city || "");
+    setLocation({
+      address: studio.address || "",
+      city: studio.city || "",
+      lat: studio.lat,
+      lng: studio.lng,
+      placeId: studio.placeId,
+    });
     setCommission(pctToWhole(studio.defaultCommissionPct));
   }, [studio._id]);
 
@@ -422,7 +435,15 @@ function StudioSettings({
     try {
       await updateStudio(
         studio._id,
-        { name, city, defaultCommissionPct: wholeToFrac(commission) },
+        {
+          name,
+          address: location.address,
+          city: location.city,
+          lat: location.lat,
+          lng: location.lng,
+          placeId: location.placeId,
+          defaultCommissionPct: wholeToFrac(commission),
+        },
         await token()
       );
       toast.success("Studio saved", { theme: "dark" });
@@ -472,9 +493,12 @@ function StudioSettings({
           <Label className="text-xs text-muted">Name</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1" />
         </div>
-        <div>
-          <Label className="text-xs text-muted">City</Label>
-          <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1" />
+        <div className="sm:col-span-2">
+          <Label className="text-xs text-muted">Shop location</Label>
+          <p className="mb-2 mt-0.5 text-[11px] text-muted">
+            Search for your studio as a real business so clients can find you and we can verify the location.
+          </p>
+          <StudioLocationPicker value={location} onChange={setLocation} />
         </div>
         <div>
           <Label className="text-xs text-muted">Default commission (%)</Label>

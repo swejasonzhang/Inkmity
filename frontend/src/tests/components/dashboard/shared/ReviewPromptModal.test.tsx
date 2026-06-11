@@ -91,13 +91,13 @@ describe("ReviewPromptModal", () => {
 
   test("should render when open", () => {
     render(<ReviewPromptModal {...defaultProps} />);
-    expect(screen.getByText("Write a Review (Optional)")).toBeInTheDocument();
-    expect(screen.getByText(/How was your experience with Test Artist/i)).toBeInTheDocument();
+    expect(screen.getByText("How was Test Artist?")).toBeInTheDocument();
+    expect(screen.getByText(/honest reviews help other clients/i)).toBeInTheDocument();
   });
 
   test("should not render when closed", () => {
     render(<ReviewPromptModal {...defaultProps} open={false} />);
-    expect(screen.queryByText("Write a Review (Optional)")).not.toBeInTheDocument();
+    expect(screen.queryByText("How was Test Artist?")).not.toBeInTheDocument();
   });
 
   test("should display 5 star rating buttons", async () => {
@@ -122,7 +122,7 @@ describe("ReviewPromptModal", () => {
   test("should have textarea for review comment", async () => {
     render(<ReviewPromptModal {...defaultProps} />);
     await waitFor(() => {
-      const textarea = screen.getByPlaceholderText("Share your experience...");
+      const textarea = screen.getByPlaceholderText(/What stood out about working with Test Artist/i);
       expect(textarea).toBeInTheDocument();
     });
   });
@@ -130,7 +130,7 @@ describe("ReviewPromptModal", () => {
   test("should disable submit button when comment is empty", async () => {
     render(<ReviewPromptModal {...defaultProps} />);
     await waitFor(() => {
-      const submitButton = screen.getByRole("button", { name: /Submit Review/i });
+      const submitButton = screen.getByRole("button", { name: /Post review/i });
       expect(submitButton).toBeDisabled();
     });
   });
@@ -140,14 +140,14 @@ describe("ReviewPromptModal", () => {
     render(<ReviewPromptModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("Share your experience...")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/What stood out about working with Test Artist/i)).toBeInTheDocument();
     });
 
-    const textarea = screen.getByPlaceholderText("Share your experience...");
+    const textarea = screen.getByPlaceholderText(/What stood out about working with Test Artist/i);
     await user.type(textarea, "Great experience!");
 
     await waitFor(() => {
-      const submitButton = screen.getByRole("button", { name: /Submit Review/i });
+      const submitButton = screen.getByRole("button", { name: /Post review/i });
       expect(submitButton).not.toBeDisabled();
     });
   });
@@ -175,18 +175,18 @@ describe("ReviewPromptModal", () => {
     render(<ReviewPromptModal {...defaultProps} onClose={onClose} />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("Share your experience...")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/What stood out about working with Test Artist/i)).toBeInTheDocument();
     });
 
-    const textarea = screen.getByPlaceholderText("Share your experience...");
+    const textarea = screen.getByPlaceholderText(/What stood out about working with Test Artist/i);
     await user.type(textarea, "Amazing artist!");
 
     await waitFor(() => {
-      const submitButton = screen.getByRole("button", { name: /Submit Review/i });
+      const submitButton = screen.getByRole("button", { name: /Post review/i });
       expect(submitButton).not.toBeDisabled();
     });
 
-    const submitButton = screen.getByRole("button", { name: /Submit Review/i });
+    const submitButton = screen.getByRole("button", { name: /Post review/i });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -195,6 +195,7 @@ describe("ReviewPromptModal", () => {
         rating: 5,
         text: "Amazing artist!",
         bookingId: "booking-123",
+        recommend: true,
       });
     }, { timeout: 3000 });
 
@@ -210,18 +211,18 @@ describe("ReviewPromptModal", () => {
     render(<ReviewPromptModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("Share your experience...")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/What stood out about working with Test Artist/i)).toBeInTheDocument();
     });
 
-    const textarea = screen.getByPlaceholderText("Share your experience...");
+    const textarea = screen.getByPlaceholderText(/What stood out about working with Test Artist/i);
     await user.type(textarea, "Test review");
 
     await waitFor(() => {
-      const submitButton = screen.getByRole("button", { name: /Submit Review/i });
+      const submitButton = screen.getByRole("button", { name: /Post review/i });
       expect(submitButton).not.toBeDisabled();
     });
 
-    const submitButton = screen.getByRole("button", { name: /Submit Review/i });
+    const submitButton = screen.getByRole("button", { name: /Post review/i });
     await user.click(submitButton);
 
     await waitFor(() => {

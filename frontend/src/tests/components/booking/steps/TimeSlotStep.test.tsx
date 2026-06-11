@@ -34,6 +34,7 @@ jest.unstable_mockModule("@/api", () => ({
   syncUser: jest.fn(),
   createConsultation: jest.fn(),
   createTattooSession: jest.fn(),
+  createMultiSession: jest.fn(),
   rescheduleAppointment: jest.fn(),
   getAppointments: jest.fn(),
   acceptAppointment: jest.fn(),
@@ -54,14 +55,19 @@ jest.unstable_mockModule("@/api", () => ({
 const { default: TimeSlotStep } = await import("@/components/booking/steps/TimeSlotStep");
 
 describe("TimeSlotStep", () => {
+  // A future day with a wide availability block so generated session slots are
+  // in the future (the component hides past times).
+  const futureBase = new Date(Date.now() + 7 * 86400000);
+  futureBase.setHours(10, 0, 0, 0);
+  const blockEnd = new Date(futureBase);
+  blockEnd.setHours(16, 0, 0, 0);
+
   const defaultProps = {
     artistId: "artist-123",
-    initialDate: new Date("2024-01-15"),
-    selectedStart: null,
-    selectedEnd: null,
-    durationMinutes: 60,
+    initialDate: futureBase,
     appointmentType: "tattoo_session" as const,
-    onSelect: jest.fn(),
+    sessions: [] as Array<{ startISO: string; endISO: string }>,
+    onToggle: jest.fn(),
   };
 
   beforeEach(() => {
@@ -69,21 +75,17 @@ describe("TimeSlotStep", () => {
     mockApiGet.mockImplementation((path?: string) => {
       if (path && path.includes("/availability")) {
         return Promise.resolve([
-          {
-            startISO: "2024-01-15T10:00:00Z",
-            endISO: "2024-01-15T11:00:00Z",
-          },
-          {
-            startISO: "2024-01-15T14:00:00Z",
-            endISO: "2024-01-15T15:00:00Z",
-          },
+          { startISO: futureBase.toISOString(), endISO: blockEnd.toISOString() },
         ]);
       }
       return Promise.resolve([]);
     });
   });
 
-  test("should render calendar and time slots", async () => {
+  const findSlotButton = () =>
+    screen.getAllByRole("button").find((b: HTMLElement) => /\b(AM|PM)\b/.test(b.textContent || ""));
+
+  test("should render and load availability", async () => {
     render(<TimeSlotStep {...defaultProps} />);
     expect(screen.getByText(/Select Date & Time/i)).toBeInTheDocument();
     await waitFor(() => {
@@ -91,71 +93,21 @@ describe("TimeSlotStep", () => {
     }, { timeout: 3000 });
   });
 
-  test("should show health instructions modal when selecting slot for tattoo_session", async () => {
-    const user = userEvent.setup();
-    render(<TimeSlotStep {...defaultProps} appointmentType="tattoo_session" />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Available Times/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
-
-    const timeSlots = screen.getAllByRole("button");
-    const slotButton = timeSlots.find((btn: HTMLElement) => btn.textContent?.includes("10:00"));
-
-    if (slotButton) {
-      await user.click(slotButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Pre-Appointment Instructions (Required)")).toBeInTheDocument();
-      }, { timeout: 3000 });
-    }
+  test("should show the session length options for tattoo sessions", async () => {
+    render(<TimeSlotStep {...defaultProps} />);
+    expect(screen.getByRole("heading", { name: /session length/i })).toBeInTheDocument();
   });
 
-  test("should not show health instructions modal for consultation", async () => {
+  test("clicking a time slot calls onToggle", async () => {
     const user = userEvent.setup();
-    render(<TimeSlotStep {...defaultProps} appointmentType="consultation" />);
+    const onToggle = jest.fn();
+    render(<TimeSlotStep {...defaultProps} onToggle={onToggle} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Available Times/i)).toBeInTheDocument();
+      expect(findSlotButton()).toBeTruthy();
     }, { timeout: 3000 });
 
-    const timeSlots = screen.getAllByRole("button");
-    const slotButton = timeSlots.find((btn: HTMLElement) => btn.textContent?.includes("10:00"));
-
-    if (slotButton) {
-      await user.click(slotButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText("Pre-Appointment Instructions (Required)")).not.toBeInTheDocument();
-      });
-    }
-  });
-
-  test("should call onSelect after acknowledging health instructions", async () => {
-    const user = userEvent.setup();
-    const onSelect = jest.fn();
-    render(<TimeSlotStep {...defaultProps} appointmentType="tattoo_session" onSelect={onSelect} />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Available Times/i)).toBeInTheDocument();
-    }, { timeout: 3000 });
-
-    const timeSlots = screen.getAllByRole("button");
-    const slotButton = timeSlots.find((btn: HTMLElement) => btn.textContent?.includes("10:00"));
-
-    if (slotButton) {
-      await user.click(slotButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Pre-Appointment Instructions (Required)")).toBeInTheDocument();
-      }, { timeout: 3000 });
-
-      const continueButton = screen.getByRole("button", { name: /I Understand, Continue/i });
-      await user.click(continueButton);
-
-      await waitFor(() => {
-        expect(onSelect).toHaveBeenCalled();
-      }, { timeout: 3000 });
-    }
+    await user.click(findSlotButton()!);
+    expect(onToggle).toHaveBeenCalled();
   });
 });

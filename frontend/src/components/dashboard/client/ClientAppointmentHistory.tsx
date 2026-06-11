@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
-import { Calendar, Clock, User } from "lucide-react";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
+import { Calendar, Clock, User, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ReviewPromptModal, { type ReviewDetails } from "@/components/dashboard/shared/ReviewPromptModal";
 
 type Booking = {
     _id: string;
@@ -10,10 +12,15 @@ type Booking = {
     clientId: string;
     startAt: string;
     endAt: string;
-    status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show" | "booked" | "matched";
+    status: "pending" | "confirmed" | "accepted" | "in-progress" | "completed" | "cancelled" | "denied" | "no-show" | "booked" | "matched";
     note?: string;
+    appointmentType?: "consultation" | "tattoo_session";
+    projectId?: string | null;
+    sessionNumber?: number;
+    projectSessions?: number | null;
     artist?: {
         username?: string;
+        handle?: string;
         profileImage?: string;
         avatar?: { url?: string };
     };
@@ -27,6 +34,8 @@ export default function ClientAppointmentHistory() {
     useEffect(() => {
         loadBookings();
     }, []);
+
+    useBookingRealtime(() => loadBookings());
 
     const loadBookings = async () => {
         try {
@@ -49,24 +58,58 @@ export default function ClientAppointmentHistory() {
     };
 
     const { pendingBookings, pastBookings } = useMemo(() => {
-        const pendingStatuses = new Set<Booking["status"]>([
-            "pending",
-            "confirmed",
-            "booked",
-            "matched",
-            "in-progress",
+        // An appointment is only "finished" once the work is actually done (or it was
+        // cancelled/denied/no-show). Everything else — including an accepted/confirmed
+        // booking whose session hasn't happened yet — stays in Upcoming.
+        const finishedStatuses = new Set<Booking["status"]>([
+            "completed",
+            "cancelled",
+            "denied",
+            "no-show",
         ]);
 
         const pending = bookings
-            .filter((b) => pendingStatuses.has(b.status))
+            .filter((b) => !finishedStatuses.has(b.status))
             .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
         const past = bookings
-            .filter((b) => !pendingStatuses.has(b.status))
+            .filter((b) => finishedStatuses.has(b.status))
             .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime());
 
         return { pendingBookings: pending, pastBookings: past };
     }, [bookings]);
+
+    const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+    const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+
+    // A booking can be reviewed once the work is finished. For multi-session pieces that
+    // means every session of the project is complete — we prompt once, on the final one.
+    const reviewableIds = useMemo(() => {
+        const ids = new Set<string>();
+        const byProject = new Map<string, Booking[]>();
+        for (const b of bookings) {
+            if (b.projectId) {
+                const arr = byProject.get(b.projectId) || [];
+                arr.push(b);
+                byProject.set(b.projectId, arr);
+            } else if (b.status === "completed") {
+                ids.add(b._id);
+            }
+        }
+        byProject.forEach((arr) => {
+            if (arr.length && arr.every((b) => b.status === "completed")) {
+                const last = arr.reduce((a, b) => ((b.sessionNumber || 0) > (a.sessionNumber || 0) ? b : a));
+                ids.add(last._id);
+            }
+        });
+        return ids;
+    }, [bookings]);
+
+    const reviewDetailsFor = (b: Booking): ReviewDetails => ({
+        dateLabel: formatDate(b.startAt),
+        appointmentType: b.appointmentType,
+        sessions: b.projectSessions || undefined,
+    });
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -172,6 +215,18 @@ export default function ClientAppointmentHistory() {
                     </div>
                 )}
             </div>
+
+            {reviewableIds.has(booking._id) && !reviewedIds.has(booking._id) && (
+                <button
+                    type="button"
+                    onClick={() => setReviewBooking(booking)}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-semibold transition-colors hover:opacity-90"
+                    style={{ background: "var(--fg)", color: "var(--bg)", borderColor: "var(--fg)" }}
+                >
+                    <Star className="h-4 w-4 fill-current" />
+                    Write a review
+                </button>
+            )}
         </div>
     );
 
@@ -229,6 +284,19 @@ export default function ClientAppointmentHistory() {
                     <Panel title="Past" items={pastBookings} />
                 </div>
             )}
+
+            <ReviewPromptModal
+                open={!!reviewBooking}
+                onClose={() => setReviewBooking(null)}
+                onSubmitted={() => {
+                    if (reviewBooking) setReviewedIds((prev) => new Set(prev).add(reviewBooking._id));
+                }}
+                artistId={reviewBooking?.artistId || ""}
+                artistName={reviewBooking?.artist?.username || "your artist"}
+                artistHandle={reviewBooking?.artist?.handle}
+                bookingId={reviewBooking?._id}
+                details={reviewBooking ? reviewDetailsFor(reviewBooking) : undefined}
+            />
         </div>
     );
 }

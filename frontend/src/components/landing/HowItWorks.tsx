@@ -1,26 +1,13 @@
 import React from "react";
-import { LazyMotion, domAnimation, MotionConfig, useReducedMotion, m, type Variants } from "framer-motion";
+import { LazyMotion, domAnimation, MotionConfig, useReducedMotion, m } from "framer-motion";
 import { Search, CalendarDays, CheckCircle2 } from "lucide-react";
-
-const EASE = [0.22, 1, 0.36, 1] as const;
-
-const stepVariant: Variants = {
-    hidden: { opacity: 0, y: 28, filter: "blur(10px)" },
-    show: {
-        opacity: 1, y: 0, filter: "blur(0px)",
-        transition: {
-            opacity: { duration: 0.55, ease: EASE },
-            y: { type: "spring", stiffness: 220, damping: 26 },
-            filter: { duration: 0.45, ease: EASE },
-        },
-    },
-};
+import { directionalReveal, dirForColumn } from "./motion";
 
 const steps = [
     {
         icon: Search,
         title: "Browse & Discover",
-        body: "Filter by technique, healed results, budget, and travel radius. Read verified reviews and explore full portfolios before committing to anything.",
+        body: "Explore full portfolios and healed work, then shortlist the artists whose style fits your vision — all before you commit to anything.",
     },
     {
         icon: CalendarDays,
@@ -58,8 +45,8 @@ const HowItWorks: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ t
                         {steps.map((step, i) => {
                             const Icon = step.icon;
                             return (
-                                <m.div key={step.title} variants={stepVariant} initial="hidden" whileInView="show"
-                                    viewport={{ once: true, amount: 0.2 }} transition={{ delay: i * 0.08 } as any}
+                                <m.div key={step.title} custom={dirForColumn(i, 3)} variants={directionalReveal} initial="hidden" whileInView="show"
+                                    viewport={{ once: true, amount: 0.2 }} transition={{ delay: i * 0.1 } as any}
                                     className="flex flex-col items-center text-center">
                                     <div className="relative mb-fluid-4 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-[color:var(--border)] bg-card shadow-md">
                                         <Icon className="h-6 w-6 text-[color:var(--fg)]" />

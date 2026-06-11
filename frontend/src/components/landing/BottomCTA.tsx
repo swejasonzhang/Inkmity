@@ -39,7 +39,7 @@ const BottomCTA: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ te
                                     className="mt-3 text-[color:var(--fg)]/80 text-base md:text-lg max-w-2xl mx-auto"
                                     style={wc}
                                 >
-                                    Join Inkmity today. Message in real time, search faster, and build trust with verified reviews.
+                                    Join Inkmity today and give your next tattoo the start it deserves.
                                 </m.p>
 
                                 <m.div

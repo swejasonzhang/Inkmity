@@ -78,10 +78,10 @@ export default function ArtistDetailsStep({
 
     const inputCls =
         "w-full rounded-xl border border-white/15 bg-neutral-900/80 px-3 py-1.5 text-xs text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 text-center truncate";
-    const fieldCls = "space-y-1.5 md:space-y-1 flex flex-col items-center rounded-2xl md:rounded-xl border border-white/10 bg-black/40 px-3 py-3 md:px-2.5 md:py-2 transition hover:border-white/20";
+    const fieldCls = "space-y-1 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 md:py-2 transition hover:border-white/20";
     const labelCls = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-semibold capitalize text-white/90 text-center";
     const triggerCls =
-        "relative h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
+        "relative h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
         "data-[placeholder]:text-white/45 " +
         "[&>svg]:absolute [&>svg]:right-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:text-white/70 [&>svg]:opacity-100 " +
         "[&_[data-slot=select-value]]:w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center [&_[data-slot=select-value]]:truncate";
@@ -123,7 +123,7 @@ export default function ArtistDetailsStep({
                         <Button
                             type="button"
                             variant="outline"
-                            className="relative h-9 md:h-8 w-full justify-center rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white min-h-0 [&>svg]:absolute [&>svg]:right-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:text-white/60"
+                            className="relative h-8 w-full justify-center rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white min-h-0 [&>svg]:absolute [&>svg]:right-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:text-white/60"
                         >
                             <div className="flex flex-wrap items-center justify-center gap-1.5 text-center max-w-full overflow-hidden">
                                 {value.length === 0 ? (
@@ -250,13 +250,13 @@ export default function ArtistDetailsStep({
     }
 
     return (
-        <div className="space-y-3 md:space-y-2">
+        <div className="space-y-1.5 md:space-y-2">
             <div className="flex flex-col items-center justify-center text-center gap-1.5">
                 <h3 className="text-lg font-bold text-white">Artist Details</h3>
                 <p className="text-xs text-white/55">Tell us about your practice — or use “Skip now” to set defaults.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 md:gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
                 <div className={fieldCls}>
                     <label className={labelCls}><MapPin className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Location</label>
                     <Select value={artist.location && artist.location !== "__unset__" ? artist.location : "New York, NY"} onValueChange={handleSelect("location")}>

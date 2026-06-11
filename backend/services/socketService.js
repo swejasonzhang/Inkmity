@@ -143,6 +143,51 @@ export const initSocket = (ioInstance) => {
   });
 };
 
+export const emitToUser = (userId, event, payload) => {
+  if (!io || !userId) return;
+  io.to(userRoom(String(userId))).emit(event, payload);
+};
+
+// Push a realtime booking change to both participants so their appointments,
+// notifications, and dashboards update without a refresh.
+export const emitBookingUpdate = (booking, type) => {
+  if (!io || !booking) return;
+  const payload = {
+    type: type || "updated",
+    bookingId: String(booking._id),
+    artistId: String(booking.artistId),
+    clientId: String(booking.clientId),
+    status: booking.status,
+    startAt: booking.startAt,
+  };
+  io.to(userRoom(String(booking.artistId)))
+    .to(userRoom(String(booking.clientId)))
+    .emit("booking:updated", payload);
+};
+
+// Push a server-created message (e.g. booking notifications) to both
+// participants in realtime, and bump the receiver's unread badge.
+export const emitMessageCreated = (message) => {
+  if (!io || !message) return;
+  const payload = {
+    senderId: String(message.senderId),
+    receiverId: String(message.receiverId),
+    text: message.text,
+    timestamp: (message.createdAt instanceof Date ? message.createdAt : new Date()).getTime(),
+    meta: message.meta || undefined,
+    delivered: !!message.delivered,
+    seen: !!message.seen,
+  };
+  io.to(userRoom(payload.senderId))
+    .to(userRoom(payload.receiverId))
+    .to(threadRoom(message.threadKey))
+    .emit("message:new", { convoId: message.threadKey, message: payload });
+  io.to(userRoom(payload.receiverId)).emit("unread:update", {
+    userId: payload.receiverId,
+    participantId: payload.senderId,
+  });
+};
+
 export const getIO = () => io || null;
 export const isUserOnline = (clerkId) => {
   return onlineUsers.has(clerkId);

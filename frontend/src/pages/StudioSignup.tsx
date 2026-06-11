@@ -6,6 +6,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Building2, Loader2 } from "lucide-react";
 import Header from "@/components/header/Header";
+import VideoBackground from "@/components/VideoBackground";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,7 +125,8 @@ export default function StudioSignup() {
   };
 
   return (
-    <div className="relative flex h-svh flex-col text-app">
+    <div className="relative flex h-svh flex-col text-white">
+      <VideoBackground />
       <div id="clerk-captcha" />
       <ToastContainer
         position="top-center"
@@ -136,58 +138,58 @@ export default function StudioSignup() {
       />
       <Header />
       <main className="grid flex-1 place-items-center px-4 py-6">
-        <div className="w-full max-w-md rounded-3xl border border-app bg-card p-6 sm:p-8">
-          <div className="mb-5 flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-app" />
-            <h1 className="text-lg font-bold text-app">Create a studio account</h1>
+        <div className="w-full max-w-md rounded-3xl border border-app bg-card p-6 sm:p-8 text-center">
+          <div className="mb-5 flex items-center justify-center gap-2">
+            <Building2 className="h-5 w-5 text-white" />
+            <h1 className="text-lg font-bold text-white">Create a studio account</h1>
           </div>
 
           {!awaitingCode ? (
             <div className="flex flex-col gap-3">
               <div>
-                <Label className="text-xs text-muted">Studio name</Label>
+                <Label className="text-xs text-white/70">Studio name</Label>
                 <Input
                   value={studioName}
                   onChange={(e) => setStudioName(e.target.value)}
                   placeholder="Inkwell Tattoo Co."
-                  className="mt-1"
+                  className="mt-1 text-center text-white placeholder:text-white/40"
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted">Email</Label>
+                <Label className="text-xs text-white/70">Email</Label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="studio@example.com"
-                  className="mt-1"
+                  className="mt-1 text-center text-white placeholder:text-white/40"
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted">City (optional)</Label>
+                <Label className="text-xs text-white/70">City (optional)</Label>
                 <Input
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="New York, NY"
-                  className="mt-1"
+                  className="mt-1 text-center text-white placeholder:text-white/40"
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted">Password</Label>
+                <Label className="text-xs text-white/70">Password</Label>
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 text-center text-white placeholder:text-white/40"
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted">Confirm password</Label>
+                <Label className="text-xs text-white/70">Confirm password</Label>
                 <Input
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 text-center text-white placeholder:text-white/40"
                 />
               </div>
               <Button
@@ -198,7 +200,7 @@ export default function StudioSignup() {
                 {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
                 Continue
               </Button>
-              <p className="mt-1 text-center text-[11px] text-muted">
+              <p className="mt-1 text-center text-[11px] text-white/70">
                 You&apos;ll verify your business with Stripe and finish setup after
                 signing in. Not a studio?{" "}
                 <a href="/signup" className="underline">
@@ -209,9 +211,9 @@ export default function StudioSignup() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted">
+              <p className="text-sm text-white/70">
                 Enter the verification code we emailed to{" "}
-                <span className="text-app">{email}</span>.
+                <span className="text-white">{email}</span>.
               </p>
               <Input
                 value={code}
@@ -219,6 +221,7 @@ export default function StudioSignup() {
                 placeholder="123456"
                 inputMode="numeric"
                 onKeyDown={(e) => e.key === "Enter" && verify()}
+                className="text-center text-white placeholder:text-white/40"
               />
               <Button disabled={!code.trim() || loading} onClick={verify}>
                 {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
@@ -226,7 +229,7 @@ export default function StudioSignup() {
               </Button>
               <button
                 onClick={() => setAwaitingCode(false)}
-                className="text-center text-[11px] text-muted underline"
+                className="text-center text-[11px] text-white/70 underline"
               >
                 Back
               </button>

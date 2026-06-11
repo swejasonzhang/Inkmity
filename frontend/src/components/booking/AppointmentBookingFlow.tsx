@@ -21,6 +21,9 @@ type BookingFlowData = {
   sessionNumber: number;
   referenceImageIds: string[];
   intakeForm: any;
+  // One entry per session — a single appointment has one, a big piece can have
+  // several (booked together as a linked project).
+  sessions: Array<{ startISO: string; endISO: string }>;
 };
 
 type Props = {
@@ -57,7 +60,36 @@ export default function AppointmentBookingFlow({
     sessionNumber: 1,
     referenceImageIds: [],
     intakeForm: null,
+    sessions: [],
   });
+
+  // Add/remove a chosen time. Consultations are single; tattoo sessions can stack
+  // into a multi-session project. startISO/endISO mirror the first session.
+  const toggleSession = useCallback((s: { startISO: string; endISO: string }) => {
+    setBookingData((prev) => {
+      const isConsult = prev.appointmentType === "consultation";
+      let sessions: Array<{ startISO: string; endISO: string }>;
+      if (isConsult) {
+        sessions = [s];
+      } else {
+        const exists = prev.sessions.some((x) => x.startISO === s.startISO);
+        sessions = exists
+          ? prev.sessions.filter((x) => x.startISO !== s.startISO)
+          : [...prev.sessions, s].sort((a, b) => +new Date(a.startISO) - +new Date(b.startISO));
+      }
+      const first = sessions[0];
+      const durationMinutes = first
+        ? Math.round((+new Date(first.endISO) - +new Date(first.startISO)) / 60000)
+        : prev.durationMinutes;
+      return {
+        ...prev,
+        sessions,
+        startISO: first?.startISO ?? null,
+        endISO: first?.endISO ?? null,
+        durationMinutes,
+      };
+    });
+  }, []);
 
   const [consultationFree, setConsultationFree] = useState(true);
   useEffect(() => {
@@ -79,7 +111,7 @@ export default function AppointmentBookingFlow({
       case 0:
         return bookingData.appointmentType !== null;
       case 1:
-        return bookingData.startISO !== null && bookingData.endISO !== null;
+        return bookingData.sessions.length >= 1;
       case 2:
         return bookingData.intakeForm !== null;
       case 3:
@@ -154,13 +186,9 @@ export default function AppointmentBookingFlow({
               <TimeSlotStep
                 artistId={bookingData.artistId}
                 initialDate={initialDate}
-                selectedStart={bookingData.startISO}
-                selectedEnd={bookingData.endISO}
-                durationMinutes={bookingData.durationMinutes}
                 appointmentType={bookingData.appointmentType || "tattoo_session"}
-                onSelect={(startISO, endISO) => {
-                  updateBookingData({ startISO, endISO });
-                }}
+                sessions={bookingData.sessions}
+                onToggle={toggleSession}
               />
             </motion.div>
           )}

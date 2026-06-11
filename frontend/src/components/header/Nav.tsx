@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { NavItem as BuildNavItem } from "./buildNavItems";
 import {
     Lock,
@@ -28,7 +29,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
 };
 
 const desktopBase =
-    "relative inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg text-[13px] lg:text-[15px] xl:text-[16px] font-extrabold uppercase tracking-wide flex-shrink-0 whitespace-nowrap transition-all duration-200";
+    "relative flex flex-1 basis-0 items-center justify-center gap-1.5 px-2 lg:px-3 py-2 rounded-lg text-[13px] lg:text-[15px] xl:text-[16px] font-extrabold uppercase tracking-wide whitespace-nowrap transition-all duration-200";
 const desktopActive = "bg-elevated border border-app text-app shadow-sm";
 const desktopIdle = "border border-transparent text-app/55 hover:text-app hover:bg-elevated/50";
 
@@ -37,10 +38,34 @@ const mobileBase =
 const mobileActive = "bg-black/65 ring-1 ring-white/25";
 const mobileIdle = "hover:bg-black/60 active:scale-[0.98]";
 
+function CountBadge({ count, loading, className = "" }: { count?: number; loading?: boolean; className?: string }) {
+    // Only badge-bearing items (count defined) ever reserve a slot. The slot is
+    // a constant width across loading / zero / number states so the nav link
+    // never shifts when a count appears, changes, or disappears.
+    if (count === undefined) return null;
+    const slot = `inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-extrabold leading-none tabular-nums`;
+    if (loading) {
+        return <Skeleton aria-hidden className={`${slot} rounded-full ${className}`} />;
+    }
+    if (count <= 0) {
+        // Invisible placeholder keeps the reserved width so nothing shifts.
+        return <span aria-hidden className={`${slot} invisible ${className}`}>0</span>;
+    }
+    return (
+        <span
+            aria-label={`${count} new`}
+            className={`${slot} bg-white text-black shadow-sm ${className}`}
+        >
+            {count > 99 ? "99+" : count}
+        </span>
+    );
+}
+
 export function Nav({
     items,
     isActive,
     isSignedIn,
+    badgesLoading,
     onDisabledDashboardHover,
     onDisabledDashboardLeave,
     setMobileMenuOpen,
@@ -49,6 +74,7 @@ export function Nav({
     items: NavItem[];
     isActive: (to: string) => boolean;
     isSignedIn: boolean;
+    badgesLoading?: boolean;
     onDisabledDashboardHover?: React.MouseEventHandler<Element>;
     onDisabledDashboardLeave?: React.MouseEventHandler<Element>;
     setMobileMenuOpen?: (v: boolean) => void;
@@ -56,7 +82,7 @@ export function Nav({
 }) {
     return (
         <>
-            <nav className="hidden md:flex items-center justify-center gap-1.5 lg:gap-2 w-full min-w-0">
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2 w-full min-w-0">
                 {items.map((item) => {
                     const active = isActive(item.to);
                     const isDisabled = item.to === "#" || item.disabled;
@@ -86,7 +112,12 @@ export function Nav({
                             aria-current={active ? "page" : undefined}
                             className={cls}
                         >
+                            {/* Left spacer mirrors the right badge slot so the label stays centered. */}
+                            {item.count !== undefined && (
+                                <span aria-hidden className="inline-flex h-5 min-w-5 px-1.5 shrink-0 invisible" />
+                            )}
                             <span className="whitespace-nowrap">{item.label}</span>
+                            <CountBadge count={item.count} loading={badgesLoading} className="shrink-0" />
                         </Link>
                     );
                 })}
@@ -129,6 +160,7 @@ export function Nav({
                         >
                             <Icon size={22} className={`flex-shrink-0 ${iconOpacity}`} />
                             <span className="flex-1 text-left">{item.label}</span>
+                            <CountBadge count={item.count} loading={badgesLoading} />
                             <ChevronRight size={18} className="opacity-30 group-hover:opacity-70 transition-opacity flex-shrink-0" />
                         </Link>
                     );

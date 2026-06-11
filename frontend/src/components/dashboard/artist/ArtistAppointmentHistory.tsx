@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Calendar, Clock, User, DollarSign, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -10,7 +11,7 @@ type Booking = {
     clientId: string;
     startAt: string;
     endAt: string;
-    status: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show" | "booked" | "matched";
+    status: "pending" | "confirmed" | "accepted" | "in-progress" | "completed" | "cancelled" | "denied" | "no-show" | "booked" | "matched";
     appointmentType?: "consultation" | "tattoo_session";
     note?: string;
     priceCents?: number;
@@ -31,6 +32,8 @@ export default function ArtistAppointmentHistory() {
     useEffect(() => {
         loadBookings();
     }, []);
+
+    useBookingRealtime(() => loadBookings());
 
     const loadBookings = async () => {
         try {
@@ -53,20 +56,21 @@ export default function ArtistAppointmentHistory() {
     };
 
     const { pendingBookings, pastBookings } = useMemo(() => {
-        const pendingStatuses = new Set<Booking["status"]>([
-            "pending",
-            "confirmed",
-            "booked",
-            "matched",
-            "in-progress",
+        // Only truly finished work (or cancelled/denied/no-show) belongs in Past. An
+        // accepted appointment whose session hasn't happened yet stays Upcoming.
+        const finishedStatuses = new Set<Booking["status"]>([
+            "completed",
+            "cancelled",
+            "denied",
+            "no-show",
         ]);
 
         const pending = bookings
-            .filter((b) => pendingStatuses.has(b.status))
+            .filter((b) => !finishedStatuses.has(b.status))
             .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
         const past = bookings
-            .filter((b) => !pendingStatuses.has(b.status))
+            .filter((b) => finishedStatuses.has(b.status))
             .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime());
 
         return { pendingBookings: pending, pastBookings: past };

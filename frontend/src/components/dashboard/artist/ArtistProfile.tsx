@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import StudioLocationPicker from "@/components/studio/StudioLocationPicker";
 
 const PLACEMENT_OPTIONS = [
     "Forearm",
@@ -499,31 +500,6 @@ export default function ArtistProfile() {
         setEditedArtist({ ...editedArtist, restrictedPlacements: currentRestrictions.filter(p => p !== placement) });
     };
 
-    const geocodeAddress = async (address: string) => {
-        try {
-            const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-            if (!apiKey) {
-                console.warn("Google Maps API key not configured");
-                return;
-            }
-            const response = await fetch(
-                `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
-            );
-            const data = await response.json();
-            if (data.results && data.results.length > 0) {
-                const location = data.results[0].geometry.location;
-                setEditedArtist(prev => ({
-                    ...prev,
-                    shopAddress: address,
-                    shopLat: location.lat,
-                    shopLng: location.lng
-                }));
-            }
-        } catch (error) {
-            console.error("Error geocoding address:", error);
-        }
-    };
-
     const saveProfile = async () => {
         if (!user || !artist) return;
         try {
@@ -735,7 +711,7 @@ export default function ArtistProfile() {
                             id="bio"
                             value={currentBio}
                             onChange={(e) => setEditedArtist({ ...editedArtist, bio: e.target.value })}
-                            className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-sm transition-all text-center"
+                            className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none transition-all text-center"
                             rows={3}
                             style={{ color: "var(--fg)" }}
                             placeholder="Tell clients about yourself..."
@@ -822,41 +798,25 @@ export default function ArtistProfile() {
                                 className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs mb-2"
                                 placeholder="Shop name"
                             />
-                            <Label htmlFor="shopAddress" className="text-xs flex items-center justify-center gap-2 w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
-                                Shop Address
+                            <Label className="text-xs flex items-center justify-center gap-2 w-full" style={{ color: "color-mix(in srgb, var(--fg) 80%, transparent)" }}>
+                                Shop Location
                             </Label>
-                            <Input
-                                id="shopAddress"
-                                type="text"
-                                value={currentShopAddress}
-                                onChange={(e) => {
-                                    const address = e.target.value;
-                                    setEditedArtist({ ...editedArtist, shopAddress: address });
-                                    if (address.trim()) {
-                                        clearTimeout((window as any).geocodeTimeout);
-                                        (window as any).geocodeTimeout = setTimeout(() => {
-                                            geocodeAddress(address);
-                                        }, 1000);
-                                    } else {
-                                        setEditedArtist(prev => ({ ...prev, shopLat: undefined, shopLng: undefined }));
-                                    }
+                            <StudioLocationPicker
+                                value={{
+                                    address: currentShopAddress,
+                                    city: "",
+                                    lat: currentShopLat,
+                                    lng: currentShopLng,
                                 }}
-                                className="bg-[color:var(--elevated)]/50 border-[color:var(--border)] focus:border-[color:var(--fg)] focus:ring-[color:var(--fg)]/20 text-center text-xs"
-                                placeholder="Enter shop address"
+                                onChange={(loc) =>
+                                    setEditedArtist((prev) => ({
+                                        ...prev,
+                                        shopAddress: loc.address,
+                                        shopLat: loc.lat,
+                                        shopLng: loc.lng,
+                                    }))
+                                }
                             />
-                            {currentShopLat && currentShopLng && import.meta.env.VITE_GOOGLE_MAPS_API_KEY && (
-                                <div className="mt-2 w-full h-48 rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
-                                    <iframe
-                                        width="100%"
-                                        height="100%"
-                                        style={{ border: 0 }}
-                                        loading="lazy"
-                                        allowFullScreen
-                                        referrerPolicy="no-referrer-when-downgrade"
-                                        src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${currentShopLat},${currentShopLng}`}
-                                    />
-                                </div>
-                            )}
                         </div>
                     </div>
 

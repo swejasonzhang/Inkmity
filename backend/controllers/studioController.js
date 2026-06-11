@@ -104,6 +104,7 @@ export async function createStudio(req, res) {
       city: body.city || "",
       lat: body.lat,
       lng: body.lng,
+      placeId: body.placeId || "",
       bio: body.bio || "",
       defaultCommissionPct:
         body.defaultCommissionPct !== undefined
@@ -171,7 +172,7 @@ export async function updateStudio(req, res) {
       return res.status(403).json({ error: "Only the studio owner can update settings" });
 
     const body = req.body || {};
-    const editable = ["name", "email", "phone", "address", "city", "lat", "lng", "bio"];
+    const editable = ["name", "email", "phone", "address", "city", "lat", "lng", "placeId", "bio"];
     for (const key of editable) {
       if (body[key] !== undefined) studio[key] = body[key];
     }

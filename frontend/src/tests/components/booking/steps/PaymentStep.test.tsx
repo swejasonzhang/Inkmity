@@ -9,6 +9,7 @@ const mockGetToken = jest.fn<() => Promise<string>>();
 
 jest.unstable_mockModule("@/api", () => ({
   createTattooSession: mockCreateTattooSession,
+  createMultiSession: jest.fn(),
   createDepositPaymentIntent: mockCreateDepositPaymentIntent,
   getArtistPolicy: mockGetArtistPolicy,
   createConsultation: jest.fn(),
