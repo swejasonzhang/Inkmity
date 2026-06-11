@@ -23,10 +23,8 @@ export async function captureBookingBalance(booking) {
 
   const transferGroup = `booking_${String(booking._id)}`;
 
-  // Platform fee: charge the full fee on the price, net of anything already
-  // collected at deposit time. The client pays (balance − credits + fee); the
-  // provider receives the rate (balance, split solo/studio) and the platform
-  // keeps the fee.
+  // Client pays (balance − credits + fee); provider gets the rate (split solo/
+  // studio), platform keeps the fee, net of any fee already collected at deposit.
   const effectivePct = await getEffectiveFeePct(booking.clientId);
   const fullFeeCents = computePlatformFeeCents(
     booking.priceCents,

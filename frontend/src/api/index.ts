@@ -497,8 +497,7 @@ export async function denyAppointment(
   return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
 }
 
-// On-site completion phase 1: issue a fresh 3-minute code to each party (sent
-// to their messages). Phase 2 is verifyBookingCompletion below.
+// Completion phase 1: issue a fresh 3-minute code to each party.
 export async function startBookingVerification(
   id: string,
   token?: string | null,
@@ -507,8 +506,7 @@ export async function startBookingVerification(
   return apiPost<Booking>(`/bookings/${id}/verify/start`, undefined, token, signal);
 }
 
-// On-site completion phase 2: each party confirms with their own code. When
-// both have confirmed, the booking completes and the balance is charged + split.
+// Completion phase 2: each party confirms with their own code; both → charged + split.
 export async function verifyBookingCompletion(
   id: string,
   role: "client" | "artist",
@@ -519,8 +517,6 @@ export async function verifyBookingCompletion(
   return apiPost<Booking>(`/bookings/${id}/verify`, { role, code }, token, signal);
 }
 
-// Artist sets the final price; the balance (rate + platform fee) is charged at
-// completion to the client's card on file, then split solo/studio.
 export async function setBookingFinalPrice(
   id: string,
   finalPriceCents: number,
@@ -559,8 +555,7 @@ export async function createDepositPaymentIntent(
   }>("/billing/deposit/intent", { bookingId }, token, signal);
 }
 
-// No-deposit flow: save the client's card on file at booking (no charge) so the
-// rate + platform fee can be captured off-session at completion.
+// Save the client's card on file at booking (no charge) for the at-completion capture.
 export async function createCardSetupIntent(
   bookingId: string,
   token?: string | null,
