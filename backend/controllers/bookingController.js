@@ -843,6 +843,10 @@ export async function verifyBookingCode(req, res) {
     const isClient = String(doc.clientId) === actorId;
     const isArtist = String(doc.artistId) === actorId;
     if (!isClient && !isArtist) return res.status(403).json({ error: "Forbidden" });
+    // Each party may only confirm their own side — prevents one party from
+    // unilaterally completing the booking (and charging) without the other.
+    if (role === "client" && !isClient) return res.status(403).json({ error: "role_mismatch" });
+    if (role === "artist" && !isArtist) return res.status(403).json({ error: "role_mismatch" });
     if (doc.status === "cancelled")
       return res.status(400).json({ error: "booking_cancelled" });
     if (!doc.codeExpiresAt || new Date() > new Date(doc.codeExpiresAt))
