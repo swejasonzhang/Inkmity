@@ -497,6 +497,29 @@ export async function denyAppointment(
   return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
 }
 
+// On-site completion: each party confirms with their own code. When both have
+// confirmed, the booking completes and the balance is charged + split.
+export async function verifyBookingCompletion(
+  id: string,
+  role: "client" | "artist",
+  code: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/verify`, { role, code }, token, signal);
+}
+
+// Artist sets the final price; the balance (rate + platform fee) is charged at
+// completion to the client's card on file, then split solo/studio.
+export async function setBookingFinalPrice(
+  id: string,
+  finalPriceCents: number,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPatch<Booking>(`/bookings/${id}/final-price`, { finalPriceCents }, token, signal);
+}
+
 export async function getIntakeForm(
   bookingId: string,
   token?: string | null,

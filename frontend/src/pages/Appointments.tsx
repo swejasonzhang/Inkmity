@@ -3,7 +3,7 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import Header from "@/components/header/Header";
-import { getAppointments, acceptAppointment, denyAppointment, Booking } from "@/api";
+import { getAppointments, acceptAppointment, denyAppointment, setBookingFinalPrice, verifyBookingCompletion, Booking } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,6 +91,8 @@ export default function Appointments() {
   const [view, setView] = useState<"pending" | "past">("pending");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [priceEditId, setPriceEditId] = useState<string | null>(null);
+  const [priceInput, setPriceInput] = useState("");
   const [aftercareModalOpen, setAftercareModalOpen] = useState(false);
   const [aftercareAppointment, setAftercareAppointment] = useState<AppointmentWithUsers | null>(null);
 
@@ -149,6 +151,51 @@ export default function Appointments() {
     } catch (error: any) {
       console.error("Error accepting appointment:", error);
       toast.error(error?.body?.error || "Failed to accept appointment");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleSetPrice = async (id: string, dollars: string) => {
+    if (processing) return;
+    const cents = Math.round(parseFloat(dollars) * 100);
+    if (!Number.isFinite(cents) || cents < 0) {
+      toast.error("Enter a valid price");
+      return;
+    }
+    setProcessing(id);
+    try {
+      const token = await getToken();
+      await setBookingFinalPrice(id, cents, token ?? undefined);
+      toast.success(`Final price set to ${formatCurrency(cents)}`);
+      setPriceEditId(null);
+      setPriceInput("");
+      await loadAppointments();
+    } catch (error: any) {
+      toast.error(error?.body?.message || error?.body?.error || "Failed to set price");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleConfirmComplete = async (id: string, who: "client" | "artist", code: string) => {
+    if (processing) return;
+    if (!code) {
+      toast.error("Confirmation code unavailable — refresh and try again.");
+      return;
+    }
+    setProcessing(id);
+    try {
+      const token = await getToken();
+      const updated = await verifyBookingCompletion(id, who, code, token ?? undefined);
+      toast.success(
+        updated.status === "completed"
+          ? "Session completed — payment is being processed."
+          : "Confirmed — waiting for the other party to confirm."
+      );
+      await loadAppointments();
+    } catch (error: any) {
+      toast.error(error?.body?.message || error?.body?.error || "Couldn't confirm completion");
     } finally {
       setProcessing(null);
     }
@@ -359,6 +406,84 @@ export default function Appointments() {
                 )}
               </>
             )}
+
+            {isArtist && isTattooSession && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
+              <div className="mt-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                {priceEditId === appointment._id ? (
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1 min-w-0">
+                      <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        autoFocus
+                        value={priceInput}
+                        onChange={(e) => setPriceInput(e.target.value)}
+                        placeholder="Final price"
+                        className="w-full rounded-lg border bg-card py-2 pl-8 pr-3 text-sm text-app outline-none focus:border-[color:var(--fg)]/40"
+                        style={{ borderColor: "var(--border)" }}
+                      />
+                    </div>
+                    <Button onClick={() => handleSetPrice(appointment._id, priceInput)} disabled={processing === appointment._id} className="h-9 rounded-lg text-xs px-3">
+                      {processing === appointment._id ? "Saving..." : "Save"}
+                    </Button>
+                    <Button onClick={() => { setPriceEditId(null); setPriceInput(""); }} className="h-9 rounded-lg text-xs px-3 bg-elevated border border-app text-app hover:bg-elevated/70">
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-subtle min-w-0">
+                      {appointment.priceCents && appointment.priceCents > 0
+                        ? <>Final price: <span className="font-semibold text-app">{formatCurrency(appointment.priceCents)}</span></>
+                        : "Set the final price — the client is charged at completion."}
+                    </span>
+                    <Button
+                      onClick={() => { setPriceEditId(appointment._id); setPriceInput(appointment.priceCents ? (appointment.priceCents / 100).toString() : ""); }}
+                      className="h-8 rounded-lg text-xs px-3 whitespace-nowrap"
+                    >
+                      {appointment.priceCents && appointment.priceCents > 0 ? "Edit price" : "Set price"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isTattooSession && appointment.status === "accepted" && (() => {
+              const a = appointment as any;
+              const myVerified = isClient ? a.clientVerifiedAt : a.artistVerifiedAt;
+              const otherVerified = isClient ? a.artistVerifiedAt : a.clientVerifiedAt;
+              const myCode = isClient ? a.clientCode : a.artistCode;
+              const otherLabel = isClient ? "artist" : "client";
+              return (
+                <div className="mt-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <CheckCircle className="h-4 w-4 opacity-70" />
+                    <span className="text-xs font-semibold">Confirm completion</span>
+                  </div>
+                  {myVerified ? (
+                    <p className="text-xs text-subtle">
+                      You confirmed.{" "}
+                      {otherVerified ? "Finalizing payment…" : `Waiting for the ${otherLabel} to confirm.`}
+                    </p>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-subtle min-w-0">
+                        Confirm with your {otherLabel} that the session is done{isClient ? " — your card will be charged" : ""}.
+                      </span>
+                      <Button
+                        onClick={() => handleConfirmComplete(appointment._id, isClient ? "client" : "artist", myCode)}
+                        disabled={processing === appointment._id || !myCode}
+                        className="h-8 rounded-lg text-xs px-3 whitespace-nowrap"
+                      >
+                        {processing === appointment._id ? "..." : "Confirm done"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {isConsultation && (
               <DetailRow
