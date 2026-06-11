@@ -29,9 +29,16 @@ export function buildNavItems(
     items.push(gated("Studios", "/studios"));
   }
 
+  items.push(gated("Appointments", "/appointments"));
+
+  // Explore is a discovery surface for clients (and prospective clients when
+  // signed out); providers don't browse it.
+  const isProvider = role === "artist" || role === "studio";
+  if (!isProvider) {
+    items.push({ label: "Explore", to: "/explore" });
+  }
+
   items.push(
-    gated("Appointments", "/appointments"),
-    { label: "Explore", to: "/explore" },
     { label: "Tiers", to: "/tiers", secondary: true },
     { label: "Contact", to: "/contact", secondary: true },
     { label: "About", to: "/about", secondary: true }
