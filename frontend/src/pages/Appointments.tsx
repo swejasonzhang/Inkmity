@@ -423,7 +423,7 @@ export default function Appointments() {
             )}
 
             {isArtist && isTattooSession && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
-              <div className="mt-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+              <div className="col-span-2 mt-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
                 {priceEditId === appointment._id ? (
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1 min-w-0">
@@ -473,7 +473,7 @@ export default function Appointments() {
               const otherLabel = isClient ? "artist" : "client";
               const codeActive = a.codeExpiresAt && new Date(a.codeExpiresAt).getTime() > Date.now();
               return (
-                <div className="mt-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                <div className="col-span-2 mt-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <CheckCircle className="h-4 w-4 opacity-70" />
                     <span className="text-xs font-semibold">Confirm completion</span>
