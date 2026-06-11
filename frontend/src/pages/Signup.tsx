@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, ChangeEvent, useRef } from "react";
 import Header from "@/components/header/Header";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, LayoutGroup } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
@@ -8,6 +8,7 @@ import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
 import CookieConsent from "@/components/access/CookieConsent";
 import SignupFormCard from "@/components/access/SignupFormCard";
+import RoleChooser, { type RoleChoice } from "@/components/access/RoleChooser";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
@@ -104,6 +105,7 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
+  const [entrySelected, setEntrySelected] = useState(false);
   const [step, setStep] = useState(0);
   const [detailsSkipped, setDetailsSkipped] = useState(false);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
@@ -140,6 +142,17 @@ export default function SignUp() {
     if (!authLoaded) return;
     if (staleSessionRef.current === null) staleSessionRef.current = !!userId;
   }, [authLoaded, userId]);
+
+  // After a role is chosen the form first appears centered, then slides right
+  // as the info panel reveals on the left.
+  useEffect(() => {
+    if (!entrySelected) {
+      setShowInfo(false);
+      return;
+    }
+    const t = window.setTimeout(() => setShowInfo(true), 650);
+    return () => window.clearTimeout(t);
+  }, [entrySelected]);
 
   useEffect(() => {
     if (authLoaded && staleSessionRef.current === true && !!userId && onboarded === false) {
@@ -179,11 +192,6 @@ export default function SignUp() {
       }, 2000);
     }
   }, [authLoaded, userId, navigate]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowInfo(true), 2000);
-    return () => clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -481,6 +489,23 @@ export default function SignUp() {
     if (role === "artist") setArtist((prev) => ({ ...prev, bio: v }));
   };
 
+  const handleRoleSelect = (choice: RoleChoice) => {
+    if (choice === "studio") {
+      navigate("/signup/studio");
+      return;
+    }
+    setRole(choice);
+    setStep(0);
+    setDetailsSkipped(false);
+    setEntrySelected(true);
+  };
+
+  const backToRoleChoice = () => {
+    setStep(0);
+    setDetailsSkipped(false);
+    setEntrySelected(false);
+  };
+
   const successHeading = successType === "already" ? "You're already logged in." : "Successful signup!";
   const successSubtitle = successType === "already" ? "Redirecting now" : "Redirecting to Dashboard.";
 
@@ -494,11 +519,13 @@ export default function SignUp() {
       <main className="flex-1 min-h-0 overflow-y-auto grid place-items-center px-4 sm:px-6 md:px-8 pt-2 pb-6 sm:pb-8" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
           <motion.div variants={container} initial="hidden" animate="show" className="relative w-full max-w-2xl mx-auto">
             <GateNotice />
-            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId ? "" : "justify-center"}`}>
-              {showInfo && !showSuccess && authLoaded && !userId && (
+            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId && entrySelected ? "" : "justify-center"}`}>
+              <LayoutGroup>
+              {showInfo && !showSuccess && authLoaded && !userId && entrySelected && (
                 <motion.div
-                  layout={!showSuccess && !userId}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  key="info-panel"
+                  layout
+                  transition={{ layout: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } }}
                   className="hidden sm:flex w-full sm:w-1/2"
                 >
                   <div className="w-full h-full">
@@ -530,17 +557,28 @@ export default function SignUp() {
                     </div>
                   </div>
                 </motion.div>
+              ) : !entrySelected ? (
+                <motion.div
+                  layout={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="w-full max-w-md p-0"
+                >
+                  <RoleChooser onSelect={handleRoleSelect} />
+                </motion.div>
               ) : (
                 <motion.div
-                  layout={!showSuccess && !userId}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  key="form-card"
+                  layout
+                  transition={{ layout: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } }}
                   className={`${showInfo && !showSuccess && (!authLoaded || !userId) ? "w-full sm:w-1/2" : "w-full max-w-md"} p-0`}
                 >
+
                   <SignupFormCard
                     showInfo={showInfo}
                     hasError={mascotError}
                     role={role}
                     setRole={setRole}
+                    onChangeRole={backToRoleChoice}
                     step={step}
                     setStep={setStep}
                     slides={slides}
@@ -579,6 +617,7 @@ export default function SignUp() {
                   />
                 </motion.div>
               )}
+              </LayoutGroup>
             </div>
           </motion.div>
       </main>
