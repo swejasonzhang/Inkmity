@@ -41,7 +41,7 @@ const Pricing: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ text
                             initial="hidden"
                             whileInView="visible"
                             viewport={{ once: true, amount: 0.5 }}
-                            className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)]/45 mb-3"
+                            className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)] mb-3"
                             style={wc}
                         >
                             Pricing

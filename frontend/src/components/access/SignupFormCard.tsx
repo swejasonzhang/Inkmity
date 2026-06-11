@@ -43,6 +43,7 @@ type BaseProps = {
 type SignupProps = BaseProps & {
   role: Role;
   setRole: (r: Role) => void;
+  onChangeRole?: () => void;
   step: number;
   setStep: (n: number) => void;
   slides: readonly { key: string; valid: boolean }[];
@@ -81,6 +82,7 @@ export default function SignupFormCard(props: SignupProps) {
     className,
     role,
     setRole,
+    onChangeRole,
     step,
     setStep,
     slides,
@@ -204,6 +206,7 @@ export default function SignupFormCard(props: SignupProps) {
                           <SharedAccountStep
                             role={role}
                             setRole={setRole}
+                            onChangeRole={onChangeRole}
                             shared={shared}
                             onChange={onSharedChange}
                             onPasswordVisibilityChange={onPasswordVisibilityChange}
@@ -229,16 +232,16 @@ export default function SignupFormCard(props: SignupProps) {
                         <ReviewStep role={role} shared={shared} client={client} artist={artist} clientImages={clientRefs} artistImages={artistPortfolioImgs} bio={bio} onBioChange={onBioChange} />
                       )}
                     </div>
-                    {isReviewSlide && (
-                      <div className="w-full mt-2 flex items-start gap-2 text-[11px] sm:text-xs text-subtle select-none">
+                    {(isRoleSlide || isReviewSlide) && (
+                      <div className={`w-full mt-3 flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-[11px] sm:text-xs text-app select-none transition-colors ${agreedToTerms ? "border-app bg-elevated" : "border-white/70 bg-white/[0.06]"}`}>
                         <input
                           id="agree-terms"
                           type="checkbox"
                           checked={agreedToTerms}
                           onChange={(e) => setAgreedToTerms(e.target.checked)}
-                          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700 cursor-pointer"
+                          className="mt-0.5 h-4 w-4 shrink-0 accent-white cursor-pointer"
                         />
-                        <span>
+                        <span className="leading-snug">
                           <label htmlFor="agree-terms" className="cursor-pointer">I agree to Inkmity's </label>
                           <LegalLink doc="terms">Terms of Service</LegalLink>
                           <label htmlFor="agree-terms" className="cursor-pointer"> and </label>

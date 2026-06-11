@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import OAuthButtons from "@/components/access/OAuthButtons";
 import { validateEmail, validatePassword } from "@/lib/utils";
@@ -12,6 +11,7 @@ type SharedAccount = { username: string; email: string; password: string };
 type Props = {
     role: Role;
     setRole: (r: Role) => void;
+    onChangeRole?: () => void;
     shared: SharedAccount;
     onChange: React.ChangeEventHandler<HTMLInputElement>;
     onPasswordVisibilityChange?: (hidden: boolean) => void;
@@ -23,7 +23,7 @@ type Props = {
 
 export default function SharedAccountStep({
     role,
-    setRole,
+    onChangeRole,
     shared,
     onChange,
     onPasswordVisibilityChange,
@@ -87,26 +87,22 @@ export default function SharedAccountStep({
                 <span className="text-xs text-white/60">or sign up with email</span>
                 <span className="h-px flex-1 bg-white/15" />
             </div>
-            <div className="w-full">
-                <Label className="block text-xs text-white/80 mb-1">I want to join as</Label>
-                <div className="flex flex-col md:flex-row gap-2 items-stretch">
-                    <Button
-                        type="button"
-                        onClick={() => setRole("client")}
-                        className={`w-full flex-1 px-3 py-1.5 rounded-lg text-xs ${role === "client" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
-                        variant="secondary"
-                    >
-                        Client
-                    </Button>
-                    <Button
-                        type="button"
-                        onClick={() => setRole("artist")}
-                        className={`w-full flex-1 px-3 py-1.5 rounded-lg text-xs ${role === "artist" ? "bg-white/20 text-white" : "bg-white/10 text-white/80"}`}
-                        variant="secondary"
-                    >
-                        Artist
-                    </Button>
-                </div>
+            <div className="w-full flex items-center justify-center gap-2 text-xs">
+                <span className="text-white/80">
+                    Signing up as <span className="font-semibold text-white capitalize">{role}</span>
+                </span>
+                {onChangeRole && (
+                    <>
+                        <span className="text-white/40" aria-hidden>·</span>
+                        <button
+                            type="button"
+                            onClick={onChangeRole}
+                            className="underline font-semibold text-white/80 hover:text-white"
+                        >
+                            Change
+                        </button>
+                    </>
+                )}
             </div>
 
             <div className="w-full mt-3">
@@ -118,7 +114,7 @@ export default function SharedAccountStep({
                     placeholder="Username"
                     aria-label="Username"
                     onChange={onChange}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/65 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
                     aria-invalid={!usernameOk}
                 />
             </div>
@@ -133,7 +129,7 @@ export default function SharedAccountStep({
                     aria-label="Email"
                     onChange={onChange}
                     onBlur={onEmailBlur}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/65 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
                     aria-describedby={emailTakenMsg ? "email-help" : undefined}
                     aria-invalid={!emailOk}
                 />
@@ -151,7 +147,7 @@ export default function SharedAccountStep({
                         placeholder="Password (8+ chars, 1 number)"
                         aria-label="Password"
                         onChange={onChange}
-                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/65 pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
+                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
                         aria-invalid={!pwdOk}
                     />
                     <Button
