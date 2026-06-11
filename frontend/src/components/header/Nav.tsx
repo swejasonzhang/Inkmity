@@ -2,16 +2,17 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { NavItem as BuildNavItem } from "./buildNavItems";
 import {
-    Lock,
     User,
     LogOut,
     LayoutDashboard,
     Users,
     Image as ImageIcon,
-    Images,
+    Compass,
     CalendarDays,
     Mail,
     Info,
+    Award,
+    Store,
     ChevronRight,
     type LucideIcon,
 } from "lucide-react";
@@ -22,16 +23,18 @@ const NAV_ICONS: Record<string, LucideIcon> = {
     Dashboard: LayoutDashboard,
     Artists: Users,
     Portfolio: ImageIcon,
+    Studios: Store,
     Appointments: CalendarDays,
-    Gallery: Images,
+    Explore: Compass,
+    Tiers: Award,
     Contact: Mail,
     About: Info,
 };
 
 const desktopBase =
-    "relative flex flex-1 basis-0 items-center justify-center gap-1.5 px-2 lg:px-3 py-2 rounded-lg text-[13px] lg:text-[15px] xl:text-[16px] font-extrabold uppercase tracking-wide whitespace-nowrap transition-all duration-200";
-const desktopActive = "bg-elevated border border-app text-app shadow-sm";
-const desktopIdle = "border border-transparent text-app/55 hover:text-app hover:bg-elevated/50";
+    "relative flex items-center justify-center gap-1.5 min-w-[9rem] px-3 lg:px-4 py-0 rounded-lg text-[15px] lg:text-[17px] xl:text-[18px] font-semibold uppercase tracking-tight whitespace-nowrap transition-all duration-200";
+const desktopActive = "text-app";
+const desktopIdle = "text-app/50 hover:text-app";
 
 const mobileBase =
     "group relative w-full max-w-sm inline-flex items-center gap-4 px-5 py-3.5 rounded-2xl text-xl font-extrabold uppercase tracking-wide transition-all duration-200 bg-black/45 backdrop-blur-sm";
@@ -82,8 +85,8 @@ export function Nav({
 }) {
     return (
         <>
-            <nav className="hidden md:flex items-center gap-1 lg:gap-2 w-full min-w-0">
-                {items.map((item) => {
+            <nav className="hidden md:flex items-center justify-start gap-1 lg:gap-1.5 w-full min-w-0">
+                {items.filter((i) => !i.secondary).map((item) => {
                     const active = isActive(item.to);
                     const isDisabled = item.to === "#" || item.disabled;
                     const cls = `${desktopBase} ${active ? desktopActive : desktopIdle}`;
@@ -99,7 +102,6 @@ export function Nav({
                                 aria-label={`${item.label} — sign in required`}
                                 className={`${desktopBase} ${desktopIdle}`}
                             >
-                                <Lock size={11} className="opacity-60 flex-shrink-0" />
                                 <span className="whitespace-nowrap">{item.label}</span>
                             </button>
                         );
@@ -124,7 +126,7 @@ export function Nav({
             </nav>
 
             <nav className="md:hidden flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-evenly gap-2 py-6 w-full px-6">
-                {items.map((item) => {
+                {items.filter((i) => !i.secondary).map((item) => {
                     const active = isActive(item.to);
                     const isDisabled = item.to === "#" || item.disabled;
                     const cls = `${mobileBase} ${active ? mobileActive : mobileIdle}`;
@@ -145,7 +147,6 @@ export function Nav({
                             >
                                 <Icon size={22} className={`flex-shrink-0 ${iconOpacity}`} />
                                 <span className="flex-1 text-left whitespace-nowrap">{item.label}</span>
-                                <Lock size={16} className="opacity-50 flex-shrink-0" />
                             </button>
                         );
                     }
@@ -179,6 +180,22 @@ export function Nav({
                             <span className="flex-1 text-left">Profile</span>
                             <ChevronRight size={18} className="opacity-30 group-hover:opacity-70 transition-opacity flex-shrink-0" />
                         </Link>
+                        {items.filter((i) => i.secondary).map((item) => {
+                            const Icon = NAV_ICONS[item.label] ?? Info;
+                            return (
+                                <Link
+                                    key={item.label}
+                                    to={item.to}
+                                    onClick={() => setMobileMenuOpen?.(false)}
+                                    aria-current={isActive(item.to) ? "page" : undefined}
+                                    className={`${mobileBase} ${isActive(item.to) ? mobileActive : mobileIdle}`}
+                                >
+                                    <Icon size={22} className="flex-shrink-0 opacity-60" />
+                                    <span className="flex-1 text-left">{item.label}</span>
+                                    <ChevronRight size={18} className="opacity-30 group-hover:opacity-70 transition-opacity flex-shrink-0" />
+                                </Link>
+                            );
+                        })}
                         <button
                             type="button"
                             onClick={() => {

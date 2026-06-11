@@ -10,6 +10,7 @@ import VideoBackground from "@/components/VideoBackground";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import LegalLink from "@/components/legal/LegalModal";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import { apiPost } from "@/api";
 import { setCachedRole } from "@/lib/roleCache";
@@ -25,17 +26,17 @@ export default function StudioSignup() {
   const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [attempt, setAttempt] = useState<SignUpResource | null>(null);
   const [awaitingCode, setAwaitingCode] = useState(false);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const valid =
     !!studioName.trim() &&
     validateEmail(email) &&
     validatePassword(password) &&
-    password === confirm;
+    agreedToTerms;
 
   const start = async () => {
     if (!valid || !isLoaded || !signUp || loading) return;
@@ -152,7 +153,7 @@ export default function StudioSignup() {
                   value={studioName}
                   onChange={(e) => setStudioName(e.target.value)}
                   placeholder="Inkwell Tattoo Co."
-                  className="mt-1 text-center text-white placeholder:text-white/40"
+                  className="mt-1 text-center text-white placeholder:text-white"
                 />
               </div>
               <div>
@@ -162,7 +163,7 @@ export default function StudioSignup() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="studio@example.com"
-                  className="mt-1 text-center text-white placeholder:text-white/40"
+                  className="mt-1 text-center text-white placeholder:text-white"
                 />
               </div>
               <div>
@@ -171,7 +172,7 @@ export default function StudioSignup() {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="New York, NY"
-                  className="mt-1 text-center text-white placeholder:text-white/40"
+                  className="mt-1 text-center text-white placeholder:text-white"
                 />
               </div>
               <div>
@@ -180,17 +181,25 @@ export default function StudioSignup() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 text-center text-white placeholder:text-white/40"
+                  placeholder="8+ characters, 1 number"
+                  className="mt-1 text-center text-white placeholder:text-white"
                 />
               </div>
-              <div>
-                <Label className="text-xs text-white/70">Confirm password</Label>
-                <Input
-                  type="password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  className="mt-1 text-center text-white placeholder:text-white/40"
+              <div className="mt-1 flex items-start gap-2 text-[11px] text-white/70 select-none">
+                <input
+                  id="studio-agree-terms"
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700 cursor-pointer"
                 />
+                <span>
+                  <label htmlFor="studio-agree-terms" className="cursor-pointer">I agree to Inkmity's </label>
+                  <LegalLink doc="terms">Terms of Service</LegalLink>
+                  <label htmlFor="studio-agree-terms" className="cursor-pointer"> and </label>
+                  <LegalLink doc="privacy">Privacy Policy</LegalLink>
+                  <label htmlFor="studio-agree-terms" className="cursor-pointer">.</label>
+                </span>
               </div>
               <Button
                 disabled={!valid || loading}
@@ -221,7 +230,7 @@ export default function StudioSignup() {
                 placeholder="123456"
                 inputMode="numeric"
                 onKeyDown={(e) => e.key === "Enter" && verify()}
-                className="text-center text-white placeholder:text-white/40"
+                className="text-center text-white placeholder:text-white"
               />
               <Button disabled={!code.trim() || loading} onClick={verify}>
                 {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}

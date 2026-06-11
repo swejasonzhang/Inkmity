@@ -5,7 +5,7 @@ type Props = {
     scrim?: number;
 };
 
-const VideoBackground: React.FC<Props> = ({ scrim = 38 }) => {
+const VideoBackground: React.FC<Props> = ({ scrim = 58 }) => {
     const ref = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {

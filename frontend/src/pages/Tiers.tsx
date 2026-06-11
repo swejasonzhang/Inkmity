@@ -110,6 +110,9 @@ export default function Tiers() {
             <p className="text-subtle max-w-2xl mx-auto" style={{ fontSize: "clamp(0.875rem, 0.4vw + 0.8rem, 1rem)" }}>
               {intro}
             </p>
+            <p className="max-w-2xl mx-auto rounded-xl border border-app bg-elevated px-3.5 py-2 text-xs text-subtle">
+              <span className="font-semibold text-app">How Inkmity makes money:</span> one transparent platform fee on completed bookings — shown before you pay. The essentials are always free (including features other platforms paywall); any future subscriptions are optional extras. We only earn when you book.
+            </p>
             {!isArtist && ready && rewards && (
               <RewardsPanel data={rewards} className="w-full max-w-xl mx-auto mt-2 text-left" />
             )}

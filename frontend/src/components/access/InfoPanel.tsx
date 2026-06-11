@@ -73,7 +73,7 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
         >
             <div className="w-full h-full rounded-3xl sm:rounded-l-3xl sm:rounded-r-none border border-app bg-card text-app overflow-hidden flex flex-col">
                 <div className="w-full h-full px-5 py-5 sm:px-6 sm:py-6 flex flex-col items-center justify-center text-center">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-app/40 bg-elevated px-3 py-1 text-fluid-xs text-app/70 select-none mb-3">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-app/40 bg-elevated px-3 py-1 text-fluid-xs text-app select-none mb-3">
                         <Sparkles className="h-3.5 w-3.5" />
                         <span>Inkmity</span>
                     </div>
@@ -118,7 +118,7 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                             transition={prefersReduced ? { duration: 0 } : { duration: 0.45, ease: "easeOut", delay: 0.45 }}
                             className="mt-5 w-full max-w-sm"
                         >
-                            <div className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-app/50 mb-2.5">
+                            <div className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-app mb-2.5">
                                 How it works
                             </div>
                             <div className="flex items-start gap-1">
@@ -127,7 +127,7 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                                         <span className="grid h-7 w-7 place-items-center rounded-full border border-app/40 bg-elevated text-fluid-xs font-bold text-app">
                                             {i + 1}
                                         </span>
-                                        <span className="text-fluid-xs text-subtle leading-tight">{label}</span>
+                                        <span className="text-fluid-xs text-app font-semibold leading-tight">{label}</span>
                                     </div>
                                 ))}
                             </div>

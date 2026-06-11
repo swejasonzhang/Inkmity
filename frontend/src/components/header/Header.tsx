@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock, Award, Mail, Info, Bell, type LucideIcon } from "lucide-react";
+
+const SECONDARY_NAV_ICONS: Record<string, LucideIcon> = {
+  Tiers: Award,
+  Contact: Mail,
+  About: Info,
+};
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
@@ -34,27 +40,19 @@ const ThemeSwitch = ({ theme, toggleTheme, size = "md" }: ThemeSwitchProps) => {
   const isLight = theme === "light";
   const dims =
     size === "lg"
-      ? { h: "h-[45px]", w: "w-28", knob: "h-[35px] w-[35px]", icon: 22 }
+      ? { box: "h-11 w-11", icon: 22 }
       : size === "md"
-        ? { h: "h-10", w: "w-24", knob: "h-8 w-8", icon: 20 }
-        : { h: "h-9", w: "w-20", knob: "h-7 w-7", icon: 18 };
-  const iconColorClass = isLight ? "text-black" : "text-white";
+        ? { box: "h-10 w-10", icon: 20 }
+        : { box: "h-9 w-9", icon: 18 };
   return (
     <button
       type="button"
-      role="switch"
       aria-label="Toggle theme"
-      aria-checked={isLight}
+      title="Toggle theme"
       onClick={toggleTheme}
-      className={["relative inline-flex items-center rounded-full border border-app focus:outline-none bg-card", dims.h, dims.w].join(" ")}
+      className={["inline-flex items-center justify-center rounded-lg border border-app bg-elevated text-app hover:bg-card transition-colors flex-shrink-0", dims.box].join(" ")}
     >
-      <span className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${iconColorClass}`}>
-        <Moon size={dims.icon} />
-      </span>
-      <span className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 ${iconColorClass}`}>
-        <Sun size={dims.icon} />
-      </span>
-      <span className={["absolute top-1/2 -translate-y-1/2 rounded-full shadow-md grid place-items-center transition-all duration-300 bg-[color:var(--fg)]", dims.knob, isLight ? "right-1.5" : "left-1.5"].join(" ")} />
+      {isLight ? <Moon size={dims.icon} strokeWidth={1.75} /> : <Sun size={dims.icon} strokeWidth={1.75} />}
       <span className="sr-only">{isLight ? "Switch to dark theme" : "Switch to light theme"}</span>
     </button>
   );
@@ -269,20 +267,34 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const onGate = useCallback<React.MouseEventHandler>((e) => {
     e.preventDefault();
     e.stopPropagation();
-  }, []);
+    navigate("/signup");
+  }, [navigate]);
 
   const navBadges = useNavBadges();
-  const NAV_ITEMS: BuildNavItem[] = useMemo(() => {
-    const items = buildNavItems(effectiveSignedIn, onGate, userRole);
-    if (!effectiveSignedIn) return items;
-    return items.map((it) =>
-      it.label === "Appointments"
-        ? { ...it, count: navBadges.appointments }
-        : it.label === "Dashboard"
-          ? { ...it, count: navBadges.notifications }
-          : it
-    );
-  }, [effectiveSignedIn, onGate, userRole, navBadges]);
+  // Per-link count badges are consolidated into a single notification bell next
+  // to the tier — unread messages + pending chat & booking requests.
+  const bellCount = navBadges.notifications + navBadges.appointments;
+  const renderBell = (visibilityCls: string) =>
+    effectiveSignedIn ? (
+      <button
+        type="button"
+        aria-label={bellCount > 0 ? `Notifications, ${bellCount} unread` : "Notifications"}
+        title="Notifications"
+        onClick={() => navigate("/dashboard")}
+        className={`${visibilityCls} relative items-center justify-center h-9 w-9 rounded-lg border border-app bg-elevated text-app hover:bg-card transition-colors flex-shrink-0`}
+      >
+        <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
+        {!navBadges.loading && bellCount > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--bg)] text-[10px] font-bold leading-none">
+            {bellCount > 99 ? "99+" : bellCount}
+          </span>
+        )}
+      </button>
+    ) : null;
+  const NAV_ITEMS: BuildNavItem[] = useMemo(
+    () => buildNavItems(effectiveSignedIn, onGate, userRole),
+    [effectiveSignedIn, onGate, userRole]
+  );
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -439,10 +451,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="grid w-full relative items-center z-[100] gap-x-3 sm:gap-x-6 lg:gap-x-10 py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
+      <header className="grid w-full sticky top-0 items-center z-[100] gap-x-3 sm:gap-x-6 lg:gap-x-10 py-1 sm:py-1.5 text-app min-w-0 overflow-visible bg-[color:var(--bg)]/70 backdrop-blur-md" style={{ minWidth: '320px', gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
         <div className="col-start-1 justify-self-start flex-shrink-0 relative z-10">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
-            <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 sm:h-20 lg:h-24 w-auto object-contain flex-shrink-0" draggable={false} />
+            <img src={resolvedLogo} alt="Inkmity Logo" className="h-14 sm:h-16 lg:h-[4.5rem] w-auto object-contain flex-shrink-0" draggable={false} />
             <span className="sr-only">Inkmity</span>
           </Link>
         </div>
@@ -452,14 +464,23 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         </div>
 
         <div className="col-start-3 justify-self-end flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
-            {themed && (
-              <div className="md:hidden flex items-center">
-                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="md" />
+            {(themed || effectiveSignedIn) && (
+              <div className="md:hidden flex items-center gap-fluid-xs">
+                {themed && <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />}
+                {renderBell("inline-flex")}
               </div>
             )}
             <button type="button" aria-label="Open menu" className={mobileBtnCls} onClick={() => setMobileMenuOpen(true)}>
               <Menu strokeWidth={1.75} className={mobileIconCls} />
             </button>
+
+            {renderBell("hidden md:inline-flex")}
+
+            {themed && (
+              <div className="hidden md:flex items-center flex-shrink-0">
+                <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
+              </div>
+            )}
 
             {effectiveSignedIn && userRole === "client" && <HeaderRewards />}
 
@@ -513,7 +534,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                 >
                   <span className="flex items-center justify-center gap-2 w-full">
                     <span className="font-semibold text-xl leading-none">✦</span>
-                    <span className="font-bold whitespace-nowrap text-[13px] lg:text-[17px]">Sign In</span>
+                    <span className="font-bold uppercase tracking-tight whitespace-nowrap text-[13px] lg:text-[17px]">Sign In</span>
                   </span>
                 </button>
               </div>
@@ -574,11 +595,6 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                   </div>
                 </div>
                 <div className="mt-3 text-xs opacity-70 text-app text-center">{greeting}</div>
-                {themed && (
-                  <div className="mt-3 flex items-center justify-center">
-                    <ThemeSwitch theme={theme} toggleTheme={toggleTheme} size="sm" />
-                  </div>
-                )}
               </div>
             );
           })()}
@@ -591,6 +607,20 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             <User size={16} className="opacity-70" />
             <span>Profile</span>
           </Link>
+          {NAV_ITEMS.filter((i) => i.secondary).map((item) => {
+            const Icon = SECONDARY_NAV_ICONS[item.label] ?? Info;
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                onClick={() => setShowDropdown(false)}
+                className="w-full px-4 py-3 hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] text-app text-sm flex items-center justify-center gap-2 transition-colors"
+              >
+                <Icon size={16} className="opacity-70" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
           <div className="h-px w-full bg-[color-mix(in_srgb,var(--fg)_14%,transparent)]" />
           <button onClick={handleLogout} className="w-full px-4 py-3 hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] text-app text-sm flex items-center justify-center gap-2 transition-colors rounded-b-xl">
             <LogOut size={16} className="opacity-70" />
