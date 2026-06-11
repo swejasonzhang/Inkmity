@@ -341,8 +341,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           return
         }
 
-        // No deposit: save the client's card on file (no charge) so the rate +
-        // platform fee can be captured at completion. Dev keeps bookings free.
+        // Save the card on file for the at-completion charge (dev bookings are free).
         if (!import.meta.env.DEV) {
           setPendingBooking(booking)
           swallowGestureTail()

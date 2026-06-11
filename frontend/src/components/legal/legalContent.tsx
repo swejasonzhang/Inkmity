@@ -1,14 +1,9 @@
-// Single source of truth for Inkmity's legal documents.
-// Rendered both as full pages (LegalPage) and inside the in-app modal (LegalModal),
-// so the wording can never drift between the two.
-
+// Single source of truth for the legal docs — rendered as full pages and in the
+// in-app modal, so the wording can't drift between them.
 export const LEGAL_UPDATED = "June 11, 2026";
 
-// Dark surface for the legal panels/modal, matching the app theme.
 export const LEGAL_SURFACE = "bg-card";
 
-// Light body text on the dark surface, with links underlined so the clickable
-// text stands out.
 export const LEGAL_PROSE =
   "space-y-3 text-sm leading-relaxed text-app/90 [&_h2]:mt-6 [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-app [&_strong]:text-app [&_a]:text-app [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1";
 

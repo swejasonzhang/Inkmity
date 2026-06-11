@@ -14,8 +14,6 @@ type Props = {
   artistName?: string;
 };
 
-// No-deposit flow: save the client's card on file at booking (no charge). The
-// rate + platform fee are captured off-session when the session is completed.
 function Inner({ booking, onSaved, onCancel, artistName }: Props) {
   const { getToken } = useAuth();
   const stripe = useStripe();
