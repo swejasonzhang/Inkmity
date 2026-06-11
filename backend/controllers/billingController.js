@@ -326,8 +326,7 @@ export async function createDepositPaymentIntent(req, res) {
   }
 }
 
-// No-deposit flow: save the client's card on file at booking (no charge) so the
-// rate + platform fee can be captured off-session at completion.
+// Save the client's card on file at booking (no charge) for the at-completion capture.
 export async function createCardSetupIntent(req, res) {
   try {
     const { bookingId } = req.body || {};
