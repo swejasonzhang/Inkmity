@@ -40,6 +40,7 @@ const BookingSchema = new mongoose.Schema(
     balanceCapturedAt: { type: Date },
     balanceCaptureError: { type: String, default: "" },
     platformFeeCents: { type: Number, default: 0, min: 0 },
+    stripeCustomerId: { type: String, default: "" },
     clientCode: { type: String },
     artistCode: { type: String },
     codeIssuedAt: { type: Date },

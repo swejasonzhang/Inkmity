@@ -14,6 +14,7 @@ import {
   createTattooSession,
   createMultiSession,
   createDepositPaymentIntent,
+  createCardSetupIntent,
   submitIntakeForm,
   getArtistPolicy,
   getBooking,
@@ -285,6 +286,38 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
           toast.error(errorMessage);
           return;
         }
+      } else if (willRequireDeposit) {
+        // No deposit, but the rate + platform fee are charged at completion — so
+        // save the client's card on file now (no charge today).
+        try {
+          if (!stripe || !elements) {
+            throw new Error("Payment system is not ready. Please refresh and try again.");
+          }
+          const setupData = await createCardSetupIntent(booking._id, token);
+          if (!setupData.clientSecret) {
+            throw new Error("Could not start card setup");
+          }
+          const cardElement = elements.getElement(CardElement);
+          if (!cardElement) {
+            throw new Error("Card element not found");
+          }
+          const { error: setupError } = await stripe.confirmCardSetup(setupData.clientSecret, {
+            payment_method: { card: cardElement },
+          });
+          if (setupError) {
+            const msg = setupError.message || "Couldn't save your card";
+            setPaymentError(msg);
+            toast.error(msg);
+            return;
+          }
+          toast.success("Card saved — you'll be charged when your session is complete.");
+        } catch (err: any) {
+          console.error("Card setup error:", err);
+          const msg = err?.message || "Couldn't save your card. Please try again.";
+          setPaymentError(msg);
+          toast.error(msg);
+          return;
+        }
       }
 
       toast.success("Appointment booked successfully!");
@@ -390,12 +423,8 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">
-                Deposit{bookingData.appointmentType === "consultation" ? " (consultation)" : " (session)"}:
-              </span>
-              <span className="font-semibold">
-                {depositPreviewCents > 0 ? `$${(depositPreviewCents / 100).toFixed(2)}` : "Free"}
-              </span>
+              <span className="text-muted-foreground">Due today:</span>
+              <span className="font-semibold">{willRequireDeposit ? "$0.00" : "Free"}</span>
             </div>
           </div>
         </div>
@@ -406,13 +435,15 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              Deposit Required
+              Save your card
             </h4>
             <div className="space-y-2 text-sm mb-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Deposit (artist-set):</span>
-                <span className="font-medium">${(depositPreviewCents / 100).toFixed(2)}</span>
-              </div>
+              {bookingData.priceCents > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Estimated total:</span>
+                  <span className="font-medium">${(bookingData.priceCents / 100).toFixed(2)}</span>
+                </div>
+              )}
               {platformFeeCents > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
@@ -421,31 +452,23 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
                   <span className="font-medium">${(platformFeeCents / 100).toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between rounded-lg border px-3 py-2 mt-2" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
-                <span className="font-semibold">Total due now</span>
-                <span className="text-lg font-bold">
-                  ${((depositPreviewCents + platformFeeCents) / 100).toFixed(2)}
-                </span>
-              </div>
-              {bookingData.priceCents > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Estimated remaining balance:</span>
-                  <span>
-                    ${(Math.max(0, bookingData.priceCents - depositPreviewCents) / 100).toFixed(2)}
+              {creditCents > 0 && bookingData.priceCents > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Inkmity credit:</span>
+                  <span className="font-medium">
+                    -${(Math.min(creditCents, bookingData.priceCents + platformFeeCents) / 100).toFixed(2)}
                   </span>
                 </div>
               )}
-              {creditCents > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Inkmity credit (applied to balance):</span>
-                  <span className="font-medium">
-                    -$
-                    {(
-                      Math.min(
-                        creditCents,
-                        Math.max(0, bookingData.priceCents - depositPreviewCents)
-                      ) / 100
-                    ).toFixed(2)}
+              <div className="flex items-center justify-between rounded-lg border px-3 py-2 mt-2" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                <span className="font-semibold">Due today</span>
+                <span className="text-lg font-bold">$0.00</span>
+              </div>
+              {bookingData.priceCents > 0 && (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Charged when your session is complete:</span>
+                  <span>
+                    ${(Math.max(0, bookingData.priceCents + platformFeeCents - Math.min(creditCents, bookingData.priceCents + platformFeeCents)) / 100).toFixed(2)}
                   </span>
                 </div>
               )}
@@ -482,11 +505,11 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 mt-0.5 opacity-70 shrink-0" />
                 <div className="text-[11px] leading-relaxed opacity-75">
-                  <p className="font-semibold mb-0.5 opacity-100">Deposit policy</p>
+                  <p className="font-semibold mb-0.5 opacity-100">How payment works</p>
                   <p>
-                    The deposit holds your booking and is applied to your final cost. The
-                    remaining balance is paid with the artist at the studio. Cancellations
-                    inside the artist's cutoff window forfeit the deposit.
+                    Your card is saved securely now — nothing is charged today. You'll be
+                    charged the total automatically once your artist marks the session
+                    complete.
                   </p>
                 </div>
               </div>
@@ -497,7 +520,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
             <div className="flex items-center justify-center gap-2">
               <Gift className="h-4 w-4 opacity-70" />
               <span className="font-semibold">
-                {bookingData.appointmentType === "consultation" ? "Free consultation" : "No deposit required"}
+                {bookingData.appointmentType === "consultation" ? "Free consultation" : "Nothing due today"}
               </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
