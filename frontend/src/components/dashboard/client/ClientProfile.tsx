@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import ClientTierCard from "@/components/dashboard/shared/ClientTierCard";
 
 interface Client {
     _id: string;
@@ -618,6 +619,7 @@ export default function ClientProfile() {
                     )}
 
                         <div className="w-full mt-4 space-y-4 flex-1 min-h-0 overflow-y-auto px-4">
+                        <ClientTierCard className="w-full" />
                         <div className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full"
                             style={{
                                 background: "color-mix(in srgb, var(--card) 80%, transparent)",

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock, Award, Mail, Info, type LucideIcon } from "lucide-react";
+
+const SECONDARY_NAV_ICONS: Record<string, LucideIcon> = {
+  Tiers: Award,
+  Contact: Mail,
+  About: Info,
+};
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
@@ -269,7 +275,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
   const onGate = useCallback<React.MouseEventHandler>((e) => {
     e.preventDefault();
     e.stopPropagation();
-  }, []);
+    navigate("/signup");
+  }, [navigate]);
 
   const navBadges = useNavBadges();
   const NAV_ITEMS: BuildNavItem[] = useMemo(() => {
@@ -439,10 +446,10 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="grid w-full relative items-center z-[100] gap-x-3 sm:gap-x-6 lg:gap-x-10 py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
+      <header className="grid w-full relative items-center z-[100] gap-x-3 sm:gap-x-6 lg:gap-x-10 py-1 sm:py-1.5 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
         <div className="col-start-1 justify-self-start flex-shrink-0 relative z-10">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
-            <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 sm:h-20 lg:h-24 w-auto object-contain flex-shrink-0" draggable={false} />
+            <img src={resolvedLogo} alt="Inkmity Logo" className="h-14 sm:h-16 lg:h-[4.5rem] w-auto object-contain flex-shrink-0" draggable={false} />
             <span className="sr-only">Inkmity</span>
           </Link>
         </div>
@@ -513,7 +520,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
                 >
                   <span className="flex items-center justify-center gap-2 w-full">
                     <span className="font-semibold text-xl leading-none">✦</span>
-                    <span className="font-bold whitespace-nowrap text-[13px] lg:text-[17px]">Sign In</span>
+                    <span className="font-bold uppercase tracking-tight whitespace-nowrap text-[13px] lg:text-[17px]">Sign In</span>
                   </span>
                 </button>
               </div>
@@ -591,6 +598,20 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             <User size={16} className="opacity-70" />
             <span>Profile</span>
           </Link>
+          {NAV_ITEMS.filter((i) => i.secondary).map((item) => {
+            const Icon = SECONDARY_NAV_ICONS[item.label] ?? Info;
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                onClick={() => setShowDropdown(false)}
+                className="w-full px-4 py-3 hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] text-app text-sm flex items-center justify-center gap-2 transition-colors"
+              >
+                <Icon size={16} className="opacity-70" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
           <div className="h-px w-full bg-[color-mix(in_srgb,var(--fg)_14%,transparent)]" />
           <button onClick={handleLogout} className="w-full px-4 py-3 hover:bg-[color-mix(in_srgb,var(--elevated)_50%,transparent)] text-app text-sm flex items-center justify-center gap-2 transition-colors rounded-b-xl">
             <LogOut size={16} className="opacity-70" />

@@ -13,7 +13,6 @@ export default function ProgressDots({ total, current, showVerify }: { total: nu
                         style={{ background: current >= i ? "rgb(255 255 255 / 1)" : "rgb(255 255 255 / 0.3)" }}
                     />
                 ))}
-                {showVerify && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
             </div>
             <span className="text-white/50">{showVerify ? "Verify" : `Step ${current + 1} of ${total}`}</span>
         </div>

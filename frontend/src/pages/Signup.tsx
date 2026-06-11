@@ -42,18 +42,15 @@ function apiUrl(path: string, qs?: Record<string, string>) {
   return url.toString();
 }
 
-function collectIssues({ role, step, shared, client, artist, confirmPassword }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile; confirmPassword: string }) {
+function collectIssues({ role, step, shared, client, artist }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile }) {
   const tips: string[] = [];
   const emailOk = validateEmail(shared.email);
   const pwdOk = validatePassword(shared.password);
   const usernameOk = !!shared.username.trim();
-  const passwordsMatch = shared.password === (confirmPassword || "");
   if (step === 0) {
     if (!usernameOk) tips.push("Username is required — enter a display name.");
     if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
     if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
-    if (!passwordsMatch && (confirmPassword || "").trim().length > 0) tips.push("Passwords do not match — ensure both password fields are identical.");
-    if ((confirmPassword || "").trim().length === 0 && shared.password.trim().length > 0) tips.push("Please confirm your password.");
     return tips;
   }
   if (role === "client") {
@@ -69,9 +66,6 @@ function collectIssues({ role, step, shared, client, artist, confirmPassword }: 
       if (!usernameOk) tips.push("Username is required — enter a display name.");
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
-      if (!passwordsMatch || !confirmPassword || !confirmPassword.trim()) {
-        tips.push("Passwords do not match — ensure both password fields are identical.");
-      }
       if (!client.location) tips.push("City is required — choose your city from the list.");
       const min = Number(client.budgetMin);
       const max = Number(client.budgetMax);
@@ -94,9 +88,6 @@ function collectIssues({ role, step, shared, client, artist, confirmPassword }: 
       if (!usernameOk) tips.push("Username is required — enter a display name.");
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
-      if (!passwordsMatch || !confirmPassword || !confirmPassword.trim()) {
-        tips.push("Passwords do not match — ensure both password fields are identical.");
-      }
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("Pick one or more styles. At least one is required.");
       if (!artist.years || artist.years === "__unset__" || !Number.isFinite(Number(artist.years))) {
@@ -116,7 +107,6 @@ export default function SignUp() {
   const [step, setStep] = useState(0);
   const [detailsSkipped, setDetailsSkipped] = useState(false);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", dob: "" });
   const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, NY", shop: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
@@ -265,8 +255,7 @@ export default function SignUp() {
     }
   };
 
-  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim() && shared.password === confirmPassword;
-  const allClientValid = !!client.location;
+  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
   const allArtistValid =
     !!artist.location &&
     artist.location !== "__unset__" &&
@@ -279,23 +268,16 @@ export default function SignUp() {
     artist.baseRate !== "__unset__" &&
     Number.isFinite(Number(artist.baseRate));
 
-  const effectiveClientValid = detailsSkipped || allClientValid;
   const effectiveArtistValid = detailsSkipped || allArtistValid;
 
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
     return role === "client"
-      ? [
-        { key: "role", valid: allSharedValid },
-        { key: "client-1", valid: effectiveClientValid },
-        { key: "review", valid: allSharedValid && effectiveClientValid }
-      ]
+      ? [{ key: "role", valid: allSharedValid }]
       : [
         { key: "role", valid: allSharedValid },
-        { key: "artist-1", valid: effectiveArtistValid },
-        { key: "upload", valid: true },
-        { key: "review", valid: allSharedValid && effectiveArtistValid }
+        { key: "artist-1", valid: effectiveArtistValid }
       ];
-  }, [role, allSharedValid, effectiveClientValid, effectiveArtistValid]);
+  }, [role, allSharedValid, effectiveArtistValid]);
 
   const isLastFormSlide = step === slides.length - 1;
 
@@ -309,7 +291,6 @@ export default function SignUp() {
     if (!shared.username.trim()) out.push("username");
     if (!validateEmail(shared.email)) out.push("email");
     if (!validatePassword(shared.password)) out.push("password");
-    if (shared.password !== confirmPassword || !confirmPassword.trim()) out.push("confirmPassword");
     return out;
   };
 
@@ -351,7 +332,7 @@ export default function SignUp() {
 
   const startVerification = async () => {
     if (loading) return;
-    const tips = detailsSkipped ? [] : collectIssues({ role, step: 3, shared, client, artist, confirmPassword });
+    const tips = detailsSkipped ? [] : collectIssues({ role, step: role === "client" ? 0 : 3, shared, client, artist });
     if (tips.length) {
       setInvalidFields([]);
       setFlashToken((t) => t + 1);
@@ -592,8 +573,6 @@ export default function SignUp() {
                     onBioChange={(e) => setBio(e.target.value)}
                     invalidFields={invalidFields}
                     flashToken={flashToken}
-                    confirmPassword={confirmPassword}
-                    setConfirmPassword={setConfirmPassword}
                     success={showSuccess}
                     successHeading={successHeading}
                     successSubtitle={successSubtitle}
@@ -601,14 +580,6 @@ export default function SignUp() {
                 </motion.div>
               )}
             </div>
-            {authLoaded && !userId && !showSuccess && (
-              <p className="mt-3 text-center text-xs text-app/70">
-                Setting up a tattoo studio?{" "}
-                <a href="/signup/studio" className="underline">
-                  Create a studio account
-                </a>
-              </p>
-            )}
           </motion.div>
       </main>
       <CookieConsent />

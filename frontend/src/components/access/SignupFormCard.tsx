@@ -11,6 +11,7 @@ import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
 import ReviewStep from "@/components/access/ReviewStep";
 import OtpStep from "@/components/access/OtpStep";
 import SignupUpload from "@/components/upload/SignupUpload";
+import LegalLink from "@/components/legal/LegalModal";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
@@ -70,8 +71,6 @@ type SignupProps = BaseProps & {
   onCancelVerification: () => void;
   bio: string;
   onBioChange: React.ChangeEventHandler<HTMLTextAreaElement>;
-  confirmPassword: string;
-  setConfirmPassword: (v: string) => void;
 };
 
 export default function SignupFormCard(props: SignupProps) {
@@ -115,8 +114,6 @@ export default function SignupFormCard(props: SignupProps) {
     success,
     successHeading,
     successSubtitle,
-    confirmPassword,
-    setConfirmPassword
   } = props;
 
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
@@ -214,8 +211,6 @@ export default function SignupFormCard(props: SignupProps) {
                             emailTaken={emailTaken}
                             invalidFields={invalidFields}
                             flashToken={flashToken}
-                            confirmPassword={confirmPassword}
-                            setConfirmPassword={setConfirmPassword}
                           />
                         </div>
                       )}
@@ -235,20 +230,22 @@ export default function SignupFormCard(props: SignupProps) {
                       )}
                     </div>
                     {isReviewSlide && (
-                      <label className="w-full mt-2 flex items-start gap-2 text-[11px] sm:text-xs text-subtle cursor-pointer select-none">
+                      <div className="w-full mt-2 flex items-start gap-2 text-[11px] sm:text-xs text-subtle select-none">
                         <input
+                          id="agree-terms"
                           type="checkbox"
                           checked={agreedToTerms}
                           onChange={(e) => setAgreedToTerms(e.target.checked)}
-                          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700 cursor-pointer"
                         />
                         <span>
-                          I agree to Inkmity's{" "}
-                          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Terms of Service</a>{" "}
-                          and{" "}
-                          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-app hover:opacity-80">Privacy Policy</a>.
+                          <label htmlFor="agree-terms" className="cursor-pointer">I agree to Inkmity's </label>
+                          <LegalLink doc="terms">Terms of Service</LegalLink>
+                          <label htmlFor="agree-terms" className="cursor-pointer"> and </label>
+                          <LegalLink doc="privacy">Privacy Policy</LegalLink>
+                          <label htmlFor="agree-terms" className="cursor-pointer">.</label>
                         </span>
-                      </label>
+                      </div>
                     )}
                     <div className={`w-full mt-2 sm:mt-3 flex flex-row gap-2`}>
                       {step > 0 && (
@@ -301,8 +298,9 @@ export default function SignupFormCard(props: SignupProps) {
               </AnimatePresence>
             </motion.div>
           </div>
-          <div className="text-subtle text-center text-xs sm:text-sm">
-            <span>Already have an account? <a href="/login" className="underline text-app hover:opacity-80">Login</a></span>
+          <div className="text-subtle text-center text-xs sm:text-sm space-y-1">
+            <div><span>Already have an account? <a href="/login" className="underline text-app hover:opacity-80">Login</a></span></div>
+            <div><span>Setting up a tattoo studio? <a href="/signup/studio" className="underline text-app hover:opacity-80">Create a studio account</a></span></div>
           </div>
         </div>
       </div>

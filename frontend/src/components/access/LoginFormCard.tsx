@@ -18,7 +18,7 @@ export default function LoginFormCard({ showInfo, hasError, titleOverride, subti
     const { isSignedIn, isLoaded } = useAuth();
 
     const title = titleOverride ?? "Welcome Back!";
-    const subtitle = subtitleOverride ?? "Login to continue exploring artists, styles, and your tattoo journey.";
+    const subtitle = subtitleOverride ?? "Log in to pick up where you left off.";
 
     const shouldShowForm = isLoaded && !isSignedIn;
     const shouldRenderChildren = shouldShowForm || (children !== undefined && children !== null);
