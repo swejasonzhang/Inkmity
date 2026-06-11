@@ -497,8 +497,18 @@ export async function denyAppointment(
   return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
 }
 
-// On-site completion: each party confirms with their own code. When both have
-// confirmed, the booking completes and the balance is charged + split.
+// On-site completion phase 1: issue a fresh 3-minute code to each party (sent
+// to their messages). Phase 2 is verifyBookingCompletion below.
+export async function startBookingVerification(
+  id: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/verify/start`, undefined, token, signal);
+}
+
+// On-site completion phase 2: each party confirms with their own code. When
+// both have confirmed, the booking completes and the balance is charged + split.
 export async function verifyBookingCompletion(
   id: string,
   role: "client" | "artist",

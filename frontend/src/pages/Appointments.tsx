@@ -3,7 +3,7 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import Header from "@/components/header/Header";
-import { getAppointments, acceptAppointment, denyAppointment, setBookingFinalPrice, verifyBookingCompletion, Booking } from "@/api";
+import { getAppointments, acceptAppointment, denyAppointment, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -173,6 +173,21 @@ export default function Appointments() {
       await loadAppointments();
     } catch (error: any) {
       toast.error(error?.body?.message || error?.body?.error || "Failed to set price");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleStartVerification = async (id: string) => {
+    if (processing) return;
+    setProcessing(id);
+    try {
+      const token = await getToken();
+      await startBookingVerification(id, token ?? undefined);
+      toast.success("Verification started — a code was sent to both of you (valid 3 minutes).");
+      await loadAppointments();
+    } catch (error: any) {
+      toast.error(error?.body?.message || error?.body?.error || "Couldn't start verification");
     } finally {
       setProcessing(null);
     }
@@ -456,13 +471,27 @@ export default function Appointments() {
               const otherVerified = isClient ? a.artistVerifiedAt : a.clientVerifiedAt;
               const myCode = isClient ? a.clientCode : a.artistCode;
               const otherLabel = isClient ? "artist" : "client";
+              const codeActive = a.codeExpiresAt && new Date(a.codeExpiresAt).getTime() > Date.now();
               return (
                 <div className="mt-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <CheckCircle className="h-4 w-4 opacity-70" />
                     <span className="text-xs font-semibold">Confirm completion</span>
                   </div>
-                  {myVerified ? (
+                  {!codeActive ? (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-subtle min-w-0">
+                        When the session is done, start verification — you'll each get a code to confirm{isClient ? " (this charges your card)" : ""}.
+                      </span>
+                      <Button
+                        onClick={() => handleStartVerification(appointment._id)}
+                        disabled={processing === appointment._id}
+                        className="h-8 rounded-lg text-xs px-3 whitespace-nowrap"
+                      >
+                        {processing === appointment._id ? "..." : "Start"}
+                      </Button>
+                    </div>
+                  ) : myVerified ? (
                     <p className="text-xs text-subtle">
                       You confirmed.{" "}
                       {otherVerified ? "Finalizing payment…" : `Waiting for the ${otherLabel} to confirm.`}
@@ -470,7 +499,7 @@ export default function Appointments() {
                   ) : (
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs text-subtle min-w-0">
-                        Confirm with your {otherLabel} that the session is done{isClient ? " — your card will be charged" : ""}.
+                        Code sent to your messages — confirm within 3 minutes{isClient ? " to complete payment" : ""}.
                       </span>
                       <Button
                         onClick={() => handleConfirmComplete(appointment._id, isClient ? "client" : "artist", myCode)}
