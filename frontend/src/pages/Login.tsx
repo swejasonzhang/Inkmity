@@ -514,7 +514,7 @@ export default function Login() {
                               if (authError) setAuthError("");
                               if (invalid.email) setInvalid((p) => ({ ...p, email: false }));
                             }}
-                            className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white px-4 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.email ? "ink-flash" : ""}`}
+                            className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/50 px-4 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.email ? "ink-flash" : ""}`}
                             autoComplete="email"
                           />
                         </div>
@@ -534,7 +534,7 @@ export default function Login() {
                                 if (authError) setAuthError("");
                                 if (invalid.password) setInvalid((p) => ({ ...p, password: false }));
                               }}
-                              className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white px-4 pr-11 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.password ? "ink-flash" : ""}`}
+                              className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/50 px-4 pr-11 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.password ? "ink-flash" : ""}`}
                               autoComplete="current-password"
                               aria-describedby="auth-help"
                             />
