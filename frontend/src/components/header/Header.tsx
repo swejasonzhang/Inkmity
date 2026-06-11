@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser, useAuth } from "@clerk/clerk-react";
-import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock, Award, Mail, Info, Bell, type LucideIcon } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut, User, Circle, Clock, EyeOff, Lock, Award, Mail, Info, type LucideIcon } from "lucide-react";
 
 const SECONDARY_NAV_ICONS: Record<string, LucideIcon> = {
   Tiers: Award,
@@ -12,12 +12,12 @@ import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
 import BlackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems";
-import { useNavBadges } from "@/hooks/useNavBadges";
 import { Nav } from "./Nav";
 import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityStatus } from "./VisibilityDropdown";
 import HeaderRewards from "./HeaderRewards";
+import NotificationBell from "./NotificationBell";
 import { API_URL, updateVisibility } from "@/api";
 import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername, clearCachedUsername } from "@/lib/roleCache";
 
@@ -270,27 +270,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     navigate("/signup");
   }, [navigate]);
 
-  const navBadges = useNavBadges();
-  // Per-link count badges are consolidated into a single notification bell next
-  // to the tier — unread messages + pending chat & booking requests.
-  const bellCount = navBadges.notifications + navBadges.appointments;
   const renderBell = (visibilityCls: string) =>
-    effectiveSignedIn ? (
-      <button
-        type="button"
-        aria-label={bellCount > 0 ? `Notifications, ${bellCount} unread` : "Notifications"}
-        title="Notifications"
-        onClick={() => navigate("/dashboard")}
-        className={`${visibilityCls} relative items-center justify-center h-9 w-9 rounded-lg border border-app bg-elevated text-app hover:bg-card transition-colors flex-shrink-0`}
-      >
-        <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
-        {!navBadges.loading && bellCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-[color:var(--fg)] text-[color:var(--bg)] text-[10px] font-bold leading-none">
-            {bellCount > 99 ? "99+" : bellCount}
-          </span>
-        )}
-      </button>
-    ) : null;
+    effectiveSignedIn ? <NotificationBell className={visibilityCls} /> : null;
   const NAV_ITEMS: BuildNavItem[] = useMemo(
     () => buildNavItems(effectiveSignedIn, onGate, userRole),
     [effectiveSignedIn, onGate, userRole]
@@ -440,7 +421,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               </button>
             </div>
             <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} badgesLoading={navBadges.loading} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
             </div>
           </div>
         </div>
@@ -460,7 +441,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
         </div>
 
         <div className="col-start-2 hidden md:flex w-full min-w-0 overflow-hidden">
-          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} badgesLoading={navBadges.loading} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
         </div>
 
         <div className="col-start-3 justify-self-end flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">
