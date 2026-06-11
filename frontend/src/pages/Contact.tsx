@@ -30,7 +30,7 @@ function InputClearPlaceholder(
             }}
             className={[
                 keepCenter ? "text-center placeholder:text-center" : "",
-                "bg-card border border-app/50 text-app placeholder:text-app",
+                "bg-card border border-app/50 text-app placeholder:text-app/50",
                 "focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
                 className || "",
             ]
@@ -161,7 +161,7 @@ function AutoCenterTextarea({
                 suppressContentEditableWarning
             />
             {showPlaceholder && !isFocused && (
-                <div className="placeholder-overlay text-app">
+                <div className="placeholder-overlay text-app/50">
                     <span className="text-center">
                         {placeholder}
                         <span className="blink">|</span>

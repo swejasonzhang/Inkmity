@@ -410,7 +410,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   const resolvedLogo = logoSrcProp ?? (!themed ? WhiteLogo : theme === "light" ? BlackLogo : WhiteLogo);
 
-  const mobileLogoCls = "h-16 sm:h-20 w-auto object-contain flex-shrink-0";
+  const mobileLogoCls = "h-14 sm:h-16 w-auto object-contain flex-shrink-0";
   const mobileBtnCls = "md:hidden grid place-items-center rounded-xl text-app hover:bg-white/10 active:scale-95 transition p-1";
   const mobileIconCls = "h-12 w-12 xs:h-14 xs:w-14";
 
@@ -431,7 +431,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </video>
           <div className="absolute inset-0 bg-black/55" />
           <div className="relative z-10 flex flex-col h-full">
-            <div className="flex items-center justify-between pl-[var(--ink-edge-l)] pr-[var(--ink-edge-r)] py-1.5 sm:py-2 flex-shrink-0">
+            <div className="flex items-center justify-between pl-[var(--ink-edge-l)] pr-[var(--ink-edge-r)] py-1 sm:py-1.5 flex-shrink-0">
               <Link to={homeHref} onClick={() => setMobileMenuOpen(false)} className="flex-shrink-0">
                 <img src={WhiteLogo} alt="Inkmity Logo" className={mobileLogoCls} draggable={false} />
               </Link>

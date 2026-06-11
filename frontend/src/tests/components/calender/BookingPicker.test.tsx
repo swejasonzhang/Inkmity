@@ -30,6 +30,7 @@ jest.unstable_mockModule("@/api", () => ({
   getBooking: jest.fn(),
   startCheckout: jest.fn(),
   checkoutDeposit: jest.fn(),
+  createCardSetupIntent: jest.fn<() => Promise<any>>().mockResolvedValue({ clientSecret: "seti_secret", setupIntentId: "seti_1", customerId: "cus_1" }),
   refundByBooking: jest.fn(),
   getMe: jest.fn(),
   updateVisibility: jest.fn(),
