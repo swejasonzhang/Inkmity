@@ -18,6 +18,7 @@ import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
 import DepositStep from "./DepositStep"
+import CardOnFileStep from "./CardOnFileStep"
 
 type Kind = "consultation" | "appointment"
 type Props = { artistId: string; date?: Date; artistName?: string }
@@ -71,7 +72,7 @@ function swallowGestureTail(ms = 220) {
   }, ms)
 }
 
-export default function BookingPicker({ artistId, date }: Props) {
+export default function BookingPicker({ artistId, date, artistName }: Props) {
   const scopeRef = useRef<HTMLDivElement>(null)
   const portalRef = useRef<HTMLDivElement>(null)
   const { theme } = useTheme()
@@ -89,6 +90,7 @@ export default function BookingPicker({ artistId, date }: Props) {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [depositStepOpen, setDepositStepOpen] = useState(false)
+  const [cardStepOpen, setCardStepOpen] = useState(false)
   const [pendingBooking, setPendingBooking] = useState<any>(null)
 
   const [depositPolicy, setDepositPolicy] = useState<any>(null)
@@ -335,6 +337,18 @@ export default function BookingPicker({ artistId, date }: Props) {
           setSelectedSlots([])
           setConfirmOpen(false)
           setDepositStepOpen(true)
+          setSubmitting(false)
+          return
+        }
+
+        // No deposit: save the client's card on file (no charge) so the rate +
+        // platform fee can be captured at completion. Dev keeps bookings free.
+        if (!import.meta.env.DEV) {
+          setPendingBooking(booking)
+          swallowGestureTail()
+          setSelectedSlots([])
+          setConfirmOpen(false)
+          setCardStepOpen(true)
           setSubmitting(false)
           return
         }
@@ -740,6 +754,48 @@ export default function BookingPicker({ artistId, date }: Props) {
                 }}
                 onCancel={() => {
                   setDepositStepOpen(false)
+                  setPendingBooking(null)
+                }}
+              />
+            )}
+          </RDialogContent>
+        </RDialogPortal>
+      </RDialog>
+
+      <RDialog open={cardStepOpen} onOpenChange={setCardStepOpen}>
+        <RDialogPortal container={portalRef.current ?? scopeRef.current ?? (typeof document !== "undefined" ? document.body : undefined)}>
+          <RDialogOverlay
+            className="fixed inset-0 z-[2147483600] bg-overlay"
+            onPointerDownCapture={(ev) => ev.stopPropagation()}
+          />
+          <RDialogContent
+            showCloseButton={false}
+            className="z-[2147483646] border rounded-2xl p-5 sm:p-6"
+            style={{
+              background: isLightTheme ? "#ffffff" : "var(--card)",
+              color: isLightTheme ? "#000000" : "var(--fg)",
+              borderColor: isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)",
+              overflowY: "auto",
+              maxWidth: "480px"
+            }}
+            onPointerDownCapture={(ev) => ev.stopPropagation()}
+          >
+            <RDialogHeader className="sr-only">
+              <RDialogTitle>Save your card</RDialogTitle>
+              <RDialogDescription>Save a card on file for this appointment</RDialogDescription>
+            </RDialogHeader>
+            {pendingBooking && (
+              <CardOnFileStep
+                booking={pendingBooking}
+                artistName={artistName}
+                onSaved={async () => {
+                  setCardStepOpen(false)
+                  setPendingBooking(null)
+                  await refreshSlots()
+                  toast.success("Appointment booked — card saved.", toastStyle)
+                }}
+                onCancel={() => {
+                  setCardStepOpen(false)
                   setPendingBooking(null)
                 }}
               />
