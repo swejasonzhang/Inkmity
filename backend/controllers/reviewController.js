@@ -3,7 +3,7 @@ import User from "../models/UserBase.js";
 
 export const addReview = async (req, res) => {
   try {
-    const { artistId, rating, text, comment, bookingId } = req.body;
+    const { artistId, rating, text, comment, bookingId, recommend } = req.body;
     const reviewerId = req.auth.userId;
 
     const review = await Review.create({
@@ -12,6 +12,7 @@ export const addReview = async (req, res) => {
       bookingId: bookingId || undefined,
       rating,
       comment: text || comment || "",
+      recommend: Boolean(recommend),
     });
 
     const artist = await User.findOne({ _id: artistId, role: "artist" }).populate("reviews");

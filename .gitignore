@@ -30,3 +30,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Internal docs — not for the public repo
+BUSINESS_SETUP.md
+DEPLOYMENT.md

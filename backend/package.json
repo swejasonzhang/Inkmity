@@ -19,6 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
     "@clerk/express": "^1.7.34",
     "cloudinary": "^2.7.0",
     "compression": "^1.8.1",

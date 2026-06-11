@@ -13,6 +13,7 @@ import { Check } from "lucide-react";
 import { container } from "@/lib/animations";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
+import { getMe, apiPost } from "@/api";
 import VideoBackground from "@/components/VideoBackground";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,7 +31,7 @@ export default function Login() {
   const [showInfo, setShowInfo] = useState(false);
   const [mascotError, setMascotError] = useState(false);
   const { signIn, setActive, isLoaded: signInLoaded } = useSignIn();
-  const { userId, isLoaded: authLoaded, isSignedIn, signOut } = useAuth();
+  const { userId, isLoaded: authLoaded, isSignedIn, signOut, getToken } = useAuth();
   const { onboarded } = useOnboarded();
   const staleSessionRef = useRef<boolean | null>(null);
   const [tip, setTip] = useState<TipState>({ show: false, x: 0, y: 0 });
@@ -40,21 +41,35 @@ export default function Login() {
   const [flashToken, setFlashToken] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successType, setSuccessType] = useState<"login" | "already" | null>(null);
+  const [redirectTo, setRedirectTo] = useState<"/dashboard" | "/onboarding">("/dashboard");
   const redirectTimerRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
   const justLoggedInRef = useRef(false);
   const isRedirectingRef = useRef(false);
   const intendedSuccessTypeRef = useRef<"login" | "already" | null>(null);
 
-  const beginRedirect = useCallback(() => {
+  const beginRedirect = useCallback((dest: "/dashboard" | "/onboarding" = "/dashboard") => {
     if (redirectTimerRef.current !== null) {
       window.clearTimeout(redirectTimerRef.current);
     }
     isRedirectingRef.current = true;
     redirectTimerRef.current = window.setTimeout(() => {
-      navigate("/dashboard", { replace: true });
+      navigate(dest, { replace: true });
     }, 2000);
   }, [navigate]);
+
+  // After a successful sign-in, send users who haven't finished onboarding to
+  // /onboarding instead of /dashboard (where the route guard would bounce them
+  // anyway), so the success message and redirect match reality.
+  const resolveDestination = useCallback(async (): Promise<"/dashboard" | "/onboarding"> => {
+    try {
+      const token = await getToken();
+      const me = await getMe({ token: token ?? undefined });
+      return me?.onboardingComplete === true ? "/dashboard" : "/onboarding";
+    } catch (e: unknown) {
+      return (e as { status?: number })?.status === 404 ? "/onboarding" : "/dashboard";
+    }
+  }, [getToken]);
 
   useEffect(() => {
     return () => {
@@ -150,7 +165,10 @@ export default function Login() {
       if (justLoggedInRef.current || intendedSuccessTypeRef.current === "login" || successType === "login") {
         return;
       }
-      if (!isMountedRef.current) {
+      // Only show the "already signed in -> redirecting" state for a genuinely
+      // complete session. A stale/incomplete session (onboarded null/false) is
+      // signed out by the effect above, so showing the redirect would be wrong.
+      if (!isMountedRef.current && onboarded === true) {
         isMountedRef.current = true;
         intendedSuccessTypeRef.current = "already";
         setShowSuccess(true);
@@ -171,7 +189,7 @@ export default function Login() {
       }
       intendedSuccessTypeRef.current = null;
     }
-  }, [authLoaded, isSignedIn, beginRedirect, successType, showSuccess]);
+  }, [authLoaded, isSignedIn, beginRedirect, successType, showSuccess, onboarded]);
 
   const triggerMascotError = () => {
     setMascotError(true);
@@ -182,6 +200,47 @@ export default function Login() {
   const pwdOk = password.trim().length > 0;
   const emailHelp = email.trim().length === 0 ? "Required. Enter your email." : emailOk ? "Looks good." : "Invalid email. Use a format like name@example.com.";
   const pwdHelp = password.trim().length === 0 ? "Required. Enter your password." : pwdOk ? "Keep this private." : "Password required.";
+
+  // Dev-only: skip the signup/login form and sign in as a seeded test account.
+  // Uses a Clerk sign-in token (ticket) minted by the backend, which bypasses
+  // password AND 2FA. Never shipped to prod (gated by import.meta.env.DEV and
+  // the backend endpoint is hard-gated to the Clerk test instance).
+  const quickLogin = async (role: "client" | "artist") => {
+    if (!import.meta.env.DEV || !signIn || !signInLoaded || loading) return;
+    setAuthError("");
+    setLoading(true);
+    try {
+      // Clerk is single-session by default; clear any stale session first so a
+      // fresh signIn.create can complete instead of returning a partial status.
+      try { await signOut(); } catch { /* ignore: no active session */ }
+      const { token: ticket } = await apiPost<{ token: string }>("/auth/dev-sign-in-token", { role });
+      const result = await signIn.create({ strategy: "ticket", ticket });
+      if (result.status === "complete" && result.createdSessionId) {
+        await setActive({ session: result.createdSessionId });
+        resetActivityTimer();
+        const dest = await resolveDestination();
+        setRedirectTo(dest);
+        isMountedRef.current = true;
+        justLoggedInRef.current = true;
+        intendedSuccessTypeRef.current = "login";
+        setSuccessType("login");
+        setShowSuccess(true);
+        beginRedirect(dest);
+        setTimeout(() => {
+          justLoggedInRef.current = false;
+        }, 1000);
+      } else {
+        console.error("[dev quick-login] unexpected status:", result.status, result);
+        setAuthError(`Dev quick-login: Clerk returned "${result.status}" (see console).`);
+      }
+    } catch (err: any) {
+      const detail = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || "unknown error";
+      console.error("[dev quick-login] error:", err);
+      setAuthError(`Dev quick-login failed: ${detail}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -223,12 +282,14 @@ export default function Login() {
         try {
           sessionStorage.setItem("authRedirect", "1");
         } catch { }
+        const dest = await resolveDestination();
+        setRedirectTo(dest);
         isMountedRef.current = true;
         justLoggedInRef.current = true;
         intendedSuccessTypeRef.current = "login";
         setSuccessType("login");
         setShowSuccess(true);
-        beginRedirect();
+        beginRedirect(dest);
         setTimeout(() => {
           justLoggedInRef.current = false;
         }, 1000);
@@ -240,12 +301,14 @@ export default function Login() {
             try {
               sessionStorage.setItem("authRedirect", "1");
             } catch { }
+            const dest = await resolveDestination();
+            setRedirectTo(dest);
             isMountedRef.current = true;
             justLoggedInRef.current = true;
             intendedSuccessTypeRef.current = "login";
             setSuccessType("login");
             setShowSuccess(true);
-            beginRedirect();
+            beginRedirect(dest);
             setTimeout(() => {
               justLoggedInRef.current = false;
             }, 1000);
@@ -326,7 +389,11 @@ export default function Login() {
   const successTitle =
     successType === "already" ? "You're already logged in" : "Welcome back!";
   const successSubtitle =
-    successType === "already" ? "Taking you to your dashboard" : "Redirecting to your dashboard";
+    redirectTo === "/onboarding"
+      ? "Let's finish setting up your account"
+      : successType === "already"
+        ? "Taking you to your dashboard"
+        : "Redirecting to your dashboard";
 
   const RedirectNotice = (
     <motion.div
@@ -406,6 +473,29 @@ export default function Login() {
                       RedirectNotice
                     ) : (
                       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
+                        {import.meta.env.DEV && (
+                          <div className="w-full rounded-xl border border-dashed border-white/25 bg-white/5 p-2.5">
+                            <p className="mb-2 text-[10px] uppercase tracking-wider text-white/50">Dev: skip signup</p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => quickLogin("client")}
+                                disabled={loading || !signInLoaded}
+                                className="flex-1 h-9 rounded-lg bg-white/10 text-white text-xs font-semibold hover:bg-white/20 transition disabled:opacity-50"
+                              >
+                                Login as Client
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quickLogin("artist")}
+                                disabled={loading || !signInLoaded}
+                                className="flex-1 h-9 rounded-lg bg-white/10 text-white text-xs font-semibold hover:bg-white/20 transition disabled:opacity-50"
+                              >
+                                Login as Artist
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         <OAuthButtons mode="login" />
                         <div className="flex items-center gap-3 w-full" aria-hidden>
                           <span className="h-px flex-1 bg-app/15" />
@@ -426,7 +516,7 @@ export default function Login() {
                               if (authError) setAuthError("");
                               if (invalid.email) setInvalid((p) => ({ ...p, email: false }));
                             }}
-                            className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 text-center text-sm sm:text-base outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.email ? "ink-flash" : ""}`}
+                            className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.email ? "ink-flash" : ""}`}
                             autoComplete="email"
                             aria-describedby="email-help"
                           />
@@ -448,7 +538,7 @@ export default function Login() {
                                 if (authError) setAuthError("");
                                 if (invalid.password) setInvalid((p) => ({ ...p, password: false }));
                               }}
-                              className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 pr-11 text-center text-sm sm:text-base outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.password ? "ink-flash" : ""}`}
+                              className={`w-full h-11 rounded-xl bg-neutral-900/80 border border-white/15 text-white placeholder:text-white/40 px-4 pr-11 text-center outline-none focus:ring-2 focus:ring-white/20 transition ${invalid.password ? "ink-flash" : ""}`}
                               autoComplete="current-password"
                               aria-describedby="password-help auth-help"
                             />

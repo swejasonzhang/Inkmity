@@ -2,10 +2,7 @@ import LegalPage from "@/components/legal/LegalPage";
 
 export default function Privacy() {
   return (
-    <LegalPage title="Privacy Policy" updated="June 9, 2026">
-      <p className="text-xs italic text-muted">
-        Template for review — have an attorney review and tailor this before launch.
-      </p>
+    <LegalPage title="Privacy Policy" updated="June 10, 2026">
 
       <p>
         This Privacy Policy explains how Inkmity ("we", "us") collects, uses, and
@@ -45,14 +42,55 @@ export default function Privacy() {
       <h2>Data retention &amp; security</h2>
       <p>
         We retain information for as long as your account is active or as needed for legal,
-        accounting, and dispute-resolution purposes. We apply industry-standard safeguards
-        (encryption in transit, access controls, signed payment webhooks), but no method is 100% secure.
+        accounting, and dispute-resolution purposes. We maintain reasonable administrative,
+        technical, and physical safeguards designed to protect the private information of New York
+        residents, consistent with the New York SHIELD Act, including encryption in transit, access
+        controls, and signed payment webhooks. No method of transmission or storage is 100% secure.
+        If a breach affecting your private information occurs, we will notify affected users as
+        required by applicable law.
       </p>
 
       <h2>Your rights</h2>
       <p>
         Depending on your location, you may request access, correction, deletion, or export of your
-        data, and may object to certain processing. Contact us to exercise these rights.
+        data, and may object to or restrict certain processing. To exercise any of these rights,
+        email <a href="mailto:privacy@inkmity.com">privacy@inkmity.com</a>; we will verify your
+        identity before acting and respond within the time required by applicable law. You will not
+        be discriminated against for exercising these rights.
+      </p>
+
+      <h2>Health information</h2>
+      <p>
+        Some bookings involve health-related intake information (such as allergies, medications, skin
+        conditions, or pregnancy status) that you choose to provide so an artist can tattoo you
+        safely. We collect only what is needed for the booking, share it only with the artist or
+        studio you book and our service providers, and do not use it for advertising. Inkmity is not
+        a healthcare provider and this information is not protected by HIPAA; provide only what is
+        necessary.
+      </p>
+
+      <h2>California residents</h2>
+      <p>
+        If you are a California resident, the CCPA/CPRA gives you the right to know what personal
+        information we collect, to access and delete it, to correct it, and to opt out of any
+        &ldquo;sale&rdquo; or &ldquo;sharing&rdquo; of personal information. <strong>We do not sell
+        or share your personal information</strong> as those terms are defined under California law.
+        You may exercise your rights using the contact above, and may use an authorized agent.
+      </p>
+
+      <h2>Other U.S. states</h2>
+      <p>
+        Residents of states with comprehensive privacy laws (such as Colorado, Connecticut, Virginia,
+        Utah, Texas, and others) have similar rights to access, correct, delete, and obtain a copy of
+        their personal data, and to opt out of targeted advertising and profiling. Contact us at the
+        address above to exercise them.
+      </p>
+
+      <h2>International users</h2>
+      <p>
+        Inkmity is operated from the United States and your information will be processed there. If
+        you access the service from outside the U.S., you understand that U.S. data-protection laws
+        may differ from those in your country, and you consent to this transfer and processing.
       </p>
 
       <h2>Children</h2>

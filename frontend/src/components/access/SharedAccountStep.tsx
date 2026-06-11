@@ -144,7 +144,7 @@ export default function SharedAccountStep({
                     value={shared.username}
                     placeholder="Enter a display name"
                     onChange={onChange}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
                     aria-describedby="username-help"
                     aria-invalid={!usernameOk}
                 />
@@ -161,7 +161,7 @@ export default function SharedAccountStep({
                     placeholder="name@example.com"
                     onChange={onChange}
                     onBlur={onEmailBlur}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 placeholder:text-xs sm:placeholder:text-sm px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
                     aria-describedby="email-help"
                     aria-invalid={!emailOk}
                 />
@@ -179,7 +179,7 @@ export default function SharedAccountStep({
                         value={shared.password}
                         placeholder="8+ characters, letters & numbers"
                         onChange={onChange}
-                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 placeholder:text-[11px] sm:placeholder:text-xs pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
+                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
                         aria-describedby="password-help"
                         aria-invalid={!pwdOk}
                     />
@@ -211,7 +211,7 @@ export default function SharedAccountStep({
                         value={confirmPassword || ""}
                         placeholder="Re-enter your password"
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 placeholder:text-[11px] sm:placeholder:text-xs pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
+                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/15 text-white text-center placeholder:text-white/40 pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashConfirmPwd ? "ink-flash" : ""}`}
                         aria-describedby="confirm-password-help"
                         aria-invalid={!confirmPwdOk}
                     />

@@ -599,7 +599,7 @@ export default function ClientProfile() {
                         <textarea
                             value={currentBio}
                             onChange={(e) => setEditedClient({ ...editedClient, bio: e.target.value })}
-                            className="w-full max-w-prose bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-xs text-center"
+                            className="w-full max-w-prose bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md p-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none text-center"
                             rows={2}
                             style={{ color: "var(--fg)" }}
                             placeholder="Tell us about yourself..."
@@ -864,7 +864,7 @@ export default function ClientProfile() {
                                     const minHeight = 100;
                                     textarea.style.height = `${Math.max(scrollHeight, minHeight)}px`;
                                 }}
-                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md px-3 py-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden text-xs min-h-[100px] text-center"
+                                className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md px-3 py-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden min-h-[100px] text-center"
                                 style={{ color: "var(--fg)", textAlign: "center" }}
                                 placeholder="Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $100-$200. I'm located in New York, NY. I don't have a placement in mind. I'm still figuring out the size. Let me know if you're available and interested!"
                             />

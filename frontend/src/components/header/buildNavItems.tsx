@@ -5,6 +5,8 @@ export type NavItem = {
   to: string;
   disabled?: boolean;
   badge?: React.ReactNode;
+  /** Live count shown as a notification bubble on the nav link. */
+  count?: number;
   onClick?: (e: React.MouseEvent) => void;
 };
 
@@ -21,7 +23,7 @@ export function buildNavItems(
   if (isSignedIn && role === "artist") {
     items.push(gated("Portfolio", "/portfolio"));
   }
-  if (isSignedIn && (role === "artist" || role === "studio")) {
+  if (isSignedIn && role === "studio") {
     items.push(gated("Studios", "/studios"));
   }
 

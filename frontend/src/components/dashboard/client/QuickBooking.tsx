@@ -69,7 +69,7 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                 type="button"
                 onClick={() => setDate(d)}
                 aria-pressed={selected}
-                className="group relative flex flex-col items-center justify-center gap-0.5 rounded-xl border py-2 transition-all duration-150 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+                className="group relative flex flex-col items-center justify-center gap-0.5 rounded-xl border py-2 transition-colors duration-150 hover:ring-2 hover:ring-[color:var(--fg)]/30 focus:outline-none focus-visible:ring-2"
                 style={{
                     background: selected ? "var(--fg)" : "transparent",
                     color: selected ? "var(--bg)" : "var(--fg)",
@@ -102,12 +102,12 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                 >
                     <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" aria-hidden />
                     <motion.div
-                        className="relative w-[min(720px,100%)] max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border shadow-2xl"
-                        style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
-                        initial={{ scale: 0.96, opacity: 0, y: 12 }}
+                        className="relative w-[min(720px,100%)] max-h-[92vh] flex flex-col overflow-hidden rounded-3xl border shadow-2xl transform-gpu"
+                        style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", willChange: "transform, opacity", backfaceVisibility: "hidden" }}
+                        initial={{ scale: 0.98, opacity: 0, y: 10 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.96, opacity: 0, y: 12 }}
-                        transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                        exit={{ scale: 0.98, opacity: 0, y: 10 }}
+                        transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
                         onClick={e => e.stopPropagation()}
                     >
                         {}
@@ -134,9 +134,9 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                         </div>
 
                         {}
-                        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 flex flex-col gap-5">
+                        <div className="flex-1 min-h-0 overflow-hidden px-4 sm:px-6 py-4 sm:py-5 flex flex-col gap-5">
                             {}
-                            <section className="flex flex-col gap-2.5">
+                            <section className="flex flex-col gap-2.5 shrink-0">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-sm font-semibold">
                                         <CalendarDays className="h-4 w-4 opacity-70" />
@@ -169,7 +169,7 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                             </section>
 
                             {}
-                            <section className="flex flex-col gap-2.5">
+                            <section className="flex flex-col gap-2.5 flex-1 min-h-0">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-sm font-semibold">
                                         <Clock className="h-4 w-4 opacity-70" />
@@ -178,7 +178,7 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
                                     <span className="text-xs opacity-50 truncate max-w-[55%] text-right">{selectedLabel}</span>
                                 </div>
                                 <div
-                                    className="rounded-2xl border min-h-[420px] p-2 sm:p-3"
+                                    className="rounded-2xl border flex-1 min-h-0 flex flex-col p-2 sm:p-3"
                                     style={{ background: "var(--elevated)", borderColor: "var(--border)" }}
                                 >
                                     {artistId && artist ? (

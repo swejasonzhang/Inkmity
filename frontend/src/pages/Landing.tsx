@@ -11,6 +11,8 @@ import Header from "@/components/header/Header";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
+import Differentiators from "@/components/landing/Differentiators";
+import Roadmap from "@/components/landing/Roadmap";
 import ForArtists from "@/components/landing/ForArtists";
 import BottomCTA from "@/components/landing/BottomCTA";
 import Divider from "@/components/landing/Divider";
@@ -86,7 +88,15 @@ const Landing: React.FC = () => {
 
                                 <Divider />
 
+                                <Differentiators textFadeUp={textFadeUp} wc={wc} />
+
+                                <Divider />
+
                                 <ForArtists textFadeUp={textFadeUp} wc={wc} />
+
+                                <Divider />
+
+                                <Roadmap textFadeUp={textFadeUp} wc={wc} />
 
                                 <Divider />
 

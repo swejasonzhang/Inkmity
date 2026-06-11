@@ -183,6 +183,7 @@ export type ReviewInput = {
   rating: number;
   text?: string;
   bookingId?: string;
+  recommend?: boolean;
 };
 
 export type MessageDTO = {
@@ -440,6 +441,26 @@ export async function createTattooSession(
   return apiPost<Booking>("/bookings/session", input, token, signal);
 }
 
+export async function createMultiSession(
+  input: {
+    artistId: string;
+    name?: string;
+    note?: string;
+    placement?: string;
+    priceCents?: number;
+    sessions: Array<{ startISO: string; durationMinutes: number }>;
+  },
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{ project: any; bookings: Booking[] }>(
+    "/bookings/multi-session",
+    input,
+    token,
+    signal
+  );
+}
+
 export async function getAppointments(
   role?: "client" | "artist",
   token?: string | null,
@@ -447,6 +468,16 @@ export async function getAppointments(
 ) {
   const params = role ? { role } : {};
   return apiGet<Booking[]>("/bookings/appointments", params, token, signal);
+}
+
+export type UnreadState = {
+  unreadConversationIds?: string[];
+  pendingRequestIds?: string[];
+  counts?: { unreadConversations?: number; pendingRequests?: number };
+};
+
+export async function getUnreadState(token?: string | null, signal?: AbortSignal) {
+  return apiGet<UnreadState>("/messages/unread", undefined, token, signal);
 }
 
 export async function acceptAppointment(
@@ -464,6 +495,14 @@ export async function denyAppointment(
   signal?: AbortSignal
 ) {
   return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
+}
+
+export async function getIntakeForm(
+  bookingId: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiGet<IntakeForm | null>(`/bookings/${bookingId}/intake`, undefined, token, signal);
 }
 
 export async function submitIntakeForm(
@@ -523,10 +562,14 @@ export async function updateArtistPolicy(
   );
 }
 
+export type PieceSize = "flash" | "small" | "medium" | "large" | "sleeve" | "back_piece";
+
 export type BookingGate = {
   enabled: boolean;
   depositConfigured: boolean;
   payoutsReady?: boolean;
+  maxSessions?: number;
+  pieceSize?: PieceSize;
   message: string;
 };
 
@@ -538,12 +581,13 @@ export async function getBookingGate(artistId: string, clientId?: string, signal
 export async function enableClientBookings(
   artistId: string,
   clientId: string,
+  opts?: { pieceSize?: PieceSize; maxSessions?: number },
   token?: string | null,
   signal?: AbortSignal
 ) {
   return apiPost<{ ok: boolean; permission?: any; message?: string }>(
     "/artist-policy/enable-client-bookings",
-    { artistId, clientId },
+    { artistId, clientId, ...(opts || {}) },
     token,
     signal
   );
@@ -636,6 +680,9 @@ export type Studio = {
   phone?: string;
   address?: string;
   city?: string;
+  lat?: number;
+  lng?: number;
+  placeId?: string;
   bio?: string;
   logo?: { url: string; publicId?: string };
   defaultCommissionPct: number;

@@ -97,14 +97,15 @@ describe("AftercareInstructions", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  test("should have disabled X button", async () => {
-    render(<AftercareInstructions {...defaultProps} />);
+  test("X button closes the modal", async () => {
+    const user = userEvent.setup();
+    const onClose = jest.fn();
+    render(<AftercareInstructions {...defaultProps} onClose={onClose} />);
     await waitFor(() => {
-      const closeButtons = screen.getAllByLabelText("Close");
-      const disabledButton = closeButtons.find(btn => btn.hasAttribute('disabled'));
-      expect(disabledButton).toBeInTheDocument();
-      expect(disabledButton).toBeDisabled();
+      expect(screen.getByLabelText("Close")).toBeInTheDocument();
     });
+    await user.click(screen.getByLabelText("Close"));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test("should not close when clicking outside", async () => {

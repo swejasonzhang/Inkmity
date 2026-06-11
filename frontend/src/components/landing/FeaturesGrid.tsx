@@ -1,5 +1,6 @@
 import React from "react";
 import { LazyMotion, domAnimation, MotionConfig, useReducedMotion, m, type Variants, type Transition } from "framer-motion";
+import { dirForColumn } from "./motion";
 
 const features = [
     {
@@ -13,9 +14,9 @@ const features = [
         tags: ["Reference sharing", "Sketch approval", "Full history"],
     },
     {
-        title: "Clear pricing and rewards",
-        body: "Up-front quotes, verified reviews, and perks that stack as you book. Every completed session earns points toward discounts on your next one.",
-        tags: ["Transparent quotes", "Verified reviews", "Reward points"],
+        title: "Clear pricing, no surprises",
+        body: "Up-front quotes and verified reviews, with cancellation terms shown before you ever pay. What you agree to is exactly what you get.",
+        tags: ["Transparent quotes", "Verified reviews", "Clear terms"],
     },
 ];
 
@@ -23,11 +24,12 @@ const SPRING: Transition = { type: "spring", stiffness: 260, damping: 24 };
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const card: Variants = {
-    hidden: { opacity: 0, y: 32, scale: 0.96, filter: "blur(8px)" },
+    hidden: (dir: number = 0) => ({ opacity: 0, x: dir * 56, y: dir === 0 ? 32 : 0, scale: 0.96, filter: "blur(8px)" }),
     show: {
-        opacity: 1, y: 0, scale: 1, filter: "blur(0px)",
+        opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)",
         transition: {
             opacity: { duration: 0.55, ease: EASE },
+            x: SPRING,
             y: SPRING,
             scale: SPRING,
             filter: { duration: 0.45, ease: EASE },
@@ -73,9 +75,10 @@ const FeaturesGrid: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({
                 <LazyMotion features={domAnimation} strict>
                     <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-fluid-md">
-                            {features.map((f) => (
-                                <m.article key={f.title} variants={card} initial="hidden" whileInView="show"
+                            {features.map((f, i) => (
+                                <m.article key={f.title} custom={dirForColumn(i, 3)} variants={card} initial="hidden" whileInView="show"
                                     viewport={{ once: true, amount: 0.2 }}
+                                    transition={{ delay: i * 0.08 } as any}
                                     whileHover={prefersReduced ? undefined : "hover"}
                                     whileTap={prefersReduced ? undefined : "tap"}
                                     className="relative">

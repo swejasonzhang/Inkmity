@@ -3,7 +3,7 @@ import { m } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useOnboarded } from "@/hooks/useOnboarded";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 type HeroProps = {
     textFadeUp: any;
@@ -12,41 +12,18 @@ type HeroProps = {
     onReveal: () => void;
 };
 
-const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal }) => {
+const Hero: React.FC<HeroProps> = ({ wc, textFadeUp, onReveal }) => {
     const { onboarded } = useOnboarded();
     const isOnboarded = onboarded === true;
     const findArtistTo = isOnboarded ? "/login" : "/signup";
-    const gradientInitial = { backgroundPositionX: "100%" as const };
-    const gradientAnimate  = { backgroundPositionX: "0%" as const };
-    const gradientTransition = {
-        backgroundPositionX: { duration: 2.2, ease: [0.22, 1, 0.36, 1], delay: 0.1 },
-    } as const;
 
     return (
         <div className="text-center">
-            <m.div
-                variants={textFadeUp}
-                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--elevated)] px-4 py-1.5 text-fluid-xs font-medium text-[color:var(--fg)]/60 mb-fluid-6"
-                style={wc}
-            >
-                <MapPin className="h-3 w-3 opacity-60" />
-                US-only · Active development · Launch coming soon
-            </m.div>
-
             <h1 className="font-extrabold leading-[1.02] tracking-tight mb-fluid-4" style={wc}>
-                <m.span
-                    initial={gradientInitial}
-                    {...(!prefersReduced && { animate: gradientAnimate })}
-                    transition={gradientTransition}
-                    className="block text-fluid-6xl bg-clip-text text-transparent bg-[linear-gradient(90deg,var(--fg)_0%,var(--fg)_50%,rgba(255,255,255,0.5)_100%)] bg-[length:200%_100%]"
-                >
+                <m.span variants={textFadeUp} className="block text-fluid-6xl text-[color:var(--fg)]" style={wc}>
                     One place to discover,
                 </m.span>
-                <m.span
-                    variants={textFadeUp}
-                    className="block text-fluid-6xl text-[color:var(--fg)]"
-                    style={wc}
-                >
+                <m.span variants={textFadeUp} className="block text-fluid-6xl text-[color:var(--fg)]" style={wc}>
                     book, and earn.
                 </m.span>
             </h1>
@@ -56,7 +33,7 @@ const Hero: React.FC<HeroProps> = ({ prefersReduced, wc, textFadeUp, onReveal })
                 className="text-fluid-lg text-[color:var(--fg)]/65 font-medium leading-relaxed max-w-2xl mx-auto mb-fluid-8"
                 style={wc}
             >
-                Find tattoo artists across the US by style, technique, and availability. Message with full context. Book with clear pricing. Earn rewards every time you sit.
+                Find tattoo artists across the US by style and availability. Talk through every reference, lock in your slot, and earn as you go.
             </m.p>
 
             <m.div variants={textFadeUp} className="flex-center flex-wrap gap-fluid-sm mb-fluid-4" style={wc}>

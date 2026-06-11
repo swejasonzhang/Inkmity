@@ -282,10 +282,10 @@ export default function ClientDetailsStep({
         } catch { }
     }, []);
 
-    const fieldCls = "space-y-1.5 md:space-y-1 flex flex-col items-center rounded-2xl md:rounded-xl border border-white/10 bg-black/40 px-3 py-3 md:px-2.5 md:py-2 transition hover:border-white/20";
+    const fieldCls = "space-y-1 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 md:py-2 transition hover:border-white/20";
     const labelCls = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-semibold capitalize text-white/90 text-center";
     const triggerCls =
-        "relative h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
+        "relative h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
         "data-[placeholder]:text-white/45 " +
         "[&>svg]:absolute [&>svg]:right-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:text-white/70 [&>svg]:opacity-100 " +
         "[&_[data-slot=select-value]]:w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center [&_[data-slot=select-value]]:truncate";
@@ -296,11 +296,11 @@ export default function ClientDetailsStep({
         "w-full [&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-white/15 [&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-white [&_[data-slot=slider-thumb]]:bg-neutral-900 [&_[data-slot=slider-thumb]]:shadow-lg [&_[data-slot=slider-thumb]]:ring-white/30";
 
     return (
-        <div className="w-full space-y-3 md:space-y-2">
-            <div className="grid grid-cols-2 gap-2.5 md:gap-1.5">
+        <div className="w-full space-y-1.5 md:space-y-2">
+            <div className="grid grid-cols-2 gap-1.5">
                 <div className={`${fieldCls} col-span-2`}>
                     <label className={labelCls}><DollarSign className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Budget range</label>
-                    <div className="w-full max-w-md px-1 pt-2">
+                    <div className="w-full max-w-md px-1 pt-1">
                         <Slider
                             min={MIN}
                             max={MAX}
@@ -311,7 +311,7 @@ export default function ClientDetailsStep({
                             aria-label="Budget range"
                             className={sliderCls}
                         />
-                        <div className="mt-3 flex items-stretch justify-center gap-2">
+                        <div className="mt-1.5 flex items-stretch justify-center gap-2">
                             <div className="flex-1 max-w-[7.5rem] flex flex-col items-center gap-0.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-1.5">
                                 <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">Min</span>
                                 <span className="text-base font-bold leading-none tabular-nums text-white">${low.toLocaleString()}</span>
@@ -426,7 +426,7 @@ export default function ClientDetailsStep({
                         value={client.dob || ""}
                         max={new Date().toISOString().slice(0, 10)}
                         onChange={(e) => emit("dob", e.target.value)}
-                        className="h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 px-3 text-xs text-white text-center [color-scheme:dark]"
+                        className="h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 px-3 text-white text-center [color-scheme:dark]"
                     />
                     <p className="text-center text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">For your birthday credit · optional</p>
                 </div>

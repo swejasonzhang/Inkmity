@@ -10,7 +10,7 @@ import Artist from "../models/Artist.js";
 import { dayBoundsUTC } from "../utils/date.js";
 import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
-import { getIO } from "../services/socketService.js";
+import { getIO, emitMessageCreated } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
@@ -24,6 +24,97 @@ const DEFAULT_TIMEZONE = "America/New_York";
 const DEFAULT_SLOT_MINUTES = 30;
 const DEFAULT_OPEN_RANGES = [{ start: "10:00", end: "22:00" }];
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+// Create a notification message and push it to both participants in realtime
+// (drives the recipient's notification badge + chat without a refresh).
+async function notify(fields) {
+  const message = await Message.create(fields);
+  try { emitMessageCreated(message); } catch {}
+  return message;
+}
+
+// Clients must wait this long between appointment requests with the same artist so
+// artists don't get spammed. Applies regardless of appointment type.
+const SCHEDULE_COOLDOWN_HOURS = 2;
+
+async function getArtistTimezone(artistId) {
+  try {
+    const av = await Availability.findOne({ artistId });
+    return av?.timezone || DEFAULT_TIMEZONE;
+  } catch {
+    return DEFAULT_TIMEZONE;
+  }
+}
+
+function formatBookingWhen(startAt, zone) {
+  try {
+    return DateTime.fromJSDate(new Date(startAt), { zone: zone || DEFAULT_TIMEZONE })
+      .toFormat("cccc, LLLL d, yyyy 'at' h:mm a");
+  } catch {
+    return new Date(startAt).toISOString();
+  }
+}
+
+// Returns an active cooldown record (cancellation, denial, or recent scheduling) or null.
+async function getActiveBookingCooldown(userId, artistId) {
+  if (config.dev.bypassGates) return null;
+  return BookingCooldown.findOne({
+    userId: String(userId),
+    artistId: String(artistId),
+    expiresAt: { $gt: new Date() },
+  });
+}
+
+function respondWithCooldown(res, cooldown) {
+  const hoursRemaining =
+    (cooldown.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60);
+  return res.status(429).json({
+    error: "cooldown_active",
+    message: `You can request another appointment with this artist in ${Math.ceil(hoursRemaining)} hour(s).`,
+    expiresAt: cooldown.expiresAt,
+  });
+}
+
+// Start an anti-spam cooldown after a client schedules, regardless of appointment type.
+async function applyScheduleCooldown(userId, artistId, bookingId) {
+  try {
+    const now = new Date();
+    await BookingCooldown.findOneAndUpdate(
+      { userId: String(userId), artistId: String(artistId) },
+      {
+        userId: String(userId),
+        artistId: String(artistId),
+        cancelledAt: now,
+        expiresAt: new Date(now.getTime() + SCHEDULE_COOLDOWN_HOURS * 60 * 60 * 1000),
+        bookingId,
+      },
+      { upsert: true, new: true }
+    );
+  } catch (e) {
+    console.error("applyScheduleCooldown failed:", e?.message);
+  }
+}
+
+async function notifyArtistOfBooking({ clientId, artistId, booking, tz }) {
+  try {
+    const zone = tz || (await getArtistTimezone(artistId));
+    const typeLabel = booking.appointmentType === "consultation" ? "consultation" : "tattoo session";
+    const action = booking.status === "pending" ? "request" : "booking";
+    const whenStr = formatBookingWhen(booking.startAt, zone);
+    await notify({
+      senderId: String(clientId),
+      receiverId: String(artistId),
+      text: `New ${typeLabel} ${action} for ${whenStr}.`,
+      meta: {
+        kind: "appointment_requested",
+        bookingId: String(booking._id),
+        appointmentType: booking.appointmentType || "tattoo_session",
+      },
+    });
+  } catch (e) {
+    console.error("notifyArtistOfBooking failed:", e?.message);
+  }
+}
 
 function getActorId(req) {
   return String(
@@ -81,6 +172,9 @@ async function studioReadyForArtist(artistId) {
 }
 
 export function computeDepositCents(policy, priceCents, appointmentType) {
+  // TEMP: deposits disabled for now — always 0. Remove to restore policy-based deposits.
+  return 0;
+
   const p = policy?.deposit || {};
   if (appointmentType === "consultation" && (p.consultationFree ?? true)) return 0;
   const price = Math.max(0, Number(priceCents || 0));
@@ -102,12 +196,6 @@ export function computeDepositCents(policy, priceCents, appointmentType) {
   }
   if (price > 0) result = Math.min(result, price);
   return result;
-}
-
-function isRefundEligible(startAtISO, now = new Date()) {
-  const start = new Date(startAtISO).getTime();
-  const diffHours = (start - now.getTime()) / (1000 * 60 * 60);
-  return diffHours >= 0 && diffHours < 72;
 }
 
 function parseHmToMinutes(hm) {
@@ -305,6 +393,10 @@ export async function createBooking(req, res) {
       status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
     });
     if (conflict) return res.status(409).json({ error: "Slot already booked" });
+
+    const activeCooldown = await getActiveBookingCooldown(userId, artistId);
+    if (activeCooldown) return respondWithCooldown(res, activeCooldown);
+
     let policy = null;
     try {
       policy =
@@ -394,6 +486,8 @@ export async function createBooking(req, res) {
         message: e?.message || "Invalid payload",
       });
     }
+    await notifyArtistOfBooking({ clientId: userId, artistId, booking: created });
+    await applyScheduleCooldown(userId, artistId, created._id);
     return res.status(201).json(created);
   } catch {
     return res.status(500).json({ error: "Failed to create booking" });
@@ -416,7 +510,7 @@ export async function startVerification(req, res) {
     booking.matchedAt = null;
     await booking.save();
     try {
-      await Message.create({
+      await notify({
         senderId: String(booking.artistId),
         receiverId: String(booking.clientId),
         text: `Your verification code: ${booking.clientCode} (valid 3 minutes)`,
@@ -426,7 +520,7 @@ export async function startVerification(req, res) {
           role: "client",
         },
       });
-      await Message.create({
+      await notify({
         senderId: String(booking.clientId),
         receiverId: String(booking.artistId),
         text: `Your verification code: ${booking.artistCode} (valid 3 minutes)`,
@@ -470,8 +564,15 @@ export async function cancelBooking(req, res) {
     const now = new Date();
     const hoursUntilAppointment =
       (new Date(booking.startAt).getTime() - now.getTime()) / (1000 * 60 * 60);
+    // The artist sets the cancellation window (cutoffHours). Cancelling with more notice
+    // than the cutoff refunds the deposit; cancelling inside the window forfeits it.
+    let cancelPolicy = null;
+    try {
+      cancelPolicy = await ArtistPolicy.findOne({ artistId: booking.artistId });
+    } catch {}
+    const cutoffHours = Number(cancelPolicy?.deposit?.cutoffHours ?? 48);
     const shouldForfeitDeposit =
-      hoursUntilAppointment < 48 && booking.depositPaidCents > 0;
+      hoursUntilAppointment < cutoffHours && booking.depositPaidCents > 0;
 
     booking.status = "cancelled";
     booking.cancelledAt = now;
@@ -514,7 +615,8 @@ export async function cancelBooking(req, res) {
     try {
       if (
         !shouldForfeitDeposit &&
-        isRefundEligible(booking.startAt.toISOString())
+        hoursUntilAppointment >= 0 &&
+        booking.depositPaidCents > 0
       ) {
         const mockRes = {
           _status: 200,
@@ -534,16 +636,17 @@ export async function cancelBooking(req, res) {
     } catch {}
 
     try {
-      await Message.create({
+      const zone = await getArtistTimezone(booking.artistId);
+      const whenStr = formatBookingWhen(booking.startAt, zone);
+      const typeLabel = booking.appointmentType === "consultation" ? "consultation" : "appointment";
+      await notify({
         senderId: actorId,
         receiverId: isClient
           ? String(booking.artistId)
           : String(booking.clientId),
-        text: `Appointment cancelled. ${
-          shouldForfeitDeposit
-            ? "Deposit has been forfeited due to late cancellation."
-            : ""
-        } ${reason ? `Reason: ${reason}` : ""}`,
+        text: `The ${typeLabel} for ${whenStr} has been cancelled.${
+          shouldForfeitDeposit ? " The deposit was forfeited due to late cancellation." : ""
+        } Reason: ${reason || "none provided"}.`,
         meta: {
           kind: "appointment_cancelled",
           bookingId: String(booking._id),
@@ -601,19 +704,44 @@ export async function cancelBookingViaLink(req, res) {
     const now = new Date();
     const hoursUntilAppointment =
       (new Date(booking.startAt).getTime() - now.getTime()) / (1000 * 60 * 60);
-    const shouldForfeitDeposit =
-      hoursUntilAppointment < 48 && booking.depositPaidCents > 0;
 
+    let cancelPolicy = null;
+    try {
+      cancelPolicy = await ArtistPolicy.findOne({ artistId: booking.artistId });
+    } catch {}
+    const cutoffHours = Number(cancelPolicy?.deposit?.cutoffHours ?? 48);
+    const shouldForfeitDeposit =
+      hoursUntilAppointment < cutoffHours && booking.depositPaidCents > 0;
+
+    const cancellationReason = "Cancelled via email link";
     booking.status = "cancelled";
     booking.cancelledAt = now;
     booking.cancelledBy = "client";
-    booking.cancellationReason = "Cancelled via email link";
+    booking.cancellationReason = cancellationReason;
 
     if (shouldForfeitDeposit) {
       booking.depositPaidCents = 0;
     }
 
     await booking.save();
+
+    try {
+      const zone = await getArtistTimezone(booking.artistId);
+      const whenStr = formatBookingWhen(booking.startAt, zone);
+      const typeLabel = booking.appointmentType === "consultation" ? "consultation" : "appointment";
+      await notify({
+        senderId: String(booking.clientId),
+        receiverId: String(booking.artistId),
+        text: `The ${typeLabel} for ${whenStr} has been cancelled.${
+          shouldForfeitDeposit ? " The deposit was forfeited due to late cancellation." : ""
+        } Reason: ${cancellationReason}.`,
+        meta: {
+          kind: "appointment_cancelled",
+          bookingId: String(booking._id),
+          depositForfeited: shouldForfeitDeposit,
+        },
+      });
+    } catch {}
 
     try {
       let clientEmail = null;
@@ -689,7 +817,7 @@ export async function setFinalPrice(req, res) {
     await booking.save();
 
     try {
-      await Message.create({
+      await notify({
         senderId: String(booking.artistId),
         receiverId: String(booking.clientId),
         text: `Final price set to $${(finalPriceCents / 100).toFixed(2)}. Your remaining balance will be charged automatically once you both confirm completion.`,
@@ -757,7 +885,7 @@ export async function verifyBookingCode(req, res) {
         try {
           const result = await captureBookingBalance(doc);
           if (result && !result.ok && !result.skipped) {
-            await Message.create({
+            await notify({
               senderId: String(doc.artistId),
               receiverId: String(doc.clientId),
               text: "We couldn't automatically charge your remaining balance. Please complete the payment from your appointment.",
@@ -844,7 +972,7 @@ export async function updateBookingTime(req, res) {
     booking.endAt = endAt;
     await booking.save();
     try {
-      await Message.create({
+      await notify({
         senderId: String(booking.artistId),
         receiverId: String(booking.clientId),
         text: "Booking time updated",
@@ -914,22 +1042,8 @@ export async function createConsultation(req, res) {
       return res.status(409).json({ error: "Slot already booked" });
     }
 
-    const activeCooldown = config.dev.bypassGates
-      ? null
-      : await BookingCooldown.findOne({
-          userId: String(userId),
-          artistId,
-          expiresAt: { $gt: new Date() },
-        });
-
-    if (activeCooldown) {
-      const hoursRemaining = (activeCooldown.expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60);
-      return res.status(429).json({
-        error: "cooldown_active",
-        message: `You must wait ${Math.ceil(hoursRemaining)} hours before booking with this artist again after cancelling or denying an appointment.`,
-        expiresAt: activeCooldown.expiresAt
-      });
-    }
+    const activeCooldown = await getActiveBookingCooldown(userId, artistId);
+    if (activeCooldown) return respondWithCooldown(res, activeCooldown);
 
     let policy = null;
     try {
@@ -973,6 +1087,9 @@ export async function createConsultation(req, res) {
       }
       throw e;
     }
+
+    await notifyArtistOfBooking({ clientId: userId, artistId, booking, tz });
+    await applyScheduleCooldown(userId, artistId, booking._id);
 
     res.status(201).json(booking);
   } catch (error) {
@@ -1030,6 +1147,9 @@ export async function createTattooSession(req, res) {
       return res.status(409).json({ error: "Slot already booked" });
     }
 
+    const activeCooldown = await getActiveBookingCooldown(userId, artistId);
+    if (activeCooldown) return respondWithCooldown(res, activeCooldown);
+
     let project = null;
     if (projectId) {
       project = await Project.findById(projectId);
@@ -1059,6 +1179,16 @@ export async function createTattooSession(req, res) {
       return res.status(403).json({
         error: "bookings_disabled",
         message: "Appointments are not enabled for you. Please contact the artist to enable appointments."
+      });
+    }
+
+    // Don't let a client book more sittings than the artist approved for this piece.
+    const maxSessions = Math.max(1, Number(permission?.maxSessions || 1));
+    if (!config.dev.bypassGates && sessionNumber > maxSessions) {
+      return res.status(403).json({
+        error: "too_many_sessions",
+        maxSessions,
+        message: `This piece is approved for up to ${maxSessions} session${maxSessions === 1 ? "" : "s"}. Ask the artist to re-assess the size to book more.`,
       });
     }
 
@@ -1137,10 +1267,171 @@ export async function createTattooSession(req, res) {
       await project.save();
     }
 
+    await notifyArtistOfBooking({ clientId: userId, artistId, booking, tz });
+    await applyScheduleCooldown(userId, artistId, booking._id);
+
     res.status(201).json(booking);
   } catch (error) {
     console.error("Error creating tattoo session:", error);
     return res.status(500).json({ error: "Failed to create tattoo session" });
+  }
+}
+
+// Book a big tattoo as several linked sessions under one Project. To the artist
+// these appear as one piece split across multiple appointments (Session X of N).
+export async function createMultiSession(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const body = req.body || {};
+    const artistId = String(body.artistId || "").trim();
+    const rawSessions = Array.isArray(body.sessions) ? body.sessions : [];
+    const name = String(body.name || "").trim() || "Multi-session tattoo";
+    const note = body.note ?? "";
+    const placement = String(body.placement || "").trim();
+    const priceCents = Math.max(0, Number(body.priceCents || 0));
+
+    if (!artistId) return res.status(400).json({ error: "artistId required" });
+    if (rawSessions.length < 2) {
+      return res.status(400).json({ error: "At least two sessions are required" });
+    }
+    if (rawSessions.length > 12) {
+      return res.status(400).json({ error: "Too many sessions (max 12)" });
+    }
+
+    const activeCooldown = await getActiveBookingCooldown(userId, artistId);
+    if (activeCooldown) return respondWithCooldown(res, activeCooldown);
+
+    const av = (await Availability.findOne({ artistId })) || { timezone: DEFAULT_TIMEZONE };
+    const tz = av.timezone || DEFAULT_TIMEZONE;
+
+    const parsed = [];
+    for (const s of rawSessions) {
+      const startISO = String(s?.startISO || "").trim();
+      const durationMinutes = Math.max(30, Math.min(480, Number(s?.durationMinutes || DEFAULT_SLOT_MINUTES)));
+      const startAt = new Date(startISO);
+      if (!startISO || Number.isNaN(startAt.getTime())) {
+        return res.status(400).json({ error: "Invalid session start" });
+      }
+      const endAt = new Date(
+        DateTime.fromJSDate(startAt, { zone: tz }).plus({ minutes: durationMinutes }).toISO()
+      );
+      parsed.push({ startAt, endAt });
+    }
+    parsed.sort((a, b) => a.startAt - b.startAt);
+
+    // Booking gates (run once for the whole project).
+    const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
+    const permission = await ClientBookingPermission.findOne({ artistId, clientId: String(userId) });
+    if (!config.dev.bypassGates && (!permission || !permission.enabled)) {
+      return res.status(403).json({
+        error: "bookings_disabled",
+        message: "Appointments are not enabled for you. Please contact the artist to enable appointments.",
+      });
+    }
+
+    // The artist sizes the piece after the consultation; the client can't book more
+    // dates than that allows (e.g. a flash can't be spread across several days).
+    const maxSessions = Math.max(1, Number(permission?.maxSessions || 1));
+    if (!config.dev.bypassGates && parsed.length > maxSessions) {
+      return res.status(403).json({
+        error: "too_many_sessions",
+        maxSessions,
+        message: `This piece is approved for up to ${maxSessions} session${maxSessions === 1 ? "" : "s"}. Please choose ${maxSessions} date${maxSessions === 1 ? "" : "s"} or fewer, or ask the artist to re-assess the size.`,
+      });
+    }
+
+    if (!(await artistCanReceivePayments(artistId))) {
+      return res.status(409).json({
+        error: "artist_not_onboarded",
+        message: "This artist hasn't finished payment setup yet, so bookings can't be processed.",
+      });
+    }
+    if (!(await clientWaiverSigned(userId))) {
+      return res.status(403).json({
+        error: "waiver_required",
+        docType: "client_waiver",
+        message: "Please review and sign the consent & liability waiver before booking.",
+      });
+    }
+    const studioReady = await studioReadyForArtist(artistId);
+    if (!studioReady.ok) {
+      return res.status(409).json({ error: "studio_not_ready", message: studioReady.message });
+    }
+
+    // No overlap with existing bookings, for any of the chosen times.
+    for (const p of parsed) {
+      const conflict = await Booking.findOne({
+        artistId,
+        startAt: { $lt: p.endAt },
+        endAt: { $gt: p.startAt },
+        status: { $nin: ["cancelled"] },
+      });
+      if (conflict) {
+        return res.status(409).json({
+          error: "slot_conflict",
+          message: "One of the chosen times is already booked. Please adjust your sessions.",
+        });
+      }
+    }
+
+    let policy = null;
+    try { policy = await ArtistPolicy.findOne({ artistId }); } catch {}
+    const perDeposit = config.dev.bypassGates ? 0 : computeDepositCents(policy, priceCents, "tattoo_session");
+
+    const project = await Project.create({
+      artistId,
+      clientId: String(userId),
+      name,
+      description: note,
+      placement,
+      estimatedSessions: parsed.length,
+      totalPriceCents: priceCents,
+      status: "active",
+      startedAt: new Date(),
+    });
+
+    const bookings = [];
+    for (let i = 0; i < parsed.length; i++) {
+      const p = parsed[i];
+      const booking = await Booking.create({
+        artistId,
+        clientId: String(userId),
+        startAt: p.startAt,
+        endAt: p.endAt,
+        note,
+        status: "pending",
+        appointmentType: "tattoo_session",
+        projectId: project._id,
+        sessionNumber: i + 1,
+        priceCents,
+        depositRequiredCents: perDeposit,
+        depositPaidCents: 0,
+        clientCode: genCode(),
+        artistCode: genCode(),
+        cancelToken: randomBytes(32).toString("hex"),
+      });
+      bookings.push(booking);
+    }
+
+    try {
+      const zone = await getArtistTimezone(artistId);
+      const firstWhen = bookings.length ? formatBookingWhen(bookings[0].startAt, zone) : null;
+      await notify({
+        senderId: String(userId),
+        receiverId: artistId,
+        text: `New ${parsed.length}-session tattoo project requested: "${name}"${firstWhen ? `, first session ${firstWhen}` : ""}.`,
+        meta: { kind: "appointment_request", status: "pending", sessions: parsed.length },
+      });
+    } catch {}
+
+    await applyScheduleCooldown(userId, artistId, bookings[0]?._id);
+
+    res.status(201).json({ project, bookings });
+  } catch (error) {
+    console.error("Error creating multi-session booking:", error);
+    return res.status(500).json({ error: "Failed to create multi-session booking" });
   }
 }
 
@@ -1224,7 +1515,7 @@ export async function rescheduleAppointment(req, res) {
     await booking.save();
 
     try {
-      await Message.create({
+      await notify({
         senderId: actorId,
         receiverId: isClient
           ? String(booking.artistId)
@@ -1296,7 +1587,7 @@ export async function markNoShow(req, res) {
     await booking.save();
 
     try {
-      await Message.create({
+      await notify({
         senderId: actorId,
         receiverId: String(booking.clientId),
         text: `No-show marked for appointment on ${new Date(
@@ -1470,7 +1761,7 @@ export async function acceptAppointment(req, res) {
     await booking.save();
 
     try {
-      await Message.create({
+      await notify({
         senderId: String(booking.artistId),
         receiverId: String(booking.clientId),
         text: `Your ${booking.appointmentType === "consultation" ? "consultation" : "appointment"} request has been accepted.`,
@@ -1547,10 +1838,17 @@ export async function denyAppointment(req, res) {
     } catch {}
 
     try {
-      await Message.create({
+      const isConsultation = booking.appointmentType === "consultation";
+      let when = "";
+      if (isConsultation && booking.startAt) {
+        try {
+          when = ` ${new Date(booking.startAt).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" })}.`;
+        } catch {}
+      }
+      await notify({
         senderId: userId,
         receiverId: isClient ? String(booking.artistId) : String(booking.clientId),
-        text: `The ${booking.appointmentType === "consultation" ? "consultation" : "appointment"} request has been denied.${reason ? ` Reason: ${reason}` : ""}`,
+        text: `The ${isConsultation ? "consultation" : "appointment"} request has been denied.${when}${reason ? ` Reason: ${reason}` : ""}`,
         meta: {
           kind: "appointment_denied",
           bookingId: String(booking._id),
@@ -1570,10 +1868,40 @@ export async function denyAppointment(req, res) {
   }
 }
 
+// Appointments finish when the work is done. Primary signal is the on-site mutual code
+// verification (see verifyBookingCode). This is the safety net: any agreed appointment whose
+// session ended more than AUTO_COMPLETE_GRACE_HOURS ago is marked completed automatically, so
+// the artist never has to do admin to "close out" a booking. It does NOT auto-charge a balance —
+// money only moves on explicit on-site verification — keeping clients protected from bad charges.
+const AUTO_COMPLETE_GRACE_HOURS = 6;
+
+async function autoCompleteDueBookings(userId) {
+  try {
+    const cutoff = new Date(Date.now() - AUTO_COMPLETE_GRACE_HOURS * 60 * 60 * 1000);
+    const due = await Booking.find({
+      $or: [{ clientId: String(userId) }, { artistId: String(userId) }],
+      status: { $in: ["accepted", "confirmed", "booked", "matched", "in-progress"] },
+      endAt: { $lt: cutoff },
+    });
+    for (const b of due) {
+      b.status = "completed";
+      b.completedAt = b.completedAt || new Date();
+      b.autoCompleted = true;
+      await b.save();
+      try { await recordCompletedBooking(b.clientId); } catch (e) { console.error("recordCompletedBooking failed:", e.message); }
+      try { await incrementArtistBookings(b.artistId); } catch (e) { console.error("incrementArtistBookings failed:", e.message); }
+    }
+  } catch (e) {
+    console.error("autoCompleteDueBookings failed:", e.message);
+  }
+}
+
 export async function getAppointments(req, res) {
   try {
     const userId = getActorId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    await autoCompleteDueBookings(userId);
 
     const { role } = req.query;
     let bookings;
@@ -1599,6 +1927,13 @@ export async function getAppointments(req, res) {
 
     const User = (await import("../models/UserBase.js")).default;
 
+    // Attach project info so multi-session pieces show "Session X of N · name".
+    const projectIds = [...new Set(bookings.map((b) => b.projectId).filter(Boolean).map(String))];
+    const projects = projectIds.length
+      ? await Project.find({ _id: { $in: projectIds } }).lean()
+      : [];
+    const projectMap = new Map(projects.map((p) => [String(p._id), p]));
+
     const appointmentsWithUsers = await Promise.all(
       bookings.map(async (booking) => {
         const [client, artist] = await Promise.all([
@@ -1606,8 +1941,12 @@ export async function getAppointments(req, res) {
           User.findOne({ clerkId: booking.artistId }).lean(),
         ]);
 
+        const proj = booking.projectId ? projectMap.get(String(booking.projectId)) : null;
+
         return {
           ...booking,
+          projectName: proj?.name || null,
+          projectSessions: proj?.estimatedSessions || null,
           client: client
             ? {
                 username: client.username || "Unknown",

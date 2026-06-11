@@ -1,21 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { LazyMotion, domAnimation, MotionConfig, useReducedMotion, m, type Variants } from "framer-motion";
+import { LazyMotion, domAnimation, MotionConfig, useReducedMotion, m } from "framer-motion";
 import { MessageSquare, CreditCard, FileText, LayoutGrid, ArrowRight } from "lucide-react";
-
-const EASE = [0.22, 1, 0.36, 1] as const;
-
-const fadeIn: Variants = {
-    hidden: { opacity: 0, y: 20, filter: "blur(8px)" },
-    show: {
-        opacity: 1, y: 0, filter: "blur(0px)",
-        transition: {
-            opacity: { duration: 0.55, ease: EASE },
-            y: { type: "spring", stiffness: 220, damping: 26 },
-            filter: { duration: 0.45, ease: EASE },
-        },
-    },
-};
+import { directionalReveal } from "./motion";
 
 const benefits = [
     { icon: MessageSquare, title: "One inbox", body: "All client conversations in one thread. No more scattered DMs." },
@@ -87,7 +74,8 @@ const ForArtists: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ t
                                     return (
                                         <m.div
                                             key={b.title}
-                                            variants={fadeIn}
+                                            custom={1}
+                                            variants={directionalReveal}
                                             initial="hidden"
                                             whileInView="show"
                                             viewport={{ once: true, amount: 0.2 }}

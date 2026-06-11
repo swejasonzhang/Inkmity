@@ -9,6 +9,7 @@ const mockCreateTattooSession = jest.fn<() => Promise<Booking>>();
 jest.unstable_mockModule("@/api", () => ({
   createConsultation: mockCreateConsultation,
   createTattooSession: mockCreateTattooSession,
+  createMultiSession: jest.fn<() => Promise<any>>().mockResolvedValue({ project: {}, bookings: [] }),
   apiGet: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiPost: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiRequest: jest.fn<() => Promise<any>>().mockResolvedValue({}),

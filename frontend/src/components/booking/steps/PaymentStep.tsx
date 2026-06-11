@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import {
   createConsultation,
   createTattooSession,
+  createMultiSession,
   createDepositPaymentIntent,
   submitIntakeForm,
   getArtistPolicy,
@@ -34,6 +35,7 @@ type BookingFlowData = {
   sessionNumber: number;
   referenceImageIds: string[];
   intakeForm: any;
+  sessions?: Array<{ startISO: string; endISO: string }>;
 };
 
 type Props = {
@@ -59,6 +61,9 @@ function computeDepositPreviewCents(
   priceCents: number,
   appointmentType: BookingFlowData["appointmentType"]
 ) {
+  // TEMP: deposits disabled for now — always 0. Remove to restore policy-based deposits.
+  return 0;
+
   const p = deposit || {};
   if (appointmentType === "consultation" && (p.consultationFree ?? true)) return 0;
   const price = Math.max(0, Number(priceCents || 0));
@@ -99,6 +104,8 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
   }, [bookingData.artistId]);
 
   const depositPreviewCents = useMemo(() => {
+    // Dev: bookings are free end-to-end (mirrors backend DEV_BYPASS_GATES).
+    if (import.meta.env?.DEV) return 0;
     if (!bookingData.appointmentType) return 0;
     return computeDepositPreviewCents(
       depositPolicy || undefined,
@@ -135,6 +142,7 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
   }, [rewards, bookingData.priceCents]);
 
   const willRequireDeposit = useMemo(() => {
+    if (import.meta.env?.DEV) return false; // free bookings in dev
     if (!bookingData.appointmentType) return false;
     if (bookingData.appointmentType === "tattoo_session") return true;
     return depositPreviewCents > 0;
@@ -157,6 +165,38 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
     try {
       const token = await getToken();
       let booking: Booking;
+
+      // Multi-session: book the whole piece as one linked project.
+      const sessions = bookingData.sessions ?? [];
+      if (bookingData.appointmentType === "tattoo_session" && sessions.length > 1) {
+        const result = await createMultiSession(
+          {
+            artistId: bookingData.artistId,
+            note: bookingData.intakeForm?.tattooDetails?.description || "",
+            placement: bookingData.intakeForm?.tattooDetails?.placement || "",
+            priceCents: bookingData.priceCents,
+            sessions: sessions.map((s) => ({
+              startISO: s.startISO,
+              durationMinutes: Math.round((+new Date(s.endISO) - +new Date(s.startISO)) / 60000),
+            })),
+          },
+          token
+        );
+        const first = result.bookings?.[0];
+        if (first?._id && bookingData.intakeForm) {
+          try {
+            await submitIntakeForm(first._id, bookingData.intakeForm, token);
+          } catch (err) {
+            console.error("Failed to submit intake form:", err);
+          }
+        }
+        toast.success(`Booked ${result.bookings.length} sessions!`);
+        if (first) {
+          setConfirmedBooking(first);
+          onSubmit(first);
+        }
+        return;
+      }
 
       if (bookingData.appointmentType === "consultation") {
         booking = await createConsultation(
@@ -335,6 +375,12 @@ function PaymentForm({ bookingData, artist, onSubmit, submitting: parentSubmitti
               <span className="text-muted-foreground">Duration:</span>
               <span className="font-medium">{bookingData.durationMinutes} minutes</span>
             </div>
+            {(bookingData.sessions?.length ?? 0) > 1 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Sessions:</span>
+                <span className="font-medium">{bookingData.sessions!.length} (linked project)</span>
+              </div>
+            )}
             {bookingData.priceCents > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Estimated Total:</span>

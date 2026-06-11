@@ -9,6 +9,7 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { API_URL, getAppointments } from "@/api";
 import { useMessaging } from "@/hooks/useMessaging";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import type { AppointmentWithUsers } from "@/components/dashboard/artist/ArtistOverview";
 
 const CalendarView = lazy(() => import("@/components/dashboard/artist/CalendarView"));
@@ -24,23 +25,24 @@ export default function ArtistDashboard() {
   const [appointments, setAppointments] = useState<AppointmentWithUsers[]>([]);
   const [apptLoading, setApptLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const token = await getToken();
-        const data = await getAppointments(undefined, token ?? undefined);
-        if (!cancelled) setAppointments((data as AppointmentWithUsers[]) ?? []);
-      } catch {
-        if (!cancelled) setAppointments([]);
-      } finally {
-        if (!cancelled) setApptLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadAppointments = useCallback(async (silent = false) => {
+    try {
+      const token = await getToken();
+      const data = await getAppointments(undefined, token ?? undefined);
+      setAppointments((data as AppointmentWithUsers[]) ?? []);
+    } catch {
+      setAppointments([]);
+    } finally {
+      if (!silent) setApptLoading(false);
+    }
   }, [getToken]);
+
+  useEffect(() => {
+    void loadAppointments();
+  }, [loadAppointments]);
+
+  // Keep the calendar + overview (next up, earnings/deposits, insights) live.
+  useBookingRealtime(() => loadAppointments(true));
 
   const calendarBookings = useMemo(
     () =>
@@ -53,6 +55,13 @@ export default function ArtistDashboard() {
           start: a.startAt,
           end: a.endAt,
           status: a.status,
+          appointmentType: a.appointmentType,
+          priceCents: a.priceCents,
+          depositPaidCents: a.depositPaidCents,
+          note: a.note,
+          sessionNumber: a.sessionNumber,
+          projectName: (a as any).projectName,
+          projectSessions: (a as any).projectSessions,
         })),
     [appointments]
   );

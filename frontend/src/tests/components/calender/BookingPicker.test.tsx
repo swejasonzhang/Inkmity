@@ -121,14 +121,14 @@ describe("BookingPicker", () => {
 
   test("should render booking picker", () => {
     render(<BookingPicker {...defaultProps} />);
-    expect(screen.getByText(/Pick a start time/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pick a time to continue/i)).toBeInTheDocument();
   });
 
   test("should render time slots", async () => {
     render(<BookingPicker {...defaultProps} artistName="Test Artist" />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Pick a start time/i)).toBeInTheDocument();
+      expect(screen.getByText(/Pick a time to continue/i)).toBeInTheDocument();
     });
 
     await waitFor(() => {
@@ -140,9 +140,9 @@ describe("BookingPicker", () => {
     render(<BookingPicker {...defaultProps} artistName="Test Artist" />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Pick a start time/i)).toBeInTheDocument();
+      expect(screen.getByText(/Pick a time to continue/i)).toBeInTheDocument();
     });
 
-    expect(screen.queryByText("Write a Review (Optional)")).not.toBeInTheDocument();
+    expect(screen.queryByText("How was")).not.toBeInTheDocument();
   });
 });

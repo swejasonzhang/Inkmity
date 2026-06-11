@@ -14,7 +14,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
 import { socket } from "@/lib/socket";
 import { getSignedUpload, uploadToCloudinary } from "@/lib/cloudinary";
-import { enableClientBookings, getArtistPolicy } from "@/api";
+import { enableClientBookings, getArtistPolicy, type PieceSize } from "@/api";
 import DepositPolicyModal from "./DepositPolicyModal";
 
 export type Message = {
@@ -52,6 +52,17 @@ export type Conversation = {
 
 type GateStatus = "pending" | "accepted" | "declined";
 type Role = "client" | "artist";
+
+// How big the artist judges the piece to be — this caps how many dates the client can book.
+const PIECE_SIZE_LABELS: Record<PieceSize, { label: string; sessions: number; hint: string }> = {
+  flash: { label: "Flash / small", sessions: 1, hint: "A few hours — one sitting" },
+  small: { label: "Small", sessions: 1, hint: "One sitting" },
+  medium: { label: "Medium", sessions: 2, hint: "Up to 2 sittings" },
+  large: { label: "Large", sessions: 3, hint: "Up to 3 sittings" },
+  sleeve: { label: "Sleeve", sessions: 5, hint: "A few days — up to 5 sittings" },
+  back_piece: { label: "Back piece", sessions: 8, hint: "Several days — up to 8 sittings" },
+};
+const PIECE_SIZE_ORDER: PieceSize[] = ["flash", "small", "medium", "large", "sleeve", "back_piece"];
 
 interface ChatWindowProps {
   currentUserId: string;
@@ -114,6 +125,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [pendingDeclineId, setPendingDeclineId] = useState<string | null>(null);
   const [declining, setDeclining] = useState(false);
   const [declineError, setDeclineError] = useState<string | null>(null);
+  const [sizePickerClientId, setSizePickerClientId] = useState<string | null>(null);
   const [gateOverride, setGateOverride] = useState<Record<string, GateStatus | undefined>>({});
   const prevExpandedRef = useRef<string | null>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
@@ -136,7 +148,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       if (el) el.scrollTop = el.scrollHeight;
     });
   };
-  const overlayActive = confirmOpen || declineConfirmOpen || !!viewerUrl;
+  const overlayActive = confirmOpen || declineConfirmOpen || !!viewerUrl || !!sizePickerClientId;
 
   useEffect(() => {
     const el = appRef.current as any;
@@ -706,14 +718,16 @@ const ChatWindow: FC<ChatWindowProps> = ({
     }
   }, [authFetch, onMarkRead, conversations]);
 
-  const enableBookingForClient = async (clientId: string) => {
+  const enableBookingForClient = async (clientId: string, pieceSize: PieceSize) => {
     try {
       const token = await getToken();
-      const result = await enableClientBookings(currentUserId, clientId, token);
+      const result = await enableClientBookings(currentUserId, clientId, { pieceSize }, token);
       if (!result?.ok) {
         throw new Error(result?.message || "Failed to enable appointments");
       }
-      const messageText = "Great! I've enabled booking for you. You can now book consultations and appointments with me!";
+      const sessions = result?.permission?.maxSessions ?? PIECE_SIZE_LABELS[pieceSize].sessions;
+      const sittings = sessions === 1 ? "a single sitting" : `up to ${sessions} sittings`;
+      const messageText = `Great! I've enabled booking for you. Based on the size of your piece (${PIECE_SIZE_LABELS[pieceSize].label}), you can schedule ${sittings}. Book your consultation and sessions with me whenever you're ready!`;
       await sendMessage(clientId, messageText, []);
       window.dispatchEvent(new CustomEvent("ink:booking-enabled", {
         detail: { artistId: currentUserId, clientId }
@@ -734,7 +748,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
       setDepositModalOpen(true);
       return;
     }
-    await enableBookingForClient(clientId);
+    setSizePickerClientId(clientId);
   };
 
   const handleDepositPolicySaved = () => {
@@ -743,7 +757,13 @@ const ChatWindow: FC<ChatWindowProps> = ({
     setDepositModalClientId(null);
     setDepositModalOpen(false);
     checkDepositPolicy();
-    if (clientId) void enableBookingForClient(clientId);
+    if (clientId) setSizePickerClientId(clientId);
+  };
+
+  const confirmPieceSize = async (pieceSize: PieceSize) => {
+    const clientId = sizePickerClientId;
+    setSizePickerClientId(null);
+    if (clientId) await enableBookingForClient(clientId, pieceSize);
   };
 
   const removeConversation = useCallback((participantId: string) => {
@@ -1056,6 +1076,54 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm disabled:opacity-60"
                 >
                   {declining ? "Declining..." : "Confirm Decline"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {sizePickerClientId && (
+          <motion.div
+            className="fixed inset-0 z-[99999] flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            aria-modal="true"
+            role="dialog"
+            onClick={() => setSizePickerClientId(null)}
+          >
+            <button type="button" className="absolute inset-0 bg-black/60" aria-label="Close dialog" />
+            <motion.div
+              className="relative bg-card text-app rounded-xl shadow-2xl border border-app"
+              style={{ padding: 'clamp(1rem, 2vw, 1.5rem)', width: 'clamp(280px, 85vw, 448px)', maxWidth: '90vw' }}
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.94, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 240, damping: 22 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-base font-semibold mb-1">How big is this piece?</h3>
+              <p className="text-muted-foreground mb-4 text-sm">
+                This sets how many dates the client can schedule. A flash stays a single sitting; larger work can span several.
+              </p>
+              <div className="flex flex-col gap-2">
+                {PIECE_SIZE_ORDER.map((size) => (
+                  <button
+                    key={size}
+                    onClick={e => { e.stopPropagation(); void confirmPieceSize(size); }}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-app bg-elevated hover:bg-elevated/70 text-left transition-colors"
+                  >
+                    <span className="text-sm font-semibold">{PIECE_SIZE_LABELS[size].label}</span>
+                    <span className="text-xs text-muted-foreground">{PIECE_SIZE_LABELS[size].hint}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={e => { e.stopPropagation(); setSizePickerClientId(null); }}
+                  className="px-4 py-2 rounded-md bg-elevated hover:bg-elevated/80 text-app text-sm"
+                >
+                  Cancel
                 </button>
               </div>
             </motion.div>
@@ -1513,7 +1581,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                           onChange={e =>
                             activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
                           }
-                          className="flex-1 min-w-0 h-10 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
+                          className="flex-1 min-w-0 h-10 rounded-full border border-app px-4 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
                           placeholder={
                             isMessagingDisabled
                               ? "Messaging disabled - artist declined your request"
@@ -1905,7 +1973,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       onChange={e =>
                         activeConv && setMessageInput(prev => ({ ...prev, [activeConv.participantId]: e.target.value }))
                       }
-                      className="flex-1 min-w-0 h-11 rounded-full border border-app px-4 text-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
+                      className="flex-1 min-w-0 h-11 rounded-full border border-app px-4 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
                       placeholder={
                         isMessagingDisabled
                           ? "Messaging disabled - artist declined your request"

@@ -1,11 +1,9 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
 import {
   CalendarClock,
   Hourglass,
   CalendarRange,
   CheckCircle2,
-  ChevronRight,
   Wallet,
   TrendingUp,
   PiggyBank,
@@ -36,6 +34,11 @@ const ACTIVE_STATUSES = new Set([
   "matched",
   "in-progress",
 ]);
+
+// What counts as "on the calendar" for Next up / upcoming: anything booked that
+// isn't cancelled/denied/finished — including pending requests, so the overview
+// matches what the bookings calendar shows.
+const UPCOMING_STATUSES = new Set([...ACTIVE_STATUSES, "pending"]);
 
 function startOfDay(d: Date) {
   const x = new Date(d);
@@ -77,7 +80,7 @@ function fmtMoney(cents: number) {
 export default function ArtistOverview({ appointments, loading }: Props) {
   const data = appointments ?? [];
 
-  const { stats, money, next, upcoming } = useMemo(() => {
+  const { stats, money, next } = useMemo(() => {
     const now = new Date();
     const weekAhead = new Date(now.getTime() + 7 * 86400000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
@@ -86,7 +89,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
 
     const upcomingList = data
       .filter(
-        (a) => ACTIVE_STATUSES.has(a.status) && new Date(a.startAt).getTime() >= now.getTime()
+        (a) => UPCOMING_STATUSES.has(a.status) && new Date(a.startAt).getTime() >= now.getTime()
       )
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
@@ -129,7 +132,6 @@ export default function ArtistOverview({ appointments, loading }: Props) {
         { label: "Avg / booking", value: fmtMoney(avgValue), Icon: Coins },
       ],
       next: upcomingList[0] ?? null,
-      upcoming: upcomingList.slice(1, 7),
     };
   }, [data]);
 
@@ -137,7 +139,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
     <div className="flex flex-col h-full min-h-0 overflow-y-auto sm:overflow-hidden gap-2 sm:gap-2.5">
       <PayoutSetup redirectToProfile />
 
-      <div className="rounded-xl border border-app bg-elevated px-3 py-2 flex items-center gap-3 flex-shrink-0">
+      <div className="rounded-xl border border-app bg-elevated px-2 py-2 flex items-center gap-3 flex-shrink-0">
         <div className="grid place-items-center h-9 w-9 rounded-full bg-card border border-app shrink-0">
           <Clock className="h-4 w-4 text-app" />
         </div>
@@ -149,20 +151,20 @@ export default function ArtistOverview({ appointments, loading }: Props) {
           </div>
         ) : next ? (
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-wide text-muted">
+            <div className="text-xs uppercase tracking-wide text-muted">
               Next up · {fmtRelative(next.startAt)}
             </div>
             <div className="text-sm font-semibold text-app truncate">
               {next.client?.username ?? "Client"}
               <span className="text-muted font-normal"> · {next.appointmentType === "consultation" ? "Consultation" : "Tattoo session"}</span>
             </div>
-            <div className="text-[11px] text-muted truncate">
+            <div className="text-xs text-muted truncate">
               {fmtDay(next.startAt)} · {fmtTime(next.startAt)} – {fmtTime(next.endAt)}
             </div>
           </div>
         ) : (
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-wide text-muted">Next up</div>
+            <div className="text-xs uppercase tracking-wide text-muted">Next up</div>
             <div className="text-sm font-medium text-app">Nothing scheduled yet</div>
           </div>
         )}
@@ -170,65 +172,27 @@ export default function ArtistOverview({ appointments, loading }: Props) {
 
       <ArtistInsights stats={stats} loading={loading} />
 
-      <div className="rounded-xl border border-app bg-elevated overflow-hidden flex-shrink-0">
-        <div className="px-3 sm:px-4 py-2 border-b border-app flex items-center gap-1.5">
+      <div className="rounded-xl border border-app bg-card overflow-hidden flex-shrink-0">
+        <div className="px-2 sm:px-3 py-2 border-b border-app flex items-center gap-1.5">
           <Wallet className="h-3.5 w-3.5 text-muted" />
-          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide text-muted">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
             Earnings &amp; deposits
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-px" style={{ background: "var(--border)" }}>
           {money.map(({ label, value }) => (
-            <div key={label} className="bg-elevated px-2 py-2 flex flex-col items-center text-center min-w-0">
+            <div key={label} className="bg-card px-1 py-2 flex flex-col items-center text-center min-w-0">
               {loading ? (
                 <Skeleton className="h-6 w-12" />
               ) : (
-                <div className="text-base sm:text-lg font-bold text-app leading-none">{value}</div>
+                <div className="text-lg font-bold text-app leading-none">{value}</div>
               )}
-              <div className="mt-1 text-[9px] sm:text-[10px] text-muted leading-tight">{label}</div>
+              <div className="mt-1 text-xs text-muted leading-tight">{label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 md:min-h-[120px] rounded-xl border border-app bg-elevated flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b border-app flex-shrink-0">
-          <div className="text-xs sm:text-sm font-semibold text-app">Upcoming appointments</div>
-          <Link
-            to="/appointments"
-            className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs text-muted hover:text-app transition-colors"
-          >
-            View all <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-center p-2 sm:p-3 gap-1.5">
-          {loading ? (
-            Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full rounded-lg" />
-            ))
-          ) : upcoming.length === 0 ? (
-            <div className="text-center text-xs sm:text-sm text-muted px-4">
-              No upcoming appointments
-            </div>
-          ) : (
-            upcoming.map((a) => {
-              const name = a.client?.username ?? "Client";
-              return (
-                <div
-                  key={a._id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-app bg-card px-2.5 py-1.5"
-                >
-                  <span className="text-xs sm:text-sm font-medium text-app truncate">{name}</span>
-                  <span className="text-[11px] text-muted shrink-0 whitespace-nowrap">
-                    {fmtDay(a.startAt)}
-                  </span>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
     </div>
   );
 }

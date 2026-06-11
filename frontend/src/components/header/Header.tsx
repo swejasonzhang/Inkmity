@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import WhiteLogo from "@/assets/WhiteLogo.png";
 import BlackLogo from "@/assets/BlackLogo.png";
 import { buildNavItems, NavItem as BuildNavItem } from "../header/buildNavItems";
+import { useNavBadges } from "@/hooks/useNavBadges";
 import { Nav } from "./Nav";
 import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
@@ -270,7 +271,18 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
     e.stopPropagation();
   }, []);
 
-  const NAV_ITEMS: BuildNavItem[] = useMemo(() => buildNavItems(effectiveSignedIn, onGate, userRole), [effectiveSignedIn, onGate, userRole]);
+  const navBadges = useNavBadges();
+  const NAV_ITEMS: BuildNavItem[] = useMemo(() => {
+    const items = buildNavItems(effectiveSignedIn, onGate, userRole);
+    if (!effectiveSignedIn) return items;
+    return items.map((it) =>
+      it.label === "Appointments"
+        ? { ...it, count: navBadges.appointments }
+        : it.label === "Dashboard"
+          ? { ...it, count: navBadges.notifications }
+          : it
+    );
+  }, [effectiveSignedIn, onGate, userRole, navBadges]);
   const isActive = (to: string) => (to !== "#" ? pathname === to || pathname.startsWith(`${to}/`) : false);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -416,7 +428,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
               </button>
             </div>
             <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
+              <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} badgesLoading={navBadges.loading} setMobileMenuOpen={setMobileMenuOpen} handleLogout={handleLogout} />
             </div>
           </div>
         </div>
@@ -427,7 +439,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
 
   return (
     <>
-      <header className="grid w-full relative items-center z-[100] py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}>
+      <header className="grid w-full relative items-center z-[100] gap-x-3 sm:gap-x-6 lg:gap-x-10 py-1.5 sm:py-2 text-app bg-transparent min-w-0 overflow-visible" style={{ minWidth: '320px', gridTemplateColumns: 'auto minmax(0,1fr) auto' }}>
         <div className="col-start-1 justify-self-start flex-shrink-0 relative z-10">
           <Link to={homeHref} className="flex-center gap-fluid-sm xs:gap-fluid-md sm:gap-fluid-lg">
             <img src={resolvedLogo} alt="Inkmity Logo" className="h-16 sm:h-20 lg:h-24 w-auto object-contain flex-shrink-0" draggable={false} />
@@ -435,8 +447,8 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
           </Link>
         </div>
 
-        <div className="col-start-2 justify-self-center hidden md:flex justify-center overflow-hidden min-w-0">
-          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
+        <div className="col-start-2 hidden md:flex w-full min-w-0 overflow-hidden">
+          <Nav items={NAV_ITEMS} isActive={isActive} isSignedIn={effectiveSignedIn} badgesLoading={navBadges.loading} onDisabledDashboardHover={onDashMouseMove} onDisabledDashboardLeave={onDashLeave} />
         </div>
 
         <div className="col-start-3 justify-self-end flex-center gap-fluid-xs xs:gap-fluid-sm sm:gap-fluid-md flex-shrink-0">

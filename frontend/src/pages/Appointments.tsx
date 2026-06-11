@@ -4,6 +4,7 @@ import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import Header from "@/components/header/Header";
 import { getAppointments, acceptAppointment, denyAppointment, Booking } from "@/api";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast, ToastContainer } from "react-toastify";
@@ -70,6 +71,17 @@ type AppointmentWithUsers = Booking & {
   artist?: { username: string; avatar?: any } | null;
 };
 
+const AFTERCARE_DISMISS_KEY = "ink:aftercare-dismissed";
+function getDismissedAftercare(): string[] {
+  try { return JSON.parse(localStorage.getItem(AFTERCARE_DISMISS_KEY) || "[]"); } catch { return []; }
+}
+function markAftercareDismissed(id: string) {
+  try {
+    const arr = getDismissedAftercare();
+    if (!arr.includes(id)) localStorage.setItem(AFTERCARE_DISMISS_KEY, JSON.stringify([...arr, id]));
+  } catch { /* ignore */ }
+}
+
 export default function Appointments() {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -98,20 +110,21 @@ export default function Appointments() {
   }, [roleLoaded, user?.id]);
 
   useEffect(() => {
-    if (appointments.length > 0 && isClient) {
+    if (appointments.length > 0 && isClient && !aftercareAppointment) {
+      const dismissed = getDismissedAftercare();
       const completedTattooSession = appointments.find(
-        (a) => a.status === "completed" && a.appointmentType === "tattoo_session"
+        (a) => a.status === "completed" && a.appointmentType === "tattoo_session" && !dismissed.includes(a._id)
       );
-      if (completedTattooSession && !aftercareAppointment) {
+      if (completedTattooSession) {
         setAftercareAppointment(completedTattooSession);
         setAftercareModalOpen(true);
       }
     }
-  }, [appointments, isClient]);
+  }, [appointments, isClient, aftercareAppointment]);
 
-  const loadAppointments = async () => {
+  const loadAppointments = async (silent = false) => {
     if (!roleLoaded || !user?.id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const token = await getToken();
       const data = await getAppointments(undefined, token ?? undefined);
@@ -119,9 +132,11 @@ export default function Appointments() {
     } catch (error: any) {
       console.error("Error loading appointments:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  useBookingRealtime(() => loadAppointments(true));
 
   const handleAccept = async (id: string) => {
     if (processing) return;
@@ -603,16 +618,16 @@ export default function Appointments() {
       </div>
       </div>
 
-      {aftercareAppointment && (
-        <AftercareInstructions
-          open={aftercareModalOpen}
-          onClose={() => {
-            setAftercareModalOpen(false);
-            setAftercareAppointment(null);
-          }}
-          appointmentDate={aftercareAppointment.startAt}
-        />
-      )}
+      {/* Rendered unconditionally so the Radix dialog is never unmounted while open
+          (that orphans its overlay and locks the page). `open` alone controls it. */}
+      <AftercareInstructions
+        open={aftercareModalOpen}
+        onClose={() => {
+          setAftercareModalOpen(false);
+          if (aftercareAppointment?._id) markAftercareDismissed(aftercareAppointment._id);
+        }}
+        appointmentDate={aftercareAppointment?.startAt}
+      />
 
       <ToastContainer
         position="top-center"

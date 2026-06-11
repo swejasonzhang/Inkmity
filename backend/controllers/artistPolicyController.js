@@ -98,12 +98,18 @@ export async function getBookingGate(req, res) {
       (deposit.mode === "percent" && deposit.percent > 0 && deposit.minCents > 0);
 
     let clientEnabled = false;
+    let maxSessions = 1;
+    let pieceSize = "flash";
     if (clientId) {
       const permission = await ClientBookingPermission.findOne({
         artistId,
         clientId: String(clientId),
       });
       clientEnabled = permission ? Boolean(permission.enabled) : false;
+      if (permission) {
+        maxSessions = permission.maxSessions || 1;
+        pieceSize = permission.pieceSize || "flash";
+      }
     }
 
     const artist = await Artist.findOne({ clerkId: String(artistId) });
@@ -114,6 +120,8 @@ export async function getBookingGate(req, res) {
       enabled,
       depositConfigured,
       payoutsReady,
+      maxSessions,
+      pieceSize,
       message: !payoutsReady
         ? "This artist hasn't finished payment setup yet."
         : enabled
@@ -127,14 +135,37 @@ export async function getBookingGate(req, res) {
   }
 }
 
+// Default number of sessions/dates a client may book for each piece size. The artist
+// can override with an explicit maxSessions. Flash stays a single sitting.
+const PIECE_SIZE_SESSIONS = {
+  flash: 1,
+  small: 1,
+  medium: 2,
+  large: 3,
+  sleeve: 5,
+  back_piece: 8,
+};
+
 export async function enableClientBookings(req, res) {
   try {
-    const { artistId, clientId } = req.body || {};
+    const { artistId, clientId, pieceSize, maxSessions } = req.body || {};
     const actorId = req.user?.clerkId || req.auth?.userId;
 
     if (!artistId || !clientId) {
       return res.status(400).json({ error: "artistId and clientId required" });
     }
+
+    const size = PIECE_SIZE_SESSIONS[pieceSize] ? pieceSize : "flash";
+    const requested = Number(maxSessions);
+    const sessions = Math.max(
+      1,
+      Math.min(
+        12,
+        Number.isFinite(requested) && requested > 0
+          ? Math.round(requested)
+          : PIECE_SIZE_SESSIONS[size]
+      )
+    );
 
     if (String(actorId) !== String(artistId)) {
       return res.status(403).json({ error: "Only the artist can enable bookings for clients" });
@@ -161,6 +192,8 @@ export async function enableClientBookings(req, res) {
       { artistId, clientId },
       {
         enabled: true,
+        pieceSize: size,
+        maxSessions: sessions,
         enabledAt: new Date(),
         enabledBy: "artist",
       },
