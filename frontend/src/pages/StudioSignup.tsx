@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LegalLink from "@/components/legal/LegalModal";
+import StudioLocationPicker, { type StudioLocation } from "@/components/studio/StudioLocationPicker";
 import { validateEmail, validatePassword } from "@/lib/utils";
 import { apiPost } from "@/api";
 import { setCachedRole } from "@/lib/roleCache";
@@ -24,7 +25,7 @@ export default function StudioSignup() {
 
   const [studioName, setStudioName] = useState("");
   const [email, setEmail] = useState("");
-  const [city, setCity] = useState("");
+  const [location, setLocation] = useState<StudioLocation>({ address: "", city: "" });
   const [password, setPassword] = useState("");
   const [attempt, setAttempt] = useState<SignUpResource | null>(null);
   const [awaitingCode, setAwaitingCode] = useState(false);
@@ -36,7 +37,20 @@ export default function StudioSignup() {
     !!studioName.trim() &&
     validateEmail(email) &&
     validatePassword(password) &&
+    !!location.address.trim() &&
     agreedToTerms;
+
+  // Only surface the password requirement once the user has typed something that fails it.
+  const pwdMsg = password.length > 0 && !validatePassword(password) ? "Use at least 8 characters, including a number." : "";
+
+  const buildProfile = () => ({
+    studioName: studioName.trim(),
+    city: location.city.trim(),
+    address: location.address.trim(),
+    lat: location.lat,
+    lng: location.lng,
+    placeId: location.placeId,
+  });
 
   const start = async () => {
     if (!valid || !isLoaded || !signUp || loading) return;
@@ -53,7 +67,7 @@ export default function StudioSignup() {
         role: "studio",
         displayName: studioName.trim(),
         email: email.trim().toLowerCase(),
-        profile: { studioName: studioName.trim(), city: city.trim() },
+        profile: buildProfile(),
       };
       const created = await signUp.create({
         emailAddress: email.trim().toLowerCase(),
@@ -96,7 +110,7 @@ export default function StudioSignup() {
             email: email.trim().toLowerCase(),
             role: "studio",
             username: studioName.trim(),
-            profile: { studioName: studioName.trim(), city: city.trim() },
+            profile: buildProfile(),
           },
           token
         );
@@ -153,7 +167,7 @@ export default function StudioSignup() {
                   value={studioName}
                   onChange={(e) => setStudioName(e.target.value)}
                   placeholder="Inkwell Tattoo Co."
-                  className="mt-1 text-center text-white placeholder:text-white"
+                  className="mt-1 text-center text-white placeholder:text-white/50"
                 />
               </div>
               <div>
@@ -163,17 +177,12 @@ export default function StudioSignup() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="studio@example.com"
-                  className="mt-1 text-center text-white placeholder:text-white"
+                  className="mt-1 text-center text-white placeholder:text-white/50"
                 />
               </div>
-              <div>
-                <Label className="text-xs text-white/70">City (optional)</Label>
-                <Input
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="New York, NY"
-                  className="mt-1 text-center text-white placeholder:text-white"
-                />
+              <div className="text-left">
+                <Label className="block text-center text-xs text-white/70 mb-1">Find your studio</Label>
+                <StudioLocationPicker value={location} onChange={setLocation} />
               </div>
               <div>
                 <Label className="text-xs text-white/70">Password</Label>
@@ -181,11 +190,13 @@ export default function StudioSignup() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="8+ characters, 1 number"
-                  className="mt-1 text-center text-white placeholder:text-white"
+                  placeholder="Password"
+                  className="mt-1 text-center text-white placeholder:text-white/50"
+                  aria-describedby={pwdMsg ? "studio-password-help" : undefined}
                 />
+                {pwdMsg && <p id="studio-password-help" className="mt-1 text-[10px] text-white text-center">{pwdMsg}</p>}
               </div>
-              <div className="mt-1 flex items-start gap-2 text-[11px] text-white/70 select-none">
+              <div className="mt-1 flex items-start justify-center gap-2 text-[11px] text-white/70 select-none text-center">
                 <input
                   id="studio-agree-terms"
                   type="checkbox"
@@ -230,7 +241,7 @@ export default function StudioSignup() {
                 placeholder="123456"
                 inputMode="numeric"
                 onKeyDown={(e) => e.key === "Enter" && verify()}
-                className="text-center text-white placeholder:text-white"
+                className="text-center text-white placeholder:text-white/50"
               />
               <Button disabled={!code.trim() || loading} onClick={verify}>
                 {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}

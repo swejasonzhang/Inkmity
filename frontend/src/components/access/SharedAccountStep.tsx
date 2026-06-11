@@ -78,6 +78,8 @@ export default function SharedAccountStep({
     // Email-already-registered is the one message worth surfacing inline; the rest is
     // conveyed by the placeholders per the placeholder-only form style.
     const emailTakenMsg = emailTaken ? "This email is already registered. Log in or use another." : "";
+    // Only surface the password requirement once the user has typed something that fails it.
+    const pwdMsg = shared.password.length > 0 && !pwdOk ? "Use at least 8 characters, including a number." : "";
 
     return (
         <div className="grid w-full mx-0 p-0 place-items-stretch text-center">
@@ -114,7 +116,7 @@ export default function SharedAccountStep({
                     placeholder="Username"
                     aria-label="Username"
                     onChange={onChange}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/50 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashUser ? "ink-flash" : ""}`}
                     aria-invalid={!usernameOk}
                 />
             </div>
@@ -129,7 +131,7 @@ export default function SharedAccountStep({
                     aria-label="Email"
                     onChange={onChange}
                     onBlur={onEmailBlur}
-                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
+                    className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/50 px-4 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${emailTaken ? "!border-white" : ""} ${flashEmail ? "ink-flash" : ""}`}
                     aria-describedby={emailTakenMsg ? "email-help" : undefined}
                     aria-invalid={!emailOk}
                 />
@@ -144,11 +146,12 @@ export default function SharedAccountStep({
                         type={showPassword ? "text" : "password"}
                         name="password"
                         value={shared.password}
-                        placeholder="Password (8+ chars, 1 number)"
+                        placeholder="Password"
                         aria-label="Password"
                         onChange={onChange}
-                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
+                        className={`h-8 w-full rounded-xl bg-neutral-900/80 border border-white/40 text-white text-center placeholder:text-white/50 pl-9 pr-9 focus-visible:ring-white/20 transition-shadow will-change-[box-shadow] ${flashPwd ? "ink-flash" : ""}`}
                         aria-invalid={!pwdOk}
+                        aria-describedby={pwdMsg ? "password-help" : undefined}
                     />
                     <Button
                         type="button"
@@ -164,6 +167,7 @@ export default function SharedAccountStep({
                         <span className="sr-only">{showPassword ? "Hide" : "Show"}</span>
                     </Button>
                 </div>
+                {pwdMsg && <p id="password-help" className="mt-0 text-[10px] text-white">{pwdMsg}</p>}
             </div>
         </div>
     );
