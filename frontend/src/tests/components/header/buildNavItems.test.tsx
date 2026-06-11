@@ -58,4 +58,10 @@ describe("buildNavItems", () => {
     const items = buildNavItems(false, jest.fn(), "artist");
     expect(items.map((i) => i.label)).not.toContain("Portfolio");
   });
+
+  test("should NOT show Explore for providers (artist/studio), but show it for clients", () => {
+    expect(buildNavItems(true, jest.fn(), "artist").map((i) => i.label)).not.toContain("Explore");
+    expect(buildNavItems(true, jest.fn(), "studio").map((i) => i.label)).not.toContain("Explore");
+    expect(buildNavItems(true, jest.fn(), "client").map((i) => i.label)).toContain("Explore");
+  });
 });
