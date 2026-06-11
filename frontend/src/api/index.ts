@@ -526,6 +526,20 @@ export async function createDepositPaymentIntent(
   }>("/billing/deposit/intent", { bookingId }, token, signal);
 }
 
+// No-deposit flow: save the client's card on file at booking (no charge) so the
+// rate + platform fee can be captured off-session at completion.
+export async function createCardSetupIntent(
+  bookingId: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{
+    clientSecret: string;
+    setupIntentId: string;
+    customerId: string;
+  }>("/billing/setup-intent", { bookingId }, token, signal);
+}
+
 export type ArtistPolicy = {
   _id?: string;
   artistId: string;

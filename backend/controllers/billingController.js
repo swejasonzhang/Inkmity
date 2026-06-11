@@ -11,6 +11,7 @@ import {
 } from "../services/rewardsService.js";
 import { executePayouts, reversePayouts } from "../services/payoutService.js";
 import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
+import { computePlatformFeeCents } from "../lib/fees.js";
 
 function bookingTransferGroup(bookingId) {
   return `booking_${String(bookingId)}`;
@@ -41,12 +42,6 @@ async function runPayoutsForBill(bill) {
   } catch (e) {
     console.error("runPayoutsForBill failed:", e.code || e.message);
   }
-}
-
-function computePlatformFeeCents(priceCents, effectivePct, minCents) {
-  const base = Math.max(0, Number(priceCents || 0));
-  const pct = Math.max(0, Math.min(1, Number(effectivePct)));
-  return Math.max(Math.round(base * pct), Math.max(0, Number(minCents || 0)));
 }
 
 async function resolveArtistPayoutAccount(artistId) {
@@ -325,6 +320,63 @@ export async function createDepositPaymentIntent(req, res) {
   });
   } catch (err) {
     console.error("createDepositPaymentIntent error:", err);
+    return res
+      .status(err.status || 500)
+      .json({ error: err.message || "Internal error", message: err.publicMessage });
+  }
+}
+
+// No-deposit flow: save the client's card on file at booking (no charge) so the
+// rate + platform fee can be captured off-session at completion.
+export async function createCardSetupIntent(req, res) {
+  try {
+    const { bookingId } = req.body || {};
+    if (!bookingId) return res.status(400).json({ error: "bookingId required" });
+
+    const booking = await Booking.findById(bookingId);
+    requireBooking(booking);
+
+    let customer;
+    try {
+      const existingBills = await Billing.find({
+        clientId: String(booking.clientId),
+        stripeCustomerId: { $exists: true, $ne: null },
+      }).limit(1);
+      const existingId = booking.stripeCustomerId || existingBills[0]?.stripeCustomerId;
+      if (existingId) {
+        customer = await stripe.customers.retrieve(existingId);
+      } else {
+        customer = await stripe.customers.create({
+          metadata: { clientId: String(booking.clientId) },
+        });
+      }
+    } catch {
+      customer = await stripe.customers.create({
+        metadata: { clientId: String(booking.clientId) },
+      });
+    }
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customer.id,
+      usage: "off_session",
+      automatic_payment_methods: { enabled: true },
+      metadata: {
+        bookingId: String(booking._id),
+        clientId: String(booking.clientId),
+        type: "card_on_file",
+      },
+    });
+
+    booking.stripeCustomerId = customer.id;
+    await booking.save();
+
+    res.json({
+      clientSecret: setupIntent.client_secret,
+      setupIntentId: setupIntent.id,
+      customerId: customer.id,
+    });
+  } catch (err) {
+    console.error("createCardSetupIntent error:", err);
     return res
       .status(err.status || 500)
       .json({ error: err.message || "Internal error", message: err.publicMessage });

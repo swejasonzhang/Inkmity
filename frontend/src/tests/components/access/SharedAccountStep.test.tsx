@@ -58,13 +58,14 @@ describe("SharedAccountStep", () => {
     expect(passwordInput).toHaveAttribute("type", "text");
   });
 
-  test("should call setRole when role button is clicked", async () => {
+  test("shows the chosen role and calls onChangeRole when Change is clicked", async () => {
     const user = userEvent.setup();
-    const setRole = jest.fn();
-    render(<SharedAccountStep {...defaultProps} setRole={setRole} />);
+    const onChangeRole = jest.fn();
+    render(<SharedAccountStep {...defaultProps} role="artist" onChangeRole={onChangeRole} />);
 
-    const artistButton = screen.getByRole("button", { name: /^artist$/i });
-    await user.click(artistButton);
-    expect(setRole).toHaveBeenCalledWith("artist");
+    expect(screen.getByText(/signing up as/i)).toBeInTheDocument();
+    const changeButton = screen.getByRole("button", { name: /change/i });
+    await user.click(changeButton);
+    expect(onChangeRole).toHaveBeenCalled();
   });
 });

@@ -2,6 +2,8 @@ import Billing from "../models/Billing.js";
 import { stripe } from "../lib/stripe.js";
 import { executePayouts } from "./payoutService.js";
 import { getAvailableCreditCents, applyCredits } from "./creditsService.js";
+import { getEffectiveFeePct, recordFeePaid } from "./rewardsService.js";
+import { computePlatformFeeCents } from "../lib/fees.js";
 import { config } from "../config/index.js";
 
 const CURRENCY = config.stripe.currency || "usd";
@@ -21,20 +23,39 @@ export async function captureBookingBalance(booking) {
 
   const transferGroup = `booking_${String(booking._id)}`;
 
+  // Platform fee: charge the full fee on the price, net of anything already
+  // collected at deposit time. The client pays (balance − credits + fee); the
+  // provider receives the rate (balance, split solo/studio) and the platform
+  // keeps the fee.
+  const effectivePct = await getEffectiveFeePct(booking.clientId);
+  const fullFeeCents = computePlatformFeeCents(
+    booking.priceCents,
+    effectivePct,
+    config.platformFee?.minCents || 0
+  );
+  const priorPaid = await Billing.find({ bookingId: booking._id, status: "paid" });
+  const feeAlreadyCollected = priorPaid.reduce(
+    (sum, b) => sum + Number(b.platformFeeCents || 0),
+    0
+  );
+  const platformFeeCents = Math.max(0, fullFeeCents - feeAlreadyCollected);
+
   const available = await getAvailableCreditCents(booking.clientId);
   const plannedCredit = Math.min(balance, available);
-  const chargeAmount = balance - plannedCredit;
+  const chargeAmount = balance - plannedCredit + platformFeeCents;
 
   let pi = null;
-  let customerId = null;
+  let customerId = booking.stripeCustomerId || null;
+  if (!customerId) {
+    const priorBill = await Billing.findOne({
+      bookingId: booking._id,
+      status: "paid",
+      stripeCustomerId: { $exists: true, $ne: null },
+    }).sort({ paidAt: -1 });
+    customerId = priorBill?.stripeCustomerId || null;
+  }
 
   if (chargeAmount > 0) {
-    const depositBill = await Billing.findOne({
-      bookingId: booking._id,
-      type: "deposit",
-      status: "paid",
-    }).sort({ paidAt: -1 });
-    customerId = depositBill?.stripeCustomerId;
     if (!customerId) return { ok: false, reason: "no_saved_customer" };
 
     const pms = await stripe.paymentMethods.list({ customer: customerId, type: "card" });
@@ -51,10 +72,14 @@ export async function captureBookingBalance(booking) {
           confirm: true,
           off_session: true,
           transfer_group: transferGroup,
-          metadata: { bookingId: String(booking._id), type: "final_payment" },
+          metadata: {
+            bookingId: String(booking._id),
+            type: "final_payment",
+            platformFeeCents: String(platformFeeCents),
+          },
           description: "Tattoo appointment balance",
         },
-        { idempotencyKey: `balance_${booking._id}_${balance}` }
+        { idempotencyKey: `balance_${booking._id}_${balance}_${platformFeeCents}` }
       );
     } catch (e) {
       booking.balanceCaptureError = e?.code || e?.message || "charge_failed";
@@ -77,7 +102,7 @@ export async function captureBookingBalance(booking) {
     clientId: booking.clientId,
     type: "final_payment",
     amountCents: chargeAmount,
-    platformFeeCents: 0,
+    platformFeeCents,
     transferGroup,
     currency: CURRENCY,
     stripeCustomerId: customerId || undefined,
@@ -89,13 +114,23 @@ export async function captureBookingBalance(booking) {
       capture: "auto_on_completion",
       balanceCents: balance,
       creditAppliedCents: appliedCredit,
+      platformFeeCents,
     },
   });
 
   booking.balancePaidCents = Number(booking.balancePaidCents || 0) + balance;
   booking.balanceCapturedAt = new Date();
   booking.balanceCaptureError = "";
+  if (customerId && !booking.stripeCustomerId) booking.stripeCustomerId = customerId;
   await booking.save();
+
+  if (platformFeeCents > 0) {
+    try {
+      await recordFeePaid(booking.clientId, platformFeeCents);
+    } catch (e) {
+      console.error("recordFeePaid failed:", e.message);
+    }
+  }
 
   try {
     await executePayouts({
