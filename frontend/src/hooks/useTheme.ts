@@ -11,7 +11,7 @@ export function isThemedPath(pathname: string): boolean {
     pathname.startsWith("/profile") ||
     pathname.startsWith("/appointments") ||
     pathname.startsWith("/portfolio") ||
-    pathname.startsWith("/gallery") ||
+    pathname.startsWith("/explore") ||
     pathname.startsWith("/artist/")
   );
 }

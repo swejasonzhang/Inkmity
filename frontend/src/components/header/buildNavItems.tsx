@@ -8,6 +8,8 @@ export type NavItem = {
   /** Live count shown as a notification bubble on the nav link. */
   count?: number;
   onClick?: (e: React.MouseEvent) => void;
+  /** Secondary links collapse into a "More" menu on desktop to keep the bar lean. */
+  secondary?: boolean;
 };
 
 export function buildNavItems(
@@ -27,12 +29,19 @@ export function buildNavItems(
     items.push(gated("Studios", "/studios"));
   }
 
+  items.push(gated("Appointments", "/appointments"));
+
+  // Explore is a discovery surface for clients (and prospective clients when
+  // signed out); providers don't browse it.
+  const isProvider = role === "artist" || role === "studio";
+  if (!isProvider) {
+    items.push({ label: "Explore", to: "/explore" });
+  }
+
   items.push(
-    gated("Appointments", "/appointments"),
-    gated("Gallery", "/gallery"),
-    { label: "Tiers", to: "/tiers" },
-    { label: "Contact", to: "/contact" },
-    { label: "About", to: "/about" }
+    { label: "Tiers", to: "/tiers", secondary: true },
+    { label: "Contact", to: "/contact", secondary: true },
+    { label: "About", to: "/about", secondary: true }
   );
 
   return items;

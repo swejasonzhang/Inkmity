@@ -4,15 +4,16 @@ import { LazyMotion, domAnimation, MotionConfig, useReducedMotion, m } from "fra
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ArrowRight } from "lucide-react";
 
 const BottomCTA: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ textFadeUp, wc }) => {
     const prefersReduced = useReducedMotion();
 
     return (
-        <section className="grid place-items-center px-3 sm:px-4">
+        <section className="mt-2 mb-6">
             <LazyMotion features={domAnimation} strict>
                 <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
-                    <div className="relative max-w-[40rem] sm:max-w-2xl md:max-w-[70rem] lg:max-w-[76rem] mx-auto rounded-2xl p-[1.25px] overflow-hidden w-full">
+                    <div className="relative w-full rounded-2xl p-[1.25px] overflow-hidden">
                         <div
                             aria-hidden
                             className="pointer-events-none absolute inset-0 rounded-2xl"
@@ -59,9 +60,15 @@ const BottomCTA: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ te
                                 >
                                     <Button
                                         asChild
-                                        className="w-full sm:w-auto rounded-lg sm:rounded-xl px-5 py-4 sm:px-6 sm:py-4 md:px-7 md:py-5 text-base font-semibold tracking-tight bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-95 focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
+                                        className="group relative w-full sm:w-auto overflow-hidden rounded-xl px-7 py-4 md:py-5 text-base font-bold tracking-tight bg-[color:var(--fg)] text-[color:var(--bg)] shadow-[0_8px_30px_-6px_rgba(255,255,255,0.25)] transition-transform duration-200 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                                     >
-                                        <Link to="/signup" aria-label="Create your Inkmity account">Create your account</Link>
+                                        <Link to="/signup" aria-label="Create your Inkmity account">
+                                            <span aria-hidden className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-black/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[340%]" />
+                                            <span className="relative z-10 inline-flex items-center gap-2">
+                                                Create your account
+                                                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                                            </span>
+                                        </Link>
                                     </Button>
                                 </m.div>
                             </CardContent>

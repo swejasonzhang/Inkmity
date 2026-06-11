@@ -19,7 +19,7 @@ const Hero: React.FC<HeroProps> = ({ wc, textFadeUp, onReveal }) => {
 
     return (
         <div className="text-center">
-            <h1 className="font-extrabold leading-[1.02] tracking-tight mb-fluid-4" style={wc}>
+            <h1 className="font-extrabold leading-[1.02] tracking-tight mb-fluid-4 [text-shadow:0_2px_22px_rgba(0,0,0,0.7)]" style={wc}>
                 <m.span variants={textFadeUp} className="block text-fluid-6xl text-[color:var(--fg)]" style={wc}>
                     One place to discover,
                 </m.span>
@@ -30,7 +30,7 @@ const Hero: React.FC<HeroProps> = ({ wc, textFadeUp, onReveal }) => {
 
             <m.p
                 variants={textFadeUp}
-                className="text-fluid-lg text-[color:var(--fg)]/65 font-medium leading-relaxed max-w-2xl mx-auto mb-fluid-8"
+                className="text-fluid-lg text-[color:var(--fg)]/90 font-medium leading-relaxed max-w-2xl mx-auto mb-fluid-8 [text-shadow:0_1px_14px_rgba(0,0,0,0.75)]"
                 style={wc}
             >
                 Find tattoo artists across the US by style and availability. Talk through every reference, lock in your slot, and earn as you go.

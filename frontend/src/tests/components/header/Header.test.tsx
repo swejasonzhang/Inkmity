@@ -30,6 +30,7 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
 
 jest.unstable_mockModule("@/api", () => ({
   updateVisibility: mockUpdateVisibility,
+  getUnreadState: jest.fn<() => Promise<any>>().mockResolvedValue({ unreadConversationIds: [], pendingRequestIds: [], counts: {} }),
   getMe: jest.fn<() => Promise<any>>().mockResolvedValue({ role: "client" }),
   getMyRewards: jest.fn<() => Promise<any>>().mockResolvedValue({
     tier: { key: "bronze", label: "Bronze" },

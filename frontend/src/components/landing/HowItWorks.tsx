@@ -29,7 +29,7 @@ const HowItWorks: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ t
                 <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                     <div className="text-center mb-fluid-8">
                         <m.p variants={textFadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }}
-                            className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)]/45 mb-3" style={wc}>
+                            className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)] mb-3" style={wc}>
                             How it works
                         </m.p>
                         <m.h2 variants={textFadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }}

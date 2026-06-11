@@ -26,7 +26,7 @@ const ForArtists: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ t
                                     initial="hidden"
                                     whileInView="visible"
                                     viewport={{ once: true, amount: 0.4 }}
-                                    className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)]/50 mb-3"
+                                    className="text-xs sm:text-sm font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)] mb-3"
                                     style={wc}
                                 >
                                     For tattoo artists

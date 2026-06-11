@@ -12,6 +12,8 @@ import { clerkClient } from "@clerk/express";
 import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
+import "../models/StudioAccount.js";
+import Studio from "../models/Studio.js";
 
 const ALLOWED_DB = "inkmity_dev";
 const PASSWORD = "InkmityDevTest!2026";
@@ -48,6 +50,21 @@ export const TEST_ACCOUNTS = [
       baseRateMax: 400,
       bookingPreference: "open",
       travelFrequency: "rare",
+    },
+  },
+  {
+    role: "studio",
+    email: "teststudio@inkmity.dev",
+    username: "teststudio",
+    handle: "@teststudio",
+    extra: {},
+    studio: {
+      name: "Inkmity Test Studio",
+      slug: "inkmity-test-studio",
+      city: "New York, NY",
+      address: "123 Test St, New York, NY",
+      bio: "Dev test studio.",
+      active: true,
     },
   },
 ];
@@ -97,7 +114,7 @@ async function main() {
     const clerkId = await ensureClerkUser(acct);
     const Model = mongoose.model(acct.role);
     await User.deleteOne({ email: acct.email });
-    await Model.create({
+    const userDoc = await Model.create({
       clerkId,
       email: acct.email,
       username: acct.username,
@@ -106,6 +123,16 @@ async function main() {
       onboardingComplete: true,
       ...acct.extra,
     });
+
+    // Studios also need an owned Studio entity so /studios/mine returns it.
+    if (acct.role === "studio" && acct.studio) {
+      await Studio.deleteMany({ ownerClerkId: clerkId });
+      const studio = await Studio.create({ ownerClerkId: clerkId, ...acct.studio });
+      userDoc.ownedStudioId = studio._id;
+      await userDoc.save();
+      console.log(`  + studio entity "${studio.name}" (${studio._id})`);
+    }
+
     console.log(`Ready: ${acct.handle} (${acct.email}) -> clerkId ${clerkId}`);
   }
 

@@ -34,7 +34,7 @@ export default function RewardsPanel({ className = "", data: dataProp }: Props) 
   }, [controlled, load]);
 
   const data = controlled ? dataProp : fetched;
-  if ((!controlled && loading) || !data) return null;
+  if ((!controlled && loading) || !data || !data.tier) return null;
 
   const { tier, nextTier, completedBookings, currentFeePct } = data;
 

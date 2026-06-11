@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, ChangeEvent, useRef } from "react";
 import Header from "@/components/header/Header";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, LayoutGroup } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
@@ -8,6 +8,7 @@ import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
 import CookieConsent from "@/components/access/CookieConsent";
 import SignupFormCard from "@/components/access/SignupFormCard";
+import RoleChooser, { type RoleChoice } from "@/components/access/RoleChooser";
 import { container } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 import { resetActivityTimer } from "@/hooks/useInactivityLogout";
@@ -42,18 +43,15 @@ function apiUrl(path: string, qs?: Record<string, string>) {
   return url.toString();
 }
 
-function collectIssues({ role, step, shared, client, artist, confirmPassword }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile; confirmPassword: string }) {
+function collectIssues({ role, step, shared, client, artist }: { role: Role; step: number; shared: SharedAccount; client: ClientProfile; artist: ArtistProfile }) {
   const tips: string[] = [];
   const emailOk = validateEmail(shared.email);
   const pwdOk = validatePassword(shared.password);
   const usernameOk = !!shared.username.trim();
-  const passwordsMatch = shared.password === (confirmPassword || "");
   if (step === 0) {
     if (!usernameOk) tips.push("Username is required — enter a display name.");
     if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
     if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
-    if (!passwordsMatch && (confirmPassword || "").trim().length > 0) tips.push("Passwords do not match — ensure both password fields are identical.");
-    if ((confirmPassword || "").trim().length === 0 && shared.password.trim().length > 0) tips.push("Please confirm your password.");
     return tips;
   }
   if (role === "client") {
@@ -69,9 +67,6 @@ function collectIssues({ role, step, shared, client, artist, confirmPassword }: 
       if (!usernameOk) tips.push("Username is required — enter a display name.");
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
-      if (!passwordsMatch || !confirmPassword || !confirmPassword.trim()) {
-        tips.push("Passwords do not match — ensure both password fields are identical.");
-      }
       if (!client.location) tips.push("City is required — choose your city from the list.");
       const min = Number(client.budgetMin);
       const max = Number(client.budgetMax);
@@ -94,9 +89,6 @@ function collectIssues({ role, step, shared, client, artist, confirmPassword }: 
       if (!usernameOk) tips.push("Username is required — enter a display name.");
       if (!emailOk) tips.push("Email is invalid — use a valid format like name@example.com.");
       if (!pwdOk) tips.push("Password is weak — use at least 8 chars with letters and numbers.");
-      if (!passwordsMatch || !confirmPassword || !confirmPassword.trim()) {
-        tips.push("Passwords do not match — ensure both password fields are identical.");
-      }
       if (!artist.location || artist.location === "__unset__") tips.push("Studio city is required — choose your city.");
       if (!Array.isArray(artist.styles) || artist.styles.length < 1) tips.push("Pick one or more styles. At least one is required.");
       if (!artist.years || artist.years === "__unset__" || !Number.isFinite(Number(artist.years))) {
@@ -113,10 +105,10 @@ function collectIssues({ role, step, shared, client, artist, confirmPassword }: 
 export default function SignUp() {
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
+  const [entrySelected, setEntrySelected] = useState(false);
   const [step, setStep] = useState(0);
   const [detailsSkipped, setDetailsSkipped] = useState(false);
   const [shared, setShared] = useState<SharedAccount>({ username: "", email: "", password: "" });
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [client, setClient] = useState<ClientProfile>({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", dob: "" });
   const [artist, setArtist] = useState<ArtistProfile>({ location: "New York, NY", shop: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
   const [clientRefs, setClientRefs] = useState<string[]>(["", "", ""]);
@@ -150,6 +142,17 @@ export default function SignUp() {
     if (!authLoaded) return;
     if (staleSessionRef.current === null) staleSessionRef.current = !!userId;
   }, [authLoaded, userId]);
+
+  // After a role is chosen the form first appears centered, then slides right
+  // as the info panel reveals on the left.
+  useEffect(() => {
+    if (!entrySelected) {
+      setShowInfo(false);
+      return;
+    }
+    const t = window.setTimeout(() => setShowInfo(true), 650);
+    return () => window.clearTimeout(t);
+  }, [entrySelected]);
 
   useEffect(() => {
     if (authLoaded && staleSessionRef.current === true && !!userId && onboarded === false) {
@@ -189,11 +192,6 @@ export default function SignUp() {
       }, 2000);
     }
   }, [authLoaded, userId, navigate]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowInfo(true), 2000);
-    return () => clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -265,8 +263,7 @@ export default function SignUp() {
     }
   };
 
-  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim() && shared.password === confirmPassword;
-  const allClientValid = !!client.location;
+  const allSharedValid = validateEmail(shared.email) && validatePassword(shared.password) && !!shared.username.trim();
   const allArtistValid =
     !!artist.location &&
     artist.location !== "__unset__" &&
@@ -279,23 +276,16 @@ export default function SignUp() {
     artist.baseRate !== "__unset__" &&
     Number.isFinite(Number(artist.baseRate));
 
-  const effectiveClientValid = detailsSkipped || allClientValid;
   const effectiveArtistValid = detailsSkipped || allArtistValid;
 
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
     return role === "client"
-      ? [
-        { key: "role", valid: allSharedValid },
-        { key: "client-1", valid: effectiveClientValid },
-        { key: "review", valid: allSharedValid && effectiveClientValid }
-      ]
+      ? [{ key: "role", valid: allSharedValid }]
       : [
         { key: "role", valid: allSharedValid },
-        { key: "artist-1", valid: effectiveArtistValid },
-        { key: "upload", valid: true },
-        { key: "review", valid: allSharedValid && effectiveArtistValid }
+        { key: "artist-1", valid: effectiveArtistValid }
       ];
-  }, [role, allSharedValid, effectiveClientValid, effectiveArtistValid]);
+  }, [role, allSharedValid, effectiveArtistValid]);
 
   const isLastFormSlide = step === slides.length - 1;
 
@@ -309,7 +299,6 @@ export default function SignUp() {
     if (!shared.username.trim()) out.push("username");
     if (!validateEmail(shared.email)) out.push("email");
     if (!validatePassword(shared.password)) out.push("password");
-    if (shared.password !== confirmPassword || !confirmPassword.trim()) out.push("confirmPassword");
     return out;
   };
 
@@ -351,7 +340,7 @@ export default function SignUp() {
 
   const startVerification = async () => {
     if (loading) return;
-    const tips = detailsSkipped ? [] : collectIssues({ role, step: 3, shared, client, artist, confirmPassword });
+    const tips = detailsSkipped ? [] : collectIssues({ role, step: role === "client" ? 0 : 3, shared, client, artist });
     if (tips.length) {
       setInvalidFields([]);
       setFlashToken((t) => t + 1);
@@ -500,6 +489,23 @@ export default function SignUp() {
     if (role === "artist") setArtist((prev) => ({ ...prev, bio: v }));
   };
 
+  const handleRoleSelect = (choice: RoleChoice) => {
+    if (choice === "studio") {
+      navigate("/signup/studio");
+      return;
+    }
+    setRole(choice);
+    setStep(0);
+    setDetailsSkipped(false);
+    setEntrySelected(true);
+  };
+
+  const backToRoleChoice = () => {
+    setStep(0);
+    setDetailsSkipped(false);
+    setEntrySelected(false);
+  };
+
   const successHeading = successType === "already" ? "You're already logged in." : "Successful signup!";
   const successSubtitle = successType === "already" ? "Redirecting now" : "Redirecting to Dashboard.";
 
@@ -513,11 +519,13 @@ export default function SignUp() {
       <main className="flex-1 min-h-0 overflow-y-auto grid place-items-center px-4 sm:px-6 md:px-8 pt-2 pb-6 sm:pb-8" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
           <motion.div variants={container} initial="hidden" animate="show" className="relative w-full max-w-2xl mx-auto">
             <GateNotice />
-            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId ? "" : "justify-center"}`}>
-              {showInfo && !showSuccess && authLoaded && !userId && (
+            <div className={`relative flex w-full flex-col sm:flex-row sm:items-stretch sm:justify-center p-0 ${showInfo && !showSuccess && authLoaded && !userId && entrySelected ? "" : "justify-center"}`}>
+              <LayoutGroup>
+              {showInfo && !showSuccess && authLoaded && !userId && entrySelected && (
                 <motion.div
-                  layout={!showSuccess && !userId}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  key="info-panel"
+                  layout
+                  transition={{ layout: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } }}
                   className="hidden sm:flex w-full sm:w-1/2"
                 >
                   <div className="w-full h-full">
@@ -549,17 +557,28 @@ export default function SignUp() {
                     </div>
                   </div>
                 </motion.div>
+              ) : !entrySelected ? (
+                <motion.div
+                  layout={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="w-full max-w-md p-0"
+                >
+                  <RoleChooser onSelect={handleRoleSelect} />
+                </motion.div>
               ) : (
                 <motion.div
-                  layout={!showSuccess && !userId}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  key="form-card"
+                  layout
+                  transition={{ layout: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } }}
                   className={`${showInfo && !showSuccess && (!authLoaded || !userId) ? "w-full sm:w-1/2" : "w-full max-w-md"} p-0`}
                 >
+
                   <SignupFormCard
                     showInfo={showInfo}
                     hasError={mascotError}
                     role={role}
                     setRole={setRole}
+                    onChangeRole={backToRoleChoice}
                     step={step}
                     setStep={setStep}
                     slides={slides}
@@ -592,23 +611,14 @@ export default function SignUp() {
                     onBioChange={(e) => setBio(e.target.value)}
                     invalidFields={invalidFields}
                     flashToken={flashToken}
-                    confirmPassword={confirmPassword}
-                    setConfirmPassword={setConfirmPassword}
                     success={showSuccess}
                     successHeading={successHeading}
                     successSubtitle={successSubtitle}
                   />
                 </motion.div>
               )}
+              </LayoutGroup>
             </div>
-            {authLoaded && !userId && !showSuccess && (
-              <p className="mt-3 text-center text-xs text-app/70">
-                Setting up a tattoo studio?{" "}
-                <a href="/signup/studio" className="underline">
-                  Create a studio account
-                </a>
-              </p>
-            )}
           </motion.div>
       </main>
       <CookieConsent />

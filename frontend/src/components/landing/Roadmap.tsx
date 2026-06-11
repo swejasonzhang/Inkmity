@@ -46,7 +46,7 @@ const Roadmap: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ text
                             initial="hidden"
                             whileInView="visible"
                             viewport={{ once: true, amount: 0.5 }}
-                            className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)]/45 mb-3"
+                            className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-[color:var(--fg)] mb-3"
                             style={wc}
                         >
                             Roadmap · in progress
@@ -91,7 +91,7 @@ const Roadmap: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ text
                                             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-dashed border-app bg-card text-[color:var(--fg)]">
                                                 <Icon className="h-5 w-5" />
                                             </div>
-                                            <span className="rounded-full border border-app bg-card px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[color:var(--fg)]/50">
+                                            <span className="rounded-full border border-app bg-card px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[color:var(--fg)]">
                                                 Soon
                                             </span>
                                         </div>

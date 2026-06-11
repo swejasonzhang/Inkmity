@@ -55,6 +55,18 @@ relationship from the first reference to the healed result, with money and trust
 
 ---
 
+## How Inkmity makes money
+
+One way, in the open — **a single transparent platform fee on completed bookings**, shown before you pay. No lead fees, no per-listing charges, no surprise costs.
+
+- **The essentials are always free.** Discovery, booking, messaging, sketch approval, intake, and reviews cost nothing — and the free tier deliberately includes tools other platforms lock behind a paid plan.
+- **We only earn when you book.** The fee applies to completed bookings and drops as low as 5% as a client books more (see [Tiers](frontend/src/pages/Tiers.tsx)). Our incentive is aligned with keeping artists' books full.
+- **We bring the clients.** Artists focus on tattooing, not chasing leads — Inkmity owns discovery and client acquisition.
+- **We carry the risk.** Inkmity acts as merchant of record and mediator, so payments, paperwork, and protections sit with the platform rather than individual clients or artists.
+- **Premium is optional, never essential.** Future monthly subscriptions are planned only as power-user extras (non-essential conveniences) — they will never gate the core experience or hide a must-have behind a plan.
+
+---
+
 ## Roadmap
 
 > **In progress — not live yet.** These are the bets that make Inkmity more than a booking tool. They're

@@ -80,7 +80,7 @@ const App: React.FC = () => {
       <Route path="/artist/:handle" element={<DashboardScope />}>
         <Route index element={<ArtistWorks />} />
       </Route>
-      <Route path="/gallery" element={<Gallery />} />
+      <Route path="/explore" element={<Gallery />} />
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signup/studio" element={<StudioSignup />} />
