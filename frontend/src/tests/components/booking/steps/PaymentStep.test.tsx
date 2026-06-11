@@ -11,6 +11,7 @@ jest.unstable_mockModule("@/api", () => ({
   createTattooSession: mockCreateTattooSession,
   createMultiSession: jest.fn(),
   createDepositPaymentIntent: mockCreateDepositPaymentIntent,
+  createCardSetupIntent: jest.fn<() => Promise<any>>().mockResolvedValue({ clientSecret: "seti_secret", setupIntentId: "seti_1", customerId: "cus_1" }),
   getArtistPolicy: mockGetArtistPolicy,
   createConsultation: jest.fn(),
   submitIntakeForm: jest.fn(),
@@ -187,11 +188,11 @@ describe("PaymentStep", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Deposit Required")).toBeInTheDocument();
+      expect(screen.getByText("Save your card")).toBeInTheDocument();
     });
   });
 
-  test("should display deposit policy notice", () => {
+  test("should display the card-on-file notice", () => {
     render(
       <PaymentStep
         bookingData={mockBookingData}
@@ -201,8 +202,8 @@ describe("PaymentStep", () => {
       />
     );
 
-    expect(screen.getByText(/Deposit policy/i)).toBeInTheDocument();
-    expect(screen.getByText(/applied to your final cost/i)).toBeInTheDocument();
+    expect(screen.getByText(/How payment works/i)).toBeInTheDocument();
+    expect(screen.getByText(/charged the total automatically/i)).toBeInTheDocument();
   });
 
   test("should not render CardElement when no deposit required", () => {
