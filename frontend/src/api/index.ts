@@ -410,57 +410,6 @@ export async function syncUser(
   return apiPost("/users/sync", payload, token, signal);
 }
 
-export async function createConsultation(
-  input: {
-    artistId: string;
-    startISO: string;
-    durationMinutes?: number;
-    priceCents?: number;
-    note?: string;
-  },
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>("/bookings/consultation", input, token, signal);
-}
-
-export async function createTattooSession(
-  input: {
-    artistId: string;
-    startISO: string;
-    durationMinutes?: number;
-    priceCents?: number;
-    projectId?: string;
-    sessionNumber?: number;
-    referenceImageIds?: string[];
-    note?: string;
-  },
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<Booking>("/bookings/session", input, token, signal);
-}
-
-export async function createMultiSession(
-  input: {
-    artistId: string;
-    name?: string;
-    note?: string;
-    placement?: string;
-    priceCents?: number;
-    sessions: Array<{ startISO: string; durationMinutes: number }>;
-  },
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<{ project: any; bookings: Booking[] }>(
-    "/bookings/multi-session",
-    input,
-    token,
-    signal
-  );
-}
-
 export async function getAppointments(
   role?: "client" | "artist",
   token?: string | null,
@@ -541,18 +490,6 @@ export async function submitIntakeForm(
   signal?: AbortSignal
 ) {
   return apiPost<IntakeForm>(`/bookings/${bookingId}/intake`, form, token, signal);
-}
-
-export async function createDepositPaymentIntent(
-  bookingId: string,
-  token?: string | null,
-  signal?: AbortSignal
-) {
-  return apiPost<{
-    clientSecret: string;
-    paymentIntentId: string;
-    billingId: string;
-  }>("/billing/deposit/intent", { bookingId }, token, signal);
 }
 
 // Save the client's card on file at booking (no charge) for the at-completion capture.
