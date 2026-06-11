@@ -136,7 +136,7 @@ export default function PayoutSetup({ redirectToProfile = false }: Props) {
           <div className="min-w-0">
             <p className="text-xs sm:text-sm font-semibold text-app">Finish payment setup to accept bookings</p>
             <p className="text-[11px] sm:text-xs text-muted">
-              Connect your bank with Stripe so clients can pay deposits and you get paid out.
+              Connect your bank with Stripe so clients can pay you and you get paid out.
             </p>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function PayoutSetup({ redirectToProfile = false }: Props) {
         >
           {status?.connected ? "Continue connecting your Stripe account" : "Connect your bank with Stripe"}
         </button>{" "}
-        so clients can pay deposits and you get paid out.
+        so clients can pay you and you get paid out.
       </p>
       {busy && (
         <p className="text-[11px] text-muted flex items-center gap-1">
