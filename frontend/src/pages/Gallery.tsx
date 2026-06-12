@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ImageIcon, Bot, ShieldCheck, X } from "lucide-react";
+import { Sparkles, ImageIcon, Bot, ShieldCheck, X, SlidersHorizontal } from "lucide-react";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
 import { fetchArtists, type Artist } from "@/api";
 
+type WorkCategory = "Portfolio" | "Past work" | "Healed";
+
 type GalleryItem = {
   url: string;
   artist: string;
+  styles: string[];
+  category: WorkCategory;
 };
 
 type TabKey = "real" | "ai";
@@ -17,6 +21,8 @@ const Gallery: React.FC = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState<GalleryItem | null>(null);
+  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [healedOnly, setHealedOnly] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -30,12 +36,15 @@ const Gallery: React.FC = () => {
         })[];
         const collected: GalleryItem[] = [];
         for (const a of artists) {
-          const imgs = [
-            ...(a.portfolioImages ?? []),
-            ...(a.pastWorks ?? []),
-            ...(a.healedWorks ?? []),
-          ].filter(Boolean);
-          for (const url of imgs) collected.push({ url, artist: a.username });
+          const styles = (a.styles ?? []).filter(Boolean);
+          const add = (urls: string[] | undefined, category: WorkCategory) => {
+            for (const url of (urls ?? []).filter(Boolean)) {
+              collected.push({ url, artist: a.username, styles, category });
+            }
+          };
+          add(a.portfolioImages, "Portfolio");
+          add(a.pastWorks, "Past work");
+          add(a.healedWorks, "Healed");
         }
         setItems(collected);
       } catch {
@@ -65,6 +74,26 @@ const Gallery: React.FC = () => {
     { key: "real", label: "Real Work", Icon: ImageIcon },
     { key: "ai", label: "AI Inspiration", Icon: Bot },
   ];
+
+  const allStyles = useMemo(
+    () => Array.from(new Set(items.flatMap((i) => i.styles))).sort((a, b) => a.localeCompare(b)),
+    [items]
+  );
+  const filtered = useMemo(
+    () =>
+      items.filter(
+        (i) =>
+          (selectedStyles.length === 0 || i.styles.some((s) => selectedStyles.includes(s))) &&
+          (!healedOnly || i.category === "Healed")
+      ),
+    [items, selectedStyles, healedOnly]
+  );
+  const toggleStyle = (s: string) =>
+    setSelectedStyles((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  const clearFilters = () => {
+    setSelectedStyles([]);
+    setHealedOnly(false);
+  };
 
   return (
     <div id="dashboard-scope" className="ink-scope theme-smooth h-svh ink-page-scroll overflow-x-hidden bg-app text-app">
@@ -113,7 +142,28 @@ const Gallery: React.FC = () => {
 
         <div className="mt-8">
           {tab === "real" ? (
-            <RealWork items={items} loading={loading} onOpen={setZoom} />
+            <>
+              {!loading && items.length > 0 && (
+                <FilterBar
+                  allStyles={allStyles}
+                  selectedStyles={selectedStyles}
+                  onToggleStyle={toggleStyle}
+                  healedOnly={healedOnly}
+                  onToggleHealed={() => setHealedOnly((v) => !v)}
+                  onClear={clearFilters}
+                  resultCount={filtered.length}
+                />
+              )}
+              {!loading && items.length > 0 && filtered.length === 0 ? (
+                <EmptyState
+                  Icon={ImageIcon}
+                  title="No matches"
+                  body="No pieces match these filters yet. Try removing a filter or two."
+                />
+              ) : (
+                <RealWork items={filtered} loading={loading} onOpen={setZoom} />
+              )}
+            </>
           ) : (
             <AiInspiration />
           )}
@@ -156,6 +206,62 @@ const Gallery: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+};
+
+const Chip: React.FC<{ active: boolean; label: string; onClick: () => void }> = ({ active, label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={active}
+    className={`rounded-full px-3 py-1.5 text-xs font-medium border transition ${
+      active
+        ? "bg-neutral-700 text-white border-transparent"
+        : "border-app/40 bg-elevated text-subtle hover:text-app"
+    }`}
+  >
+    {label}
+  </button>
+);
+
+const FilterBar: React.FC<{
+  allStyles: string[];
+  selectedStyles: string[];
+  onToggleStyle: (s: string) => void;
+  healedOnly: boolean;
+  onToggleHealed: () => void;
+  onClear: () => void;
+  resultCount: number;
+}> = ({ allStyles, selectedStyles, onToggleStyle, healedOnly, onToggleHealed, onClear, resultCount }) => {
+  const hasFilters = selectedStyles.length > 0 || healedOnly;
+  return (
+    <div className="mb-6 rounded-2xl border border-app bg-card/70 p-3 sm:p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-subtle">
+          <SlidersHorizontal className="h-3.5 w-3.5" /> Filter
+        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-subtle">
+            {resultCount} {resultCount === 1 ? "piece" : "pieces"}
+          </span>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-xs text-subtle underline underline-offset-2 hover:text-app"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Chip active={healedOnly} onClick={onToggleHealed} label="Healed only" />
+        {allStyles.map((s) => (
+          <Chip key={s} active={selectedStyles.includes(s)} onClick={() => onToggleStyle(s)} label={s} />
+        ))}
+      </div>
     </div>
   );
 };
