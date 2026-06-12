@@ -1,14 +1,34 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Props = {
+    /** Scrim opacity (0–100) over the background so foreground text stays legible. */
     scrim?: number;
+    /** Play the looping video on top of the poster. Off by default — most pages
+     *  use the cheap static poster; only key pages opt into the heavier video. */
+    video?: boolean;
 };
 
-const VideoBackground: React.FC<Props> = ({ scrim = 58 }) => {
+const POSTER = "/poster.jpg";
+const VIDEO = "/Landing.mp4";
+
+const VideoBackground: React.FC<Props> = ({ scrim = 58, video = true }) => {
     const ref = useRef<HTMLVideoElement>(null);
+    const [reduced, setReduced] = useState(false);
 
     useEffect(() => {
+        if (typeof window === "undefined" || !window.matchMedia) return;
+        const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const on = () => setReduced(mq.matches);
+        on();
+        mq.addEventListener?.("change", on);
+        return () => mq.removeEventListener?.("change", on);
+    }, []);
+
+    const showVideo = video && !reduced;
+
+    useEffect(() => {
+        if (!showVideo) return;
         const v = ref.current;
         if (!v) return;
         v.muted = true;
@@ -20,7 +40,7 @@ const VideoBackground: React.FC<Props> = ({ scrim = 58 }) => {
         tryPlay();
         v.addEventListener("canplay", tryPlay, { once: true });
         return () => v.removeEventListener("canplay", tryPlay);
-    }, []);
+    }, [showVideo]);
 
     useEffect(() => {
         const prev = document.body.style.backgroundColor;
@@ -38,17 +58,26 @@ const VideoBackground: React.FC<Props> = ({ scrim = 58 }) => {
             style={{ zIndex: -1 }}
             aria-hidden
         >
-            <video
-                ref={ref}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
+            <img
+                src={POSTER}
+                alt=""
                 className="absolute inset-0 h-full w-full object-cover grayscale"
-            >
-                <source src="/Landing.mp4" type="video/mp4" />
-            </video>
+                decoding="async"
+            />
+            {showVideo && (
+                <video
+                    ref={ref}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    poster={POSTER}
+                    className="absolute inset-0 h-full w-full object-cover grayscale"
+                >
+                    <source src={VIDEO} type="video/mp4" />
+                </video>
+            )}
             <div
                 className="absolute inset-0"
                 style={{ background: `color-mix(in srgb, var(--bg) ${scrim}%, transparent)` }}

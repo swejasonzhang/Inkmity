@@ -56,7 +56,7 @@ const Landing: React.FC = () => {
 
     return (
         <>
-            <VideoBackground />
+            <VideoBackground video />
             <MotionConfig reducedMotion={prefersReduced ? "always" : "never"}>
                 <LazyMotion features={domAnimation} strict>
                     <div className="relative z-10 text-app flex flex-col min-h-[100svh]">

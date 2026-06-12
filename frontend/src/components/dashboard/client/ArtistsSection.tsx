@@ -346,13 +346,32 @@ export default function ArtistsSection({
     return (
         <div className="flex flex-col h-full min-h-0 w-full">
             <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
-                <LazyReveal
-                    loading={isCenterLoading}
-                    className="h-full"
-                    skeleton={
-                        <div className="h-full w-full">
-                            {/* Desktop: style rows of card skeletons */}
-                            <div className="hidden md:block px-1 py-2 space-y-8">
+                {/* Desktop: hero + filter render immediately; only the sections wait on data. */}
+                <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto px-1 pt-2 pb-24">
+                    <header className="text-center pt-3 pb-2 px-4">
+                        <div className="flex items-center justify-center gap-3 mb-4">
+                            <span className="h-px w-8 bg-app/50" aria-hidden />
+                            <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-subtle">Discover artists</span>
+                            <span className="h-px w-8 bg-app/50" aria-hidden />
+                        </div>
+                        <h1 className="font-extrabold tracking-tight leading-[1.05]" style={{ fontSize: "clamp(1.9rem, 2vw + 1.3rem, 3.1rem)" }}>
+                            Find your artist. Wear their art.
+                        </h1>
+                        <p className="mt-4 text-sm sm:text-base text-subtle max-w-xl mx-auto leading-relaxed">
+                            Browse by style — from bold blackwork to delicate fine line — and book the artist who brings your vision to skin.
+                        </p>
+                    </header>
+                    <div className="sticky top-0 z-20 -mx-1 px-1 py-2.5 bg-[color:var(--bg)]/85 backdrop-blur-md">
+                        {filterNode}
+                    </div>
+                    <p className="flex items-center justify-center gap-1.5 text-xs text-subtle mt-3 mb-6">
+                        <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
+                        Scroll to explore every style
+                    </p>
+                    <LazyReveal
+                        loading={isCenterLoading}
+                        skeleton={
+                            <div className="space-y-8">
                                 {Array.from({ length: 2 }).map((_, s) => (
                                     <div key={s}>
                                         <div className="ink-shimmer h-5 w-40 rounded mb-3" />
@@ -364,36 +383,8 @@ export default function ArtistsSection({
                                     </div>
                                 ))}
                             </div>
-                            {/* Mobile: one full-screen section skeleton */}
-                            <div className="md:hidden h-full w-full flex flex-col px-3 py-2">
-                                <div className="ink-shimmer h-5 w-32 rounded mb-2 shrink-0" />
-                                <div className="flex-1 min-h-0 ink-shimmer rounded-2xl" />
-                            </div>
-                        </div>
-                    }
-                >
-                    {/* Desktop: vertical scroll of horizontal style carousels */}
-                    <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto px-1 pt-2 pb-24">
-                        <header className="text-center pt-3 pb-2 px-4">
-                            <div className="flex items-center justify-center gap-3 mb-4">
-                                <span className="h-px w-8 bg-app/50" aria-hidden />
-                                <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-subtle">Discover artists</span>
-                                <span className="h-px w-8 bg-app/50" aria-hidden />
-                            </div>
-                            <h1 className="font-extrabold tracking-tight leading-[1.05]" style={{ fontSize: "clamp(1.9rem, 2vw + 1.3rem, 3.1rem)" }}>
-                                Find your artist. Wear their art.
-                            </h1>
-                            <p className="mt-4 text-sm sm:text-base text-subtle max-w-xl mx-auto leading-relaxed">
-                                Browse by style — from bold blackwork to delicate fine line — and book the artist who brings your vision to skin.
-                            </p>
-                        </header>
-                        <div className="sticky top-0 z-20 -mx-1 px-1 py-2.5 bg-[color:var(--bg)]/85 backdrop-blur-md">
-                            {filterNode}
-                        </div>
-                        <p className="flex items-center justify-center gap-1.5 text-xs text-subtle mt-3 mb-6">
-                            <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
-                            Scroll to explore every style
-                        </p>
+                        }
+                    >
                         {sections.length === 0 ? (
                             <EmptyArtists />
                         ) : (
@@ -420,9 +411,20 @@ export default function ArtistsSection({
                                 ))}
                             </div>
                         )}
-                    </div>
+                    </LazyReveal>
+                </div>
 
-                    {/* Mobile: full-screen sections — swipe up/down = styles, left/right = artists */}
+                {/* Mobile: full-screen sections — swipe up/down = styles, left/right = artists */}
+                <LazyReveal
+                    loading={isCenterLoading}
+                    className="md:hidden h-full"
+                    skeleton={
+                        <div className="md:hidden h-full w-full flex flex-col px-3 py-2">
+                            <div className="ink-shimmer h-5 w-32 rounded mb-2 shrink-0" />
+                            <div className="flex-1 min-h-0 ink-shimmer rounded-2xl" />
+                        </div>
+                    }
+                >
                     <div
                         className="md:hidden h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
                         style={{ WebkitOverflowScrolling: "touch" }}
