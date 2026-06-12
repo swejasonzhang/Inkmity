@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "react-toastify";
 
 export type Weekday = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 
@@ -250,7 +251,7 @@ export default function AvailabilityEditor({ artistId, initial }: Props) {
         <button
           onClick={async () => {
             await saveAvailability(payload);
-            alert("Availability saved");
+            toast.success("Availability saved");
           }}
           className="px-5 py-2.5 rounded-lg border border-white bg-white text-black hover:bg-gray-200 transition"
         >
