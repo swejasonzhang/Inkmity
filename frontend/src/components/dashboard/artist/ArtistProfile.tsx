@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
 import { Save, Edit2, X, Plus, Camera, Briefcase, Trash2, ArrowUp, ArrowDown, SlidersHorizontal } from "lucide-react";
@@ -273,7 +274,7 @@ export default function ArtistProfile() {
             setDepositDollars((enforced / 100).toFixed(2));
         } catch (e) {
             console.error("Failed to save deposit policy:", e);
-            alert("Failed to save deposit. Please try again.");
+            toast.error("Failed to save deposit. Please try again.");
         } finally {
             setDepositPolicySaving(false);
         }
@@ -390,7 +391,7 @@ export default function ArtistProfile() {
             }
         } catch (error) {
             console.error("Failed to upload image:", error);
-            alert("Failed to upload image. Please try again.");
+            toast.error("Failed to upload image. Please try again.");
         } finally {
             setUploading(false);
         }
@@ -466,7 +467,7 @@ export default function ArtistProfile() {
             setEditedSketches([]);
         } catch (error) {
             console.error("Failed to save portfolio:", error);
-            alert("Failed to save portfolio. Please try again.");
+            toast.error("Failed to save portfolio. Please try again.");
         } finally {
             setSaving(false);
         }
@@ -553,7 +554,7 @@ export default function ArtistProfile() {
             setEditedArtist({});
         } catch (error) {
             console.error("Failed to save profile:", error);
-            alert("Failed to save profile. Please try again.");
+            toast.error("Failed to save profile. Please try again.");
         } finally {
             setSaving(false);
         }
