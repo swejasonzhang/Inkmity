@@ -11,7 +11,7 @@ import { dayBoundsUTC } from "../utils/date.js";
 import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
 import { getIO, emitMessageCreated } from "../services/socketService.js";
-import { sendAppointmentCancellationEmail } from "../services/emailService.js";
+import { sendAppointmentCancellationEmail, sendVerificationCodeEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
 import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
@@ -530,6 +530,32 @@ export async function startVerification(req, res) {
           role: "artist",
         },
       });
+    } catch {}
+    // Email each party their own code, respectively.
+    try {
+      const User = (await import("../models/UserBase.js")).default;
+      const [client, artist] = await Promise.all([
+        User.findOne({ clerkId: booking.clientId }).lean(),
+        User.findOne({ clerkId: booking.artistId }).lean(),
+      ]);
+      await Promise.all([
+        client?.email &&
+          sendVerificationCodeEmail(client.email, {
+            code: booking.clientCode,
+            role: "client",
+            recipientName: client.username,
+            expiresAt: booking.codeExpiresAt,
+            appointmentType: booking.appointmentType,
+          }),
+        artist?.email &&
+          sendVerificationCodeEmail(artist.email, {
+            code: booking.artistCode,
+            role: "artist",
+            recipientName: artist.username,
+            expiresAt: booking.codeExpiresAt,
+            appointmentType: booking.appointmentType,
+          }),
+      ]);
     } catch {}
     res.json({
       ok: true,
