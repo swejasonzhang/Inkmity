@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import ArtistFilter from "./ArtistFilter";
-import { ArtistCardSkeleton } from "./ArtistCardSkeleton";
 import LazyReveal from "@/components/ui/LazyReveal";
 import HScroll from "@/components/ui/HScroll";
 import { Search } from "lucide-react";
@@ -65,7 +64,7 @@ const matchesExperience = (years: number | undefined, filter: string) => {
 
 // Image-forward card for the style carousels: leads with the artist's featured
 // work, then name + styles. Falls back gracefully when there are no images.
-const ArtistCarouselCard = ({ artist, onClick }: { artist: any; onClick: () => void }) => {
+const ArtistCarouselCard = ({ artist, onClick, fill = false }: { artist: any; onClick: () => void; fill?: boolean }) => {
     const featured: string[] = [
         ...(artist.portfolioImages || []),
         ...(artist.pastWorks || []),
@@ -85,7 +84,7 @@ const ArtistCarouselCard = ({ artist, onClick }: { artist: any; onClick: () => v
             aria-label={`View ${artist.username}`}
         >
             <div
-                className={`relative w-full aspect-[4/3] bg-elevated grid gap-0.5 ${single ? "grid-cols-1" : "grid-cols-2 grid-rows-2"}`}
+                className={`relative w-full bg-elevated grid gap-0.5 ${fill ? "flex-1 min-h-0" : "aspect-[4/3]"} ${single ? "grid-cols-1" : "grid-cols-2 grid-rows-2"}`}
             >
                 {featured.length > 0 ? (
                     featured.map((src, i) => (
@@ -393,27 +392,33 @@ export default function ArtistsSection({
                     className="h-full"
                     skeleton={
                         <div className="h-full w-full">
-                            <div
-                                className="hidden md:grid md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 w-full h-full"
-                                style={{ gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)', padding: 'clamp(10px, 1.2vh + 0.4vw, 18px) 0', gridAutoRows: '1fr', alignContent: 'start' }}
-                            >
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                    <ArtistCardSkeleton key={i} />
+                            {/* Desktop: style rows of card skeletons */}
+                            <div className="hidden md:block px-1 py-2 space-y-8">
+                                {Array.from({ length: 2 }).map((_, s) => (
+                                    <div key={s}>
+                                        <div className="ink-shimmer h-5 w-40 rounded mb-3" />
+                                        <div className="flex gap-3 overflow-hidden">
+                                            {Array.from({ length: 6 }).map((_, i) => (
+                                                <div key={i} className="shrink-0 w-56 sm:w-60 md:w-64 h-[19rem] sm:h-[20rem] rounded-2xl ink-shimmer" />
+                                            ))}
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                            <div className="md:hidden h-full w-full grid place-items-center" style={{ padding: '6px' }}>
-                                <div className="w-full h-full max-w-md">
-                                    <ArtistCardSkeleton />
-                                </div>
+                            {/* Mobile: one full-screen section skeleton */}
+                            <div className="md:hidden h-full w-full flex flex-col px-3 py-2">
+                                <div className="ink-shimmer h-5 w-32 rounded mb-2 shrink-0" />
+                                <div className="flex-1 min-h-0 ink-shimmer rounded-2xl" />
                             </div>
                         </div>
                     }
                 >
-                    <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-0.5 sm:px-1 py-2">
+                    {/* Desktop: vertical scroll of horizontal style carousels */}
+                    <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto px-1 py-2">
                         {sections.length === 0 ? (
                             <EmptyArtists />
                         ) : (
-                            <div className="space-y-7 sm:space-y-8 pb-4">
+                            <div className="space-y-8 pb-4">
                                 {sections.map(({ style, items }) => (
                                     <section key={style}>
                                         <div className="mb-2.5 flex items-baseline justify-between gap-3 px-1">
@@ -435,6 +440,40 @@ export default function ArtistsSection({
                                     </section>
                                 ))}
                             </div>
+                        )}
+                    </div>
+
+                    {/* Mobile: full-screen sections — swipe up/down = styles, left/right = artists */}
+                    <div
+                        className="md:hidden h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                    >
+                        {sections.length === 0 ? (
+                            <div className="h-full w-full"><EmptyArtists /></div>
+                        ) : (
+                            sections.map(({ style, items }) => (
+                                <section key={style} className="h-full w-full snap-start snap-always flex flex-col">
+                                    <div className="shrink-0 px-3 pt-2 pb-1.5 flex items-baseline justify-between">
+                                        <h2 className="text-base font-bold tracking-tight">{style}</h2>
+                                        <span className="text-xs text-subtle">
+                                            {items.length} {items.length === 1 ? "artist" : "artists"}
+                                        </span>
+                                    </div>
+                                    <div
+                                        className="flex-1 min-h-0 w-full flex overflow-x-auto snap-x snap-mandatory overscroll-contain"
+                                        style={{ WebkitOverflowScrolling: "touch" }}
+                                    >
+                                        {items.map((artist, index) => (
+                                            <div
+                                                key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                                                className="snap-start snap-always shrink-0 w-full h-full px-3 pb-3 flex"
+                                            >
+                                                <ArtistCarouselCard artist={artist} onClick={() => onSelectArtist(artist)} fill />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            ))
                         )}
                     </div>
                 </LazyReveal>
