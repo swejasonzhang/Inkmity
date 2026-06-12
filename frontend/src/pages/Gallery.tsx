@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ImageIcon, Bot, ShieldCheck, X, SlidersHorizontal } from "lucide-react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, ImageIcon, Bot, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
 import { fetchArtists, type Artist } from "@/api";
@@ -10,17 +11,19 @@ type WorkCategory = "Portfolio" | "Past work" | "Healed";
 type GalleryItem = {
   url: string;
   artist: string;
+  handle: string;
   styles: string[];
   category: WorkCategory;
 };
 
 type TabKey = "real" | "ai";
 
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 const Gallery: React.FC = () => {
   const [tab, setTab] = useState<TabKey>("real");
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [zoom, setZoom] = useState<GalleryItem | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [healedOnly, setHealedOnly] = useState(false);
 
@@ -30,6 +33,7 @@ const Gallery: React.FC = () => {
       try {
         const res = await fetchArtists({ pageSize: 60 }, controller.signal);
         const artists = (res?.items ?? []) as (Artist & {
+          handle?: string;
           portfolioImages?: string[];
           pastWorks?: string[];
           healedWorks?: string[];
@@ -37,9 +41,10 @@ const Gallery: React.FC = () => {
         const collected: GalleryItem[] = [];
         for (const a of artists) {
           const styles = (a.styles ?? []).filter(Boolean);
+          const handle = (a.handle || a.username || "").replace(/^@/, "");
           const add = (urls: string[] | undefined, category: WorkCategory) => {
             for (const url of (urls ?? []).filter(Boolean)) {
-              collected.push({ url, artist: a.username, styles, category });
+              collected.push({ url, artist: a.username, handle, styles, category });
             }
           };
           add(a.portfolioImages, "Portfolio");
@@ -55,20 +60,6 @@ const Gallery: React.FC = () => {
     })();
     return () => controller.abort();
   }, []);
-
-  useEffect(() => {
-    if (!zoom) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setZoom(null);
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [zoom]);
 
   const tabs: { key: TabKey; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "real", label: "Real Work", Icon: ImageIcon },
@@ -112,9 +103,8 @@ const Gallery: React.FC = () => {
           </div>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight">Explore</h1>
           <p className="mt-2 text-sm text-subtle leading-relaxed">
-            Browse real tattoo artistry from the Inkmity community and explore AI-generated
-            concepts for inspiration. Everything here is strictly tattoo-related — stencils,
-            sketches, and finished work.
+            Browse real tattoo artistry from the Inkmity community. Tap any piece to open the
+            artist's portfolio and book them.
           </p>
         </motion.div>
 
@@ -161,7 +151,7 @@ const Gallery: React.FC = () => {
                   body="No pieces match these filters yet. Try removing a filter or two."
                 />
               ) : (
-                <RealWork items={filtered} loading={loading} onOpen={setZoom} />
+                <RealWork items={filtered} loading={loading} />
               )}
             </>
           ) : (
@@ -169,43 +159,6 @@ const Gallery: React.FC = () => {
           )}
         </div>
       </main>
-
-      <AnimatePresence>
-        {zoom && (
-          <motion.div
-            className="fixed inset-0 z-[2147483646] grid place-items-center bg-black/90 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setZoom(null)}
-          >
-            <button
-              type="button"
-              onClick={() => setZoom(null)}
-              aria-label="Close"
-              className="absolute top-4 right-4 grid place-items-center h-11 w-11 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <motion.figure
-              className="relative max-w-[92vw] max-h-[88vh] flex flex-col items-center"
-              initial={{ scale: 0.94, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.94, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 240, damping: 26 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={zoom.url}
-                alt={`Tattoo work by ${zoom.artist}`}
-                className="max-w-[92vw] max-h-[80vh] w-auto h-auto object-contain rounded-xl"
-                referrerPolicy="no-referrer"
-              />
-              <figcaption className="mt-3 text-sm font-medium text-white/90">@{zoom.artist}</figcaption>
-            </motion.figure>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
@@ -259,18 +212,14 @@ const FilterBar: React.FC<{
       <div className="flex flex-wrap gap-2">
         <Chip active={healedOnly} onClick={onToggleHealed} label="Healed only" />
         {allStyles.map((s) => (
-          <Chip key={s} active={selectedStyles.includes(s)} onClick={() => onToggleStyle(s)} label={s} />
+          <Chip key={s} active={selectedStyles.includes(s)} onClick={() => onToggleStyle(s)} label={cap(s)} />
         ))}
       </div>
     </div>
   );
 };
 
-const RealWork: React.FC<{
-  items: GalleryItem[];
-  loading: boolean;
-  onOpen: (item: GalleryItem) => void;
-}> = ({ items, loading, onOpen }) => {
+const RealWork: React.FC<{ items: GalleryItem[]; loading: boolean }> = ({ items, loading }) => {
   const skeleton = (
     <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
       {Array.from({ length: 24 }).map((_, i) => (
@@ -290,7 +239,7 @@ const RealWork: React.FC<{
       ) : (
         <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
           {items.map((item, i) => (
-            <GalleryTile key={`${item.url}-${i}`} item={item} index={i} onOpen={onOpen} />
+            <GalleryTile key={`${item.url}-${i}`} item={item} index={i} />
           ))}
         </div>
       )}
@@ -298,22 +247,20 @@ const RealWork: React.FC<{
   );
 };
 
-const GalleryTile: React.FC<{
-  item: GalleryItem;
-  index: number;
-  onOpen: (item: GalleryItem) => void;
-}> = ({ item, index, onOpen }) => {
+const GalleryTile: React.FC<{ item: GalleryItem; index: number }> = ({ item, index }) => {
+  const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
 
   return (
     <motion.button
       type="button"
-      onClick={() => onOpen(item)}
+      onClick={() => navigate(`/artist/${encodeURIComponent(item.handle)}`)}
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -8% 0px" }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.015, 0.25) }}
-      className="block w-full aspect-square relative overflow-hidden rounded-xl border border-app bg-card group cursor-zoom-in"
+      aria-label={`View ${item.artist}'s portfolio`}
+      className="block w-full aspect-square relative overflow-hidden rounded-xl border border-app bg-card group cursor-pointer"
     >
       {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
       <img
@@ -326,7 +273,7 @@ const GalleryTile: React.FC<{
         className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${loaded ? "ink-fade-in" : "opacity-0"}`}
       />
       <figcaption className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white text-left">
-        @{item.artist}
+        @{item.artist} · View portfolio
       </figcaption>
     </motion.button>
   );
