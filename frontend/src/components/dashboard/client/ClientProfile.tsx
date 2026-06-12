@@ -449,15 +449,39 @@ export default function ClientProfile() {
     const budgetMin = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
 
+    const messagePlaceholder = useMemo(() => {
+        const named = (v?: string) => !!v && v !== "none";
+        const sizeLabel = SIZE_OPTIONS.find((s) => s.value === currentSize)?.label;
+        const parts = ["Hi! I'm interested in getting a tattoo."];
+        if (currentReferences.length > 0)
+            parts.push("I've attached some reference images that show the style and vibe I'm going for.");
+        parts.push(`My budget is around $${budgetMin}-$${budgetMax}.`);
+        if (loc) parts.push(`I'm located in ${loc}.`);
+        parts.push(
+            named(currentPieceType)
+                ? `I'm looking at a ${currentPieceType.toLowerCase()}.`
+                : "I'm still open on the type of piece."
+        );
+        parts.push(
+            named(currentPlacement)
+                ? `I'd like it on my ${currentPlacement.toLowerCase()}.`
+                : "I don't have a placement in mind yet."
+        );
+        parts.push(sizeLabel ? `I'm thinking ${sizeLabel.toLowerCase()}.` : "I'm still figuring out the size.");
+        parts.push("Let me know if you're available and interested!");
+        return parts.join(" ");
+    }, [budgetMin, budgetMax, loc, currentPieceType, currentPlacement, currentSize, currentReferences.length]);
+
     useEffect(() => {
         const textarea = messageTextareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            const scrollHeight = textarea.scrollHeight;
-            const minHeight = 100;
-            textarea.style.height = `${Math.max(scrollHeight, minHeight)}px`;
-        }
-    }, [currentMessage]);
+        if (!textarea) return;
+        // Size to fit the typed message, or the dynamic placeholder when empty.
+        const empty = !currentMessage;
+        if (empty) textarea.value = messagePlaceholder;
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.max(textarea.scrollHeight, 100)}px`;
+        if (empty) textarea.value = '';
+    }, [currentMessage, messagePlaceholder]);
 
     if (!client) return null;
 
@@ -626,7 +650,7 @@ export default function ClientProfile() {
                                 background: "color-mix(in srgb, var(--card) 80%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
-                            <h3 className="ink-flash-title text-xs mb-5" style={{ color: "var(--fg)" }}>
+                            <h3 className="ink-flash-title text-xs mb-5 text-center w-full" style={{ color: "var(--fg)" }}>
                                 Base Filters
                             </h3>
 
@@ -853,7 +877,7 @@ export default function ClientProfile() {
                                 background: "color-mix(in srgb, var(--card) 80%, transparent)",
                                 borderColor: "var(--border)"
                             }}>
-                            <h3 className="ink-flash-title text-xs mb-4" style={{ color: "var(--fg)" }}>
+                            <h3 className="ink-flash-title text-xs mb-4 text-center w-full" style={{ color: "var(--fg)" }}>
                                 Message to Artists
                             </h3>
                             <textarea
@@ -869,7 +893,7 @@ export default function ClientProfile() {
                                 }}
                                 className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md px-3 py-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden min-h-[100px] text-center"
                                 style={{ color: "var(--fg)", textAlign: "center" }}
-                                placeholder="Hi! I'm interested in getting a tattoo. I've attached some reference images that show the style and vibe I'm going for. My budget is around $100-$200. I'm located in New York, NY. I don't have a placement in mind. I'm still figuring out the size. Let me know if you're available and interested!"
+                                placeholder={messagePlaceholder}
                             />
 
                             <div className="flex items-center justify-between mt-4 mb-3">
