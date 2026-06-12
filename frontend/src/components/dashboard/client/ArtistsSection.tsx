@@ -13,13 +13,9 @@ type Props = {
     showArtists: boolean;
     onSelectArtist: (a: Artist) => void;
     onRequestCloseModal?: () => void;
-    page?: number;
-    totalPages?: number;
-    onPageChange?: (p: number) => void;
 };
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
-const ITEMS_PER_PAGE = 12;
 
 const EmptyArtists = () => (
     <div className="h-full w-full grid place-items-center p-6">
@@ -72,9 +68,6 @@ export default function ArtistsSection({
     showArtists,
     onSelectArtist,
     onRequestCloseModal,
-    page,
-    totalPages,
-    onPageChange
 }: Props) {
     const initialPreset: Partial<{
         priceFilter: string;
@@ -108,9 +101,9 @@ export default function ArtistsSection({
     const [sort, setSort] = useState<string>(initialPreset.sort || "experience_desc");
     const [searchQuery, setSearchQuery] = useState<string>(typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "");
     const [debouncedSearch, setDebouncedSearch] = useState<string>((typeof initialPreset.searchQuery === "string" ? initialPreset.searchQuery : "").trim().toLowerCase());
-    const [currentPage, setCurrentPage] = useState(1);
-
-    const usingExternalPaging = typeof page === "number" && typeof totalPages === "number" && typeof onPageChange === "function";
+    // Filters no longer reset a page (single scrolling feed); kept as a no-op so
+    // the shared ArtistFilter prop contract stays the same.
+    const setCurrentPage = (_page: number) => {};
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -226,12 +219,8 @@ export default function ArtistsSection({
         return list;
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]);
 
-    const clientPageItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-    const listItems = usingExternalPaging ? filtered : clientPageItems;
-    const DESKTOP_PAGE_SIZE = 5;
-    const desktopItems = usingExternalPaging && typeof page === "number"
-        ? filtered.slice((page - 1) * DESKTOP_PAGE_SIZE, page * DESKTOP_PAGE_SIZE)
-        : listItems;
+    // All artists scroll in a single feed now — no pagination slicing.
+    const listItems = filtered;
     const isCenterLoading = loading || !showArtists;
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -263,7 +252,7 @@ export default function ArtistsSection({
     const mobileListRef = useRef<HTMLDivElement | null>(null);
     const lastTouchYRef = useRef<number | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const lastIndex = Math.max(0, (usingExternalPaging ? filtered : clientPageItems).length - 1);
+    const lastIndex = Math.max(0, filtered.length - 1);
 
     const handleMobileScroll = () => {
         const el = mobileListRef.current;
@@ -437,20 +426,18 @@ export default function ArtistsSection({
                         )}
                     </div>
 
-                    <div className="hidden md:block h-full min-h-0 overflow-hidden py-1.5 sm:py-2">
-                        {desktopItems.length > 0 ? (
+                    <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto py-1.5 sm:py-2">
+                        {filtered.length > 0 ? (
                             <div
-                                data-artist-scroll
-                                className="w-full h-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 overflow-hidden"
+                                className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
                                 style={{
                                     gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)',
                                     padding: '0',
-                                    gridAutoRows: '100%',
+                                    gridAutoRows: 'clamp(20rem, 14vh + 14rem, 25rem)',
                                     alignContent: 'start',
-                                    height: '100%'
                                 }}
                             >
-                                {desktopItems.map((artist, index) => (
+                                {filtered.map((artist, index) => (
                                     <motion.div
                                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
                                         initial={{ opacity: 0 }}
