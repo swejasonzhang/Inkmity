@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, screen } from "@/tests/setup/test-utils";
+import { render, screen, waitFor } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 
 const { default: ArtistFilter } = await import("@/components/dashboard/client/ArtistFilter");
@@ -45,7 +45,7 @@ describe("ArtistFilter", () => {
     const inputs = screen.getAllByRole("textbox");
     if (inputs.length > 0) {
       await user.type(inputs[0], "test");
-      expect(setSearchQuery).toHaveBeenCalled();
+      await waitFor(() => expect(setSearchQuery).toHaveBeenCalled());
     } else {
       expect(true).toBe(true);
     }
