@@ -58,6 +58,7 @@ export default function NotificationBell({ className = "" }: { className?: strin
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [fetching, setFetching] = useState(false);
+  const [seenAt, setSeenAt] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -94,10 +95,32 @@ export default function NotificationBell({ className = "" }: { className?: strin
     };
   }, [isSignedIn, user?.id, getToken, refetch]);
 
-  // Fetch fresh whenever the panel opens.
+  // Restore the last time this user looked at their notifications.
+  const seenKey = user?.id ? `inkmity_notif_seen_${user.id}` : null;
   useEffect(() => {
-    if (open) void refetch();
-  }, [open, refetch]);
+    if (!seenKey) return;
+    try {
+      setSeenAt(Number(localStorage.getItem(seenKey)) || 0);
+    } catch {
+      setSeenAt(0);
+    }
+  }, [seenKey]);
+
+  // Fetch fresh whenever the panel opens, and mark everything as seen so the
+  // badge clears (it only counts notifications newer than the last open).
+  useEffect(() => {
+    if (!open) return;
+    void refetch();
+    const now = Date.now();
+    setSeenAt(now);
+    if (seenKey) {
+      try {
+        localStorage.setItem(seenKey, String(now));
+      } catch {
+        /* ignore storage failures */
+      }
+    }
+  }, [open, refetch, seenKey]);
 
   useEffect(() => {
     if (!open) return;
@@ -113,7 +136,7 @@ export default function NotificationBell({ className = "" }: { className?: strin
     };
   }, [open]);
 
-  const count = items.length;
+  const count = items.filter((it) => new Date(it.createdAt).getTime() > seenAt).length;
   const go = (kind: string | null) => {
     setOpen(false);
     navigate(linkFor(kind));
