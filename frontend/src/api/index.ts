@@ -429,6 +429,18 @@ export async function getUnreadState(token?: string | null, signal?: AbortSignal
   return apiGet<UnreadState>("/messages/unread", undefined, token, signal);
 }
 
+export type NotificationItem = {
+  id: string;
+  kind: string | null;
+  name: string;
+  text: string;
+  createdAt: string;
+};
+
+export async function getNotifications(token?: string | null, signal?: AbortSignal) {
+  return apiGet<{ items: NotificationItem[] }>("/messages/notifications", undefined, token, signal);
+}
+
 export async function acceptAppointment(
   id: string,
   token?: string | null,

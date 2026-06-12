@@ -9,6 +9,7 @@ import {
   declineMessageRequest,
   getGateStatus,
   getUnreadState,
+  getNotifications,
   markConversationRead,
 } from "../controllers/messageController.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -17,6 +18,7 @@ const router = express.Router();
 
 router.get("/user/:userId", requireAuth(), getAllMessagesForUser);
 router.get("/unread", requireAuth(), getUnreadState);
+router.get("/notifications", requireAuth(), getNotifications);
 router.post("/read", requireAuth(), markConversationRead);
 
 router.post("/", requireAuth(), createMessage);
