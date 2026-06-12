@@ -14,13 +14,10 @@ import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
 import type { Artist as ArtistDto } from "@/api";
 import { AnimatePresence, motion } from "framer-motion";
-import Pagination from "@/components/dashboard/shared/Pagination";
 import ArtistFilter from "@/components/dashboard/client/ArtistFilter";
 
 const ArtistsSection = lazy(() => import("@/components/dashboard/client/ArtistsSection"));
 const ArtistModal = lazy(() => import("@/components/dashboard/client/ArtistModal"));
-
-const PAGE_SIZE = 5;
 
 export default function ClientDashboard() {
     const { isSignedIn, isLoaded, user } = useUser();
@@ -29,23 +26,6 @@ export default function ClientDashboard() {
     const warnedRef = useRef(false);
 
     const [assistantOpen, setAssistantOpen] = useState(false);
-    const [page, setPage] = useState(1);
-    const [isMdUp, setIsMdUp] = useState(false);
-    const [artistPager, setArtistPager] = useState({ index: 0, total: 0 });
-
-    useEffect(() => {
-        const mq = window.matchMedia("(min-width: 768px)");
-        const on = () => setIsMdUp(mq.matches);
-        on();
-        mq.addEventListener?.("change", on);
-        return () => mq.removeEventListener?.("change", on);
-    }, []);
-
-    useEffect(() => {
-        const onPager = (e: Event) => setArtistPager((e as CustomEvent).detail);
-        window.addEventListener("inkmity:artist-pager", onPager);
-        return () => window.removeEventListener("inkmity:artist-pager", onPager);
-    }, []);
 
     const [priceFilter, setPriceFilter] = useState("all");
     const [locationFilter, setLocationFilter] = useState("all");
@@ -215,14 +195,6 @@ export default function ClientDashboard() {
         return by(sort);
     }, [artists, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
-    const totalPages = Math.max(1, Math.ceil((filtered.length || 0) / PAGE_SIZE));
-
-    const handlePageChange = (next: number) => {
-        if (next < 1 || next > totalPages) return;
-        setPage(next);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-
     if (!isLoaded || !user) {
         return null;
     }
@@ -258,7 +230,7 @@ export default function ClientDashboard() {
                     sort={sort}
                     setSort={setSort}
                     artists={artists}
-                    setCurrentPage={setPage}
+                    setCurrentPage={() => {}}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                     className="mb-3"
@@ -291,9 +263,6 @@ export default function ClientDashboard() {
                                 loading={loading}
                                 showArtists
                                 onSelectArtist={(artist: ArtistDto) => { setModalStep(0); setSelectedArtist(artist); }}
-                                page={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
                             />
                         </Suspense>
                     </div>
@@ -310,18 +279,6 @@ export default function ClientDashboard() {
                     unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
                     pendingRequestIds={pendingRequestIds}
                     pendingRequestsCount={pendingRequestsCount}
-                    rightContent={
-                        <Pagination
-                            currentPage={isMdUp ? page : artistPager.index + 1}
-                            totalPages={isMdUp ? totalPages : Math.max(1, artistPager.total)}
-                            onPrev={isMdUp
-                                ? () => handlePageChange(page - 1)
-                                : () => window.dispatchEvent(new CustomEvent("inkmity:artist-nav", { detail: { dir: "prev" } }))}
-                            onNext={isMdUp
-                                ? () => handlePageChange(page + 1)
-                                : () => window.dispatchEvent(new CustomEvent("inkmity:artist-nav", { detail: { dir: "next" } }))}
-                        />
-                    }
                 />
             </div>
 
