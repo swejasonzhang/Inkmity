@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal } from "lucide-react";
-import YinYang from "@/components/ui/YinYang";
 import clsx from "clsx";
 
 interface Artist {
@@ -259,7 +258,7 @@ const ArtistFilter: React.FC<Props> = ({
     } catch { }
   }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
-  const triggerBase = "h-10 bg-elevated/60 hover:bg-elevated border border-app/60 text-xs sm:text-sm rounded-full text-center justify-center transition-colors focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 data-[state=open]:bg-elevated data-[state=open]:border-app";
+  const triggerBase = "h-10 bg-elevated/60 hover:bg-elevated border border-app/60 text-xs sm:text-sm rounded-md text-center justify-center transition-colors focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 data-[state=open]:bg-elevated data-[state=open]:border-[color:var(--fg)]";
   const contentBase = "bg-card text-app border border-app rounded-2xl shadow-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
   const itemCentered = "justify-center text-center rounded-lg outline-none focus:outline-none focus:bg-elevated focus:ring-0 focus-visible:ring-0 ring-0 cursor-pointer";
   const FILTER_W = "w-full sm:flex-1 sm:min-w-[8.5rem]";
@@ -270,7 +269,7 @@ const ArtistFilter: React.FC<Props> = ({
     <section
       className={clsx(
         "relative w-full max-w-full bg-card border-b border-app mb-3",
-        "sm:border sm:rounded-2xl sm:shadow-sm sm:mb-0",
+        "sm:border sm:rounded-xl sm:shadow-sm sm:mb-0",
         "sm:bg-[color-mix(in_srgb,var(--card)_85%,transparent)] sm:backdrop-blur-sm",
         "mx-auto overflow-hidden",
         className
@@ -279,15 +278,20 @@ const ArtistFilter: React.FC<Props> = ({
       aria-label="Artist filters"
       style={{ maxWidth: '100%', width: '100%' }}
     >
-      {/* Yin-yang brand accents: split-tone top rule + corner watermark. */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-[3px] hidden sm:block"
-        style={{ background: "linear-gradient(90deg, var(--fg) 0 50%, var(--bg) 50% 100%)" }}
-      />
-      <div aria-hidden className="pointer-events-none absolute -right-4 -bottom-5 opacity-[0.06] hidden sm:block">
-        <YinYang size={84} />
-      </div>
+      {/* Industrial viewfinder corner brackets — distinct, monochrome identity. */}
+      {[
+        "top-1.5 left-1.5 border-t-2 border-l-2",
+        "top-1.5 right-1.5 border-t-2 border-r-2",
+        "bottom-1.5 left-1.5 border-b-2 border-l-2",
+        "bottom-1.5 right-1.5 border-b-2 border-r-2",
+      ].map((c, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className={clsx("pointer-events-none absolute h-2.5 w-2.5 hidden sm:block z-[1]", c)}
+          style={{ borderColor: "color-mix(in srgb, var(--fg) 45%, transparent)" }}
+        />
+      ))}
       <div className="sm:hidden border-t border-app" aria-hidden="true" />
       <div className="w-full mx-auto max-w-full overflow-hidden" style={{ maxWidth: '100%', width: '100%' }}>
         <div className="p-2 sm:p-2.5 md:p-3" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
@@ -304,7 +308,7 @@ const ArtistFilter: React.FC<Props> = ({
                 aria-label="Search artists or tattoo subjects"
                 className={clsx(
                   "pl-10 pr-4",
-                  "h-10 w-full bg-elevated/60 border-app/60 text-app rounded-full",
+                  "h-10 w-full bg-elevated/60 border-app/60 text-app rounded-md",
                   "text-xs sm:text-sm placeholder:text-muted-foreground",
                   "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app/80 hover:bg-elevated transition-colors",
                   "selection:bg-elevated selection:text-app",
@@ -320,7 +324,7 @@ const ArtistFilter: React.FC<Props> = ({
                 aria-expanded={showMobileFilters}
                 onClick={() => setShowMobileFilters((v) => !v)}
                 className={clsx(
-                  "h-10 w-full inline-flex items-center justify-center gap-1.5 rounded-full",
+                  "h-10 w-full inline-flex items-center justify-center gap-1.5 rounded-md",
                   "border border-app/60 text-app text-xs font-medium transition-colors",
                   showMobileFilters ? "bg-elevated" : "bg-elevated/60 hover:bg-elevated",
                   "outline-none ring-0 focus:ring-0 focus-visible:ring-0"
@@ -403,14 +407,14 @@ const ArtistFilter: React.FC<Props> = ({
               aria-expanded={showAdvanced}
               onClick={() => setShowAdvanced((v) => !v)}
               className={clsx(
-                "hidden sm:inline-flex sm:flex-none items-center justify-center gap-1.5 h-10 px-4 rounded-full",
+                "hidden sm:inline-flex sm:flex-none items-center justify-center gap-1.5 h-10 px-4 rounded-md",
                 "border text-xs font-semibold transition-colors whitespace-nowrap",
                 showAdvanced
                   ? "border-app bg-elevated text-app"
                   : "border-app/60 bg-elevated/60 text-app hover:bg-elevated"
               )}
             >
-              <YinYang size={14} />
+              <SlidersHorizontal className="h-3.5 w-3.5" />
               {showAdvanced ? "Less" : "Advanced"}
             </button>
           </div>
