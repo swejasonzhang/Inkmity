@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ArtistFilter from "./ArtistFilter";
 import LazyReveal from "@/components/ui/LazyReveal";
 import HScroll from "@/components/ui/HScroll";
@@ -318,74 +318,33 @@ export default function ArtistsSection({
         onRequestCloseModal();
     };
 
-    const filterRef = useRef<HTMLDivElement | null>(null);
-    const [isMdUp, setIsMdUp] = useState(false);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const md = window.matchMedia("(min-width: 768px)");
-        const onChange = () => {
-            setIsMdUp(md.matches);
-        };
-        onChange();
-        md.addEventListener?.("change", onChange);
-        return () => {
-            md.removeEventListener?.("change", onChange);
-        };
-    }, []);
+    const filterNode = (
+        <ArtistFilter
+            priceFilter={priceFilter}
+            setPriceFilter={(v) => { setPriceFilter(v); setCurrentPage(1); }}
+            locationFilter={locationFilter}
+            setLocationFilter={(v) => { setLocationFilter(v); setCurrentPage(1); }}
+            styleFilter={styleFilter}
+            setStyleFilter={(v) => { setStyleFilter(v); setCurrentPage(1); }}
+            availabilityFilter={availabilityFilter}
+            setAvailabilityFilter={(v) => { setAvailabilityFilter(v); setCurrentPage(1); }}
+            experienceFilter={experienceFilter}
+            setExperienceFilter={(v) => { setExperienceFilter(v); setCurrentPage(1); }}
+            bookingFilter={bookingFilter}
+            setBookingFilter={(v) => { setBookingFilter(v); setCurrentPage(1); }}
+            travelFilter={travelFilter}
+            setTravelFilter={(v) => { setTravelFilter(v); setCurrentPage(1); }}
+            sort={sort}
+            setSort={(v) => { setSort(v); setCurrentPage(1); }}
+            artists={artists}
+            setCurrentPage={setCurrentPage}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+        />
+    );
 
     return (
-        <div className={`${isMdUp ? "grid grid-rows-[auto,1fr]" : "flex flex-col"} h-full min-h-0 w-full`}>
-            <div ref={filterRef} data-artist-filter className="w-full bg-card shrink-0 hidden md:block" style={{ padding: '0' }}>
-                <ArtistFilter
-                    priceFilter={priceFilter}
-                    setPriceFilter={(v) => {
-                        setPriceFilter(v);
-                        setCurrentPage(1);
-                    }}
-                    locationFilter={locationFilter}
-                    setLocationFilter={(v) => {
-                        setLocationFilter(v);
-                        setCurrentPage(1);
-                    }}
-                    styleFilter={styleFilter}
-                    setStyleFilter={(v) => {
-                        setStyleFilter(v);
-                        setCurrentPage(1);
-                    }}
-                    availabilityFilter={availabilityFilter}
-                    setAvailabilityFilter={(v) => {
-                        setAvailabilityFilter(v);
-                        setCurrentPage(1);
-                    }}
-                    experienceFilter={experienceFilter}
-                    setExperienceFilter={(v) => {
-                        setExperienceFilter(v);
-                        setCurrentPage(1);
-                    }}
-                    bookingFilter={bookingFilter}
-                    setBookingFilter={(v) => {
-                        setBookingFilter(v);
-                        setCurrentPage(1);
-                    }}
-                    travelFilter={travelFilter}
-                    setTravelFilter={(v) => {
-                        setTravelFilter(v);
-                        setCurrentPage(1);
-                    }}
-                    sort={sort}
-                    setSort={(v) => {
-                        setSort(v);
-                        setCurrentPage(1);
-                    }}
-                    artists={artists}
-                    setCurrentPage={setCurrentPage}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    className="shrink-0"
-                />
-            </div>
-
+        <div className="flex flex-col h-full min-h-0 w-full">
             <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
                 <LazyReveal
                     loading={isCenterLoading}
@@ -415,14 +374,30 @@ export default function ArtistsSection({
                 >
                     {/* Desktop: vertical scroll of horizontal style carousels */}
                     <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto px-1 pt-2 pb-24">
+                        <header className="text-center pt-3 pb-2 px-4">
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                                <span className="h-px w-8 bg-app/50" aria-hidden />
+                                <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-subtle">Discover artists</span>
+                                <span className="h-px w-8 bg-app/50" aria-hidden />
+                            </div>
+                            <h1 className="font-extrabold tracking-tight leading-[1.05]" style={{ fontSize: "clamp(1.9rem, 2vw + 1.3rem, 3.1rem)" }}>
+                                Find your artist. Wear their art.
+                            </h1>
+                            <p className="mt-4 text-sm sm:text-base text-subtle max-w-xl mx-auto leading-relaxed">
+                                Browse by style — from bold blackwork to delicate fine line — and book the artist who brings your vision to skin.
+                            </p>
+                            <p className="mt-6 inline-flex items-center gap-1.5 text-xs text-subtle">
+                                <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
+                                Scroll to explore every style
+                            </p>
+                        </header>
+                        <div className="sticky top-0 z-20 -mx-1 px-1 py-2.5 mb-5 bg-[color:var(--bg)]/85 backdrop-blur-md">
+                            {filterNode}
+                        </div>
                         {sections.length === 0 ? (
                             <EmptyArtists />
                         ) : (
                             <div className="space-y-8">
-                                <p className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-subtle">
-                                    <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
-                                    Scroll to view our artists across different styles
-                                </p>
                                 {sections.map(({ style, items }) => (
                                     <section key={style}>
                                         <div className="mb-2.5 flex items-baseline justify-between gap-3 px-1">
