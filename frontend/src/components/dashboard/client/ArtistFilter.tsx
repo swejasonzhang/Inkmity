@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal } from "lucide-react";
+import YinYang from "@/components/ui/YinYang";
 import clsx from "clsx";
 
 interface Artist {
@@ -268,7 +269,7 @@ const ArtistFilter: React.FC<Props> = ({
   return (
     <section
       className={clsx(
-        "w-full max-w-full bg-card border-b border-app mb-3",
+        "relative w-full max-w-full bg-card border-b border-app mb-3",
         "sm:border sm:rounded-2xl sm:shadow-sm sm:mb-0",
         "sm:bg-[color-mix(in_srgb,var(--card)_85%,transparent)] sm:backdrop-blur-sm",
         "mx-auto overflow-hidden",
@@ -278,6 +279,15 @@ const ArtistFilter: React.FC<Props> = ({
       aria-label="Artist filters"
       style={{ maxWidth: '100%', width: '100%' }}
     >
+      {/* Yin-yang brand accents: split-tone top rule + corner watermark. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[3px] hidden sm:block"
+        style={{ background: "linear-gradient(90deg, var(--fg) 0 50%, var(--bg) 50% 100%)" }}
+      />
+      <div aria-hidden className="pointer-events-none absolute -right-4 -bottom-5 opacity-[0.06] hidden sm:block">
+        <YinYang size={84} />
+      </div>
       <div className="sm:hidden border-t border-app" aria-hidden="true" />
       <div className="w-full mx-auto max-w-full overflow-hidden" style={{ maxWidth: '100%', width: '100%' }}>
         <div className="p-2 sm:p-2.5 md:p-3" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
@@ -400,7 +410,7 @@ const ArtistFilter: React.FC<Props> = ({
                   : "border-app/60 bg-elevated/60 text-app hover:bg-elevated"
               )}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <YinYang size={14} />
               {showAdvanced ? "Less" : "Advanced"}
             </button>
           </div>
