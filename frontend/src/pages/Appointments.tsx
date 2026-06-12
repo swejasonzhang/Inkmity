@@ -790,13 +790,6 @@ export default function Appointments() {
         draggable
         pauseOnHover
         hideProgressBar
-        toastStyle={{
-          background: "var(--card)",
-          color: "var(--fg)",
-          border: "1px solid var(--border)",
-          boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
-        }}
-        className="text-sm"
         style={{ zIndex: 2147483647 }}
       />
     </div>

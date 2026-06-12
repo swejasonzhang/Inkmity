@@ -1221,3 +1221,76 @@ input::-moz-focus-inner {
 .pac-container:after {
   display: none !important;
 }
+
+/* ─── react-toastify · monochrome, modern theme ───────────────────────────
+   Scoped to .ink-scope (set on <html>) so it overrides the library's own
+   stylesheet regardless of import order, and adapts to light/dark via vars. */
+.ink-scope .Toastify__toast-container {
+  width: auto;
+  max-width: min(92vw, 25rem);
+  padding: 0;
+}
+.ink-scope .Toastify__toast,
+.ink-scope .Toastify__toast--success,
+.ink-scope .Toastify__toast--error,
+.ink-scope .Toastify__toast--info,
+.ink-scope .Toastify__toast--warning,
+.ink-scope .Toastify__toast--default {
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px -16px color-mix(in srgb, var(--fg) 26%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  font-family: inherit;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  min-height: 0;
+}
+.ink-scope .Toastify__toast-body {
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+.ink-scope .Toastify__toast-icon {
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 11px;
+  color: var(--fg);
+}
+.ink-scope .Toastify__toast-icon svg {
+  fill: currentColor;
+}
+.ink-scope .Toastify__close-button {
+  color: var(--fg);
+  opacity: 0.4;
+  align-self: center;
+  transition: opacity 0.15s ease;
+}
+.ink-scope .Toastify__close-button > svg {
+  width: 15px;
+  height: 15px;
+}
+.ink-scope .Toastify__close-button:hover {
+  opacity: 0.9;
+}
+.ink-scope .Toastify__progress-bar,
+.ink-scope .Toastify__progress-bar--success,
+.ink-scope .Toastify__progress-bar--error,
+.ink-scope .Toastify__progress-bar--info,
+.ink-scope .Toastify__progress-bar--warning,
+.ink-scope .Toastify__progress-bar--default {
+  background: var(--fg);
+  height: 2px;
+  opacity: 0.8;
+}
+.ink-scope .Toastify__spinner {
+  border-color: color-mix(in srgb, var(--fg) 22%, transparent);
+  border-right-color: var(--fg);
+}

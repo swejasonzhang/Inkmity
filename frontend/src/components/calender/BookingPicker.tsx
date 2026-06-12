@@ -810,13 +810,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
         draggable
         pauseOnHover
         hideProgressBar
-        toastStyle={{
-          background: isLightTheme ? "#ffffff" : "var(--card)",
-          color: isLightTheme ? "#000000" : "var(--fg)",
-          border: `1px solid ${isLightTheme ? "rgba(0,0,0,0.18)" : "var(--border)"}`,
-          boxShadow: "0 10px 25px color-mix(in srgb, var(--fg) 8%, transparent)"
-        }}
-        className="text-sm"
         style={{ zIndex: 2147483647 }}
       />
     </div>
