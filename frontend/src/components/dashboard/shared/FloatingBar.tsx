@@ -156,10 +156,10 @@ export default function FloatingBar({
   const assistantBtnClass = [
     "ink-assistant-btn",
     "px-3 md:px-4",
-    "bg-app text-[color:var(--fg)] border-app shadow-lg",
+    "bg-[color:color-mix(in_srgb,var(--card)_40%,transparent)] backdrop-blur-md text-[color:var(--fg)] border-app shadow-lg",
     "focus:ring-2 focus:ring-app/50 focus:ring-offset-2 focus:ring-offset-[color:var(--bg)]",
     "hover:brightness-[1.08] active:scale-[0.99]",
-    "disabled:opacity-100 disabled:bg-app disabled:text-[color:var(--fg)]",
+    "disabled:opacity-100 disabled:bg-[color:color-mix(in_srgb,var(--card)_40%,transparent)] disabled:text-[color:var(--fg)]",
     btnCommon
   ].join(" ");
 
@@ -270,11 +270,12 @@ export default function FloatingBar({
     >
       <style>{`
         .ink-assistant-btn[aria-disabled="true"] { opacity: 1; }
-        .ink-assistant-btn { backdrop-filter: none; }
+        .ink-assistant-btn { backdrop-filter: blur(12px); }
         .ink-solid-controls :is(button, [role="button"], .btn),
         .ink-solid-controls :is(nav button, nav a),
         .ink-solid-controls [data-pagination] :is(button, a) {
-          background: var(--card);
+          background: color-mix(in srgb, var(--card) 40%, transparent);
+          backdrop-filter: blur(12px);
           color: var(--fg);
           border: 1px solid var(--app, var(--border));
           font-weight: 600;
