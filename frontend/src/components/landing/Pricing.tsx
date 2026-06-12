@@ -26,7 +26,7 @@ const Pricing: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> = ({ text
     const prefersReduced = useReducedMotion();
     const points: Point[] = [
         { title: "The essentials are always free", body: "Discovery, booking, messaging, sketch approval, intake forms, reviews — and free here includes tools other platforms lock behind a paid plan.", Icon: Gift },
-        { title: "We only earn when you book", body: "One transparent platform fee on completed bookings — shown before you pay, dropping as low as 5% the more you book. No lead fees, no per-listing charges.", Icon: Receipt },
+        { title: "We only earn when you book", body: "One simple platform fee on completed bookings — $10 + 5% of the price, never more than $50, shown before you pay. No lead fees, no per-listing charges.", Icon: Receipt },
         { title: "We bring the clients", body: "Artists focus on tattooing, not chasing leads. Inkmity owns discovery and client acquisition — our incentive is to keep your books full.", Icon: Users },
         { title: "Premium is optional, never essential", body: "Any monthly subscriptions we add later are power-user extras only. We'll never paywall the core experience or hide a must-have behind a plan.", Icon: Sparkles },
     ];

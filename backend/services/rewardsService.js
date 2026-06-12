@@ -29,38 +29,28 @@ async function findClient(clientId) {
   return Client.findOne({ clerkId: String(clientId) });
 }
 
-export async function getEffectiveFeePct(clientId) {
-  const base = config.platformFee.pct;
-  try {
-    const client = await findClient(clientId);
-    if (!client) return base;
-    const count = Number(client.completedBookingsCount || 0);
-    const tier = tierForCount(count);
-    return Math.min(base, tier.feePct);
-  } catch {
-    return base;
-  }
-}
-
 export async function getRewardsSummary(clientId) {
-  const base = config.platformFee.pct;
   const client = await findClient(clientId);
   const count = Number(client?.completedBookingsCount || 0);
   const tier = tierForCount(count);
   const next = nextTierForCount(count);
   return {
     completedBookings: count,
-    tier: { key: tier.key, label: tier.label, feePct: Math.min(base, tier.feePct) },
+    tier: { key: tier.key, label: tier.label },
     nextTier: next
       ? {
           key: next.key,
           label: next.label,
-          feePct: Math.min(base, next.feePct),
           bookingsToNextTier: Math.max(0, next.bookings - count),
         }
       : null,
-    currentFeePct: Math.min(base, tier.feePct),
-    platformFeeMinCents: config.platformFee.minCents,
+    // Fee = base + pct of price, capped (same for every client; tiers are
+    // loyalty perks now). Frontend formats it (e.g. "$10 + 5%, max $50").
+    platformFee: {
+      baseCents: config.platformFee.baseCents,
+      pct: config.platformFee.pct,
+      capCents: config.platformFee.capCents,
+    },
     totalFeesPaidCents: Math.round(Number(client?.totalFeesPaid || 0)),
     lifetimeDiscountUsd: Number(client?.lifetimeDiscountUsd || 0),
   };

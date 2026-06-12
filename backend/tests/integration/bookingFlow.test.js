@@ -15,10 +15,12 @@ const stripeMock = {
 };
 const sendAppointmentConfirmationEmail = jest.fn();
 const sendAppointmentCancellationEmail = jest.fn();
+const sendVerificationCodeEmail = jest.fn();
 jest.unstable_mockModule("../../lib/stripe.js", () => ({ stripe: stripeMock }));
 jest.unstable_mockModule("../../services/emailService.js", () => ({
   sendAppointmentConfirmationEmail,
   sendAppointmentCancellationEmail,
+  sendVerificationCodeEmail,
 }));
 
 const {
