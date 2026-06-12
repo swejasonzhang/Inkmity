@@ -1,5 +1,6 @@
 import Message from "../models/Message.js";
 import User from "../models/UserBase.js";
+import Booking from "../models/Booking.js";
 import DeletedConversation from "../models/DeletedConversation.js";
 import { getIO, userRoom, threadRoom } from "../services/socketService.js";
 
@@ -604,6 +605,67 @@ export const getUnreadState = async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ error: "Failed to fetch unread state" });
+  }
+};
+
+// Detailed feed for the notification bell: unread messages (including event
+// notifications carried as messages) and pending booking/message requests, each
+// with the sender's name + a preview, newest first.
+export const getNotifications = async (req, res) => {
+  try {
+    const userId = String(req.user?.clerkId || req.auth?.userId || "");
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const [unread, pending, pendingBookings] = await Promise.all([
+      Message.find({ type: "message", receiverId: userId, seen: false })
+        .sort({ createdAt: -1 })
+        .limit(15)
+        .lean(),
+      Message.find({ type: "request", receiverId: userId, requestStatus: "pending" })
+        .sort({ createdAt: -1 })
+        .limit(15)
+        .lean(),
+      // Incoming appointment requests the artist still needs to act on.
+      Booking.find({ artistId: userId, status: "pending" })
+        .sort({ createdAt: -1 })
+        .limit(15)
+        .lean(),
+    ]);
+
+    const peopleIds = [
+      ...unread.map((m) => m.senderId),
+      ...pending.map((m) => m.senderId),
+      ...pendingBookings.map((b) => b.clientId),
+    ];
+    const ids = [...new Set(peopleIds)];
+    const users = ids.length
+      ? await User.find({ clerkId: { $in: ids } }).select("clerkId username").lean()
+      : [];
+    const nameOf = (id) => users.find((u) => u.clerkId === id)?.username || "Someone";
+
+    const toItem = (m, kind) => ({
+      id: String(m._id),
+      kind: m.meta?.kind || kind,
+      name: nameOf(m.senderId),
+      text: m.text || "",
+      createdAt: m.createdAt,
+    });
+
+    const items = [
+      ...unread.map((m) => toItem(m, "message")),
+      ...pending.map((m) => toItem(m, "request")),
+      ...pendingBookings.map((b) => ({
+        id: String(b._id),
+        kind: "booking_request",
+        name: nameOf(b.clientId),
+        text: `${b.appointmentType === "consultation" ? "Consultation" : "Tattoo session"} request`,
+        createdAt: b.createdAt,
+      })),
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ items });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch notifications" });
   }
 };
 
