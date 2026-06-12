@@ -2,8 +2,8 @@ import Billing from "../models/Billing.js";
 import { stripe } from "../lib/stripe.js";
 import { executePayouts } from "./payoutService.js";
 import { getAvailableCreditCents, applyCredits } from "./creditsService.js";
-import { getEffectiveFeePct, recordFeePaid } from "./rewardsService.js";
-import { computePlatformFeeCents } from "../lib/fees.js";
+import { recordFeePaid } from "./rewardsService.js";
+import { computePlatformFeeCents, estimateStripeFeeCents } from "../lib/fees.js";
 import { config } from "../config/index.js";
 
 const CURRENCY = config.stripe.currency || "usd";
@@ -23,14 +23,10 @@ export async function captureBookingBalance(booking) {
 
   const transferGroup = `booking_${String(booking._id)}`;
 
-  // Client pays (balance − credits + fee); provider gets the rate (split solo/
-  // studio), platform keeps the fee, net of any fee already collected at deposit.
-  const effectivePct = await getEffectiveFeePct(booking.clientId);
-  const fullFeeCents = computePlatformFeeCents(
-    booking.priceCents,
-    effectivePct,
-    config.platformFee?.minCents || 0
-  );
+  // Client pays (balance − credits + fee); the platform keeps the fee ($10 + 5%
+  // capped, net of any collected at deposit) and nets Stripe processing out of
+  // the provider payout below, so the artist bears card processing.
+  const fullFeeCents = computePlatformFeeCents(booking.priceCents, config.platformFee);
   const priorPaid = await Billing.find({ bookingId: booking._id, status: "paid" });
   const feeAlreadyCollected = priorPaid.reduce(
     (sum, b) => sum + Number(b.platformFeeCents || 0),
@@ -130,11 +126,20 @@ export async function captureBookingBalance(booking) {
     }
   }
 
+  // Artist/studio bear card processing: net Stripe's cut on this charge out of
+  // the payout so the platform keeps the flat fee clean.
+  const stripeFeeCents = estimateStripeFeeCents(
+    chargeAmount,
+    config.platformFee.processingPct,
+    config.platformFee.processingFlatCents
+  );
+  const transferableCents = Math.max(0, balance - stripeFeeCents);
+
   try {
     await executePayouts({
       billing: bill,
       artistId: booking.artistId,
-      transferableCents: balance,
+      transferableCents,
       transferGroup,
       currency: CURRENCY,
     });
