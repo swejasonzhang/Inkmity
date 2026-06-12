@@ -1,6 +1,7 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { type ReactNode } from "react";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, ShoppingBag, X } from "lucide-react";
+import { CheckCircle2, XCircle, ShoppingBag, X, Clock, AlertTriangle } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -30,128 +31,129 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
   ];
 
   const recommendedProducts = [
-    {
-      name: "Second Skin / Tegaderm",
-      description: "Protective film that can be left on for 3-5 days (if applied by artist)",
-    },
-    {
-      name: "Aquaphor Healing Ointment",
-      description: "Petroleum-based ointment, use sparingly for first 3-5 days",
-    },
-    {
-      name: "A&D Ointment",
-      description: "Alternative to Aquaphor, apply thin layer 2-3 times daily",
-    },
-    {
-      name: "Unscented Lotion",
-      description: "Switch to after 3-5 days, use for remaining healing period (Cetaphil, Lubriderm, etc.)",
-    },
-    {
-      name: "Antibacterial Soap",
-      description: "Fragrance-free soap for cleaning (Dial Gold, Cetaphil Gentle Cleanser)",
-    },
+    { name: "Second Skin / Tegaderm", description: "Protective film that can be left on for 3-5 days (if applied by artist)" },
+    { name: "Aquaphor Healing Ointment", description: "Petroleum-based ointment, use sparingly for first 3-5 days" },
+    { name: "A&D Ointment", description: "Alternative to Aquaphor, apply thin layer 2-3 times daily" },
+    { name: "Unscented Lotion", description: "Switch to after 3-5 days, use for remaining healing period (Cetaphil, Lubriderm, etc.)" },
+    { name: "Antibacterial Soap", description: "Fragrance-free soap for cleaning (Dial Gold, Cetaphil Gentle Cleanser)" },
   ];
+
+  const timeline: [string, string][] = [
+    ["Days 1-3:", "Initial healing, may ooze plasma/ink"],
+    ["Days 4-7:", "Scabbing begins, keep moisturized"],
+    ["Days 8-14:", "Scabs may flake off (don't pick!)"],
+    ["Weeks 3-4:", "Surface healing complete, may look dull"],
+    ["Month 2+:", "Tattoo fully settled, vibrant colors return"],
+  ];
+
+  const muted = "color-mix(in srgb, var(--fg) 60%, transparent)";
+  const sectionStyle = { background: "var(--elevated)", borderColor: "var(--border)" };
+
+  const SectionTitle = ({ icon: Icon, children }: { icon: typeof Clock; children: ReactNode }) => (
+    <h3 className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] mb-4">
+      <Icon className="h-4 w-4" /> {children}
+    </h3>
+  );
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent
-        className="max-w-3xl max-h-[90vh] overflow-y-auto relative"
+        className="sm:max-w-3xl max-h-[90vh] overflow-y-auto text-center justify-items-stretch p-0 gap-0"
         showCloseButton={false}
         style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
       >
-        <button
-          aria-label="Close"
-          onClick={onClose}
-          className="absolute top-4 right-4 rounded-md p-1 opacity-60 hover:opacity-100 transition-opacity"
-          style={{ color: "var(--fg)", zIndex: 10 }}
+        {/* Header */}
+        <div
+          className="sticky top-0 z-10 px-6 sm:px-8 py-5 border-b text-center"
+          style={{ background: "color-mix(in srgb, var(--card) 90%, transparent)", backdropFilter: "blur(10px)", borderColor: "var(--border)" }}
         >
-          <X className="h-5 w-5" />
-        </button>
-        <DialogHeader>
-          <DialogTitle>Tattoo Aftercare Instructions (Required)</DialogTitle>
-          <DialogDescription>
-            {appointmentDate && (
-              <span className="block mt-1">
-                Appointment Date: {new Date(appointmentDate).toLocaleDateString()}
-              </span>
-            )}
+          <button
+            aria-label="Close"
+            onClick={onClose}
+            className="absolute top-4 right-4 rounded-lg p-2 transition-colors hover:bg-[color:var(--elevated)]"
+            style={{ color: "var(--fg)" }}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <DialogTitle className="text-center text-xl sm:text-2xl font-bold tracking-tight">
+            Tattoo Aftercare Instructions (Required)
+          </DialogTitle>
+          <DialogDescription className="text-center mt-1.5 text-xs sm:text-sm mx-auto max-w-md" style={{ color: muted }}>
+            {appointmentDate && <span className="block">Appointment Date: {new Date(appointmentDate).toLocaleDateString()}</span>}
             Please read these important aftercare instructions carefully
           </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-6">
-        <div>
-          <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-app" />
-            Aftercare Steps
-          </h3>
-          <ol className="space-y-2 list-decimal list-inside">
-            {aftercareSteps.map((step, idx) => (
-              <li key={idx} className="text-sm flex items-start gap-2">
-                <span className="flex-shrink-0 w-5">{idx + 1}.</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
         </div>
 
-        <div>
-          <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <XCircle className="h-5 w-5 text-app" />
-            What to Avoid
-          </h3>
-          <ul className="space-y-2">
-            {avoidItems.map((item, idx) => (
-              <li key={idx} className="text-sm flex items-start gap-2">
-                <XCircle className="h-4 w-4 text-app mt-0.5 flex-shrink-0" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <div className="px-6 sm:px-8 py-6 space-y-5">
+          {/* Aftercare steps */}
+          <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
+            <SectionTitle icon={CheckCircle2}>Aftercare Steps</SectionTitle>
+            <ol className="space-y-2.5">
+              {aftercareSteps.map((step, idx) => (
+                <li key={idx} className="text-sm leading-relaxed">
+                  <span className="font-bold tabular-nums">{idx + 1}.</span> {step}
+                </li>
+              ))}
+            </ol>
+          </section>
 
-        <div>
-          <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-app" />
-            Recommended Products
-          </h3>
-          <div className="space-y-3">
-            {recommendedProducts.map((product, idx) => (
-              <div
-                key={idx}
-                className="p-3 rounded-lg border"
-                style={{ background: "var(--elevated)", borderColor: "var(--border)" }}
-              >
-                <p className="font-medium text-sm">{product.name}</p>
-                <p className="text-xs opacity-70 mt-1">{product.description}</p>
-              </div>
-            ))}
+          {/* What to avoid */}
+          <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
+            <SectionTitle icon={XCircle}>What to Avoid</SectionTitle>
+            <ul className="space-y-2.5">
+              {avoidItems.map((item, idx) => (
+                <li key={idx} className="text-sm leading-relaxed">{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Recommended products */}
+          <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
+            <SectionTitle icon={ShoppingBag}>Recommended Products</SectionTitle>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {recommendedProducts.map((product, idx) => (
+                <div key={idx} className="rounded-xl border p-4 text-center" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+                  <p className="text-sm font-semibold">{product.name}</p>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: muted }}>{product.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Healing timeline */}
+          <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
+            <SectionTitle icon={Clock}>Healing Timeline</SectionTitle>
+            <div className="space-y-2">
+              {timeline.map(([label, desc], idx) => (
+                <p key={idx} className="text-sm leading-relaxed">
+                  <span className="font-semibold tabular-nums">{label}</span> {desc}
+                </p>
+              ))}
+            </div>
+          </section>
+
+          {/* Warning */}
+          <div
+            className="rounded-2xl border p-5 text-center"
+            style={{ borderColor: "var(--fg)", background: "color-mix(in srgb, var(--fg) 7%, transparent)" }}
+          >
+            <AlertTriangle className="h-5 w-5 mx-auto mb-2" />
+            <p className="text-sm leading-relaxed">
+              <strong>Warning Signs:</strong> If you experience excessive redness, swelling, pus, fever, or signs of infection, contact your artist or seek medical attention immediately.
+            </p>
           </div>
         </div>
 
-        <div className="bg-white/10 border border-white/30 rounded-lg p-4">
-          <p className="text-sm font-semibold mb-1">Healing Timeline</p>
-          <ul className="text-xs space-y-1 opacity-90">
-            <li>• Days 1-3: Initial healing, may ooze plasma/ink</li>
-            <li>• Days 4-7: Scabbing begins, keep moisturized</li>
-            <li>• Days 8-14: Scabs may flake off (don't pick!)</li>
-            <li>• Weeks 3-4: Surface healing complete, may look dull</li>
-            <li>• Month 2+: Tattoo fully settled, vibrant colors return</li>
-          </ul>
-        </div>
-
-        <div className="bg-white/10 border border-white/30 rounded-lg p-4">
-          <p className="text-sm">
-            <strong>Warning Signs:</strong> If you experience excessive redness, swelling, pus, fever, or signs of infection, contact your artist or seek medical attention immediately.
-          </p>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+        {/* Footer */}
+        <div
+          className="sticky bottom-0 flex justify-center px-6 sm:px-8 py-4 border-t"
+          style={{ background: "color-mix(in srgb, var(--card) 90%, transparent)", backdropFilter: "blur(10px)", borderColor: "var(--border)" }}
+        >
           <Button onClick={onClose} className="w-full sm:w-auto">
             I Understand
           </Button>
         </div>
-      </div>
-    </DialogContent>
+      </DialogContent>
     </Dialog>
   );
 }
