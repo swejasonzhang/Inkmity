@@ -259,6 +259,9 @@ const ArtistFilter: React.FC<Props> = ({
   }, [priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
 
   const triggerBase = "h-10 bg-elevated/60 hover:bg-elevated border border-app/60 text-xs sm:text-sm rounded-md text-center justify-center transition-colors focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 data-[state=open]:bg-elevated data-[state=open]:border-[color:var(--fg)]";
+  // Active (non-default) filters invert to solid fg/bg — a monochrome "on" state.
+  const triggerActive = "h-10 bg-[color:var(--fg)] text-[color:var(--bg)] border border-[color:var(--fg)] text-xs sm:text-sm rounded-md text-center justify-center font-semibold transition-colors focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 data-[state=open]:bg-[color:var(--fg)]";
+  const trig = (active: boolean) => (active ? triggerActive : triggerBase);
   const contentBase = "bg-card text-app border border-app rounded-2xl shadow-xl focus:outline-none ring-0 outline-none w-[var(--radix-select-trigger-width)] max-h-64 overflow-y-auto data-[state=open]:animate-in";
   const itemCentered = "justify-center text-center rounded-lg outline-none focus:outline-none focus:bg-elevated focus:ring-0 focus-visible:ring-0 ring-0 cursor-pointer";
   const FILTER_W = "w-full sm:flex-1 sm:min-w-[8.5rem]";
@@ -296,6 +299,9 @@ const ArtistFilter: React.FC<Props> = ({
       <div className="w-full mx-auto max-w-full overflow-hidden" style={{ maxWidth: '100%', width: '100%' }}>
         <div className="p-2 sm:p-2.5 md:p-3" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:gap-2.5 w-full max-w-full min-w-0" style={{ maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+            <div className="hidden lg:flex items-center shrink-0 pr-2.5 mr-0.5 border-r border-app/50 select-none">
+              <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-subtle">Filter</span>
+            </div>
             <div className={clsx("relative col-span-2 sm:col-span-1 min-w-0", SEARCH_W)}>
               <Search
                 className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-app"
@@ -343,7 +349,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
+                <SelectTrigger className={clsx(trig(styleFilter !== "all"), "w-full px-4")}>
                   <SelectValue placeholder="All Styles" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -367,7 +373,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
+                <SelectTrigger className={clsx(trig(availabilityFilter !== "all"), "w-full px-4")}>
                   <SelectValue placeholder="Availability" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
@@ -388,7 +394,7 @@ const ArtistFilter: React.FC<Props> = ({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className={clsx(triggerBase, "w-full px-4")}>
+                <SelectTrigger className={clsx(trig(sort !== "highest_rated"), "w-full px-4")}>
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className={clsx(contentBase)} position="popper" align="start">
