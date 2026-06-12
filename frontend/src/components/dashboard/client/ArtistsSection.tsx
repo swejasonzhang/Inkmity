@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import ArtistCard from "./ArtistCard";
 import ArtistFilter from "./ArtistFilter";
 import { ArtistCardSkeleton } from "./ArtistCardSkeleton";
 import LazyReveal from "@/components/ui/LazyReveal";
-import { motion } from "framer-motion";
+import HScroll from "@/components/ui/HScroll";
 import { Search } from "lucide-react";
 import type { Artist } from "@/api";
 
@@ -16,6 +15,8 @@ type Props = {
 };
 
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const OTHER_STYLE = "Other styles";
 
 const EmptyArtists = () => (
     <div className="h-full w-full grid place-items-center p-6">
@@ -60,6 +61,78 @@ const matchesExperience = (years: number | undefined, filter: string) => {
     if (filter === "professional") return years >= 6 && years <= 10;
     if (filter === "veteran") return years >= 10;
     return true;
+};
+
+// Image-forward card for the style carousels: leads with the artist's featured
+// work, then name + styles. Falls back gracefully when there are no images.
+const ArtistCarouselCard = ({ artist, onClick }: { artist: any; onClick: () => void }) => {
+    const featured: string[] = [
+        ...(artist.portfolioImages || []),
+        ...(artist.pastWorks || []),
+        ...(artist.healedWorks || []),
+    ].filter(Boolean).slice(0, 4);
+    const avatar = artist.profileImage || artist.avatarUrl || artist.avatar?.url;
+    const styles: string[] = (Array.isArray(artist.styles) ? artist.styles : []).filter(Boolean).slice(0, 3);
+    const rating = Number(artist.rating ?? 0);
+    const single = featured.length === 1;
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            data-artist-card="true"
+            className="w-full h-full text-left rounded-2xl border border-app bg-card overflow-hidden flex flex-col group transition hover:border-app/80"
+            aria-label={`View ${artist.username}`}
+        >
+            <div
+                className={`relative w-full aspect-[4/3] bg-elevated grid gap-0.5 ${single ? "grid-cols-1" : "grid-cols-2 grid-rows-2"}`}
+            >
+                {featured.length > 0 ? (
+                    featured.map((src, i) => (
+                        <div key={i} className="relative overflow-hidden">
+                            <img
+                                src={src}
+                                alt={`${artist.username} work ${i + 1}`}
+                                loading="lazy"
+                                decoding="async"
+                                referrerPolicy="no-referrer"
+                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                            />
+                        </div>
+                    ))
+                ) : (
+                    <div className="grid place-items-center text-subtle text-xs">No work yet</div>
+                )}
+            </div>
+
+            <div className="flex-1 min-h-0 p-3 flex flex-col gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <span className="grid place-items-center h-8 w-8 shrink-0 rounded-full border border-app bg-elevated overflow-hidden text-xs font-bold">
+                        {avatar ? (
+                            <img src={avatar} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                            (artist.username?.[0] || "A").toUpperCase()
+                        )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold leading-tight">{artist.username}</span>
+                        {rating > 0 && (
+                            <span className="text-[11px] text-subtle">★ {rating.toFixed(1)}{artist.reviewsCount ? ` (${artist.reviewsCount})` : ""}</span>
+                        )}
+                    </span>
+                </div>
+                {styles.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-auto">
+                        {styles.map((s) => (
+                            <span key={s} className="rounded-full border border-app/50 bg-elevated px-2 py-0.5 text-[10px] text-subtle">
+                                {cap(s)}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </button>
+    );
 };
 
 export default function ArtistsSection({
@@ -219,8 +292,21 @@ export default function ArtistsSection({
         return list;
     }, [artists, priceFilter, locationFilter, styleFilter, debouncedSearch, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort]);
 
-    // All artists scroll in a single feed now — no pagination slicing.
-    const listItems = filtered;
+    // Group artists into a section per style (an artist can appear in several).
+    const sections = useMemo(() => {
+        const map = new Map<string, Artist[]>();
+        for (const a of filtered) {
+            const styles = (Array.isArray((a as any).styles) ? (a as any).styles : []).filter(Boolean);
+            const keys = styles.length ? styles.map((s: string) => cap(s)) : [OTHER_STYLE];
+            for (const s of keys) {
+                if (!map.has(s)) map.set(s, []);
+                map.get(s)!.push(a);
+            }
+        }
+        return [...map.entries()]
+            .sort((a, b) => (a[0] === OTHER_STYLE ? 1 : b[0] === OTHER_STYLE ? -1 : a[0].localeCompare(b[0])))
+            .map(([style, list]) => ({ style, items: list }));
+    }, [filtered]);
     const isCenterLoading = loading || !showArtists;
 
     const handleGridPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -248,82 +334,6 @@ export default function ArtistsSection({
             md.removeEventListener?.("change", onChange);
         };
     }, []);
-
-    const mobileListRef = useRef<HTMLDivElement | null>(null);
-    const lastTouchYRef = useRef<number | null>(null);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const lastIndex = Math.max(0, filtered.length - 1);
-
-    const handleMobileScroll = () => {
-        const el = mobileListRef.current;
-        if (!el) return;
-        const h = el.clientHeight || 1;
-        const idx = Math.round(el.scrollTop / h);
-        const clampedIdx = Math.max(0, Math.min(idx, lastIndex));
-        setCurrentIndex(clampedIdx);
-        const maxTop = lastIndex * h;
-        if (clampedIdx >= lastIndex && el.scrollTop > maxTop) {
-            el.scrollTop = maxTop;
-        }
-    };
-
-    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-        lastTouchYRef.current = e.touches[0]?.clientY ?? null;
-    };
-
-    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-        const el = mobileListRef.current;
-        if (!el) return;
-        const lastY = lastTouchYRef.current;
-        const y = e.touches[0]?.clientY ?? null;
-        if (lastY == null || y == null) return;
-        const dy = y - lastY;
-        const atLast = currentIndex >= lastIndex;
-        if (atLast && dy < 0) {
-            e.preventDefault();
-            e.stopPropagation();
-            const h = el.clientHeight || 1;
-            el.scrollTop = lastIndex * h;
-        }
-    };
-
-    const scrollToIndex = (index: number) => {
-        const el = mobileListRef.current;
-        if (!el) return;
-        const h = el.clientHeight || 1;
-        const targetIndex = Math.max(0, Math.min(index, lastIndex));
-        el.scrollTo({ top: targetIndex * h, behavior: "smooth" });
-        setCurrentIndex(targetIndex);
-    };
-
-    const handlePrev = () => {
-        if (currentIndex > 0) {
-            scrollToIndex(currentIndex - 1);
-        }
-    };
-
-    const handleNext = () => {
-        if (currentIndex < lastIndex) {
-            scrollToIndex(currentIndex + 1);
-        }
-    };
-
-    useEffect(() => {
-        if (isMdUp) return;
-        window.dispatchEvent(new CustomEvent("inkmity:artist-pager", { detail: { index: currentIndex, total: lastIndex + 1 } }));
-    }, [currentIndex, lastIndex, isMdUp]);
-
-    useEffect(() => {
-        if (isMdUp) return;
-        const onNav = (e: Event) => {
-            const dir = (e as CustomEvent).detail?.dir;
-            if (dir === "next") handleNext();
-            else if (dir === "prev") handlePrev();
-        };
-        window.addEventListener("inkmity:artist-nav", onNav);
-        return () => window.removeEventListener("inkmity:artist-nav", onNav);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isMdUp, currentIndex, lastIndex]);
 
     return (
         <div className={`${isMdUp ? "grid grid-rows-[auto,1fr]" : "flex flex-col"} h-full min-h-0 w-full`}>
@@ -399,61 +409,32 @@ export default function ArtistsSection({
                         </div>
                     }
                 >
-                    <div className="md:hidden h-full w-full relative" style={{ height: "100%" }}>
-                        {listItems.length > 0 ? (
-                            <>
-                                <div
-                                    ref={mobileListRef}
-                                    className="h-full min-h-0 w-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
-                                    style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", height: "100%" }}
-                                    onScroll={handleMobileScroll}
-                                    onTouchStart={handleTouchStart}
-                                    onTouchMove={handleTouchMove}
-                                >
-                                    {listItems.map((artist, index) => (
-                                        <div
-                                            key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                            className="snap-start snap-always h-full w-full flex items-center justify-center"
-                                            style={{ height: "100%", minHeight: "100%", scrollSnapStop: "always", scrollSnapAlign: "center" }}
-                                        >
-                                            <ArtistCard artist={artist as any} onClick={() => onSelectArtist(artist)} fullScreen />
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
+                    <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-0.5 sm:px-1 py-2">
+                        {sections.length === 0 ? (
                             <EmptyArtists />
-                        )}
-                    </div>
-
-                    <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto py-1.5 sm:py-2">
-                        {filtered.length > 0 ? (
-                            <div
-                                className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
-                                style={{
-                                    gap: 'clamp(0.5rem, 0.8vmin + 0.4vw, 1rem)',
-                                    padding: '0',
-                                    gridAutoRows: 'clamp(20rem, 14vh + 14rem, 25rem)',
-                                    alignContent: 'start',
-                                }}
-                            >
-                                {filtered.map((artist, index) => (
-                                    <motion.div
-                                        key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="w-full h-full"
-                                        style={{ minHeight: 0, display: 'flex' }}
-                                    >
-                                        <div className="w-full h-full flex" data-artist-card="true" style={{ minHeight: 0 }}>
-                                            <ArtistCard artist={{ ...(artist as any), images: (artist as any).portfolioImages || [] } as any} onClick={() => onSelectArtist(artist)} />
+                        ) : (
+                            <div className="space-y-7 sm:space-y-8 pb-4">
+                                {sections.map(({ style, items }) => (
+                                    <section key={style}>
+                                        <div className="mb-2.5 flex items-baseline justify-between gap-3 px-1">
+                                            <h2 className="text-base sm:text-lg font-bold tracking-tight">{style}</h2>
+                                            <span className="text-xs text-subtle">
+                                                {items.length} {items.length === 1 ? "artist" : "artists"}
+                                            </span>
                                         </div>
-                                    </motion.div>
+                                        <HScroll>
+                                            {items.map((artist, index) => (
+                                                <div
+                                                    key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                                                    className="snap-start shrink-0 w-56 sm:w-60 md:w-64 h-[19rem] sm:h-[20rem]"
+                                                >
+                                                    <ArtistCarouselCard artist={artist} onClick={() => onSelectArtist(artist)} />
+                                                </div>
+                                            ))}
+                                        </HScroll>
+                                    </section>
                                 ))}
                             </div>
-                        ) : (
-                            <EmptyArtists />
                         )}
                     </div>
                 </LazyReveal>
