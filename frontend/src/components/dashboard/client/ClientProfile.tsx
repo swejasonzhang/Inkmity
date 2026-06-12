@@ -449,28 +449,37 @@ export default function ClientProfile() {
     const budgetMin = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
 
+    // Resolve a stored value back to its canonical option (case-insensitive),
+    // falling back to "none" so the trigger always shows the placeholder.
+    const optValue = (opts: string[], v?: string) =>
+        opts.find((o) => o.toLowerCase() === (v || "").toLowerCase()) ?? "none";
+    const placementValue = optValue(PLACEMENT_OPTIONS, currentPlacement);
+    const pieceTypeValue = optValue(PIECE_TYPE_OPTIONS, currentPieceType);
+
     const messagePlaceholder = useMemo(() => {
-        const named = (v?: string) => !!v && v !== "none";
-        const sizeLabel = SIZE_OPTIONS.find((s) => s.value === currentSize)?.label;
+        const named = (v: string) => !!v && v !== "none";
+        const article = (w: string) => (/^[aeiou]/i.test(w.trim()) ? "an" : "a");
+        const sizePhrase: Record<string, string> = {
+            tiny: "a tiny piece",
+            small: "a small piece",
+            medium: "a medium-sized piece",
+            large: "a large piece",
+            xl: "a large piece",
+            xxl: "a large piece",
+        };
         const parts = ["Hi! I'm interested in getting a tattoo."];
         if (currentReferences.length > 0)
-            parts.push("I've attached some reference images that show the style and vibe I'm going for.");
-        parts.push(`My budget is around $${budgetMin}-$${budgetMax}.`);
-        if (loc) parts.push(`I'm located in ${loc}.`);
-        parts.push(
-            named(currentPieceType)
-                ? `I'm looking at a ${currentPieceType.toLowerCase()}.`
-                : "I'm still open on the type of piece."
-        );
-        parts.push(
-            named(currentPlacement)
-                ? `I'd like it on my ${currentPlacement.toLowerCase()}.`
-                : "I don't have a placement in mind yet."
-        );
-        parts.push(sizeLabel ? `I'm thinking ${sizeLabel.toLowerCase()}.` : "I'm still figuring out the size.");
+            parts.push("I've attached a few references that show the style and vibe I'm going for.");
+        parts.push(`My budget is around $${budgetMin}–$${budgetMax}.`);
+        if (named(pieceTypeValue))
+            parts.push(`I'm interested in ${article(pieceTypeValue)} ${pieceTypeValue.toLowerCase()}.`);
+        if (named(placementValue))
+            parts.push(`I'd like it on my ${placementValue.toLowerCase()}.`);
+        if (sizePhrase[currentSize])
+            parts.push(`I'm thinking ${sizePhrase[currentSize]}.`);
         parts.push("Let me know if you're available and interested!");
         return parts.join(" ");
-    }, [budgetMin, budgetMax, loc, currentPieceType, currentPlacement, currentSize, currentReferences.length]);
+    }, [budgetMin, budgetMax, pieceTypeValue, placementValue, currentSize, currentReferences.length]);
 
     useEffect(() => {
         const textarea = messageTextareaRef.current;
@@ -684,7 +693,7 @@ export default function ClientProfile() {
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, location: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
+                                                    className="relative justify-center h-11 bg-elevated border-app rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>svg]:absolute [&>svg]:right-2.5 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:size-3 [&>svg]:opacity-60 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
@@ -703,11 +712,10 @@ export default function ClientProfile() {
                                                             alignItems: "center",
                                                             justifyContent: "center",
                                                             margin: 0,
-                                                            padding: 0,
-                                                            paddingLeft: "0.5rem",
-                                                            paddingRight: "0",
+                                                            paddingLeft: "1.25rem",
+                                                            paddingRight: "1.25rem",
                                                             width: "100%",
-                                                            fontSize: "12px",
+                                                            fontSize: "clamp(11px, 2.8vw, 13px)",
                                                             overflow: "hidden",
                                                             textOverflow: "ellipsis"
                                                         }}
@@ -728,11 +736,11 @@ export default function ClientProfile() {
                                         </Label>
                                         <div className="w-full">
                                             <Select
-                                                value={currentPieceType || "none"}
+                                                value={pieceTypeValue}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, pieceType: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
+                                                    className="relative justify-center h-11 bg-elevated border-app rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>svg]:absolute [&>svg]:right-2.5 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:size-3 [&>svg]:opacity-60 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
@@ -751,11 +759,10 @@ export default function ClientProfile() {
                                                             alignItems: "center",
                                                             justifyContent: "center",
                                                             margin: 0,
-                                                            padding: 0,
-                                                            paddingLeft: "0.5rem",
-                                                            paddingRight: "0",
+                                                            paddingLeft: "1.25rem",
+                                                            paddingRight: "1.25rem",
                                                             width: "100%",
-                                                            fontSize: "12px",
+                                                            fontSize: "clamp(11px, 2.8vw, 13px)",
                                                             overflow: "hidden",
                                                             textOverflow: "ellipsis"
                                                         }}
@@ -777,11 +784,11 @@ export default function ClientProfile() {
                                         </Label>
                                         <div className="w-full">
                                             <Select
-                                                value={currentPlacement || "none"}
+                                                value={placementValue}
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, placement: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
+                                                    className="relative justify-center h-11 bg-elevated border-app rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>svg]:absolute [&>svg]:right-2.5 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:size-3 [&>svg]:opacity-60 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
@@ -800,11 +807,10 @@ export default function ClientProfile() {
                                                             alignItems: "center",
                                                             justifyContent: "center",
                                                             margin: 0,
-                                                            padding: 0,
-                                                            paddingLeft: "0.5rem",
-                                                            paddingRight: "0",
+                                                            paddingLeft: "1.25rem",
+                                                            paddingRight: "1.25rem",
                                                             width: "100%",
-                                                            fontSize: "12px",
+                                                            fontSize: "clamp(11px, 2.8vw, 13px)",
                                                             overflow: "hidden",
                                                             textOverflow: "ellipsis"
                                                         }}
@@ -830,7 +836,7 @@ export default function ClientProfile() {
                                                 onValueChange={(v) => setEditedClient({ ...editedClient, size: v })}
                                             >
                                                 <SelectTrigger
-                                                    className="h-11 bg-elevated border-app text-xs rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>[data-slot='select-icon']]:absolute [&>[data-slot='select-icon']]:right-0.5 [&>[data-slot='select-icon']]:top-1/2 [&>[data-slot='select-icon']]:-translate-y-1/2 [&>[data-slot='select-icon']]:!size-3 [&>[data-slot='select-icon']]:z-10 !gap-0 w-full px-2 overflow-hidden"
+                                                    className="relative justify-center h-11 bg-elevated border-app rounded-lg focus:ring-0 focus:outline-none ring-0 ring-offset-0 focus-visible:ring-0 [&>svg]:absolute [&>svg]:right-2.5 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:size-3 [&>svg]:opacity-60 !gap-0 w-full px-2 overflow-hidden"
                                                     style={{
                                                         display: "flex",
                                                         alignItems: "center",
@@ -849,11 +855,10 @@ export default function ClientProfile() {
                                                             alignItems: "center",
                                                             justifyContent: "center",
                                                             margin: 0,
-                                                            padding: 0,
-                                                            paddingLeft: "0.5rem",
-                                                            paddingRight: "0",
+                                                            paddingLeft: "1.25rem",
+                                                            paddingRight: "1.25rem",
                                                             width: "100%",
-                                                            fontSize: "12px",
+                                                            fontSize: "clamp(11px, 2.8vw, 13px)",
                                                             overflow: "hidden",
                                                             textOverflow: "ellipsis"
                                                         }}
@@ -892,7 +897,7 @@ export default function ClientProfile() {
                                     textarea.style.height = `${Math.max(scrollHeight, minHeight)}px`;
                                 }}
                                 className="w-full bg-[color:var(--elevated)]/50 backdrop-blur-sm border border-[color:var(--border)] rounded-md px-3 py-3 focus:outline-none focus:border-[color:var(--fg)] focus:ring-2 focus:ring-[color:var(--fg)]/20 resize-none overflow-hidden min-h-[100px] text-center"
-                                style={{ color: "var(--fg)", textAlign: "center" }}
+                                style={{ color: "var(--fg)", textAlign: "center", fontSize: "clamp(12px, 3.2vw, 14px)", lineHeight: 1.5 }}
                                 placeholder={messagePlaceholder}
                             />
 
