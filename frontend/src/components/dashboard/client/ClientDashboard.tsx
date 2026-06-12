@@ -268,19 +268,16 @@ export default function ClientDashboard() {
                     </div>
                 </div>
             </main>
-            {
-}
-            <div className="shrink-0" style={{ height: 'calc(44px + clamp(0.625rem, 1vh + 0.5vw, 1.25rem) + env(safe-area-inset-bottom, 0px))' }}>
-                <FloatingBar
-                    role="Client"
-                    onAssistantOpen={() => setAssistantOpen(true)}
-                    messagesContent={<div className="client-dashboard-messages"><ChatWindow currentUserId={user.id} role="client" /></div>}
-                    unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
-                    unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
-                    pendingRequestIds={pendingRequestIds}
-                    pendingRequestsCount={pendingRequestsCount}
-                />
-            </div>
+            {/* Floating bar overlays the full-bleed content (it is position: fixed). */}
+            <FloatingBar
+                role="Client"
+                onAssistantOpen={() => setAssistantOpen(true)}
+                messagesContent={<div className="client-dashboard-messages"><ChatWindow currentUserId={user.id} role="client" /></div>}
+                unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
+                unreadConversationIds={Object.keys(unreadState?.unreadByConversation ?? {})}
+                pendingRequestIds={pendingRequestIds}
+                pendingRequestsCount={pendingRequestsCount}
+            />
 
             <AnimatePresence>
                 {assistantOpen && (

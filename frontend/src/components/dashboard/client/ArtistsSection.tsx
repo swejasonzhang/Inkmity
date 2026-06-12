@@ -414,11 +414,11 @@ export default function ArtistsSection({
                     }
                 >
                     {/* Desktop: vertical scroll of horizontal style carousels */}
-                    <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto px-1 py-2">
+                    <div data-artist-scroll className="hidden md:block h-full min-h-0 overflow-y-auto px-1 pt-2 pb-24">
                         {sections.length === 0 ? (
                             <EmptyArtists />
                         ) : (
-                            <div className="space-y-8 pb-4">
+                            <div className="space-y-8">
                                 {sections.map(({ style, items }) => (
                                     <section key={style}>
                                         <div className="mb-2.5 flex items-baseline justify-between gap-3 px-1">
@@ -466,7 +466,7 @@ export default function ArtistsSection({
                                         {items.map((artist, index) => (
                                             <div
                                                 key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                                                className="snap-start snap-always shrink-0 w-full h-full px-3 pb-3 flex"
+                                                className="snap-start snap-always shrink-0 w-full h-full px-3 pb-16 flex"
                                             >
                                                 <ArtistCarouselCard artist={artist} onClick={() => onSelectArtist(artist)} fill />
                                             </div>
