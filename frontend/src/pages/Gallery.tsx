@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, ImageIcon, Bot, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Sparkles, ImageIcon, Bot, ShieldCheck } from "lucide-react";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
+import HScroll from "@/components/ui/HScroll";
 import { fetchArtists, type Artist } from "@/api";
 
 type WorkCategory = "Portfolio" | "Past work" | "Healed";
@@ -19,12 +20,12 @@ type GalleryItem = {
 type TabKey = "real" | "ai";
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const OTHER = "Other styles";
 
 const Gallery: React.FC = () => {
   const [tab, setTab] = useState<TabKey>("real");
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [healedOnly, setHealedOnly] = useState(false);
 
   useEffect(() => {
@@ -66,25 +67,25 @@ const Gallery: React.FC = () => {
     { key: "ai", label: "AI Inspiration", Icon: Bot },
   ];
 
-  const allStyles = useMemo(
-    () => Array.from(new Set(items.flatMap((i) => i.styles))).sort((a, b) => a.localeCompare(b)),
-    [items]
-  );
   const filtered = useMemo(
-    () =>
-      items.filter(
-        (i) =>
-          (selectedStyles.length === 0 || i.styles.some((s) => selectedStyles.includes(s))) &&
-          (!healedOnly || i.category === "Healed")
-      ),
-    [items, selectedStyles, healedOnly]
+    () => items.filter((i) => !healedOnly || i.category === "Healed"),
+    [items, healedOnly]
   );
-  const toggleStyle = (s: string) =>
-    setSelectedStyles((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
-  const clearFilters = () => {
-    setSelectedStyles([]);
-    setHealedOnly(false);
-  };
+
+  // Group images into a section per style (an image can appear in several).
+  const sections = useMemo(() => {
+    const map = new Map<string, GalleryItem[]>();
+    for (const it of filtered) {
+      const keys = it.styles.length ? it.styles.map(cap) : [OTHER];
+      for (const s of keys) {
+        if (!map.has(s)) map.set(s, []);
+        map.get(s)!.push(it);
+      }
+    }
+    return [...map.entries()]
+      .sort((a, b) => (a[0] === OTHER ? 1 : b[0] === OTHER ? -1 : a[0].localeCompare(b[0])))
+      .map(([style, list]) => ({ style, items: list }));
+  }, [filtered]);
 
   return (
     <div id="dashboard-scope" className="ink-scope theme-smooth h-svh ink-page-scroll overflow-x-hidden bg-app text-app">
@@ -103,12 +104,11 @@ const Gallery: React.FC = () => {
           </div>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight">Explore</h1>
           <p className="mt-2 text-sm text-subtle leading-relaxed">
-            Browse real tattoo artistry from the Inkmity community. Tap any piece to open the
-            artist's portfolio and book them.
+            Browse real tattoo artistry by style. Tap any piece to open the artist's portfolio and book them.
           </p>
         </motion.div>
 
-        <div className="mt-6 flex items-center justify-center gap-2">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
           {tabs.map(({ key, label, Icon }) => {
             const active = tab === key;
             return (
@@ -128,118 +128,78 @@ const Gallery: React.FC = () => {
               </button>
             );
           })}
+          {tab === "real" && !loading && items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setHealedOnly((v) => !v)}
+              aria-pressed={healedOnly}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition ${
+                healedOnly
+                  ? "bg-neutral-700 text-white border-transparent"
+                  : "border-app/40 bg-elevated text-subtle hover:text-app"
+              }`}
+            >
+              Healed only
+            </button>
+          )}
         </div>
 
         <div className="mt-8">
-          {tab === "real" ? (
-            <>
-              {!loading && items.length > 0 && (
-                <FilterBar
-                  allStyles={allStyles}
-                  selectedStyles={selectedStyles}
-                  onToggleStyle={toggleStyle}
-                  healedOnly={healedOnly}
-                  onToggleHealed={() => setHealedOnly((v) => !v)}
-                  onClear={clearFilters}
-                  resultCount={filtered.length}
-                />
-              )}
-              {!loading && items.length > 0 && filtered.length === 0 ? (
-                <EmptyState
-                  Icon={ImageIcon}
-                  title="No matches"
-                  body="No pieces match these filters yet. Try removing a filter or two."
-                />
-              ) : (
-                <RealWork items={filtered} loading={loading} />
-              )}
-            </>
-          ) : (
-            <AiInspiration />
-          )}
+          {tab === "real" ? <RealWork sections={sections} loading={loading} hasItems={items.length > 0} /> : <AiInspiration />}
         </div>
       </main>
     </div>
   );
 };
 
-const Chip: React.FC<{ active: boolean; label: string; onClick: () => void }> = ({ active, label, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-pressed={active}
-    className={`rounded-full px-3 py-1.5 text-xs font-medium border transition ${
-      active
-        ? "bg-neutral-700 text-white border-transparent"
-        : "border-app/40 bg-elevated text-subtle hover:text-app"
-    }`}
-  >
-    {label}
-  </button>
-);
-
-const FilterBar: React.FC<{
-  allStyles: string[];
-  selectedStyles: string[];
-  onToggleStyle: (s: string) => void;
-  healedOnly: boolean;
-  onToggleHealed: () => void;
-  onClear: () => void;
-  resultCount: number;
-}> = ({ allStyles, selectedStyles, onToggleStyle, healedOnly, onToggleHealed, onClear, resultCount }) => {
-  const hasFilters = selectedStyles.length > 0 || healedOnly;
-  return (
-    <div className="mb-6 rounded-2xl border border-app bg-card/70 p-3 sm:p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-subtle">
-          <SlidersHorizontal className="h-3.5 w-3.5" /> Filter
-        </span>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-subtle">
-            {resultCount} {resultCount === 1 ? "piece" : "pieces"}
-          </span>
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-xs text-subtle underline underline-offset-2 hover:text-app"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Chip active={healedOnly} onClick={onToggleHealed} label="Healed only" />
-        {allStyles.map((s) => (
-          <Chip key={s} active={selectedStyles.includes(s)} onClick={() => onToggleStyle(s)} label={cap(s)} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const RealWork: React.FC<{ items: GalleryItem[]; loading: boolean }> = ({ items, loading }) => {
+const RealWork: React.FC<{
+  sections: { style: string; items: GalleryItem[] }[];
+  loading: boolean;
+  hasItems: boolean;
+}> = ({ sections, loading, hasItems }) => {
   const skeleton = (
-    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
-      {Array.from({ length: 24 }).map((_, i) => (
-        <div key={i} className="aspect-square w-full rounded-xl ink-shimmer" />
+    <div className="space-y-8">
+      {Array.from({ length: 3 }).map((_, s) => (
+        <div key={s}>
+          <div className="ink-shimmer h-5 w-40 rounded mb-3" />
+          <div className="flex gap-3 overflow-hidden">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="shrink-0 w-40 sm:w-48 aspect-square rounded-xl ink-shimmer" />
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
 
   return (
     <LazyReveal loading={loading} skeleton={skeleton}>
-      {items.length === 0 ? (
+      {!hasItems || sections.length === 0 ? (
         <EmptyState
           Icon={ImageIcon}
-          title="No artwork yet"
-          body="As artists publish their portfolios, their stencils and finished tattoos will show up here."
+          title={hasItems ? "No matches" : "No artwork yet"}
+          body={
+            hasItems
+              ? "No healed pieces to show yet. Turn off the filter to see everything."
+              : "As artists publish their portfolios, their stencils and finished tattoos will show up here, grouped by style."
+          }
         />
       ) : (
-        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
-          {items.map((item, i) => (
-            <GalleryTile key={`${item.url}-${i}`} item={item} index={i} />
+        <div className="space-y-9">
+          {sections.map(({ style, items }) => (
+            <section key={style}>
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h2 className="text-lg font-bold tracking-tight">{style}</h2>
+                <span className="text-xs text-subtle">
+                  {items.length} {items.length === 1 ? "piece" : "pieces"}
+                </span>
+              </div>
+              <HScroll>
+                {items.map((item, i) => (
+                  <GalleryTile key={`${style}-${item.url}-${i}`} item={item} />
+                ))}
+              </HScroll>
+            </section>
           ))}
         </div>
       )}
@@ -247,20 +207,16 @@ const RealWork: React.FC<{ items: GalleryItem[]; loading: boolean }> = ({ items,
   );
 };
 
-const GalleryTile: React.FC<{ item: GalleryItem; index: number }> = ({ item, index }) => {
+const GalleryTile: React.FC<{ item: GalleryItem }> = ({ item }) => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={() => navigate(`/artist/${encodeURIComponent(item.handle)}`)}
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-      transition={{ duration: 0.35, delay: Math.min(index * 0.015, 0.25) }}
       aria-label={`View ${item.artist}'s portfolio`}
-      className="block w-full aspect-square relative overflow-hidden rounded-xl border border-app bg-card group cursor-pointer"
+      className="snap-start shrink-0 w-40 sm:w-48 aspect-square relative overflow-hidden rounded-xl border border-app bg-card group cursor-pointer"
     >
       {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
       <img
@@ -270,12 +226,12 @@ const GalleryTile: React.FC<{ item: GalleryItem; index: number }> = ({ item, ind
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${loaded ? "ink-fade-in" : "opacity-0"}`}
+        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05] ${loaded ? "ink-fade-in" : "opacity-0"}`}
       />
       <figcaption className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white text-left">
         @{item.artist} · View portfolio
       </figcaption>
-    </motion.button>
+    </button>
   );
 };
 
