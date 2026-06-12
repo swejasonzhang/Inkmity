@@ -386,14 +386,14 @@ export default function ArtistsSection({
                             <p className="mt-4 text-sm sm:text-base text-subtle max-w-xl mx-auto leading-relaxed">
                                 Browse by style — from bold blackwork to delicate fine line — and book the artist who brings your vision to skin.
                             </p>
-                            <p className="mt-6 inline-flex items-center gap-1.5 text-xs text-subtle">
-                                <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
-                                Scroll to explore every style
-                            </p>
                         </header>
-                        <div className="sticky top-0 z-20 -mx-1 px-1 py-2.5 mb-5 bg-[color:var(--bg)]/85 backdrop-blur-md">
+                        <div className="sticky top-0 z-20 -mx-1 px-1 py-2.5 bg-[color:var(--bg)]/85 backdrop-blur-md">
                             {filterNode}
                         </div>
+                        <p className="flex items-center justify-center gap-1.5 text-xs text-subtle mt-3 mb-6">
+                            <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
+                            Scroll to explore every style
+                        </p>
                         {sections.length === 0 ? (
                             <EmptyArtists />
                         ) : (
