@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 import { Award } from "lucide-react";
-import { getMyRewards, type RewardsSummary } from "@/api";
+import { getMyRewards, formatPlatformFee, type RewardsSummary } from "@/api";
 
 const pillStyle: React.CSSProperties = {
   borderColor: "var(--border)",
@@ -10,10 +10,6 @@ const pillStyle: React.CSSProperties = {
     "linear-gradient(135deg, color-mix(in srgb, var(--elevated) 95%, var(--fg) 5%), color-mix(in srgb, var(--elevated) 85%, var(--fg) 15%))",
   color: "var(--fg)",
 };
-
-function pctLabel(p: number) {
-  return `${((p * 100) % 1 === 0 ? (p * 100).toFixed(0) : (p * 100).toFixed(1))}%`;
-}
 
 const SHIMMER_MS = 2000;
 
@@ -66,9 +62,10 @@ export default function HeaderRewards() {
   if (!data) return null;
 
   const next = data.nextTier;
+  const fee = formatPlatformFee(data.platformFee);
   const title = next
-    ? `${data.tier.label} • ${pctLabel(data.currentFeePct)} platform fee\n${next.bookingsToNextTier} more booking(s) → ${next.label} (${pctLabel(next.feePct)})`
-    : `${data.tier.label} • ${pctLabel(data.currentFeePct)} platform fee — top tier reached`;
+    ? `${data.tier.label} • ${fee.full} platform fee\n${next.bookingsToNextTier} more booking(s) → ${next.label}`
+    : `${data.tier.label} • ${fee.full} platform fee — top tier reached`;
 
   return (
     <Link
@@ -76,7 +73,7 @@ export default function HeaderRewards() {
       className="hidden md:flex items-center gap-2 rounded-full border h-11 md:h-12 px-4 min-w-[128px] flex-shrink-0 transition hover:brightness-110"
       style={pillStyle}
       title={title}
-      aria-label={`Rewards tier ${data.tier.label}, ${pctLabel(data.currentFeePct)} platform fee`}
+      aria-label={`Rewards tier ${data.tier.label}, ${fee.full} platform fee`}
     >
       <Award className="h-4 w-4" />
       <div className="flex flex-col leading-none">
@@ -84,7 +81,7 @@ export default function HeaderRewards() {
           {data.tier.label}
         </span>
         <span className="text-[9px] lg:text-[10px] opacity-70 leading-tight">
-          {pctLabel(data.currentFeePct)} fee
+          {fee.short} fee
         </span>
       </div>
     </Link>

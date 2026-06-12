@@ -830,20 +830,29 @@ export async function startStudioConnectOnboarding(
   );
 }
 
+export type PlatformFee = { baseCents: number; pct: number; capCents: number };
+
 export type RewardsSummary = {
   completedBookings: number;
-  tier: { key: string; label: string; feePct: number };
+  tier: { key: string; label: string };
   nextTier: {
     key: string;
     label: string;
-    feePct: number;
     bookingsToNextTier: number;
   } | null;
-  currentFeePct: number;
-  platformFeeMinCents: number;
+  platformFee: PlatformFee;
   totalFeesPaidCents: number;
   lifetimeDiscountUsd: number;
 };
+
+// Single source of truth for how the platform fee reads in the UI.
+export function formatPlatformFee(f?: PlatformFee | null) {
+  const base = `$${Math.round((f?.baseCents ?? 0) / 100)}`;
+  const pctNum = (f?.pct ?? 0) * 100;
+  const pct = `${Number.isInteger(pctNum) ? pctNum : pctNum.toFixed(1)}%`;
+  const cap = `$${Math.round((f?.capCents ?? 0) / 100)}`;
+  return { base, pct, cap, short: `${base} + ${pct}`, full: `${base} + ${pct}, max ${cap}` };
+}
 
 export async function getMyRewards(token?: string | null, signal?: AbortSignal) {
   return apiGet<RewardsSummary>("/rewards/me", undefined, token, signal);

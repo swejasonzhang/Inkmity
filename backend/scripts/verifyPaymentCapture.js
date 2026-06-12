@@ -21,7 +21,6 @@ import "../models/Client.js";
 import "../models/StudioAccount.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
 import { computeArtistStudioSplit } from "../services/studioService.js";
-import { getEffectiveFeePct } from "../services/rewardsService.js";
 import { computePlatformFeeCents } from "../lib/fees.js";
 import { config } from "../config/index.js";
 
@@ -84,8 +83,7 @@ async function main() {
   console.log(`Booking: ${booking._id} (price $${(PRICE_CENTS / 100).toFixed(2)})\n`);
 
   // 3. Expected split.
-  const pct = await getEffectiveFeePct(CLIENT_ID);
-  const expectedFee = computePlatformFeeCents(PRICE_CENTS, pct, config.platformFee.minCents);
+  const expectedFee = computePlatformFeeCents(PRICE_CENTS, config.platformFee);
   const split = await computeArtistStudioSplit(ARTIST_ID, PRICE_CENTS);
   console.log("Expected:");
   console.log(`  fee=$${(expectedFee / 100).toFixed(2)} | client charged=$${((PRICE_CENTS + expectedFee) / 100).toFixed(2)}`);

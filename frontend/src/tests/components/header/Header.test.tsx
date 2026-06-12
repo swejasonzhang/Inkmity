@@ -35,10 +35,11 @@ jest.unstable_mockModule("@/api", () => ({
   getMe: jest.fn<() => Promise<any>>().mockResolvedValue({ role: "client" }),
   getMyRewards: jest.fn<() => Promise<any>>().mockResolvedValue({
     tier: { key: "bronze", label: "Bronze" },
-    currentFeePct: 0.1,
+    platformFee: { baseCents: 1000, pct: 0.05, capCents: 5000 },
     completedBookings: 0,
     nextTier: null,
   }),
+  formatPlatformFee: () => ({ base: "$10", pct: "5%", cap: "$50", short: "$10 + 5%", full: "$10 + 5%, max $50" }),
   apiGet: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiPost: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiRequest: jest.fn<() => Promise<any>>().mockResolvedValue({}),
