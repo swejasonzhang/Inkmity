@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import ArtistFilter from "./ArtistFilter";
 import LazyReveal from "@/components/ui/LazyReveal";
 import HScroll from "@/components/ui/HScroll";
-import { Search } from "lucide-react";
+import { Search, ChevronsDown } from "lucide-react";
 import type { Artist } from "@/api";
 
 type Props = {
@@ -419,6 +419,10 @@ export default function ArtistsSection({
                             <EmptyArtists />
                         ) : (
                             <div className="space-y-8">
+                                <p className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-subtle">
+                                    <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
+                                    Scroll to view our artists across different styles
+                                </p>
                                 {sections.map(({ style, items }) => (
                                     <section key={style}>
                                         <div className="mb-2.5 flex items-baseline justify-between gap-3 px-1">
