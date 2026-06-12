@@ -2,11 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { Award, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { getMyRewards, type RewardsSummary } from "@/api";
-
-function pctLabel(p: number) {
-  return `${(p * 100).toFixed((p * 100) % 1 === 0 ? 0 : 1)}%`;
-}
+import { getMyRewards, formatPlatformFee, type RewardsSummary } from "@/api";
 
 type Props = {
   className?: string;
@@ -36,7 +32,8 @@ export default function RewardsPanel({ className = "", data: dataProp }: Props) 
   const data = controlled ? dataProp : fetched;
   if ((!controlled && loading) || !data || !data.tier) return null;
 
-  const { tier, nextTier, completedBookings, currentFeePct } = data;
+  const { tier, nextTier, completedBookings, platformFee } = data;
+  const fee = formatPlatformFee(platformFee);
 
   let progress = 100;
   if (nextTier) {
@@ -59,8 +56,8 @@ export default function RewardsPanel({ className = "", data: dataProp }: Props) 
       </div>
 
       <div className="mt-3 flex items-baseline justify-between gap-2">
-        <span className="text-xs text-subtle">Your platform fee</span>
-        <span className="text-lg font-bold text-app">{pctLabel(currentFeePct)}</span>
+        <span className="text-xs text-subtle">Platform fee</span>
+        <span className="text-lg font-bold text-app">{fee.short}<span className="text-xs font-normal text-subtle"> · max {fee.cap}</span></span>
       </div>
 
       <p className="mt-1 text-xs text-subtle">
@@ -73,12 +70,12 @@ export default function RewardsPanel({ className = "", data: dataProp }: Props) 
           <p className="mt-2 text-xs text-subtle flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 shrink-0" />
             {nextTier.bookingsToNextTier} more booking{nextTier.bookingsToNextTier === 1 ? "" : "s"} to{" "}
-            <span className="text-app font-semibold">{nextTier.label}</span> ({pctLabel(nextTier.feePct)} fee)
+            <span className="text-app font-semibold">{nextTier.label}</span>
           </p>
         </div>
       ) : (
         <p className="mt-3 text-xs text-subtle flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 shrink-0" /> You've reached the top tier — best rate unlocked.
+          <Sparkles className="h-3.5 w-3.5 shrink-0" /> You've reached the top tier — all perks unlocked.
         </p>
       )}
     </div>

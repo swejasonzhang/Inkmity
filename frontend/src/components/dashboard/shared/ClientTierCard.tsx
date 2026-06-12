@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { Award, ArrowRight } from "lucide-react";
-import { getMyRewards, type RewardsSummary } from "@/api";
+import { getMyRewards, formatPlatformFee, type RewardsSummary } from "@/api";
 
-const pct = (p: number) => `${((p * 100) % 1 === 0 ? (p * 100).toFixed(0) : (p * 100).toFixed(1))}%`;
-
-// Shows the client their live reward tier, the platform fee it earns them, and how
-// close they are to the next tier. Self-contained — fetches its own rewards summary.
+// Shows the client their live reward tier, the platform fee, and how close they
+// are to the next tier. Self-contained — fetches its own rewards summary.
 export default function ClientTierCard({ className = "" }: { className?: string }) {
   const { getToken } = useAuth();
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
@@ -25,7 +23,8 @@ export default function ClientTierCard({ className = "" }: { className?: string 
 
   if (!rewards) return null;
 
-  const { tier, nextTier, currentFeePct, completedBookings, lifetimeDiscountUsd } = rewards;
+  const { tier, nextTier, platformFee, completedBookings, lifetimeDiscountUsd } = rewards;
+  const fee = formatPlatformFee(platformFee);
   const progress =
     nextTier && nextTier.bookingsToNextTier > 0
       ? Math.max(0, Math.min(1, completedBookings / (completedBookings + nextTier.bookingsToNextTier)))
@@ -47,8 +46,8 @@ export default function ClientTierCard({ className = "" }: { className?: string 
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-xl font-extrabold leading-none">{pct(currentFeePct)}</div>
-          <div className="text-[11px]" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>platform fee</div>
+          <div className="text-lg font-extrabold leading-none">{fee.short}</div>
+          <div className="text-[11px]" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>platform fee · max {fee.cap}</div>
         </div>
       </div>
 
@@ -57,9 +56,8 @@ export default function ClientTierCard({ className = "" }: { className?: string 
           <div className="flex items-center justify-between text-[11px] mb-1.5" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
             <span>{completedBookings} booking{completedBookings === 1 ? "" : "s"}</span>
             <span className="inline-flex items-center gap-1">
-              {nextTier.bookingsToNextTier} to {nextTier.label}
+              {nextTier.bookingsToNextTier} to <span className="font-semibold" style={{ color: "var(--fg)" }}>{nextTier.label}</span>
               <ArrowRight className="h-3 w-3" />
-              <span className="font-semibold" style={{ color: "var(--fg)" }}>{pct(nextTier.feePct)} fee</span>
             </span>
           </div>
           <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "var(--elevated)" }}>
@@ -68,7 +66,7 @@ export default function ClientTierCard({ className = "" }: { className?: string 
         </div>
       ) : (
         <div className="mt-4 text-[11px]" style={{ color: "color-mix(in srgb, var(--fg) 70%, transparent)" }}>
-          Top tier reached — you're paying the lowest platform fee on Inkmity.
+          Top tier reached — enjoy your loyalty perks.
         </div>
       )}
 

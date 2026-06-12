@@ -7,14 +7,14 @@ import RewardsPanel from "@/components/dashboard/client/RewardsPanel";
 import { useRole } from "@/hooks/useRole";
 import { getMe, getMyRewards, fetchArtistById, type RewardsSummary } from "@/api";
 
-type ClientTier = { key: string; label: string; threshold: number; feePct: number; perks: string[] };
+type ClientTier = { key: string; label: string; threshold: number; perks: string[] };
 type ArtistTier = { key: string; label: string; bookings: number; minRating: number; perks: string[] };
 
 const CLIENT_TIERS: ClientTier[] = [
-  { key: "bronze", label: "Bronze", threshold: 0, feePct: 0.1, perks: ["10% platform fee", "Full marketplace access", "Book & message any artist", "Secure deposit protection"] },
-  { key: "silver", label: "Silver", threshold: 3, feePct: 0.08, perks: ["8% platform fee", "Priority booking support", "Early-bird appointment slots", "Birthday booking credit"] },
-  { key: "gold", label: "Gold", threshold: 8, feePct: 0.06, perks: ["6% platform fee", "Early access to new artists", "Free design consultation", "Priority waitlist placement", "Exclusive flash drops"] },
-  { key: "platinum", label: "Platinum", threshold: 15, feePct: 0.05, perks: ["5% platform fee", "Concierge booking assistance", "Dedicated support line", "First dibs on guest spots", "Annual loyalty credit"] },
+  { key: "bronze", label: "Bronze", threshold: 0, perks: ["Full marketplace access", "Book & message any artist", "Secure deposit protection"] },
+  { key: "silver", label: "Silver", threshold: 3, perks: ["Priority booking support", "Early-bird appointment slots", "Birthday booking credit"] },
+  { key: "gold", label: "Gold", threshold: 8, perks: ["Early access to new artists", "Free design consultation", "Priority waitlist placement", "Exclusive flash drops"] },
+  { key: "platinum", label: "Platinum", threshold: 15, perks: ["Concierge booking assistance", "Dedicated support line", "First dibs on guest spots", "Annual loyalty credit"] },
 ];
 
 const ARTIST_TIERS: ArtistTier[] = [
@@ -28,8 +28,6 @@ const TIER_ICON: Record<string, typeof Award> = {
   bronze: Award, silver: Star, gold: Sparkles, platinum: Crown,
   rising: Award, established: Star, pro: Sparkles, elite: Crown,
 };
-
-const pctLabel = (p: number) => `${((p * 100) % 1 === 0 ? (p * 100).toFixed(0) : (p * 100).toFixed(1))}%`;
 
 const pillStyle: React.CSSProperties = {
   borderColor: "var(--border)",
@@ -86,7 +84,7 @@ export default function Tiers() {
 
   const intro = isArtist
     ? "Grow your reputation on Inkmity. As you complete more bookings and keep your rating high, you unlock better placement, badges, and payout perks."
-    : "Book more sessions to climb the tiers. Each tier lowers the platform fee you pay at checkout — automatically applied to every booking.";
+    : "Book more sessions to climb the tiers and unlock perks like priority support, credits, and early access. Every booking has the same simple fee — $10 + 5%, capped at $50.";
 
   const tiers = useMemo(() => (isArtist ? ARTIST_TIERS : CLIENT_TIERS), [isArtist]);
 
@@ -111,7 +109,7 @@ export default function Tiers() {
               {intro}
             </p>
             <p className="max-w-2xl mx-auto rounded-xl border border-app bg-elevated px-3.5 py-2 text-xs text-subtle">
-              <span className="font-semibold text-app">How Inkmity makes money:</span> one transparent platform fee on completed bookings — shown before you pay. The essentials are always free (including features other platforms paywall); any future subscriptions are optional extras. We only earn when you book.
+              <span className="font-semibold text-app">How Inkmity makes money:</span> one simple platform fee on completed bookings — <span className="font-semibold text-app">$10 + 5% of the price, never more than $50</span> — shown before you pay. The essentials are always free (including features other platforms paywall); any future subscriptions are optional extras. We only earn when you book.
             </p>
             {!isArtist && ready && rewards && (
               <RewardsPanel data={rewards} className="w-full max-w-xl mx-auto mt-2 text-left" />
@@ -153,7 +151,7 @@ export default function Tiers() {
                     </p>
                   ) : (
                     <p className="text-subtle text-sm mt-0.5">
-                      {(t as ClientTier).threshold === 0 ? "Starting tier" : `${(t as ClientTier).threshold}+ bookings`} · <span className="text-app font-semibold">{pctLabel((t as ClientTier).feePct)} fee</span>
+                      {(t as ClientTier).threshold === 0 ? "Starting tier" : `${(t as ClientTier).threshold}+ bookings`}
                     </p>
                   )}
                   <ul className="mt-4 flex flex-col gap-2 text-left mx-auto w-fit">
@@ -172,7 +170,7 @@ export default function Tiers() {
           <p className="text-subtle mt-6 text-center" style={{ fontSize: "clamp(0.75rem, 0.3vw + 0.7rem, 0.85rem)" }}>
             {isArtist
               ? "Tier placement updates automatically as your booking history and rating grow."
-              : "Tier discounts are funded by Inkmity and applied automatically — your artists always receive their full rate."}
+              : "Perks and credits unlock automatically as your booking history grows."}
           </p>
         </div>
       </main>

@@ -5,13 +5,10 @@ import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
 import { sendAppointmentConfirmationEmail } from "../services/emailService.js";
 import { config } from "../config/index.js";
-import {
-  getEffectiveFeePct,
-  recordFeePaid,
-} from "../services/rewardsService.js";
+import { recordFeePaid } from "../services/rewardsService.js";
 import { executePayouts, reversePayouts } from "../services/payoutService.js";
 import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
-import { computePlatformFeeCents } from "../lib/fees.js";
+import { computePlatformFeeCents, estimateStripeFeeCents } from "../lib/fees.js";
 
 function bookingTransferGroup(bookingId) {
   return `booking_${String(bookingId)}`;
@@ -28,10 +25,17 @@ const CURRENCY = config.stripe.currency || "usd";
 async function runPayoutsForBill(bill) {
   if (!bill) return;
   try {
-    const transferable =
+    const gross =
       bill.type === "deposit"
         ? Math.max(0, Number(bill.amountCents || 0) - Number(bill.platformFeeCents || 0))
         : Number(bill.amountCents || 0);
+    // Artist bears card processing: net Stripe's cut out of the payout.
+    const stripeFee = estimateStripeFeeCents(
+      Number(bill.amountCents || 0),
+      config.platformFee.processingPct,
+      config.platformFee.processingFlatCents
+    );
+    const transferable = Math.max(0, gross - stripeFee);
     await executePayouts({
       billing: bill,
       artistId: bill.artistId,
@@ -94,12 +98,7 @@ export async function checkoutDeposit(req, res) {
   }
 
   const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
-  const effectivePct = await getEffectiveFeePct(booking.clientId);
-  const platformFeeCents = computePlatformFeeCents(
-    booking.priceCents,
-    effectivePct,
-    config.platformFee.minCents
-  );
+  const platformFeeCents = computePlatformFeeCents(booking.priceCents, config.platformFee);
 
   let customer;
   try {
@@ -228,12 +227,7 @@ export async function createDepositPaymentIntent(req, res) {
   }
 
   const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
-  const effectivePct = await getEffectiveFeePct(booking.clientId);
-  const platformFeeCents = computePlatformFeeCents(
-    booking.priceCents,
-    effectivePct,
-    config.platformFee.minCents
-  );
+  const platformFeeCents = computePlatformFeeCents(booking.priceCents, config.platformFee);
   const chargeAmount = amount + platformFeeCents;
 
   let customer;
