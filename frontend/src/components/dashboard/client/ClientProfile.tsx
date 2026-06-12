@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
 import { Save, X, Camera, Plus, Trash2, Pencil } from "lucide-react";
@@ -298,7 +299,7 @@ export default function ClientProfile() {
             }
         } catch (error) {
             console.error("Failed to upload image:", error);
-            alert("Failed to upload image. Please try again.");
+            toast.error("Failed to upload image. Please try again.");
         } finally {
             setUploading(false);
         }
@@ -403,7 +404,7 @@ export default function ClientProfile() {
             }
         } catch (error) {
             console.error("Failed to save profile:", error);
-            alert("Failed to save profile. Please try again.");
+            toast.error("Failed to save profile. Please try again.");
         } finally {
             setSaving(false);
         }

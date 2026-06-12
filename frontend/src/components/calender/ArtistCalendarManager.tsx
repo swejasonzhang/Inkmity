@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { toast } from "react-toastify";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
 import { Calendar as CalendarIcon, Clock, Ban } from "lucide-react";
@@ -176,7 +177,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
             }
         } catch (error) {
             console.error("Failed to block time:", error);
-            alert("Failed to block time. Please try again.");
+            toast.error("Failed to block time. Please try again.");
         } finally {
             setSaving(false);
         }
@@ -210,7 +211,7 @@ export default function ArtistCalendarManager({ artistId }: { artistId: string }
             }
         } catch (error) {
             console.error("Failed to block day:", error);
-            alert("Failed to block day. Please try again.");
+            toast.error("Failed to block day. Please try again.");
         } finally {
             setSaving(false);
         }
