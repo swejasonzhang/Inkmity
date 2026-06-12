@@ -29,11 +29,33 @@ async function findClient(clientId) {
   return Client.findOne({ clerkId: String(clientId) });
 }
 
+// Platform fee params for a tier — the flat base is waived at tiers that earn it.
+export function platformFeeForTier(tier) {
+  const { baseCents, pct, capCents } = config.platformFee;
+  return {
+    baseCents: tier?.waivesBaseFee ? 0 : baseCents,
+    pct,
+    capCents,
+    baseFeeWaived: !!tier?.waivesBaseFee,
+  };
+}
+
+// The fee a specific client pays, accounting for their tier's base-fee waiver.
+export async function getClientPlatformFee(clientId) {
+  try {
+    const client = await findClient(clientId);
+    return platformFeeForTier(tierForCount(Number(client?.completedBookingsCount || 0)));
+  } catch {
+    return platformFeeForTier(null);
+  }
+}
+
 export async function getRewardsSummary(clientId) {
   const client = await findClient(clientId);
   const count = Number(client?.completedBookingsCount || 0);
   const tier = tierForCount(count);
   const next = nextTierForCount(count);
+  const fee = platformFeeForTier(tier);
   return {
     completedBookings: count,
     tier: { key: tier.key, label: tier.label },
@@ -44,13 +66,10 @@ export async function getRewardsSummary(clientId) {
           bookingsToNextTier: Math.max(0, next.bookings - count),
         }
       : null,
-    // Fee = base + pct of price, capped (same for every client; tiers are
-    // loyalty perks now). Frontend formats it (e.g. "$10 + 5%, max $50").
-    platformFee: {
-      baseCents: config.platformFee.baseCents,
-      pct: config.platformFee.pct,
-      capCents: config.platformFee.capCents,
-    },
+    // Fee = base + pct of price, capped. The flat base is waived at tiers that
+    // earn it. Frontend formats it (e.g. "$10 + 5%, max $50" or "5%, max $50").
+    platformFee: { baseCents: fee.baseCents, pct: fee.pct, capCents: fee.capCents },
+    baseFeeWaived: fee.baseFeeWaived,
     totalFeesPaidCents: Math.round(Number(client?.totalFeesPaid || 0)),
     lifetimeDiscountUsd: Number(client?.lifetimeDiscountUsd || 0),
   };

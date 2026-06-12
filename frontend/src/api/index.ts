@@ -841,17 +841,20 @@ export type RewardsSummary = {
     bookingsToNextTier: number;
   } | null;
   platformFee: PlatformFee;
+  baseFeeWaived?: boolean;
   totalFeesPaidCents: number;
   lifetimeDiscountUsd: number;
 };
 
 // Single source of truth for how the platform fee reads in the UI.
 export function formatPlatformFee(f?: PlatformFee | null) {
+  const noBase = (f?.baseCents ?? 0) <= 0;
   const base = `$${Math.round((f?.baseCents ?? 0) / 100)}`;
   const pctNum = (f?.pct ?? 0) * 100;
   const pct = `${Number.isInteger(pctNum) ? pctNum : pctNum.toFixed(1)}%`;
   const cap = `$${Math.round((f?.capCents ?? 0) / 100)}`;
-  return { base, pct, cap, short: `${base} + ${pct}`, full: `${base} + ${pct}, max ${cap}` };
+  const short = noBase ? pct : `${base} + ${pct}`;
+  return { base, pct, cap, short, full: `${short}, max ${cap}` };
 }
 
 export async function getMyRewards(token?: string | null, signal?: AbortSignal) {

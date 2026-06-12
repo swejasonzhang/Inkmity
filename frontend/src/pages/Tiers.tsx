@@ -14,7 +14,7 @@ const CLIENT_TIERS: ClientTier[] = [
   { key: "bronze", label: "Bronze", threshold: 0, perks: ["Full marketplace access", "Book & message any artist", "Secure deposit protection"] },
   { key: "silver", label: "Silver", threshold: 3, perks: ["Priority booking support", "Early-bird appointment slots", "Birthday booking credit"] },
   { key: "gold", label: "Gold", threshold: 8, perks: ["Early access to new artists", "Free design consultation", "Priority waitlist placement", "Exclusive flash drops"] },
-  { key: "platinum", label: "Platinum", threshold: 15, perks: ["Concierge booking assistance", "Dedicated support line", "First dibs on guest spots", "Annual loyalty credit"] },
+  { key: "platinum", label: "Platinum", threshold: 15, perks: ["No $10 booking fee — pay just 5%", "Concierge booking assistance", "Dedicated support line", "First dibs on guest spots", "Annual loyalty credit"] },
 ];
 
 const ARTIST_TIERS: ArtistTier[] = [
@@ -84,7 +84,7 @@ export default function Tiers() {
 
   const intro = isArtist
     ? "Grow your reputation on Inkmity. As you complete more bookings and keep your rating high, you unlock better placement, badges, and payout perks."
-    : "Book more sessions to climb the tiers and unlock perks like priority support, credits, and early access. Every booking has the same simple fee — $10 + 5%, capped at $50.";
+    : "Book more sessions to climb the tiers and unlock perks like priority support, credits, and early access. Every booking is a simple $10 + 5%, capped at $50 — and Platinum members skip the $10 base entirely.";
 
   const tiers = useMemo(() => (isArtist ? ARTIST_TIERS : CLIENT_TIERS), [isArtist]);
 
