@@ -682,7 +682,7 @@ export default function ClientProfile() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-[2px] w-full max-w-6xl">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-x-5 gap-y-5 w-full max-w-6xl">
                                     <div className="w-full flex flex-col items-center">
                                         <Label className="text-xs font-medium mb-3 block text-center w-full max-w-full" style={{ color: "var(--fg)" }}>
                                             City
