@@ -2,7 +2,7 @@ import Billing from "../models/Billing.js";
 import { stripe } from "../lib/stripe.js";
 import { executePayouts } from "./payoutService.js";
 import { getAvailableCreditCents, applyCredits } from "./creditsService.js";
-import { recordFeePaid } from "./rewardsService.js";
+import { recordFeePaid, getClientPlatformFee } from "./rewardsService.js";
 import { computePlatformFeeCents, estimateStripeFeeCents } from "../lib/fees.js";
 import { config } from "../config/index.js";
 
@@ -26,7 +26,8 @@ export async function captureBookingBalance(booking) {
   // Client pays (balance − credits + fee); the platform keeps the fee ($10 + 5%
   // capped, net of any collected at deposit) and nets Stripe processing out of
   // the provider payout below, so the artist bears card processing.
-  const fullFeeCents = computePlatformFeeCents(booking.priceCents, config.platformFee);
+  const clientFee = await getClientPlatformFee(booking.clientId);
+  const fullFeeCents = computePlatformFeeCents(booking.priceCents, clientFee);
   const priorPaid = await Billing.find({ bookingId: booking._id, status: "paid" });
   const feeAlreadyCollected = priorPaid.reduce(
     (sum, b) => sum + Number(b.platformFeeCents || 0),
