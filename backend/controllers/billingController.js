@@ -5,7 +5,7 @@ import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
 import { sendAppointmentConfirmationEmail } from "../services/emailService.js";
 import { config } from "../config/index.js";
-import { recordFeePaid } from "../services/rewardsService.js";
+import { recordFeePaid, getClientPlatformFee } from "../services/rewardsService.js";
 import { executePayouts, reversePayouts } from "../services/payoutService.js";
 import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
 import { computePlatformFeeCents, estimateStripeFeeCents } from "../lib/fees.js";
@@ -98,7 +98,10 @@ export async function checkoutDeposit(req, res) {
   }
 
   const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
-  const platformFeeCents = computePlatformFeeCents(booking.priceCents, config.platformFee);
+  const platformFeeCents = computePlatformFeeCents(
+    booking.priceCents,
+    await getClientPlatformFee(booking.clientId)
+  );
 
   let customer;
   try {
@@ -227,7 +230,10 @@ export async function createDepositPaymentIntent(req, res) {
   }
 
   const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
-  const platformFeeCents = computePlatformFeeCents(booking.priceCents, config.platformFee);
+  const platformFeeCents = computePlatformFeeCents(
+    booking.priceCents,
+    await getClientPlatformFee(booking.clientId)
+  );
   const chargeAmount = amount + platformFeeCents;
 
   let customer;
