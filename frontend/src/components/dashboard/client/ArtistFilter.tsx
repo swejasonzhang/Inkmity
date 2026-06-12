@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ArrowUpDown } from "lucide-react";
 import clsx from "clsx";
 
 interface Artist {
@@ -23,8 +24,7 @@ interface Artist {
   portfolio?: string;
 }
 
-// Props are kept broad so the dashboards can pass the same set, but the filter
-// is now just a search field — the rest of the controls were removed.
+// Props stay broad so the dashboards pass the same set; only search + sort are used.
 interface Props {
   priceFilter?: string;
   setPriceFilter?: (value: string) => void;
@@ -49,9 +49,17 @@ interface Props {
   className?: string;
 }
 
-const ArtistFilter: React.FC<Props> = ({ searchQuery, setSearchQuery, setCurrentPage, className }) => {
+const SORT_OPTIONS = [
+  { value: "highest_rated", label: "Top rated" },
+  { value: "most_reviews", label: "Most reviewed" },
+  { value: "experience_desc", label: "Most experienced" },
+  { value: "newest", label: "Newest" },
+] as const;
+
+const ArtistFilter: React.FC<Props> = ({ searchQuery, setSearchQuery, setCurrentPage, sort, setSort, className }) => {
   const [localSearch, setLocalSearch] = useState(searchQuery ?? "");
   const debounceRef = useRef<number | null>(null);
+  const currentSort = sort && SORT_OPTIONS.some((o) => o.value === sort) ? sort : "highest_rated";
 
   useEffect(() => setLocalSearch(searchQuery ?? ""), [searchQuery]);
 
@@ -66,17 +74,19 @@ const ArtistFilter: React.FC<Props> = ({ searchQuery, setSearchQuery, setCurrent
     };
   }, [localSearch, setSearchQuery, setCurrentPage]);
 
+  const glass =
+    "bg-[color-mix(in_srgb,var(--card)_70%,transparent)] backdrop-blur-sm border border-app/60";
+
   return (
     <section
-      className={clsx("w-full max-w-full mb-3 sm:mb-0 mx-auto", className)}
+      className={clsx("w-full mb-3 sm:mb-0", className)}
       role="search"
       aria-label="Search artists"
-      style={{ maxWidth: "100%", width: "100%" }}
     >
-      <div className="px-2 py-1.5 sm:px-0 sm:py-0">
-        <div className="relative w-full min-w-0">
+      <div className="flex items-center gap-2 w-full max-w-xl mx-auto">
+        <div className="relative flex-1 min-w-0">
           <Search
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-subtle"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-subtle"
             aria-hidden
           />
           <Input
@@ -85,14 +95,44 @@ const ArtistFilter: React.FC<Props> = ({ searchQuery, setSearchQuery, setCurrent
             placeholder="Search artists, styles, cities…"
             aria-label="Search artists, styles, or cities"
             className={clsx(
-              "pl-11 pr-4 h-11 w-full rounded-xl",
-              "bg-[color-mix(in_srgb,var(--card)_70%,transparent)] backdrop-blur-sm border-app/60 text-app",
+              "pl-10 pr-3 h-11 w-full rounded-xl text-app",
+              glass,
               "text-sm placeholder:text-muted-foreground",
               "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app transition-colors",
               "selection:bg-elevated selection:text-app caret-[var(--fg)] text-left"
             )}
           />
         </div>
+
+        {setSort && (
+          <Select value={currentSort} onValueChange={(v) => { setSort(v); setCurrentPage?.(1); }}>
+            <SelectTrigger
+              aria-label="Sort artists"
+              className={clsx(
+                "h-11 shrink-0 rounded-xl text-app text-sm gap-1.5 px-3 sm:px-3.5",
+                "w-11 sm:w-auto justify-center [&>svg:last-child]:hidden sm:[&>svg:last-child]:block",
+                glass,
+                "hover:bg-elevated transition-colors focus:ring-0 focus:outline-none ring-0 data-[state=open]:border-app"
+              )}
+            >
+              <ArrowUpDown className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">
+                <SelectValue />
+              </span>
+            </SelectTrigger>
+            <SelectContent
+              className="bg-card text-app border border-app rounded-xl shadow-xl"
+              position="popper"
+              align="end"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value} className="text-sm rounded-lg cursor-pointer">
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
     </section>
   );
