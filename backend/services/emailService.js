@@ -227,3 +227,32 @@ export async function sendAppointmentConfirmationEmail(booking, clientEmail, cli
 export async function sendAppointmentCancellationEmail(booking, clientEmail, clientName) {
   return deliver('cancellation', clientEmail, createEmailContent(booking, clientName, 'cancellation'));
 }
+
+function createVerificationContent({ code, role, recipientName, expiresAt, appointmentType }) {
+  const apptType = appointmentType === 'consultation' ? 'consultation' : 'tattoo session';
+  const who = role === 'artist' ? 'artist' : 'client';
+  const mins = expiresAt
+    ? Math.max(1, Math.round((new Date(expiresAt).getTime() - Date.now()) / 60000))
+    : 3;
+  const body = `
+    <p style="margin:0 0 18px;font-size:14px;color:${BRAND.muted};text-align:center;">
+      Hi ${recipientName || 'there'}, use this code to confirm completion of your ${apptType}. Enter it on your own device — it's unique to you as the ${who}.
+    </p>
+    <div style="text-align:center;margin:8px 0 18px;">
+      <div style="display:inline-block;background:#0d0d0d;border:1px solid ${BRAND.border};border-radius:14px;padding:18px 30px;">
+        <span style="font-size:34px;font-weight:800;letter-spacing:0.32em;color:${BRAND.fg};font-family:'SFMono-Regular',Menlo,Consolas,monospace;">${code}</span>
+      </div>
+    </div>
+    <p style="margin:0;font-size:12px;color:${BRAND.muted};text-align:center;">
+      Valid for ${mins} minute${mins === 1 ? '' : 's'}. If you didn't request this, you can ignore this email.
+    </p>`;
+  return {
+    subject: 'Your Inkmity verification code',
+    html: renderShell({ preheader: `Your verification code is ${code}`, heading: 'Confirm your appointment', body }),
+    text: `Your Inkmity verification code is ${code}. Valid for ${mins} minute${mins === 1 ? '' : 's'} and unique to you as the ${who}. Enter it on your device to confirm completion of your ${apptType}.\n\nInkmity(TM) — automated message, please do not reply.`,
+  };
+}
+
+export async function sendVerificationCodeEmail(toEmail, opts) {
+  return deliver('verification_code', toEmail, createVerificationContent(opts));
+}
