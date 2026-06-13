@@ -25,39 +25,48 @@ function Shimmer({ className }: { className?: string }) {
   return <div className={`ink-shimmer rounded-lg ${className || ""}`} aria-hidden />;
 }
 
+function Field({ labelW }: { labelW: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Shimmer className={`h-3 ${labelW}`} />
+      <Shimmer className="h-[44px] w-full" />
+    </div>
+  );
+}
+
 function PaymentElementSkeleton() {
   return (
-    <div className="h-full flex flex-col gap-4" aria-hidden>
+    <div className="space-y-4" aria-hidden>
       <div className="grid grid-cols-4 gap-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Shimmer key={i} className="h-[52px]" />
+          <Shimmer key={i} className="h-[58px]" />
         ))}
       </div>
-      <div className="space-y-1.5">
-        <Shimmer className="h-3 w-24" />
-        <Shimmer className="h-11 w-full" />
-      </div>
+
+      <Shimmer className="h-5 w-56" />
+
+      <Field labelW="w-24" />
+
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Shimmer className="h-3 w-20" />
-          <Shimmer className="h-11 w-full" />
-        </div>
-        <div className="space-y-1.5">
-          <Shimmer className="h-3 w-20" />
-          <Shimmer className="h-11 w-full" />
-        </div>
+        <Field labelW="w-24" />
+        <Field labelW="w-24" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Shimmer className="h-3 w-16" />
-          <Shimmer className="h-11 w-full" />
-        </div>
-        <div className="space-y-1.5">
-          <Shimmer className="h-3 w-16" />
-          <Shimmer className="h-11 w-full" />
-        </div>
+
+      <Field labelW="w-16" />
+      <Field labelW="w-16" />
+
+      <div className="space-y-1.5 pt-1">
+        <Shimmer className="h-2.5 w-full" />
+        <Shimmer className="h-2.5 w-full" />
+        <Shimmer className="h-2.5 w-2/3" />
       </div>
-      <Shimmer className="flex-1 min-h-[120px] w-full" />
+
+      <div className="rounded-xl border border-app/40 p-3.5 space-y-3">
+        <Shimmer className="h-4 w-16" />
+        <Shimmer className="h-4 w-2/3" />
+        <Field labelW="w-12" />
+        <Field labelW="w-24" />
+      </div>
     </div>
   );
 }
