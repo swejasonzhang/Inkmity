@@ -19,6 +19,7 @@ import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
 import DepositStep from "./DepositStep"
 import CardOnFileStep from "./CardOnFileStep"
+import BankOnFileStep from "./BankOnFileStep"
 
 type Kind = "consultation" | "appointment"
 type Props = { artistId: string; date?: Date; artistName?: string }
@@ -90,6 +91,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
   const [depositStepOpen, setDepositStepOpen] = useState(false)
   const [cardStepOpen, setCardStepOpen] = useState(false)
   const [pendingBooking, setPendingBooking] = useState<any>(null)
+  const [payMethod, setPayMethod] = useState<"card" | "bank">("card")
 
   const [depositPolicy, setDepositPolicy] = useState<any>(null)
   useEffect(() => {
@@ -768,24 +770,61 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
             onPointerDownCapture={(ev) => ev.stopPropagation()}
           >
             <RDialogHeader className="sr-only">
-              <RDialogTitle>Save your card</RDialogTitle>
-              <RDialogDescription>Save a card on file for this appointment</RDialogDescription>
+              <RDialogTitle>Save a payment method</RDialogTitle>
+              <RDialogDescription>Save a card or bank account on file for this appointment</RDialogDescription>
             </RDialogHeader>
             {pendingBooking && (
-              <CardOnFileStep
-                booking={pendingBooking}
-                artistName={artistName}
-                onSaved={async () => {
-                  setCardStepOpen(false)
-                  setPendingBooking(null)
-                  await refreshSlots()
-                  toast.success("Appointment booked — card saved.", toastStyle)
-                }}
-                onCancel={() => {
-                  setCardStepOpen(false)
-                  setPendingBooking(null)
-                }}
-              />
+              <>
+                <div className="mb-4 grid grid-cols-2 gap-2 max-w-md mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("card")}
+                    aria-pressed={payMethod === "card"}
+                    className={`h-9 rounded-lg text-sm font-semibold border transition ${payMethod === "card" ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent" : "border-app bg-elevated text-subtle hover:text-app"}`}
+                  >
+                    Card
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("bank")}
+                    aria-pressed={payMethod === "bank"}
+                    className={`h-9 rounded-lg text-sm font-semibold border transition ${payMethod === "bank" ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent" : "border-app bg-elevated text-subtle hover:text-app"}`}
+                  >
+                    Bank account
+                  </button>
+                </div>
+                {payMethod === "card" ? (
+                  <CardOnFileStep
+                    booking={pendingBooking}
+                    artistName={artistName}
+                    onSaved={async () => {
+                      setCardStepOpen(false)
+                      setPendingBooking(null)
+                      await refreshSlots()
+                      toast.success("Appointment booked — card saved.", toastStyle)
+                    }}
+                    onCancel={() => {
+                      setCardStepOpen(false)
+                      setPendingBooking(null)
+                    }}
+                  />
+                ) : (
+                  <BankOnFileStep
+                    booking={pendingBooking}
+                    artistName={artistName}
+                    onSaved={async () => {
+                      setCardStepOpen(false)
+                      setPendingBooking(null)
+                      await refreshSlots()
+                      toast.success("Appointment booked — bank linked.", toastStyle)
+                    }}
+                    onCancel={() => {
+                      setCardStepOpen(false)
+                      setPendingBooking(null)
+                    }}
+                  />
+                )}
+              </>
             )}
           </RDialogContent>
         </RDialogPortal>

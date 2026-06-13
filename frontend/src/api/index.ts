@@ -565,6 +565,18 @@ export async function createCardSetupIntent(
   }>("/billing/setup-intent", { bookingId }, token, signal);
 }
 
+export async function createBankSetupIntent(
+  bookingId: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{
+    clientSecret: string;
+    setupIntentId: string;
+    customerId: string;
+  }>("/billing/bank-setup-intent", { bookingId }, token, signal);
+}
+
 export type ArtistPolicy = {
   _id?: string;
   artistId: string;
