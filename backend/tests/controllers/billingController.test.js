@@ -519,9 +519,12 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
       expect.objectContaining({
         customer: "cus_pm1",
         usage: "off_session",
-        automatic_payment_methods: { enabled: true },
+        payment_method_types: expect.arrayContaining(["card", "klarna"]),
       })
     );
+    const passed = stripeMock.setupIntents.create.mock.calls[0][0].payment_method_types;
+    expect(passed).not.toContain("bancontact");
+    expect(passed).not.toContain("amazon_pay");
 
     const Client = mongoose.model("client");
     const saved = await Client.findOne({ clerkId: CLERK });
