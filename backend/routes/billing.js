@@ -5,6 +5,9 @@ import {
   createDepositPaymentIntent,
   createCardSetupIntent,
   createBankSetupIntent,
+  createClientSetupIntent,
+  listClientPaymentMethods,
+  deleteClientPaymentMethod,
   createFinalPaymentIntent,
   refundBilling,
   createPortalSession,
@@ -19,6 +22,9 @@ router.post("/deposit", requireAuth(), checkoutDeposit);
 router.post("/deposit/intent", requireAuth(), createDepositPaymentIntent);
 router.post("/setup-intent", requireAuth(), createCardSetupIntent);
 router.post("/bank-setup-intent", requireAuth(), createBankSetupIntent);
+router.post("/client/setup-intent", requireAuth(), createClientSetupIntent);
+router.get("/client/payment-methods", requireAuth(), listClientPaymentMethods);
+router.post("/client/payment-methods/delete", requireAuth(), deleteClientPaymentMethod);
 router.post("/final-payment/intent", requireAuth(), createFinalPaymentIntent);
 router.post("/refund", requireAuth(), refundBilling);
 router.post("/portal", requireAuth(), createPortalSession);

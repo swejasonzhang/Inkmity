@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import ClientTierCard from "@/components/dashboard/shared/ClientTierCard";
+import PaymentMethods from "@/components/dashboard/client/PaymentMethods";
 
 interface Client {
     _id: string;
@@ -977,6 +978,9 @@ export default function ClientProfile() {
                                 </div>
                             )}
                         </div>
+
+                        <PaymentMethods />
+
                         <div className="flex flex-col gap-4 mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
                             {usernameNotice && (
                                 <p className="text-xs text-app text-center">{usernameNotice}</p>

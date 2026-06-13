@@ -439,6 +439,127 @@ export async function createBankSetupIntent(req, res) {
   }
 }
 
+async function resolveClientCustomer(clerkId) {
+  const client = await Client.findOne({ clerkId });
+  if (!client) return null;
+  if (client.stripeCustomerId) {
+    try {
+      const c = await stripe.customers.retrieve(client.stripeCustomerId);
+      if (c && !c.deleted) return { customerId: client.stripeCustomerId, client };
+    } catch {}
+  }
+  const customer = await stripe.customers.create({ metadata: { clerkId } });
+  client.stripeCustomerId = customer.id;
+  await client.save();
+  return { customerId: customer.id, client };
+}
+
+export async function createClientSetupIntent(req, res) {
+  try {
+    const clerkId = String(req.user?.clerkId || req.auth?.userId || "");
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    const method = req.body?.method === "bank" ? "bank" : "card";
+    const resolved = await resolveClientCustomer(clerkId);
+    if (!resolved) return res.status(404).json({ error: "client_not_found" });
+
+    const base = {
+      customer: resolved.customerId,
+      usage: "off_session",
+      metadata: { clerkId, type: "client_payment_method" },
+    };
+    const setupIntent =
+      method === "bank"
+        ? await stripe.setupIntents.create({
+            ...base,
+            payment_method_types: ["us_bank_account"],
+            payment_method_options: { us_bank_account: { verification_method: "automatic" } },
+          })
+        : await stripe.setupIntents.create({
+            ...base,
+            automatic_payment_methods: { enabled: true },
+          });
+
+    res.json({
+      clientSecret: setupIntent.client_secret,
+      setupIntentId: setupIntent.id,
+      customerId: resolved.customerId,
+    });
+  } catch (err) {
+    console.error("createClientSetupIntent error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
+}
+
+export async function listClientPaymentMethods(req, res) {
+  try {
+    const clerkId = String(req.user?.clerkId || req.auth?.userId || "");
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    const client = await Client.findOne({ clerkId });
+    if (!client?.stripeCustomerId) return res.json({ methods: [] });
+
+    const customerId = client.stripeCustomerId;
+    let defaultPm = null;
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      defaultPm = customer?.invoice_settings?.default_payment_method || null;
+    } catch {}
+
+    const [cards, banks] = await Promise.all([
+      stripe.paymentMethods.list({ customer: customerId, type: "card" }),
+      stripe.paymentMethods.list({ customer: customerId, type: "us_bank_account" }),
+    ]);
+
+    const methods = [
+      ...(cards?.data || []).map((pm) => ({
+        id: pm.id,
+        type: "card",
+        brand: pm.card?.brand || "card",
+        last4: pm.card?.last4 || "",
+        expMonth: pm.card?.exp_month || null,
+        expYear: pm.card?.exp_year || null,
+        isDefault: pm.id === defaultPm,
+      })),
+      ...(banks?.data || []).map((pm) => ({
+        id: pm.id,
+        type: "us_bank_account",
+        bankName: pm.us_bank_account?.bank_name || "Bank account",
+        last4: pm.us_bank_account?.last4 || "",
+        isDefault: pm.id === defaultPm,
+      })),
+    ];
+
+    res.json({ methods });
+  } catch (err) {
+    console.error("listClientPaymentMethods error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
+}
+
+export async function deleteClientPaymentMethod(req, res) {
+  try {
+    const clerkId = String(req.user?.clerkId || req.auth?.userId || "");
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { paymentMethodId } = req.body || {};
+    if (!paymentMethodId) return res.status(400).json({ error: "paymentMethodId required" });
+
+    const client = await Client.findOne({ clerkId });
+    if (!client?.stripeCustomerId) return res.status(404).json({ error: "no_customer" });
+
+    const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+    if (pm.customer && String(pm.customer) !== String(client.stripeCustomerId))
+      return res.status(403).json({ error: "forbidden" });
+
+    await stripe.paymentMethods.detach(paymentMethodId);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("deleteClientPaymentMethod error:", err);
+    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+  }
+}
+
 export async function refundBilling(req, res) {
   try {
     const actorId = String(req.user?.clerkId || req.auth?.userId || "").trim();
