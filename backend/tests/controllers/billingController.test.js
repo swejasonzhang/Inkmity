@@ -507,11 +507,11 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
     jest.clearAllMocks();
   });
 
-  test("creates a card SetupIntent and persists the Stripe customer on the client", async () => {
+  test("creates an automatic-methods SetupIntent (card + bank) and persists the Stripe customer", async () => {
     const res = await request(app)
       .post("/billing/client/setup-intent")
       .set("x-test-user-id", CLERK)
-      .send({ method: "card" });
+      .send({});
 
     expect(res.status).toBe(200);
     expect(res.body.clientSecret).toBe("seti_pm1_secret");
@@ -526,18 +526,6 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
     const Client = mongoose.model("client");
     const saved = await Client.findOne({ clerkId: CLERK });
     expect(saved.stripeCustomerId).toBe("cus_pm1");
-  });
-
-  test("creates a us_bank_account SetupIntent when method is bank", async () => {
-    const res = await request(app)
-      .post("/billing/client/setup-intent")
-      .set("x-test-user-id", CLERK)
-      .send({ method: "bank" });
-
-    expect(res.status).toBe(200);
-    expect(stripeMock.setupIntents.create).toHaveBeenCalledWith(
-      expect.objectContaining({ payment_method_types: ["us_bank_account"] })
-    );
   });
 
   test("lists saved card + bank methods with display details and default flag", async () => {

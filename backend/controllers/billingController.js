@@ -459,26 +459,15 @@ export async function createClientSetupIntent(req, res) {
     const clerkId = String(req.user?.clerkId || req.auth?.userId || "");
     if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
 
-    const method = req.body?.method === "bank" ? "bank" : "card";
     const resolved = await resolveClientCustomer(clerkId);
     if (!resolved) return res.status(404).json({ error: "client_not_found" });
 
-    const base = {
+    const setupIntent = await stripe.setupIntents.create({
       customer: resolved.customerId,
       usage: "off_session",
+      automatic_payment_methods: { enabled: true },
       metadata: { clerkId, type: "client_payment_method" },
-    };
-    const setupIntent =
-      method === "bank"
-        ? await stripe.setupIntents.create({
-            ...base,
-            payment_method_types: ["us_bank_account"],
-            payment_method_options: { us_bank_account: { verification_method: "automatic" } },
-          })
-        : await stripe.setupIntents.create({
-            ...base,
-            automatic_payment_methods: { enabled: true },
-          });
+    });
 
     res.json({
       clientSecret: setupIntent.client_secret,

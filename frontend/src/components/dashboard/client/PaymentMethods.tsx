@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import { stripePromise } from "@/lib/stripe";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-react";
+import { useTheme } from "@/hooks/useTheme";
 import { toast } from "react-toastify";
 import { CreditCard, Landmark, Trash2, Plus, Loader2, Lock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,27 +14,112 @@ import {
   type SavedPaymentMethod,
 } from "@/api";
 
-type Method = "card" | "bank";
-
 function brandLabel(m: SavedPaymentMethod) {
   if (m.type === "us_bank_account") return m.bankName || "Bank account";
   return (m.brand || "card").replace(/^\w/, (c) => c.toUpperCase());
 }
 
-function Inner() {
+function AddPaymentForm({
+  clientSecret,
+  appearanceTheme,
+  onSaved,
+  onCancel,
+}: {
+  clientSecret: string;
+  appearanceTheme: "stripe" | "night";
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stripeRef = useRef<Stripe | null>(null);
+  const elementsRef = useRef<StripeElements | null>(null);
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const stripe = await stripePromise;
+      if (!stripe || !active || !containerRef.current) return;
+      const elements = stripe.elements({ clientSecret, appearance: { theme: appearanceTheme } });
+      const paymentEl = elements.create("payment", { layout: "tabs" });
+      paymentEl.on("ready", () => active && setReady(true));
+      paymentEl.mount(containerRef.current);
+      stripeRef.current = stripe;
+      elementsRef.current = elements;
+    })();
+    return () => {
+      active = false;
+    };
+  }, [clientSecret, appearanceTheme]);
+
+  const submit = async () => {
+    const stripe = stripeRef.current;
+    const elements = elementsRef.current;
+    if (busy || !stripe || !elements) return;
+    setBusy(true);
+    try {
+      const { error } = await stripe.confirmSetup({
+        elements,
+        redirect: "if_required",
+        confirmParams: { return_url: window.location.href },
+      });
+      if (error) {
+        toast.error(error.message || "Couldn't save that payment method");
+        setBusy(false);
+        return;
+      }
+      toast.success("Payment method saved.");
+      onSaved();
+    } catch (err: any) {
+      toast.error(err?.message || "Something went wrong");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="min-h-[40px]">
+        {!ready && <div className="ink-shimmer h-32 w-full rounded-xl" aria-hidden />}
+        <div ref={containerRef} />
+      </div>
+
+      <div className="mt-4 flex items-center gap-1.5 text-[11px] text-subtle">
+        <Lock className="h-3.5 w-3.5" /> Encrypted and stored by Stripe — Inkmity never sees your details.
+      </div>
+
+      <div className="mt-5 flex gap-2">
+        <Button
+          type="button"
+          onClick={onCancel}
+          disabled={busy}
+          className="flex-1 bg-elevated border border-app text-app hover:bg-elevated/70 h-11 rounded-xl"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          onClick={submit}
+          disabled={busy || !ready}
+          className="flex-1 h-11 rounded-xl font-semibold"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save payment method"}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+export default function PaymentMethods() {
   const { getToken } = useAuth();
-  const { user } = useUser();
-  const stripe = useStripe();
-  const elements = useElements();
+  const { theme } = useTheme();
 
   const [methods, setMethods] = useState<SavedPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [method, setMethod] = useState<Method>("card");
-  const [busy, setBusy] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [name, setName] = useState(user?.fullName || "");
-  const [email, setEmail] = useState(user?.primaryEmailAddress?.emailAddress || "");
 
   const load = useCallback(async () => {
     try {
@@ -53,64 +139,36 @@ function Inner() {
 
   useEffect(() => {
     if (!modalOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !busy && setModalOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setModalOpen(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [modalOpen, busy]);
+  }, [modalOpen]);
 
-  const openModal = (m: Method) => {
-    setMethod(m);
+  const openModal = async () => {
     setModalOpen(true);
-  };
-
-  const saveCard = async () => {
-    if (!stripe || !elements) return;
-    const token = await getToken();
-    const { clientSecret } = await createClientSetupIntent("card", token);
-    const card = elements.getElement(CardElement);
-    if (!clientSecret || !card) throw new Error("Could not start card setup");
-    const { error } = await stripe.confirmCardSetup(clientSecret, { payment_method: { card } });
-    if (error) throw new Error(error.message || "Couldn't save your card");
-    toast.success("Card saved.");
-  };
-
-  const linkBank = async () => {
-    if (!stripe) return;
-    if (!name.trim() || !email.trim()) throw new Error("Enter your name and email to link a bank account.");
-    const token = await getToken();
-    const { clientSecret } = await createClientSetupIntent("bank", token);
-    if (!clientSecret) throw new Error("Could not start bank setup");
-    const collected = await stripe.collectBankAccountForSetup({
-      clientSecret,
-      params: {
-        payment_method_type: "us_bank_account",
-        payment_method_data: { billing_details: { name: name.trim(), email: email.trim() } },
-      },
-      expand: ["payment_method"],
-    });
-    if (collected.error) throw new Error(collected.error.message || "Couldn't link your bank");
-    const confirmed = await stripe.confirmUsBankAccountSetup(clientSecret);
-    if (confirmed.error) throw new Error(confirmed.error.message || "Couldn't confirm your bank");
-    if (confirmed.setupIntent?.status === "requires_action") {
-      toast.info("Check your bank for two small deposits, then verify to finish.");
-    } else {
-      toast.success("Bank account linked.");
-    }
-  };
-
-  const submit = async () => {
-    if (busy || !stripe) return;
-    setBusy(true);
+    setClientSecret(null);
+    setPreparing(true);
     try {
-      if (method === "card") await saveCard();
-      else await linkBank();
+      const token = await getToken();
+      const res = await createClientSetupIntent(token);
+      if (!res?.clientSecret) throw new Error("no secret");
+      setClientSecret(res.clientSecret);
+    } catch {
+      toast.error("Couldn't start — try again.");
       setModalOpen(false);
-      await load();
-    } catch (err: any) {
-      toast.error(err?.body?.message || err?.message || "Something went wrong");
     } finally {
-      setBusy(false);
+      setPreparing(false);
     }
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setClientSecret(null);
+  };
+
+  const onSaved = async () => {
+    closeModal();
+    await load();
   };
 
   const remove = async (id: string) => {
@@ -139,7 +197,7 @@ function Inner() {
         <div className="ink-shimmer h-16 w-full rounded-xl" aria-hidden />
       ) : methods.length === 0 ? (
         <p className="text-xs text-center mb-4" style={{ color: "color-mix(in srgb, var(--fg) 50%, transparent)" }}>
-          No card or bank account linked yet. You'll be charged automatically once a session is complete.
+          No payment method linked yet. You'll be charged automatically once a session is complete.
         </p>
       ) : (
         <ul className="space-y-2 mb-4">
@@ -183,31 +241,20 @@ function Inner() {
         </ul>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Button
-          type="button"
-          onClick={() => openModal("card")}
-          size="sm"
-          variant="outline"
-          className="flex-1 border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Add card
-        </Button>
-        <Button
-          type="button"
-          onClick={() => openModal("bank")}
-          size="sm"
-          variant="outline"
-          className="flex-1 border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-        >
-          <Landmark className="h-4 w-4 mr-2" /> Link bank account
-        </Button>
-      </div>
+      <Button
+        type="button"
+        onClick={openModal}
+        size="sm"
+        variant="outline"
+        className="w-full border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+      >
+        <Plus className="h-4 w-4 mr-2" /> Add payment method
+      </Button>
 
       {modalOpen && createPortal(
         <div
           className="fixed inset-0 z-[2147483600] grid place-items-center p-4 bg-black/60 backdrop-blur-sm ink-fade-in"
-          onClick={() => !busy && setModalOpen(false)}
+          onClick={closeModal}
           role="dialog"
           aria-modal="true"
         >
@@ -219,18 +266,16 @@ function Inner() {
             <div className="flex items-start justify-between gap-3 mb-5">
               <div className="flex items-center gap-3 min-w-0">
                 <span className="grid place-items-center h-11 w-11 shrink-0 rounded-2xl border border-app/60 bg-elevated">
-                  {method === "card" ? <CreditCard className="h-5 w-5" /> : <Landmark className="h-5 w-5" />}
+                  <CreditCard className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
-                  <h4 className="text-lg font-extrabold tracking-tight leading-tight">
-                    {method === "card" ? "Add a card" : "Link a bank account"}
-                  </h4>
-                  <p className="text-xs text-subtle">Nothing is charged until a session is complete.</p>
+                  <h4 className="text-lg font-extrabold tracking-tight leading-tight">Add a payment method</h4>
+                  <p className="text-xs text-subtle">Card or bank — nothing is charged until a session is complete.</p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => !busy && setModalOpen(false)}
+                onClick={closeModal}
                 aria-label="Close"
                 className="shrink-0 rounded-full p-1.5 text-subtle hover:text-app hover:bg-app/10 transition"
               >
@@ -238,88 +283,20 @@ function Inner() {
               </button>
             </div>
 
-            <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-app/60 bg-elevated p-1">
-              {(["card", "bank"] as Method[]).map((m) => {
-                const active = method === m;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMethod(m)}
-                    aria-pressed={active}
-                    className={`inline-flex items-center justify-center gap-2 h-9 rounded-lg text-sm font-semibold transition ${
-                      active ? "bg-[color:var(--fg)] text-[color:var(--bg)]" : "text-subtle hover:text-app"
-                    }`}
-                  >
-                    {m === "card" ? <CreditCard className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
-                    {m === "card" ? "Card" : "Bank"}
-                  </button>
-                );
-              })}
-            </div>
-
-            {method === "card" ? (
-              <div className="rounded-2xl border border-app bg-white px-4 py-4">
-                <CardElement
-                  options={{
-                    style: {
-                      base: { fontSize: "16px", color: "#1a1a1a", fontFamily: "inherit", "::placeholder": { color: "#9aa0a6" } },
-                      invalid: { color: "#c0392b" },
-                    },
-                  }}
-                />
-              </div>
+            {preparing || !clientSecret ? (
+              <div className="ink-shimmer h-40 w-full rounded-xl" aria-hidden />
             ) : (
-              <div className="space-y-2.5">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Full name"
-                  className="w-full h-11 px-3.5 rounded-xl border border-app bg-elevated text-app placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-[color:var(--fg)]/20"
-                />
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  type="email"
-                  className="w-full h-11 px-3.5 rounded-xl border border-app bg-elevated text-app placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-[color:var(--fg)]/20"
-                />
-                <p className="text-[11px] text-subtle leading-relaxed px-0.5">
-                  You'll log in to your bank securely through Stripe to confirm the account.
-                </p>
-              </div>
+              <AddPaymentForm
+                clientSecret={clientSecret}
+                appearanceTheme={theme === "light" ? "stripe" : "night"}
+                onSaved={onSaved}
+                onCancel={closeModal}
+              />
             )}
-
-            <div className="mt-4 flex items-center gap-1.5 text-[11px] text-subtle">
-              <Lock className="h-3.5 w-3.5" /> Encrypted and stored by Stripe — Inkmity never sees your details.
-            </div>
-
-            <Button
-              type="button"
-              onClick={submit}
-              disabled={busy || !stripe}
-              className="mt-5 w-full h-11 rounded-xl font-semibold"
-            >
-              {busy ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : method === "card" ? (
-                "Save card"
-              ) : (
-                "Link bank account"
-              )}
-            </Button>
           </div>
         </div>,
         document.body
       )}
     </div>
-  );
-}
-
-export default function PaymentMethods() {
-  return (
-    <Elements stripe={stripePromise}>
-      <Inner />
-    </Elements>
   );
 }
