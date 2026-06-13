@@ -3,6 +3,7 @@ import ArtistFilter from "./ArtistFilter";
 import LazyReveal from "@/components/ui/LazyReveal";
 import HScroll, { type HScrollHandle } from "@/components/ui/HScroll";
 import { Search, ChevronsDown, ChevronLeft, ChevronRight, MapPin, Clock, Building2, ArrowRight } from "lucide-react";
+import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
 import { titleCase } from "@/lib/format";
 import type { Artist } from "@/api";
 
@@ -114,7 +115,10 @@ const ArtistCarouselCard = ({ artist, onClick, fill = false }: { artist: any; on
                         )}
                     </span>
                     <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-bold leading-tight">{artist.username}</span>
+                        <span className="flex items-center gap-1 min-w-0">
+                            <span className="truncate text-sm font-bold leading-tight">{artist.username}</span>
+                            {artist.verified && <VerifiedBadge size={14} className="shrink-0" />}
+                        </span>
                         {rating > 0 && (
                             <span className="text-[11px] text-subtle">★ {rating.toFixed(1)}{artist.reviewsCount ? ` (${artist.reviewsCount})` : ""}</span>
                         )}

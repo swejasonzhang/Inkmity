@@ -46,6 +46,7 @@ import studioRoutes from "./routes/studios.js";
 import documentRoutes from "./routes/documents.js";
 import waitlistRoutes from "./routes/waitlist.js";
 import sketchRoutes from "./routes/sketches.js";
+import artworkRoutes from "./routes/artworks.js";
 import { mountStripeWebhook } from "./controllers/billingController.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
 import { initSocket } from "./services/socketService.js";
@@ -134,6 +135,7 @@ app.use("/studios", studioRoutes);
 app.use("/documents", documentRoutes);
 app.use("/waitlist", waitlistRoutes);
 app.use("/sketches", sketchRoutes);
+app.use("/artworks", artworkRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });

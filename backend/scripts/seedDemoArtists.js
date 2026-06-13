@@ -7,6 +7,7 @@ import Booking from "../models/Booking.js";
 import Availability from "../models/Availability.js";
 import Studio from "../models/Studio.js";
 import StudioMembership from "../models/StudioMembership.js";
+import ArtworkLike from "../models/ArtworkLike.js";
 
 const ALLOWED_DB = "inkmity_dev";
 const ARTIST_COUNT = 60;
@@ -61,6 +62,7 @@ async function main() {
   await Availability.deleteMany({ artistId: /^seed_artist_/ });
   await StudioMembership.deleteMany({ artistClerkId: /^seed_artist_/ });
   await Studio.deleteMany({ slug: /^seed-studio-/ });
+  await ArtworkLike.deleteMany({ $or: [{ artistClerkId: /^seed_artist_/ }, { userClerkId: /^seed_liker_/ }] });
   const removed = await User.deleteMany({ clerkId: /^seed_artist_/ });
   if (removed.deletedCount) console.log(`Cleared ${removed.deletedCount} old demo artist(s) + related data.`);
 
@@ -97,8 +99,12 @@ async function main() {
       baseRateMax: rate[1],
       bookingPreference: "open",
       travelFrequency: "rare",
+      verified: true,
+      verifiedAt: new Date(),
       portfolioImages: works(`${handle}p`, 8),
+      pastWorks: works(`${handle}a`, 5),
       healedWorks: works(`${handle}h`, 3),
+      sketches: works(`${handle}s`, 4),
     });
   }
   const created = await Artist.insertMany(docs);
@@ -120,6 +126,22 @@ async function main() {
   });
   await Review.insertMany(reviewDocs);
   console.log(`Created ${reviewDocs.length} reviews.`);
+
+  const likeDocs = [];
+  let popIdx = 0;
+  for (const doc of created.slice(0, 24)) {
+    const featured = (doc.portfolioImages || []).slice(0, 2);
+    for (const url of featured) {
+      const n = Math.max(1, 40 - popIdx * 2);
+      for (let l = 0; l < n; l++) {
+        likeDocs.push({ userClerkId: `seed_liker_${l + 1}`, artistClerkId: doc.clerkId, imageUrl: url });
+      }
+      popIdx += 1;
+    }
+  }
+  likeDocs.push(...(created[0]?.portfolioImages || []).slice(0, 2).map((url) => ({ userClerkId: client.clerkId, artistClerkId: created[0].clerkId, imageUrl: url })));
+  await ArtworkLike.insertMany(likeDocs, { ordered: false }).catch(() => {});
+  console.log(`Created ${likeDocs.length} artwork likes.`);
 
   const STATUSES = ["pending", "accepted", "completed", "denied", "cancelled", "completed", "accepted"];
   const TYPES = ["consultation", "tattoo_session"];
@@ -171,7 +193,7 @@ async function main() {
 
   await Artist.updateOne(
     { username: "testartist" },
-    { $set: { styles: ["traditional", "blackwork", "fine line"], portfolioImages: works("testartistp", 8), healedWorks: works("testartisth", 3), rating: 4.8, reviewsCount: 40, visible: true } }
+    { $set: { styles: ["traditional", "blackwork", "fine line"], portfolioImages: works("testartistp", 8), pastWorks: works("testartista", 5), healedWorks: works("testartisth", 3), sketches: works("testartists", 4), rating: 4.8, reviewsCount: 40, visible: true, verified: true, verifiedAt: new Date() } }
   );
 
   const counts = {};

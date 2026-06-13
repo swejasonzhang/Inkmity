@@ -5,6 +5,7 @@ import { Maximize2, MapPin, Clock, Star, Images, ChevronLeft, ChevronRight } fro
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
+import { titleCase } from "@/lib/format";
 
 export type ArtistWithGroups = {
     _id: string;
@@ -37,7 +38,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
     const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
     const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
     const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
-    const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }>(null);
+    const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: string }>(null);
     const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
 
     const stylesClean = useMemo(() => {
@@ -67,12 +68,12 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
         </span>
     );
 
-    const openZoom = (items: string[], index: number, label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches") => setZoom({ items, index, label });
+    const openZoom = (items: string[], index: number, label: string) => setZoom({ items, index, label });
     const closeZoom = () => setZoom(null);
     const goPrev = () => setZoom(z => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
     const goNext = () => setZoom(z => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
 
-    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) =>
+    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: string }> = ({ images, imgAltPrefix, label }) =>
         images.length ? (
             <div className="w-full hidden sm:block">
                 <div className="grid gap-3 w-full grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
@@ -112,7 +113,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
             </p>
         );
 
-    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: "Recent Works" | "Past Works" | "Healed Works" | "Upcoming Sketches" }> = ({ images, imgAltPrefix, label }) => {
+    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: string }> = ({ images, imgAltPrefix, label }) => {
         const [index, setIndex] = useState(0);
         const swipeTo = (dir: "prev" | "next") => setIndex(i => (dir === "prev" ? (i + images.length - 1) % images.length : (i + 1) % images.length));
         const onDragEnd = (_: any, info: { offset: { x: number } }) => {
@@ -279,16 +280,26 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                     </section>
                 )}
 
-                {past.length > 0 && (
+                {stylesClean.length > 0 && past.length > 0 && (
                     <section className="w-full">
                         <header className="mb-2 sm:mb-3 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Past Works</h3>
-                            <span className="text-xs portfolio-section-count">
-                                {past.length} image{past.length === 1 ? "" : "s"}
-                            </span>
+                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">By style</h3>
+                            <span className="text-xs portfolio-section-count">{stylesClean.length} style{stylesClean.length === 1 ? "" : "s"}</span>
                         </header>
-                        <MobileCarousel images={past} imgAltPrefix="Past work" label="Past Works" />
-                        <ImageGrid images={past} imgAltPrefix="Past work" label="Past Works" />
+                        <div className="space-y-4 sm:space-y-5">
+                            {stylesClean.map((style, si) => {
+                                const imgs = past.filter((_, i) => i % stylesClean.length === si);
+                                if (!imgs.length) return null;
+                                const label = titleCase(style);
+                                return (
+                                    <div key={style}>
+                                        <h4 className="text-sm font-semibold mb-2" style={{ color: "color-mix(in srgb, var(--fg) 88%, transparent)" }}>{label}</h4>
+                                        <MobileCarousel images={imgs} imgAltPrefix={`${label} work`} label={label} />
+                                        <ImageGrid images={imgs} imgAltPrefix={`${label} work`} label={label} />
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </section>
                 )}
 

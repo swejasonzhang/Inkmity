@@ -338,6 +338,35 @@ export async function fetchArtistByHandle(handle: string, signal?: AbortSignal) 
   );
 }
 
+export type PopularArtwork = {
+  artistClerkId: string;
+  handle: string;
+  username: string;
+  avatarUrl: string | null;
+  verified: boolean;
+  styles: string[];
+  rating: number;
+  url: string;
+  likes: number;
+  likedByMe: boolean;
+};
+
+export async function fetchPopularArtworks(
+  token?: string | null,
+  signal?: AbortSignal,
+  limit = 60
+) {
+  return apiGet<{ items: PopularArtwork[] }>("/artworks/popular", { limit }, token, signal);
+}
+
+export async function toggleArtworkLike(
+  body: { artistClerkId: string; imageUrl: string },
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{ liked: boolean; likes: number }>("/artworks/like", body, token, signal);
+}
+
 export async function addReview(
   token: string | null | undefined,
   reviewData: ReviewInput,
