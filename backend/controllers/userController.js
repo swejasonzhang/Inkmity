@@ -234,7 +234,7 @@ export async function getArtists(req, res) {
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .select(
-        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages avatar coverImage lastActive visibility"
+        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages pastWorks healedWorks sketches verified avatar coverImage lastActive visibility"
       )
       .lean(),
   ]);
@@ -447,6 +447,7 @@ export async function syncUser(req, res) {
             .map((p) => String(p || "").trim())
             .filter(Boolean)
         : [];
+      const profileComplete = Boolean(bio && styles.length && portfolio.length);
       Object.assign(setDoc, {
         location: profile.location ?? "",
         shop,
@@ -461,6 +462,8 @@ export async function syncUser(req, res) {
         ...(coverImage ? { coverImage } : {}),
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
         ...(restrictedPlacements.length ? { restrictedPlacements } : {}),
+        // Verified is sticky: granted once the profile is complete, never revoked here.
+        ...(profileComplete ? { verified: true, verifiedAt: existing?.verifiedAt || new Date() } : {}),
       });
     }
     if (existing && existing.role !== role) {

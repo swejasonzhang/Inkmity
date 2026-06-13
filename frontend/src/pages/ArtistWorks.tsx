@@ -7,6 +7,7 @@ import { fetchArtistByHandle, fetchArtistById } from "@/api";
 import ArtistPortfolio, { type ArtistWithGroups } from "@/components/dashboard/client/ArtistPortfolio";
 import ArtistBooking from "@/components/dashboard/client/ArtistBooking";
 import ArtistReviews from "@/components/dashboard/client/ArtistReviews";
+import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
 import { displayNameFromUsername, titleCase } from "@/lib/format";
 
 type AnyArtist = Record<string, any>;
@@ -123,7 +124,10 @@ export default function ArtistWorks() {
                                         )}
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-app">{mapped.username}</h1>
+                                        <div className="flex items-center gap-2">
+                                            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-app">{mapped.username}</h1>
+                                            {artist?.verified && <VerifiedBadge size={20} label className="shrink-0" />}
+                                        </div>
                                         <p className="text-subtle text-sm mt-0.5">@{displayHandle}</p>
                                         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-subtle">
                                             {rating > 0 && (
