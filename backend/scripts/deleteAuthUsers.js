@@ -1,7 +1,3 @@
-// Delete specific users from BOTH Clerk and Mongo by email. Destructive.
-// Seed fixtures are hard-protected and can never be deleted by this script.
-//
-//   node --env-file=.env.development scripts/deleteAuthUsers.js email1 email2 ...
 import mongoose from "mongoose";
 import { clerkClient } from "@clerk/express";
 import User from "../models/UserBase.js";

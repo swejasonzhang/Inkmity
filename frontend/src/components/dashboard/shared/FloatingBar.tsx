@@ -151,15 +151,15 @@ export default function FloatingBar({
     bottom: `calc(max(${vvBottom}px, clamp(0.625rem, 1vh + 0.5vw, 1.25rem)) + env(safe-area-inset-bottom, 0px))`,
   };
 
-  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border-2";
+  const btnCommon = "inline-flex items-center justify-center gap-2 rounded-full pointer-events-auto transition focus:outline-none font-semibold border";
   const collapsedHeight = 44;
   const assistantBtnClass = [
     "ink-assistant-btn",
     "px-3 md:px-4",
-    "bg-[color:color-mix(in_srgb,var(--card)_40%,transparent)] backdrop-blur-md text-[color:var(--fg)] border-app shadow-lg",
+    "bg-[color:var(--bg)] text-[color:var(--fg)] border-app shadow-lg",
     "focus:ring-2 focus:ring-app/50 focus:ring-offset-2 focus:ring-offset-[color:var(--bg)]",
     "hover:brightness-[1.08] active:scale-[0.99]",
-    "disabled:opacity-100 disabled:bg-[color:color-mix(in_srgb,var(--card)_40%,transparent)] disabled:text-[color:var(--fg)]",
+    "disabled:opacity-100 disabled:bg-[color:var(--bg)] disabled:text-[color:var(--fg)]",
     btnCommon
   ].join(" ");
 
@@ -257,12 +257,12 @@ export default function FloatingBar({
 
   const ui = (
     <div
-      className="fixed grid items-center"
+      className="fixed grid items-end"
       style={{
         left: pad.left,
         right: pad.right,
-        bottom: 0,
-        height: `calc(${Math.max(wrapperH, collapsedHeight)}px + clamp(0.625rem, 1vh + 0.5vw, 1.25rem) + env(safe-area-inset-bottom, 0px))`,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.2rem)",
+        height: `${Math.max(wrapperH, collapsedHeight)}px`,
         gridTemplateColumns: "1fr auto 1fr",
         pointerEvents: "none",
         zIndex: !isMdUp && open ? 9999 : 200,
@@ -274,10 +274,9 @@ export default function FloatingBar({
         .ink-solid-controls :is(button, [role="button"], .btn),
         .ink-solid-controls :is(nav button, nav a),
         .ink-solid-controls [data-pagination] :is(button, a) {
-          background: color-mix(in srgb, var(--card) 40%, transparent);
-          backdrop-filter: blur(12px);
+          background: var(--bg);
           color: var(--fg);
-          border: 1px solid var(--app, var(--border));
+          border: 1px solid var(--border);
           font-weight: 600;
           border-radius: 9999px;
         }
@@ -296,7 +295,7 @@ export default function FloatingBar({
         style={{
           height: collapsedHeight,
           pointerEvents: "auto",
-          boxShadow: "0 0 0 1px var(--bg) inset, 0 10px 28px rgba(0,0,0,0.35), 0 0 0 2px color-mix(in srgb, var(--app) 70%, transparent)",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.35)",
         }}
         variant="outline"
       >

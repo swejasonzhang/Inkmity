@@ -15,9 +15,6 @@ type Props = {
     onChange: (next: StudioLocation) => void;
 };
 
-// Lets a studio owner search for their shop as a real Google business listing and confirm
-// it on a map. Selecting an establishment captures its address, city, coordinates, and
-// place_id — proof the location is a valid, listed shop.
 export default function StudioLocationPicker({ value, onChange }: Props) {
     const inputRef = useRef<HTMLInputElement | null>(null);
     const mapElRef = useRef<HTMLDivElement | null>(null);
@@ -38,8 +35,6 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
         let cancelled = false;
         setStatus("loading");
 
-        // Google reports an invalid/restricted key or a disabled API through this global
-        // hook (not the script's onerror), so we catch it here and show a clear message.
         (window as any).gm_authFailure = () => {
             if (cancelled) return;
             setStatus("error");

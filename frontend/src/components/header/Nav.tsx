@@ -42,16 +42,12 @@ const mobileActive = "bg-black/65 ring-1 ring-white/25";
 const mobileIdle = "hover:bg-black/60 active:scale-[0.98]";
 
 function CountBadge({ count, loading, className = "" }: { count?: number; loading?: boolean; className?: string }) {
-    // Only badge-bearing items (count defined) ever reserve a slot. The slot is
-    // a constant width across loading / zero / number states so the nav link
-    // never shifts when a count appears, changes, or disappears.
     if (count === undefined) return null;
     const slot = `inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-extrabold leading-none tabular-nums`;
     if (loading) {
         return <Skeleton aria-hidden className={`${slot} rounded-full ${className}`} />;
     }
     if (count <= 0) {
-        // Invisible placeholder keeps the reserved width so nothing shifts.
         return <span aria-hidden className={`${slot} invisible ${className}`}>0</span>;
     }
     return (
@@ -114,7 +110,6 @@ export function Nav({
                             aria-current={active ? "page" : undefined}
                             className={cls}
                         >
-                            {/* Left spacer mirrors the right badge slot so the label stays centered. */}
                             {item.count !== undefined && (
                                 <span aria-hidden className="inline-flex h-5 min-w-5 px-1.5 shrink-0 invisible" />
                             )}

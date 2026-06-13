@@ -25,16 +25,12 @@ const DEFAULT_SLOT_MINUTES = 30;
 const DEFAULT_OPEN_RANGES = [{ start: "10:00", end: "22:00" }];
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-// Create a notification message and push it to both participants in realtime
-// (drives the recipient's notification badge + chat without a refresh).
 async function notify(fields) {
   const message = await Message.create(fields);
   try { emitMessageCreated(message); } catch {}
   return message;
 }
 
-// Clients must wait this long between appointment requests with the same artist so
-// artists don't get spammed. Applies regardless of appointment type.
 const SCHEDULE_COOLDOWN_HOURS = 2;
 
 async function getArtistTimezone(artistId) {
@@ -55,7 +51,6 @@ function formatBookingWhen(startAt, zone) {
   }
 }
 
-// Returns an active cooldown record (cancellation, denial, or recent scheduling) or null.
 async function getActiveBookingCooldown(userId, artistId) {
   if (config.dev.bypassGates) return null;
   return BookingCooldown.findOne({
@@ -75,7 +70,6 @@ function respondWithCooldown(res, cooldown) {
   });
 }
 
-// Start an anti-spam cooldown after a client schedules, regardless of appointment type.
 async function applyScheduleCooldown(userId, artistId, bookingId) {
   try {
     const now = new Date();
@@ -531,7 +525,6 @@ export async function startVerification(req, res) {
         },
       });
     } catch {}
-    // Email each party their own code, respectively.
     try {
       const User = (await import("../models/UserBase.js")).default;
       const [client, artist] = await Promise.all([
@@ -590,8 +583,6 @@ export async function cancelBooking(req, res) {
     const now = new Date();
     const hoursUntilAppointment =
       (new Date(booking.startAt).getTime() - now.getTime()) / (1000 * 60 * 60);
-    // The artist sets the cancellation window (cutoffHours). Cancelling with more notice
-    // than the cutoff refunds the deposit; cancelling inside the window forfeits it.
     let cancelPolicy = null;
     try {
       cancelPolicy = await ArtistPolicy.findOne({ artistId: booking.artistId });
@@ -869,8 +860,6 @@ export async function verifyBookingCode(req, res) {
     const isClient = String(doc.clientId) === actorId;
     const isArtist = String(doc.artistId) === actorId;
     if (!isClient && !isArtist) return res.status(403).json({ error: "Forbidden" });
-    // Each party may only confirm their own side — prevents one party from
-    // unilaterally completing the booking (and charging) without the other.
     if (role === "client" && !isClient) return res.status(403).json({ error: "role_mismatch" });
     if (role === "artist" && !isArtist) return res.status(403).json({ error: "role_mismatch" });
     if (doc.status === "cancelled")
@@ -1212,7 +1201,6 @@ export async function createTattooSession(req, res) {
       });
     }
 
-    // Don't let a client book more sittings than the artist approved for this piece.
     const maxSessions = Math.max(1, Number(permission?.maxSessions || 1));
     if (!config.dev.bypassGates && sessionNumber > maxSessions) {
       return res.status(403).json({
@@ -1307,8 +1295,6 @@ export async function createTattooSession(req, res) {
   }
 }
 
-// Book a big tattoo as several linked sessions under one Project. To the artist
-// these appear as one piece split across multiple appointments (Session X of N).
 export async function createMultiSession(req, res) {
   try {
     const userId = getActorId(req);
@@ -1351,7 +1337,6 @@ export async function createMultiSession(req, res) {
     }
     parsed.sort((a, b) => a.startAt - b.startAt);
 
-    // Booking gates (run once for the whole project).
     const ClientBookingPermission = (await import("../models/ClientBookingPermission.js")).default;
     const permission = await ClientBookingPermission.findOne({ artistId, clientId: String(userId) });
     if (!config.dev.bypassGates && (!permission || !permission.enabled)) {
@@ -1361,8 +1346,6 @@ export async function createMultiSession(req, res) {
       });
     }
 
-    // The artist sizes the piece after the consultation; the client can't book more
-    // dates than that allows (e.g. a flash can't be spread across several days).
     const maxSessions = Math.max(1, Number(permission?.maxSessions || 1));
     if (!config.dev.bypassGates && parsed.length > maxSessions) {
       return res.status(403).json({
@@ -1390,7 +1373,6 @@ export async function createMultiSession(req, res) {
       return res.status(409).json({ error: "studio_not_ready", message: studioReady.message });
     }
 
-    // No overlap with existing bookings, for any of the chosen times.
     for (const p of parsed) {
       const conflict = await Booking.findOne({
         artistId,
@@ -1898,11 +1880,6 @@ export async function denyAppointment(req, res) {
   }
 }
 
-// Appointments finish when the work is done. Primary signal is the on-site mutual code
-// verification (see verifyBookingCode). This is the safety net: any agreed appointment whose
-// session ended more than AUTO_COMPLETE_GRACE_HOURS ago is marked completed automatically, so
-// the artist never has to do admin to "close out" a booking. It does NOT auto-charge a balance —
-// money only moves on explicit on-site verification — keeping clients protected from bad charges.
 const AUTO_COMPLETE_GRACE_HOURS = 6;
 
 async function autoCompleteDueBookings(userId) {
@@ -1957,7 +1934,6 @@ export async function getAppointments(req, res) {
 
     const User = (await import("../models/UserBase.js")).default;
 
-    // Attach project info so multi-session pieces show "Session X of N · name".
     const projectIds = [...new Set(bookings.map((b) => b.projectId).filter(Boolean).map(String))];
     const projects = projectIds.length
       ? await Project.find({ _id: { $in: projectIds } }).lean()

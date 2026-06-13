@@ -15,7 +15,7 @@ type ArtistFilters = {
   sort?: string;
 };
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 60;
 
 export function useDashboardData() {
   const { isLoaded, isSignedIn, user } = useUser();

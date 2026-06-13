@@ -2,11 +2,6 @@ import { useEffect, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { connectSocket, getSocket } from "@/lib/socket";
 
-/**
- * Calls `onChange` whenever a booking the current user is part of changes
- * (created, accepted, denied, cancelled, rescheduled, completed, etc.), so
- * appointments / notifications / dashboards can refetch without a refresh.
- */
 export function useBookingRealtime(onChange: () => void) {
   const { user, isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();

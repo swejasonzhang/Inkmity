@@ -449,8 +449,6 @@ export default function ClientProfile() {
     const budgetMin = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
     const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
 
-    // Resolve a stored value back to its canonical option (case-insensitive),
-    // falling back to "none" so the trigger always shows the placeholder.
     const optValue = (opts: string[], v?: string) =>
         opts.find((o) => o.toLowerCase() === (v || "").toLowerCase()) ?? "none";
     const placementValue = optValue(PLACEMENT_OPTIONS, currentPlacement);
@@ -484,7 +482,6 @@ export default function ClientProfile() {
     useEffect(() => {
         const textarea = messageTextareaRef.current;
         if (!textarea) return;
-        // Size to fit the typed message, or the dynamic placeholder when empty.
         const empty = !currentMessage;
         if (empty) textarea.value = messagePlaceholder;
         textarea.style.height = 'auto';

@@ -12,7 +12,7 @@ describe("buildNavItems", () => {
   test("should include core destinations in order", () => {
     const items = buildNavItems(true, jest.fn());
     const labels = items.map((i) => i.label);
-    expect(labels).toEqual(["Dashboard", "Appointments", "Explore", "Tiers", "Contact", "About"]);
+    expect(labels).toEqual(["Artists", "Appointments", "Explore", "Tiers", "Contact", "About"]);
   });
 
   test("should lock auth links (with gate handler) when signed out, leaving public links open", () => {
@@ -20,7 +20,7 @@ describe("buildNavItems", () => {
     const items = buildNavItems(false, onGate);
     const byLabel = (label: string) => items.find((i) => i.label === label)!;
 
-    for (const label of ["Dashboard", "Appointments"]) {
+    for (const label of ["Artists", "Appointments"]) {
       expect(byLabel(label).disabled).toBe(true);
       expect(byLabel(label).onClick).toBe(onGate);
     }
@@ -38,11 +38,12 @@ describe("buildNavItems", () => {
     expect(tiers.disabled).toBeUndefined();
   });
 
-  test("should NOT show an Artists link for clients (dashboard already lists artists)", () => {
+  test("should label the client home as Artists pointing at /artists", () => {
     const items = buildNavItems(true, jest.fn(), "client");
     const labels = items.map((i) => i.label);
-    expect(labels).not.toContain("Artists");
-    expect(labels).toEqual(["Dashboard", "Appointments", "Explore", "Tiers", "Contact", "About"]);
+    expect(labels[0]).toBe("Artists");
+    expect(items[0].to).toBe("/artists");
+    expect(labels).toEqual(["Artists", "Appointments", "Explore", "Tiers", "Contact", "About"]);
   });
 
   test("should give artists a Portfolio link as their discovery destination", () => {

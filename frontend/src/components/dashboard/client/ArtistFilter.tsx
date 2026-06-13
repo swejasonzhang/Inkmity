@@ -24,7 +24,6 @@ interface Artist {
   portfolio?: string;
 }
 
-// Props stay broad so the dashboards pass the same set; only search + sort are used.
 interface Props {
   priceFilter?: string;
   setPriceFilter?: (value: string) => void;
@@ -74,16 +73,12 @@ const ArtistFilter: React.FC<Props> = ({ searchQuery, setSearchQuery, setCurrent
     };
   }, [localSearch, setSearchQuery, setCurrentPage]);
 
-  const glass =
-    "bg-[color-mix(in_srgb,var(--card)_70%,transparent)] backdrop-blur-sm border border-app/60";
+  const shell =
+    "flex items-stretch w-full max-w-2xl mx-auto rounded-xl overflow-hidden border border-app/60 focus-within:border-app transition-colors";
 
   return (
-    <section
-      className={clsx("w-full mb-3 sm:mb-0", className)}
-      role="search"
-      aria-label="Search artists"
-    >
-      <div className="flex items-center gap-2 w-full max-w-xl mx-auto">
+    <section className={clsx("w-full", className)} role="search" aria-label="Search artists">
+      <div className={shell}>
         <div className="relative flex-1 min-w-0">
           <Search
             className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-subtle"
@@ -95,43 +90,46 @@ const ArtistFilter: React.FC<Props> = ({ searchQuery, setSearchQuery, setCurrent
             placeholder="Search artists, styles, cities…"
             aria-label="Search artists, styles, or cities"
             className={clsx(
-              "pl-10 pr-3 h-11 w-full rounded-xl text-app",
-              glass,
+              "pl-10 pr-3 h-11 w-full rounded-none border-0 bg-transparent text-app",
               "text-sm placeholder:text-muted-foreground",
-              "outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-app transition-colors",
+              "outline-none ring-0 focus:ring-0 focus-visible:ring-0 transition-colors",
               "selection:bg-elevated selection:text-app caret-[var(--fg)] text-left"
             )}
           />
         </div>
 
         {setSort && (
-          <Select value={currentSort} onValueChange={(v) => { setSort(v); setCurrentPage?.(1); }}>
-            <SelectTrigger
-              aria-label="Sort artists"
-              className={clsx(
-                "h-11 shrink-0 rounded-xl text-app text-sm gap-1.5 px-3 sm:px-3.5",
-                "w-11 sm:w-auto justify-center [&>svg:last-child]:hidden sm:[&>svg:last-child]:block",
-                glass,
-                "hover:bg-elevated transition-colors focus:ring-0 focus:outline-none ring-0 data-[state=open]:border-app"
-              )}
-            >
-              <ArrowUpDown className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline whitespace-nowrap">
-                <SelectValue />
-              </span>
-            </SelectTrigger>
-            <SelectContent
-              className="bg-card text-app border border-app rounded-xl shadow-xl"
-              position="popper"
-              align="end"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value} className="text-sm rounded-lg cursor-pointer">
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <>
+            <Select value={currentSort} onValueChange={(v) => { setSort(v); setCurrentPage?.(1); }}>
+              <SelectTrigger
+                aria-label="Sort artists"
+                className={clsx(
+                  "self-stretch h-auto data-[size=default]:h-auto rounded-none border-0 bg-transparent text-app text-sm gap-2 px-3.5",
+                  "w-11 shrink-0 justify-center sm:w-auto sm:justify-center",
+                  "[&>svg:last-child]:hidden sm:[&>svg:last-child]:block",
+                  "hover:bg-elevated/60 transition-colors focus:ring-0 focus:outline-none ring-0"
+                )}
+              >
+                <span className="flex items-center gap-2 min-w-0">
+                  <ArrowUpDown className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline truncate">
+                    <SelectValue />
+                  </span>
+                </span>
+              </SelectTrigger>
+              <SelectContent
+                className="w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] bg-card text-app border border-app rounded-xl shadow-xl"
+                position="popper"
+                align="center"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value} className="text-sm rounded-lg cursor-pointer">
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
         )}
       </div>
     </section>

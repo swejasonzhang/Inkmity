@@ -40,7 +40,6 @@ export default function StudioSignup() {
     !!location.address.trim() &&
     agreedToTerms;
 
-  // Only surface the password requirement once the user has typed something that fails it.
   const pwdMsg = password.length > 0 && !validatePassword(password) ? "Use at least 8 characters, including a number." : "";
 
   const buildProfile = () => ({
@@ -60,7 +59,6 @@ export default function StudioSignup() {
         try {
           await signOut();
         } catch {
-          /* ignore stale session */
         }
       }
       const unsafeMetadata = {

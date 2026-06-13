@@ -135,8 +135,6 @@ export async function getBookingGate(req, res) {
   }
 }
 
-// Default number of sessions/dates a client may book for each piece size. The artist
-// can override with an explicit maxSessions. Flash stays a single sitting.
 const PIECE_SIZE_SESSIONS = {
   flash: 1,
   small: 1,

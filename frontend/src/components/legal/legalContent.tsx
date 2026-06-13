@@ -1,5 +1,3 @@
-// Single source of truth for the legal docs — rendered as full pages and in the
-// in-app modal, so the wording can't drift between them.
 export const LEGAL_UPDATED = "June 11, 2026";
 
 export const LEGAL_SURFACE = "bg-card";

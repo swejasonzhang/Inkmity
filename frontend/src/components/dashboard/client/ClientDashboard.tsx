@@ -209,9 +209,12 @@ export default function ClientDashboard() {
                     }
                 }
             `}</style>
-            <div className="h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root" onWheel={handleWheel}>
+            <div
+                className="h-dvh bg-app text-app flex flex-col overflow-hidden md:overflow-auto client-dashboard-root"
+                onWheel={handleWheel}
+            >
             <Header />
-            <div className="sm:hidden" style={{ marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
+            <div className="hidden" style={{ marginTop: 'clamp(0.25rem, 0.4vmin + 0.2vw, 0.5rem)' }}>
                 <ArtistFilter
                     priceFilter={priceFilter}
                     setPriceFilter={setPriceFilter}
@@ -262,13 +265,15 @@ export default function ClientDashboard() {
                                 artists={filtered.map(a => ({ ...a, username: displayNameFromUsername(a.username) }))}
                                 loading={loading}
                                 showArtists
-                                onSelectArtist={(artist: ArtistDto) => { setModalStep(0); setSelectedArtist(artist); }}
+                                onSelectArtist={(artist: ArtistDto) => {
+                                    const h = String((artist as any).handle || artist.username || "").replace(/^@/, "").trim();
+                                    navigate(`/artist/${encodeURIComponent(h)}`, { state: { artist } });
+                                }}
                             />
                         </Suspense>
                     </div>
                 </div>
             </main>
-            {/* Floating bar overlays the full-bleed content (it is position: fixed). */}
             <FloatingBar
                 role="Client"
                 onAssistantOpen={() => setAssistantOpen(true)}
@@ -297,7 +302,7 @@ export default function ClientDashboard() {
                             transition={{ type: "spring", stiffness: 260, damping: 28 }}
                             className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-4 lg:right-4 z-50 client-dashboard-assistant"
                         >
-                            <div className="w-full h-[90dvh] lg:w-[88vw] lg:h-auto lg:max-w-[400px] bg-card border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card">
+                            <div className="w-full h-[90dvh] lg:w-[88vw] lg:h-auto lg:max-w-[400px] bg-app border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card">
                                 <div className="flex items-center justify-between px-3 py-2 lg:px-3 lg:py-2 border-b border-app">
                                     <div className="flex items-center gap-2 font-semibold">
                                         <Bot size={16} />

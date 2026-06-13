@@ -75,10 +75,7 @@ export default function SharedAccountStep({
     const emailOk = emailFormatOk && !emailTaken;
     const pwdOk = shared.password.trim().length > 0 && validatePassword(shared.password);
 
-    // Email-already-registered is the one message worth surfacing inline; the rest is
-    // conveyed by the placeholders per the placeholder-only form style.
     const emailTakenMsg = emailTaken ? "This email is already registered. Log in or use another." : "";
-    // Only surface the password requirement once the user has typed something that fails it.
     const pwdMsg = shared.password.length > 0 && !pwdOk ? "Use at least 8 characters, including a number." : "";
 
     return (

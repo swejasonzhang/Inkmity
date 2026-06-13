@@ -56,8 +56,6 @@ export default function ArtistAppointmentHistory() {
     };
 
     const { pendingBookings, pastBookings } = useMemo(() => {
-        // Only truly finished work (or cancelled/denied/no-show) belongs in Past. An
-        // accepted appointment whose session hasn't happened yet stays Upcoming.
         const finishedStatuses = new Set<Booking["status"]>([
             "completed",
             "cancelled",

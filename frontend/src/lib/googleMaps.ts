@@ -1,9 +1,6 @@
-// Loads the Google Maps JS SDK (with the Places library) exactly once and resolves
-// with the global `google` namespace. Callers use `(window as any).google` afterwards.
 let mapsPromise: Promise<any> | null = null;
 
 export function googleMapsKey(): string | undefined {
-    // Guarded so it never throws if import.meta.env is absent (e.g. under tests).
     return (import.meta as any)?.env?.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
 }
 
@@ -36,14 +33,12 @@ export function loadGoogleMaps(): Promise<any> {
     return mapsPromise;
 }
 
-// Pulls the city (locality) out of a Places result's address components.
 export function cityFromPlace(place: any): string {
     const comps: any[] = place?.address_components || [];
     const pick = (type: string) => comps.find((c) => (c.types || []).includes(type))?.long_name;
     return pick("locality") || pick("postal_town") || pick("sublocality") || pick("administrative_area_level_2") || "";
 }
 
-// A monochrome map style that matches the app's black/white/gray theme.
 export const MONO_MAP_STYLE: any[] = [
     { elementType: "geometry", stylers: [{ color: "#1a1a1a" }] },
     { elementType: "labels.icon", stylers: [{ visibility: "off" }] },

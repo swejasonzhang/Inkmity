@@ -33,8 +33,6 @@ const Differentiators: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> =
         { title: "Built for clients, artists & studios", body: "Solo artists and full studios run on the same platform their clients book from — no bolting five disconnected tools together to run a shop.", Icon: Layers },
     ];
 
-    // Ink cascade: once the section scrolls in, the ink "pours" through the cards,
-    // flipping each one's color scheme to black in sequence (1 → 6).
     const [frontier, setFrontier] = useState(0);
     const startedRef = useRef(false);
     const timersRef = useRef<number[]>([]);
@@ -104,7 +102,6 @@ const Differentiators: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> =
                                             c.ink ? "justify-center" : "",
                                         ].join(" ")}
                                     >
-                                        {/* Ink pour: a black panel wipes down the card as it flips */}
                                         <span
                                             aria-hidden
                                             className={`pointer-events-none absolute inset-0 z-0 origin-top bg-[color:var(--fg)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${inverted && !c.ink ? "scale-y-100" : "scale-y-0"}`}
