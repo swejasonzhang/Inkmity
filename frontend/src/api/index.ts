@@ -367,6 +367,28 @@ export async function toggleArtworkLike(
   return apiPost<{ liked: boolean; likes: number }>("/artworks/like", body, token, signal);
 }
 
+export type PaymentBreakdown = {
+  priceCents: number;
+  platformFeeCents: number;
+  baseFeeWaived: boolean;
+  clientTotalCents: number;
+  isStudio: boolean;
+  commissionPct: number;
+  artistGrossCents: number;
+  artistNetCents: number;
+  studioCents: number;
+  stripeFeeCents: number;
+  status: string | null;
+};
+
+export async function fetchPaymentBreakdown(
+  body: { bookingId: string } | { artistClerkId: string; priceCents: number },
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<PaymentBreakdown>("/billing/breakdown", body, token, signal);
+}
+
 export async function addReview(
   token: string | null | undefined,
   reviewData: ReviewInput,

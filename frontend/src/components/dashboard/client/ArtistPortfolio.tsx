@@ -1,11 +1,72 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Maximize2, MapPin, Clock, Star, Images, ChevronLeft, ChevronRight } from "lucide-react";
+import { Maximize2, MapPin, Clock, Star, Images } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
 import { titleCase } from "@/lib/format";
+
+const SECTION_INITIAL = 5;
+
+const WorkSection: React.FC<{
+    title: string;
+    images: string[];
+    label: string;
+    imgAltPrefix: string;
+    onOpen: (images: string[], index: number, label: string) => void;
+    headingLevel?: "h3" | "h4";
+}> = ({ title, images, label, imgAltPrefix, onOpen, headingLevel = "h3" }) => {
+    const [showAll, setShowAll] = useState(false);
+    if (!images.length) return null;
+    const shown = showAll ? images : images.slice(0, SECTION_INITIAL);
+    const Heading = headingLevel;
+    return (
+        <section className="w-full">
+            <header className="mb-2 sm:mb-3 flex items-end justify-between gap-3">
+                <Heading className="text-base sm:text-lg font-semibold portfolio-section-title">{title}</Heading>
+                <span className="text-xs portfolio-section-count whitespace-nowrap">{images.length} image{images.length === 1 ? "" : "s"}</span>
+            </header>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {shown.map((src, i) => (
+                    <button
+                        key={`${src}-${i}`}
+                        onClick={() => onOpen(images, i, label)}
+                        className="group relative aspect-square rounded-2xl border overflow-hidden transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
+                        aria-label={`Open ${imgAltPrefix} ${i + 1}`}
+                    >
+                        <img
+                            src={src}
+                            alt={`${imgAltPrefix} ${i + 1}`}
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading={i < 4 ? "eager" : "lazy"}
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                        />
+                        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                            <div className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur-sm border" style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                                <Maximize2 className="h-3 w-3" /> View
+                            </div>
+                        </div>
+                    </button>
+                ))}
+            </div>
+            {images.length > SECTION_INITIAL && (
+                <div className="mt-3 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={() => setShowAll((v) => !v)}
+                        className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition hover:bg-elevated"
+                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                    >
+                        {showAll ? "Show less" : `View all ${images.length}`}
+                    </button>
+                </div>
+            )}
+        </section>
+    );
+};
 
 export type ArtistWithGroups = {
     _id: string;
@@ -72,103 +133,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
     const closeZoom = () => setZoom(null);
     const goPrev = () => setZoom(z => (z ? { ...z, index: (z.index + z.items.length - 1) % z.items.length } : z));
     const goNext = () => setZoom(z => (z ? { ...z, index: (z.index + 1) % z.items.length } : z));
-
-    const ImageGrid: React.FC<{ images: string[]; imgAltPrefix: string; label: string }> = ({ images, imgAltPrefix, label }) =>
-        images.length ? (
-            <div className="w-full hidden sm:block">
-                <div className="grid gap-3 w-full grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
-                    {images.map((src, i) => (
-                        <button
-                            key={`${src}-${i}`}
-                            onClick={() => openZoom(images, i, label)}
-                            className="group relative w-full aspect-[5/4] rounded-2xl border shadow-sm overflow-hidden ring-offset-background transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
-                            aria-label={`Open ${imgAltPrefix} ${i + 1}`}
-                        >
-                            <img
-                                src={src}
-                                alt={`${imgAltPrefix} ${i + 1}`}
-                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                loading={i < 4 ? "eager" : "lazy"}
-                                fetchPriority={i < 4 ? "high" : undefined}
-                                decoding="async"
-                                referrerPolicy="no-referrer"
-                            />
-                            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                                <div
-                                    className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm border"
-                                    style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}
-                                >
-                                    <Maximize2 className="h-3.5 w-3.5" /> View
-                                </div>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
-        ) : (
-            <p className="hidden sm:block text-sm" style={{ color: "color-mix(in srgb, var(--fg) 60%, transparent)" }}>
-                No items to show yet.
-            </p>
-        );
-
-    const MobileCarousel: React.FC<{ images: string[]; imgAltPrefix: string; label: string }> = ({ images, imgAltPrefix, label }) => {
-        const [index, setIndex] = useState(0);
-        const swipeTo = (dir: "prev" | "next") => setIndex(i => (dir === "prev" ? (i + images.length - 1) % images.length : (i + 1) % images.length));
-        const onDragEnd = (_: any, info: { offset: { x: number } }) => {
-            const t = 50;
-            if (info.offset.x < -t) swipeTo("next");
-            else if (info.offset.x > t) swipeTo("prev");
-        };
-        if (!images.length) return null;
-        const src = images[index];
-        const frost: React.CSSProperties = {
-            background: "color-mix(in srgb, var(--card) 82%, transparent)",
-            borderColor: "color-mix(in srgb, var(--fg) 25%, transparent)",
-            color: "var(--fg)",
-        };
-        return (
-            <div className="sm:hidden">
-                <div className="relative w-full mx-auto max-w-full rounded-2xl overflow-hidden border" style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}>
-                    <motion.button
-                        key={src}
-                        drag="x"
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.2}
-                        dragSnapToOrigin
-                        onDragEnd={onDragEnd}
-                        onClick={() => openZoom(images, index, label)}
-                        aria-label={`Open ${imgAltPrefix} ${index + 1}`}
-                        className="block w-full"
-                    >
-                        <img src={src} alt={`${imgAltPrefix} ${index + 1}`} className="block max-w-full h-auto object-contain mx-auto" loading="eager" decoding="async" referrerPolicy="no-referrer" />
-                    </motion.button>
-
-                    <div className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold backdrop-blur-md border shadow-lg" style={frost}>
-                        <Maximize2 className="h-3.5 w-3.5" /> View
-                    </div>
-
-                    {images.length > 1 && (
-                        <>
-                            <button type="button" aria-label="Previous" onClick={(e) => { e.stopPropagation(); swipeTo("prev"); }} className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border backdrop-blur-md shadow-lg active:scale-90 transition" style={frost}>
-                                <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            <button type="button" aria-label="Next" onClick={(e) => { e.stopPropagation(); swipeTo("next"); }} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full border backdrop-blur-md shadow-lg active:scale-90 transition" style={frost}>
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-
-                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 backdrop-blur-md border shadow-lg" style={frost}>
-                                {images.map((_, i) => (
-                                    <button key={i} type="button" onClick={(e) => { e.stopPropagation(); setIndex(i); }} aria-label={`Go to ${label} ${i + 1}`} className="rounded-full transition-all" style={{ height: 8, width: i === index ? 16 : 8, background: i === index ? "var(--fg)" : "color-mix(in srgb, var(--fg) 35%, transparent)" }} />
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
-        );
-    };
 
     const bioText = (artist.bio || "").trim() || `Nice to meet you, I'm ${artist.username || "this artist"}, let's talk about your next tattoo.`;
 
@@ -264,21 +228,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                     </section>
                 )}
 
-                {recent.length > 0 && (
-                    <section className="w-full">
-                        <header className="mb-2 sm:mb-3 grid items-center gap-2" style={{ gridTemplateColumns: "minmax(0,1fr) auto minmax(0,1fr)" }}>
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title whitespace-nowrap justify-self-start">Recent Works</h3>
-                            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] sm:text-xs font-bold whitespace-nowrap justify-self-center shadow-sm" style={{ borderColor: "color-mix(in srgb, var(--fg) 28%, transparent)", background: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)" }}>
-                                <Maximize2 className="h-3 w-3" /> Tap any image to zoom
-                            </span>
-                            <span className="text-xs portfolio-section-count whitespace-nowrap justify-self-end">
-                                {recent.length} image{recent.length === 1 ? "" : "s"}
-                            </span>
-                        </header>
-                        <MobileCarousel images={recent} imgAltPrefix="Recent work" label="Recent Works" />
-                        <ImageGrid images={recent} imgAltPrefix="Recent work" label="Recent Works" />
-                    </section>
-                )}
+                <WorkSection title="Recent Works" images={recent} imgAltPrefix="Recent work" label="Recent Works" onOpen={openZoom} />
 
                 {stylesClean.length > 0 && past.length > 0 && (
                     <section className="w-full">
@@ -292,42 +242,15 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                                 if (!imgs.length) return null;
                                 const label = titleCase(style);
                                 return (
-                                    <div key={style}>
-                                        <h4 className="text-sm font-semibold mb-2" style={{ color: "color-mix(in srgb, var(--fg) 88%, transparent)" }}>{label}</h4>
-                                        <MobileCarousel images={imgs} imgAltPrefix={`${label} work`} label={label} />
-                                        <ImageGrid images={imgs} imgAltPrefix={`${label} work`} label={label} />
-                                    </div>
+                                    <WorkSection key={style} title={label} images={imgs} imgAltPrefix={`${label} work`} label={label} onOpen={openZoom} headingLevel="h4" />
                                 );
                             })}
                         </div>
                     </section>
                 )}
 
-                {healed.length > 0 && (
-                    <section className="w-full">
-                        <header className="mb-2 sm:mb-3 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Healed Works</h3>
-                            <span className="text-xs portfolio-section-count">
-                                {healed.length} image{healed.length === 1 ? "" : "s"}
-                            </span>
-                        </header>
-                        <MobileCarousel images={healed} imgAltPrefix="Healed work" label="Healed Works" />
-                        <ImageGrid images={healed} imgAltPrefix="Healed work" label="Healed Works" />
-                    </section>
-                )}
-
-                {sketches.length > 0 && (
-                    <section className="w-full">
-                        <header className="mb-2 sm:mb-3 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">Upcoming Sketches & Ideas</h3>
-                            <span className="text-xs portfolio-section-count">
-                                {sketches.length} image{sketches.length === 1 ? "" : "s"}
-                            </span>
-                        </header>
-                        <MobileCarousel images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
-                        <ImageGrid images={sketches} imgAltPrefix="Sketch" label="Upcoming Sketches" />
-                    </section>
-                )}
+                <WorkSection title="Healed Works" images={healed} imgAltPrefix="Healed work" label="Healed Works" onOpen={openZoom} />
+                <WorkSection title="Sketches & Ideas" images={sketches} imgAltPrefix="Sketch" label="Sketches & Ideas" onOpen={openZoom} />
             </div>
 
             {zoom && <FullscreenZoom src={zoom.items[zoom.index]} count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`} onPrev={goPrev} onNext={goNext} onClose={closeZoom} />}
