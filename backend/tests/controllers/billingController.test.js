@@ -9,6 +9,8 @@ const conditionalDescribe =
 const stripeMock = {
   customers: { create: jest.fn(), retrieve: jest.fn() },
   paymentIntents: { create: jest.fn() },
+  setupIntents: { create: jest.fn() },
+  paymentMethods: { list: jest.fn(), retrieve: jest.fn(), detach: jest.fn() },
   webhooks: { constructEvent: jest.fn((body) => JSON.parse(body.toString())) },
   accounts: { create: jest.fn(), retrieve: jest.fn() },
   accountLinks: { create: jest.fn() },
@@ -16,8 +18,15 @@ const stripeMock = {
 };
 jest.unstable_mockModule("../../lib/stripe.js", () => ({ stripe: stripeMock }));
 
-const { createDepositPaymentIntent, createFinalPaymentIntent, stripeWebhook } =
-  await import("../../controllers/billingController.js");
+const {
+  createDepositPaymentIntent,
+  createFinalPaymentIntent,
+  createBankSetupIntent,
+  createClientSetupIntent,
+  listClientPaymentMethods,
+  deleteClientPaymentMethod,
+  stripeWebhook,
+} = await import("../../controllers/billingController.js");
 const Booking = (await import("../../models/Booking.js")).default;
 const Billing = (await import("../../models/Billing.js")).default;
 const WebhookEvent = (await import("../../models/WebhookEvent.js")).default;
@@ -37,6 +46,10 @@ const mockAuth = (req, res, next) => {
 
 app.post("/billing/deposit/intent", mockAuth, createDepositPaymentIntent);
 app.post("/billing/final-payment/intent", mockAuth, createFinalPaymentIntent);
+app.post("/billing/bank-setup-intent", mockAuth, createBankSetupIntent);
+app.post("/billing/client/setup-intent", mockAuth, createClientSetupIntent);
+app.get("/billing/client/payment-methods", mockAuth, listClientPaymentMethods);
+app.post("/billing/client/payment-methods/delete", mockAuth, deleteClientPaymentMethod);
 app.post(
   "/billing/webhook",
   (req, res, next) => {
@@ -403,5 +416,176 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
     expect(artist.chargesEnabled).toBe(true);
     expect(artist.payoutsEnabled).toBe(true);
     expect(artist.onboardingCompletedAt).toBeTruthy();
+  });
+});
+
+conditionalDescribe("Billing Controller - Bank Setup Intent (ACH)", () => {
+  let bookingId;
+
+  beforeEach(async () => {
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const booking = await Booking.create({
+      artistId: "artist-123",
+      clientId: "client-456",
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "confirmed",
+      appointmentType: "tattoo_session",
+      priceCents: 10000,
+    });
+    bookingId = booking._id.toString();
+
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_bank123" });
+    stripeMock.setupIntents.create.mockResolvedValue({
+      id: "seti_bank123",
+      client_secret: "seti_bank123_secret",
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("creates a us_bank_account SetupIntent for off-session ACH charges", async () => {
+    const response = await request(app)
+      .post("/billing/bank-setup-intent")
+      .set("x-test-user-id", "client-456")
+      .send({ bookingId });
+
+    expect(response.status).toBe(200);
+    expect(response.body.clientSecret).toBe("seti_bank123_secret");
+    expect(response.body.setupIntentId).toBe("seti_bank123");
+    expect(response.body.customerId).toBe("cus_bank123");
+    expect(stripeMock.setupIntents.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: "cus_bank123",
+        usage: "off_session",
+        payment_method_types: ["us_bank_account"],
+        metadata: expect.objectContaining({ type: "bank_on_file", bookingId }),
+      })
+    );
+
+    const booking = await Booking.findById(bookingId);
+    expect(booking.stripeCustomerId).toBe("cus_bank123");
+  });
+
+  test("rejects when bookingId is missing", async () => {
+    const response = await request(app)
+      .post("/billing/bank-setup-intent")
+      .set("x-test-user-id", "client-456")
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(stripeMock.setupIntents.create).not.toHaveBeenCalled();
+  });
+});
+
+conditionalDescribe("Billing Controller - Client saved payment methods (profile)", () => {
+  const CLERK = "client-pm";
+
+  beforeEach(async () => {
+    const Client = mongoose.model("client");
+    await Client.create({
+      clerkId: CLERK,
+      email: "pm@example.com",
+      username: "PM Client",
+      handle: "@pmclient",
+      role: "client",
+    });
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_pm1", invoice_settings: {} });
+    stripeMock.customers.retrieve.mockResolvedValue({
+      id: "cus_pm1",
+      invoice_settings: { default_payment_method: "pm_card_1" },
+    });
+    stripeMock.setupIntents.create.mockResolvedValue({
+      id: "seti_pm1",
+      client_secret: "seti_pm1_secret",
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("creates an automatic-methods SetupIntent (card + bank) and persists the Stripe customer", async () => {
+    const res = await request(app)
+      .post("/billing/client/setup-intent")
+      .set("x-test-user-id", CLERK)
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.clientSecret).toBe("seti_pm1_secret");
+    expect(stripeMock.setupIntents.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: "cus_pm1",
+        usage: "off_session",
+        automatic_payment_methods: { enabled: true },
+      })
+    );
+
+    const Client = mongoose.model("client");
+    const saved = await Client.findOne({ clerkId: CLERK });
+    expect(saved.stripeCustomerId).toBe("cus_pm1");
+  });
+
+  test("lists saved card + bank methods with display details and default flag", async () => {
+    const Client = mongoose.model("client");
+    await Client.updateOne({ clerkId: CLERK }, { $set: { stripeCustomerId: "cus_pm1" } });
+
+    stripeMock.paymentMethods.list.mockImplementation(async ({ type }) =>
+      type === "card"
+        ? { data: [{ id: "pm_card_1", card: { brand: "visa", last4: "4242", exp_month: 12, exp_year: 2030 } }] }
+        : { data: [{ id: "pm_bank_1", us_bank_account: { bank_name: "Test Bank", last4: "6789" } }] }
+    );
+
+    const res = await request(app)
+      .get("/billing/client/payment-methods")
+      .set("x-test-user-id", CLERK);
+
+    expect(res.status).toBe(200);
+    expect(res.body.methods).toHaveLength(2);
+    const card = res.body.methods.find((m) => m.type === "card");
+    expect(card).toMatchObject({ brand: "visa", last4: "4242", isDefault: true });
+    const bank = res.body.methods.find((m) => m.type === "us_bank_account");
+    expect(bank).toMatchObject({ bankName: "Test Bank", last4: "6789", isDefault: false });
+  });
+
+  test("returns empty list when the client has no Stripe customer yet", async () => {
+    const res = await request(app)
+      .get("/billing/client/payment-methods")
+      .set("x-test-user-id", CLERK);
+
+    expect(res.status).toBe(200);
+    expect(res.body.methods).toEqual([]);
+  });
+
+  test("detaches (swaps out) a saved payment method the client owns", async () => {
+    const Client = mongoose.model("client");
+    await Client.updateOne({ clerkId: CLERK }, { $set: { stripeCustomerId: "cus_pm1" } });
+    stripeMock.paymentMethods.retrieve.mockResolvedValue({ id: "pm_card_1", customer: "cus_pm1" });
+    stripeMock.paymentMethods.detach.mockResolvedValue({ id: "pm_card_1" });
+
+    const res = await request(app)
+      .post("/billing/client/payment-methods/delete")
+      .set("x-test-user-id", CLERK)
+      .send({ paymentMethodId: "pm_card_1" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(stripeMock.paymentMethods.detach).toHaveBeenCalledWith("pm_card_1");
+  });
+
+  test("refuses to detach a payment method owned by another customer", async () => {
+    const Client = mongoose.model("client");
+    await Client.updateOne({ clerkId: CLERK }, { $set: { stripeCustomerId: "cus_pm1" } });
+    stripeMock.paymentMethods.retrieve.mockResolvedValue({ id: "pm_x", customer: "cus_other" });
+
+    const res = await request(app)
+      .post("/billing/client/payment-methods/delete")
+      .set("x-test-user-id", CLERK)
+      .send({ paymentMethodId: "pm_x" });
+
+    expect(res.status).toBe(403);
+    expect(stripeMock.paymentMethods.detach).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,7 @@ const ClientSchema = new Schema(
     placement: String,
     size: String,
     references: { type: [String], default: [] },
+    stripeCustomerId: { type: String, index: true },
     dob: { type: Date },
     lastBirthdayCreditYear: { type: Number },
     totalFeesPaid: { type: Number, default: 0 },
