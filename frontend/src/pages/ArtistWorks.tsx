@@ -190,10 +190,8 @@ export default function ArtistWorks() {
                                     onBack={() => setTab(0)}
                                     onGoToStep={(s) => setTab(s)}
                                     onMessage={async (a) => {
-                                        navigate("/dashboard");
-                                        window.dispatchEvent(
-                                            new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } })
-                                        );
+                                        try { if (a.clerkId) sessionStorage.setItem("inkmity_reopen_conversation", a.clerkId); } catch { }
+                                        navigate("/artists");
                                     }}
                                 />
                             )}
