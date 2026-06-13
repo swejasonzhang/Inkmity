@@ -161,7 +161,10 @@ function AddPaymentForm({
 
   return (
     <>
-      <div className="relative" style={{ minHeight: ready ? undefined : PAYMENT_ELEMENT_HEIGHT }}>
+      <div
+        className="relative overflow-y-auto ink-page-scroll"
+        style={{ height: PAYMENT_ELEMENT_HEIGHT }}
+      >
         <div ref={containerRef} />
         {!ready && (
           <div className="absolute inset-0">
