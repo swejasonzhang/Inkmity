@@ -465,7 +465,7 @@ export async function createClientSetupIntent(req, res) {
     const setupIntent = await stripe.setupIntents.create({
       customer: resolved.customerId,
       usage: "off_session",
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ["card", "klarna", "cashapp", "us_bank_account"],
       metadata: { clerkId, type: "client_payment_method" },
     });
 

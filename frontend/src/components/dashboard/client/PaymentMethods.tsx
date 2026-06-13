@@ -19,13 +19,56 @@ function brandLabel(m: SavedPaymentMethod) {
   return (m.brand || "card").replace(/^\w/, (c) => c.toUpperCase());
 }
 
+const PAYMENT_ELEMENT_HEIGHT = 776;
+
+function Shimmer({ className }: { className?: string }) {
+  return <div className={`ink-shimmer rounded-lg ${className || ""}`} aria-hidden />;
+}
+
+function PaymentElementSkeleton() {
+  return (
+    <div className="h-full flex flex-col gap-4" aria-hidden>
+      <div className="grid grid-cols-4 gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Shimmer key={i} className="h-[52px]" />
+        ))}
+      </div>
+      <div className="space-y-1.5">
+        <Shimmer className="h-3 w-24" />
+        <Shimmer className="h-11 w-full" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Shimmer className="h-3 w-20" />
+          <Shimmer className="h-11 w-full" />
+        </div>
+        <div className="space-y-1.5">
+          <Shimmer className="h-3 w-20" />
+          <Shimmer className="h-11 w-full" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Shimmer className="h-3 w-16" />
+          <Shimmer className="h-11 w-full" />
+        </div>
+        <div className="space-y-1.5">
+          <Shimmer className="h-3 w-16" />
+          <Shimmer className="h-11 w-full" />
+        </div>
+      </div>
+      <Shimmer className="flex-1 min-h-[120px] w-full" />
+    </div>
+  );
+}
+
 function AddPaymentForm({
   clientSecret,
   appearanceTheme,
   onSaved,
   onCancel,
 }: {
-  clientSecret: string;
+  clientSecret: string | null;
   appearanceTheme: "stripe" | "night";
   onSaved: () => void;
   onCancel: () => void;
@@ -37,11 +80,50 @@ function AddPaymentForm({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!clientSecret) return;
     let active = true;
     (async () => {
       const stripe = await stripePromise;
       if (!stripe || !active || !containerRef.current) return;
-      const elements = stripe.elements({ clientSecret, appearance: { theme: appearanceTheme } });
+
+      const cs = getComputedStyle(document.documentElement);
+      const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
+      const isLight = appearanceTheme === "stripe";
+      const fg = v("--fg", isLight ? "#111111" : "#f5f5f5");
+      const surface = v("--elevated", v("--card", isLight ? "#ffffff" : "#161616"));
+      const border = v("--border", isLight ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.16)");
+      const muted = v("--subtle", isLight ? "#6b7280" : "#a1a1aa");
+
+      const appearance = {
+        theme: appearanceTheme,
+        variables: {
+          colorPrimary: fg,
+          colorBackground: surface,
+          colorText: fg,
+          colorTextSecondary: muted,
+          colorDanger: "#ef4444",
+          fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+          borderRadius: "12px",
+          fontSizeBase: "15px",
+        },
+        rules: {
+          ".Tab": { border: `1px solid ${border}`, backgroundColor: surface, boxShadow: "none" },
+          ".Tab:hover": { color: fg },
+          ".Tab--selected": { borderColor: fg, backgroundColor: surface, color: fg, boxShadow: "none" },
+          ".TabIcon--selected": { fill: fg, color: fg },
+          ".TabLabel--selected": { color: fg },
+          ".Input": { border: `1px solid ${border}`, backgroundColor: surface, boxShadow: "none" },
+          ".Input:focus": { border: `1px solid ${fg}`, boxShadow: "none" },
+          ".Label": { color: muted },
+          ".Block": { backgroundColor: surface, border: `1px solid ${border}` },
+        },
+      } as const;
+
+      const elements = stripe.elements({
+        clientSecret,
+        appearance,
+        fonts: [{ cssSrc: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" }],
+      });
       const paymentEl = elements.create("payment", { layout: "tabs" });
       paymentEl.on("ready", () => active && setReady(true));
       paymentEl.mount(containerRef.current);
@@ -79,9 +161,13 @@ function AddPaymentForm({
 
   return (
     <>
-      <div className="min-h-[40px]">
-        {!ready && <div className="ink-shimmer h-32 w-full rounded-xl" aria-hidden />}
+      <div className="relative" style={{ minHeight: ready ? undefined : PAYMENT_ELEMENT_HEIGHT }}>
         <div ref={containerRef} />
+        {!ready && (
+          <div className="absolute inset-0">
+            <PaymentElementSkeleton />
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex items-center gap-1.5 text-[11px] text-subtle">
@@ -118,7 +204,6 @@ export default function PaymentMethods() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [preparing, setPreparing] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -147,7 +232,6 @@ export default function PaymentMethods() {
   const openModal = async () => {
     setModalOpen(true);
     setClientSecret(null);
-    setPreparing(true);
     try {
       const token = await getToken();
       const res = await createClientSetupIntent(token);
@@ -156,8 +240,6 @@ export default function PaymentMethods() {
     } catch {
       toast.error("Couldn't start — try again.");
       setModalOpen(false);
-    } finally {
-      setPreparing(false);
     }
   };
 
@@ -283,16 +365,12 @@ export default function PaymentMethods() {
               </button>
             </div>
 
-            {preparing || !clientSecret ? (
-              <div className="ink-shimmer h-40 w-full rounded-xl" aria-hidden />
-            ) : (
-              <AddPaymentForm
-                clientSecret={clientSecret}
-                appearanceTheme={theme === "light" ? "stripe" : "night"}
-                onSaved={onSaved}
-                onCancel={closeModal}
-              />
-            )}
+            <AddPaymentForm
+              clientSecret={clientSecret}
+              appearanceTheme={theme === "light" ? "stripe" : "night"}
+              onSaved={onSaved}
+              onCancel={closeModal}
+            />
           </div>
         </div>,
         document.body
