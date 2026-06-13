@@ -13,6 +13,7 @@ import AftercareInstructions from "@/components/dashboard/shared/AftercareInstru
 import LazyReveal from "@/components/ui/LazyReveal";
 import ArtistWaitlist from "@/components/dashboard/artist/ArtistWaitlist";
 import SketchPanel from "@/components/dashboard/shared/SketchPanel";
+import PaymentBreakdown from "@/components/dashboard/client/PaymentBreakdown";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
 
 function formatCurrency(cents: number): string {
@@ -95,6 +96,7 @@ export default function Appointments() {
   const [priceInput, setPriceInput] = useState("");
   const [aftercareModalOpen, setAftercareModalOpen] = useState(false);
   const [aftercareAppointment, setAftercareAppointment] = useState<AppointmentWithUsers | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
@@ -111,18 +113,6 @@ export default function Appointments() {
     loadAppointments();
   }, [roleLoaded, user?.id]);
 
-  useEffect(() => {
-    if (appointments.length > 0 && isClient && !aftercareAppointment) {
-      const dismissed = getDismissedAftercare();
-      const completedTattooSession = appointments.find(
-        (a) => a.status === "completed" && a.appointmentType === "tattoo_session" && !dismissed.includes(a._id)
-      );
-      if (completedTattooSession) {
-        setAftercareAppointment(completedTattooSession);
-        setAftercareModalOpen(true);
-      }
-    }
-  }, [appointments, isClient, aftercareAppointment]);
 
   const loadAppointments = async (silent = false) => {
     if (!roleLoaded || !user?.id) return;
@@ -204,9 +194,8 @@ export default function Appointments() {
       const token = await getToken();
       const updated = await verifyBookingCompletion(id, who, code, token ?? undefined);
       toast.success(
-        updated.status === "completed"
-          ? "Session completed — payment is being processed."
-          : "Confirmed — waiting for the other party to confirm."
+        updated.status === "completed" ? "Completed — processing payment." : "Confirmed — awaiting the other party.",
+        { hideProgressBar: true }
       );
       await loadAppointments();
     } catch (error: any) {
@@ -616,6 +605,12 @@ export default function Appointments() {
             )}
           </div>
 
+          {isClient && appointment.priceCents !== undefined && appointment.priceCents > 0 && (
+            <div className="pt-1">
+              <PaymentBreakdown bookingId={appointment._id} />
+            </div>
+          )}
+
           {isCompleted && isTattooSession && (
             <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
               <Button
@@ -672,7 +667,7 @@ export default function Appointments() {
               )}
               {canCancel && (
                 <Button
-                  onClick={() => handleDeny(appointment._id)}
+                  onClick={() => setCancelTarget(appointment._id)}
                   disabled={processing === appointment._id}
                   variant="outline"
                   className="flex-1 h-10 sm:h-11 text-xs sm:text-sm font-semibold transition-all hover:scale-[1.02] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -780,6 +775,41 @@ export default function Appointments() {
         }}
         appointmentDate={aftercareAppointment?.startAt}
       />
+
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 z-[2147483600] grid place-items-center p-4"
+          style={{ background: "color-mix(in srgb, var(--bg) 70%, transparent)", backdropFilter: "blur(6px)" }}
+          onClick={() => setCancelTarget(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border bg-card p-5 text-center shadow-2xl"
+            style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold">Cancel this appointment?</h3>
+            <p className="mt-1.5 text-sm text-subtle">
+              This frees the slot and notifies the artist. You may need to wait before re-booking with them.
+            </p>
+            <div className="mt-5 flex gap-2">
+              <Button
+                onClick={() => setCancelTarget(null)}
+                className="flex-1 h-10 text-sm font-semibold bg-elevated border border-app text-app hover:bg-elevated/70"
+              >
+                Keep it
+              </Button>
+              <Button
+                onClick={() => { const id = cancelTarget; setCancelTarget(null); if (id) handleDeny(id); }}
+                disabled={processing === cancelTarget}
+                className="flex-1 h-10 text-sm font-semibold"
+                style={{ background: "var(--fg)", color: "var(--bg)" }}
+              >
+                {processing === cancelTarget ? "Cancelling…" : "Yes, cancel"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ToastContainer
         position="top-center"

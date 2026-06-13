@@ -1,64 +1,30 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, ImageIcon, Bot, ShieldCheck, Search, X } from "lucide-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { Sparkles, ImageIcon, Bot, ShieldCheck, ThumbsUp, Flame } from "lucide-react";
+import { toast } from "react-toastify";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
-import { titleCase } from "@/lib/format";
-import { fetchArtists, type Artist } from "@/api";
-
-type WorkCategory = "Portfolio" | "Past work" | "Healed";
-
-type GalleryItem = {
-  url: string;
-  artist: string;
-  handle: string;
-  styles: string[];
-  category: WorkCategory;
-};
+import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
+import { fetchPopularArtworks, toggleArtworkLike, type PopularArtwork } from "@/api";
 
 type TabKey = "real" | "ai";
 
 const Gallery: React.FC = () => {
   const [tab, setTab] = useState<TabKey>("real");
-  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [items, setItems] = useState<PopularArtwork[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [query, setQuery] = useState("");
-  const [debounced, setDebounced] = useState("");
-  const [activeStyle, setActiveStyle] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<WorkCategory | "All">("All");
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(query.trim().toLowerCase()), 180);
-    return () => clearTimeout(t);
-  }, [query]);
+  const { getToken } = useAuth();
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
       try {
-        const res = await fetchArtists({ pageSize: 60 }, controller.signal);
-        const artists = (res?.items ?? []) as (Artist & {
-          handle?: string;
-          portfolioImages?: string[];
-          pastWorks?: string[];
-          healedWorks?: string[];
-        })[];
-        const collected: GalleryItem[] = [];
-        for (const a of artists) {
-          const styles = (a.styles ?? []).filter(Boolean);
-          const handle = (a.handle || a.username || "").replace(/^@/, "");
-          const add = (urls: string[] | undefined, category: WorkCategory) => {
-            for (const url of (urls ?? []).filter(Boolean)) {
-              collected.push({ url, artist: a.username, handle, styles, category });
-            }
-          };
-          add(a.portfolioImages, "Portfolio");
-          add(a.pastWorks, "Past work");
-          add(a.healedWorks, "Healed");
-        }
-        setItems(collected);
+        const token = isSignedIn ? await getToken() : null;
+        const res = await fetchPopularArtworks(token, controller.signal, 80);
+        setItems(res?.items ?? []);
       } catch {
         setItems([]);
       } finally {
@@ -66,39 +32,35 @@ const Gallery: React.FC = () => {
       }
     })();
     return () => controller.abort();
-  }, []);
+  }, [isSignedIn, getToken]);
+
+  const onToggleLike = async (idx: number) => {
+    if (!isSignedIn) {
+      toast.info("Sign in to save favorites.", { position: "top-center", hideProgressBar: true });
+      return;
+    }
+    const it = items[idx];
+    if (!it) return;
+    const nextLiked = !it.likedByMe;
+    setItems((prev) =>
+      prev.map((w, i) => (i === idx ? { ...w, likedByMe: nextLiked, likes: Math.max(0, w.likes + (nextLiked ? 1 : -1)) } : w))
+    );
+    try {
+      const token = await getToken();
+      const res = await toggleArtworkLike({ artistClerkId: it.artistClerkId, imageUrl: it.url }, token);
+      setItems((prev) => prev.map((w, i) => (i === idx ? { ...w, likedByMe: res.liked, likes: res.likes } : w)));
+    } catch {
+      setItems((prev) =>
+        prev.map((w, i) => (i === idx ? { ...w, likedByMe: it.likedByMe, likes: it.likes } : w))
+      );
+      toast.error("Couldn't update — try again.", { position: "top-center", hideProgressBar: true });
+    }
+  };
 
   const tabs: { key: TabKey; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "real", label: "Real Work", Icon: ImageIcon },
     { key: "ai", label: "AI Inspiration", Icon: Bot },
   ];
-
-  const allStyles = useMemo(() => {
-    const set = new Set<string>();
-    for (const it of items) for (const s of it.styles) set.add(titleCase(s));
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [items]);
-
-  const categories: (WorkCategory | "All")[] = ["All", "Portfolio", "Past work", "Healed"];
-
-  const filtered = useMemo(() => {
-    return items.filter((it) => {
-      if (activeCategory !== "All" && it.category !== activeCategory) return false;
-      if (activeStyle && !it.styles.some((s) => titleCase(s) === activeStyle)) return false;
-      if (debounced) {
-        const hay = [
-          it.artist,
-          it.handle,
-          it.category,
-          ...it.styles.map(titleCase),
-        ]
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(debounced)) return false;
-      }
-      return true;
-    });
-  }, [items, debounced, activeStyle, activeCategory]);
 
   return (
     <div id="dashboard-scope" className="ink-scope theme-smooth h-svh ink-page-scroll overflow-x-hidden bg-app text-app">
@@ -117,7 +79,7 @@ const Gallery: React.FC = () => {
           </div>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight">Explore</h1>
           <p className="mt-2 text-sm text-subtle leading-relaxed">
-            Search by style, artist, or vibe. Tap any piece to open the artist's portfolio and book them.
+            The most-loved pieces and fresh ideas across Inkmity. Tap a thumbs-up on what speaks to you, or open the artist to book.
           </p>
         </motion.div>
 
@@ -143,86 +105,9 @@ const Gallery: React.FC = () => {
           })}
         </div>
 
-        {tab === "real" && (
-          <div className="mt-7 max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-subtle" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search styles, artists, or vibes…"
-                className="w-full rounded-2xl border border-app/50 bg-card/70 backdrop-blur-md pl-11 pr-10 py-3 text-sm text-app placeholder:text-subtle outline-none focus:border-app focus:ring-2 focus:ring-white/10 transition"
-              />
-              {query && (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center h-6 w-6 rounded-full text-subtle hover:text-app hover:bg-elevated transition"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
-            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {categories.map((c) => {
-                const active = activeCategory === c;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setActiveCategory(c)}
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border transition ${
-                      active
-                        ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent"
-                        : "border-app/40 bg-elevated text-subtle hover:text-app"
-                    }`}
-                  >
-                    {c}
-                  </button>
-                );
-              })}
-            </div>
-
-            {allStyles.length > 0 && (
-              <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <button
-                  type="button"
-                  onClick={() => setActiveStyle(null)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium border transition ${
-                    activeStyle === null
-                      ? "bg-neutral-700 text-white border-transparent"
-                      : "border-app/40 bg-elevated text-subtle hover:text-app"
-                  }`}
-                >
-                  All styles
-                </button>
-                {allStyles.map((s) => {
-                  const active = activeStyle === s;
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setActiveStyle(active ? null : s)}
-                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium border transition ${
-                        active
-                          ? "bg-neutral-700 text-white border-transparent"
-                          : "border-app/40 bg-elevated text-subtle hover:text-app"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="mt-8">
           {tab === "real" ? (
-            <RealWork items={filtered} loading={loading} hasItems={items.length > 0} />
+            <PopularGrid items={items} loading={loading} onToggleLike={onToggleLike} />
           ) : (
             <AiInspiration />
           )}
@@ -234,79 +119,90 @@ const Gallery: React.FC = () => {
 
 const SPANS = [22, 28, 24, 32, 26, 20];
 
-const RealWork: React.FC<{
-  items: GalleryItem[];
+const PopularGrid: React.FC<{
+  items: PopularArtwork[];
   loading: boolean;
-  hasItems: boolean;
-}> = ({ items, loading, hasItems }) => {
+  onToggleLike: (idx: number) => void;
+}> = ({ items, loading, onToggleLike }) => {
   const skeleton = (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
       {Array.from({ length: 12 }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-2xl ink-shimmer"
-          style={{ gridRow: `span ${SPANS[i % SPANS.length]}` }}
-        />
+        <div key={i} className="rounded-2xl ink-shimmer" style={{ gridRow: `span ${SPANS[i % SPANS.length]}` }} />
       ))}
     </div>
   );
 
   return (
     <LazyReveal loading={loading} skeleton={skeleton}>
-      {!hasItems ? (
+      {items.length === 0 ? (
         <EmptyState
           Icon={ImageIcon}
           title="No artwork yet"
-          body="As artists publish their portfolios, their stencils and finished tattoos will show up here."
-        />
-      ) : items.length === 0 ? (
-        <EmptyState
-          Icon={Search}
-          title="No matches"
-          body="Nothing fits those filters yet. Try a different style, category, or search term."
+          body="As artists publish their portfolios, their best pieces will rise to the top here."
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
-          {items.map((item, i) => (
-            <GalleryTile key={`${item.url}-${i}`} item={item} span={SPANS[i % SPANS.length]} />
-          ))}
-
-        </div>
+        <>
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold">
+            <Flame className="h-4 w-4" /> Most loved right now
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
+            {items.map((item, i) => (
+              <ArtworkTile key={`${item.artistClerkId}-${item.url}`} item={item} span={SPANS[i % SPANS.length]} onLike={() => onToggleLike(i)} />
+            ))}
+          </div>
+        </>
       )}
     </LazyReveal>
   );
 };
 
-const GalleryTile: React.FC<{ item: GalleryItem; span: number }> = ({ item, span }) => {
+const ArtworkTile: React.FC<{ item: PopularArtwork; span: number; onLike: () => void }> = ({ item, span, onLike }) => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => navigate(`/artist/${encodeURIComponent(item.handle)}`)}
-      aria-label={`View ${item.artist}'s portfolio`}
+      onKeyDown={(e) => { if (e.key === "Enter") navigate(`/artist/${encodeURIComponent(item.handle)}`); }}
+      aria-label={`View ${item.username}'s portfolio`}
       style={{ gridRow: `span ${span}` }}
       className="relative overflow-hidden rounded-2xl border border-app bg-card group cursor-pointer"
     >
       {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
       <img
         src={item.url}
-        alt={`Tattoo work by ${item.artist}`}
+        alt={`Tattoo work by ${item.username}`}
         loading="lazy"
         decoding="async"
+        referrerPolicy="no-referrer"
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] ${
-          loaded ? "ink-fade-in" : "opacity-0"
-        }`}
+        className={`w-full h-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] ${loaded ? "ink-fade-in" : "opacity-0"}`}
       />
-      <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <figcaption className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 px-3 py-2 text-xs font-medium text-white text-left">
-        @{item.artist}
-        <span className="block text-[10px] text-white/70">{item.category} · View portfolio</span>
-      </figcaption>
-    </button>
+      <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onLike(); }}
+        aria-pressed={item.likedByMe}
+        aria-label={item.likedByMe ? "Remove like" : "Like this piece"}
+        className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold border backdrop-blur-md transition ${
+          item.likedByMe
+            ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent"
+            : "bg-black/40 text-white border-white/30 hover:bg-black/60"
+        }`}
+      >
+        <ThumbsUp className={`h-3.5 w-3.5 ${item.likedByMe ? "fill-current" : ""}`} />
+        {item.likes}
+      </button>
+
+      <div className="absolute inset-x-0 bottom-0 px-3 py-2.5 flex items-center gap-1.5 text-white">
+        <span className="text-xs font-semibold truncate">@{item.username}</span>
+        {item.verified && <VerifiedBadge size={13} className="!text-white shrink-0" />}
+      </div>
+    </div>
   );
 };
 

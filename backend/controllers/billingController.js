@@ -9,6 +9,7 @@ import { recordFeePaid, getClientPlatformFee } from "../services/rewardsService.
 import { executePayouts, reversePayouts } from "../services/payoutService.js";
 import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
 import { computePlatformFeeCents, estimateStripeFeeCents } from "../lib/fees.js";
+import { computeArtistStudioSplit } from "../services/studioService.js";
 
 function bookingTransferGroup(bookingId) {
   return `booking_${String(bookingId)}`;
@@ -785,4 +786,61 @@ export function mountStripeWebhook(app) {
     },
     stripeWebhook
   );
+}
+export async function getPaymentBreakdown(req, res) {
+  try {
+    const me = String(req.user?.clerkId || req.auth?.userId || "").trim();
+    if (!me) return res.status(401).json({ error: "Unauthorized" });
+
+    let artistClerkId, priceCents, clientId, status = null;
+    if (req.body?.bookingId) {
+      const booking = await Booking.findById(req.body.bookingId).lean();
+      if (!booking) return res.status(404).json({ error: "not_found" });
+      if (me !== String(booking.clientId) && me !== String(booking.artistId)) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      artistClerkId = String(booking.artistId);
+      priceCents = Math.max(0, Number(booking.priceCents || 0));
+      clientId = String(booking.clientId);
+      status = booking.status;
+    } else {
+      artistClerkId = String(req.body?.artistClerkId || "").trim();
+      priceCents = Math.max(0, Number(req.body?.priceCents || 0));
+      clientId = me;
+      if (!artistClerkId) return res.status(400).json({ error: "bookingId or artistClerkId required" });
+    }
+
+    const fee = await getClientPlatformFee(clientId);
+    const platformFeeCents = computePlatformFeeCents(priceCents, fee);
+    const clientTotalCents = priceCents + platformFeeCents;
+
+    const split = await computeArtistStudioSplit(artistClerkId, priceCents);
+    const isStudio = !!split;
+    const artistGrossCents = isStudio ? split.artistCents : priceCents;
+    const studioCents = isStudio ? split.studioCents : 0;
+
+    const stripeFeeCents = estimateStripeFeeCents(
+      clientTotalCents,
+      config.platformFee.processingPct,
+      config.platformFee.processingFlatCents
+    );
+    const artistNetCents = Math.max(0, artistGrossCents - stripeFeeCents);
+
+    res.json({
+      priceCents,
+      platformFeeCents,
+      baseFeeWaived: !!fee.baseFeeWaived,
+      clientTotalCents,
+      isStudio,
+      commissionPct: split?.commissionPct || 0,
+      artistGrossCents,
+      artistNetCents,
+      studioCents,
+      stripeFeeCents,
+      status,
+    });
+  } catch (e) {
+    console.error("getPaymentBreakdown error:", e.message);
+    res.status(500).json({ error: "breakdown_failed" });
+  }
 }
