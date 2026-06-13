@@ -14,7 +14,7 @@ const ChatBot: React.FC = () => {
       }}
     >
       <div
-        className="bg-card text-app border border-app rounded-3xl p-5 shadow-2xl flex flex-col gap-4"
+        className="bg-app text-app border border-app rounded-3xl p-5 shadow-2xl flex flex-col gap-4"
         style={{
           height: "420px",
           maxHeight: "min(75vh, 520px)",

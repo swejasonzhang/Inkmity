@@ -143,8 +143,6 @@ export default function SignUp() {
     if (staleSessionRef.current === null) staleSessionRef.current = !!userId;
   }, [authLoaded, userId]);
 
-  // After a role is chosen the form first appears centered, then slides right
-  // as the info panel reveals on the left.
   useEffect(() => {
     if (!entrySelected) {
       setShowInfo(false);

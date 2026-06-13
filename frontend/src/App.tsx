@@ -62,6 +62,9 @@ const App: React.FC = () => {
 
   return (
     <Routes>
+      <Route path="/artists" element={<DashboardScope />}>
+        <Route index element={<Dashboard />} />
+      </Route>
       <Route path="/dashboard" element={<DashboardScope />}>
         <Route index element={<Dashboard />} />
       </Route>
@@ -98,7 +101,7 @@ const App: React.FC = () => {
           element={
             <>
               <SignedIn>
-                <Navigate to="/dashboard" replace />
+                <Navigate to="/artists" replace />
               </SignedIn>
               <SignedOut>
                 <Navigate to="/landing" replace />

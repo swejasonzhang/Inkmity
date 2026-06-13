@@ -10,9 +10,6 @@ type AuthSocket = ReturnType<typeof ioClient> & {
 
 export const socket: AuthSocket = ioClient(SOCKET_URL.replace(/\/+$/, ""), {
   path: SOCKET_PATH,
-  // Start on long-polling (always works through proxies) and auto-upgrade to
-  // WebSocket when the upgrade succeeds. websocket-only fails hard behind
-  // Render's proxy with no fallback.
   transports: ["polling", "websocket"],
   autoConnect: false,
 }) as AuthSocket;

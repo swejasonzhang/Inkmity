@@ -2,9 +2,6 @@ import { computeDepositCents } from "../../controllers/bookingController.js";
 
 const policy = (deposit) => ({ deposit });
 
-// Deposits are intentionally disabled (computeDepositCents has a TEMP `return 0`)
-// in favor of the no-deposit, card-on-file-at-booking + charge-at-completion flow.
-// These cover the dormant policy-based deposit math; un-skip when deposits return.
 describe.skip("computeDepositCents (deposit policy → deposit amount)", () => {
   test("percent: takes the percentage of the price", () => {
     const p = policy({ mode: "percent", percent: 0.2, minCents: 5000, maxCents: 30000 });

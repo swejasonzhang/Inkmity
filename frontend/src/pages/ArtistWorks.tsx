@@ -1,12 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Images, CalendarDays, Star, MapPin, Clock } from "lucide-react";
 import Header from "@/components/header/Header";
 import { useTheme } from "@/hooks/useTheme";
-import { fetchArtistByHandle } from "@/api";
-import FullscreenZoom from "@/components/dashboard/client/FullscreenZoom";
+import { fetchArtistByHandle, fetchArtistById } from "@/api";
+import ArtistPortfolio, { type ArtistWithGroups } from "@/components/dashboard/client/ArtistPortfolio";
+import ArtistBooking from "@/components/dashboard/client/ArtistBooking";
+import ArtistReviews from "@/components/dashboard/client/ArtistReviews";
+import { displayNameFromUsername, titleCase } from "@/lib/format";
 
 type AnyArtist = Record<string, any>;
+type Tab = 0 | 1 | 2;
 
 export default function ArtistWorks() {
     const { handle = "" } = useParams();
@@ -14,45 +18,81 @@ export default function ArtistWorks() {
     const navigate = useNavigate();
     const { theme } = useTheme();
 
-    const stateArtist = (location.state as { artist?: AnyArtist } | null)?.artist ?? null;
+    const stateArtist = (location.state as { artist?: AnyArtist; tab?: Tab } | null)?.artist ?? null;
+    const initialTab = (location.state as { tab?: Tab } | null)?.tab ?? 0;
     const [artist, setArtist] = useState<AnyArtist | null>(stateArtist);
     const [loading, setLoading] = useState<boolean>(!stateArtist);
-    const [zoom, setZoom] = useState<number | null>(null);
+    const [tab, setTab] = useState<Tab>(initialTab);
 
     const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
     const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
     useEffect(() => {
-        if (artist) return;
         let active = true;
+        const ac = new AbortController();
         (async () => {
             try {
-                const a = await fetchArtistByHandle(handle);
-                if (active) setArtist(a as AnyArtist);
-            } catch {} finally {
+                const h = String(artist?.handle || handle || "").replace(/^@/, "").trim();
+                let full: AnyArtist | null = null;
+                if (h) full = (await fetchArtistByHandle(h, ac.signal)) as AnyArtist;
+                else if (artist?._id && /^[a-f0-9]{24}$/i.test(artist._id))
+                    full = (await fetchArtistById(artist._id, ac.signal)) as AnyArtist;
+                if (active && full) {
+                    setArtist((prev) => ({
+                        ...(prev ?? {}),
+                        ...full,
+                        avatarUrl: full!.avatar?.url ?? full!.avatarUrl ?? prev?.avatarUrl,
+                    }));
+                }
+            } catch {
+            } finally {
                 if (active) setLoading(false);
             }
         })();
-        return () => { active = false; };
-    }, [handle, artist]);
+        return () => {
+            active = false;
+            ac.abort();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [handle]);
 
-    const works = useMemo(() => {
-        if (!artist) return [] as { src: string; label: string }[];
-        const cats: [string, unknown][] = [
-            ["Recent", artist.portfolioImages],
-            ["Past", artist.pastWorks],
-            ["Healed", artist.healedWorks],
-            ["Flash & Sketches", artist.sketches],
-        ];
-        const out: { src: string; label: string }[] = [];
-        for (const [label, arr] of cats) {
-            (Array.isArray(arr) ? arr : []).filter(Boolean).forEach((src: string) => out.push({ src, label }));
-        }
-        return out;
-    }, [artist]);
-
-    const images = useMemo(() => works.map((w) => w.src), [works]);
     const displayHandle = String(artist?.handle || handle).replace(/^@/, "");
+
+    const mapped: ArtistWithGroups = useMemo(
+        () => ({
+            _id: String(artist?._id ?? ""),
+            clerkId: String(artist?.clerkId ?? ""),
+            handle: artist?.handle,
+            username: displayNameFromUsername(artist?.username) || displayHandle,
+            bio: artist?.bio,
+            portfolioImages: (artist?.portfolioImages ?? []).filter(Boolean),
+            pastWorks: (artist?.pastWorks ?? []).filter(Boolean),
+            healedWorks: (artist?.healedWorks ?? []).filter(Boolean),
+            sketches: (artist?.sketches ?? []).filter(Boolean),
+            avatarUrl: artist?.avatarUrl || artist?.profileImage || artist?.avatar?.url,
+            coverImage: artist?.coverImage,
+            styles: artist?.styles,
+            location: artist?.location,
+            yearsExperience: artist?.yearsExperience,
+            rating: artist?.rating,
+            reviewsCount: artist?.reviewsCount,
+        }),
+        [artist, displayHandle]
+    );
+
+    const styles: string[] = Array.isArray(mapped.styles)
+        ? mapped.styles
+        : typeof mapped.styles === "string"
+            ? [mapped.styles]
+            : [];
+    const rating = Number(mapped.rating ?? 0);
+    const years = Number(mapped.yearsExperience ?? 0);
+
+    const tabs: { key: Tab; label: string; Icon: ComponentType<{ className?: string }> }[] = [
+        { key: 0, label: "Portfolio", Icon: Images },
+        { key: 1, label: "Booking & Message", Icon: CalendarDays },
+        { key: 2, label: "Reviews", Icon: Star },
+    ];
 
     return (
         <div id="dashboard-scope" className="ink-scope min-h-dvh flex flex-col" style={{ background: shellBg, color: shellFg }}>
@@ -60,71 +100,108 @@ export default function ArtistWorks() {
             <main className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "clamp(14px, 2.5vw, 36px)" }}>
                 <div className="mx-auto w-full max-w-6xl">
                     <button
-                        onClick={() => {
-                            if (artist?._id) navigate("/dashboard", { state: { reopenArtistId: artist._id, reopenArtist: artist } });
-                            else navigate(-1);
-                        }}
+                        onClick={() => navigate(-1)}
                         className="inline-flex items-center gap-1.5 text-sm font-semibold rounded-full border px-3 py-1.5 mb-4 transition hover:brightness-110"
                         style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 92%, transparent)", color: "var(--fg)" }}
                     >
                         <ArrowLeft className="h-4 w-4" /> Back
                     </button>
 
-                    {loading ? (
+                    {loading && !artist ? (
                         <p className="text-center text-subtle py-12">Loading…</p>
                     ) : !artist ? (
                         <p className="text-center text-subtle py-12">Artist not found.</p>
                     ) : (
                         <>
-                            <header className="mb-5 text-center">
-                                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-app">{artist.username}</h1>
-                                <p className="text-subtle text-sm mt-1">@{displayHandle} · {works.length} work{works.length === 1 ? "" : "s"}</p>
+                            <header className="rounded-3xl border bg-card p-5 sm:p-6 mb-5" style={{ borderColor: "var(--border)" }}>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                    <span className="grid place-items-center h-16 w-16 shrink-0 rounded-2xl border border-app bg-elevated overflow-hidden text-xl font-bold">
+                                        {mapped.avatarUrl ? (
+                                            <img src={mapped.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                                        ) : (
+                                            (mapped.username?.[0] || "A").toUpperCase()
+                                        )}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-app">{mapped.username}</h1>
+                                        <p className="text-subtle text-sm mt-0.5">@{displayHandle}</p>
+                                        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-subtle">
+                                            {rating > 0 && (
+                                                <span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5" /> {rating.toFixed(1)}{mapped.reviewsCount ? ` (${mapped.reviewsCount})` : ""}</span>
+                                            )}
+                                            {mapped.location && (
+                                                <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {mapped.location}</span>
+                                            )}
+                                            {years > 0 && (
+                                                <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {years} yrs experience</span>
+                                            )}
+                                        </div>
+                                        {styles.length > 0 && (
+                                            <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                                {styles.slice(0, 6).map((s) => (
+                                                    <span key={s} className="rounded-full border border-app/50 bg-elevated px-2 py-0.5 text-[11px] text-subtle">{titleCase(s)}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex sm:flex-col gap-2 sm:self-stretch sm:justify-center">
+                                        <button
+                                            onClick={() => setTab(1)}
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold bg-[color:var(--fg)] text-[color:var(--bg)] transition hover:opacity-90 active:scale-[0.99]"
+                                        >
+                                            <CalendarDays className="h-4 w-4" /> Book now
+                                        </button>
+                                        <button
+                                            onClick={() => setTab(0)}
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold border transition hover:bg-elevated"
+                                            style={{ borderColor: "var(--border)", color: "var(--fg)" }}
+                                        >
+                                            <Images className="h-4 w-4" /> View portfolio
+                                        </button>
+                                    </div>
+                                </div>
                             </header>
 
-                            {works.length === 0 ? (
-                                <p className="text-center text-subtle py-12">No works to show yet.</p>
-                            ) : (
-                                <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                                    {works.map((w, i) => (
+                            <div className="mb-5 flex flex-wrap items-center gap-2">
+                                {tabs.map(({ key, label, Icon }) => {
+                                    const active = tab === key;
+                                    return (
                                         <button
-                                            key={`${w.src}-${i}`}
-                                            onClick={() => setZoom(i)}
-                                            className="group relative aspect-square rounded-xl overflow-hidden border"
-                                            style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                                            aria-label={`Open ${w.label} work ${i + 1}`}
+                                            key={key}
+                                            onClick={() => setTab(key)}
+                                            aria-pressed={active}
+                                            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition ${
+                                                active
+                                                    ? "bg-neutral-700 text-white border-transparent"
+                                                    : "border-app/40 bg-elevated text-subtle hover:text-app"
+                                            }`}
                                         >
-                                            <img
-                                                src={w.src}
-                                                alt={`${w.label} work ${i + 1}`}
-                                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                loading="lazy"
-                                                decoding="async"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                            <span
-                                                className="absolute left-1.5 bottom-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold backdrop-blur-md border"
-                                                style={{ background: "color-mix(in srgb, var(--card) 80%, transparent)", borderColor: "color-mix(in srgb, var(--fg) 25%, transparent)", color: "var(--fg)" }}
-                                            >
-                                                {w.label}
-                                            </span>
+                                            <Icon className="h-4 w-4" />
+                                            {label}
                                         </button>
-                                    ))}
-                                </div>
+                                    );
+                                })}
+                            </div>
+
+                            {tab === 0 && <ArtistPortfolio artist={mapped} compact />}
+                            {tab === 1 && (
+                                <ArtistBooking
+                                    artist={mapped}
+                                    onBack={() => setTab(0)}
+                                    onGoToStep={(s) => setTab(s)}
+                                    onMessage={async (a) => {
+                                        navigate("/dashboard");
+                                        window.dispatchEvent(
+                                            new CustomEvent("ink:open-messages", { detail: { participantId: a.clerkId } })
+                                        );
+                                    }}
+                                />
                             )}
+                            {tab === 2 && <ArtistReviews artist={mapped} />}
                         </>
                     )}
                 </div>
             </main>
-
-            {zoom !== null && images.length > 0 && (
-                <FullscreenZoom
-                    src={images[zoom]}
-                    count={`${works[zoom]?.label}: ${zoom + 1} / ${images.length}`}
-                    onPrev={() => setZoom((z) => (z === null ? z : (z + images.length - 1) % images.length))}
-                    onNext={() => setZoom((z) => (z === null ? z : (z + 1) % images.length))}
-                    onClose={() => setZoom(null)}
-                />
-            )}
         </div>
     );
 }

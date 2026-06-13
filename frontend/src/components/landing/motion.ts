@@ -2,14 +2,6 @@ import { type Variants } from "framer-motion";
 
 export const EASE = [0.22, 1, 0.36, 1] as const;
 
-/**
- * Directional reveal used across the landing page.
- * Pass a direction via framer-motion's `custom` prop:
- *   -1 → enters from the left
- *    1 → enters from the right
- *    0 → rises from below
- * Each element also blurs into focus, giving a polished, high-end feel.
- */
 export const directionalReveal: Variants = {
     hidden: (dir: number = 0) => ({
         opacity: 0,
@@ -31,10 +23,6 @@ export const directionalReveal: Variants = {
     },
 };
 
-/**
- * Maps a grid item's index to a reveal direction so the outer columns slide in
- * from the sides and the middle column rises — a clean "converge" effect.
- */
 export const dirForColumn = (index: number, cols: number): number => {
     if (cols <= 1) return 0;
     const col = index % cols;

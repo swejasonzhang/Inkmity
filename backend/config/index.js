@@ -25,12 +25,9 @@ export const config = {
   },
 
   platformFee: {
-    // Client fee = base + pct of price, capped. Default $10 + 5%, max $50.
     baseCents: Number(process.env.PLATFORM_FEE_BASE_CENTS ?? 1000),
     pct: Number(process.env.PLATFORM_FEE_PCT ?? 0.05),
     capCents: Number(process.env.PLATFORM_FEE_CAP_CENTS ?? 5000),
-    // Stripe processing estimate, netted out of the artist/studio payout so the
-    // platform keeps its fee clean (artist bears card processing).
     processingPct: Number(process.env.STRIPE_PROCESSING_PCT ?? 0.029),
     processingFlatCents: Number(process.env.STRIPE_PROCESSING_FLAT_CENTS ?? 30),
   },

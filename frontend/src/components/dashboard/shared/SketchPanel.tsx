@@ -38,7 +38,6 @@ export default function SketchPanel({
       const t = (await getToken()) ?? undefined;
       setSketches(await getSketches(bookingId, t));
     } catch {
-      /* optional */
     } finally {
       setLoaded(true);
     }

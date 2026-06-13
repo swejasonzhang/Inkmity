@@ -10,8 +10,6 @@ import { getMe, getMyRewards, fetchArtistById, type RewardsSummary } from "@/api
 type ClientTier = { key: string; label: string; threshold: number; perks: string[] };
 type ArtistTier = { key: string; label: string; bookings: number; minRating: number; perks: string[] };
 
-// Each tier keeps everything the tier below it has — these lists are the *new*
-// bonuses layered on top (the base tier is what everyone gets).
 const CLIENT_TIERS: ClientTier[] = [
   { key: "bronze", label: "Bronze", threshold: 0, perks: ["Full marketplace access", "Book & message any artist", "Secure deposit & payment protection", "Standard fee: $10 + 5%, capped at $50"] },
   { key: "silver", label: "Silver", threshold: 3, perks: ["Priority booking support", "Early-bird appointment slots", "Birthday booking credit"] },
@@ -94,11 +92,10 @@ export default function Tiers() {
     <div className="h-svh overflow-hidden flex flex-col text-app">
       <VideoBackground video />
       <Header />
-      <main className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "clamp(12px, 3vh, 28px) clamp(12px, 4vw, 48px)" }}>
-        <div className="min-h-full flex items-center justify-center">
-          {/* Frosted panel separates all content from the video behind it. */}
+      <main className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden" style={{ padding: "clamp(8px, 2vh, 16px) clamp(12px, 4vw, 48px)" }}>
+        <div className="min-h-full lg:h-full flex items-center justify-center">
           <div
-            className="w-full max-w-6xl rounded-3xl border p-5 sm:p-7 lg:p-9 backdrop-blur-2xl"
+            className="w-full max-w-6xl rounded-3xl border p-5 sm:p-7 lg:px-9 lg:py-5 backdrop-blur-2xl"
             style={{
               borderColor: "var(--border)",
               background: "color-mix(in srgb, var(--bg) 82%, transparent)",

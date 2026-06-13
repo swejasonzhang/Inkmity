@@ -53,7 +53,6 @@ export type Conversation = {
 type GateStatus = "pending" | "accepted" | "declined";
 type Role = "client" | "artist";
 
-// How big the artist judges the piece to be — this caps how many dates the client can book.
 const PIECE_SIZE_LABELS: Record<PieceSize, { label: string; sessions: number; hint: string }> = {
   flash: { label: "Flash / small", sessions: 1, hint: "A few hours — one sitting" },
   small: { label: "Small", sessions: 1, hint: "One sitting" },

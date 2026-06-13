@@ -22,10 +22,6 @@ const META: Record<LegalDoc, { title: string; Body: () => React.ReactElement }> 
   privacy: { title: "Privacy Policy", Body: PrivacyContent },
 };
 
-/**
- * Inline text trigger that opens the chosen legal document in a scrollable modal.
- * Use in place of an <a href="/terms"> link.
- */
 export default function LegalLink({
   doc,
   children,

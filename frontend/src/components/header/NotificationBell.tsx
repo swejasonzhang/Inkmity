@@ -69,13 +69,11 @@ export default function NotificationBell({ className = "" }: { className?: strin
       const { items } = await getNotifications(token ?? undefined);
       setItems(items || []);
     } catch {
-      /* keep previous items on transient failure */
     } finally {
       setFetching(false);
     }
   }, [getToken]);
 
-  // Initial load + live refresh on the relevant socket events.
   useEffect(() => {
     if (!isSignedIn || !user?.id) return;
     void refetch();
@@ -95,7 +93,6 @@ export default function NotificationBell({ className = "" }: { className?: strin
     };
   }, [isSignedIn, user?.id, getToken, refetch]);
 
-  // Restore the last time this user looked at their notifications.
   const seenKey = user?.id ? `inkmity_notif_seen_${user.id}` : null;
   useEffect(() => {
     if (!seenKey) return;
@@ -106,8 +103,6 @@ export default function NotificationBell({ className = "" }: { className?: strin
     }
   }, [seenKey]);
 
-  // Fetch fresh whenever the panel opens, and mark everything as seen so the
-  // badge clears (it only counts notifications newer than the last open).
   useEffect(() => {
     if (!open) return;
     void refetch();
@@ -117,7 +112,6 @@ export default function NotificationBell({ className = "" }: { className?: strin
       try {
         localStorage.setItem(seenKey, String(now));
       } catch {
-        /* ignore storage failures */
       }
     }
   }, [open, refetch, seenKey]);

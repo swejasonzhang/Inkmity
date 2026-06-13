@@ -3,8 +3,6 @@ import { useAuth } from "@clerk/clerk-react";
 import { Award, ArrowRight } from "lucide-react";
 import { getMyRewards, formatPlatformFee, type RewardsSummary } from "@/api";
 
-// Shows the client their live reward tier, the platform fee, and how close they
-// are to the next tier. Self-contained — fetches its own rewards summary.
 export default function ClientTierCard({ className = "" }: { className?: string }) {
   const { getToken } = useAuth();
   const [rewards, setRewards] = useState<RewardsSummary | null>(null);
@@ -16,7 +14,7 @@ export default function ClientTierCard({ className = "" }: { className?: string 
         const token = await getToken();
         const data = await getMyRewards(token, ac.signal);
         setRewards(data);
-      } catch { /* ignore */ }
+      } catch { }
     })();
     return () => ac.abort();
   }, [getToken]);

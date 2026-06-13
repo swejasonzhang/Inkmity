@@ -23,9 +23,6 @@ export async function captureBookingBalance(booking) {
 
   const transferGroup = `booking_${String(booking._id)}`;
 
-  // Client pays (balance − credits + fee); the platform keeps the fee ($10 + 5%
-  // capped, net of any collected at deposit) and nets Stripe processing out of
-  // the provider payout below, so the artist bears card processing.
   const clientFee = await getClientPlatformFee(booking.clientId);
   const fullFeeCents = computePlatformFeeCents(booking.priceCents, clientFee);
   const priorPaid = await Billing.find({ bookingId: booking._id, status: "paid" });
@@ -127,8 +124,6 @@ export async function captureBookingBalance(booking) {
     }
   }
 
-  // Artist/studio bear card processing: net Stripe's cut on this charge out of
-  // the payout so the platform keeps the flat fee clean.
   const stripeFeeCents = estimateStripeFeeCents(
     chargeAmount,
     config.platformFee.processingPct,

@@ -92,7 +92,6 @@ export async function getMe(req, res) {
         }
       }
     } catch {
-      // Ignore lookup failures and fall through to 404.
     }
   }
   if (!me) return res.status(404).json({ error: "Not found" });

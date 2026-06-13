@@ -2,10 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Props = {
-    /** Scrim opacity (0–100) over the background so foreground text stays legible. */
     scrim?: number;
-    /** Play the looping video on top of the poster. Off by default — most pages
-     *  use the cheap static poster; only key pages opt into the heavier video. */
     video?: boolean;
 };
 

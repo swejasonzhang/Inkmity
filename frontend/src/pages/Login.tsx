@@ -58,9 +58,6 @@ export default function Login() {
     }, 2000);
   }, [navigate]);
 
-  // After a successful sign-in, send users who haven't finished onboarding to
-  // /onboarding instead of /dashboard (where the route guard would bounce them
-  // anyway), so the success message and redirect match reality.
   const resolveDestination = useCallback(async (): Promise<"/dashboard" | "/onboarding"> => {
     try {
       const token = await getToken();
@@ -165,9 +162,6 @@ export default function Login() {
       if (justLoggedInRef.current || intendedSuccessTypeRef.current === "login" || successType === "login") {
         return;
       }
-      // Only show the "already signed in -> redirecting" state for a genuinely
-      // complete session. A stale/incomplete session (onboarded null/false) is
-      // signed out by the effect above, so showing the redirect would be wrong.
       if (!isMountedRef.current && onboarded === true) {
         isMountedRef.current = true;
         intendedSuccessTypeRef.current = "already";
@@ -199,18 +193,12 @@ export default function Login() {
   const emailOk = email.trim().length > 0 && validateEmail(email);
   const pwdOk = password.trim().length > 0;
 
-  // Dev-only: skip the signup/login form and sign in as a seeded test account.
-  // Uses a Clerk sign-in token (ticket) minted by the backend, which bypasses
-  // password AND 2FA. Never shipped to prod (gated by import.meta.env.DEV and
-  // the backend endpoint is hard-gated to the Clerk test instance).
   const quickLogin = async (role: "client" | "artist") => {
     if (!import.meta.env.DEV || !signIn || !signInLoaded || loading) return;
     setAuthError("");
     setLoading(true);
     try {
-      // Clerk is single-session by default; clear any stale session first so a
-      // fresh signIn.create can complete instead of returning a partial status.
-      try { await signOut(); } catch { /* ignore: no active session */ }
+      try { await signOut(); } catch { }
       const { token: ticket } = await apiPost<{ token: string }>("/auth/dev-sign-in-token", { role });
       const result = await signIn.create({ strategy: "ticket", ticket });
       if (result.status === "complete" && result.createdSessionId) {

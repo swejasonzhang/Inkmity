@@ -1,12 +1,3 @@
-// Dev-only: provision two real Clerk test users (client + artist) with known
-// passwords, linked to matching Mongo records, so the dev "skip signup" buttons
-// can sign in for real. Idempotent — safe to re-run.
-//
-// Run with the development env (Clerk test instance + dev database):
-//   node --env-file=.env.development scripts/seedTestAuthUsers.js
-//
-// Safety: refuses to run unless CLERK_SECRET_KEY is a test key and the database
-// is `inkmity_dev` (production shares the same Atlas cluster + a live Clerk key).
 import mongoose from "mongoose";
 import { clerkClient } from "@clerk/express";
 import User from "../models/UserBase.js";
@@ -104,7 +95,6 @@ async function main() {
   }
   console.log(`Connected to ${mongoose.connection.name} (Clerk test instance).`);
 
-  // Clean up legacy data-only fixtures from the old seedMockUsers script.
   const legacy = await User.deleteMany({
     email: { $in: ["mockclient@inkmity.dev", "mockartist@inkmity.dev"] },
   });
@@ -124,7 +114,6 @@ async function main() {
       ...acct.extra,
     });
 
-    // Studios also need an owned Studio entity so /studios/mine returns it.
     if (acct.role === "studio" && acct.studio) {
       await Studio.deleteMany({ ownerClerkId: clerkId });
       const studio = await Studio.create({ ownerClerkId: clerkId, ...acct.studio });

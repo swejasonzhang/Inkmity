@@ -4,8 +4,6 @@ import { BadgeCheck, Zap, TrendingUp } from "lucide-react";
 import { computeArtistTier } from "@/lib/artistTier";
 import { getArtistAnalytics } from "@/api";
 
-// Display metadata per artist tier, aligned with backend config.artistTiers
-// (rising / established / pro / elite — thresholds & payout speeds).
 const TIER_META: Record<string, { bookings: number; minRating: number; placement: string; payout: string }> = {
   rising: { bookings: 0, minRating: 0, placement: "Standard placement", payout: "Standard payouts" },
   established: { bookings: 10, minRating: 4.0, placement: "Boosted placement", payout: "Standard payouts" },
@@ -23,8 +21,6 @@ export default function ArtistTierBadge({
   rating?: number;
   className?: string;
 }) {
-  // When no stats are passed (the artist's own profile), fetch the authoritative
-  // numbers from analytics. With props, render any artist's tier (e.g. public cards).
   const { getToken } = useAuth();
   const selfFetch = bookingsCount === undefined && rating === undefined;
   const [fetched, setFetched] = useState<{ bookings?: number; rating?: number } | null>(null);
@@ -36,7 +32,7 @@ export default function ArtistTierBadge({
         const token = await getToken();
         const a = await getArtistAnalytics(token, ac.signal);
         setFetched({ bookings: a.bookingsCount, rating: a.rating });
-      } catch { /* ignore */ }
+      } catch { }
     })();
     return () => ac.abort();
   }, [selfFetch, getToken]);
