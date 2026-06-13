@@ -588,16 +588,12 @@ export type SavedPaymentMethod = {
   isDefault: boolean;
 };
 
-export async function createClientSetupIntent(
-  method: "card" | "bank",
-  token?: string | null,
-  signal?: AbortSignal
-) {
+export async function createClientSetupIntent(token?: string | null, signal?: AbortSignal) {
   return apiPost<{
     clientSecret: string;
     setupIntentId: string;
     customerId: string;
-  }>("/billing/client/setup-intent", { method }, token, signal);
+  }>("/billing/client/setup-intent", {}, token, signal);
 }
 
 export async function listClientPaymentMethods(token?: string | null, signal?: AbortSignal) {
