@@ -148,8 +148,6 @@ export const emitToUser = (userId, event, payload) => {
   io.to(userRoom(String(userId))).emit(event, payload);
 };
 
-// Push a realtime booking change to both participants so their appointments,
-// notifications, and dashboards update without a refresh.
 export const emitBookingUpdate = (booking, type) => {
   if (!io || !booking) return;
   const payload = {
@@ -165,8 +163,6 @@ export const emitBookingUpdate = (booking, type) => {
     .emit("booking:updated", payload);
 };
 
-// Push a server-created message (e.g. booking notifications) to both
-// participants in realtime, and bump the receiver's unread badge.
 export const emitMessageCreated = (message) => {
   if (!io || !message) return;
   const payload = {

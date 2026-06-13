@@ -608,9 +608,6 @@ export const getUnreadState = async (req, res) => {
   }
 };
 
-// Detailed feed for the notification bell: unread messages (including event
-// notifications carried as messages) and pending booking/message requests, each
-// with the sender's name + a preview, newest first.
 export const getNotifications = async (req, res) => {
   try {
     const userId = String(req.user?.clerkId || req.auth?.userId || "");
@@ -625,7 +622,6 @@ export const getNotifications = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(15)
         .lean(),
-      // Incoming appointment requests the artist still needs to act on.
       Booking.find({ artistId: userId, status: "pending" })
         .sort({ createdAt: -1 })
         .limit(15)

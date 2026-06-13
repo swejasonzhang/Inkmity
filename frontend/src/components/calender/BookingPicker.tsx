@@ -81,8 +81,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
 
   const [kind, setKind] = useState<Kind>("consultation")
   const [slots, setSlots] = useState<Slot[]>([])
-  // Selected sittings (a "cart"). Consultations are always a single sitting; a tattoo
-  // piece can span several dates, capped by what the artist approved for its size.
   const [selectedSlots, setSelectedSlots] = useState<Slot[]>([])
   const [maxSessions, setMaxSessions] = useState(1)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -101,7 +99,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     return () => ac.abort()
   }, [artistId])
 
-  // How many sittings the artist approved for this client's piece.
   useEffect(() => {
     if (!artistId) return
     const ac = new AbortController()
@@ -111,7 +108,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     return () => ac.abort()
   }, [artistId, userId])
 
-  // Consultations are a single sitting; only tattoo appointments can span multiple dates.
   const effectiveMax = kind === "appointment" ? maxSessions : 1
   const isSlotSelected = useCallback(
     (slot: Slot) => selectedSlots.some((s) => s.startISO === slot.startISO),
@@ -132,7 +128,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     })
   }, [effectiveMax])
 
-  // Switching between consultation and appointment clears the cart to avoid mixing.
   useEffect(() => {
     setSelectedSlots([])
   }, [kind])
@@ -156,8 +151,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
 
   const canConfirm = selectedSlots.length >= 1
 
-  // A tattoo session carries a permanence/health acknowledgment; consultations only need the
-  // Terms & refund agreement. Re-acknowledgment is required each time the confirm dialog opens.
   const requiresRiskAck = kind === "appointment"
   const consentComplete = agreedToTerms && (!requiresRiskAck || acknowledgedRisk)
   useEffect(() => {
@@ -341,7 +334,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           return
         }
 
-        // Save the card on file for the at-completion charge (dev bookings are free).
         if (!import.meta.env.DEV) {
           setPendingBooking(booking)
           swallowGestureTail()
@@ -412,7 +404,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
     <div ref={scopeRef} className="w-full h-full min-h-0 flex flex-col">
       <div ref={portalRef} />
       <div className="flex w-full flex-1 min-h-0 flex-col gap-3.5">
-        {/* Booking type — segmented control */}
         <div
           className="relative grid grid-cols-2 w-full shrink-0 p-1 rounded-2xl border select-none"
           style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
@@ -444,7 +435,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           </button>
         </div>
 
-        {/* Helper / timezone */}
         <div className="flex items-center justify-between gap-2 shrink-0 text-xs" style={{ color: "color-mix(in srgb, var(--fg) 65%, transparent)" }}>
           <span className="inline-flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" />
@@ -455,7 +445,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           </span>
         </div>
 
-        {/* Time grid */}
         <div
           className="rounded-2xl border p-2.5 sm:p-3 w-full flex-1 min-h-0 max-h-[440px] overflow-y-auto"
           style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 40%, transparent)" }}
@@ -488,7 +477,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           )}
         </div>
 
-        {/* Selected + confirm */}
         <div
           className="flex items-center justify-between gap-3 shrink-0 rounded-2xl border p-3"
           style={{ borderColor: "var(--border)", background: "var(--card)" }}

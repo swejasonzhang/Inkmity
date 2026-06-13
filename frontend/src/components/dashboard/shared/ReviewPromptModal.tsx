@@ -89,7 +89,6 @@ export default function ReviewPromptModal({ open, onClose, onSubmitted, artistId
         toast.success("Link copied — share it with a friend!");
       }
     } catch {
-      /* user cancelled share */
     }
   };
 
@@ -109,7 +108,6 @@ export default function ReviewPromptModal({ open, onClose, onSubmitted, artistId
         showCloseButton={true}
         style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
       >
-        {/* Header */}
         <div className="px-6 pt-6 pb-5 border-b" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--elevated) 60%, transparent)" }}>
           <DialogHeader className="space-y-1.5">
             <div className="mx-auto mb-1 grid h-12 w-12 place-items-center rounded-2xl border" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
@@ -140,7 +138,6 @@ export default function ReviewPromptModal({ open, onClose, onSubmitted, artistId
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
-          {/* Stars */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5" onMouseLeave={() => setHover(0)}>
               {[1, 2, 3, 4, 5].map((value) => (
@@ -164,7 +161,6 @@ export default function ReviewPromptModal({ open, onClose, onSubmitted, artistId
             </p>
           </div>
 
-          {/* Comment */}
           <div>
             <Textarea
               id="review-comment"
@@ -180,7 +176,6 @@ export default function ReviewPromptModal({ open, onClose, onSubmitted, artistId
             </p>
           </div>
 
-          {/* Recommend toggle */}
           <button
             type="button"
             onClick={() => setRecommend((v) => !v)}
@@ -202,7 +197,6 @@ export default function ReviewPromptModal({ open, onClose, onSubmitted, artistId
             </span>
           </button>
 
-          {/* Actions */}
           <div className="flex items-center gap-2">
             <Button
               type="button"

@@ -41,7 +41,6 @@ export default function ArtistDashboard() {
     void loadAppointments();
   }, [loadAppointments]);
 
-  // Keep the calendar + overview (next up, earnings/deposits, insights) live.
   useBookingRealtime(() => loadAppointments(true));
 
   const calendarBookings = useMemo(

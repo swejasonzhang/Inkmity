@@ -5,9 +5,6 @@ const DEV_TEST_EMAILS = {
   artist: "testartist@inkmity.dev",
 };
 
-// Dev-only: mint a Clerk sign-in token (ticket) for a seeded test account so the
-// frontend can sign in without a password or second factor. Hard-gated to the
-// Clerk test instance so it can never run against production.
 export const devSignInToken = async (req, res) => {
   if (!/^sk_test/.test(process.env.CLERK_SECRET_KEY || "")) {
     return res.status(403).json({ error: "Disabled outside the dev/test instance" });

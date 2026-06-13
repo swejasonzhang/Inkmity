@@ -29,7 +29,6 @@ async function findClient(clientId) {
   return Client.findOne({ clerkId: String(clientId) });
 }
 
-// Platform fee params for a tier — the flat base is waived at tiers that earn it.
 export function platformFeeForTier(tier) {
   const { baseCents, pct, capCents } = config.platformFee;
   return {
@@ -40,7 +39,6 @@ export function platformFeeForTier(tier) {
   };
 }
 
-// The fee a specific client pays, accounting for their tier's base-fee waiver.
 export async function getClientPlatformFee(clientId) {
   try {
     const client = await findClient(clientId);
@@ -66,8 +64,6 @@ export async function getRewardsSummary(clientId) {
           bookingsToNextTier: Math.max(0, next.bookings - count),
         }
       : null,
-    // Fee = base + pct of price, capped. The flat base is waived at tiers that
-    // earn it. Frontend formats it (e.g. "$10 + 5%, max $50" or "5%, max $50").
     platformFee: { baseCents: fee.baseCents, pct: fee.pct, capCents: fee.capCents },
     baseFeeWaived: fee.baseFeeWaived,
     totalFeesPaidCents: Math.round(Number(client?.totalFeesPaid || 0)),

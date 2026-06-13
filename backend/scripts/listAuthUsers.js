@@ -1,7 +1,3 @@
-// Read-only: list every user in Mongo and Clerk so we can see what exists
-// before deciding what to delete. Never mutates anything.
-//
-//   node --env-file=.env.development scripts/listAuthUsers.js
 import mongoose from "mongoose";
 import { clerkClient } from "@clerk/express";
 import User from "../models/UserBase.js";

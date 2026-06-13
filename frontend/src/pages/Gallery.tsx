@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, ImageIcon, Bot, ShieldCheck } from "lucide-react";
+import { Sparkles, ImageIcon, Bot, ShieldCheck, Search, X } from "lucide-react";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
-import HScroll from "@/components/ui/HScroll";
+import { titleCase } from "@/lib/format";
 import { fetchArtists, type Artist } from "@/api";
 
 type WorkCategory = "Portfolio" | "Past work" | "Healed";
@@ -19,14 +19,20 @@ type GalleryItem = {
 
 type TabKey = "real" | "ai";
 
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
-const OTHER = "Other styles";
-
 const Gallery: React.FC = () => {
   const [tab, setTab] = useState<TabKey>("real");
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [healedOnly, setHealedOnly] = useState(false);
+
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [activeStyle, setActiveStyle] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<WorkCategory | "All">("All");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim().toLowerCase()), 180);
+    return () => clearTimeout(t);
+  }, [query]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -67,25 +73,32 @@ const Gallery: React.FC = () => {
     { key: "ai", label: "AI Inspiration", Icon: Bot },
   ];
 
-  const filtered = useMemo(
-    () => items.filter((i) => !healedOnly || i.category === "Healed"),
-    [items, healedOnly]
-  );
+  const allStyles = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of items) for (const s of it.styles) set.add(titleCase(s));
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [items]);
 
-  // Group images into a section per style (an image can appear in several).
-  const sections = useMemo(() => {
-    const map = new Map<string, GalleryItem[]>();
-    for (const it of filtered) {
-      const keys = it.styles.length ? it.styles.map(cap) : [OTHER];
-      for (const s of keys) {
-        if (!map.has(s)) map.set(s, []);
-        map.get(s)!.push(it);
+  const categories: (WorkCategory | "All")[] = ["All", "Portfolio", "Past work", "Healed"];
+
+  const filtered = useMemo(() => {
+    return items.filter((it) => {
+      if (activeCategory !== "All" && it.category !== activeCategory) return false;
+      if (activeStyle && !it.styles.some((s) => titleCase(s) === activeStyle)) return false;
+      if (debounced) {
+        const hay = [
+          it.artist,
+          it.handle,
+          it.category,
+          ...it.styles.map(titleCase),
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(debounced)) return false;
       }
-    }
-    return [...map.entries()]
-      .sort((a, b) => (a[0] === OTHER ? 1 : b[0] === OTHER ? -1 : a[0].localeCompare(b[0])))
-      .map(([style, list]) => ({ style, items: list }));
-  }, [filtered]);
+      return true;
+    });
+  }, [items, debounced, activeStyle, activeCategory]);
 
   return (
     <div id="dashboard-scope" className="ink-scope theme-smooth h-svh ink-page-scroll overflow-x-hidden bg-app text-app">
@@ -104,7 +117,7 @@ const Gallery: React.FC = () => {
           </div>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight">Explore</h1>
           <p className="mt-2 text-sm text-subtle leading-relaxed">
-            Browse real tattoo artistry by style. Tap any piece to open the artist's portfolio and book them.
+            Search by style, artist, or vibe. Tap any piece to open the artist's portfolio and book them.
           </p>
         </motion.div>
 
@@ -128,86 +141,143 @@ const Gallery: React.FC = () => {
               </button>
             );
           })}
-          {tab === "real" && !loading && items.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setHealedOnly((v) => !v)}
-              aria-pressed={healedOnly}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition ${
-                healedOnly
-                  ? "bg-neutral-700 text-white border-transparent"
-                  : "border-app/40 bg-elevated text-subtle hover:text-app"
-              }`}
-            >
-              Healed only
-            </button>
-          )}
         </div>
 
+        {tab === "real" && (
+          <div className="mt-7 max-w-2xl mx-auto">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-subtle" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search styles, artists, or vibes…"
+                className="w-full rounded-2xl border border-app/50 bg-card/70 backdrop-blur-md pl-11 pr-10 py-3 text-sm text-app placeholder:text-subtle outline-none focus:border-app focus:ring-2 focus:ring-white/10 transition"
+              />
+              {query && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center h-6 w-6 rounded-full text-subtle hover:text-app hover:bg-elevated transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {categories.map((c) => {
+                const active = activeCategory === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setActiveCategory(c)}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border transition ${
+                      active
+                        ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent"
+                        : "border-app/40 bg-elevated text-subtle hover:text-app"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
+
+            {allStyles.length > 0 && (
+              <div className="mt-2 flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  type="button"
+                  onClick={() => setActiveStyle(null)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium border transition ${
+                    activeStyle === null
+                      ? "bg-neutral-700 text-white border-transparent"
+                      : "border-app/40 bg-elevated text-subtle hover:text-app"
+                  }`}
+                >
+                  All styles
+                </button>
+                {allStyles.map((s) => {
+                  const active = activeStyle === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setActiveStyle(active ? null : s)}
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium border transition ${
+                        active
+                          ? "bg-neutral-700 text-white border-transparent"
+                          : "border-app/40 bg-elevated text-subtle hover:text-app"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-8">
-          {tab === "real" ? <RealWork sections={sections} loading={loading} hasItems={items.length > 0} /> : <AiInspiration />}
+          {tab === "real" ? (
+            <RealWork items={filtered} loading={loading} hasItems={items.length > 0} />
+          ) : (
+            <AiInspiration />
+          )}
         </div>
       </main>
     </div>
   );
 };
 
+const SPANS = [22, 28, 24, 32, 26, 20];
+
 const RealWork: React.FC<{
-  sections: { style: string; items: GalleryItem[] }[];
+  items: GalleryItem[];
   loading: boolean;
   hasItems: boolean;
-}> = ({ sections, loading, hasItems }) => {
+}> = ({ items, loading, hasItems }) => {
   const skeleton = (
-    <div className="space-y-8">
-      {Array.from({ length: 3 }).map((_, s) => (
-        <div key={s}>
-          <div className="ink-shimmer h-5 w-40 rounded mb-3" />
-          <div className="flex gap-3 overflow-hidden">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="shrink-0 w-40 sm:w-48 aspect-square rounded-xl ink-shimmer" />
-            ))}
-          </div>
-        </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl ink-shimmer"
+          style={{ gridRow: `span ${SPANS[i % SPANS.length]}` }}
+        />
       ))}
     </div>
   );
 
   return (
     <LazyReveal loading={loading} skeleton={skeleton}>
-      {!hasItems || sections.length === 0 ? (
+      {!hasItems ? (
         <EmptyState
           Icon={ImageIcon}
-          title={hasItems ? "No matches" : "No artwork yet"}
-          body={
-            hasItems
-              ? "No healed pieces to show yet. Turn off the filter to see everything."
-              : "As artists publish their portfolios, their stencils and finished tattoos will show up here, grouped by style."
-          }
+          title="No artwork yet"
+          body="As artists publish their portfolios, their stencils and finished tattoos will show up here."
+        />
+      ) : items.length === 0 ? (
+        <EmptyState
+          Icon={Search}
+          title="No matches"
+          body="Nothing fits those filters yet. Try a different style, category, or search term."
         />
       ) : (
-        <div className="space-y-9">
-          {sections.map(({ style, items }) => (
-            <section key={style}>
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <h2 className="text-lg font-bold tracking-tight">{style}</h2>
-                <span className="text-xs text-subtle">
-                  {items.length} {items.length === 1 ? "piece" : "pieces"}
-                </span>
-              </div>
-              <HScroll>
-                {items.map((item, i) => (
-                  <GalleryTile key={`${style}-${item.url}-${i}`} item={item} />
-                ))}
-              </HScroll>
-            </section>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
+          {items.map((item, i) => (
+            <GalleryTile key={`${item.url}-${i}`} item={item} span={SPANS[i % SPANS.length]} />
           ))}
+
         </div>
       )}
     </LazyReveal>
   );
 };
 
-const GalleryTile: React.FC<{ item: GalleryItem }> = ({ item }) => {
+const GalleryTile: React.FC<{ item: GalleryItem; span: number }> = ({ item, span }) => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
 
@@ -216,7 +286,8 @@ const GalleryTile: React.FC<{ item: GalleryItem }> = ({ item }) => {
       type="button"
       onClick={() => navigate(`/artist/${encodeURIComponent(item.handle)}`)}
       aria-label={`View ${item.artist}'s portfolio`}
-      className="snap-start shrink-0 w-40 sm:w-48 aspect-square relative overflow-hidden rounded-xl border border-app bg-card group cursor-pointer"
+      style={{ gridRow: `span ${span}` }}
+      className="relative overflow-hidden rounded-2xl border border-app bg-card group cursor-pointer"
     >
       {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
       <img
@@ -226,10 +297,14 @@ const GalleryTile: React.FC<{ item: GalleryItem }> = ({ item }) => {
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05] ${loaded ? "ink-fade-in" : "opacity-0"}`}
+        className={`w-full h-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] ${
+          loaded ? "ink-fade-in" : "opacity-0"
+        }`}
       />
-      <figcaption className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-xs font-medium text-white text-left">
-        @{item.artist} · View portfolio
+      <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <figcaption className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 px-3 py-2 text-xs font-medium text-white text-left">
+        @{item.artist}
+        <span className="block text-[10px] text-white/70">{item.category} · View portfolio</span>
       </figcaption>
     </button>
   );

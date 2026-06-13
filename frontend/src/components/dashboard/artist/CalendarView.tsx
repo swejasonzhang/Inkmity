@@ -52,7 +52,6 @@ const fmtMoney = (cents?: number) =>
 const typeLabel = (b: Booking) =>
     b.appointmentType === "consultation" ? "Consultation" : b.title || "Tattoo session";
 
-// Small key/value tile used inside the expanded appointment details.
 function KV({ k, v }: { k: string; v?: string | null }) {
     if (!v) return null;
     return (
@@ -63,8 +62,6 @@ function KV({ k, v }: { k: string; v?: string | null }) {
     );
 }
 
-// One appointment in the day agenda — expands smoothly to reveal full details,
-// pushing the appointments below it down (flow + layout animation).
 function DayAppointment({ b, accent }: { b: Booking; accent: string }) {
     const { getToken } = useAuth();
     const [open, setOpen] = useState(false);
@@ -282,7 +279,6 @@ export default function CalendarView({
         return st !== "cancelled" && st !== "no-show" && st !== "denied";
     };
 
-    // Day-cell count pill colour, matched to the Upcoming/Pending/Past legend.
     const dayPillClass = (items: Booking[]) => {
         const hasUpcoming = items.some((b) => isActive(b) && b.status !== "pending" && !isPastDay(new Date(b.start)));
         const hasPending = items.some((b) => b.status === "pending");
@@ -291,7 +287,6 @@ export default function CalendarView({
         return "bg-white/25 text-app";
     };
 
-    // Left accent on each appointment card in the day view.
     const apptAccent = (b: Booking) => {
         if (!isActive(b)) return "bg-white/30";
         if (b.status === "pending") return "bg-white/60";

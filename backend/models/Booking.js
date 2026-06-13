@@ -76,9 +76,6 @@ BookingSchema.index({ createdAt: -1 }, { name: "created_desc_idx" });
 
 BookingSchema.index({ note: "text", requirements: "text", serviceDescription: "text" });
 
-// Emit a realtime update to both participants on every booking save (create,
-// accept, deny, cancel, reschedule, complete, no-show, price/time changes).
-// Dynamic import avoids any model<->service load-order/circular issues.
 BookingSchema.post("save", function (doc) {
   import("../services/socketService.js")
     .then(({ emitBookingUpdate }) => emitBookingUpdate(doc, doc.status))

@@ -8,6 +8,7 @@ const STORAGE_KEY = "inkmity-theme";
 export function isThemedPath(pathname: string): boolean {
   return (
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/artists") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/appointments") ||
     pathname.startsWith("/portfolio") ||
@@ -104,7 +105,7 @@ export function useTheme() {
     if (!themed) return;
     const next: Theme = store === "light" ? "dark" : "light";
     setStore(next);
-    applyToDom(next, true);
+    applyToDom(next, false);
   }, [themed]);
 
   const logoSrc = useMemo(() => {

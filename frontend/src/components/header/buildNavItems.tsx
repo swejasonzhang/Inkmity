@@ -5,10 +5,8 @@ export type NavItem = {
   to: string;
   disabled?: boolean;
   badge?: React.ReactNode;
-  /** Live count shown as a notification bubble on the nav link. */
   count?: number;
   onClick?: (e: React.MouseEvent) => void;
-  /** Secondary links collapse into a "More" menu on desktop to keep the bar lean. */
   secondary?: boolean;
 };
 
@@ -20,7 +18,10 @@ export function buildNavItems(
   const gated = (label: string, to: string): NavItem =>
     isSignedIn ? { label, to } : { label, to, disabled: true, onClick: onGate };
 
-  const items: NavItem[] = [gated("Dashboard", "/dashboard")];
+  const isProvider = role === "artist" || role === "studio";
+  const items: NavItem[] = [
+    isProvider ? gated("Dashboard", "/dashboard") : gated("Artists", "/artists"),
+  ];
 
   if (isSignedIn && role === "artist") {
     items.push(gated("Portfolio", "/portfolio"));
@@ -31,9 +32,6 @@ export function buildNavItems(
 
   items.push(gated("Appointments", "/appointments"));
 
-  // Explore is a discovery surface for clients (and prospective clients when
-  // signed out); providers don't browse it.
-  const isProvider = role === "artist" || role === "studio";
   if (!isProvider) {
     items.push({ label: "Explore", to: "/explore" });
   }

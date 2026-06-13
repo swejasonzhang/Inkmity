@@ -58,9 +58,6 @@ export default function ClientAppointmentHistory() {
     };
 
     const { pendingBookings, pastBookings } = useMemo(() => {
-        // An appointment is only "finished" once the work is actually done (or it was
-        // cancelled/denied/no-show). Everything else — including an accepted/confirmed
-        // booking whose session hasn't happened yet — stays in Upcoming.
         const finishedStatuses = new Set<Booking["status"]>([
             "completed",
             "cancelled",
@@ -82,8 +79,6 @@ export default function ClientAppointmentHistory() {
     const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
     const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
 
-    // A booking can be reviewed once the work is finished. For multi-session pieces that
-    // means every session of the project is complete — we prompt once, on the final one.
     const reviewableIds = useMemo(() => {
         const ids = new Set<string>();
         const byProject = new Map<string, Booking[]>();

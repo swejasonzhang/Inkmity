@@ -35,9 +35,6 @@ const ACTIVE_STATUSES = new Set([
   "in-progress",
 ]);
 
-// What counts as "on the calendar" for Next up / upcoming: anything booked that
-// isn't cancelled/denied/finished — including pending requests, so the overview
-// matches what the bookings calendar shows.
 const UPCOMING_STATUSES = new Set([...ACTIVE_STATUSES, "pending"]);
 
 function startOfDay(d: Date) {

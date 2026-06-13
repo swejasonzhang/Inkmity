@@ -79,7 +79,7 @@ function markAftercareDismissed(id: string) {
   try {
     const arr = getDismissedAftercare();
     if (!arr.includes(id)) localStorage.setItem(AFTERCARE_DISMISS_KEY, JSON.stringify([...arr, id]));
-  } catch { /* ignore */ }
+  } catch { }
 }
 
 export default function Appointments() {
@@ -772,8 +772,6 @@ export default function Appointments() {
       </div>
       </div>
 
-      {/* Rendered unconditionally so the Radix dialog is never unmounted while open
-          (that orphans its overlay and locks the page). `open` alone controls it. */}
       <AftercareInstructions
         open={aftercareModalOpen}
         onClose={() => {

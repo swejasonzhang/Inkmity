@@ -29,7 +29,6 @@ async function runPayoutsForBill(bill) {
       bill.type === "deposit"
         ? Math.max(0, Number(bill.amountCents || 0) - Number(bill.platformFeeCents || 0))
         : Number(bill.amountCents || 0);
-    // Artist bears card processing: net Stripe's cut out of the payout.
     const stripeFee = estimateStripeFeeCents(
       Number(bill.amountCents || 0),
       config.platformFee.processingPct,
@@ -326,7 +325,6 @@ export async function createDepositPaymentIntent(req, res) {
   }
 }
 
-// Save the client's card on file at booking (no charge) for the at-completion capture.
 export async function createCardSetupIntent(req, res) {
   try {
     const { bookingId } = req.body || {};

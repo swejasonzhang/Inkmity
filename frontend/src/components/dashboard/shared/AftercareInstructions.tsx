@@ -62,7 +62,6 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
         showCloseButton={false}
         style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
       >
-        {/* Header */}
         <div
           className="sticky top-0 z-10 px-6 sm:px-8 py-5 border-b text-center"
           style={{ background: "color-mix(in srgb, var(--card) 90%, transparent)", backdropFilter: "blur(10px)", borderColor: "var(--border)" }}
@@ -85,7 +84,6 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
         </div>
 
         <div className="px-6 sm:px-8 py-6 space-y-5">
-          {/* Aftercare steps */}
           <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
             <SectionTitle icon={CheckCircle2}>Aftercare Steps</SectionTitle>
             <ol className="space-y-2.5">
@@ -97,7 +95,6 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
             </ol>
           </section>
 
-          {/* What to avoid */}
           <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
             <SectionTitle icon={XCircle}>What to Avoid</SectionTitle>
             <ul className="space-y-2.5">
@@ -107,7 +104,6 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
             </ul>
           </section>
 
-          {/* Recommended products */}
           <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
             <SectionTitle icon={ShoppingBag}>Recommended Products</SectionTitle>
             <div className="grid sm:grid-cols-2 gap-3">
@@ -120,7 +116,6 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
             </div>
           </section>
 
-          {/* Healing timeline */}
           <section className="rounded-2xl border p-5 sm:p-6" style={sectionStyle}>
             <SectionTitle icon={Clock}>Healing Timeline</SectionTitle>
             <div className="space-y-2">
@@ -132,7 +127,6 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
             </div>
           </section>
 
-          {/* Warning */}
           <div
             className="rounded-2xl border p-5 text-center"
             style={{ borderColor: "var(--fg)", background: "color-mix(in srgb, var(--fg) 7%, transparent)" }}
@@ -144,7 +138,6 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
           </div>
         </div>
 
-        {/* Footer */}
         <div
           className="sticky bottom-0 flex justify-center px-6 sm:px-8 py-4 border-t"
           style={{ background: "color-mix(in srgb, var(--card) 90%, transparent)", backdropFilter: "blur(10px)", borderColor: "var(--border)" }}

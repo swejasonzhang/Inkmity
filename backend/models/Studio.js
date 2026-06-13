@@ -22,7 +22,6 @@ const StudioSchema = new Schema(
     city: { type: String, default: "", index: true },
     lat: { type: Number },
     lng: { type: Number },
-    // Google Places place_id — proof the location is a real, listed business.
     placeId: { type: String, default: "", index: true },
     logo: LogoSchema,
     bio: { type: String, default: "", maxlength: 600 },

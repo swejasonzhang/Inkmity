@@ -458,7 +458,6 @@ export async function denyAppointment(
   return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
 }
 
-// Completion phase 1: issue a fresh 3-minute code to each party.
 export async function startBookingVerification(
   id: string,
   token?: string | null,
@@ -467,7 +466,6 @@ export async function startBookingVerification(
   return apiPost<Booking>(`/bookings/${id}/verify/start`, undefined, token, signal);
 }
 
-// Completion phase 2: each party confirms with their own code; both → charged + split.
 export async function verifyBookingCompletion(
   id: string,
   role: "client" | "artist",
@@ -504,7 +502,6 @@ export async function submitIntakeForm(
   return apiPost<IntakeForm>(`/bookings/${bookingId}/intake`, form, token, signal);
 }
 
-// Save the client's card on file at booking (no charge) for the at-completion capture.
 export async function createCardSetupIntent(
   bookingId: string,
   token?: string | null,
@@ -846,7 +843,6 @@ export type RewardsSummary = {
   lifetimeDiscountUsd: number;
 };
 
-// Single source of truth for how the platform fee reads in the UI.
 export function formatPlatformFee(f?: PlatformFee | null) {
   const noBase = (f?.baseCents ?? 0) <= 0;
   const base = `$${Math.round((f?.baseCents ?? 0) / 100)}`;

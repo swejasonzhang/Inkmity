@@ -27,9 +27,10 @@ export type ArtistWithGroups = {
 
 export type PortfolioProps = {
     artist: ArtistWithGroups;
+    compact?: boolean;
 };
 
-const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
+const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) => {
     const navigate = useNavigate();
     const recent = useMemo(() => (artist?.portfolioImages ?? []).filter(Boolean), [artist]);
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
@@ -185,6 +186,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
     return (
         <div className="w-full" style={{ background: "var(--card)", color: "var(--fg)" }}>
             <div className="mx-auto max-w-screen-2xl px-1.5 sm:px-2.5 pt-[10px] pb-6 space-y-4 sm:space-y-5">
+                {!compact && (
                 <section className="w-full">
                     <Card className="w-full shadow-none overflow-hidden" style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)", paddingTop: 0, paddingBottom: 0, gap: 0 }}>
                         <div className="relative w-full overflow-hidden" style={{ background: "var(--elevated)" }}>
@@ -240,8 +242,9 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist }) => {
                         </p>
                     </Card>
                 </section>
+                )}
 
-                {artist.handle && totalWorks > 0 && (
+                {!compact && artist.handle && totalWorks > 0 && (
                     <section className="w-full flex justify-center">
                         <button
                             type="button"

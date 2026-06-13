@@ -57,7 +57,6 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
           sketches: pick(full.sketches, prev.sketches) as string[],
         }));
       } catch {
-        /* keep the lightweight artist we already have */
       }
     })();
     return () => {
