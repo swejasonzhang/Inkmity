@@ -9,6 +9,7 @@ const conditionalDescribe =
 const stripeMock = {
   customers: { create: jest.fn(), retrieve: jest.fn() },
   paymentIntents: { create: jest.fn() },
+  setupIntents: { create: jest.fn() },
   webhooks: { constructEvent: jest.fn((body) => JSON.parse(body.toString())) },
   accounts: { create: jest.fn(), retrieve: jest.fn() },
   accountLinks: { create: jest.fn() },
@@ -16,8 +17,12 @@ const stripeMock = {
 };
 jest.unstable_mockModule("../../lib/stripe.js", () => ({ stripe: stripeMock }));
 
-const { createDepositPaymentIntent, createFinalPaymentIntent, stripeWebhook } =
-  await import("../../controllers/billingController.js");
+const {
+  createDepositPaymentIntent,
+  createFinalPaymentIntent,
+  createBankSetupIntent,
+  stripeWebhook,
+} = await import("../../controllers/billingController.js");
 const Booking = (await import("../../models/Booking.js")).default;
 const Billing = (await import("../../models/Billing.js")).default;
 const WebhookEvent = (await import("../../models/WebhookEvent.js")).default;
@@ -37,6 +42,7 @@ const mockAuth = (req, res, next) => {
 
 app.post("/billing/deposit/intent", mockAuth, createDepositPaymentIntent);
 app.post("/billing/final-payment/intent", mockAuth, createFinalPaymentIntent);
+app.post("/billing/bank-setup-intent", mockAuth, createBankSetupIntent);
 app.post(
   "/billing/webhook",
   (req, res, next) => {
@@ -403,5 +409,66 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
     expect(artist.chargesEnabled).toBe(true);
     expect(artist.payoutsEnabled).toBe(true);
     expect(artist.onboardingCompletedAt).toBeTruthy();
+  });
+});
+
+conditionalDescribe("Billing Controller - Bank Setup Intent (ACH)", () => {
+  let bookingId;
+
+  beforeEach(async () => {
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const booking = await Booking.create({
+      artistId: "artist-123",
+      clientId: "client-456",
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "confirmed",
+      appointmentType: "tattoo_session",
+      priceCents: 10000,
+    });
+    bookingId = booking._id.toString();
+
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_bank123" });
+    stripeMock.setupIntents.create.mockResolvedValue({
+      id: "seti_bank123",
+      client_secret: "seti_bank123_secret",
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("creates a us_bank_account SetupIntent for off-session ACH charges", async () => {
+    const response = await request(app)
+      .post("/billing/bank-setup-intent")
+      .set("x-test-user-id", "client-456")
+      .send({ bookingId });
+
+    expect(response.status).toBe(200);
+    expect(response.body.clientSecret).toBe("seti_bank123_secret");
+    expect(response.body.setupIntentId).toBe("seti_bank123");
+    expect(response.body.customerId).toBe("cus_bank123");
+    expect(stripeMock.setupIntents.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: "cus_bank123",
+        usage: "off_session",
+        payment_method_types: ["us_bank_account"],
+        metadata: expect.objectContaining({ type: "bank_on_file", bookingId }),
+      })
+    );
+
+    const booking = await Booking.findById(bookingId);
+    expect(booking.stripeCustomerId).toBe("cus_bank123");
+  });
+
+  test("rejects when bookingId is missing", async () => {
+    const response = await request(app)
+      .post("/billing/bank-setup-intent")
+      .set("x-test-user-id", "client-456")
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(stripeMock.setupIntents.create).not.toHaveBeenCalled();
   });
 });

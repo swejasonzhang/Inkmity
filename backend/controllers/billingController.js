@@ -381,6 +381,64 @@ export async function createCardSetupIntent(req, res) {
   }
 }
 
+export async function createBankSetupIntent(req, res) {
+  try {
+    const { bookingId } = req.body || {};
+    if (!bookingId) return res.status(400).json({ error: "bookingId required" });
+
+    const booking = await Booking.findById(bookingId);
+    requireBooking(booking);
+
+    let customer;
+    try {
+      const existingBills = await Billing.find({
+        clientId: String(booking.clientId),
+        stripeCustomerId: { $exists: true, $ne: null },
+      }).limit(1);
+      const existingId = booking.stripeCustomerId || existingBills[0]?.stripeCustomerId;
+      if (existingId) {
+        customer = await stripe.customers.retrieve(existingId);
+      } else {
+        customer = await stripe.customers.create({
+          metadata: { clientId: String(booking.clientId) },
+        });
+      }
+    } catch {
+      customer = await stripe.customers.create({
+        metadata: { clientId: String(booking.clientId) },
+      });
+    }
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customer.id,
+      usage: "off_session",
+      payment_method_types: ["us_bank_account"],
+      payment_method_options: {
+        us_bank_account: { verification_method: "automatic" },
+      },
+      metadata: {
+        bookingId: String(booking._id),
+        clientId: String(booking.clientId),
+        type: "bank_on_file",
+      },
+    });
+
+    booking.stripeCustomerId = customer.id;
+    await booking.save();
+
+    res.json({
+      clientSecret: setupIntent.client_secret,
+      setupIntentId: setupIntent.id,
+      customerId: customer.id,
+    });
+  } catch (err) {
+    console.error("createBankSetupIntent error:", err);
+    return res
+      .status(err.status || 500)
+      .json({ error: err.message || "Internal error", message: err.publicMessage });
+  }
+}
+
 export async function refundBilling(req, res) {
   try {
     const actorId = String(req.user?.clerkId || req.auth?.userId || "").trim();
