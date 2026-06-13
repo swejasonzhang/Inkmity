@@ -577,6 +577,51 @@ export async function createBankSetupIntent(
   }>("/billing/bank-setup-intent", { bookingId }, token, signal);
 }
 
+export type SavedPaymentMethod = {
+  id: string;
+  type: "card" | "us_bank_account";
+  brand?: string;
+  bankName?: string;
+  last4: string;
+  expMonth?: number | null;
+  expYear?: number | null;
+  isDefault: boolean;
+};
+
+export async function createClientSetupIntent(
+  method: "card" | "bank",
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{
+    clientSecret: string;
+    setupIntentId: string;
+    customerId: string;
+  }>("/billing/client/setup-intent", { method }, token, signal);
+}
+
+export async function listClientPaymentMethods(token?: string | null, signal?: AbortSignal) {
+  return apiGet<{ methods: SavedPaymentMethod[] }>(
+    "/billing/client/payment-methods",
+    undefined,
+    token,
+    signal
+  );
+}
+
+export async function deleteClientPaymentMethod(
+  paymentMethodId: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{ ok: boolean }>(
+    "/billing/client/payment-methods/delete",
+    { paymentMethodId },
+    token,
+    signal
+  );
+}
+
 export type ArtistPolicy = {
   _id?: string;
   artistId: string;
