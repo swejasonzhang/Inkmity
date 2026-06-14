@@ -1238,7 +1238,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                 <div className="text-sm font-semibold">Message requests</div>
                 <div className="text-xs text-muted-foreground">Review new requests</div>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                 <RequestPanel
                   authFetch={authFetch}
                   onOpenConversation={(clerkId) => {
@@ -1268,7 +1268,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                     )}
                   </button>
                 )}
-                <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl bg-card p-1.5 flex flex-col items-center gap-2 w-full">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-2xl bg-card p-1.5 flex flex-col items-center gap-2 w-full">
                   {sortedConversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     return (
@@ -1617,14 +1617,14 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       <X size={26} strokeWidth={2.5} />
                     </button>
                   </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                     <RequestPanel authFetch={authFetch} onOpenConversation={(clerkId) => { setExpandedId(clerkId); setMobileRequestsOpen(false); try { window.dispatchEvent(new CustomEvent("ink:set-expanded-conversation", { detail: clerkId })); } catch { } }} />
                   </div>
                 </div>
               )}
             </div>
             <div className="hidden md:grid gap-3 h-full min-h-0 flex-1 w-full" style={{ gridTemplateColumns: 'clamp(180px, 15vw, 260px) minmax(0, 1fr)' }}>
-              <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto ink-page-scroll">
+              <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto overscroll-contain ink-page-scroll">
                 <ul className="space-y-1.5 p-1.5">
                   {sortedConversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
