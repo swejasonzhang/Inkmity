@@ -19,8 +19,6 @@ function brandLabel(m: SavedPaymentMethod) {
   return (m.brand || "card").replace(/^\w/, (c) => c.toUpperCase());
 }
 
-const PAYMENT_ELEMENT_HEIGHT = 776;
-
 function Shimmer({ className }: { className?: string }) {
   return <div className={`ink-shimmer rounded-lg ${className || ""}`} aria-hidden />;
 }
@@ -42,25 +40,19 @@ function PaymentElementSkeleton() {
           <Shimmer key={i} className="h-[58px]" />
         ))}
       </div>
-
       <Shimmer className="h-5 w-56" />
-
       <Field labelW="w-24" />
-
       <div className="grid grid-cols-2 gap-3">
         <Field labelW="w-24" />
         <Field labelW="w-24" />
       </div>
-
       <Field labelW="w-16" />
       <Field labelW="w-16" />
-
       <div className="space-y-1.5 pt-1">
         <Shimmer className="h-2.5 w-full" />
         <Shimmer className="h-2.5 w-full" />
         <Shimmer className="h-2.5 w-2/3" />
       </div>
-
       <div className="rounded-xl border border-app/40 p-3.5 space-y-3">
         <Shimmer className="h-4 w-16" />
         <Shimmer className="h-4 w-2/3" />
@@ -85,12 +77,15 @@ function AddPaymentForm({
   const containerRef = useRef<HTMLDivElement>(null);
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
-  const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [measuredHeight, setMeasuredHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!clientSecret) return;
     let active = true;
+    let ro: ResizeObserver | null = null;
+    let settle: ReturnType<typeof setTimeout> | undefined;
     (async () => {
       const stripe = await stripePromise;
       if (!stripe || !active || !containerRef.current) return;
@@ -131,16 +126,30 @@ function AddPaymentForm({
       const elements = stripe.elements({
         clientSecret,
         appearance,
+        loader: "never",
         fonts: [{ cssSrc: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" }],
       });
       const paymentEl = elements.create("payment", { layout: "tabs" });
-      paymentEl.on("ready", () => active && setReady(true));
       paymentEl.mount(containerRef.current);
       stripeRef.current = stripe;
       elementsRef.current = elements;
+
+      // Reveal once the element stops resizing (loads in stages), so it appears
+      // at its final natural height with no layout shift — all heights stay fluid.
+      ro = new ResizeObserver(() => {
+        if (!active || !containerRef.current) return;
+        setMeasuredHeight(containerRef.current.offsetHeight);
+        clearTimeout(settle);
+        settle = setTimeout(() => {
+          if (active) setReady(true);
+        }, 1000);
+      });
+      ro.observe(containerRef.current);
     })();
     return () => {
       active = false;
+      clearTimeout(settle);
+      ro?.disconnect();
     };
   }, [clientSecret, appearanceTheme]);
 
@@ -169,17 +178,20 @@ function AddPaymentForm({
   };
 
   return (
-    <>
+    <div className="flex flex-col">
       <div
-        className="relative overflow-y-auto ink-page-scroll"
-        style={{ height: PAYMENT_ELEMENT_HEIGHT }}
+        className="relative overflow-hidden"
+        style={{
+          height: ready ? undefined : measuredHeight,
+          transition: "height 450ms cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
       >
-        <div ref={containerRef} />
-        {!ready && (
-          <div className="absolute inset-0">
-            <PaymentElementSkeleton />
-          </div>
-        )}
+        <div
+          ref={containerRef}
+          className={ready ? "" : "absolute top-0 left-0 right-0 opacity-0 pointer-events-none"}
+          aria-hidden={!ready}
+        />
+        {!ready && <PaymentElementSkeleton />}
       </div>
 
       <div className="mt-4 flex items-center gap-1.5 text-[11px] text-subtle">
@@ -198,13 +210,13 @@ function AddPaymentForm({
         <Button
           type="button"
           onClick={submit}
-          disabled={busy || !ready}
+          disabled={busy}
           className="flex-1 h-11 rounded-xl font-semibold"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save payment method"}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -353,7 +365,7 @@ export default function PaymentMethods() {
           aria-modal="true"
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-app bg-card p-6 text-app shadow-2xl"
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto ink-page-scroll rounded-3xl border border-app bg-card p-6 text-app shadow-2xl"
             style={{ boxShadow: "0 24px 70px -20px rgba(0,0,0,0.7)" }}
             onClick={(e) => e.stopPropagation()}
           >
