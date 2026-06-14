@@ -1625,7 +1625,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
             </div>
             <div className="hidden md:grid gap-3 h-full min-h-0 flex-1 w-full" style={{ gridTemplateColumns: 'clamp(180px, 15vw, 260px) minmax(0, 1fr)' }}>
               <aside className="hidden md:block h-full rounded-xl bg-card min-h-0 overflow-y-auto">
-                <ul className="divide-y divide-white/60">
+                <ul>
                   {sortedConversations.map(c => {
                     const isActive = c.participantId === activeConv?.participantId;
                     const lastMsg = c.messages[c.messages.length - 1];
