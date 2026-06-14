@@ -899,7 +899,7 @@ export default function ClientProfile() {
                                 placeholder={messagePlaceholder}
                             />
 
-                            <div className="flex items-center justify-between mt-4 mb-3">
+                            <div className="flex flex-col items-start gap-2 mt-4 mb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
                                     Reference Images {currentReferences.length > 0 && `(${currentReferences.length}/3)`}
                                 </h3>
@@ -909,14 +909,14 @@ export default function ClientProfile() {
                                         disabled={uploading}
                                         size="sm"
                                         variant="outline"
-                                        className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                        className="text-xs sm:text-sm h-8 sm:h-9 px-2.5 sm:px-3 border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
                                     >
-                                        <Plus className="h-4 w-4 mr-2" />
+                                        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                                         {uploading ? "Uploading..." : "Add Image"}
                                     </Button>
                                 )}
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {currentReferences.map((url, index) => (
                                     <div
                                         key={index}
@@ -964,7 +964,7 @@ export default function ClientProfile() {
                                     <button
                                         onClick={() => referenceInputRef.current?.click()}
                                         disabled={uploading}
-                                        className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:bg-[color:var(--elevated)] transition-colors"
+                                        className={`rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:bg-[color:var(--elevated)] transition-colors ${currentReferences.length === 0 ? "col-span-2 sm:col-span-3 py-10" : "aspect-square"}`}
                                         style={{ borderColor: "var(--border)", color: "var(--fg)" }}
                                     >
                                         <Plus className="h-6 w-6" />

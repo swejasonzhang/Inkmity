@@ -33,7 +33,7 @@ export default function ClientTierCard({ className = "" }: { className?: string 
       className={`rounded-2xl border p-4 sm:p-5 ${className}`}
       style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--fg)" }}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="grid h-10 w-10 place-items-center rounded-xl border shrink-0" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
             <Award className="h-5 w-5" />
@@ -43,9 +43,9 @@ export default function ClientTierCard({ className = "" }: { className?: string 
             <div className="text-lg font-bold leading-tight truncate">{tier.label}</div>
           </div>
         </div>
-        <div className="text-right shrink-0">
-          <div className="text-lg font-extrabold leading-none">{fee.short}</div>
-          <div className="text-[11px]" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>platform fee · max {fee.cap}</div>
+        <div className="text-left sm:text-right shrink-0">
+          <div className="text-sm sm:text-lg font-extrabold leading-none">{fee.short}</div>
+          <div className="text-[10px] sm:text-[11px]" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>platform fee · max {fee.cap}</div>
         </div>
       </div>
 
