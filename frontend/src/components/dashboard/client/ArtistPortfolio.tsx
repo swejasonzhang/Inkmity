@@ -8,6 +8,41 @@ import { titleCase } from "@/lib/format";
 
 const SECTION_INITIAL = 5;
 
+const PortfolioTile: React.FC<{
+    src: string;
+    alt: string;
+    eager?: boolean;
+    onClick: () => void;
+}> = ({ src, alt, eager, onClick }) => {
+    const [loaded, setLoaded] = useState(false);
+    return (
+        <button
+            onClick={onClick}
+            className="group relative aspect-square rounded-2xl border overflow-hidden transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
+            aria-label={`Open ${alt}`}
+        >
+            {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
+            <img
+                src={src}
+                alt={alt}
+                onLoad={() => setLoaded(true)}
+                onError={() => setLoaded(true)}
+                className={`absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${loaded ? "ink-fade-in" : "opacity-0"}`}
+                loading={eager ? "eager" : "lazy"}
+                decoding="async"
+                referrerPolicy="no-referrer"
+            />
+            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                <div className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur-sm border" style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                    <Maximize2 className="h-3 w-3" /> View
+                </div>
+            </div>
+        </button>
+    );
+};
+
 const WorkSection: React.FC<{
     title: string;
     images: string[];
@@ -29,28 +64,7 @@ const WorkSection: React.FC<{
             </header>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {shown.map((src, i) => (
-                    <button
-                        key={`${src}-${i}`}
-                        onClick={() => onOpen(images, i, label)}
-                        className="group relative aspect-square rounded-2xl border overflow-hidden transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
-                        aria-label={`Open ${imgAltPrefix} ${i + 1}`}
-                    >
-                        <img
-                            src={src}
-                            alt={`${imgAltPrefix} ${i + 1}`}
-                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            loading={i < 4 ? "eager" : "lazy"}
-                            decoding="async"
-                            referrerPolicy="no-referrer"
-                        />
-                        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
-                            <div className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur-sm border" style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                                <Maximize2 className="h-3 w-3" /> View
-                            </div>
-                        </div>
-                    </button>
+                    <PortfolioTile key={`${src}-${i}`} src={src} alt={`${imgAltPrefix} ${i + 1}`} eager={i < 4} onClick={() => onOpen(images, i, label)} />
                 ))}
             </div>
             {images.length > initial && (
@@ -271,28 +285,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                         {activeCat && activeCat.images.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                 {activeCat.images.map((src, i) => (
-                                    <button
-                                        key={`${src}-${i}`}
-                                        onClick={() => openZoom(activeCat.images, i, activeCat.label)}
-                                        className="group relative aspect-square rounded-2xl border overflow-hidden transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
-                                        aria-label={`Open ${activeCat.label} ${i + 1}`}
-                                    >
-                                        <img
-                                            src={src}
-                                            alt={`${activeCat.label} ${i + 1}`}
-                                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                            loading={i < 8 ? "eager" : "lazy"}
-                                            decoding="async"
-                                            referrerPolicy="no-referrer"
-                                        />
-                                        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
-                                            <div className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur-sm border" style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}>
-                                                <Maximize2 className="h-3 w-3" /> View
-                                            </div>
-                                        </div>
-                                    </button>
+                                    <PortfolioTile key={`${src}-${i}`} src={src} alt={`${activeCat.label} ${i + 1}`} eager={i < 8} onClick={() => openZoom(activeCat.images, i, activeCat.label)} />
                                 ))}
                             </div>
                         ) : (

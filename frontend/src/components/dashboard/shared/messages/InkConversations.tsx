@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, X } from "lucide-react";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import type { Role } from "@/hooks/useInkConversations";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
   width: number;
   height: number;
   open: boolean;
+  closing?: boolean;
   setOpen: (v: boolean) => void;
   unreadConvoCount: number;
   requestCount: number;
@@ -23,12 +25,15 @@ export const InkConversations: React.FC<Props> = ({
   width,
   height,
   open,
+  closing,
   setOpen,
   unreadConvoCount,
   requestCount,
   derivedTotal,
   messagesContent,
 }) => {
+  useScrollLock(open);
+
   const wrapperWidth = width;
   const badgeH = isMdUp ? 22 : 16;
   const badgeMinW = badgeH;
@@ -37,16 +42,15 @@ export const InkConversations: React.FC<Props> = ({
 
   return (
     <div
-      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} pointer-events-auto border border-app/40 shadow-md transition`}
+      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} ${closing ? "ink-panel-out" : open ? "ink-panel-in" : ""} pointer-events-auto border border-app/40 shadow-md transition`}
       aria-label={open ? "Messages" : "Open messages"}
       aria-expanded={open}
+      {...(open ? { role: "dialog", "aria-modal": true } : {})}
       style={{
-        willChange: "width,height",
         width: wrapperWidth as number | string,
         height,
         borderRadius: open ? 16 : 9999,
-        transition:
-          "width 900ms cubic-bezier(0.22,1,0.36,1), height 900ms cubic-bezier(0.22,1,0.36,1), border-radius 900ms ease, padding 700ms ease",
+        contain: "layout paint",
         overflow: "hidden",
         position: "relative",
         display: "flex",
@@ -87,7 +91,7 @@ export const InkConversations: React.FC<Props> = ({
           )}
         </Button>
       ) : (
-        <div className="flex flex-col h-full w-full">
+        <div className="flex flex-col overflow-hidden" style={{ width, height }}>
           <div
             className={`flex items-center justify-between ${isMdUp ? "px-3 py-2" : "px-2 py-3"} border-b border-app/40`}
             style={!isMdUp ? { minHeight: "50px" } : undefined}

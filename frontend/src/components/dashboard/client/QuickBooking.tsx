@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { X, CalendarDays, Clock, Info, ArrowLeft, ChevronRight } from "lucide-react";
 import BookingPicker from "../../calender/BookingPicker";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 
 type BookingProps = {
@@ -29,6 +31,7 @@ function fmtDow(d: Date) {
 }
 
 export default function QuickBooking({ open, artist, onBack, onClose }: BookingProps) {
+    const navigate = useNavigate();
     const today = useMemo(() => startOfDay(), []);
     const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(today, i)), [today]);
 
@@ -36,12 +39,13 @@ export default function QuickBooking({ open, artist, onBack, onClose }: BookingP
     const username = artist?.username ?? "the artist";
     const artistId = artist?.clerkId ?? null;
 
+    useScrollLock(open);
+
     const openPortfolio = () => {
-        if (!artistId) return;
+        const handle = String(artist?.handle || "").replace(/^@/, "").trim();
+        if (!handle) return;
         onClose();
-        window.dispatchEvent(new CustomEvent("ink:open-artist-modal", {
-            detail: { clerkId: artistId, handle: artist?.handle, username: artist?.username, step: 1 },
-        }));
+        navigate(`/artist/${encodeURIComponent(handle)}`, { state: { artist } });
     };
     const initial = (username || "A").trim().charAt(0).toUpperCase();
 

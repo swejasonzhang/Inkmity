@@ -4,6 +4,7 @@ import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import { stripePromise } from "@/lib/stripe";
 import { useAuth } from "@clerk/clerk-react";
 import { useTheme } from "@/hooks/useTheme";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { toast } from "react-toastify";
 import { CreditCard, Landmark, Trash2, Plus, Loader2, Lock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,8 +135,6 @@ function AddPaymentForm({
       stripeRef.current = stripe;
       elementsRef.current = elements;
 
-      // Reveal once the element stops resizing (loads in stages), so it appears
-      // at its final natural height with no layout shift — all heights stay fluid.
       ro = new ResizeObserver(() => {
         if (!active || !containerRef.current) return;
         setMeasuredHeight(containerRef.current.offsetHeight);
@@ -229,6 +228,8 @@ export default function PaymentMethods() {
   const [modalOpen, setModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+
+  useScrollLock(modalOpen);
 
   const load = useCallback(async () => {
     try {
