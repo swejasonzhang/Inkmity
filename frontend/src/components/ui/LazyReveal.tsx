@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-export const LAZY_MS = 2000;
+const LAZY_MS = 2000;
 
 type GroupState = {
   startedAt: number;

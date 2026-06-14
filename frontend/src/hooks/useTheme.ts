@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
 
-export const THEME_MS = 300;
+const THEME_MS = 300;
 type Theme = "dark" | "light";
 const STORAGE_KEY = "inkmity-theme";
 

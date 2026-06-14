@@ -14,7 +14,7 @@ export type Message = {
   seenAt?: number | string;
 };
 
-export type ConversationMeta = {
+type ConversationMeta = {
   allowed: boolean;
   lastStatus: "pending" | "accepted" | "declined" | null;
   declines: number;
