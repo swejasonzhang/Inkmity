@@ -483,11 +483,16 @@ export default function ClientProfile() {
     useEffect(() => {
         const textarea = messageTextareaRef.current;
         if (!textarea) return;
-        const empty = !currentMessage;
-        if (empty) textarea.value = messagePlaceholder;
-        textarea.style.height = 'auto';
-        textarea.style.height = `${Math.max(textarea.scrollHeight, 100)}px`;
-        if (empty) textarea.value = '';
+        const resize = () => {
+            const empty = !currentMessage;
+            if (empty) textarea.value = messagePlaceholder;
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.max(textarea.scrollHeight, 100)}px`;
+            if (empty) textarea.value = '';
+        };
+        resize();
+        window.addEventListener('resize', resize);
+        return () => window.removeEventListener('resize', resize);
     }, [currentMessage, messagePlaceholder]);
 
     if (!client) return null;
@@ -899,22 +904,10 @@ export default function ClientProfile() {
                                 placeholder={messagePlaceholder}
                             />
 
-                            <div className="flex flex-col items-start gap-2 mt-4 mb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                                <h3 className="text-sm font-semibold" style={{ color: "var(--fg)" }}>
+                            <div className="mt-4 mb-3">
+                                <h3 className="text-sm font-semibold text-center" style={{ color: "var(--fg)" }}>
                                     Reference Images {currentReferences.length > 0 && `(${currentReferences.length}/3)`}
                                 </h3>
-                                {currentReferences.length < 3 && (
-                                    <Button
-                                        onClick={() => referenceInputRef.current?.click()}
-                                        disabled={uploading}
-                                        size="sm"
-                                        variant="outline"
-                                        className="text-xs sm:text-sm h-8 sm:h-9 px-2.5 sm:px-3 border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
-                                    >
-                                        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                                        {uploading ? "Uploading..." : "Add Image"}
-                                    </Button>
-                                )}
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {currentReferences.map((url, index) => (

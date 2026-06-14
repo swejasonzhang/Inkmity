@@ -155,13 +155,6 @@ export default function ArtistWorks() {
                                         >
                                             <CalendarDays className="h-4 w-4" /> Book now
                                         </button>
-                                        <button
-                                            onClick={() => setTab(0)}
-                                            className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold border transition hover:bg-elevated"
-                                            style={{ borderColor: "var(--border)", color: "var(--fg)" }}
-                                        >
-                                            <Images className="h-4 w-4" /> View portfolio
-                                        </button>
                                     </div>
                                 </div>
                             </header>
