@@ -262,8 +262,11 @@ export default function FloatingBar({
     if (portalTarget instanceof HTMLElement) return portalTarget as HTMLElement;
     const byId = document.getElementById("dashboard-portal-root") as HTMLElement | null;
     if (byId) return byId;
-    const scope = document.getElementById("dashboard-scope") as HTMLElement | null;
-    return scope ?? (document.body as HTMLElement);
+    // Fall back to <body> (not #dashboard-scope): the panel is position:fixed, so
+    // layout is unaffected and theme vars cascade from html.ink-light — but living
+    // outside the app's scroll containers means there is no scrollable ancestor for
+    // the panel's scroll to chain into.
+    return document.body as HTMLElement;
   };
   const targetEl = resolveTarget();
   portalRootRef.current = targetEl;

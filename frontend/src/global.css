@@ -1331,6 +1331,18 @@ input::-moz-focus-inner {
   }
 }
 
+@keyframes ink-fade-quick {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ink-fade-quick {
+  animation: ink-fade-quick 0.28s ease both;
+}
+
 @keyframes ink-panel-out {
   from {
     opacity: 1;
@@ -1361,6 +1373,19 @@ input::-moz-focus-inner {
 html.ink-modal-open,
 html.ink-modal-open body {
   overflow: hidden !important;
+}
+html.ink-modal-open .ink-art-imgs {
+  pointer-events: none;
+}
+[role="dialog"],
+[aria-modal="true"],
+[data-ink-modal],
+.ink-conv-scope,
+[role="dialog"] *,
+[aria-modal="true"] *,
+[data-ink-modal] *,
+.ink-conv-scope * {
+  overscroll-behavior: contain;
 }
 html.ink-modal-open #dashboard-scope,
 html.ink-modal-open .ink-page-scroll,

@@ -89,7 +89,7 @@ const ArtistCarouselCard = ({ artist, onClick, fill = false }: { artist: any; on
         >
             <div className={`relative w-full bg-elevated ${fill ? "flex-1 min-h-0" : "aspect-[4/3]"}`}>
                 {recent.length > 0 ? (
-                    <div className="group/imgs absolute inset-0 flex gap-0.5">
+                    <div className="ink-art-imgs group/imgs absolute inset-0 flex gap-0.5">
                         {recent.map((src, i) => (
                             <div
                                 key={i}

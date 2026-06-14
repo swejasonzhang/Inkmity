@@ -62,7 +62,7 @@ export const InkConversations: React.FC<Props> = ({
         <Button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex h-full w-full items-center justify-center gap-1.5 px-2.5 md:px-3 py-1.5 leading-none text-center focus:outline-none"
+          className="ink-fade-quick flex h-full w-full items-center justify-center gap-1.5 px-2.5 md:px-3 py-1.5 leading-none text-center focus:outline-none"
           title="Open messages"
           aria-label="Open messages"
           variant="ghost"
