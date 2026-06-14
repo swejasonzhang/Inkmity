@@ -438,16 +438,6 @@ export async function getAppointments(
   return apiGet<Booking[]>("/bookings/appointments", params, token, signal);
 }
 
-export type UnreadState = {
-  unreadConversationIds?: string[];
-  pendingRequestIds?: string[];
-  counts?: { unreadConversations?: number; pendingRequests?: number };
-};
-
-export async function getUnreadState(token?: string | null, signal?: AbortSignal) {
-  return apiGet<UnreadState>("/messages/unread", undefined, token, signal);
-}
-
 export type NotificationItem = {
   id: string;
   kind: string | null;
