@@ -200,7 +200,7 @@ const StyleRow = ({
                 {items.map((artist, index) => (
                     <div
                         key={`${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
-                        className="snap-start shrink-0 w-full sm:w-[calc((100%_-_0.75rem)/2)] md:w-[calc((100%_-_1.5rem)/3)] lg:w-[calc((100%_-_2.25rem)/4)] h-[23rem]"
+                        className="shrink-0 w-full sm:w-[calc((100%_-_0.75rem)/2)] md:w-[calc((100%_-_1.5rem)/3)] lg:w-[calc((100%_-_2.25rem)/4)] h-[23rem]"
                     >
                         <ArtistCarouselCard artist={artist} onClick={() => onSelect(artist)} fill />
                     </div>
