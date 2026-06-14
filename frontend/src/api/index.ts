@@ -169,44 +169,12 @@ export type Artist = {
   createdAt?: string;
 };
 
-export interface DashboardArtist {
-  id: string;
-  name: string;
-  location: string;
-  style: string;
-  priceRange: string;
-  rating: number;
-}
-
 export type ReviewInput = {
   artistClerkId: string;
   rating: number;
   text?: string;
   bookingId?: string;
   recommend?: boolean;
-};
-
-export type MessageDTO = {
-  senderId?: string;
-  receiverId: string;
-  text: string;
-  budgetCents?: number;
-  style?: string;
-  targetDateISO?: string;
-  referenceUrls?: string[];
-};
-
-export type ConversationMessage = {
-  senderId: string;
-  receiverId: string;
-  text: string;
-  timestamp: number;
-};
-
-export type ConversationDTO = {
-  participantId: string;
-  username: string;
-  messages: ConversationMessage[];
 };
 
 export type Booking = {
@@ -685,11 +653,6 @@ export async function enableClientBookings(
   );
 }
 
-export type ConsultationStatus = {
-  hasCompletedConsultation: boolean;
-  consultationDate: string | null;
-};
-
 export type LegalDocument = {
   docType: string;
   version: string;
@@ -959,10 +922,6 @@ export function formatPlatformFee(f?: PlatformFee | null) {
 
 export async function getMyRewards(token?: string | null, signal?: AbortSignal) {
   return apiGet<RewardsSummary>("/rewards/me", undefined, token, signal);
-}
-
-export async function getMyCredits(token?: string | null, signal?: AbortSignal) {
-  return apiGet<{ availableCents: number }>("/rewards/credits", undefined, token, signal);
 }
 
 export type WaitlistEntry = {

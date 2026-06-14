@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
-export type Weekday = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
+type Weekday = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 
 export interface TimeRange {
   start: string;

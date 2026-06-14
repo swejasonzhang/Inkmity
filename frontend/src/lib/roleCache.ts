@@ -1,4 +1,4 @@
-export type CachedRole = "client" | "artist" | "studio";
+type CachedRole = "client" | "artist" | "studio";
 
 const KEY = "inkmity-role";
 const NAME_KEY = "inkmity-username-v2";
