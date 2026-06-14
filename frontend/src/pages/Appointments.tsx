@@ -15,6 +15,7 @@ import LazyReveal from "@/components/ui/LazyReveal";
 import ArtistWaitlist from "@/components/dashboard/artist/ArtistWaitlist";
 import SketchPanel from "@/components/dashboard/shared/SketchPanel";
 import PaymentBreakdown from "@/components/dashboard/client/PaymentBreakdown";
+import IntakeFormPanel from "@/components/dashboard/client/IntakeFormPanel";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
 
 function formatCurrency(cents: number): string {
@@ -636,6 +637,10 @@ export default function Appointments() {
 
           {isTattooSession && (
             <SketchPanel bookingId={appointment._id} isArtist={isArtist} isClient={isClient} />
+          )}
+
+          {isClient && isTattooSession && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
+            <IntakeFormPanel bookingId={appointment._id} isClient={isClient} />
           )}
 
           {(canAccept || canDeny || canCancel) && (
