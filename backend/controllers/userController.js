@@ -8,6 +8,7 @@ import Studio from "../models/Studio.js";
 import cloudinary from "../lib/cloudinary.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
 import { config } from "../config/index.js";
+import { tierRankAggExpr } from "../services/artistTierService.js";
 
 const SAFE_ROLES = new Set(["client", "artist", "studio"]);
 
@@ -214,7 +215,12 @@ export async function getArtists(req, res) {
   if (travel) Object.assign(filter, { travelFrequency: travel });
   if (Object.keys(experience).length)
     Object.assign(filter, { yearsExperience: experience });
-  const sort =
+  const PUBLIC_FIELDS =
+    "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages pastWorks healedWorks sketches verified avatar coverImage lastActive visibility";
+
+  // Explicit user-chosen sorts are honored as-is. The default "Top rated" view
+  // (null here) applies reward-tier placement: higher tiers surface first.
+  const explicitSort =
     sortKey === "experience_desc"
       ? { yearsExperience: -1, rating: -1 }
       : sortKey === "experience_asc"
@@ -223,21 +229,45 @@ export async function getArtists(req, res) {
       ? { createdAt: -1 }
       : sortKey === "rating_asc"
       ? { rating: 1, reviewsCount: -1 }
-      : { rating: -1, reviewsCount: -1, createdAt: -1 };
+      : null;
+
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
 
-  const [total, items] = await Promise.all([
-    Artist.countDocuments(filter),
-    Artist.find(filter)
-      .sort(sort)
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .select(
-        "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages pastWorks healedWorks sketches verified avatar coverImage lastActive visibility"
-      )
-      .lean(),
-  ]);
+  let total;
+  let items;
+  if (explicitSort) {
+    [total, items] = await Promise.all([
+      Artist.countDocuments(filter),
+      Artist.find(filter)
+        .sort(explicitSort)
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .select(PUBLIC_FIELDS)
+        .lean(),
+    ]);
+  } else {
+    // Tier-weighted placement (the advertised "Boosted/Priority/Top placement"
+    // perk). tierRankAggExpr derives the tier on the fly from completed bookings
+    // + rating per config.artistTiers, so higher tiers (Elite > Pro >
+    // Established > Rising) surface first, then by rating — no stored field.
+    // Inclusion projection mirrors PUBLIC_FIELDS so private fields never leak
+    // (and drops the temporary _tierRank).
+    const projection = Object.fromEntries(
+      PUBLIC_FIELDS.split(" ").map((f) => [f, 1])
+    );
+    [total, items] = await Promise.all([
+      Artist.countDocuments(filter),
+      Artist.aggregate([
+        { $match: filter },
+        { $addFields: { _tierRank: tierRankAggExpr() } },
+        { $sort: { _tierRank: -1, rating: -1, reviewsCount: -1, createdAt: -1 } },
+        { $skip: (page - 1) * pageSize },
+        { $limit: pageSize },
+        { $project: projection },
+      ]),
+    ]);
+  }
   const itemsWithProfileImage = items.map(item => ({
     ...item,
     profileImage: item.avatar?.url || item.profileImage || null,
