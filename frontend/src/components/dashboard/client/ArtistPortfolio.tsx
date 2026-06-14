@@ -15,10 +15,11 @@ const WorkSection: React.FC<{
     imgAltPrefix: string;
     onOpen: (images: string[], index: number, label: string) => void;
     headingLevel?: "h3" | "h4";
-}> = ({ title, images, label, imgAltPrefix, onOpen, headingLevel = "h3" }) => {
+    initial?: number;
+}> = ({ title, images, label, imgAltPrefix, onOpen, headingLevel = "h3", initial = SECTION_INITIAL }) => {
     const [showAll, setShowAll] = useState(false);
     if (!images.length) return null;
-    const shown = showAll ? images : images.slice(0, SECTION_INITIAL);
+    const shown = showAll ? images : images.slice(0, initial);
     const Heading = headingLevel;
     return (
         <section className="w-full">
@@ -52,7 +53,7 @@ const WorkSection: React.FC<{
                     </button>
                 ))}
             </div>
-            {images.length > SECTION_INITIAL && (
+            {images.length > initial && (
                 <div className="mt-3 flex justify-center">
                     <button
                         type="button"
@@ -114,6 +115,23 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
         ? `${artist.yearsExperience} yr${artist.yearsExperience === 1 ? "" : "s"} exp`
         : "";
     const loc = (artist.location || "").trim();
+
+    const allImages = useMemo(() => [...recent, ...past, ...healed, ...sketches], [recent, past, healed, sketches]);
+    const categories = useMemo(() => {
+        const cats: { key: string; label: string; images: string[] }[] = [
+            { key: "all", label: "All works", images: allImages },
+        ];
+        if (recent.length) cats.push({ key: "recent", label: "Recent", images: recent });
+        stylesClean.forEach((style, si) => {
+            const imgs = past.filter((_, i) => i % stylesClean.length === si);
+            if (imgs.length) cats.push({ key: `style-${si}`, label: titleCase(style), images: imgs });
+        });
+        if (healed.length) cats.push({ key: "healed", label: "Healed", images: healed });
+        if (sketches.length) cats.push({ key: "sketches", label: "Sketches & Ideas", images: sketches });
+        return cats;
+    }, [allImages, recent, past, healed, sketches, stylesClean]);
+    const [filterKey, setFilterKey] = useState("all");
+    const activeCat = categories.find((c) => c.key === filterKey) ?? categories[0];
 
     const InfoChip: React.FC<{ icon?: React.ComponentType<{ className?: string }>; text: string }> = ({ icon: Icon, text }) => (
         <span
@@ -228,29 +246,86 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                     </section>
                 )}
 
-                <WorkSection title="Recent Works" images={recent} imgAltPrefix="Recent work" label="Recent Works" onOpen={openZoom} />
-
-                {stylesClean.length > 0 && past.length > 0 && (
+                {compact ? (
                     <section className="w-full">
-                        <header className="mb-2 sm:mb-3 flex items-end justify-between">
-                            <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">By style</h3>
-                            <span className="text-xs portfolio-section-count">{stylesClean.length} style{stylesClean.length === 1 ? "" : "s"}</span>
-                        </header>
-                        <div className="space-y-4 sm:space-y-5">
-                            {stylesClean.map((style, si) => {
-                                const imgs = past.filter((_, i) => i % stylesClean.length === si);
-                                if (!imgs.length) return null;
-                                const label = titleCase(style);
-                                return (
-                                    <WorkSection key={style} title={label} images={imgs} imgAltPrefix={`${label} work`} label={label} onOpen={openZoom} headingLevel="h4" />
-                                );
-                            })}
-                        </div>
+                        {categories.length > 1 && (
+                            <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-center gap-1.5">
+                                {categories.map((c) => {
+                                    const active = c.key === activeCat?.key;
+                                    return (
+                                        <button
+                                            key={c.key}
+                                            type="button"
+                                            onClick={() => setFilterKey(c.key)}
+                                            aria-pressed={active}
+                                            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-medium border transition ${active ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent" : "hover:bg-elevated"}`}
+                                            style={active ? undefined : { borderColor: "var(--border)", color: "var(--fg)" }}
+                                        >
+                                            {c.label}
+                                            <span className="opacity-60">{c.images.length}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {activeCat && activeCat.images.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {activeCat.images.map((src, i) => (
+                                    <button
+                                        key={`${src}-${i}`}
+                                        onClick={() => openZoom(activeCat.images, i, activeCat.label)}
+                                        className="group relative aspect-square rounded-2xl border overflow-hidden transition-all hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        style={{ borderColor: "var(--border)", backgroundColor: "var(--elevated)" }}
+                                        aria-label={`Open ${activeCat.label} ${i + 1}`}
+                                    >
+                                        <img
+                                            src={src}
+                                            alt={`${activeCat.label} ${i + 1}`}
+                                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            loading={i < 8 ? "eager" : "lazy"}
+                                            decoding="async"
+                                            referrerPolicy="no-referrer"
+                                        />
+                                        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                                            <div className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur-sm border" style={{ backgroundColor: "color-mix(in srgb, var(--elevated) 80%, transparent)", borderColor: "var(--border)", color: "var(--fg)" }}>
+                                                <Maximize2 className="h-3 w-3" /> View
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-center text-sm portfolio-section-count py-8">No images in this category yet.</p>
+                        )}
                     </section>
-                )}
+                ) : (
+                    <>
+                        <WorkSection title="Recent Works" images={recent} imgAltPrefix="Recent work" label="Recent Works" onOpen={openZoom} initial={4} />
 
-                <WorkSection title="Healed Works" images={healed} imgAltPrefix="Healed work" label="Healed Works" onOpen={openZoom} />
-                <WorkSection title="Sketches & Ideas" images={sketches} imgAltPrefix="Sketch" label="Sketches & Ideas" onOpen={openZoom} />
+                        {stylesClean.length > 0 && past.length > 0 && (
+                            <section className="w-full">
+                                <header className="mb-2 sm:mb-3 flex items-end justify-between">
+                                    <h3 className="text-base sm:text-lg font-semibold portfolio-section-title">By style</h3>
+                                    <span className="text-xs portfolio-section-count">{stylesClean.length} style{stylesClean.length === 1 ? "" : "s"}</span>
+                                </header>
+                                <div className="space-y-4 sm:space-y-5">
+                                    {stylesClean.map((style, si) => {
+                                        const imgs = past.filter((_, i) => i % stylesClean.length === si);
+                                        if (!imgs.length) return null;
+                                        const label = titleCase(style);
+                                        return (
+                                            <WorkSection key={style} title={label} images={imgs} imgAltPrefix={`${label} work`} label={label} onOpen={openZoom} headingLevel="h4" />
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
+
+                        <WorkSection title="Healed Works" images={healed} imgAltPrefix="Healed work" label="Healed Works" onOpen={openZoom} />
+                        <WorkSection title="Sketches & Ideas" images={sketches} imgAltPrefix="Sketch" label="Sketches & Ideas" onOpen={openZoom} />
+                    </>
+                )}
             </div>
 
             {zoom && <FullscreenZoom src={zoom.items[zoom.index]} count={`${zoom.label}: ${zoom.index + 1} / ${zoom.items.length}`} onPrev={goPrev} onNext={goNext} onClose={closeZoom} />}
