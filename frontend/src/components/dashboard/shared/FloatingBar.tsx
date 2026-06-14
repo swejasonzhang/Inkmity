@@ -135,6 +135,19 @@ export default function FloatingBar({
     pendingRequestIds,
   });
 
+  const [closing, setClosing] = useState(false);
+  const prevOpenRef = useRef(open);
+  useEffect(() => {
+    if (!open && prevOpenRef.current) {
+      setClosing(true);
+      const t = window.setTimeout(() => setClosing(false), 430);
+      prevOpenRef.current = open;
+      return () => window.clearTimeout(t);
+    }
+    prevOpenRef.current = open;
+  }, [open]);
+  const visualOpen = open || closing;
+
   useEffect(() => {
     const measureFilter = () => {
       const filter = document.querySelector("[data-artist-filter]") as HTMLElement | null;
@@ -176,8 +189,8 @@ export default function FloatingBar({
   const DESKTOP_OPEN_TOP = mainTop > 0 ? mainTop : desktopOpenTop;
   const DESKTOP_OPEN_H = (buttonBottom > 0 ? buttonBottom : (vp.h - bottomGapPx)) - DESKTOP_OPEN_TOP;
 
-  const convW = isMdUp ? (open ? DESKTOP_OPEN_W + PANEL_W : DESKTOP_CLOSED_W) : (open ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
-  const convH = isMdUp ? (open ? DESKTOP_OPEN_H : collapsedHeight) : (open ? MOBILE_OPEN_H : collapsedHeight);
+  const convW = isMdUp ? (visualOpen ? DESKTOP_OPEN_W + PANEL_W : DESKTOP_CLOSED_W) : (visualOpen ? MOBILE_OPEN_W : MOBILE_CLOSED_W);
+  const convH = isMdUp ? (visualOpen ? DESKTOP_OPEN_H : collapsedHeight) : (visualOpen ? MOBILE_OPEN_H : collapsedHeight);
 
   const centerRef = useRef<HTMLDivElement | null>(null);
   const [centerH, setCenterH] = useState(0);
@@ -265,7 +278,7 @@ export default function FloatingBar({
         height: `${Math.max(wrapperH, collapsedHeight)}px`,
         gridTemplateColumns: "1fr auto 1fr",
         pointerEvents: "none",
-        zIndex: !isMdUp && open ? 9999 : 200,
+        zIndex: !isMdUp && visualOpen ? 9999 : 200,
       }}
     >
       <style>{`
@@ -314,9 +327,9 @@ export default function FloatingBar({
         className="ink-solid-controls flex items-center justify-center justify-self-center"
         style={{
           paddingInline: 4,
-          pointerEvents: rightContent && (!open || isMdUp) ? "auto" : "none",
-          opacity: !isMdUp && open ? 0 : 1,
-          visibility: !isMdUp && open ? "hidden" : "visible",
+          pointerEvents: rightContent && (!visualOpen || isMdUp) ? "auto" : "none",
+          opacity: !isMdUp && visualOpen ? 0 : 1,
+          visibility: !isMdUp && visualOpen ? "hidden" : "visible",
         }}
       >
         {rightContent}
@@ -329,7 +342,7 @@ export default function FloatingBar({
         className="ink-solid-controls flex items-end justify-end justify-self-end"
         style={{
           pointerEvents: "auto",
-          ...(open
+          ...(visualOpen
             ? {
                 position: "fixed",
                 ...(isMdUp
@@ -346,9 +359,10 @@ export default function FloatingBar({
         <InkConversations
           role={role}
           isMdUp={isMdUp}
-          width={isMdUp ? convW : (open ? vp.w : Math.max(0, convW - 50))}
-          height={isMdUp ? convH : (open ? MOBILE_OPEN_H : convH)}
-          open={open}
+          width={isMdUp ? convW : (visualOpen ? vp.w : Math.max(0, convW - 50))}
+          height={isMdUp ? convH : (visualOpen ? MOBILE_OPEN_H : convH)}
+          open={visualOpen}
+          closing={closing}
           setOpen={setOpen}
           unreadConvoCount={unreadConvoCount}
           requestCount={requestCount}

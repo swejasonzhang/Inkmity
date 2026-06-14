@@ -1,6 +1,7 @@
-import { type ReactNode } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import { CheckCircle2, XCircle, ShoppingBag, X, Clock, AlertTriangle } from "lucide-react";
 
 type Props = {
@@ -55,11 +56,25 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
     </h3>
   );
 
-  return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent
-        className="sm:max-w-3xl max-h-[90vh] overflow-y-auto text-center justify-items-stretch p-0 gap-0"
-        showCloseButton={false}
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  useScrollLock(open);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-x-0 bottom-0 top-16 sm:top-20 z-[2147483600] grid place-items-center p-4 bg-black/60 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="w-full sm:max-w-3xl max-h-[85vh] overflow-y-auto ink-page-scroll rounded-2xl border text-center"
         style={{ background: "var(--card)", color: "var(--fg)", borderColor: "var(--border)" }}
       >
         <div
@@ -74,13 +89,13 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
           >
             <X className="h-5 w-5" />
           </button>
-          <DialogTitle className="text-center text-xl sm:text-2xl font-bold tracking-tight">
+          <h2 className="text-center text-xl sm:text-2xl font-bold tracking-tight">
             Tattoo Aftercare Instructions (Required)
-          </DialogTitle>
-          <DialogDescription className="text-center mt-1.5 text-xs sm:text-sm mx-auto max-w-md" style={{ color: muted }}>
+          </h2>
+          <div className="text-center mt-1.5 text-xs sm:text-sm mx-auto max-w-md" style={{ color: muted }}>
             {appointmentDate && <span className="block">Appointment Date: {new Date(appointmentDate).toLocaleDateString()}</span>}
             Please read these important aftercare instructions carefully
-          </DialogDescription>
+          </div>
         </div>
 
         <div className="px-6 sm:px-8 py-6 space-y-5">
@@ -146,7 +161,8 @@ export default function AftercareInstructions({ open, onClose, appointmentDate }
             I Understand
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>,
+    document.body
   );
 }

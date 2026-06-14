@@ -2,6 +2,7 @@ import { useEffect, useState, useLayoutEffect } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import Header from "@/components/header/Header";
 import { getAppointments, acceptAppointment, denyAppointment, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
@@ -97,6 +98,8 @@ export default function Appointments() {
   const [aftercareModalOpen, setAftercareModalOpen] = useState(false);
   const [aftercareAppointment, setAftercareAppointment] = useState<AppointmentWithUsers | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+
+  useScrollLock(cancelTarget !== null);
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
@@ -780,6 +783,8 @@ export default function Appointments() {
         <div
           className="fixed inset-0 z-[2147483600] grid place-items-center p-4"
           style={{ background: "color-mix(in srgb, var(--bg) 70%, transparent)", backdropFilter: "blur(6px)" }}
+          role="dialog"
+          aria-modal="true"
           onClick={() => setCancelTarget(null)}
         >
           <div

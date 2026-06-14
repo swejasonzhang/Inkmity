@@ -128,7 +128,9 @@ export function useInkConversations({
   useEffect(() => {
     if (!open) return;
     const modalOpen = () =>
-      !!document.querySelector('[role="dialog"], [data-ink-modal]');
+      [...document.querySelectorAll('[role="dialog"], [data-ink-modal]')].some(
+        (d) => !(d as HTMLElement).closest(".ink-conv-scope")
+      );
     const onDocPointer = (e: Event) => {
       if (modalOpen()) return;
       const root = btnRef.current;

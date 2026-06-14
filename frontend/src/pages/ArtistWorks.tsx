@@ -109,7 +109,38 @@ export default function ArtistWorks() {
                     </button>
 
                     {loading && !artist ? (
-                        <p className="text-center text-subtle py-12">Loading…</p>
+                        <div aria-hidden>
+                            <div className="rounded-3xl border bg-card p-5 sm:p-6 mb-5" style={{ borderColor: "var(--border)" }}>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                    <div className="ink-shimmer h-16 w-16 rounded-2xl shrink-0" />
+                                    <div className="flex-1 space-y-2.5">
+                                        <div className="ink-shimmer h-7 w-48 rounded" />
+                                        <div className="ink-shimmer h-4 w-32 rounded" />
+                                        <div className="flex gap-2 pt-1">
+                                            <div className="ink-shimmer h-5 w-16 rounded-full" />
+                                            <div className="ink-shimmer h-5 w-16 rounded-full" />
+                                            <div className="ink-shimmer h-5 w-16 rounded-full" />
+                                        </div>
+                                    </div>
+                                    <div className="ink-shimmer h-10 w-28 rounded-full" />
+                                </div>
+                            </div>
+                            <div className="mb-5 flex flex-wrap gap-2">
+                                <div className="ink-shimmer h-9 w-28 rounded-full" />
+                                <div className="ink-shimmer h-9 w-44 rounded-full" />
+                                <div className="ink-shimmer h-9 w-24 rounded-full" />
+                            </div>
+                            <div className="mb-4 flex flex-wrap justify-center gap-1.5">
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                    <div key={i} className="ink-shimmer h-8 w-20 rounded-full" />
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                    <div key={i} className="ink-shimmer aspect-square w-full rounded-2xl" />
+                                ))}
+                            </div>
+                        </div>
                     ) : !artist ? (
                         <p className="text-center text-subtle py-12">Artist not found.</p>
                     ) : (
