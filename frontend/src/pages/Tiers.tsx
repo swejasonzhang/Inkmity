@@ -18,10 +18,10 @@ const CLIENT_TIERS: ClientTier[] = [
 ];
 
 const ARTIST_TIERS: ArtistTier[] = [
-  { key: "rising", label: "Rising", bookings: 0, minRating: 0, perks: ["Profile & portfolio tools", "Built-in booking calendar", "Standard search placement", "Standard payout schedule"] },
+  { key: "rising", label: "Rising", bookings: 0, minRating: 0, perks: ["Profile & portfolio tools", "Built-in booking calendar", "Instant payouts — free, every tier", "Standard search placement"] },
   { key: "established", label: "Established", bookings: 10, minRating: 4.0, perks: ["Boosted search ranking", "Verified profile badge", "Insights & analytics dashboard"] },
-  { key: "pro", label: "Pro", bookings: 50, minRating: 4.5, perks: ["Priority placement", "Featured-artist eligibility", "Faster 2-day payouts"] },
-  { key: "elite", label: "Elite", bookings: 150, minRating: 4.8, perks: ["Top placement", "Homepage & newsletter features", "Instant payouts"] },
+  { key: "pro", label: "Pro", bookings: 50, minRating: 4.5, perks: ["Priority placement", "Featured-artist eligibility"] },
+  { key: "elite", label: "Elite", bookings: 150, minRating: 4.8, perks: ["Top placement", "Homepage & newsletter features"] },
 ];
 
 const TIER_ICON: Record<string, typeof Award> = {
@@ -83,7 +83,7 @@ export default function Tiers() {
     : rewards?.tier?.key ?? CLIENT_TIERS[0].key;
 
   const intro = isArtist
-    ? "Every artist gets the full toolkit. Climb the tiers with completed bookings and a strong rating to stack on better placement, badges, and faster payouts."
+    ? "Every artist gets the full toolkit — including instant payouts, free. Climb the tiers with completed bookings and a strong rating to stack on better placement and badges."
     : "Every client gets the full marketplace. Book more to stack on perks like priority support, credits, and early access — Platinum even skips the $10 base fee.";
 
   const tiers = useMemo(() => (isArtist ? ARTIST_TIERS : CLIENT_TIERS), [isArtist]);

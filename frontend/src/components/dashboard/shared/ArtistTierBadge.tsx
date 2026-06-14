@@ -5,9 +5,9 @@ import { computeArtistTier } from "@/lib/artistTier";
 import { getArtistAnalytics } from "@/api";
 
 const TIER_META: Record<string, { bookings: number; minRating: number; placement: string; payout: string }> = {
-  rising: { bookings: 0, minRating: 0, placement: "Standard placement", payout: "Standard payouts" },
-  established: { bookings: 10, minRating: 4.0, placement: "Boosted placement", payout: "Standard payouts" },
-  pro: { bookings: 50, minRating: 4.5, placement: "Priority placement", payout: "2-day payouts" },
+  rising: { bookings: 0, minRating: 0, placement: "Standard placement", payout: "Instant payouts" },
+  established: { bookings: 10, minRating: 4.0, placement: "Boosted placement", payout: "Instant payouts" },
+  pro: { bookings: 50, minRating: 4.5, placement: "Priority placement", payout: "Instant payouts" },
   elite: { bookings: 150, minRating: 4.8, placement: "Top placement", payout: "Instant payouts" },
 };
 const ORDER = ["rising", "established", "pro", "elite"];
