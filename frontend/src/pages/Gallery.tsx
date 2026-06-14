@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Sparkles, ImageIcon, Bot, ShieldCheck, ThumbsUp, Flame } from "lucide-react";
+import { Sparkles, ImageIcon, Bot, ShieldCheck, ThumbsUp, Flame, Search, TrendingUp } from "lucide-react";
 import { toast } from "react-toastify";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
@@ -11,10 +11,22 @@ import { fetchPopularArtworks, toggleArtworkLike, type PopularArtwork } from "@/
 
 type TabKey = "real" | "ai";
 
+const TRENDING_IDEAS = [
+  "Fine line",
+  "Blackwork",
+  "Floral",
+  "Geometric",
+  "Traditional",
+  "Script",
+  "Realism",
+  "Minimalist",
+];
+
 const Gallery: React.FC = () => {
   const [tab, setTab] = useState<TabKey>("real");
   const [items, setItems] = useState<PopularArtwork[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
   const { getToken } = useAuth();
   const { isSignedIn } = useUser();
 
@@ -34,24 +46,24 @@ const Gallery: React.FC = () => {
     return () => controller.abort();
   }, [isSignedIn, getToken]);
 
-  const onToggleLike = async (idx: number) => {
+  const onToggleLike = async (it: PopularArtwork) => {
     if (!isSignedIn) {
       toast.info("Sign in to save favorites.", { position: "top-center", hideProgressBar: true });
       return;
     }
-    const it = items[idx];
     if (!it) return;
+    const isSame = (w: PopularArtwork) => w.artistClerkId === it.artistClerkId && w.url === it.url;
     const nextLiked = !it.likedByMe;
     setItems((prev) =>
-      prev.map((w, i) => (i === idx ? { ...w, likedByMe: nextLiked, likes: Math.max(0, w.likes + (nextLiked ? 1 : -1)) } : w))
+      prev.map((w) => (isSame(w) ? { ...w, likedByMe: nextLiked, likes: Math.max(0, w.likes + (nextLiked ? 1 : -1)) } : w))
     );
     try {
       const token = await getToken();
       const res = await toggleArtworkLike({ artistClerkId: it.artistClerkId, imageUrl: it.url }, token);
-      setItems((prev) => prev.map((w, i) => (i === idx ? { ...w, likedByMe: res.liked, likes: res.likes } : w)));
+      setItems((prev) => prev.map((w) => (isSame(w) ? { ...w, likedByMe: res.liked, likes: res.likes } : w)));
     } catch {
       setItems((prev) =>
-        prev.map((w, i) => (i === idx ? { ...w, likedByMe: it.likedByMe, likes: it.likes } : w))
+        prev.map((w) => (isSame(w) ? { ...w, likedByMe: it.likedByMe, likes: it.likes } : w))
       );
       toast.error("Couldn't update — try again.", { position: "top-center", hideProgressBar: true });
     }
@@ -61,6 +73,11 @@ const Gallery: React.FC = () => {
     { key: "real", label: "Real Work", Icon: ImageIcon },
     { key: "ai", label: "AI Inspiration", Icon: Bot },
   ];
+
+  const q = query.trim().toLowerCase();
+  const shownItems = q
+    ? items.filter((it) => `${it.username ?? ""} ${it.handle ?? ""}`.toLowerCase().includes(q))
+    : items;
 
   return (
     <div id="dashboard-scope" className="ink-scope theme-smooth h-svh ink-page-scroll overflow-x-hidden bg-app text-app">
@@ -82,6 +99,44 @@ const Gallery: React.FC = () => {
             The most-loved pieces and fresh ideas across Inkmity. Tap a thumbs-up on what speaks to you, or open the artist to book.
           </p>
         </motion.div>
+
+        <div className="mt-6 max-w-xl mx-auto">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-subtle" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search artists by name or handle…"
+              className="w-full h-11 pl-10 pr-9 rounded-full border border-app bg-elevated text-app placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-[color:var(--fg)]/20"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-app text-lg leading-none"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs">
+            <span className="inline-flex items-center gap-1 text-subtle font-medium">
+              <TrendingUp className="h-3.5 w-3.5" /> Trending ideas:
+            </span>
+            {TRENDING_IDEAS.map((idea) => (
+              <button
+                key={idea}
+                type="button"
+                onClick={() => setQuery(idea)}
+                className="rounded-full border border-app/50 bg-elevated px-2.5 py-1 text-subtle hover:text-app hover:border-app transition"
+              >
+                {idea}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
           {tabs.map(({ key, label, Icon }) => {
@@ -107,7 +162,7 @@ const Gallery: React.FC = () => {
 
         <div className="mt-8">
           {tab === "real" ? (
-            <PopularGrid items={items} loading={loading} onToggleLike={onToggleLike} />
+            <PopularGrid items={shownItems} loading={loading} onToggleLike={onToggleLike} />
           ) : (
             <AiInspiration />
           )}
@@ -122,7 +177,7 @@ const SPANS = [22, 28, 24, 32, 26, 20];
 const PopularGrid: React.FC<{
   items: PopularArtwork[];
   loading: boolean;
-  onToggleLike: (idx: number) => void;
+  onToggleLike: (item: PopularArtwork) => void;
 }> = ({ items, loading, onToggleLike }) => {
   const skeleton = (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
@@ -147,7 +202,7 @@ const PopularGrid: React.FC<{
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
             {items.map((item, i) => (
-              <ArtworkTile key={`${item.artistClerkId}-${item.url}`} item={item} span={SPANS[i % SPANS.length]} onLike={() => onToggleLike(i)} />
+              <ArtworkTile key={`${item.artistClerkId}-${item.url}`} item={item} span={SPANS[i % SPANS.length]} onLike={() => onToggleLike(item)} />
             ))}
           </div>
         </>
