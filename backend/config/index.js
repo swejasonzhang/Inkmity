@@ -63,9 +63,11 @@ export const config = {
   },
 
   artistTiers: [
-    { key: 'rising', label: 'Rising', bookings: 0, minRating: 0, payoutSpeed: 'standard' },
-    { key: 'established', label: 'Established', bookings: 10, minRating: 4.0, payoutSpeed: 'standard' },
-    { key: 'pro', label: 'Pro', bookings: 50, minRating: 4.5, payoutSpeed: 'two_day' },
+    // Instant payouts are free for every tier — a feature competitors paywall.
+    // Tiers differentiate on placement/badges/recognition, never payout speed.
+    { key: 'rising', label: 'Rising', bookings: 0, minRating: 0, payoutSpeed: 'instant' },
+    { key: 'established', label: 'Established', bookings: 10, minRating: 4.0, payoutSpeed: 'instant' },
+    { key: 'pro', label: 'Pro', bookings: 50, minRating: 4.5, payoutSpeed: 'instant' },
     { key: 'elite', label: 'Elite', bookings: 150, minRating: 4.8, payoutSpeed: 'instant' },
   ],
 

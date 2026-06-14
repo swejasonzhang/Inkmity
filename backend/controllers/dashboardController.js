@@ -44,7 +44,7 @@ export const getArtistAnalytics = async (req, res) => {
       bookingsCount: artist.bookingsCount || 0,
       bookings: { total: counts.total, completed, noShow, cancelled, completionRate },
       earnings: { paidOutCents },
-      payoutSpeed: artist.payoutSpeed || "standard",
+      payoutSpeed: artist.payoutSpeed || "instant",
     });
   } catch (error) {
     console.error("getArtistAnalytics error:", error);

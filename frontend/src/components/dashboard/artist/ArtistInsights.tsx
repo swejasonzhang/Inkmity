@@ -78,7 +78,7 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
             )}
             <span className="inline-flex items-center gap-1 rounded-full border border-app px-1.5 py-0.5 text-xs font-semibold text-app">
               <Zap className="h-3 w-3" />
-              {payoutLabel[data.payoutSpeed] || "Standard payouts"}
+              {payoutLabel[data.payoutSpeed] || "Instant payouts"}
             </span>
           </div>
         )}
