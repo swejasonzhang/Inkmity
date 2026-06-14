@@ -364,7 +364,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
               loading={!bookingGateReady}
               skeleton={
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 items-stretch">
-                  <div className="min-h-[300px] rounded-2xl border p-3 flex flex-col gap-2" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                  <div className="min-h-[460px] md:min-h-[700px] rounded-2xl border p-3 flex flex-col gap-2" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
                     <div className="ink-shimmer h-5 w-32 mx-auto rounded flex-shrink-0" />
                     <div className="flex items-center justify-center gap-3 flex-shrink-0">
                       <div className="ink-shimmer h-4 w-16 rounded" />
@@ -383,7 +383,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
                       ))}
                     </div>
                   </div>
-                  <div className="min-h-[300px] rounded-2xl border p-3 space-y-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                  <div className="min-h-[460px] md:min-h-[700px] rounded-2xl border p-3 space-y-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
                     <div className="ink-shimmer h-6 w-32 mx-auto rounded-full" />
                     <div className="ink-shimmer h-10 w-full rounded-xl" />
                     <div className="grid grid-cols-3 gap-2">
