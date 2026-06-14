@@ -21,7 +21,7 @@ import NotificationBell from "./NotificationBell";
 import { API_URL, updateVisibility } from "@/api";
 import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername, clearCachedUsername } from "@/lib/roleCache";
 
-export type HeaderProps = {
+type HeaderProps = {
   disableDashboardLink?: boolean;
   logoSrc?: string;
 };

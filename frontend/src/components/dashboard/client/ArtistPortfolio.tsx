@@ -102,7 +102,7 @@ export type ArtistWithGroups = {
     reviewsCount?: number;
 };
 
-export type PortfolioProps = {
+type PortfolioProps = {
     artist: ArtistWithGroups;
     compact?: boolean;
 };

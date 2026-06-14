@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type StepBarRowProps = {
+type StepBarRowProps = {
     active?: 0 | 1 | 2;
     onGoToStep?: (step: 0 | 1 | 2) => void;
     leftLabel?: string;
