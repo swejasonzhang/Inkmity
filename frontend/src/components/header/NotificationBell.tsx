@@ -161,7 +161,17 @@ export default function NotificationBell({ className = "" }: { className?: strin
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
             {fetching && items.length === 0 ? (
-              <div className="px-4 py-6 text-center text-xs text-subtle">Loading…</div>
+              <div className="py-1" aria-busy="true">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="px-4 py-3 flex items-start gap-3">
+                    <span className="h-8 w-8 rounded-lg bg-elevated animate-pulse shrink-0" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block h-3 w-1/2 rounded bg-elevated animate-pulse" />
+                      <span className="block h-3 w-3/4 rounded bg-elevated animate-pulse mt-2" />
+                    </span>
+                  </div>
+                ))}
+              </div>
             ) : items.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <Bell className="h-5 w-5 mx-auto mb-2 text-subtle" />
