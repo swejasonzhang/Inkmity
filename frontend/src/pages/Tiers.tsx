@@ -96,7 +96,6 @@ export default function Tiers() {
         className="flex-1 min-h-0 overflow-y-auto sm:overflow-hidden flex items-center justify-center"
         style={{ padding: "clamp(6px, 1.4vh, 14px) clamp(10px, 4vw, 48px)" }}
       >
-        {ready && (
         <div
           className="w-full max-w-6xl sm:max-h-full rounded-3xl border backdrop-blur-2xl flex flex-col overflow-hidden"
           style={{
@@ -137,7 +136,7 @@ export default function Tiers() {
           >
             {tiers.map((t, i) => {
               const Icon = TIER_ICON[t.key] ?? Award;
-              const isCurrent = currentKey === t.key;
+              const isCurrent = ready && currentKey === t.key;
               const prevLabel = i > 0 ? tiers[i - 1].label : null;
               const meta = isArtist
                 ? (t as ArtistTier).bookings === 0
@@ -213,7 +212,6 @@ export default function Tiers() {
               : "Perks and credits unlock automatically as your booking history grows."}
           </p>
         </div>
-        )}
       </main>
     </div>
   );
