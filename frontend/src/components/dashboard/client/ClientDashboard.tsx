@@ -303,11 +303,11 @@ export default function ClientDashboard() {
                         />
                         <motion.div
                             key="assistant"
-                            initial={{ y: "100%" }}
-                            animate={{ y: 0 }}
-                            exit={{ y: "100%" }}
-                            transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                            className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-4 lg:right-4 z-50 client-dashboard-assistant"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                            className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-4 lg:right-4 z-50 client-dashboard-assistant origin-bottom lg:origin-bottom-right"
                         >
                             <div className="w-full h-[90dvh] lg:w-[88vw] lg:h-auto lg:max-w-[400px] bg-app border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card">
                                 <div className="flex items-center justify-between px-3 py-2 lg:px-3 lg:py-2 border-b border-app">
