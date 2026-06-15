@@ -13,6 +13,7 @@ import { API_URL } from "@/api";
 import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
 import type { Artist as ArtistDto } from "@/api";
+import { computeArtistTier } from "@/lib/artistTier";
 import { AnimatePresence, motion } from "framer-motion";
 import ArtistFilter from "@/components/dashboard/client/ArtistFilter";
 
@@ -185,7 +186,12 @@ export default function ClientDashboard() {
         };
         const out = artists.filter(a => inPrice(a) && inLocation(a) && inStyle(a) && inAvail(a) && inExp(a) && inBooking(a) && inTravel(a) && inSearch(a));
         const by = (v: string) => {
-            if (v === "highest_rated") return [...out].sort((a: any, b: any) => (b.rating ?? 0) - (a.rating ?? 0));
+            // Default view mirrors the backend's tier-weighted placement:
+            // higher reward tiers surface first, then by rating/reviews.
+            if (v === "highest_rated") return [...out].sort((a: any, b: any) =>
+                (computeArtistTier(b.bookingsCount, b.rating).rank - computeArtistTier(a.bookingsCount, a.rating).rank)
+                || ((b.rating ?? 0) - (a.rating ?? 0))
+                || ((b.reviewsCount ?? 0) - (a.reviewsCount ?? 0)));
             if (v === "most_reviews") return [...out].sort((a: any, b: any) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0));
             if (v === "experience_desc") return [...out].sort((a: any, b: any) => (b.yearsExperience ?? 0) - (a.yearsExperience ?? 0));
             if (v === "experience_asc") return [...out].sort((a: any, b: any) => (a.yearsExperience ?? 0) - (b.yearsExperience ?? 0));
