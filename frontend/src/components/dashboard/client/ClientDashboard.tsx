@@ -30,8 +30,6 @@ export default function ClientDashboard() {
     const [assistantOpen, setAssistantOpen] = useState(false);
     useScrollLock(assistantOpen);
 
-    // Clicking outside the assistant closes it — and closes the conversations
-    // modal too, so an outside click dismisses both when both are open.
     useEffect(() => {
         if (!assistantOpen) return;
         const onDown = (e: MouseEvent | TouchEvent) => {
@@ -208,8 +206,6 @@ export default function ClientDashboard() {
         };
         const out = artists.filter(a => inPrice(a) && inLocation(a) && inStyle(a) && inAvail(a) && inExp(a) && inBooking(a) && inTravel(a) && inSearch(a));
         const by = (v: string) => {
-            // Default view mirrors the backend's tier-weighted placement:
-            // higher reward tiers surface first, then by rating/reviews.
             if (v === "highest_rated") return [...out].sort((a: any, b: any) =>
                 (computeArtistTier(b.bookingsCount, b.rating).rank - computeArtistTier(a.bookingsCount, a.rating).rank)
                 || ((b.rating ?? 0) - (a.rating ?? 0))

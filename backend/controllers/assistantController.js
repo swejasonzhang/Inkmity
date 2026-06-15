@@ -38,7 +38,6 @@ function sanitizeMessages(raw) {
     )
     .map((m) => ({ role: m.role, content: m.content.trim().slice(0, MAX_CHARS_PER_MESSAGE) }))
     .slice(-MAX_HISTORY);
-  // Trim any leading assistant turns — the API requires the first message to be a user turn.
   while (cleaned.length && cleaned[0].role !== "user") cleaned.shift();
   return cleaned;
 }
@@ -68,7 +67,6 @@ export async function chatAssistant(req, res) {
       messages,
     });
 
-    // Stop streaming if the client disconnects mid-response.
     const onClose = () => stream.abort();
     res.on("close", onClose);
 

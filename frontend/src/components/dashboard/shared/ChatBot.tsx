@@ -37,7 +37,6 @@ const ChatBot: React.FC = () => {
       setInput("");
 
       const history = [...messages, { role: "user" as const, content }];
-      // Add the user turn + an empty assistant turn we'll stream into.
       setMessages([...history, { role: "assistant", content: "" }]);
       setBusy(true);
 
@@ -82,7 +81,6 @@ const ChatBot: React.FC = () => {
       } catch (err: any) {
         if (err?.name === "AbortError") return;
         setError(err?.message || "Something went wrong. Try again.");
-        // Drop the empty/partial assistant turn on error.
         setMessages((prev) => {
           const next = [...prev];
           const last = next[next.length - 1];

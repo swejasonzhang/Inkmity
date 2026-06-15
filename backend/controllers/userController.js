@@ -218,8 +218,6 @@ export async function getArtists(req, res) {
   const PUBLIC_FIELDS =
     "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages pastWorks healedWorks sketches verified avatar coverImage lastActive visibility";
 
-  // Explicit user-chosen sorts are honored as-is. The default "Top rated" view
-  // (null here) applies reward-tier placement: higher tiers surface first.
   const explicitSort =
     sortKey === "experience_desc"
       ? { yearsExperience: -1, rating: -1 }
@@ -247,12 +245,6 @@ export async function getArtists(req, res) {
         .lean(),
     ]);
   } else {
-    // Tier-weighted placement (the advertised "Boosted/Priority/Top placement"
-    // perk). tierRankAggExpr derives the tier on the fly from completed bookings
-    // + rating per config.artistTiers, so higher tiers (Elite > Pro >
-    // Established > Rising) surface first, then by rating — no stored field.
-    // Inclusion projection mirrors PUBLIC_FIELDS so private fields never leak
-    // (and drops the temporary _tierRank).
     const projection = Object.fromEntries(
       PUBLIC_FIELDS.split(" ").map((f) => [f, 1])
     );

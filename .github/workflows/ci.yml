@@ -8,7 +8,6 @@ on:
 jobs:
   backend:
     name: Backend (tests + DB integration)
-    # 22.04 has the most reliable mongodb-memory-server binary compatibility.
     runs-on: ubuntu-22.04
     defaults:
       run:
@@ -21,12 +20,7 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      # Runs the default unit suite (green).
-      # TODO: the DB-gated integration tests (run with DATABASE_AVAILABLE=true via
-      # mongodb-memory-server) cover the booking/billing money flow but are
-      # currently STALE — several have drifted from the code and fail. Repair
-      # them, then add `env: { DATABASE_AVAILABLE: "true" }` here so they gate CI
-      # before launch. This is the highest-value pre-production test work.
+      # TODO: enable integration tests in CI (DATABASE_AVAILABLE=true) once repaired.
       - run: npm test
 
   frontend:

@@ -23,6 +23,5 @@ export function computeArtistTier(
     if (b >= TIERS[i].bookings && r >= TIERS[i].minRating) idx = i;
   }
   const t = TIERS[idx];
-  // Verified badge is awarded at 5 completed bookings (independent of tier).
   return { key: t.key, label: t.label, rank: idx, verified: b >= 5 };
 }

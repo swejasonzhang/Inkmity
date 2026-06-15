@@ -13,7 +13,6 @@ export function computeArtistTier(bookingsCount, rating) {
     key: t.key,
     label: t.label,
     rank: idx,
-    // Verified badge is awarded at 5 completed bookings (independent of tier).
     verified: b >= 5,
     payoutSpeed: t.payoutSpeed,
   };
