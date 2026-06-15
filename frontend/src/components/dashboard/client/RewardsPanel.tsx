@@ -42,7 +42,7 @@ export default function RewardsPanel({ className = "", data: dataProp }: Props) 
   }
 
   return (
-    <div className={`rounded-2xl border border-app bg-card px-4 py-4 sm:px-5 sm:py-5 ${className}`}>
+    <div className={`rounded-2xl border border-app bg-card px-4 py-2.5 sm:px-5 sm:py-3 ${className}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Award className="h-4 w-4 text-subtle shrink-0" />
@@ -55,19 +55,19 @@ export default function RewardsPanel({ className = "", data: dataProp }: Props) 
         </span>
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between gap-2">
+      <div className="mt-2 flex items-baseline justify-between gap-2">
         <span className="text-xs text-subtle">Platform fee</span>
-        <span className="text-lg font-bold text-app">{fee.short}<span className="text-xs font-normal text-subtle"> · max {fee.cap}</span></span>
+        <span className="text-base font-bold text-app">{fee.short}<span className="text-xs font-normal text-subtle"> · max {fee.cap}</span></span>
       </div>
 
-      <p className="mt-1 text-xs text-subtle">
+      <p className="mt-0.5 text-xs text-subtle">
         {completedBookings} completed booking{completedBookings === 1 ? "" : "s"}
       </p>
 
       {nextTier ? (
-        <div className="mt-3">
+        <div className="mt-2">
           <Progress value={progress} className="h-1.5" />
-          <p className="mt-2 text-xs text-subtle flex items-center gap-1.5">
+          <p className="mt-1.5 text-xs text-subtle flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 shrink-0" />
             {nextTier.bookingsToNextTier} more booking{nextTier.bookingsToNextTier === 1 ? "" : "s"} to{" "}
             <span className="text-app font-semibold">{nextTier.label}</span>

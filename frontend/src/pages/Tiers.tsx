@@ -19,9 +19,9 @@ const CLIENT_TIERS: ClientTier[] = [
 
 const ARTIST_TIERS: ArtistTier[] = [
   { key: "rising", label: "Rising", bookings: 0, minRating: 0, perks: ["Profile & portfolio tools", "Built-in booking calendar", "Instant payouts — free, every tier", "Standard search placement"] },
-  { key: "established", label: "Established", bookings: 10, minRating: 4.0, perks: ["Boosted search ranking", "Verified profile badge", "Insights & analytics dashboard"] },
-  { key: "pro", label: "Pro", bookings: 50, minRating: 4.5, perks: ["Priority placement", "Featured-artist eligibility"] },
-  { key: "elite", label: "Elite", bookings: 150, minRating: 4.8, perks: ["Top placement", "Homepage & newsletter features"] },
+  { key: "established", label: "Established", bookings: 10, minRating: 0, perks: ["Boosted search ranking", "Verified profile badge", "Insights & analytics dashboard"] },
+  { key: "pro", label: "Pro", bookings: 25, minRating: 0, perks: ["Priority placement", "Featured-artist eligibility"] },
+  { key: "elite", label: "Elite", bookings: 50, minRating: 0, perks: ["Top placement", "Homepage & newsletter features"] },
 ];
 
 const TIER_ICON: Record<string, typeof Award> = {
@@ -97,12 +97,13 @@ export default function Tiers() {
         style={{ padding: "clamp(6px, 1.4vh, 14px) clamp(10px, 4vw, 48px)" }}
       >
         <div
-          className="w-full max-w-6xl sm:max-h-full rounded-3xl border backdrop-blur-2xl flex flex-col overflow-hidden"
+          className="ink-panel-in w-full max-w-6xl sm:max-h-full rounded-3xl border backdrop-blur-2xl flex flex-col overflow-hidden"
           style={{
             borderColor: "var(--border)",
             background: "color-mix(in srgb, var(--bg) 82%, transparent)",
             boxShadow: "0 40px 100px -50px rgba(0,0,0,0.85)",
             padding: "clamp(12px, 2.2vh, 26px) clamp(14px, 2.4vw, 34px)",
+            transformOrigin: "center",
           }}
         >
           <div

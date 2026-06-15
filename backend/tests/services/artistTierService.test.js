@@ -11,16 +11,18 @@ describe("computeArtistTier", () => {
     expect(t.verified).toBe(false);
   });
 
-  test("needs both bookings and rating to advance", () => {
-    expect(computeArtistTier(50, 3.9).key).toBe("rising");
+  test("advances on bookings alone (no rating gate)", () => {
     expect(computeArtistTier(9, 5).key).toBe("rising");
+    expect(computeArtistTier(10, 0).key).toBe("established");
+    expect(computeArtistTier(25, 0).key).toBe("pro");
+    expect(computeArtistTier(50, 0).key).toBe("elite");
   });
 
   test("instant payouts are free for every tier", () => {
     expect(computeArtistTier(0, 0).payoutSpeed).toBe("instant");
-    expect(computeArtistTier(10, 4.0).payoutSpeed).toBe("instant");
-    expect(computeArtistTier(50, 4.5).payoutSpeed).toBe("instant");
-    expect(computeArtistTier(150, 4.8).payoutSpeed).toBe("instant");
+    expect(computeArtistTier(10, 0).payoutSpeed).toBe("instant");
+    expect(computeArtistTier(25, 0).payoutSpeed).toBe("instant");
+    expect(computeArtistTier(50, 0).payoutSpeed).toBe("instant");
   });
 });
 

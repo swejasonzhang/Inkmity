@@ -7,9 +7,9 @@ export type ArtistTier = {
 
 const TIERS = [
   { key: "rising", label: "Rising", bookings: 0, minRating: 0 },
-  { key: "established", label: "Established", bookings: 10, minRating: 4.0 },
-  { key: "pro", label: "Pro", bookings: 50, minRating: 4.5 },
-  { key: "elite", label: "Elite", bookings: 150, minRating: 4.8 },
+  { key: "established", label: "Established", bookings: 10, minRating: 0 },
+  { key: "pro", label: "Pro", bookings: 25, minRating: 0 },
+  { key: "elite", label: "Elite", bookings: 50, minRating: 0 },
 ] as const;
 
 export function computeArtistTier(

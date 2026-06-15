@@ -39,6 +39,13 @@ jest.unstable_mockModule("@/api", () => ({
     nextTier: null,
   }),
   formatPlatformFee: () => ({ base: "$10", pct: "5%", cap: "$50", short: "$10 + 5%", full: "$10 + 5%, max $50" }),
+  getArtistAnalytics: jest.fn<() => Promise<any>>().mockResolvedValue({
+    tier: { key: "rising", label: "Rising", verified: false },
+    payoutSpeed: "instant",
+    rating: 0,
+    earnings: { paidOutCents: 0 },
+    bookings: { completed: 0, noShow: 0, completionRate: 0 },
+  }),
   apiGet: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiPost: jest.fn<() => Promise<any>>().mockResolvedValue({}),
   apiRequest: jest.fn<() => Promise<any>>().mockResolvedValue({}),

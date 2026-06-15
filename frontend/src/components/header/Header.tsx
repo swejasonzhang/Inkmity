@@ -17,6 +17,7 @@ import { useTheme, isThemedPath } from "@/hooks/useTheme";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { VisibilityStatus } from "./VisibilityDropdown";
 import HeaderRewards from "./HeaderRewards";
+import HeaderArtistTier from "./HeaderArtistTier";
 import NotificationBell from "./NotificationBell";
 import { API_URL, updateVisibility } from "@/api";
 import { getCachedRole, setCachedRole, getCachedUsername, setCachedUsername, clearCachedUsername } from "@/lib/roleCache";
@@ -464,6 +465,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
             )}
 
             {effectiveSignedIn && userRole === "client" && <HeaderRewards />}
+            {effectiveSignedIn && userRole === "artist" && <HeaderArtistTier />}
 
             {effectiveSignedIn ? (
               <div

@@ -8,19 +8,20 @@ describe("computeArtistTier", () => {
     expect(t.verified).toBe(false);
   });
 
-  test("10 bookings at 4.0 reaches Established (verified)", () => {
-    const t = computeArtistTier(10, 4.0);
+  test("10 bookings reaches Established (verified), rating no longer gates", () => {
+    const t = computeArtistTier(10, 0);
     expect(t.key).toBe("established");
     expect(t.verified).toBe(true);
   });
 
-  test("needs BOTH bookings and rating to advance", () => {
-    expect(computeArtistTier(50, 3.9).key).toBe("rising");
+  test("advances on bookings alone (no rating requirement)", () => {
+    expect(computeArtistTier(25, 0).key).toBe("pro");
+    expect(computeArtistTier(50, 0).key).toBe("elite");
     expect(computeArtistTier(9, 5.0).key).toBe("rising");
   });
 
-  test("elite requires 150 bookings and 4.8 rating", () => {
-    expect(computeArtistTier(150, 4.8).key).toBe("elite");
-    expect(computeArtistTier(150, 4.7).key).toBe("pro");
+  test("elite at 50 bookings regardless of rating", () => {
+    expect(computeArtistTier(50, 0).key).toBe("elite");
+    expect(computeArtistTier(49, 5.0).key).toBe("pro");
   });
 });

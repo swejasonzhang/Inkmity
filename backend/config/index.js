@@ -68,9 +68,9 @@ export const config = {
 
   artistTiers: [
     { key: 'rising', label: 'Rising', bookings: 0, minRating: 0, payoutSpeed: 'instant' },
-    { key: 'established', label: 'Established', bookings: 10, minRating: 4.0, payoutSpeed: 'instant' },
-    { key: 'pro', label: 'Pro', bookings: 50, minRating: 4.5, payoutSpeed: 'instant' },
-    { key: 'elite', label: 'Elite', bookings: 150, minRating: 4.8, payoutSpeed: 'instant' },
+    { key: 'established', label: 'Established', bookings: 10, minRating: 0, payoutSpeed: 'instant' },
+    { key: 'pro', label: 'Pro', bookings: 25, minRating: 0, payoutSpeed: 'instant' },
+    { key: 'elite', label: 'Elite', bookings: 50, minRating: 0, payoutSpeed: 'instant' },
   ],
 
   email: {
