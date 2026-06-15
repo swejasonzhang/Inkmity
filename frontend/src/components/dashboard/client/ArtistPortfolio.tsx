@@ -111,8 +111,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
     const navigate = useNavigate();
     const recent = useMemo(() => (artist?.portfolioImages ?? []).filter(Boolean), [artist]);
     const past = useMemo(() => (artist?.pastWorks ?? []).filter(Boolean), [artist]);
-    const healed = useMemo(() => (artist?.healedWorks ?? []).filter(Boolean), [artist]);
-    const sketches = useMemo(() => (artist?.sketches ?? []).filter(Boolean), [artist]);
     const initials = useMemo(() => (artist?.username?.[0]?.toUpperCase?.() ?? "?"), [artist]);
     const [zoom, setZoom] = useState<null | { items: string[]; index: number; label: string }>(null);
     const [bgOk, setBgOk] = useState(Boolean(artist.coverImage));
@@ -122,7 +120,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
         const arr = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[;,/]+/) : [];
         return arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 4);
     }, [artist]);
-    const totalWorks = recent.length + past.length + healed.length + sketches.length;
+    const totalWorks = recent.length + past.length;
     const ratingValue = typeof artist.rating === "number" ? artist.rating : Number(artist.rating ?? 0);
     const hasRating = Number.isFinite(ratingValue) && ratingValue > 0;
     const years = typeof artist.yearsExperience === "number" && artist.yearsExperience >= 0
@@ -130,7 +128,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
         : "";
     const loc = (artist.location || "").trim();
 
-    const allImages = useMemo(() => [...recent, ...past, ...healed, ...sketches], [recent, past, healed, sketches]);
+    const allImages = useMemo(() => [...recent, ...past], [recent, past]);
     const categories = useMemo(() => {
         const cats: { key: string; label: string; images: string[] }[] = [
             { key: "all", label: "All works", images: allImages },
@@ -140,10 +138,8 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
             const imgs = past.filter((_, i) => i % stylesClean.length === si);
             if (imgs.length) cats.push({ key: `style-${si}`, label: titleCase(style), images: imgs });
         });
-        if (healed.length) cats.push({ key: "healed", label: "Healed", images: healed });
-        if (sketches.length) cats.push({ key: "sketches", label: "Sketches & Ideas", images: sketches });
         return cats;
-    }, [allImages, recent, past, healed, sketches, stylesClean]);
+    }, [allImages, recent, past, stylesClean]);
     const [filterKey, setFilterKey] = useState("all");
     const activeCat = categories.find((c) => c.key === filterKey) ?? categories[0];
 
@@ -315,8 +311,6 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                             </section>
                         )}
 
-                        <WorkSection title="Healed Works" images={healed} imgAltPrefix="Healed work" label="Healed Works" onOpen={openZoom} />
-                        <WorkSection title="Sketches & Ideas" images={sketches} imgAltPrefix="Sketch" label="Sketches & Ideas" onOpen={openZoom} />
                     </>
                 )}
             </div>
