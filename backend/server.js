@@ -22,13 +22,16 @@ if (missing.length > 0) {
   console.warn("Using placeholder values for development...");
 }
 
+import * as Sentry from "@sentry/node";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import pinoHttp from "pino-http";
 import mongoose from "mongoose";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { logger } from "./lib/logger.js";
 
 import authRoutes from "./routes/auth.js";
 import bookingRoutes from "./routes/bookings.js";
@@ -92,6 +95,18 @@ const io = new Server(server, {
 
 initSocket(io);
 
+app.use(
+  pinoHttp({
+    logger,
+    autoLogging: { ignore: (req) => req.url === "/health" || req.url === "/" },
+    customLogLevel: (req, res, err) => {
+      if (err || res.statusCode >= 500) return "error";
+      if (res.statusCode >= 400) return "warn";
+      return "info";
+    },
+  })
+);
+
 app.use(helmet());
 app.use(compression());
 
@@ -143,8 +158,10 @@ app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
+Sentry.setupExpressErrorHandler(app);
+
 app.use((err, req, res, next) => {
-  console.error("Error:", err);
+  (req.log || logger).error({ err }, "Unhandled request error");
   res.status(500).json({
     error: "Internal server error",
     message: ENV === "development" ? err.message : undefined
@@ -211,11 +228,13 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 process.on("unhandledRejection", (reason) => {
-  console.error("[unhandledRejection]", reason);
+  logger.error({ reason }, "unhandledRejection");
+  Sentry.captureException(reason);
 });
 process.on("uncaughtException", (err) => {
-  console.error("[uncaughtException]", err);
-  process.exit(1);
+  logger.fatal({ err }, "uncaughtException");
+  Sentry.captureException(err);
+  Sentry.close(2000).finally(() => process.exit(1));
 });
 
 export { app, io };

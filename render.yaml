@@ -11,10 +11,12 @@ services:
     # Keep the API in the same US-East region as the MongoDB Atlas cluster to
     # minimize DB round-trip latency. (Region can't be changed after creation.)
     region: ohio
-    # Always-on plan: required in production so Socket.io connections stay open
-    # and Stripe webhooks aren't delayed by cold starts. The "free" plan sleeps
-    # after ~15m idle and breaks both — only use it for throwaway testing.
-    plan: starter
+    # Free until there are real clients. The free instance spins down after
+    # ~15m idle: first request after sleep cold-starts (~50s) and idle Socket.io
+    # connections drop. Stripe webhooks survive (Stripe retries with backoff for
+    # ~3 days). UPGRADE to `starter` before launch / real concurrent traffic so
+    # realtime stays connected and webhooks aren't delayed by cold starts.
+    plan: free
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
@@ -64,3 +66,8 @@ services:
       # Comma-separated Clerk IDs allowed to verify studios / grant credits.
       - key: ADMIN_CLERK_IDS
         sync: false
+      # Observability — Sentry stays disabled until SENTRY_DSN is set.
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0"

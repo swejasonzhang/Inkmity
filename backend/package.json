@@ -8,8 +8,8 @@
     "node": ">=20 <23"
   },
   "scripts": {
-    "start": "node --env-file-if-exists=.env.production server.js",
-    "dev": "nodemon --exec \"node --env-file-if-exists=.env.development\" server.js",
+    "start": "node --env-file-if-exists=.env.production --import ./instrument.js server.js",
+    "dev": "nodemon --exec \"node --env-file-if-exists=.env.development --import ./instrument.js\" server.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --testPathIgnorePatterns /node_modules/ /tests/scaling/",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
     "@clerk/express": "^1.7.34",
+    "@sentry/node": "^10.57.0",
     "cloudinary": "^2.7.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
@@ -30,6 +31,8 @@
     "luxon": "^3.7.2",
     "mongoose": "^8.18.0",
     "nodemailer": "^8.0.10",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
     "socket.io": "^4.8.1",
     "stripe": "^18.5.0"
   },
