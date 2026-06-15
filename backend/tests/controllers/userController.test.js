@@ -380,6 +380,78 @@ conditionalDescribe("User Controller - getArtists", () => {
     expect(response.body.items.length).toBeGreaterThan(0);
     expect(response.body.items[0].username).toMatch(/John/i);
   });
+
+  test("boosts higher reward tiers first on the default sort", async () => {
+    await mongoose.model("artist").create([
+      {
+        clerkId: "rising-1",
+        email: "rising@example.com",
+        username: "Rising Star",
+        handle: "@rising",
+        role: "artist",
+        location: "City",
+        rating: 5.0,
+        reviewsCount: 3,
+        bookingsCount: 2,
+      },
+      {
+        clerkId: "pro-1",
+        email: "pro@example.com",
+        username: "Pro Vet",
+        handle: "@pro",
+        role: "artist",
+        location: "City",
+        rating: 4.6,
+        reviewsCount: 80,
+        bookingsCount: 60,
+      },
+    ]);
+
+    const response = await request(app).get("/users/artists");
+
+    expect(response.status).toBe(200);
+    // Pro tier (60 bookings, 4.6) surfaces above a Rising artist with a higher
+    // rating (5.0, 2 bookings) on the default placement view.
+    expect(response.body.items[0].username).toBe("Pro Vet");
+    expect(response.body.items[1].username).toBe("Rising Star");
+  });
+
+  test("honors an explicit sort without tier boosting", async () => {
+    await mongoose.model("artist").create([
+      {
+        clerkId: "rising-1",
+        email: "rising@example.com",
+        username: "Rising Star",
+        handle: "@rising",
+        role: "artist",
+        location: "City",
+        rating: 5.0,
+        bookingsCount: 2,
+        yearsExperience: 12,
+      },
+      {
+        clerkId: "pro-1",
+        email: "pro@example.com",
+        username: "Pro Vet",
+        handle: "@pro",
+        role: "artist",
+        location: "City",
+        rating: 4.6,
+        bookingsCount: 60,
+        yearsExperience: 1,
+      },
+    ]);
+
+    const response = await request(app)
+      .get("/users/artists")
+      .query({ sort: "experience_desc" });
+
+    expect(response.status).toBe(200);
+    // Explicit sort is honored: the Rising artist (12 yrs) leads despite a
+    // lower tier — no placement boost applied.
+    expect(response.body.items[0].username).toBe("Rising Star");
+    expect(response.body.items[1].username).toBe("Pro Vet");
+  });
 });
 
 conditionalDescribe("User Controller - getArtistById", () => {

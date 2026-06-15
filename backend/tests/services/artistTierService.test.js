@@ -5,11 +5,10 @@ import {
 } from "../../services/artistTierService.js";
 
 describe("computeArtistTier", () => {
-  test("new artist is rising, not verified, standard payouts", () => {
+  test("new artist is rising, not verified", () => {
     const t = computeArtistTier(0, 0);
     expect(t.key).toBe("rising");
     expect(t.verified).toBe(false);
-    expect(t.payoutSpeed).toBe("standard");
   });
 
   test("needs both bookings and rating to advance", () => {
@@ -17,8 +16,10 @@ describe("computeArtistTier", () => {
     expect(computeArtistTier(9, 5).key).toBe("rising");
   });
 
-  test("pro gets two_day payouts, elite gets instant", () => {
-    expect(computeArtistTier(50, 4.5).payoutSpeed).toBe("two_day");
+  test("instant payouts are free for every tier", () => {
+    expect(computeArtistTier(0, 0).payoutSpeed).toBe("instant");
+    expect(computeArtistTier(10, 4.0).payoutSpeed).toBe("instant");
+    expect(computeArtistTier(50, 4.5).payoutSpeed).toBe("instant");
     expect(computeArtistTier(150, 4.8).payoutSpeed).toBe("instant");
   });
 });

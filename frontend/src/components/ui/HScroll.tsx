@@ -14,7 +14,7 @@ const HScroll = forwardRef<HScrollHandle, { children: ReactNode; className?: str
     return (
       <div
         ref={el}
-        className={`flex gap-3 overflow-x-auto scroll-smooth snap-x pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+        className={`flex gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
       >
         {children}
       </div>
