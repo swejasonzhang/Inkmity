@@ -96,7 +96,7 @@ conditionalDescribe("Dev Bypass - full booking → rewards workflow", () => {
     const summary = await getRewardsSummary(clientId);
     expect(summary.completedBookings).toBe(3);
     expect(summary.tier.key).toBe("silver");
-    expect(summary.currentFeePct).toBe(0.08);
+    expect(summary.platformFee.pct).toBe(0.05);
 
     const client = await Client.findOne({ clerkId: clientId });
     expect(client.rewardsTier).toBe("silver");

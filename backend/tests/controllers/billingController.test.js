@@ -33,7 +33,7 @@ const WebhookEvent = (await import("../../models/WebhookEvent.js")).default;
 await import("../../models/Artist.js");
 await import("../../models/Client.js");
 
-const PLATFORM_FEE_MIN_CENTS = 500;
+const PLATFORM_FEE_MIN_CENTS = 1000; // $10 platform base fee (config.platformFee.baseCents)
 
 const app = express();
 app.use(express.json());
@@ -124,8 +124,7 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
     expect(stripeMock.paymentIntents.create).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: 1000 + PLATFORM_FEE_MIN_CENTS,
-        application_fee_amount: PLATFORM_FEE_MIN_CENTS,
-        transfer_data: { destination: "acct_test_123" },
+        transfer_group: expect.stringContaining("booking_"),
         metadata: expect.objectContaining({ type: "deposit", bookingId }),
       })
     );
@@ -223,7 +222,7 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
     expect(stripeMock.paymentIntents.create).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: 8000,
-        transfer_data: { destination: "acct_test_123" },
+        transfer_group: expect.stringContaining("booking_"),
         metadata: expect.objectContaining({
           type: "final_payment",
           depositApplied: "2000",
