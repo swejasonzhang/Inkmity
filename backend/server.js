@@ -193,4 +193,35 @@ async function startServer() {
 
 startServer();
 
+// --- Process-level resilience -------------------------------------------------
+// Surface crashes (no monitoring yet) and shut down cleanly so in-flight
+// requests finish and the DB connection closes before the process exits.
+function shutdown(signal) {
+  console.log(`\n${signal} received — shutting down gracefully…`);
+  server.close(() => {
+    mongoose.connection
+      .close(false)
+      .catch((e) => console.error("Error closing MongoDB:", e?.message || e))
+      .finally(() => process.exit(0));
+  });
+  // Don't hang forever if a connection won't drain.
+  setTimeout(() => {
+    console.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 10000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason);
+});
+process.on("uncaughtException", (err) => {
+  // Process state is undefined after an uncaught exception — log and exit so the
+  // process manager/orchestrator restarts a clean instance.
+  console.error("[uncaughtException]", err);
+  process.exit(1);
+});
+
 export { app, io };

@@ -3,8 +3,10 @@ import express from "express";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 import mongoose from "mongoose";
+import "../../models/UserBase.js";
 import "../../models/Client.js";
 import "../../models/Artist.js";
+import "../../models/Review.js";
 import {
   getMe,
   updateMyAvatar,
