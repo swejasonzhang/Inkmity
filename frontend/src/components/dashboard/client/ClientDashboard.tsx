@@ -12,6 +12,7 @@ import { displayNameFromUsername } from "@/lib/format";
 import { API_URL } from "@/api";
 import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
+import { useScrollLock } from "@/hooks/useScrollLock";
 import type { Artist as ArtistDto } from "@/api";
 import { computeArtistTier } from "@/lib/artistTier";
 import { AnimatePresence, motion } from "framer-motion";
@@ -27,6 +28,27 @@ export default function ClientDashboard() {
     const warnedRef = useRef(false);
 
     const [assistantOpen, setAssistantOpen] = useState(false);
+    useScrollLock(assistantOpen);
+
+    // Clicking outside the assistant closes it — and closes the conversations
+    // modal too, so an outside click dismisses both when both are open.
+    useEffect(() => {
+        if (!assistantOpen) return;
+        const onDown = (e: MouseEvent | TouchEvent) => {
+            const t = e.target as HTMLElement | null;
+            if (!t) return;
+            if (t.closest(".client-dashboard-assistant")) return; // inside the assistant
+            if (t.closest(".ink-conv-scope")) return; // inside conversations (panel or pill)
+            setAssistantOpen(false);
+            window.dispatchEvent(new CustomEvent("ink:close-messages"));
+        };
+        document.addEventListener("mousedown", onDown, true);
+        document.addEventListener("touchstart", onDown, true);
+        return () => {
+            document.removeEventListener("mousedown", onDown, true);
+            document.removeEventListener("touchstart", onDown, true);
+        };
+    }, [assistantOpen]);
 
     const [priceFilter, setPriceFilter] = useState("all");
     const [locationFilter, setLocationFilter] = useState("all");
@@ -282,7 +304,8 @@ export default function ClientDashboard() {
             </main>
             <FloatingBar
                 role="Client"
-                assistantLocked={false}
+                assistantLocked={true}
+                assistantOpen={assistantOpen}
                 onAssistantOpen={() => setAssistantOpen(true)}
                 messagesContent={<div className="client-dashboard-messages"><ChatWindow currentUserId={user.id} role="client" /></div>}
                 unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
@@ -303,13 +326,19 @@ export default function ClientDashboard() {
                         />
                         <motion.div
                             key="assistant"
-                            initial={{ opacity: 0, scale: 0.8 }}
+                            initial={{ opacity: 0, scale: 0.78 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                            className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-4 lg:right-4 z-50 client-dashboard-assistant origin-bottom lg:origin-bottom-right"
+                            exit={{ opacity: 0, scale: 0.78 }}
+                            transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                            style={{ transformOrigin: "left bottom" }}
+                            className="fixed inset-x-0 bottom-0 lg:inset-auto lg:bottom-[calc(env(safe-area-inset-bottom,0px)+0.2rem)] lg:left-[var(--ink-edge-l)] z-50 client-dashboard-assistant origin-bottom-left"
                         >
-                            <div className="w-full h-[90dvh] lg:w-[88vw] lg:h-auto lg:max-w-[400px] bg-app border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card">
+                            <div
+                                role="dialog"
+                                aria-modal="true"
+                                aria-label="Assistant"
+                                className="w-full h-[92dvh] lg:w-[560px] lg:max-w-[94vw] lg:h-[min(760px,86dvh)] bg-app border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card"
+                            >
                                 <div className="flex items-center justify-between px-3 py-2 lg:px-3 lg:py-2 border-b border-app">
                                     <div className="flex items-center gap-2 font-semibold">
                                         <Bot size={16} />

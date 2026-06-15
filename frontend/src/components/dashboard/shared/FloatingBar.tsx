@@ -11,6 +11,7 @@ type Props = {
   onAssistantOpen: () => void;
   portalTarget?: Element | null;
   assistantLocked?: boolean;
+  assistantOpen?: boolean;
   messagesContent?: React.ReactNode;
   unreadCount?: number;
   unreadMessagesTotal?: number;
@@ -27,6 +28,7 @@ export default function FloatingBar({
   onAssistantOpen,
   portalTarget,
   assistantLocked = true,
+  assistantOpen = false,
   messagesContent,
   unreadCount,
   unreadMessagesTotal,
@@ -304,14 +306,19 @@ export default function FloatingBar({
         type="button"
         onClick={assistantLocked ? undefined : onAssistantOpen}
         className={`${assistantBtnClass} justify-self-start`}
-        aria-label={assistantLocked ? "Assistant locked" : "Open assistant"}
+        aria-label={assistantLocked ? "Assistant — coming soon" : "Open assistant"}
         aria-disabled={assistantLocked}
+        aria-hidden={assistantOpen}
+        tabIndex={assistantOpen ? -1 : undefined}
         disabled={assistantLocked}
-        title={assistantLocked ? "Assistant is temporarily locked" : "Open assistant"}
+        title={assistantLocked ? "Coming soon" : "Open assistant"}
         style={{
           height: collapsedHeight,
-          pointerEvents: "auto",
           boxShadow: "0 10px 28px rgba(0,0,0,0.35)",
+          // Hide the trigger while the assistant modal is open (keeps grid layout).
+          opacity: assistantOpen ? 0 : 1,
+          pointerEvents: assistantOpen ? "none" : "auto",
+          transition: "opacity 0.18s ease",
         }}
         variant="outline"
       >
