@@ -38,7 +38,7 @@ async function seedArtist(clerkId, overrides = {}) {
 
 conditionalDescribe("Artwork Controller", () => {
   test("getPopularArtworks ranks works by like count and flags likedByMe", async () => {
-    await seedArtist("art_a", { rating: 4.5, portfolioImages: ["a1.jpg", "a2.jpg"] });
+    await seedArtist("art_a", { rating: 4.5, bookingsCount: 5, portfolioImages: ["a1.jpg", "a2.jpg"] });
     await seedArtist("art_b", { rating: 4.9, portfolioImages: ["b1.jpg"] });
 
     await ArtworkLike.create([

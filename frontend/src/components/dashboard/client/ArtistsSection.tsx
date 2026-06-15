@@ -117,7 +117,7 @@ const ArtistCarouselCard = ({ artist, onClick, fill = false }: { artist: any; on
                     <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1 min-w-0">
                             <span className="truncate text-sm font-bold leading-tight">{artist.username}</span>
-                            {artist.verified && <VerifiedBadge size={14} className="shrink-0" />}
+                            {(Number((artist as any).bookingsCount) || 0) >= 5 && <VerifiedBadge size={14} className="shrink-0" />}
                         </span>
                         {rating > 0 && (
                             <span className="text-[11px] text-subtle">★ {rating.toFixed(1)}{artist.reviewsCount ? ` (${artist.reviewsCount})` : ""}</span>

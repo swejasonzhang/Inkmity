@@ -18,7 +18,7 @@ export async function getPopularArtworks(req, res) {
     const me = actorId(req);
 
     const artists = await Artist.find({ role: "artist", visible: true })
-      .select("clerkId handle username avatar styles rating verified portfolioImages pastWorks healedWorks sketches")
+      .select("clerkId handle username avatar styles rating bookingsCount portfolioImages pastWorks healedWorks sketches")
       .lean();
 
     const artworks = [];
@@ -38,7 +38,7 @@ export async function getPopularArtworks(req, res) {
           handle: (a.handle || "").replace(/^@/, ""),
           username: a.username,
           avatarUrl: a.avatar?.url || null,
-          verified: !!a.verified,
+          verified: (a.bookingsCount || 0) >= 5,
           styles: a.styles || [],
           rating: Number(a.rating || 0),
           url,
