@@ -13,6 +13,18 @@ export const apiLimiter = rateLimit({
   },
 });
 
+// LLM calls cost money — keep the assistant on a tighter leash than general API.
+export const assistantLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDevelopment ? 1000 : 30,
+  message: "You're sending messages too quickly — please slow down.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    return isDevelopment;
+  },
+});
+
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDevelopment ? 1000 : 5,

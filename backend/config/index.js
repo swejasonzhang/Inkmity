@@ -15,6 +15,10 @@ export const config = {
     clerkSecretKey: process.env.CLERK_SECRET_KEY,
   },
 
+  anthropic: {
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  },
+
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
     publishableKey: process.env.VITE_STRIPE_PUBLISHABLE_KEY,
