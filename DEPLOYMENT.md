@@ -60,6 +60,9 @@ The backend and frontend deploy to **different hosts** — this is deliberate:
   Stripe webhook relies on a raw-body handler. Serverless platforms break both,
   so the backend must run on an always-on host (Render `starter` plan or above;
   the `free` plan sleeps after ~15m idle and drops WebSockets / delays webhooks).
+  **`render.yaml` currently ships `plan: free`** for the pre-client phase (zero
+  cost). **Bump it to `starter` before launch / real concurrent traffic** so
+  realtime stays connected and webhooks aren't delayed by cold starts.
 - **Frontend → Vercel.** The Vite/React app is a static SPA — Vercel's CDN,
   preview deploys, and zero-config builds fit it well.
 
@@ -99,6 +102,9 @@ connecting the repo in Render:
 | `PLATFORM_FEE_MIN_CENTS` | optional, default `500` |
 | `STUDIO_DEFAULT_COMMISSION_PCT` | optional, default `0.30` (studio's cut; overridable per artist) |
 | `ADMIN_CLERK_IDS` | comma-separated Clerk IDs allowed to verify studios |
+| `SENTRY_DSN` | optional — error tracking off until set (free Sentry tier) |
+| `ANTHROPIC_API_KEY` | optional — AI assistant; route returns 503 and stays $0 until set (assistant is locked in the UI) |
+| `RATE_LIMIT_MAX` | optional, default `1000` req/15min/IP — raise if real users behind shared NAT hit 429s |
 
 **Frontend (Vercel)**
 | Var | Notes |
@@ -109,7 +115,20 @@ connecting the repo in Render:
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe live publishable |
 | `VITE_CLOUDINARY_CLOUD_NAME`, `VITE_CLOUDINARY_UPLOAD_PRESET` | uploads |
 
-## 5. Post-deploy smoke test
+## 5. Observability (Sentry + logs)
+
+Wiring is already in the backend; it stays dormant (and free) until you opt in.
+
+1. **Errors** — create a Sentry project (sentry.io → Node, free Developer tier)
+   and set `SENTRY_DSN` in Render. `instrument.js` loads via `--import` before app
+   code; with no DSN it no-ops. Performance tracing defaults to off
+   (`SENTRY_TRACES_SAMPLE_RATE=0`) to stay inside the free quota — raise later if
+   you want transaction traces.
+2. **Logs** — `pino-http` emits structured JSON request logs (status-aware levels,
+   auth/cookie/stripe-signature redacted, `/health` skipped) to Render's log
+   stream. No setup required; view them in the Render dashboard.
+
+## 6. Post-deploy smoke test
 
 1. `GET https://<inkmity-api>/health` → `{ status: "healthy", database: "connected" }`.
 2. Sign up as an **artist** → dashboard shows the "Finish payment setup" banner →
@@ -127,6 +146,8 @@ connecting the repo in Render:
    artist/studio transfers are reversed (`charge.dispute.created`).
 6. Confirm the rewards panel shows the client's tier/fee and updates after
    completed bookings.
+7. If `SENTRY_DSN` is set, trigger a test error and confirm it lands in Sentry;
+   confirm request logs appear in the Render log stream.
 
 > **Studio bookings** require the studio to be **verified** (admin sets
 > `verificationStatus: verified`) and payout-ready, or the booking is blocked.
@@ -161,3 +182,5 @@ MongoDB Atlas scales independently; raise its tier and the pool size together.
 - **Platform fee**: `PLATFORM_FEE_PCT` / `PLATFORM_FEE_MIN_CENTS`.
 - **Reward tiers**: `backend/config/index.js` → `rewards.tiers` (thresholds + rates).
 - **DB pool**: `MONGO_MAX_POOL` (default 20) / `MONGO_MIN_POOL` (default 2).
+- **Rate limits**: `RATE_LIMIT_MAX` (default 1000/15min/IP), `AUTH_RATE_LIMIT_MAX`
+  (default 5), `ASSISTANT_RATE_LIMIT_MAX` (default 30), `RATE_LIMIT_WINDOW_MS`.
