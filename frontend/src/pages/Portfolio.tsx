@@ -228,7 +228,7 @@ export default function Portfolio() {
                     type="button"
                     onClick={() => removeAt(i)}
                     title="Remove"
-                    className="grid place-items-center h-7 w-7 rounded-full bg-white/90 text-white hover:bg-neutral-700 transition"
+                    className="grid place-items-center h-7 w-7 rounded-full bg-black text-white hover:bg-neutral-800 transition"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>

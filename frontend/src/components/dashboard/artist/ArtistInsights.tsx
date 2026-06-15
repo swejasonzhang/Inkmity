@@ -30,15 +30,22 @@ function fmtMoney(cents: number) {
 export default function ArtistInsights({ stats = [], loading = false }: Props) {
   const { getToken } = useAuth();
   const [data, setData] = useState<ArtistAnalytics | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     const ac = new AbortController();
+    const start = Date.now();
     (async () => {
       try {
         const token = (await getToken()) ?? undefined;
         setData(await getArtistAnalytics(token, ac.signal));
       } catch {
         setData(null);
+      } finally {
+        const elapsed = Date.now() - start;
+        setTimeout(() => {
+          if (!ac.signal.aborted) setLoadingData(false);
+        }, Math.max(0, 650 - elapsed));
       }
     })();
     return () => ac.abort();
@@ -58,6 +65,8 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
         { label: "Rating", value: data.rating > 0 ? `${data.rating.toFixed(1)}★` : "—" },
       ]
     : [];
+
+  const showSkeleton = loadingData || loading;
 
   return (
     <div className="rounded-xl border border-app bg-card overflow-hidden flex flex-col flex-shrink-0 sm:flex-1 sm:min-h-0">
@@ -85,8 +94,20 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
       </div>
 
       <div className="sm:flex-1 sm:flex sm:flex-col sm:min-h-0">
-        {insightCells.length > 0 && (
+        {showSkeleton ? (
           <div className="grid grid-cols-3 gap-px sm:flex-1 auto-rows-fr" style={{ background: "var(--border)" }}>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="bg-card px-1 py-1.5 sm:py-3 flex flex-col items-center justify-center gap-1.5 min-w-0"
+              >
+                <Skeleton className="h-5 w-10" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            ))}
+          </div>
+        ) : insightCells.length > 0 && (
+          <div className="ink-fade-in grid grid-cols-3 gap-px sm:flex-1 auto-rows-fr" style={{ background: "var(--border)" }}>
             {insightCells.map((c) => (
               <div
                 key={c.label}
@@ -110,10 +131,10 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
                 className="bg-card px-1 py-1.5 sm:py-3 flex flex-col items-center justify-center text-center gap-0.5 min-w-0"
               >
                 <Icon className="h-3.5 w-3.5 text-muted shrink-0" />
-                {loading ? (
-                  <Skeleton className="h-5 w-6" />
+                {showSkeleton ? (
+                  <Skeleton className="h-5 w-8" />
                 ) : (
-                  <div className="text-lg font-bold text-app leading-none">{value}</div>
+                  <div className="text-lg font-bold text-app leading-none ink-fade-in">{value}</div>
                 )}
                 <span className="text-xs text-muted leading-tight">{label}</span>
               </div>

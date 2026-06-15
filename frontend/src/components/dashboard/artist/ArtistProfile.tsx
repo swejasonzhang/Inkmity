@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
@@ -574,32 +574,8 @@ export default function ArtistProfile() {
     const currentBaseRate = editedArtist.baseRate ?? artist?.baseRate ?? 0;
     const currentRestrictedPlacements = editedArtist.restrictedPlacements ?? artist?.restrictedPlacements ?? [];
 
-    const healedWorks = artist?.healedWorks || [];
-    const sketches = artist?.sketches || [];
 
     const initials = useMemo(() => (currentUsername || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join(""), [currentUsername]);
-
-    const Grid: React.FC<{ images: string[]; eager?: number }> = ({ images, eager = 6 }) =>
-        images.length ? (
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
-                {images.map((src, i) => (
-                    <div
-                        key={`${src}-${i}`}
-                        className="relative aspect-square w-full overflow-hidden rounded-xl border"
-                        style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
-                    >
-                        <img
-                            src={src}
-                            alt={`Work ${i + 1}`}
-                            className="h-full w-full object-cover"
-                            loading={i < eager ? "eager" : "lazy"}
-                            decoding="async"
-                            referrerPolicy="no-referrer"
-                        />
-                    </div>
-                ))}
-            </div>
-        ) : null;
 
     if (!artist) return null;
 
@@ -636,6 +612,7 @@ export default function ArtistProfile() {
 
                     <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-4 sm:mb-6">Artist Profile</h2>
 
+                    <div className="rounded-2xl border p-5 sm:p-6 backdrop-blur-sm w-full max-w-2xl mb-4 flex flex-col items-center" style={{ background: "color-mix(in srgb, var(--card) 80%, transparent)", borderColor: "var(--border)" }}>
                     <div className="relative mb-5 sm:mb-8 w-full flex items-center justify-center">
                         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                             {bgOk && currentCoverImage ? (
@@ -690,8 +667,6 @@ export default function ArtistProfile() {
                         {uploading ? "Uploading..." : (currentCoverImage ? "Change Background" : "Add Background")}
                     </Button>
 
-                    <ArtistTierBadge className="w-full max-w-md mb-4" />
-
                     <div className="space-y-2 w-full max-w-md mb-4">
                         <Label htmlFor="username" className="text-center block w-full text-sm" style={{ color: "var(--fg)" }}>Display Name</Label>
                         <Input
@@ -721,6 +696,9 @@ export default function ArtistProfile() {
                             placeholder="Tell clients about yourself..."
                         />
                     </div>
+                    </div>
+
+                    <ArtistTierBadge className="w-full max-w-2xl mb-4" />
 
                     <div className="rounded-2xl ink-frame p-5 border backdrop-blur-sm w-full max-w-2xl mb-4"
                         style={{
@@ -1037,7 +1015,8 @@ export default function ArtistProfile() {
                                 onClick={() => setEditedArtist({})}
                                 disabled={saving || uploading}
                                 variant="outline"
-                                className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                className="text-white hover:opacity-90"
+                                style={{ background: "#000", borderColor: "#000" }}
                             >
                                 <X className="h-4 w-4 mr-2" />
                                 Cancel
@@ -1110,7 +1089,7 @@ export default function ArtistProfile() {
                                         <div className="grid grid-cols-3 gap-3 w-full">
                                             {editedRecentWorks.map((src, i) => (
                                                 <div
-                                                    key={`recent-${src}-${i}`}
+                                                    key={`recent-${src}`}
                                                     className="relative aspect-square w-full overflow-hidden rounded-xl border group"
                                                     style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                                 >
@@ -1148,7 +1127,7 @@ export default function ArtistProfile() {
                                                         )}
                                                         <button
                                                             onClick={() => handleRemovePortfolioImage(i, "recentWorks")}
-                                                            className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
+                                                            className="bg-black hover:bg-neutral-800 rounded-full p-2 transition-colors"
                                                             title="Remove"
                                                         >
                                                             <Trash2 className="h-4 w-4 text-white" />
@@ -1189,7 +1168,7 @@ export default function ArtistProfile() {
                                         <div className="grid grid-cols-3 gap-3 w-full">
                                             {editedPastWorks.map((src, i) => (
                                                 <div
-                                                    key={`past-${src}-${i}`}
+                                                    key={`past-${src}`}
                                                     className="relative aspect-square w-full overflow-hidden rounded-xl border group"
                                                     style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                                 >
@@ -1222,7 +1201,7 @@ export default function ArtistProfile() {
                                                         )}
                                                         <button
                                                             onClick={() => handleRemovePortfolioImage(i, "pastWorks")}
-                                                            className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
+                                                            className="bg-black hover:bg-neutral-800 rounded-full p-2 transition-colors"
                                                             title="Remove"
                                                         >
                                                             <Trash2 className="h-4 w-4 text-white" />
@@ -1263,7 +1242,7 @@ export default function ArtistProfile() {
                                         <div className="grid grid-cols-3 gap-3 w-full">
                                             {editedSketches.map((src, i) => (
                                                 <div
-                                                    key={`sketch-${src}-${i}`}
+                                                    key={`sketch-${src}`}
                                                     className="relative aspect-square w-full overflow-hidden rounded-xl border group"
                                                     style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
                                                 >
@@ -1296,7 +1275,7 @@ export default function ArtistProfile() {
                                                         )}
                                                         <button
                                                             onClick={() => handleRemovePortfolioImage(i, "sketches")}
-                                                            className="bg-white/80 hover:bg-neutral-700 rounded-full p-2 transition-colors"
+                                                            className="bg-black hover:bg-neutral-800 rounded-full p-2 transition-colors"
                                                             title="Remove"
                                                         >
                                                             <Trash2 className="h-4 w-4 text-white" />
@@ -1323,7 +1302,8 @@ export default function ArtistProfile() {
                                     }}
                                     disabled={saving || uploading}
                                     variant="outline"
-                                    className="border-[color:var(--border)] hover:bg-[color:var(--elevated)]"
+                                    className="text-white hover:opacity-90"
+                                    style={{ background: "#000", borderColor: "#000" }}
                                 >
                                     <X className="h-4 w-4 mr-2" />
                                     Cancel
@@ -1341,23 +1321,6 @@ export default function ArtistProfile() {
                         </DialogContent>
                     </Dialog>
 
-                    {healedWorks.length > 0 && (
-                        <div className="mt-6 w-full">
-                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
-                                Healed Works
-                            </h4>
-                            <Grid images={healedWorks} />
-                        </div>
-                    )}
-
-                    {sketches.length > 0 && (
-                        <div className="mt-6 w-full">
-                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--fg)" }}>
-                                Sketches
-                            </h4>
-                            <Grid images={sketches} />
-                        </div>
-                    )}
                     </div>
                 </div>
             </div>

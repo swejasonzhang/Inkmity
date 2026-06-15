@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import AftercareInstructions from "@/components/dashboard/shared/AftercareInstructions";
 import LazyReveal from "@/components/ui/LazyReveal";
 import ArtistWaitlist from "@/components/dashboard/artist/ArtistWaitlist";
 import SketchPanel from "@/components/dashboard/shared/SketchPanel";
@@ -74,17 +73,6 @@ type AppointmentWithUsers = Booking & {
   artist?: { username: string; avatar?: any } | null;
 };
 
-const AFTERCARE_DISMISS_KEY = "ink:aftercare-dismissed";
-function getDismissedAftercare(): string[] {
-  try { return JSON.parse(localStorage.getItem(AFTERCARE_DISMISS_KEY) || "[]"); } catch { return []; }
-}
-function markAftercareDismissed(id: string) {
-  try {
-    const arr = getDismissedAftercare();
-    if (!arr.includes(id)) localStorage.setItem(AFTERCARE_DISMISS_KEY, JSON.stringify([...arr, id]));
-  } catch { }
-}
-
 export default function Appointments() {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -96,8 +84,6 @@ export default function Appointments() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [priceEditId, setPriceEditId] = useState<string | null>(null);
   const [priceInput, setPriceInput] = useState("");
-  const [aftercareModalOpen, setAftercareModalOpen] = useState(false);
-  const [aftercareAppointment, setAftercareAppointment] = useState<AppointmentWithUsers | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   useScrollLock(cancelTarget !== null);
@@ -615,27 +601,7 @@ export default function Appointments() {
             </div>
           )}
 
-          {isCompleted && isTattooSession && (
-            <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
-              <Button
-                onClick={() => {
-                  setAftercareAppointment(appointment);
-                  setAftercareModalOpen(true);
-                }}
-                variant="outline"
-                className="w-full h-9 text-sm font-medium transition-all hover:scale-[1.02]"
-                style={{
-                  borderColor: "var(--border)",
-                  color: "var(--fg)",
-                  background: "var(--card)"
-                }}
-              >
-                View Aftercare Instructions
-              </Button>
-            </div>
-          )}
-
-          {isTattooSession && (
+          {isTattooSession && isClient && (
             <SketchPanel bookingId={appointment._id} isArtist={isArtist} isClient={isClient} />
           )}
 
@@ -775,14 +741,6 @@ export default function Appointments() {
       </div>
       </div>
 
-      <AftercareInstructions
-        open={aftercareModalOpen}
-        onClose={() => {
-          setAftercareModalOpen(false);
-          if (aftercareAppointment?._id) markAftercareDismissed(aftercareAppointment._id);
-        }}
-        appointmentDate={aftercareAppointment?.startAt}
-      />
 
       {cancelTarget && (
         <div
