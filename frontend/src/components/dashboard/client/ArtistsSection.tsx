@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ArtistFilter from "./ArtistFilter";
 import LazyReveal from "@/components/ui/LazyReveal";
 import HScroll, { type HScrollHandle } from "@/components/ui/HScroll";
-import { Search, ChevronsDown, ChevronLeft, ChevronRight, MapPin, Clock, Building2, ArrowRight } from "lucide-react";
+import { Search, ChevronsDown, ChevronLeft, ChevronRight, MapPin, Clock, Building2, ArrowRight, Sparkles } from "lucide-react";
 import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
 import { titleCase } from "@/lib/format";
 import type { Artist } from "@/api";
@@ -210,6 +210,56 @@ const StyleRow = ({
     );
 };
 
+const HighlightRow = ({
+    items,
+    onSelect,
+}: {
+    items: any[];
+    onSelect: (a: any) => void;
+}) => {
+    const ref = useRef<HScrollHandle>(null);
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const t = setTimeout(() => setLoading(false), 700);
+        return () => clearTimeout(t);
+    }, []);
+    const arrowCls = "grid place-items-center h-7 w-7 rounded-full border border-app bg-card text-app hover:bg-elevated transition disabled:opacity-40";
+    const cardWrapCls = "shrink-0 w-full sm:w-[calc((100%_-_0.75rem)/2)] md:w-[calc((100%_-_1.5rem)/3)] lg:w-[calc((100%_-_2.25rem)/4)] h-[23rem]";
+    return (
+        <section className="rounded-2xl border border-app/60 bg-elevated/40 p-3 sm:p-4">
+            <div className="mb-2.5 flex items-center justify-between gap-3 px-1">
+                <div className="flex items-center gap-2 min-w-0">
+                    <Sparkles className="h-4 w-4 shrink-0" />
+                    <h2 className="text-base sm:text-lg font-bold tracking-tight truncate">New &amp; Upcoming Artists</h2>
+                    <span className="text-xs text-subtle shrink-0">{items.length}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <button type="button" aria-label="Scroll left" className={arrowCls} onClick={() => ref.current?.scrollByDir(-1)}>
+                        <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button type="button" aria-label="Scroll right" className={arrowCls} onClick={() => ref.current?.scrollByDir(1)}>
+                        <ChevronRight className="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+            <HScroll ref={ref}>
+                {loading
+                    ? Array.from({ length: 4 }).map((_, i) => (
+                        <div key={`upcoming-sk-${i}`} className={`${cardWrapCls} rounded-2xl ink-shimmer`} />
+                    ))
+                    : items.map((artist, index) => (
+                        <div
+                            key={`upcoming:${(artist as any).clerkId ?? (artist as any)._id}:${index}`}
+                            className={cardWrapCls}
+                        >
+                            <ArtistCarouselCard artist={artist} onClick={() => onSelect(artist)} fill />
+                        </div>
+                    ))}
+            </HScroll>
+        </section>
+    );
+};
+
 export default function ArtistsSection({
     artists,
     loading,
@@ -379,7 +429,28 @@ export default function ArtistsSection({
             .sort((a, b) => (a[0] === OTHER_STYLE ? 1 : b[0] === OTHER_STYLE ? -1 : a[0].localeCompare(b[0])))
             .map(([style, list]) => ({ style, items: list }));
     }, [filtered]);
-    const isCenterLoading = loading || !showArtists;
+
+    const upcomingArtists = useMemo(() => {
+        const now = Date.now();
+        // Combined "upcoming" score — lower is more upcoming: newest account,
+        // fewest reviews, least experience. Each normalized to 0..1 then weighted.
+        const scored = filtered.map((a) => {
+            const created = new Date((a as any).createdAt ?? 0).getTime();
+            const ageDays = created > 0 ? (now - created) / (1000 * 60 * 60 * 24) : 365;
+            const reviews = Number((a as any).reviewsCount ?? 0);
+            const years = Number((a as any).yearsExperience ?? 0);
+            const recency = Math.min(ageDays, 365) / 365;
+            const reviewed = Math.min(reviews, 50) / 50;
+            const experience = Math.min(years, 10) / 10;
+            const score = recency * 0.5 + reviewed * 0.3 + experience * 0.2;
+            return { a, score };
+        });
+        return scored
+            .sort((x, y) => x.score - y.score)
+            .slice(0, 12)
+            .map((s) => s.a);
+    }, [filtered]);
+    const isCenterLoading = (loading || !showArtists) && artists.length === 0;
     const [viewAllStyle, setViewAllStyle] = useState<string | null>(null);
     const viewAllItems = viewAllStyle ? sections.find((s) => s.style === viewAllStyle)?.items ?? [] : [];
 
@@ -445,7 +516,7 @@ export default function ArtistsSection({
     return (
         <div className="flex flex-col h-full min-h-0 w-full">
             <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
-                <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-2 sm:px-1 pb-24">
+                <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-2 sm:px-1 pb-32 sm:pb-36">
                     <header className="text-center pt-3 pb-0 px-4">
                         <div className="flex items-center justify-center gap-3 mb-4">
                             <span className="h-px w-8 bg-app/50" aria-hidden />
@@ -464,7 +535,7 @@ export default function ArtistsSection({
                             {filterNode}
                         </div>
                     </div>
-                    <p className="flex items-center justify-center gap-1.5 text-xs text-subtle mt-3 mb-6">
+                    <p className="flex items-center justify-center gap-1.5 text-xs text-subtle mt-3 mb-4">
                         <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
                         Scroll to explore every style
                     </p>
@@ -502,6 +573,9 @@ export default function ArtistsSection({
                             </div>
                         ) : (
                             <div className="space-y-8">
+                                {upcomingArtists.length > 0 && (
+                                    <HighlightRow items={upcomingArtists} onSelect={onSelectArtist} />
+                                )}
                                 {sections.map(({ style, items }) => (
                                     <StyleRow
                                         key={style}

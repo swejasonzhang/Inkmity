@@ -58,9 +58,11 @@ export default function NotificationBell({ className = "" }: { className?: strin
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [fetching, setFetching] = useState(false);
+  const [skeleton, setSkeleton] = useState(false);
   const [seenAt, setSeenAt] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skeletonRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refetch = useCallback(async () => {
     setFetching(true);
@@ -104,7 +106,13 @@ export default function NotificationBell({ className = "" }: { className?: strin
   }, [seenKey]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSkeleton(false);
+      return;
+    }
+    setSkeleton(true);
+    if (skeletonRef.current) clearTimeout(skeletonRef.current);
+    skeletonRef.current = setTimeout(() => setSkeleton(false), 900);
     void refetch();
     const now = Date.now();
     setSeenAt(now);
@@ -114,6 +122,9 @@ export default function NotificationBell({ className = "" }: { className?: strin
       } catch {
       }
     }
+    return () => {
+      if (skeletonRef.current) clearTimeout(skeletonRef.current);
+    };
   }, [open, refetch, seenKey]);
 
   useEffect(() => {
@@ -160,7 +171,7 @@ export default function NotificationBell({ className = "" }: { className?: strin
             {count > 0 && <span className="text-[11px] text-subtle">{count} new</span>}
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
-            {fetching && items.length === 0 ? (
+            {skeleton || (fetching && items.length === 0) ? (
               <div className="py-1" aria-busy="true">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="px-4 py-3 flex items-start gap-3">
