@@ -20,8 +20,9 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
-      # TODO: enable integration tests in CI (DATABASE_AVAILABLE=true) once repaired.
       - run: npm test
+        env:
+          DATABASE_AVAILABLE: "true"
 
   frontend:
     name: Frontend (build + tests)
