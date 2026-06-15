@@ -11,12 +11,10 @@ services:
     # Keep the API in the same US-East region as the MongoDB Atlas cluster to
     # minimize DB round-trip latency. (Region can't be changed after creation.)
     region: ohio
-    # Free until there are real clients. The free instance spins down after
-    # ~15m idle: first request after sleep cold-starts (~50s) and idle Socket.io
-    # connections drop. Stripe webhooks survive (Stripe retries with backoff for
-    # ~3 days). UPGRADE to `starter` before launch / real concurrent traffic so
-    # realtime stays connected and webhooks aren't delayed by cold starts.
-    plan: free
+    # Always-on plan: keeps Socket.io connections alive and avoids cold-start
+    # delays on Stripe webhooks / first requests. The free plan spins down after
+    # ~15m idle (~50s cold start), which breaks both — don't use it in production.
+    plan: starter
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health

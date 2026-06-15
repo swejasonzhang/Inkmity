@@ -60,9 +60,7 @@ The backend and frontend deploy to **different hosts** — this is deliberate:
   Stripe webhook relies on a raw-body handler. Serverless platforms break both,
   so the backend must run on an always-on host (Render `starter` plan or above;
   the `free` plan sleeps after ~15m idle and drops WebSockets / delays webhooks).
-  **`render.yaml` currently ships `plan: free`** for the pre-client phase (zero
-  cost). **Bump it to `starter` before launch / real concurrent traffic** so
-  realtime stays connected and webhooks aren't delayed by cold starts.
+  `render.yaml` ships `plan: starter` (always-on) for production.
 - **Frontend → Vercel.** The Vite/React app is a static SPA — Vercel's CDN,
   preview deploys, and zero-config builds fit it well.
 
