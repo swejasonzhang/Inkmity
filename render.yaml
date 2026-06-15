@@ -52,11 +52,13 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
-      # Platform economics (optional — reasonable defaults).
+      # Platform economics: fee = base + pct of price, capped. ($10 + 5%, max $50)
+      - key: PLATFORM_FEE_BASE_CENTS
+        value: "1000"
       - key: PLATFORM_FEE_PCT
-        value: "0.10"
-      - key: PLATFORM_FEE_MIN_CENTS
-        value: "500"
+        value: "0.05"
+      - key: PLATFORM_FEE_CAP_CENTS
+        value: "5000"
       - key: STUDIO_DEFAULT_COMMISSION_PCT
         value: "0.30"
       - key: BIRTHDAY_CREDIT_CENTS

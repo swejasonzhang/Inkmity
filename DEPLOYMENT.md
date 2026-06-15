@@ -96,8 +96,9 @@ connecting the repo in Render:
 | `APP_URL`, `FRONTEND_URL` | deployed frontend origin (Connect return + Stripe redirects + CORS) |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | uploads |
 | `RESEND_API_KEY`, `FROM_EMAIL` | email |
-| `PLATFORM_FEE_PCT` | optional, default `0.10` |
-| `PLATFORM_FEE_MIN_CENTS` | optional, default `500` |
+| `PLATFORM_FEE_BASE_CENTS` | optional, default `1000` ($10 base) |
+| `PLATFORM_FEE_PCT` | optional, default `0.05` (5%) |
+| `PLATFORM_FEE_CAP_CENTS` | optional, default `5000` ($50 cap) |
 | `STUDIO_DEFAULT_COMMISSION_PCT` | optional, default `0.30` (studio's cut; overridable per artist) |
 | `ADMIN_CLERK_IDS` | comma-separated Clerk IDs allowed to verify studios |
 | `SENTRY_DSN` | optional — error tracking off until set (free Sentry tier) |
@@ -177,7 +178,7 @@ MongoDB Atlas scales independently; raise its tier and the pool size together.
 
 ## Tuning knobs
 
-- **Platform fee**: `PLATFORM_FEE_PCT` / `PLATFORM_FEE_MIN_CENTS`.
+- **Platform fee**: `PLATFORM_FEE_BASE_CENTS` / `PLATFORM_FEE_PCT` / `PLATFORM_FEE_CAP_CENTS` (fee = base + pct of price, capped).
 - **Reward tiers**: `backend/config/index.js` → `rewards.tiers` (thresholds + rates).
 - **DB pool**: `MONGO_MAX_POOL` (default 20) / `MONGO_MIN_POOL` (default 2).
 - **Rate limits**: `RATE_LIMIT_MAX` (default 1000/15min/IP), `AUTH_RATE_LIMIT_MAX`
