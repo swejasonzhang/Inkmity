@@ -276,6 +276,7 @@ export default function ClientDashboard() {
             </main>
             <FloatingBar
                 role="Client"
+                assistantLocked={false}
                 onAssistantOpen={() => setAssistantOpen(true)}
                 messagesContent={<div className="client-dashboard-messages"><ChatWindow currentUserId={user.id} role="client" /></div>}
                 unreadMessagesTotal={unreadState?.unreadMessagesTotal ?? 0}
