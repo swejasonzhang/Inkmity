@@ -323,6 +323,7 @@ body {
   margin: 0;
   height: 100%;
   color: var(--fg);
+  background-color: var(--bg);
   font-family: var(--font-display);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

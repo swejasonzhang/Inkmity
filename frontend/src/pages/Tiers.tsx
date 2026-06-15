@@ -92,10 +92,10 @@ export default function Tiers() {
     <div className="h-svh overflow-hidden flex flex-col text-app">
       <VideoBackground video />
       <Header />
-      <main className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden" style={{ padding: "clamp(8px, 2vh, 16px) clamp(12px, 4vw, 48px)" }}>
-        <div className="min-h-full lg:h-full flex items-center justify-center">
+      <main className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "clamp(8px, 2vh, 16px) clamp(12px, 4vw, 48px)" }}>
+        <div className="min-h-full flex justify-center">
           <div
-            className="w-full max-w-6xl rounded-3xl border p-5 sm:p-7 lg:px-9 lg:py-5 backdrop-blur-2xl"
+            className="my-auto w-full max-w-6xl rounded-3xl border p-5 sm:p-7 lg:px-9 lg:py-5 backdrop-blur-2xl"
             style={{
               borderColor: "var(--border)",
               background: "color-mix(in srgb, var(--bg) 82%, transparent)",
