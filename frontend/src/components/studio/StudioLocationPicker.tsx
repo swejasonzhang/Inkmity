@@ -26,10 +26,13 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
 
     const hasKey = Boolean(googleMapsKey());
 
+    const MANUAL_MSG = "Map search is unavailable right now — type your full studio address above and we'll save it.";
+
     useEffect(() => {
         if (!hasKey) {
+            console.warn("[maps] VITE_GOOGLE_MAPS_API_KEY is not set — falling back to manual address entry.");
             setStatus("error");
-            setError("Maps isn't configured yet. Set VITE_GOOGLE_MAPS_API_KEY to enable location search.");
+            setError(MANUAL_MSG);
             return;
         }
         let cancelled = false;
@@ -37,10 +40,11 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
 
         (window as any).gm_authFailure = () => {
             if (cancelled) return;
-            setStatus("error");
-            setError(
-                "Google rejected the Maps key. In Google Cloud, enable the Maps JavaScript API + Places API, allow this domain in the key's HTTP-referrer restrictions, and confirm billing is on."
+            console.warn(
+                "[maps] Google rejected the key. In Google Cloud: enable Maps JavaScript API + Places API, add this domain (incl. www) to the key's HTTP-referrer restrictions, and confirm billing is on."
             );
+            setStatus("error");
+            setError(MANUAL_MSG);
         };
 
         loadGoogleMaps()
@@ -53,14 +57,22 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
             })
             .catch((e) => {
                 if (cancelled) return;
+                console.warn("[maps] failed to load Google Maps:", e?.message || e);
                 setStatus("error");
-                setError(e?.message || "Failed to load Google Maps");
+                setError(MANUAL_MSG);
             });
         return () => {
             cancelled = true;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasKey]);
+
+    const onManualAddress = (raw: string) => {
+        const address = raw.trim();
+        const parts = address.split(",").map((s) => s.trim()).filter(Boolean);
+        const city = parts.length >= 2 ? parts[parts.length - 2] : address;
+        onChange({ address, city, lat: undefined, lng: undefined, placeId: undefined });
+    };
 
     const placeMarker = (google: any, lat: number, lng: number) => {
         const pos = { lat, lng };
@@ -143,8 +155,9 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
                 <input
                     ref={inputRef}
                     defaultValue={value.address}
-                    placeholder={status === "loading" ? "Loading maps…" : "Search your shop or studio…"}
-                    disabled={status === "error"}
+                    placeholder={status === "loading" ? "Loading maps…" : status === "error" ? "Enter your full studio address…" : "Search your shop or studio…"}
+                    disabled={status === "loading"}
+                    onChange={status === "error" ? (e) => onManualAddress(e.target.value) : undefined}
                     className="w-full rounded-lg border border-app bg-elevated py-2.5 pl-9 pr-3 text-sm text-app placeholder:text-muted outline-none transition-colors focus:border-[color:var(--fg)]/40 disabled:opacity-60"
                 />
             </div>
