@@ -543,19 +543,17 @@ export default function ArtistsSection({
                         <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
                         Scroll to explore every style
                     </p>
-                    {upcomingArtists.length > 0 && (
-                        <div className="flex justify-center mb-6">
-                            <button
-                                type="button"
-                                onClick={() => setShowUpcoming((v) => !v)}
-                                aria-pressed={showUpcoming}
-                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${showUpcoming ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent" : "border-app bg-elevated text-app hover:bg-card"}`}
-                            >
-                                <Sparkles className="h-4 w-4" />
-                                {showUpcoming ? "Hide new & upcoming artists" : "Show new & upcoming artists"}
-                            </button>
-                        </div>
-                    )}
+                    <div className="flex justify-center mb-6">
+                        <button
+                            type="button"
+                            onClick={() => setShowUpcoming((v) => !v)}
+                            aria-pressed={showUpcoming}
+                            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${showUpcoming ? "bg-[color:var(--fg)] text-[color:var(--bg)] border-transparent" : "border-app bg-elevated text-app hover:bg-card"}`}
+                        >
+                            <Sparkles className="h-4 w-4" />
+                            {showUpcoming ? "Hide new & upcoming artists" : "Show new & upcoming artists"}
+                        </button>
+                    </div>
                     {reloading ? (
                         sectionsSkeleton
                     ) : (

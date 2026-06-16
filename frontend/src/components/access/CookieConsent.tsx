@@ -43,7 +43,7 @@ export default function CookieConsent() {
           className="fixed z-[2147483600] w-[min(92vw,22rem)]"
           style={{
             right: "var(--ink-edge-r)",
-            bottom: "calc(env(safe-area-inset-bottom, 0px) + 3.6rem)",
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.2rem)",
           }}
         >
           <div className="rounded-2xl border border-app bg-card text-app p-4 shadow-[0_18px_44px_-12px_rgba(0,0,0,0.6)] ring-1 ring-[color-mix(in_srgb,var(--fg)_12%,transparent)]">
