@@ -71,6 +71,12 @@ export default function Onboarding() {
         };
     }, [isLoaded, isSignedIn, getToken, navigate]);
 
+    const presetRole = (user?.unsafeMetadata as { role?: string } | undefined)?.role;
+    const roleLocked = presetRole === "client" || presetRole === "artist";
+    useEffect(() => {
+        if (roleLocked) setRole(presetRole as Role);
+    }, [roleLocked, presetRole]);
+
     const handleClient = (e: ChangeEvent<HTMLInputElement> | { target: { name: string; value: string } }) => {
         const { name, value } = (e as { target: { name: string; value: string } }).target;
         if (!name) return;
@@ -200,13 +206,15 @@ export default function Onboarding() {
                         </p>
                     </div>
 
-                    <div className="mb-1.5 sm:mb-2">
-                        <div className="block text-xs text-white/80 mb-1 text-center">I'm joining as</div>
-                        <div className="flex gap-2">
-                            {roleBtn("client", "Client")}
-                            {roleBtn("artist", "Artist")}
+                    {!roleLocked && (
+                        <div className="mb-1.5 sm:mb-2">
+                            <div className="block text-xs text-white/80 mb-1 text-center">I'm joining as</div>
+                            <div className="flex gap-2">
+                                {roleBtn("client", "Client")}
+                                {roleBtn("artist", "Artist")}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="mb-1.5 sm:mb-2">
                         {role === "client" ? (
