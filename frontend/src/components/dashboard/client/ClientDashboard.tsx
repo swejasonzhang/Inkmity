@@ -333,7 +333,7 @@ export default function ClientDashboard() {
                                 role="dialog"
                                 aria-modal="true"
                                 aria-label="Assistant"
-                                className="w-full h-[92dvh] lg:w-[35rem] lg:max-w-[94vw] lg:h-[min(47.5rem,86dvh)] bg-app border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card"
+                                className="w-full h-[92dvh] lg:w-[35rem] lg:max-w-[94vw] lg:h-[min(47.5rem,86dvh)] bg-card border-t border-app lg:border lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden client-dashboard-assistant-card"
                             >
                                 <div className="flex items-center justify-between px-3 py-2 lg:px-3 lg:py-2 border-b border-app">
                                     <div className="flex items-center gap-2 font-semibold">

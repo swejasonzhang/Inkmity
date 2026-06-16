@@ -126,6 +126,7 @@ export default function StudioLocationPicker({ value, onChange, compact = false 
         if (!host) return;
         const pac = new google.maps.places.PlaceAutocompleteElement();
         (pac as any).style.width = "100%";
+        (pac as any).style.colorScheme = "dark";
         host.replaceChildren(pac);
         pac.addEventListener("gmp-select", async (event: any) => {
             const place = event?.placePrediction?.toPlace?.();

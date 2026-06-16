@@ -105,7 +105,7 @@ const ChatBot: React.FC = () => {
   const empty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-full min-h-[420px] bg-app text-app">
+    <div className="flex flex-col h-full min-h-[420px] bg-card text-app">
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4 space-y-3">
         {empty ? (
           <div className="h-full flex flex-col items-center justify-center text-center gap-4 px-2">

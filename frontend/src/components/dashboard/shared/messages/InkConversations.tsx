@@ -42,7 +42,7 @@ export const InkConversations: React.FC<Props> = ({
 
   return (
     <div
-      className={`ink-conv-scope bg-app text-app ${!isMdUp && open ? "flex" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} ${closing ? "ink-panel-out" : open ? "ink-panel-in" : ""} pointer-events-auto border border-app shadow-md transition`}
+      className={`ink-conv-scope bg-card text-app ${!isMdUp && open ? "flex" : "inline-flex"} items-center justify-center ${open ? "rounded-2xl" : "rounded-full"} ${closing ? "ink-panel-out" : open ? "ink-panel-in" : ""} pointer-events-auto border border-app shadow-md transition`}
       aria-label={open ? "Messages" : "Open messages"}
       aria-expanded={open}
       {...(open ? { role: "dialog", "aria-modal": true } : {})}

@@ -25,7 +25,6 @@ import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
 import ComingSoon from "./components/access/ComingSoon";
 import CookieConsent from "./components/access/CookieConsent";
-import VideoBackground from "./components/VideoBackground";
 import { isTestingMode, resolvePreviewAccess } from "@/lib/launch";
 
 const PublicScope: React.FC = () => {
@@ -66,8 +65,6 @@ const App: React.FC = () => {
   if (isTestingMode && !previewAllowed) return <ComingSoon />;
 
   return (
-    <>
-    <VideoBackground video={false} scrim={46} />
     <Routes>
       <Route path="/artists" element={<DashboardScope />}>
         <Route index element={<Dashboard />} />
@@ -119,7 +116,6 @@ const App: React.FC = () => {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
-    </>
   );
 };
 
