@@ -432,8 +432,6 @@ export default function ArtistsSection({
 
     const upcomingArtists = useMemo(() => {
         const now = Date.now();
-        // Combined "upcoming" score — lower is more upcoming: newest account,
-        // fewest reviews, least experience. Each normalized to 0..1 then weighted.
         const scored = filtered.map((a) => {
             const created = new Date((a as any).createdAt ?? 0).getTime();
             const ageDays = created > 0 ? (now - created) / (1000 * 60 * 60 * 24) : 365;

@@ -484,7 +484,6 @@ export async function syncUser(req, res) {
         ...(coverImage ? { coverImage } : {}),
         ...(portfolio.length ? { portfolioImages: portfolio } : {}),
         ...(restrictedPlacements.length ? { restrictedPlacements } : {}),
-        // Verified is sticky: granted once the profile is complete, never revoked here.
         ...(profileComplete ? { verified: true, verifiedAt: existing?.verifiedAt || new Date() } : {}),
       });
     }

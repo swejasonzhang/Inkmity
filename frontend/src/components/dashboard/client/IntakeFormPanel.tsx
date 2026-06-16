@@ -197,7 +197,6 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
         setForm(fromIntake(existing));
       }
     } catch {
-      /* no intake yet — leave defaults */
     } finally {
       setLoading(false);
     }

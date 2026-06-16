@@ -91,7 +91,6 @@ function Inner({ booking, onSaved, onCancel, artistName }: Props) {
         return;
       }
 
-      // User dismissed the bank-linking flow without selecting an account.
       if (collected.setupIntent?.status === "requires_payment_method") {
         setSaving(false);
         return;
