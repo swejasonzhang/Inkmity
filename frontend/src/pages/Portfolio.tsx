@@ -28,7 +28,7 @@ export default function Portfolio() {
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = theme === "light" ? "#ffffff" : "#0b0b0b";
+    document.body.style.backgroundColor = "transparent";
     return () => {
       document.body.style.backgroundColor = prev;
     };

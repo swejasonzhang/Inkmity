@@ -16,7 +16,7 @@ export default function Profile() {
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = theme === "light" ? "#ffffff" : "#0b0b0b";
+    document.body.style.backgroundColor = "transparent";
     return () => {
       document.body.style.backgroundColor = prev;
     };
@@ -36,7 +36,6 @@ export default function Profile() {
     return () => clearTimeout(timer);
   }, [isLoaded, role]);
 
-  const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
   const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
   if (!isLoaded) {
@@ -45,7 +44,7 @@ export default function Profile() {
         ref={scopeRef}
         id="dashboard-scope"
         className="ink-scope min-h-dvh overflow-y-hidden flex flex-col"
-        style={{ background: shellBg, color: shellFg }}
+        style={{ color: shellFg }}
       >
         <Header />
       </div>
@@ -57,7 +56,7 @@ export default function Profile() {
       ref={scopeRef}
       id="dashboard-scope"
       className="ink-scope flex flex-col h-screen md:h-dvh"
-      style={{ background: shellBg, color: shellFg }}
+      style={{ color: shellFg }}
     >
       <Header />
       <main

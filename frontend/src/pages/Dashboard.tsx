@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = theme === "light" ? "#ffffff" : "#0b0b0b";
+    document.body.style.backgroundColor = "transparent";
     return () => {
       document.body.style.backgroundColor = prev;
     };
@@ -81,7 +81,6 @@ const Dashboard: React.FC = () => {
 
   const scopeRef = useRef<HTMLDivElement | null>(null);
 
-  const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
   const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
   return (
@@ -89,7 +88,7 @@ const Dashboard: React.FC = () => {
       ref={scopeRef}
       id="dashboard-scope"
       className="ink-scope h-dvh overflow-y-hidden flex flex-col"
-      style={{ background: shellBg, color: shellFg }}
+      style={{ color: shellFg }}
     >
       <div className="flex-1 min-h-0 w-full">
         <Suspense fallback={null}>
