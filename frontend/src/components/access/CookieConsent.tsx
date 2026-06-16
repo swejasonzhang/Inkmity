@@ -1,27 +1,31 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Cookie } from "lucide-react";
 
 const STORAGE_KEY = "inkmity-cookie-consent";
 
 export default function CookieConsent() {
+  const { userId } = useAuth();
+  const storageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     try {
-      const choice = localStorage.getItem(STORAGE_KEY);
+      const choice = localStorage.getItem(storageKey);
       if (!choice) {
         const t = window.setTimeout(() => setVisible(true), 700);
         return () => window.clearTimeout(t);
       }
+      setVisible(false);
     } catch {
       setVisible(true);
     }
-  }, []);
+  }, [storageKey]);
 
   const decide = (value: "accepted" | "declined") => {
     try {
-      localStorage.setItem(STORAGE_KEY, value);
+      localStorage.setItem(storageKey, value);
     } catch { }
     setVisible(false);
   };
