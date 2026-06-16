@@ -15,7 +15,7 @@ import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
 type Role = "client" | "artist";
 
 const CLIENT_DEFAULTS = { budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", style: "all", availability: "all", dob: "" };
-const ARTIST_DEFAULTS = { location: "New York, NY", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open" as const, travelFrequency: "rare" as const, portfolio: "", styles: [] as string[], bio: "" };
+const ARTIST_DEFAULTS = { location: "New York, NY", shop: "", shopAddress: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open" as const, travelFrequency: "rare" as const, portfolio: "", styles: [] as string[], bio: "" };
 
 function ageFromDob(dob?: string): number {
     if (!dob) return NaN;
@@ -118,6 +118,8 @@ export default function Onboarding() {
                           travelFrequency: (src as typeof artist)?.travelFrequency || "rare",
                           styles: (src as typeof artist)?.styles || [],
                           bio: (src as typeof artist)?.bio || "",
+                          shop: (src as typeof artist)?.shop || "",
+                          shopAddress: (src as typeof artist)?.shopAddress || "",
                       }
                     : {
                           budgetMin: Number((src as typeof client)?.budgetMin) || 100,

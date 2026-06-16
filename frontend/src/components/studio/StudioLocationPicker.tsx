@@ -3,6 +3,7 @@ import { MapPin, Search, CheckCircle2, AlertTriangle } from "lucide-react";
 import { loadGoogleMaps, googleMapsKey, cityFromPlace, MONO_MAP_STYLE } from "@/lib/googleMaps";
 
 export type StudioLocation = {
+    name?: string;
     address: string;
     city: string;
     lat?: number;
@@ -13,10 +14,11 @@ export type StudioLocation = {
 type Props = {
     value: StudioLocation;
     onChange: (next: StudioLocation) => void;
+    compact?: boolean;
 };
 
-export default function StudioLocationPicker({ value, onChange }: Props) {
-    const inputRef = useRef<HTMLInputElement | null>(null);
+export default function StudioLocationPicker({ value, onChange, compact = false }: Props) {
+    const autocompleteHostRef = useRef<HTMLDivElement | null>(null);
     const mapElRef = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
@@ -75,6 +77,7 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
     };
 
     const placeMarker = (google: any, lat: number, lng: number) => {
+        if (!mapRef.current) return;
         const pos = { lat, lng };
         if (!markerRef.current) {
             markerRef.current = new google.maps.Marker({
@@ -112,24 +115,33 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
         }
     };
 
+    const cityFromComponents = (comps: any[]): string => {
+        const arr = comps || [];
+        const pick = (type: string) => arr.find((c) => (c.types || []).includes(type))?.longText;
+        return pick("locality") || pick("postal_town") || pick("sublocality") || pick("administrative_area_level_2") || "";
+    };
+
     const initAutocomplete = (google: any) => {
-        if (!inputRef.current) return;
-        const ac = new google.maps.places.Autocomplete(inputRef.current, {
-            types: ["establishment"],
-            fields: ["place_id", "name", "formatted_address", "geometry", "address_components"],
-        });
-        ac.addListener("place_changed", () => {
-            const place = ac.getPlace();
-            if (!place?.geometry?.location) return;
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-            placeMarker(google, lat, lng);
+        const host = autocompleteHostRef.current;
+        if (!host) return;
+        const pac = new google.maps.places.PlaceAutocompleteElement();
+        (pac as any).style.width = "100%";
+        host.replaceChildren(pac);
+        pac.addEventListener("gmp-select", async (event: any) => {
+            const place = event?.placePrediction?.toPlace?.();
+            if (!place) return;
+            await place.fetchFields({ fields: ["formattedAddress", "location", "addressComponents", "id", "displayName"] });
+            const loc = place.location;
+            const lat = typeof loc?.lat === "function" ? loc.lat() : loc?.lat;
+            const lng = typeof loc?.lng === "function" ? loc.lng() : loc?.lng;
+            if (lat != null && lng != null) placeMarker(google, lat, lng);
             onChange({
-                address: place.formatted_address || place.name || "",
-                city: cityFromPlace(place),
-                lat,
-                lng,
-                placeId: place.place_id,
+                name: place.displayName || "",
+                address: place.formattedAddress || place.displayName || "",
+                city: cityFromComponents(place.addressComponents),
+                lat: lat ?? undefined,
+                lng: lng ?? undefined,
+                placeId: place.id,
             });
         });
     };
@@ -150,17 +162,24 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
 
     return (
         <div className="space-y-2">
-            <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                <input
-                    ref={inputRef}
-                    defaultValue={value.address}
-                    placeholder={status === "loading" ? "Loading maps…" : status === "error" ? "Enter your full studio address…" : "Search your shop or studio…"}
-                    disabled={status === "loading"}
-                    onChange={status === "error" ? (e) => onManualAddress(e.target.value) : undefined}
-                    className="w-full rounded-lg border border-app bg-elevated py-2.5 pl-9 pr-3 text-sm text-app placeholder:text-muted outline-none transition-colors focus:border-[color:var(--fg)]/40 disabled:opacity-60"
-                />
-            </div>
+            {status === "error" ? (
+                <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                    <input
+                        defaultValue={value.address}
+                        placeholder="Enter your full studio address…"
+                        onChange={(e) => onManualAddress(e.target.value)}
+                        className="w-full rounded-lg border border-app bg-elevated py-2.5 pl-9 pr-3 text-sm text-app placeholder:text-muted outline-none transition-colors focus:border-[color:var(--fg)]/40"
+                    />
+                </div>
+            ) : (
+                <div className="relative ink-gmp-autocomplete">
+                    {status === "loading" && (
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Loading maps…</span>
+                    )}
+                    <div ref={autocompleteHostRef} className="w-full" />
+                </div>
+            )}
 
             {status === "error" ? (
                 <div className="flex items-start gap-2 rounded-lg border border-app bg-elevated px-3 py-2 text-[11px] text-muted">
@@ -169,11 +188,13 @@ export default function StudioLocationPicker({ value, onChange }: Props) {
                 </div>
             ) : (
                 <>
-                    <div
-                        ref={mapElRef}
-                        className="h-52 w-full overflow-hidden rounded-xl border border-app bg-[#0d0d0d]"
-                        aria-label="Studio location map"
-                    />
+                    {!compact && (
+                        <div
+                            ref={mapElRef}
+                            className="h-52 w-full overflow-hidden rounded-xl border border-app bg-[#0d0d0d]"
+                            aria-label="Studio location map"
+                        />
+                    )}
                     {value.placeId ? (
                         <div className="flex items-center gap-2 text-[11px] text-app">
                             <CheckCircle2 className="h-3.5 w-3.5" />

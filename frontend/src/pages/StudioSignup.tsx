@@ -180,7 +180,13 @@ export default function StudioSignup() {
               </div>
               <div className="text-left">
                 <Label className="block text-center text-xs text-white/70 mb-1">Find your studio</Label>
-                <StudioLocationPicker value={location} onChange={setLocation} />
+                <StudioLocationPicker
+                  value={location}
+                  onChange={(next) => {
+                    setLocation(next);
+                    if (next.name) setStudioName(next.name);
+                  }}
+                />
               </div>
               <div>
                 <Label className="text-xs text-white/70">Password</Label>

@@ -793,6 +793,7 @@ export default function ArtistProfile() {
                                 onChange={(loc) =>
                                     setEditedArtist((prev) => ({
                                         ...prev,
+                                        shop: loc.name || prev.shop || currentShop,
                                         shopAddress: loc.address,
                                         shopLat: loc.lat,
                                         shopLng: loc.lng,
