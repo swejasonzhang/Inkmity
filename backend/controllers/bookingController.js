@@ -166,7 +166,6 @@ async function studioReadyForArtist(artistId) {
 }
 
 export function computeDepositCents(policy, priceCents, appointmentType) {
-  // TEMP: deposits disabled for now — always 0. Remove to restore policy-based deposits.
   return 0;
 
   const p = policy?.deposit || {};

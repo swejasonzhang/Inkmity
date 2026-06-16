@@ -133,7 +133,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
   }, [kind])
 
   const depositCents = useMemo(() => {
-    // TEMP: deposits disabled for now — always 0. Remove to restore policy-based deposits.
     return 0
 
     const p = depositPolicy || {}

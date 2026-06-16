@@ -1,10 +1,5 @@
 import crypto from "crypto";
 
-// NOTE: These are self-drafted, NY-aligned documents intended to cover the most
-// common risks for a tattoo marketplace. They are a strong starting point but
-// should still be reviewed by a New York attorney before/soon after launch,
-// especially the payout/clawback terms (Freelance Isn't Free Act) and the
-// merchant-of-record / Stripe Connect flow. Bump `version` on any material edit.
 export const DOCUMENTS = {
   platform_terms: {
     version: "2026-06-10",
