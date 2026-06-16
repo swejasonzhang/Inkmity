@@ -530,6 +530,11 @@ export async function syncUser(req, res) {
       }
     }
 
+    if (role === "artist") {
+      const { emitArtistProfileUpdated } = await import("../services/socketService.js");
+      emitArtistProfileUpdated(clerkId);
+    }
+
     res.status(200).json({ ...user, usernameChange });
   } catch (e) {
     console.error("[syncUser] failed:", e);
@@ -612,6 +617,8 @@ export async function saveMyPortfolio(req, res) {
       { new: true }
     ).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
+    const { emitArtistProfileUpdated } = await import("../services/socketService.js");
+    emitArtistProfileUpdated(clerkId);
     res.json({ ok: true, portfolioImages: user.portfolioImages || [] });
   } catch {
     res.status(500).json({ error: "save_portfolio_failed" });

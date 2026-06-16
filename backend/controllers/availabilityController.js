@@ -106,6 +106,8 @@ export async function upsertAvailability(req, res) {
       upsert: true,
       setDefaultsOnInsert: true,
     });
+    const { emitAvailabilityUpdated } = await import("../services/socketService.js");
+    emitAvailabilityUpdated(artistId);
     res.json(doc);
   } catch {
     res.status(400).json({ error: "Invalid availability payload" });

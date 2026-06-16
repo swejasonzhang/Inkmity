@@ -10,7 +10,7 @@ import Artist from "../models/Artist.js";
 import { dayBoundsUTC } from "../utils/date.js";
 import { refundBilling } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
-import { getIO, emitMessageCreated } from "../services/socketService.js";
+import { getIO, emitMessageCreated, emitBookingCreated } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail, sendVerificationCodeEmail } from "../services/emailService.js";
 import { recordCompletedBooking } from "../services/rewardsService.js";
 import { captureBookingBalance } from "../services/balanceCaptureService.js";
@@ -462,6 +462,7 @@ export async function createBooking(req, res) {
         matchedAt: null,
         completedAt: null,
       });
+      emitBookingCreated(created);
     } catch (e) {
       if (e?.name === "ValidationError") {
         return res.status(400).json({
@@ -1091,6 +1092,7 @@ export async function createConsultation(req, res) {
         artistCode: genCode(),
         cancelToken: randomBytes(32).toString("hex"),
       });
+      emitBookingCreated(booking);
     } catch (e) {
       if (e?.name === "ValidationError") {
         return res.status(400).json({
@@ -1257,6 +1259,7 @@ export async function createTattooSession(req, res) {
         artistCode: genCode(),
         cancelToken: randomBytes(32).toString("hex"),
       });
+      emitBookingCreated(booking);
     } catch (e) {
       if (e?.name === "ValidationError") {
         return res.status(400).json({
@@ -1423,6 +1426,7 @@ export async function createMultiSession(req, res) {
         artistCode: genCode(),
         cancelToken: randomBytes(32).toString("hex"),
       });
+      emitBookingCreated(booking);
       bookings.push(booking);
     }
 

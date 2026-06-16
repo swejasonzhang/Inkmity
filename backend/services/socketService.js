@@ -163,6 +163,29 @@ export const emitBookingUpdate = (booking, type) => {
     .emit("booking:updated", payload);
 };
 
+export const emitBookingCreated = (booking) => {
+  if (!io || !booking) return;
+  const payload = {
+    bookingId: String(booking._id),
+    artistId: String(booking.artistId),
+    clientId: String(booking.clientId),
+    startAt: booking.startAt,
+  };
+  io.to(userRoom(String(booking.artistId)))
+    .to(userRoom(String(booking.clientId)))
+    .emit("booking:created", payload);
+};
+
+export const emitArtistProfileUpdated = (clerkId) => {
+  if (!io) return;
+  io.emit("artist:profile:updated", { clerkId: String(clerkId || "") });
+};
+
+export const emitAvailabilityUpdated = (artistId) => {
+  if (!io) return;
+  io.emit("availability:updated", { artistId: String(artistId || "") });
+};
+
 export const emitMessageCreated = (message) => {
   if (!io || !message) return;
   const payload = {
