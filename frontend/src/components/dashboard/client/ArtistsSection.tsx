@@ -507,7 +507,7 @@ export default function ArtistsSection({
                     <div className="ink-shimmer h-5 w-40 rounded mb-3" />
                     <div className="flex gap-3 overflow-hidden">
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="shrink-0 w-56 sm:w-60 md:w-64 h-[19rem] sm:h-[20rem]">
+                            <div key={i} className="shrink-0 w-full sm:w-[calc((100%_-_0.75rem)/2)] md:w-[calc((100%_-_1.5rem)/3)] lg:w-[calc((100%_-_2.25rem)/4)] h-[23rem]">
                                 <ArtistCardSkeleton />
                             </div>
                         ))}
