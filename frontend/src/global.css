@@ -282,19 +282,11 @@ html[data-ink-themed] [data-slot="select-item"][data-highlighted] {
 .bg-app {
   background-color: var(--bg);
   background-image:
-    radial-gradient(118% 72% at 50% -14%, color-mix(in srgb, var(--fg) 9%, transparent), transparent 56%),
-    radial-gradient(82% 58% at 102% 108%, color-mix(in srgb, var(--fg) 7%, transparent), transparent 60%),
-    radial-gradient(64% 52% at -6% 46%, color-mix(in srgb, var(--fg) 5%, transparent), transparent 62%),
-    repeating-linear-gradient(
-      45deg,
-      color-mix(in srgb, var(--fg) 3.4%, transparent) 0 1px,
-      transparent 1px 23px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      color-mix(in srgb, var(--fg) 2.4%, transparent) 0 1px,
-      transparent 1px 23px
-    );
+    radial-gradient(125% 85% at 50% -12%, color-mix(in srgb, var(--fg) 11%, transparent), transparent 55%),
+    radial-gradient(120% 80% at 50% 116%, color-mix(in srgb, var(--fg) 5%, transparent), transparent 58%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size: 100% 100%, 100% 100%, 150px 150px;
 }
 .text-app {
   color: var(--fg);
