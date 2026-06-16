@@ -389,6 +389,20 @@ export async function checkoutDeposit(
   }>("/billing/deposit", { bookingId }, token, signal);
 }
 
+export async function createTipCheckout(
+  bookingId: string,
+  tipCents: number,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{ url?: string; id?: string; tipCents?: number }>(
+    "/billing/tip",
+    { bookingId, tipCents },
+    token,
+    signal
+  );
+}
+
 export async function getMe(opts?: { token?: string | null; signal?: AbortSignal }) {
   return apiGet<Me>("/users/me", undefined, opts?.token, opts?.signal);
 }
@@ -672,6 +686,22 @@ export async function signDocument(
   signal?: AbortSignal
 ) {
   return apiPost(`/documents/${docType}/sign`, input, token, signal);
+}
+
+export type SignatureStatus = {
+  docType: string;
+  version: string;
+  signed: boolean;
+  signedAt: string | null;
+};
+
+export async function getSignatureStatus(
+  docType: string,
+  params: { bookingId?: string } = {},
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiGet<SignatureStatus>(`/documents/${docType}/status`, params, token, signal);
 }
 
 export type ArtistAnalytics = {

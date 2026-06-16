@@ -11,16 +11,9 @@ import { fetchPopularArtworks, toggleArtworkLike, type PopularArtwork } from "@/
 
 type TabKey = "real" | "ai";
 
-const TRENDING_IDEAS = [
-  "Fine line",
-  "Blackwork",
-  "Floral",
-  "Geometric",
-  "Traditional",
-  "Script",
-  "Realism",
-  "Minimalist",
-];
+type TrendingIdea = { label: string; query: string; image: string };
+
+const TRENDING_IDEAS: TrendingIdea[] = [];
 
 const Gallery: React.FC = () => {
   const [tab, setTab] = useState<TabKey>("real");
@@ -106,7 +99,7 @@ const Gallery: React.FC = () => {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search artists by name or handle…"
+              placeholder="Search ideas…"
               className="w-full h-11 pl-10 pr-9 rounded-full border border-app bg-elevated text-app placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-[color:var(--fg)]/20"
             />
             {query && (
@@ -121,21 +114,24 @@ const Gallery: React.FC = () => {
             )}
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs">
-            <span className="inline-flex items-center gap-1 text-subtle font-medium">
-              <TrendingUp className="h-3.5 w-3.5" /> Trending ideas:
-            </span>
-            {TRENDING_IDEAS.map((idea) => (
-              <button
-                key={idea}
-                type="button"
-                onClick={() => setQuery(idea)}
-                className="rounded-full border border-app/50 bg-elevated px-2.5 py-1 text-subtle hover:text-app hover:border-app transition"
-              >
-                {idea}
-              </button>
-            ))}
-          </div>
+          {TRENDING_IDEAS.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs">
+              <span className="inline-flex items-center gap-1 text-subtle font-medium">
+                <TrendingUp className="h-3.5 w-3.5" /> Trending ideas:
+              </span>
+              {TRENDING_IDEAS.map((idea) => (
+                <button
+                  key={idea.label}
+                  type="button"
+                  onClick={() => setQuery(idea.query)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-app/50 bg-elevated pl-1 pr-2.5 py-1 text-subtle hover:text-app hover:border-app transition"
+                >
+                  <img src={idea.image} alt="" className="h-5 w-5 rounded-full object-cover" />
+                  {idea.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">

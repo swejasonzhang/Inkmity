@@ -50,16 +50,6 @@ export default function PaymentBreakdown({ bookingId, title = "Payment breakdown
         <div className="my-2 border-t border-app/60" />
         <Row label={settled ? "You paid" : "You'll pay"} value={money(data.clientTotalCents)} strong />
       </div>
-
-      <div className="mt-3 pt-3 border-t border-app/60 space-y-1.5">
-        <div className="text-[11px] font-bold uppercase tracking-wide text-subtle mb-1">Where it goes</div>
-        <Row label="Artist receives" value={money(data.artistNetCents)} sub />
-        {data.isStudio && (
-          <Row label={`Studio (${Math.round(data.commissionPct * 100)}% commission)`} value={money(data.studioCents)} sub />
-        )}
-        <Row label="Inkmity platform fee" value={money(data.platformFeeCents)} sub />
-        <Row label="Card processing (Stripe)" value={money(data.stripeFeeCents)} sub />
-      </div>
     </div>
   );
 }

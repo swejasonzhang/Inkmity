@@ -37,6 +37,7 @@ const BookingSchema = new mongoose.Schema(
     depositRequiredCents: { type: Number, default: 0, min: 0 },
     depositPaidCents: { type: Number, default: 0, min: 0 },
     balancePaidCents: { type: Number, default: 0, min: 0 },
+    tipCents: { type: Number, default: 0, min: 0 },
     balanceCapturedAt: { type: Date },
     balanceCaptureError: { type: String, default: "" },
     platformFeeCents: { type: Number, default: 0, min: 0 },

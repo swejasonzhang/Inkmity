@@ -9,6 +9,7 @@ import {
   listClientPaymentMethods,
   deleteClientPaymentMethod,
   createFinalPaymentIntent,
+  createTipCheckout,
   refundBilling,
   createPortalSession,
   scheduleCancel,
@@ -26,6 +27,7 @@ router.post("/client/setup-intent", requireAuth(), createClientSetupIntent);
 router.get("/client/payment-methods", requireAuth(), listClientPaymentMethods);
 router.post("/client/payment-methods/delete", requireAuth(), deleteClientPaymentMethod);
 router.post("/final-payment/intent", requireAuth(), createFinalPaymentIntent);
+router.post("/tip", requireAuth(), createTipCheckout);
 router.post("/refund", requireAuth(), refundBilling);
 router.post("/portal", requireAuth(), createPortalSession);
 router.post("/schedule-cancel", requireAuth(), scheduleCancel);

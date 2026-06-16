@@ -15,7 +15,8 @@ import ArtistWaitlist from "@/components/dashboard/artist/ArtistWaitlist";
 import SketchPanel from "@/components/dashboard/shared/SketchPanel";
 import PaymentBreakdown from "@/components/dashboard/client/PaymentBreakdown";
 import IntakeFormPanel from "@/components/dashboard/client/IntakeFormPanel";
-import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash } from "lucide-react";
+import TipModal from "@/components/dashboard/client/TipModal";
+import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash, Heart } from "lucide-react";
 
 function formatCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -85,8 +86,19 @@ export default function Appointments() {
   const [priceEditId, setPriceEditId] = useState<string | null>(null);
   const [priceInput, setPriceInput] = useState("");
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [tipTarget, setTipTarget] = useState<AppointmentWithUsers | null>(null);
 
   useScrollLock(cancelTarget !== null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tipped") === "1") {
+      toast.success("Thank you — your tip went 100% to your artist.", { position: "top-center", hideProgressBar: true });
+    }
+    if (params.get("tipped") || params.get("tip_cancelled")) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   useLayoutEffect(() => {
     const prev = document.body.style.backgroundColor;
@@ -601,6 +613,26 @@ export default function Appointments() {
             </div>
           )}
 
+          {isClient && isCompleted && (
+            <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+              {(appointment as any).tipCents > 0 ? (
+                <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
+                  <Heart className="h-3.5 w-3.5" />
+                  You tipped {formatCurrency((appointment as any).tipCents)} — thank you.
+                </div>
+              ) : (
+                <Button
+                  onClick={() => setTipTarget(appointment)}
+                  variant="outline"
+                  className="w-full h-9 text-sm font-medium gap-2"
+                  style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}
+                >
+                  <Heart className="h-4 w-4" /> Tip your artist — 100% goes to them
+                </Button>
+              )}
+            </div>
+          )}
+
           {isTattooSession && isClient && (
             <SketchPanel bookingId={appointment._id} isArtist={isArtist} isClient={isClient} />
           )}
@@ -682,11 +714,29 @@ export default function Appointments() {
           skeleton={
             <div className="max-w-2xl mx-auto w-full">
               <div className="mb-5 sm:mb-6 flex justify-center">
-                <div className="ink-shimmer rounded-full h-10 w-44 sm:w-52" />
+                <div className="ink-shimmer rounded-full h-11 w-48 sm:w-56" />
               </div>
               <div className="grid gap-3 sm:gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="ink-shimmer rounded-2xl h-40 w-full" />
+                  <div key={i} className="rounded-2xl border border-app bg-card p-4 flex flex-col">
+                    <div className="pb-3">
+                      <div className="ink-shimmer rounded-xl h-16 w-full" />
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <div
+                        className="border-t pt-3"
+                        style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}
+                      >
+                        <div className="ink-shimmer rounded-xl h-40 w-full" />
+                      </div>
+                      <div
+                        className="border-t pt-2"
+                        style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}
+                      >
+                        <div className="ink-shimmer rounded-xl h-10 w-full" />
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -778,6 +828,13 @@ export default function Appointments() {
           </div>
         </div>
       )}
+
+      <TipModal
+        open={tipTarget !== null}
+        bookingId={tipTarget?._id || ""}
+        artistName={tipTarget?.artist?.username}
+        onClose={() => setTipTarget(null)}
+      />
 
       <ToastContainer
         position="top-center"

@@ -520,7 +520,7 @@ export default function ArtistsSection({
     return (
         <div className="flex flex-col h-full min-h-0 w-full">
             <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
-                <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-2 sm:px-1 pb-32 sm:pb-36">
+                <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-2 sm:px-1 pb-16">
                     <header className="text-center pt-3 pb-0 px-4">
                         <div className="flex items-center justify-center gap-3 mb-4">
                             <span className="h-px w-8 bg-app/50" aria-hidden />

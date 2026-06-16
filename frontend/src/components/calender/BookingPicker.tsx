@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { useAuth } from "@clerk/clerk-react"
-import { apiGet, apiPost, getArtistPolicy, getBookingGate } from "@/api/index.ts"
+import { apiGet, apiPost, getArtistPolicy, getBookingGate, getSignatureStatus, type IntakeForm } from "@/api/index.ts"
 import { Button } from "@/components/ui/button"
-import { X, Wallet, Gift, Clock, Sunrise, Sun, Moon, ShieldCheck } from "lucide-react"
+import { X, Wallet, Gift, Clock, Sunrise, Sun, Moon, ShieldCheck, CheckCircle2, FileText, ClipboardList } from "lucide-react"
 import { socket, connectSocket } from "@/lib/socket"
 import {
   Dialog as RDialog,
@@ -19,6 +19,8 @@ import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
 import DepositStep from "./DepositStep"
 import CardOnFileStep from "./CardOnFileStep"
+import PreBookingWaiverModal from "@/components/dashboard/client/PreBookingWaiverModal"
+import PreBookingIntakeModal from "@/components/dashboard/client/PreBookingIntakeModal"
 
 type Kind = "consultation" | "appointment"
 type Props = { artistId: string; date?: Date; artistName?: string }
@@ -90,6 +92,10 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
   const [depositStepOpen, setDepositStepOpen] = useState(false)
   const [cardStepOpen, setCardStepOpen] = useState(false)
   const [pendingBooking, setPendingBooking] = useState<any>(null)
+  const [waiverSigned, setWaiverSigned] = useState(false)
+  const [waiverModalOpen, setWaiverModalOpen] = useState(false)
+  const [intakePayload, setIntakePayload] = useState<Partial<IntakeForm> | null>(null)
+  const [intakeModalOpen, setIntakeModalOpen] = useState(false)
 
   const [depositPolicy, setDepositPolicy] = useState<any>(null)
   useEffect(() => {
@@ -151,13 +157,32 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
   const canConfirm = selectedSlots.length >= 1
 
   const requiresRiskAck = kind === "appointment"
-  const consentComplete = agreedToTerms && (!requiresRiskAck || acknowledgedRisk)
+  const consentComplete =
+    agreedToTerms &&
+    (kind === "consultation"
+      ? (!requiresRiskAck || acknowledgedRisk)
+      : waiverSigned && !!intakePayload)
   useEffect(() => {
-    if (confirmOpen) {
-      setAcknowledgedRisk(false)
-      setAgreedToTerms(false)
+    if (!confirmOpen) return
+    setAcknowledgedRisk(false)
+    setAgreedToTerms(false)
+    setIntakePayload(null)
+    if (kind !== "appointment") {
+      setWaiverSigned(false)
+      return
     }
-  }, [confirmOpen])
+    const ac = new AbortController()
+      ; (async () => {
+        try {
+          const token = await getToken()
+          const st = await getSignatureStatus("client_waiver", {}, token, ac.signal)
+          setWaiverSigned(!!st?.signed)
+        } catch {
+          setWaiverSigned(false)
+        }
+      })()
+    return () => ac.abort()
+  }, [confirmOpen, kind, getToken])
 
   const browserTz = useMemo(() => {
     try {
@@ -260,7 +285,7 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
         startISO: s.startISO,
         durationMinutes: Math.round((new Date(s.endISO).getTime() - new Date(s.startISO).getTime()) / 60000),
       }))
-      const res = await apiPost("/bookings/multi-session", { artistId, sessions, priceCents: 0 })
+      const res = await apiPost("/bookings/multi-session", { artistId, sessions, priceCents: 0, intake: intakePayload })
       window.dispatchEvent(new CustomEvent("ink:booking-created", { detail: res }))
       swallowGestureTail()
       setSelectedSlots([])
@@ -316,7 +341,8 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           artistId,
           startISO,
           durationMinutes,
-          priceCents: 0
+          priceCents: 0,
+          intake: intakePayload
         })
         window.dispatchEvent(new CustomEvent("ink:booking-created", { detail: booking }))
 
@@ -623,22 +649,51 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
                 <span className="text-[13px] font-semibold">Before you confirm</span>
               </div>
 
-              {requiresRiskAck && (
-                <label className="flex items-start gap-2 text-[11px] sm:text-xs leading-relaxed cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={acknowledgedRisk}
-                    onChange={(e) => setAcknowledgedRisk(e.target.checked)}
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
-                  />
-                  <span className={isLightTheme ? "text-black/70" : "text-app/80"}>
-                    I understand this is a permanent tattoo on my body. It carries inherent health, safety, and
-                    aesthetic risks, results can vary, and the decision to be tattooed is mine alone.
-                  </span>
-                </label>
+              {kind === "appointment" && (
+                <div className="space-y-2 mb-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setWaiverModalOpen(true)}
+                    className="w-full flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-[11px] sm:text-xs transition hover:border-[color:var(--fg)]/40"
+                    style={{ borderColor: "var(--border)", background: "var(--card)" }}
+                  >
+                    {waiverSigned ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 opacity-90" />
+                    ) : (
+                      <FileText className="h-4 w-4 shrink-0 opacity-70" />
+                    )}
+                    <span className="flex-1 min-w-0">
+                      <span className="font-semibold block">Consent &amp; liability waiver</span>
+                      <span className={isLightTheme ? "text-black/55" : "text-app/60"}>
+                        {waiverSigned ? "Signed — tap to review" : "Required — review &amp; sign"}
+                      </span>
+                    </span>
+                    {!waiverSigned && <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">Sign</span>}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIntakeModalOpen(true)}
+                    className="w-full flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-[11px] sm:text-xs transition hover:border-[color:var(--fg)]/40"
+                    style={{ borderColor: "var(--border)", background: "var(--card)" }}
+                  >
+                    {intakePayload ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 opacity-90" />
+                    ) : (
+                      <ClipboardList className="h-4 w-4 shrink-0 opacity-70" />
+                    )}
+                    <span className="flex-1 min-w-0">
+                      <span className="font-semibold block">Pre-appointment intake</span>
+                      <span className={isLightTheme ? "text-black/55" : "text-app/60"}>
+                        {intakePayload ? "Completed — tap to edit" : "Required — health, details &amp; consent"}
+                      </span>
+                    </span>
+                    {!intakePayload && <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">Fill</span>}
+                  </button>
+                </div>
               )}
 
-              <label className={`flex items-start gap-2 text-[11px] sm:text-xs leading-relaxed cursor-pointer select-none ${requiresRiskAck ? "mt-2.5" : ""}`}>
+              <label className={`flex items-start gap-2 text-[11px] sm:text-xs leading-relaxed cursor-pointer select-none`}>
                 <input
                   type="checkbox"
                   checked={agreedToTerms}
@@ -789,6 +844,18 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           </RDialogContent>
         </RDialogPortal>
       </RDialog>
+
+      <PreBookingWaiverModal
+        open={waiverModalOpen}
+        onClose={() => setWaiverModalOpen(false)}
+        onSigned={() => setWaiverSigned(true)}
+      />
+
+      <PreBookingIntakeModal
+        open={intakeModalOpen}
+        onClose={() => setIntakeModalOpen(false)}
+        onComplete={(payload) => setIntakePayload(payload)}
+      />
 
       <ToastContainer
         position="top-center"

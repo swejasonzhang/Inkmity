@@ -249,6 +249,15 @@ conditionalDescribe("Integration - Multi-Session Project Booking Flow", () => {
           priceCents: 30000,
           projectId,
           sessionNumber: i,
+          intake: {
+            consent: {
+              ageVerification: true,
+              healthDisclosure: true,
+              aftercareInstructions: true,
+              depositPolicy: true,
+              cancellationPolicy: true,
+            },
+          },
         });
 
       expect(response.status).toBe(201);

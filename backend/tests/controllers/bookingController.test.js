@@ -30,6 +30,17 @@ const mockAuth = (req, res, next) => {
 
 app.post("/bookings/consultation", mockAuth, createConsultation);
 app.post("/bookings/session", mockAuth, createTattooSession);
+
+const VALID_INTAKE = {
+  consent: {
+    ageVerification: true,
+    healthDisclosure: true,
+    aftercareInstructions: true,
+    depositPolicy: true,
+    cancellationPolicy: true,
+  },
+  tattooDetails: { placement: "forearm", description: "small line work" },
+};
 app.post("/bookings/:id/reschedule", mockAuth, rescheduleAppointment);
 app.post("/bookings/:id/cancel", mockAuth, cancelBooking);
 app.post("/bookings/:id/no-show", mockAuth, markNoShow);
@@ -177,11 +188,30 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
         startISO,
         durationMinutes: 120,
         priceCents: 20000,
+        intake: VALID_INTAKE,
       });
 
     expect(response.status).toBe(201);
     expect(response.body.appointmentType).toBe("tattoo_session");
     expect(response.body.status).toBe("pending");
+    expect(response.body.intakeFormId).toBeDefined();
+  });
+
+  test("should reject a session when the intake form is missing", async () => {
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+
+    const response = await request(app)
+      .post("/bookings/session")
+      .set("x-test-user-id", clientId)
+      .send({
+        artistId,
+        startISO,
+        durationMinutes: 120,
+        priceCents: 20000,
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("intake_required");
   });
 
   test("should link to existing project", async () => {
@@ -206,6 +236,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
         priceCents: 20000,
         projectId: project._id.toString(),
         sessionNumber: 1,
+        intake: VALID_INTAKE,
       });
 
     expect(response.status).toBe(201);
@@ -225,6 +256,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
         durationMinutes: 120,
         priceCents: 20000,
         sessionNumber: 2,
+        intake: VALID_INTAKE,
       });
 
     expect(response.status).toBe(201);

@@ -726,6 +726,119 @@ export async function createFinalPaymentIntent(req, res) {
   }
 }
 
+const TIP_MIN_CENTS = 100;
+const TIP_MAX_CENTS = 100000;
+
+export async function createTipCheckout(req, res) {
+  try {
+    const userId = String(req.user?.clerkId || req.auth?.userId || "").trim();
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { bookingId } = req.body || {};
+    if (!bookingId) return res.status(400).json({ error: "bookingId required" });
+
+    let tipCents = Math.round(Number(req.body?.tipCents || 0));
+    if (!Number.isFinite(tipCents) || tipCents < TIP_MIN_CENTS) {
+      return res.status(400).json({ error: "invalid_amount", message: "Choose a tip amount." });
+    }
+    tipCents = Math.min(tipCents, TIP_MAX_CENTS);
+
+    const booking = await Booking.findById(bookingId);
+    requireBooking(booking);
+
+    if (String(booking.clientId) !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (booking.status !== "completed") {
+      return res.status(400).json({
+        error: "not_completed",
+        message: "You can tip once your session is completed.",
+      });
+    }
+
+    const connectAccountId = await resolveArtistPayoutAccount(booking.artistId);
+
+    let customer;
+    try {
+      const existingBills = await Billing.find({
+        clientId: String(booking.clientId),
+        stripeCustomerId: { $exists: true, $ne: null },
+      }).limit(1);
+      if (existingBills.length > 0 && existingBills[0].stripeCustomerId) {
+        customer = await stripe.customers.retrieve(existingBills[0].stripeCustomerId);
+      } else {
+        customer = await stripe.customers.create({
+          metadata: { clientId: String(booking.clientId) },
+        });
+      }
+    } catch {
+      customer = await stripe.customers.create({
+        metadata: { clientId: String(booking.clientId) },
+      });
+    }
+
+    const transferGroup = bookingTransferGroup(booking._id);
+
+    const bill = await Billing.create({
+      bookingId,
+      artistId: booking.artistId,
+      clientId: booking.clientId,
+      type: "tip",
+      amountCents: tipCents,
+      platformFeeCents: 0,
+      stripeConnectAccountId: connectAccountId,
+      transferGroup,
+      currency: CURRENCY,
+      stripeCustomerId: customer.id,
+      status: "pending",
+      metadata: { kind: "tip" },
+    });
+
+    const paymentIntentData = { transfer_group: transferGroup };
+    if (connectAccountId) {
+      paymentIntentData.transfer_data = { destination: connectAccountId };
+      paymentIntentData.on_behalf_of = connectAccountId;
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer: customer.id,
+      payment_method_types: ["card"],
+      payment_intent_data: paymentIntentData,
+      line_items: [
+        {
+          price_data: {
+            currency: CURRENCY,
+            product_data: {
+              name: "Tip for your artist",
+              description: "100% of your tip goes to your artist — Inkmity takes nothing.",
+            },
+            unit_amount: tipCents,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        billingId: String(bill._id),
+        bookingId: String(booking._id),
+        type: "tip",
+      },
+      success_url: `${process.env.APP_URL}/appointments/${bookingId}?tipped=1`,
+      cancel_url: `${process.env.APP_URL}/appointments/${bookingId}?tip_cancelled=1`,
+    });
+
+    bill.stripeCheckoutSessionId = session.id;
+    await bill.save();
+
+    res.json({ url: session.url, id: session.id, tipCents });
+  } catch (err) {
+    console.error("createTipCheckout error:", err);
+    return res
+      .status(err.status || 500)
+      .json({ error: err.message || "Internal error", message: err.publicMessage });
+  }
+}
+
 export async function stripeWebhook(req, res) {
   const sig = req.headers["stripe-signature"];
   let event;
@@ -801,6 +914,13 @@ export async function stripeWebhook(req, res) {
               }
             }
             await runPayoutsForBill(bill);
+          }
+          if (type === "tip" && bookingId) {
+            const book = await Booking.findById(bookingId);
+            if (book) {
+              book.tipCents = Number(book.tipCents || 0) + Number(bill?.amountCents || 0);
+              await book.save();
+            }
           }
           break;
         }
@@ -994,19 +1114,24 @@ export async function getPaymentBreakdown(req, res) {
     );
     const artistNetCents = Math.max(0, artistGrossCents - stripeFeeCents);
 
-    res.json({
+    const payload = {
       priceCents,
       platformFeeCents,
       baseFeeWaived: !!fee.baseFeeWaived,
       clientTotalCents,
-      isStudio,
-      commissionPct: split?.commissionPct || 0,
-      artistGrossCents,
-      artistNetCents,
-      studioCents,
-      stripeFeeCents,
       status,
-    });
+    };
+
+    if (me === artistClerkId) {
+      payload.isStudio = isStudio;
+      payload.commissionPct = split?.commissionPct || 0;
+      payload.artistGrossCents = artistGrossCents;
+      payload.artistNetCents = artistNetCents;
+      payload.studioCents = studioCents;
+      payload.stripeFeeCents = stripeFeeCents;
+    }
+
+    res.json(payload);
   } catch (e) {
     console.error("getPaymentBreakdown error:", e.message);
     res.status(500).json({ error: "breakdown_failed" });

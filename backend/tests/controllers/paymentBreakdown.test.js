@@ -22,7 +22,7 @@ app.use(express.json());
 app.post("/billing/breakdown", mockAuth, getPaymentBreakdown);
 
 conditionalDescribe("Payment Breakdown", () => {
-  test("solo artist booking: total = price + fee, artist net = gross - processing", async () => {
+  test("client view: sees only what they pay, never the artist/studio split", async () => {
     const booking = await Booking.create({
       clientId: "client_1",
       artistId: "solo_artist",
@@ -42,6 +42,35 @@ conditionalDescribe("Payment Breakdown", () => {
     const b = res.body;
     expect(b.priceCents).toBe(20000);
     expect(b.platformFeeCents).toBeGreaterThan(0);
+    expect(b.clientTotalCents).toBe(b.priceCents + b.platformFeeCents);
+    expect(b.status).toBe("completed");
+    expect(b.artistGrossCents).toBeUndefined();
+    expect(b.artistNetCents).toBeUndefined();
+    expect(b.studioCents).toBeUndefined();
+    expect(b.commissionPct).toBeUndefined();
+    expect(b.stripeFeeCents).toBeUndefined();
+    expect(b.isStudio).toBeUndefined();
+  });
+
+  test("artist view: sees their own net, gross and the studio split", async () => {
+    const booking = await Booking.create({
+      clientId: "client_1",
+      artistId: "solo_artist",
+      appointmentType: "tattoo_session",
+      status: "completed",
+      startAt: new Date(),
+      endAt: new Date(Date.now() + 3600000),
+      priceCents: 20000,
+    });
+
+    const res = await request(app)
+      .post("/billing/breakdown")
+      .set("x-test-user-id", "solo_artist")
+      .send({ bookingId: String(booking._id) });
+
+    expect(res.status).toBe(200);
+    const b = res.body;
+    expect(b.priceCents).toBe(20000);
     expect(b.clientTotalCents).toBe(b.priceCents + b.platformFeeCents);
     expect(b.isStudio).toBe(false);
     expect(b.artistGrossCents).toBe(20000);

@@ -68,7 +68,7 @@ conditionalDescribe("Appointment lifecycle: set price → both confirm → compl
 
     const breakdown = await request(app)
       .post("/billing/breakdown")
-      .set("x-test-user-id", CLIENT)
+      .set("x-test-user-id", ARTIST)
       .send({ bookingId: id });
     expect(breakdown.status).toBe(200);
 

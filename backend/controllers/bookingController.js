@@ -147,6 +147,38 @@ async function clientWaiverSigned(clientId) {
   return hasSignedCurrentDocument(clientId, "client_waiver");
 }
 
+const REQUIRED_INTAKE_CONSENT = [
+  "ageVerification",
+  "healthDisclosure",
+  "aftercareInstructions",
+  "depositPolicy",
+  "cancellationPolicy",
+];
+
+function intakeConsentComplete(intake) {
+  const consent = intake?.consent || {};
+  return REQUIRED_INTAKE_CONSENT.every((k) => consent[k] === true);
+}
+
+async function persistIntakeForBooking(booking, intake, req) {
+  const intakeForm = await IntakeForm.create({
+    bookingId: booking._id,
+    clientId: String(booking.clientId),
+    artistId: String(booking.artistId),
+    healthInfo: intake.healthInfo || {},
+    tattooDetails: intake.tattooDetails || {},
+    consent: intake.consent,
+    emergencyContact: intake.emergencyContact || {},
+    additionalNotes: intake.additionalNotes || "",
+    submittedAt: new Date(),
+    ipAddress: req.ip,
+    userAgent: req.get("user-agent") || "",
+  });
+  booking.intakeFormId = intakeForm._id;
+  await booking.save();
+  return intakeForm;
+}
+
 async function studioReadyForArtist(artistId) {
   if (config.dev.bypassGates) return { ok: true };
   const { getArtistStudioMembership } = await import("../services/studioService.js");
@@ -1226,6 +1258,15 @@ export async function createTattooSession(req, res) {
       });
     }
 
+    const intake = body.intake;
+    if (!config.dev.bypassGates && !intakeConsentComplete(intake)) {
+      return res.status(400).json({
+        error: "intake_required",
+        message: "Please complete the intake form before booking.",
+        required: REQUIRED_INTAKE_CONSENT,
+      });
+    }
+
     const studioReady = await studioReadyForArtist(artistId);
     if (!studioReady.ok) {
       return res.status(409).json({
@@ -1273,6 +1314,14 @@ export async function createTattooSession(req, res) {
         });
       }
       throw e;
+    }
+
+    if (intakeConsentComplete(intake)) {
+      try {
+        await persistIntakeForBooking(booking, intake, req);
+      } catch (e) {
+        console.error("Failed to persist intake for session:", e?.message);
+      }
     }
 
     if (project) {
@@ -1370,6 +1419,14 @@ export async function createMultiSession(req, res) {
         message: "Please review and sign the consent & liability waiver before booking.",
       });
     }
+    const intake = body.intake;
+    if (!config.dev.bypassGates && !intakeConsentComplete(intake)) {
+      return res.status(400).json({
+        error: "intake_required",
+        message: "Please complete the intake form before booking.",
+        required: REQUIRED_INTAKE_CONSENT,
+      });
+    }
     const studioReady = await studioReadyForArtist(artistId);
     if (!studioReady.ok) {
       return res.status(409).json({ error: "studio_not_ready", message: studioReady.message });
@@ -1427,6 +1484,13 @@ export async function createMultiSession(req, res) {
         cancelToken: randomBytes(32).toString("hex"),
       });
       emitBookingCreated(booking);
+      if (intakeConsentComplete(intake)) {
+        try {
+          await persistIntakeForBooking(booking, intake, req);
+        } catch (e) {
+          console.error("Failed to persist intake for multi-session:", e?.message);
+        }
+      }
       bookings.push(booking);
     }
 
