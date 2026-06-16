@@ -25,7 +25,6 @@ export default function ArtistWorks() {
     const [loading, setLoading] = useState<boolean>(!stateArtist);
     const [tab, setTab] = useState<Tab>(initialTab);
 
-    const shellBg = theme === "light" ? "#ffffff" : "#0b0b0b";
     const shellFg = theme === "light" ? "#111111" : "#f5f5f5";
 
     useEffect(() => {
@@ -100,7 +99,7 @@ export default function ArtistWorks() {
     ];
 
     return (
-        <div id="dashboard-scope" className="ink-scope min-h-dvh flex flex-col" style={{ background: shellBg, color: shellFg }}>
+        <div id="dashboard-scope" className="ink-scope min-h-dvh flex flex-col" style={{ color: shellFg }}>
             <Header />
             <main className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "clamp(14px, 2.5vw, 36px)" }}>
                 <div className="mx-auto w-full max-w-6xl">
