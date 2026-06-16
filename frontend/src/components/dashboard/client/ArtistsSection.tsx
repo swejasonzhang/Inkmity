@@ -4,6 +4,7 @@ import LazyReveal from "@/components/ui/LazyReveal";
 import HScroll, { type HScrollHandle } from "@/components/ui/HScroll";
 import { Search, ChevronsDown, ChevronLeft, ChevronRight, MapPin, Clock, Building2, ArrowRight, Sparkles } from "lucide-react";
 import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
+import { ArtistCardSkeleton } from "@/components/dashboard/client/ArtistCardSkeleton";
 import { titleCase } from "@/lib/format";
 import type { Artist } from "@/api";
 
@@ -245,7 +246,9 @@ const HighlightRow = ({
             <HScroll ref={ref}>
                 {loading
                     ? Array.from({ length: 4 }).map((_, i) => (
-                        <div key={`upcoming-sk-${i}`} className={`${cardWrapCls} rounded-2xl ink-shimmer`} />
+                        <div key={`upcoming-sk-${i}`} className={cardWrapCls}>
+                            <ArtistCardSkeleton />
+                        </div>
                     ))
                     : items.map((artist, index) => (
                         <div
@@ -504,7 +507,9 @@ export default function ArtistsSection({
                     <div className="ink-shimmer h-5 w-40 rounded mb-3" />
                     <div className="flex gap-3 overflow-hidden">
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="shrink-0 w-56 sm:w-60 md:w-64 h-[19rem] sm:h-[20rem] rounded-2xl ink-shimmer" />
+                            <div key={i} className="shrink-0 w-56 sm:w-60 md:w-64 h-[19rem] sm:h-[20rem]">
+                                <ArtistCardSkeleton />
+                            </div>
                         ))}
                     </div>
                 </div>
