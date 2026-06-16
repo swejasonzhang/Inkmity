@@ -530,7 +530,7 @@ export default function ClientProfile() {
                     <div className="flex flex-col items-center justify-center text-center gap-2 w-full max-w-2xl relative z-10 flex-1 min-h-0">
                         <h2 className="ink-flash-title text-sm sm:text-base text-app w-full max-w-md mt-1 mb-6">My Profile</h2>
                         <div className="relative mb-8 w-full flex items-center justify-center">
-                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
+                            <div className="absolute inset-x-3 sm:inset-x-0 top-1/2 -translate-y-1/2 h-40 sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                                 {bgOk && currentCoverImage ? (
                                     <img
                                         src={currentCoverImage}

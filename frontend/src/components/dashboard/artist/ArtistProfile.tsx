@@ -614,7 +614,7 @@ export default function ArtistProfile() {
 
                     <div className="rounded-2xl border p-5 sm:p-6 backdrop-blur-sm w-full max-w-2xl mb-4 flex flex-col items-center" style={{ background: "color-mix(in srgb, var(--card) 80%, transparent)", borderColor: "var(--border)" }}>
                     <div className="relative mb-5 sm:mb-8 w-full flex items-center justify-center">
-                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 w-full sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
+                        <div className="absolute inset-x-3 sm:inset-x-0 top-1/2 -translate-y-1/2 h-40 sm:h-44 md:h-48 overflow-hidden pointer-events-none rounded-lg" style={{ background: "var(--elevated)" }}>
                             {bgOk && currentCoverImage ? (
                                 <img
                                     src={currentCoverImage}

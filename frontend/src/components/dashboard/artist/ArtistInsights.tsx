@@ -77,7 +77,12 @@ export default function ArtistInsights({ stats = [], loading = false }: Props) {
             Insights
           </span>
         </div>
-        {data && (
+        {showSkeleton ? (
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        ) : data && (
           <div className="flex items-center gap-1.5">
             {data.tier.verified && (
               <span className="inline-flex items-center gap-1 rounded-full border border-app px-1.5 py-0.5 text-xs font-semibold text-app">
