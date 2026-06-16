@@ -280,13 +280,7 @@ html[data-ink-themed] [data-slot="select-item"][data-highlighted] {
 }
 
 .bg-app {
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(125% 85% at 50% -12%, color-mix(in srgb, var(--fg) 11%, transparent), transparent 55%),
-    radial-gradient(120% 80% at 50% 116%, color-mix(in srgb, var(--fg) 5%, transparent), transparent 58%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-size: 100% 100%, 100% 100%, 150px 150px;
+  background: transparent;
 }
 .text-app {
   color: var(--fg);
@@ -315,7 +309,6 @@ body {
   margin: 0;
   height: 100%;
   color: var(--fg);
-  background-color: var(--bg);
   font-family: var(--font-display);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -323,8 +316,20 @@ body {
   scrollbar-width: none;
 }
 
+html {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(130% 95% at 50% -10%, color-mix(in srgb, var(--fg) 20%, transparent), transparent 60%),
+    radial-gradient(90% 70% at 50% 50%, color-mix(in srgb, var(--fg) 8%, transparent), transparent 70%),
+    radial-gradient(120% 80% at 50% 118%, color-mix(in srgb, var(--fg) 10%, transparent), transparent 58%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 160px 160px;
+  background-attachment: fixed, fixed, fixed, fixed;
+}
+
 body:not(.ink-scope-present) {
-  background: var(--bg);
+  background: transparent;
 }
 
 html::-webkit-scrollbar,
