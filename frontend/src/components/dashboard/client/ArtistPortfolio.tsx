@@ -4,6 +4,7 @@ import { Maximize2, MapPin, Clock, Star, Images } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
+import ShopLocationMap from "./ShopLocationMap";
 import { titleCase } from "@/lib/format";
 
 const SECTION_INITIAL = 5;
@@ -97,6 +98,10 @@ export type ArtistWithGroups = {
     coverImage?: string;
     styles?: string[] | string;
     location?: string;
+    shop?: string;
+    shopAddress?: string;
+    shopLat?: number;
+    shopLng?: number;
     yearsExperience?: number;
     rating?: number;
     reviewsCount?: number;
@@ -312,6 +317,18 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                         )}
 
                     </>
+                )}
+
+                {(artist.shop || artist.shopAddress || (typeof artist.shopLat === "number" && typeof artist.shopLng === "number")) && (
+                    <div className="mt-6">
+                        <ShopLocationMap
+                            shop={artist.shop}
+                            address={artist.shopAddress}
+                            lat={artist.shopLat}
+                            lng={artist.shopLng}
+                            city={loc}
+                        />
+                    </div>
                 )}
             </div>
 

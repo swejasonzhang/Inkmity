@@ -158,6 +158,10 @@ export type Artist = {
   clerkId: string;
   username: string;
   location?: string;
+  shop?: string;
+  shopAddress?: string;
+  shopLat?: number;
+  shopLng?: number;
   styles?: string[];
   yearsExperience?: number;
   baseRate?: number;

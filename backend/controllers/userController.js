@@ -216,7 +216,7 @@ export async function getArtists(req, res) {
   if (Object.keys(experience).length)
     Object.assign(filter, { yearsExperience: experience });
   const PUBLIC_FIELDS =
-    "_id clerkId username handle role location shop styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages pastWorks healedWorks sketches verified avatar coverImage lastActive visibility";
+    "_id clerkId username handle role location shop shopAddress shopLat shopLng styles yearsExperience baseRate bookingPreference travelFrequency rating reviewsCount bookingsCount createdAt bio portfolioImages pastWorks healedWorks sketches verified avatar coverImage lastActive visibility";
 
   const explicitSort =
     sortKey === "experience_desc"
