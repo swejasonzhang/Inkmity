@@ -142,7 +142,7 @@ export default function Onboarding() {
             setCachedUsername(username.trim());
             markOnboarded(user.id);
             window.dispatchEvent(new Event("inkmity:user-updated"));
-            setTimeout(() => navigate("/dashboard", { replace: true }), 1100);
+            setTimeout(() => navigate("/dashboard", { replace: true }), 500);
         } catch {
             setSubmitting(false);
             setCompleting(false);

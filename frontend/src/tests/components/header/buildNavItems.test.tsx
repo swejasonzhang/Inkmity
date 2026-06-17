@@ -15,27 +15,22 @@ describe("buildNavItems", () => {
     expect(labels).toEqual(["Artists", "Appointments", "Explore", "Tiers", "Contact", "About"]);
   });
 
-  test("should lock auth links (with gate handler) when signed out, leaving public links open", () => {
+  test("should lock EVERY nav link (with gate handler) when signed out", () => {
     const onGate = jest.fn();
     const items = buildNavItems(false, onGate);
-    const byLabel = (label: string) => items.find((i) => i.label === label)!;
-
-    for (const label of ["Artists", "Appointments"]) {
-      expect(byLabel(label).disabled).toBe(true);
-      expect(byLabel(label).onClick).toBe(onGate);
-    }
-    for (const label of ["Explore", "Tiers", "Contact", "About"]) {
-      expect(byLabel(label).disabled).toBeUndefined();
-      expect(byLabel(label).onClick).toBeUndefined();
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.disabled).toBe(true);
+      expect(item.onClick).toBe(onGate);
     }
   });
 
-  test("should expose Tiers as a public link pointing at /tiers", () => {
+  test("should keep Tiers pointing at /tiers but disabled when signed out", () => {
     const signedOut = buildNavItems(false, jest.fn());
     const tiers = signedOut.find((i) => i.label === "Tiers")!;
     expect(tiers).toBeDefined();
     expect(tiers.to).toBe("/tiers");
-    expect(tiers.disabled).toBeUndefined();
+    expect(tiers.disabled).toBe(true);
   });
 
   test("should label the client home as Artists pointing at /artists", () => {

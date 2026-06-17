@@ -55,7 +55,7 @@ export default function Login() {
     isRedirectingRef.current = true;
     redirectTimerRef.current = window.setTimeout(() => {
       navigate(dest, { replace: true });
-    }, 2000);
+    }, 600);
   }, [navigate]);
 
   const resolveDestination = useCallback(async (): Promise<"/dashboard" | "/onboarding"> => {

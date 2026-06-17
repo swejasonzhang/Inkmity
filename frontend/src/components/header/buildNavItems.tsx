@@ -15,31 +15,31 @@ export function buildNavItems(
   onGate: (e: React.MouseEvent) => void,
   role?: "client" | "artist" | "studio" | null
 ): NavItem[] {
-  const gated = (label: string, to: string): NavItem =>
-    isSignedIn ? { label, to } : { label, to, disabled: true, onClick: onGate };
+  const gate = (item: NavItem): NavItem =>
+    isSignedIn ? item : { ...item, disabled: true, onClick: onGate };
 
   const isProvider = role === "artist" || role === "studio";
   const items: NavItem[] = [
-    isProvider ? gated("Dashboard", "/dashboard") : gated("Artists", "/artists"),
+    gate(isProvider ? { label: "Dashboard", to: "/dashboard" } : { label: "Artists", to: "/artists" }),
   ];
 
   if (isSignedIn && role === "artist") {
-    items.push(gated("Portfolio", "/portfolio"));
+    items.push(gate({ label: "Portfolio", to: "/portfolio" }));
   }
   if (isSignedIn && role === "studio") {
-    items.push(gated("Studios", "/studios"));
+    items.push(gate({ label: "Studios", to: "/studios" }));
   }
 
-  items.push(gated("Appointments", "/appointments"));
+  items.push(gate({ label: "Appointments", to: "/appointments" }));
 
   if (!isProvider) {
-    items.push({ label: "Explore", to: "/explore" });
+    items.push(gate({ label: "Explore", to: "/explore" }));
   }
 
   items.push(
-    { label: "Tiers", to: "/tiers", secondary: true },
-    { label: "Contact", to: "/contact", secondary: true },
-    { label: "About", to: "/about", secondary: true }
+    gate({ label: "Tiers", to: "/tiers", secondary: true }),
+    gate({ label: "Contact", to: "/contact", secondary: true }),
+    gate({ label: "About", to: "/about", secondary: true })
   );
 
   return items;

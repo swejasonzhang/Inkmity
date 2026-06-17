@@ -187,7 +187,7 @@ export default function SignUp() {
       }
       redirectTimerRef.current = window.setTimeout(() => {
         navigate("/dashboard", { replace: true });
-      }, 2000);
+      }, 600);
     }
   }, [authLoaded, userId, navigate]);
 
@@ -445,7 +445,7 @@ export default function SignUp() {
           }
           redirectTimerRef.current = window.setTimeout(() => {
             navigate("/dashboard", { replace: true });
-          }, 2000);
+          }, 600);
           return;
         } catch {
           try {
