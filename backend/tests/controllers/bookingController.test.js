@@ -19,6 +19,7 @@ import {
   reportArtistNoShow,
   respondArtistNoShow,
   listArtistNoShowDisputes,
+  checkInBooking,
   submitIntakeForm,
   getIntakeForm,
   deleteIntakeForm,
@@ -57,6 +58,7 @@ app.post("/bookings/:id/complete", mockAuth, completeBooking);
 app.post("/bookings/:id/artist-no-show", mockAuth, reportArtistNoShow);
 app.post("/bookings/:id/artist-no-show/respond", mockAuth, respondArtistNoShow);
 app.get("/bookings/no-show-disputes", mockAuth, listArtistNoShowDisputes);
+app.post("/bookings/:id/check-in", mockAuth, checkInBooking);
 
 conditionalDescribe("Booking Controller - Consultation Creation", () => {
   let artistId;
@@ -280,6 +282,44 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.sessionNumber).toBe(2);
+  });
+
+  test("lets a participant check in within the window", async () => {
+    const booking = await Booking.create({
+      clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
+      startAt: new Date(Date.now() - 10 * 60 * 1000), endAt: new Date(Date.now() + 60 * 60 * 1000), priceCents: 20000,
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/check-in`)
+      .set("x-test-user-id", clientId)
+      .send({ lat: 40.7, lng: -74 });
+    expect(res.status).toBe(200);
+    expect(res.body.clientCheckedInAt).toBeTruthy();
+  });
+
+  test("rejects check-in more than an hour before the appointment", async () => {
+    const booking = await Booking.create({
+      clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
+      startAt: new Date(Date.now() + 5 * 60 * 60 * 1000), endAt: new Date(Date.now() + 6 * 60 * 60 * 1000), priceCents: 20000,
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/check-in`)
+      .set("x-test-user-id", clientId)
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("too_early");
+  });
+
+  test("forbids a non-participant from checking in", async () => {
+    const booking = await Booking.create({
+      clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
+      startAt: new Date(Date.now() - 10 * 60 * 1000), endAt: new Date(Date.now() + 60 * 60 * 1000), priceCents: 20000,
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/check-in`)
+      .set("x-test-user-id", "stranger")
+      .send({});
+    expect(res.status).toBe(403);
   });
 
   test("lets the client report an artist no-show after the start time", async () => {

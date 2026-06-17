@@ -1877,6 +1877,49 @@ export async function getAppointmentDetails(req, res) {
   }
 }
 
+export async function checkInBooking(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const lat = Number(req.body?.lat);
+    const lng = Number(req.body?.lng);
+    const geo = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined;
+
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+    const isClient = String(booking.clientId) === actorId;
+    const isArtist = String(booking.artistId) === actorId;
+    if (!isClient && !isArtist) return res.status(403).json({ error: "Forbidden" });
+    if (["cancelled", "denied", "completed"].includes(booking.status)) {
+      return res.status(400).json({ error: "invalid_status" });
+    }
+
+    const start = new Date(booking.startAt).getTime();
+    const now = Date.now();
+    if (now < start - 60 * 60 * 1000) {
+      return res.status(400).json({ error: "too_early", message: "Check-in opens an hour before your appointment." });
+    }
+    if (now > start + 24 * 60 * 60 * 1000) {
+      return res.status(400).json({ error: "window_closed", message: "The check-in window has closed." });
+    }
+
+    if (isClient) {
+      booking.clientCheckedInAt = booking.clientCheckedInAt || new Date();
+      if (geo) booking.clientCheckInGeo = geo;
+    } else {
+      booking.artistCheckedInAt = booking.artistCheckedInAt || new Date();
+      if (geo) booking.artistCheckInGeo = geo;
+    }
+    await booking.save();
+    res.json(booking);
+  } catch (error) {
+    console.error("checkInBooking error:", error?.message);
+    return res.status(500).json({ error: "Failed to check in" });
+  }
+}
+
 export async function reportArtistNoShow(req, res) {
   try {
     const actorId = getActorId(req);

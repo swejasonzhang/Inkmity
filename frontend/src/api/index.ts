@@ -463,6 +463,8 @@ export type NoShowDispute = Booking & {
   artistNoShowStatus?: string;
   artistNoShowReason?: string;
   artistNoShowArtistNote?: string;
+  clientCheckedInAt?: string;
+  artistCheckedInAt?: string;
 };
 
 export async function getNoShowDisputes(token?: string | null, signal?: AbortSignal) {
@@ -568,6 +570,15 @@ export async function reportArtistNoShow(
   signal?: AbortSignal
 ) {
   return apiPost<Booking>(`/bookings/${id}/artist-no-show`, reason ? { reason } : undefined, token, signal);
+}
+
+export async function checkInBooking(
+  id: string,
+  coords?: { lat: number; lng: number },
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/check-in`, coords, token, signal);
 }
 
 export async function respondArtistNoShow(

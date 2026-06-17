@@ -125,6 +125,10 @@ export default function Admin() {
                       {d.artistNoShowArtistNote && (
                         <p className="mt-1 text-xs"><span className="text-subtle">Artist:</span> "{d.artistNoShowArtistNote}"</p>
                       )}
+                      <div className="mt-1.5 flex gap-4 text-xs text-subtle">
+                        <span>Client check-in: <span className="text-app font-semibold">{d.clientCheckedInAt ? "✓" : "—"}</span></span>
+                        <span>Artist check-in: <span className="text-app font-semibold">{d.artistCheckedInAt ? "✓" : "—"}</span></span>
+                      </div>
                       <div className="mt-3 flex gap-2">
                         <Button
                           onClick={() => resolveDispute(d._id, false)}

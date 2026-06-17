@@ -70,6 +70,10 @@ const BookingSchema = new mongoose.Schema(
       enum: ["reported", "disputed", "refunded", "dismissed"],
     },
     artistNoShowArtistNote: { type: String, default: "" },
+    clientCheckedInAt: { type: Date },
+    artistCheckedInAt: { type: Date },
+    clientCheckInGeo: { lat: { type: Number }, lng: { type: Number } },
+    artistCheckInGeo: { lat: { type: Number }, lng: { type: Number } },
     cancelToken: { type: String, select: false },
   },
   { timestamps: true }

@@ -4,7 +4,7 @@ import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import Header from "@/components/header/Header";
-import { getAppointments, acceptAppointment, denyAppointment, reportArtistNoShow, respondArtistNoShow, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
+import { getAppointments, acceptAppointment, denyAppointment, reportArtistNoShow, respondArtistNoShow, checkInBooking, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -162,6 +162,32 @@ export default function Appointments() {
       await loadAppointments();
     } catch (error: any) {
       toast.error(error?.body?.message || error?.body?.error || "Couldn't submit the report");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleCheckIn = async (id: string) => {
+    if (processing) return;
+    setProcessing(id);
+    const getCoords = () =>
+      new Promise<{ lat: number; lng: number } | undefined>((resolve) => {
+        if (!navigator.geolocation) return resolve(undefined);
+        const t = window.setTimeout(() => resolve(undefined), 4000);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => { window.clearTimeout(t); resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+          () => { window.clearTimeout(t); resolve(undefined); },
+          { timeout: 4000 }
+        );
+      });
+    try {
+      const coords = await getCoords();
+      const token = await getToken();
+      await checkInBooking(id, coords, token ?? undefined);
+      toast.success("Checked in.", { position: "top-center", hideProgressBar: true });
+      await loadAppointments();
+    } catch (error: any) {
+      toast.error(error?.body?.message || error?.body?.error || "Couldn't check in");
     } finally {
       setProcessing(null);
     }
@@ -694,6 +720,32 @@ export default function Appointments() {
           {isClient && isTattooSession && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
             <IntakeFormPanel bookingId={appointment._id} isClient={isClient} />
           )}
+
+          {(() => {
+            const startMs = new Date(appointment.startAt).getTime();
+            const checkInOpen = Date.now() >= startMs - 3600000 && Date.now() <= startMs + 24 * 3600000;
+            const myCheckedIn = isClient ? (appointment as any).clientCheckedInAt : (appointment as any).artistCheckedInAt;
+            if (!checkInOpen || ["completed", "cancelled", "denied", "no-show"].includes(appointment.status)) return null;
+            return (
+              <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+                {myCheckedIn ? (
+                  <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
+                    <CheckCircle className="h-3.5 w-3.5" /> You're checked in.
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => handleCheckIn(appointment._id)}
+                    disabled={processing === appointment._id}
+                    variant="outline"
+                    className="w-full h-9 text-sm font-medium gap-2"
+                    style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}
+                  >
+                    <CheckCircle className="h-4 w-4" /> Check in
+                  </Button>
+                )}
+              </div>
+            );
+          })()}
 
           {isClient && new Date(appointment.startAt).getTime() < Date.now() && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
             <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
