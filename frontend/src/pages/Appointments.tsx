@@ -4,7 +4,7 @@ import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import Header from "@/components/header/Header";
-import { getAppointments, acceptAppointment, denyAppointment, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
+import { getAppointments, acceptAppointment, denyAppointment, reportArtistNoShow, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -146,6 +146,22 @@ export default function Appointments() {
     } catch (error: any) {
       console.error("Error accepting appointment:", error);
       toast.error(error?.body?.error || "Failed to accept appointment");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleArtistNoShow = async (id: string) => {
+    if (processing) return;
+    const reason = window.prompt("What happened? (optional) — e.g. the artist never arrived") ?? "";
+    setProcessing(id);
+    try {
+      const token = await getToken();
+      await reportArtistNoShow(id, reason || undefined, token ?? undefined);
+      toast.success("Reported — our team may review this.", { position: "top-center", hideProgressBar: true });
+      await loadAppointments();
+    } catch (error: any) {
+      toast.error(error?.body?.message || error?.body?.error || "Couldn't submit the report");
     } finally {
       setProcessing(null);
     }
@@ -656,6 +672,26 @@ export default function Appointments() {
 
           {isClient && isTattooSession && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
             <IntakeFormPanel bookingId={appointment._id} isClient={isClient} />
+          )}
+
+          {isClient && new Date(appointment.startAt).getTime() < Date.now() && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
+            <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+              {(appointment as any).artistNoShowReportedAt ? (
+                <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
+                  <AlertCircle className="h-3.5 w-3.5" /> Artist no-show reported — our team may review this.
+                </div>
+              ) : (
+                <Button
+                  onClick={() => handleArtistNoShow(appointment._id)}
+                  disabled={processing === appointment._id}
+                  variant="outline"
+                  className="w-full h-9 text-sm font-medium gap-2"
+                  style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}
+                >
+                  <AlertCircle className="h-4 w-4" /> Artist didn't show up
+                </Button>
+              )}
+            </div>
           )}
 
           {(canAccept || canDeny || canCancel) && (

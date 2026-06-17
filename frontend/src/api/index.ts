@@ -510,6 +510,15 @@ export async function denyAppointment(
   return apiPost<Booking>(`/bookings/${id}/deny`, reason ? { reason } : undefined, token, signal);
 }
 
+export async function reportArtistNoShow(
+  id: string,
+  reason?: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/artist-no-show`, reason ? { reason } : undefined, token, signal);
+}
+
 export async function startBookingVerification(
   id: string,
   token?: string | null,

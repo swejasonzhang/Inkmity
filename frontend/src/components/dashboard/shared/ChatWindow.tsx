@@ -1554,6 +1554,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       </div>
                     )}
                     <footer className="p-2 border-t border-app flex-shrink-0">
+                      <p className="mb-1.5 flex items-center gap-1.5 text-[10px] leading-tight text-subtle">
+                        <Lock className="h-3 w-3 shrink-0" />
+                        Keep payments on Inkmity — off-platform payments (Venmo, Cash App, Zelle) aren't protected.
+                      </p>
                       <div className="flex items-center gap-2">
                         <input
                           ref={fileInputRef}
@@ -1946,6 +1950,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   </div>
                 )}
                 <footer className="p-2.5 md:p-3 border-t border-app">
+                  <p className="mb-1.5 flex items-center gap-1.5 text-[10px] leading-tight text-subtle">
+                    <Lock className="h-3 w-3 shrink-0" />
+                    Keep payments on Inkmity — off-platform payments (Venmo, Cash App, Zelle) aren't protected.
+                  </p>
                   <div className="flex items-center gap-2">
                     <input
                       ref={fileInputRef}

@@ -63,6 +63,8 @@ const BookingSchema = new mongoose.Schema(
     rescheduleNoticeHours: { type: Number },
     noShowMarkedAt: { type: Date },
     noShowMarkedBy: { type: String, enum: ["client", "artist", "system"] },
+    artistNoShowReportedAt: { type: Date },
+    artistNoShowReason: { type: String, default: "" },
     cancelToken: { type: String, select: false },
   },
   { timestamps: true }

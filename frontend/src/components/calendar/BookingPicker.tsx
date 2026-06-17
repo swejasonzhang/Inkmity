@@ -139,8 +139,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
   }, [kind])
 
   const depositCents = useMemo(() => {
-    return 0
-
     const p = depositPolicy || {}
     const appt = kind === "appointment" ? "tattoo_session" : "consultation"
     if (appt === "consultation" && (p.consultationFree ?? true)) return 0

@@ -198,8 +198,6 @@ async function studioReadyForArtist(artistId) {
 }
 
 export function computeDepositCents(policy, priceCents, appointmentType) {
-  return 0;
-
   const p = policy?.deposit || {};
   if (appointmentType === "consultation" && (p.consultationFree ?? true)) return 0;
   const price = Math.max(0, Number(priceCents || 0));
@@ -1876,6 +1874,55 @@ export async function getAppointmentDetails(req, res) {
     return res
       .status(500)
       .json({ error: "Failed to fetch appointment details" });
+  }
+}
+
+export async function reportArtistNoShow(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const reason = String(req.body?.reason || "").trim().slice(0, 500);
+
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+    if (String(booking.clientId) !== actorId) {
+      return res.status(403).json({ error: "Only the client can report an artist no-show" });
+    }
+    if (new Date(booking.startAt) > new Date()) {
+      return res.status(400).json({
+        error: "too_early",
+        message: "You can report a no-show only after the appointment start time.",
+      });
+    }
+    if (["completed", "cancelled", "denied"].includes(booking.status)) {
+      return res.status(400).json({
+        error: "invalid_status",
+        message: "This appointment can't be reported as an artist no-show.",
+      });
+    }
+    if (booking.artistNoShowReportedAt) return res.json(booking);
+
+    booking.artistNoShowReportedAt = new Date();
+    booking.artistNoShowReason = reason;
+    await booking.save();
+
+    try {
+      await notify({
+        senderId: actorId,
+        receiverId: String(booking.artistId),
+        text: `The client reported that you did not show for the appointment on ${new Date(
+          booking.startAt
+        ).toLocaleString()}.${reason ? ` Reason: ${reason}` : ""} Our team may review this.`,
+        meta: { kind: "artist_no_show_reported", bookingId: String(booking._id) },
+      });
+    } catch {}
+
+    res.json(booking);
+  } catch (error) {
+    console.error("reportArtistNoShow error:", error?.message);
+    return res.status(500).json({ error: "Failed to report artist no-show" });
   }
 }
 
