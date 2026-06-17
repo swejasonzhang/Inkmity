@@ -13,7 +13,7 @@ const ReportSchema = new mongoose.Schema(
     targetOwnerClerkId: { type: String, default: "", index: true },
     reason: {
       type: String,
-      enum: ["spam", "inappropriate", "harassment", "copyright", "other"],
+      enum: ["spam", "inappropriate", "harassment", "copyright", "impersonation", "other"],
       required: true,
     },
     details: { type: String, default: "", maxlength: 1000 },

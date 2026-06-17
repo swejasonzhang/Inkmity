@@ -2,7 +2,7 @@ import Report from "../models/Report.js";
 import { config } from "../config/index.js";
 
 const TARGET_TYPES = ["artwork", "message", "artist", "profile"];
-const REASONS = ["spam", "inappropriate", "harassment", "copyright", "other"];
+const REASONS = ["spam", "inappropriate", "harassment", "copyright", "impersonation", "other"];
 
 function actorId(req) {
   return String(req.user?.clerkId || req.auth?.userId || "").trim();
@@ -27,6 +27,14 @@ export async function createReport(req, res) {
     if (!REASONS.includes(reason)) {
       return res.status(400).json({ error: "invalid_reason" });
     }
+
+    const dupe = await Report.findOne({
+      reporterClerkId,
+      targetType,
+      targetRef,
+      status: "open",
+    }).lean();
+    if (dupe) return res.status(200).json({ ok: true, deduped: true });
 
     await Report.create({
       reporterClerkId,

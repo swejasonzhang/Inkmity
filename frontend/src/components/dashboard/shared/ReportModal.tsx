@@ -21,6 +21,7 @@ const REASONS: { value: string; label: string }[] = [
   { value: "spam", label: "Spam or misleading" },
   { value: "harassment", label: "Harassment or hate" },
   { value: "copyright", label: "Copyright / stolen work" },
+  { value: "impersonation", label: "Impersonation / fake artist" },
   { value: "other", label: "Something else" },
 ];
 

@@ -61,4 +61,14 @@ conditionalDescribe("reports", () => {
     const res = await request(app).get("/reports").set("x-test-user-id", "user_1");
     expect(res.status).toBe(403);
   });
+
+  test("dedupes repeat open reports from the same reporter for the same target", async () => {
+    const body = { targetType: "artwork", targetRef: "https://img/dupe.jpg", reason: "spam" };
+    const first = await request(app).post("/reports").set("x-test-user-id", "user_d").send(body);
+    expect(first.status).toBe(201);
+    const second = await request(app).post("/reports").set("x-test-user-id", "user_d").send(body);
+    expect(second.status).toBe(200);
+    expect(second.body.deduped).toBe(true);
+    expect(await Report.countDocuments({ targetRef: "https://img/dupe.jpg" })).toBe(1);
+  });
 });

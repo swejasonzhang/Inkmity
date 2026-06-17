@@ -19,6 +19,7 @@ import {
   submitIntakeForm,
   getIntakeForm,
   deleteIntakeForm,
+  completeBooking,
 } from "../../controllers/bookingController.js";
 
 const app = express();
@@ -49,6 +50,7 @@ app.post("/bookings/:id/no-show", mockAuth, markNoShow);
 app.post("/bookings/:bookingId/intake", mockAuth, submitIntakeForm);
 app.get("/bookings/:bookingId/intake", mockAuth, getIntakeForm);
 app.delete("/bookings/:bookingId/intake", mockAuth, deleteIntakeForm);
+app.post("/bookings/:id/complete", mockAuth, completeBooking);
 
 conditionalDescribe("Booking Controller - Consultation Creation", () => {
   let artistId;
@@ -272,6 +274,23 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.sessionNumber).toBe(2);
+  });
+
+  test("blocks unilateral completion until both parties verify", async () => {
+    const booking = await Booking.create({
+      clientId,
+      artistId,
+      appointmentType: "tattoo_session",
+      status: "accepted",
+      startAt: new Date(Date.now() - 3600000),
+      endAt: new Date(),
+      priceCents: 20000,
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/complete`)
+      .set("x-test-user-id", artistId);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("verification_required");
   });
 
   test("rejects a tattoo session for an underage client", async () => {

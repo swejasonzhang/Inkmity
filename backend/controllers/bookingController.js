@@ -826,6 +826,12 @@ export async function completeBooking(req, res) {
     const isArtist = String(doc.artistId) === actorId;
     if (!isArtist) return res.status(403).json({ error: "Only the artist can complete a booking" });
     if (doc.status === "completed") return res.json(doc);
+    if (!config.dev.bypassGates && !(doc.clientVerifiedAt && doc.artistVerifiedAt)) {
+      return res.status(400).json({
+        error: "verification_required",
+        message: "Both you and the client must confirm completion before it can be marked done.",
+      });
+    }
     doc.status = "completed";
     doc.completedAt = new Date();
     await doc.save();
