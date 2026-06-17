@@ -549,3 +549,25 @@ conditionalDescribe("saveMyPortfolio", () => {
     expect(res.body.portfolioMeta).toEqual([{ url: "p1.jpg", idea: "Dragon origami back tattoo" }]);
   });
 });
+
+conditionalDescribe("getArtists test-account visibility", () => {
+  test("hides test-account artists from real viewers, shows them to test viewers", async () => {
+    process.env.TEST_CLERK_IDS = "artist_hidden";
+    try {
+      const Artist = mongoose.model("artist");
+      await Artist.create({ clerkId: "artist_hidden", email: "h@example.com", username: "Hidden", handle: "@artist_hidden", role: "artist" });
+      await Artist.create({ clerkId: "artist_shown", email: "s@example.com", username: "Shown", handle: "@artist_shown", role: "artist" });
+
+      const real = await request(app).get("/users/artists");
+      const handles = real.body.items.map((i) => i.handle);
+      expect(handles).toContain("@artist_shown");
+      expect(handles).not.toContain("@artist_hidden");
+
+      const asTest = await request(app).get("/users/artists").set("x-clerk-user-id", "artist_hidden");
+      const handles2 = asTest.body.items.map((i) => i.handle);
+      expect(handles2).toContain("@artist_hidden");
+    } finally {
+      delete process.env.TEST_CLERK_IDS;
+    }
+  });
+});

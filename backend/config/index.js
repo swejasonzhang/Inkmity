@@ -47,6 +47,15 @@ export const config = {
       .filter(Boolean),
   },
 
+  test: {
+    get clerkIds() {
+      return (process.env.TEST_CLERK_IDS || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    },
+  },
+
   dev: {
     get bypassGates() {
       return (

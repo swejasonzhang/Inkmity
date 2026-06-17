@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { clerkMiddleware } from "@clerk/express";
 import { requireAuth } from "../middleware/auth.js";
 import {
   getMe,
@@ -32,8 +33,8 @@ router.delete("/me/avatar", requireAuth(), deleteMyAvatar);
 router.get("/references/signature", requireAuth(), getReferenceSignature);
 router.put("/me/references", requireAuth(), saveMyReferences);
 router.put("/me/portfolio", requireAuth(), saveMyPortfolio);
-router.get("/artists", getArtists);
-router.get("/artists/by-handle/:handle", getArtistByHandle);
-router.get("/artists/:id", getArtistById);
+router.get("/artists", clerkMiddleware(), getArtists);
+router.get("/artists/by-handle/:handle", clerkMiddleware(), getArtistByHandle);
+router.get("/artists/:id", clerkMiddleware(), getArtistById);
 
 export default router;

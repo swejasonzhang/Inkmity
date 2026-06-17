@@ -156,4 +156,24 @@ conditionalDescribe("Artwork Controller", () => {
     expect(res.status).toBe(200);
     expect(res.body.items).toEqual([]);
   });
+
+  test("hides test-account artwork from real viewers but shows it to test viewers", async () => {
+    process.env.TEST_CLERK_IDS = "art_hidden";
+    try {
+      await seedArtist("art_real", { portfolioImages: ["real1.jpg"] });
+      await seedArtist("art_hidden", { portfolioImages: ["hidden1.jpg"] });
+
+      const real = await request(app).get("/artworks/popular");
+      const urls = real.body.items.map((i) => i.url);
+      expect(urls).toContain("real1.jpg");
+      expect(urls).not.toContain("hidden1.jpg");
+
+      const asTest = await request(app).get("/artworks/popular").set("x-test-user-id", "art_hidden");
+      const urls2 = asTest.body.items.map((i) => i.url);
+      expect(urls2).toContain("hidden1.jpg");
+      expect(urls2).toContain("real1.jpg");
+    } finally {
+      delete process.env.TEST_CLERK_IDS;
+    }
+  });
 });

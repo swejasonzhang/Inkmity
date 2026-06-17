@@ -1,6 +1,7 @@
 import { getAuth } from "@clerk/express";
 import Artist from "../models/Artist.js";
 import ArtworkLike from "../models/ArtworkLike.js";
+import { hideTestAccountsFilter } from "../lib/testAccounts.js";
 
 const key = (artistClerkId, url) => `${artistClerkId}|${url}`;
 
@@ -17,7 +18,7 @@ export async function getPopularArtworks(req, res) {
     const limit = Math.min(120, Math.max(1, Number(req.query.limit) || 60));
     const me = actorId(req);
 
-    const artists = await Artist.find({ role: "artist", visible: true })
+    const artists = await Artist.find({ role: "artist", visible: true, ...hideTestAccountsFilter(me) })
       .select("clerkId handle username avatar styles rating bookingsCount portfolioImages portfolioMeta pastWorks healedWorks sketches")
       .lean();
 
@@ -78,7 +79,8 @@ export async function getPopularArtworks(req, res) {
 export async function getTrendingIdeas(req, res) {
   try {
     const limit = Math.min(24, Math.max(1, Number(req.query.limit) || 12));
-    const artists = await Artist.find({ role: "artist", visible: true })
+    const me = actorId(req);
+    const artists = await Artist.find({ role: "artist", visible: true, ...hideTestAccountsFilter(me) })
       .select("portfolioMeta")
       .lean();
 

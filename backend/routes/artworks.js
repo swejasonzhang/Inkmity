@@ -6,7 +6,7 @@ import { getPopularArtworks, getTrendingIdeas, toggleArtworkLike } from "../cont
 const router = express.Router();
 
 router.get("/popular", clerkMiddleware(), getPopularArtworks);
-router.get("/trending-ideas", getTrendingIdeas);
+router.get("/trending-ideas", clerkMiddleware(), getTrendingIdeas);
 router.post("/like", requireAuth(), toggleArtworkLike);
 
 export default router;

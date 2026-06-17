@@ -34,3 +34,4 @@ Thumbs.db
 # Internal docs — kept locally, never committed to the public repo
 BUSINESS_SETUP.md
 LEGAL_REVIEW.md
+TESTING.md

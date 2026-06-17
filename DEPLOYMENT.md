@@ -100,7 +100,8 @@ connecting the repo in Render:
 | `PLATFORM_FEE_PCT` | optional, default `0.05` (5%) |
 | `PLATFORM_FEE_CAP_CENTS` | optional, default `5000` ($50 cap) |
 | `STUDIO_DEFAULT_COMMISSION_PCT` | optional, default `0.30` (studio's cut; overridable per artist) |
-| `ADMIN_CLERK_IDS` | comma-separated Clerk IDs allowed to verify studios |
+| `ADMIN_CLERK_IDS` | comma-separated Clerk IDs allowed to verify studios + resolve disputes/reports at `/admin` |
+| `TEST_CLERK_IDS` | optional — comma-separated Clerk IDs of hidden test accounts. They're invisible in discovery (browse, Explore, trending, profiles) to everyone *except each other*, so you can exercise the live booking flow privately. Create the two accounts via normal Clerk signup, then put their Clerk IDs here. |
 | `SENTRY_DSN` | optional — error tracking off until set (free Sentry tier) |
 | `ANTHROPIC_API_KEY` | optional — AI assistant; route returns 503 and stays $0 until set (assistant is locked in the UI) |
 | `RATE_LIMIT_MAX` | optional, default `1000` req/15min/IP — raise if real users behind shared NAT hit 429s |

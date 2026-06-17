@@ -8,6 +8,7 @@ import Studio from "../models/Studio.js";
 import cloudinary from "../lib/cloudinary.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
 import { config } from "../config/index.js";
+import { hideTestAccountsFilter, isHiddenFromViewer } from "../lib/testAccounts.js";
 import { tierRankAggExpr } from "../services/artistTierService.js";
 
 const SAFE_ROLES = new Set(["client", "artist", "studio"]);
@@ -229,6 +230,8 @@ export async function getArtists(req, res) {
       ? { rating: 1, reviewsCount: -1 }
       : null;
 
+  Object.assign(filter, hideTestAccountsFilter(getClerkId(req)));
+
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
 
@@ -288,6 +291,7 @@ export async function getArtistById(req, res) {
     })
     .lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
+  if (isHiddenFromViewer(doc.clerkId, getClerkId(req))) return res.status(404).json({ error: "not_found" });
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
   const docWithProfileImage = {
@@ -308,6 +312,7 @@ export async function getArtistByHandle(req, res) {
     .select("+lastActive +visibility")
     .lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
+  if (isHiddenFromViewer(doc.clerkId, getClerkId(req))) return res.status(404).json({ error: "not_found" });
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
   res.json({
