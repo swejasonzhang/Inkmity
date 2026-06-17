@@ -16,6 +16,8 @@ import {
   rescheduleAppointment,
   markNoShow,
   reportArtistNoShow,
+  respondArtistNoShow,
+  resolveArtistNoShow,
   submitIntakeForm,
   getIntakeForm,
   deleteIntakeForm,
@@ -49,6 +51,8 @@ router.patch("/:id/final-price", requireAuth(), setFinalPrice);
 router.post("/:id/reschedule", requireAuth(), rescheduleAppointment);
 router.post("/:id/no-show", requireAuth(), markNoShow);
 router.post("/:id/artist-no-show", requireAuth(), reportArtistNoShow);
+router.post("/:id/artist-no-show/respond", requireAuth(), respondArtistNoShow);
+router.post("/:id/artist-no-show/resolve", requireAuth(), resolveArtistNoShow);
 router.post("/:id/verify/start", requireAuth(), startVerification);
 router.post("/:id/verify", requireAuth(), verifyBookingCode);
 router.post("/:bookingId/intake", requireAuth(), submitIntakeForm);

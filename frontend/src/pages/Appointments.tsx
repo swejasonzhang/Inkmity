@@ -4,7 +4,7 @@ import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import Header from "@/components/header/Header";
-import { getAppointments, acceptAppointment, denyAppointment, reportArtistNoShow, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
+import { getAppointments, acceptAppointment, denyAppointment, reportArtistNoShow, respondArtistNoShow, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -158,10 +158,31 @@ export default function Appointments() {
     try {
       const token = await getToken();
       await reportArtistNoShow(id, reason || undefined, token ?? undefined);
-      toast.success("Reported — our team may review this.", { position: "top-center", hideProgressBar: true });
+      toast.success("Reported — the artist will be asked to confirm or dispute.", { position: "top-center", hideProgressBar: true });
       await loadAppointments();
     } catch (error: any) {
       toast.error(error?.body?.message || error?.body?.error || "Couldn't submit the report");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleRespondNoShow = async (id: string, accept: boolean) => {
+    if (processing) return;
+    let note = "";
+    if (accept) {
+      if (!window.confirm("Confirm you missed this appointment? The client's deposit will be refunded.")) return;
+    } else {
+      note = window.prompt("Add a note for our review (optional) — e.g. the client didn't show") ?? "";
+    }
+    setProcessing(id);
+    try {
+      const token = await getToken();
+      await respondArtistNoShow(id, accept, note || undefined, token ?? undefined);
+      toast.success(accept ? "Confirmed — the deposit is being refunded." : "Disputed — sent to our team for review.", { position: "top-center", hideProgressBar: true });
+      await loadAppointments();
+    } catch (error: any) {
+      toast.error(error?.body?.message || error?.body?.error || "Couldn't submit your response");
     } finally {
       setProcessing(null);
     }
@@ -676,9 +697,13 @@ export default function Appointments() {
 
           {isClient && new Date(appointment.startAt).getTime() < Date.now() && !["completed", "cancelled", "denied", "no-show"].includes(appointment.status) && (
             <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
-              {(appointment as any).artistNoShowReportedAt ? (
+              {(appointment as any).artistNoShowStatus === "disputed" ? (
                 <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
-                  <AlertCircle className="h-3.5 w-3.5" /> Artist no-show reported — our team may review this.
+                  <AlertCircle className="h-3.5 w-3.5" /> The artist disputed your report — our team is reviewing it.
+                </div>
+              ) : (appointment as any).artistNoShowReportedAt ? (
+                <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
+                  <AlertCircle className="h-3.5 w-3.5" /> No-show reported — awaiting the artist's response.
                 </div>
               ) : (
                 <Button
@@ -691,6 +716,34 @@ export default function Appointments() {
                   <AlertCircle className="h-4 w-4" /> Artist didn't show up
                 </Button>
               )}
+            </div>
+          )}
+
+          {isArtist && (appointment as any).artistNoShowStatus === "reported" && (
+            <div className="pt-2 border-t space-y-2" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+              <div className="text-xs text-subtle">
+                The client reported you didn't show
+                {(appointment as any).artistNoShowReason ? `: "${(appointment as any).artistNoShowReason}"` : ""}. Please respond.
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleRespondNoShow(appointment._id, false)}
+                  disabled={processing === appointment._id}
+                  variant="outline"
+                  className="flex-1 h-9 text-sm font-medium"
+                  style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}
+                >
+                  Dispute
+                </Button>
+                <Button
+                  onClick={() => handleRespondNoShow(appointment._id, true)}
+                  disabled={processing === appointment._id}
+                  className="flex-1 h-9 text-sm font-semibold"
+                  style={{ background: "var(--fg)", color: "var(--bg)" }}
+                >
+                  I missed it — refund
+                </Button>
+              </div>
             </div>
           )}
 

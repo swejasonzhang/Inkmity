@@ -519,6 +519,16 @@ export async function reportArtistNoShow(
   return apiPost<Booking>(`/bookings/${id}/artist-no-show`, reason ? { reason } : undefined, token, signal);
 }
 
+export async function respondArtistNoShow(
+  id: string,
+  accept: boolean,
+  note?: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/artist-no-show/respond`, { accept, note }, token, signal);
+}
+
 export async function startBookingVerification(
   id: string,
   token?: string | null,

@@ -65,6 +65,11 @@ const BookingSchema = new mongoose.Schema(
     noShowMarkedBy: { type: String, enum: ["client", "artist", "system"] },
     artistNoShowReportedAt: { type: Date },
     artistNoShowReason: { type: String, default: "" },
+    artistNoShowStatus: {
+      type: String,
+      enum: ["reported", "disputed", "refunded", "dismissed"],
+    },
+    artistNoShowArtistNote: { type: String, default: "" },
     cancelToken: { type: String, select: false },
   },
   { timestamps: true }

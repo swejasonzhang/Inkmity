@@ -1906,6 +1906,7 @@ export async function reportArtistNoShow(req, res) {
 
     booking.artistNoShowReportedAt = new Date();
     booking.artistNoShowReason = reason;
+    booking.artistNoShowStatus = "reported";
     await booking.save();
 
     try {
@@ -1923,6 +1924,106 @@ export async function reportArtistNoShow(req, res) {
   } catch (error) {
     console.error("reportArtistNoShow error:", error?.message);
     return res.status(500).json({ error: "Failed to report artist no-show" });
+  }
+}
+
+async function refundNoShowDeposit(booking) {
+  if (config.dev.bypassGates) return;
+  try {
+    const { refundDepositForBooking } = await import("./billingController.js");
+    await refundDepositForBooking(booking._id);
+  } catch (e) {
+    console.error("no-show deposit refund failed:", e?.message);
+  }
+}
+
+export async function respondArtistNoShow(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { id } = req.params;
+    const accept = req.body?.accept === true;
+    const note = String(req.body?.note || "").trim().slice(0, 500);
+
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+    if (String(booking.artistId) !== actorId) {
+      return res.status(403).json({ error: "Only the artist can respond to this report" });
+    }
+    if (booking.artistNoShowStatus !== "reported") {
+      return res.status(400).json({ error: "no_open_report" });
+    }
+
+    booking.artistNoShowArtistNote = note;
+
+    if (accept) {
+      booking.artistNoShowStatus = "refunded";
+      booking.status = "cancelled";
+      booking.cancelledAt = new Date();
+      booking.cancelledBy = "artist";
+      await booking.save();
+      await refundNoShowDeposit(booking);
+      try {
+        await notify({
+          senderId: actorId,
+          receiverId: String(booking.clientId),
+          text: "The artist confirmed the missed appointment — your deposit is being refunded.",
+          meta: { kind: "artist_no_show_refunded", bookingId: String(booking._id) },
+        });
+      } catch {}
+    } else {
+      booking.artistNoShowStatus = "disputed";
+      await booking.save();
+      try {
+        await notify({
+          senderId: actorId,
+          receiverId: String(booking.clientId),
+          text: `The artist disputed the no-show report${note ? `: ${note}` : ""}. Our team will review it.`,
+          meta: { kind: "artist_no_show_disputed", bookingId: String(booking._id) },
+        });
+      } catch {}
+    }
+
+    res.json(booking);
+  } catch (error) {
+    console.error("respondArtistNoShow error:", error?.message);
+    return res.status(500).json({ error: "Failed to respond to no-show report" });
+  }
+}
+
+export async function resolveArtistNoShow(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId || !config.admin.clerkIds.includes(actorId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const { id } = req.params;
+    const refund = req.body?.refund === true;
+
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+    if (!["reported", "disputed"].includes(booking.artistNoShowStatus)) {
+      return res.status(400).json({ error: "no_open_report" });
+    }
+
+    if (refund) {
+      booking.artistNoShowStatus = "refunded";
+      booking.status = "cancelled";
+      booking.cancelledAt = new Date();
+      booking.cancelledBy = "system";
+      await booking.save();
+      await refundNoShowDeposit(booking);
+    } else {
+      booking.artistNoShowStatus = "dismissed";
+      await booking.save();
+    }
+
+    res.json(booking);
+  } catch (error) {
+    console.error("resolveArtistNoShow error:", error?.message);
+    return res.status(500).json({ error: "Failed to resolve no-show report" });
   }
 }
 

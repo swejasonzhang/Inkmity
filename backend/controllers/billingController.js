@@ -549,6 +549,32 @@ export async function deleteClientPaymentMethod(req, res) {
   }
 }
 
+export async function refundDepositForBooking(bookingId) {
+  const deposits = await Billing.find({ bookingId, type: "deposit", status: "paid" });
+  const refunds = [];
+  for (const b of deposits) {
+    if (b.stripePaymentIntentId) {
+      try {
+        const rr = await stripe.refunds.create({ payment_intent: b.stripePaymentIntentId });
+        b.stripeRefundIds = b.stripeRefundIds || [];
+        b.stripeRefundIds.push(rr.id);
+        refunds.push(rr.id);
+      } catch (e) {
+        console.error("refundDepositForBooking refund failed:", e.message);
+      }
+    }
+    b.status = "refunded";
+    b.refundedAt = new Date();
+    await b.save();
+    try {
+      await reversePayouts(b);
+    } catch (e) {
+      console.error("refundDepositForBooking clawback failed:", e.message);
+    }
+  }
+  return refunds;
+}
+
 export async function refundBilling(req, res) {
   try {
     const actorId = String(req.user?.clerkId || req.auth?.userId || "").trim();

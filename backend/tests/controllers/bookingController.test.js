@@ -17,6 +17,7 @@ import {
   cancelBooking,
   markNoShow,
   reportArtistNoShow,
+  respondArtistNoShow,
   submitIntakeForm,
   getIntakeForm,
   deleteIntakeForm,
@@ -53,6 +54,7 @@ app.get("/bookings/:bookingId/intake", mockAuth, getIntakeForm);
 app.delete("/bookings/:bookingId/intake", mockAuth, deleteIntakeForm);
 app.post("/bookings/:id/complete", mockAuth, completeBooking);
 app.post("/bookings/:id/artist-no-show", mockAuth, reportArtistNoShow);
+app.post("/bookings/:id/artist-no-show/respond", mockAuth, respondArtistNoShow);
 
 conditionalDescribe("Booking Controller - Consultation Creation", () => {
   let artistId;
@@ -314,6 +316,48 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       .send({});
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("too_early");
+  });
+
+  test("artist accepting a no-show report marks it refunded + cancels the booking", async () => {
+    const booking = await Booking.create({
+      clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
+      startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
+      artistNoShowReportedAt: new Date(), artistNoShowStatus: "reported",
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/artist-no-show/respond`)
+      .set("x-test-user-id", artistId)
+      .send({ accept: true });
+    expect(res.status).toBe(200);
+    expect(res.body.artistNoShowStatus).toBe("refunded");
+    expect(res.body.status).toBe("cancelled");
+  });
+
+  test("artist disputing a no-show report sends it to review", async () => {
+    const booking = await Booking.create({
+      clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
+      startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
+      artistNoShowReportedAt: new Date(), artistNoShowStatus: "reported",
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/artist-no-show/respond`)
+      .set("x-test-user-id", artistId)
+      .send({ accept: false, note: "I was there on time." });
+    expect(res.status).toBe(200);
+    expect(res.body.artistNoShowStatus).toBe("disputed");
+  });
+
+  test("a client cannot respond to (self-resolve) a no-show report", async () => {
+    const booking = await Booking.create({
+      clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
+      startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
+      artistNoShowReportedAt: new Date(), artistNoShowStatus: "reported",
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/artist-no-show/respond`)
+      .set("x-test-user-id", clientId)
+      .send({ accept: true });
+    expect(res.status).toBe(403);
   });
 
   test("blocks unilateral completion until both parties verify", async () => {
