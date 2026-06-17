@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { useAuth } from "@clerk/clerk-react"
-import { apiGet, apiPost, getArtistPolicy, getBookingGate, getSignatureStatus, type IntakeForm } from "@/api/index.ts"
+import { apiGet, apiPost, getArtistPolicy, getBookingGate, getSignatureStatus, getDocument, signDocument, type IntakeForm, type LegalDocument } from "@/api/index.ts"
 import { Button } from "@/components/ui/button"
-import { X, Wallet, Gift, Clock, Sunrise, Sun, Moon, ShieldCheck, CheckCircle2, FileText, ClipboardList } from "lucide-react"
+import { X, Wallet, Gift, Clock, Sunrise, Sun, Moon, CheckCircle2 } from "lucide-react"
 import { socket, connectSocket } from "@/lib/socket"
 import {
   Dialog as RDialog,
@@ -19,8 +19,7 @@ import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
 import DepositStep from "./DepositStep"
 import CardOnFileStep from "./CardOnFileStep"
-import PreBookingWaiverModal from "@/components/dashboard/client/PreBookingWaiverModal"
-import PreBookingIntakeModal from "@/components/dashboard/client/PreBookingIntakeModal"
+import { type FormState, EMPTY_INTAKE, IntakeFields, intakeIsComplete, toPayload } from "@/components/dashboard/client/intakeFormShared"
 
 type Kind = "consultation" | "appointment"
 type Props = { artistId: string; date?: Date; artistName?: string }
@@ -86,16 +85,21 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
   const [selectedSlots, setSelectedSlots] = useState<Slot[]>([])
   const [maxSessions, setMaxSessions] = useState(1)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [acknowledgedRisk, setAcknowledgedRisk] = useState(false)
+  const [step, setStep] = useState<"review" | "waiver" | "intake" | "confirm">("review")
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [depositStepOpen, setDepositStepOpen] = useState(false)
   const [cardStepOpen, setCardStepOpen] = useState(false)
   const [pendingBooking, setPendingBooking] = useState<any>(null)
   const [waiverSigned, setWaiverSigned] = useState(false)
-  const [waiverModalOpen, setWaiverModalOpen] = useState(false)
+  const [waiverDoc, setWaiverDoc] = useState<LegalDocument | null>(null)
+  const [waiverName, setWaiverName] = useState("")
+  const [signingWaiver, setSigningWaiver] = useState(false)
   const [intakePayload, setIntakePayload] = useState<Partial<IntakeForm> | null>(null)
-  const [intakeModalOpen, setIntakeModalOpen] = useState(false)
+  const [intakeForm, setIntakeForm] = useState<FormState>(EMPTY_INTAKE)
+  const setIntakeField = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setIntakeForm((f) => ({ ...f, [key]: value }))
+  }, [])
 
   const [depositPolicy, setDepositPolicy] = useState<any>(null)
   useEffect(() => {
@@ -154,17 +158,22 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
 
   const canConfirm = selectedSlots.length >= 1
 
-  const requiresRiskAck = kind === "appointment"
+  const steps: Array<"review" | "waiver" | "intake" | "confirm"> =
+    kind === "appointment" ? ["review", "waiver", "intake", "confirm"] : ["review", "confirm"]
+  const stepIndex = Math.max(0, steps.indexOf(step))
+  const goNext = () => setStep(steps[Math.min(stepIndex + 1, steps.length - 1)])
+  const goBack = () => setStep(steps[Math.max(stepIndex - 1, 0)])
+
   const consentComplete =
-    agreedToTerms &&
-    (kind === "consultation"
-      ? (!requiresRiskAck || acknowledgedRisk)
-      : waiverSigned && !!intakePayload)
+    kind === "consultation" ? agreedToTerms : waiverSigned && !!intakePayload && agreedToTerms
+
   useEffect(() => {
     if (!confirmOpen) return
-    setAcknowledgedRisk(false)
+    setStep("review")
     setAgreedToTerms(false)
     setIntakePayload(null)
+    setIntakeForm(EMPTY_INTAKE)
+    setWaiverName("")
     if (kind !== "appointment") {
       setWaiverSigned(false)
       return
@@ -173,14 +182,33 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
       ; (async () => {
         try {
           const token = await getToken()
-          const st = await getSignatureStatus("client_waiver", {}, token, ac.signal)
+          const [st, doc] = await Promise.all([
+            getSignatureStatus("client_waiver", {}, token, ac.signal),
+            getDocument("client_waiver", ac.signal),
+          ])
           setWaiverSigned(!!st?.signed)
+          setWaiverDoc(doc)
         } catch {
           setWaiverSigned(false)
         }
       })()
     return () => ac.abort()
   }, [confirmOpen, kind, getToken])
+
+  const signWaiverInline = async () => {
+    if (!waiverName.trim()) return
+    setSigningWaiver(true)
+    try {
+      const token = (await getToken()) ?? undefined
+      await signDocument("client_waiver", { signatureName: waiverName.trim(), signerRole: "client" }, token)
+      setWaiverSigned(true)
+      setStep("intake")
+    } catch (e: any) {
+      toast.error(e?.message || "Couldn't sign the waiver", toastStyle)
+    } finally {
+      setSigningWaiver(false)
+    }
+  }
 
   const browserTz = useMemo(() => {
     try {
@@ -581,18 +609,35 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
 
             <RDialogHeader className="space-y-1.5 flex flex-col items-center text-center">
               <RDialogTitle className="text-lg sm:text-2xl font-semibold">
-                Confirm your {kind}
+                {step === "waiver"
+                  ? "Consent & liability"
+                  : step === "intake"
+                    ? "Pre-appointment intake"
+                    : step === "confirm"
+                      ? "Almost done"
+                      : `Confirm your ${kind}`}
               </RDialogTitle>
-              <RDialogDescription
-                id="confirm-desc"
-                className={`text-[13px] sm:text-sm ${isLightTheme ? "text-black/60" : "text-app/70"}`}
-              >
-                Review the details below. If everything looks good, accept to book this time. You can go back to choose a different slot.
+              <RDialogDescription id="confirm-desc" className="sr-only">
+                Complete the steps to book your {kind}.
               </RDialogDescription>
+              {steps.length > 1 && (
+                <div className="flex items-center gap-1.5 pt-1" aria-hidden>
+                  {steps.map((s, i) => (
+                    <span
+                      key={s}
+                      className="h-1.5 rounded-full transition-all duration-200"
+                      style={{
+                        width: i === stepIndex ? "1.5rem" : "0.4rem",
+                        background: i <= stepIndex ? "var(--fg)" : "color-mix(in srgb, var(--fg) 25%, transparent)",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </RDialogHeader>
 
-            <div className="mt-3 sm:mt-4 w-full grid place-items-center gap-2.5" aria-describedby="confirm-desc">
-              {selectedSlots.length > 0 && (
+            <div className="mt-3 sm:mt-4 w-full grid place-items-center gap-2.5">
+              {step === "review" && selectedSlots.length > 0 && (
                 <>
                   {selectedSlots.length > 1 && (
                     <div className="w-full max-w-sm text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: "color-mix(in srgb, var(--fg) 55%, transparent)" }}>
@@ -639,100 +684,132 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
                   </p>
                 </>
               )}
-            </div>
 
-            <div className="mt-4 w-full max-w-sm mx-auto rounded-2xl border px-4 py-3.5 text-left" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
-              <div className="flex items-center gap-2 mb-2">
-                <ShieldCheck className="h-4 w-4 opacity-70" />
-                <span className="text-[13px] font-semibold">Before you confirm</span>
-              </div>
-
-              {kind === "appointment" && (
-                <div className="space-y-2 mb-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setWaiverModalOpen(true)}
-                    className="w-full flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-[11px] sm:text-xs transition hover:border-[color:var(--fg)]/40"
-                    style={{ borderColor: "var(--border)", background: "var(--card)" }}
-                  >
-                    {waiverSigned ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 opacity-90" />
-                    ) : (
-                      <FileText className="h-4 w-4 shrink-0 opacity-70" />
-                    )}
-                    <span className="flex-1 min-w-0">
-                      <span className="font-semibold block">Consent &amp; liability waiver</span>
-                      <span className={isLightTheme ? "text-black/55" : "text-app/60"}>
-                        {waiverSigned ? "Signed — tap to review" : "Required — review &amp; sign"}
-                      </span>
-                    </span>
-                    {!waiverSigned && <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">Sign</span>}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIntakeModalOpen(true)}
-                    className="w-full flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-[11px] sm:text-xs transition hover:border-[color:var(--fg)]/40"
-                    style={{ borderColor: "var(--border)", background: "var(--card)" }}
-                  >
-                    {intakePayload ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 opacity-90" />
-                    ) : (
-                      <ClipboardList className="h-4 w-4 shrink-0 opacity-70" />
-                    )}
-                    <span className="flex-1 min-w-0">
-                      <span className="font-semibold block">Pre-appointment intake</span>
-                      <span className={isLightTheme ? "text-black/55" : "text-app/60"}>
-                        {intakePayload ? "Completed — tap to edit" : "Required — health, details &amp; consent"}
-                      </span>
-                    </span>
-                    {!intakePayload && <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">Fill</span>}
-                  </button>
+              {step === "waiver" && (
+                <div className="w-full max-w-sm text-left">
+                  {waiverSigned ? (
+                    <div className="rounded-2xl border px-4 py-6 text-center" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                      <CheckCircle2 className="h-6 w-6 mx-auto opacity-90" />
+                      <p className="mt-2 text-sm font-semibold">You've signed the consent &amp; liability waiver.</p>
+                      <p className="mt-1 text-[11px] opacity-60">You're all set on this step.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="max-h-56 overflow-y-auto ink-page-scroll rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                        <p className="whitespace-pre-wrap text-[12px] leading-relaxed opacity-80">{waiverDoc?.body || "Loading…"}</p>
+                      </div>
+                      <label className="block mt-3 text-xs text-subtle">Type your full legal name to sign</label>
+                      <input
+                        value={waiverName}
+                        onChange={(e) => setWaiverName(e.target.value)}
+                        placeholder="Full name"
+                        className="mt-1 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:border-[color:var(--fg)]/40"
+                        style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--fg)" }}
+                      />
+                      <p className="mt-1 text-[10px] opacity-60">
+                        By signing you agree to this document{waiverDoc?.version ? ` (v${waiverDoc.version})` : ""}. Your name, timestamp, and IP are recorded.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 
-              <label className={`flex items-start gap-2 text-[11px] sm:text-xs leading-relaxed cursor-pointer select-none`}>
-                <input
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
-                />
-                <span className={isLightTheme ? "text-black/70" : "text-app/80"}>
-                  I have read and agree to Inkmity's{" "}
-                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--fg)" }}>Terms of Service</a>,
-                  including the{" "}
-                  <a href="/terms#refunds" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--fg)" }}>refund &amp; cancellation policy</a>{" "}
-                  and{" "}
-                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--fg)" }}>Privacy Policy</a>.
-                </span>
-              </label>
+              {step === "intake" && (
+                <div className="w-full max-w-sm text-left">
+                  <IntakeFields form={intakeForm} set={setIntakeField} />
+                  <p className="mt-2 text-[11px] opacity-60 text-center">All consent boxes (except photo) are required.</p>
+                </div>
+              )}
+
+              {step === "confirm" && (
+                <div className="w-full max-w-sm grid gap-2.5">
+                  <div className="rounded-2xl border px-4 py-3 text-left" style={{ borderColor: "var(--border)", background: "var(--elevated)" }}>
+                    <div className="text-sm font-semibold capitalize">
+                      {kind} · {selectedSlots.length > 1
+                        ? `${selectedSlots.length} sessions`
+                        : selectedSlots[0]
+                          ? new Date(selectedSlots[0].startISO).toLocaleDateString([], { month: "short", day: "numeric" })
+                          : ""}
+                    </div>
+                    <div className="mt-0.5 text-xs opacity-70 flex items-center justify-between">
+                      <span>Deposit due now</span>
+                      <span className="font-bold">{depositCents > 0 ? `$${(depositCents / 100).toFixed(2)}` : "Free"}</span>
+                    </div>
+                  </div>
+                  <label className="flex items-start gap-2 text-[11px] sm:text-xs leading-relaxed cursor-pointer select-none text-left">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-neutral-700"
+                    />
+                    <span className={isLightTheme ? "text-black/70" : "text-app/80"}>
+                      I have read and agree to Inkmity's{" "}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--fg)" }}>Terms of Service</a>,
+                      including the{" "}
+                      <a href="/terms#refunds" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--fg)" }}>refund &amp; cancellation policy</a>{" "}
+                      and{" "}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--fg)" }}>Privacy Policy</a>.
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
 
             <RDialogFooter className="mt-5 sm:mt-6 w-full flex flex-col-reverse sm:flex-row items-center justify-center gap-2.5">
               <Button
                 variant="outline"
                 onClick={() => {
-                  swallowGestureTail()
-                  setConfirmOpen(false)
+                  if (stepIndex === 0) {
+                    swallowGestureTail()
+                    setConfirmOpen(false)
+                  } else {
+                    goBack()
+                  }
                 }}
                 className="w-full sm:w-auto text-sm sm:text-base rounded-xl bg-transparent"
                 style={{ borderColor: "var(--border)", color: "var(--fg)" }}
-                disabled={submitting}
+                disabled={submitting || signingWaiver}
               >
-                Cancel
+                {stepIndex === 0 ? "Cancel" : "Back"}
               </Button>
-              <Button
-                onClick={(ev) => {
-                  ev.stopPropagation()
-                  handleAccept()
-                }}
-                className="w-full sm:w-auto text-sm sm:text-base rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: "var(--fg)", color: "var(--bg)", border: "1px solid var(--fg)" }}
-                disabled={submitting || !consentComplete}
-              >
-                {submitting ? "Booking..." : `Confirm${depositCents > 0 ? ` · $${(depositCents / 100).toFixed(2)}` : ""}`}
-              </Button>
+
+              {step === "review" && (
+                <Button onClick={goNext} className="w-full sm:w-auto text-sm sm:text-base rounded-xl" style={{ background: "var(--fg)", color: "var(--bg)", border: "1px solid var(--fg)" }}>
+                  Continue
+                </Button>
+              )}
+              {step === "waiver" && (
+                waiverSigned ? (
+                  <Button onClick={() => setStep("intake")} className="w-full sm:w-auto text-sm sm:text-base rounded-xl" style={{ background: "var(--fg)", color: "var(--bg)", border: "1px solid var(--fg)" }}>
+                    Continue
+                  </Button>
+                ) : (
+                  <Button onClick={signWaiverInline} disabled={!waiverName.trim() || signingWaiver} className="w-full sm:w-auto text-sm sm:text-base rounded-xl disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "var(--fg)", color: "var(--bg)", border: "1px solid var(--fg)" }}>
+                    {signingWaiver ? "Signing…" : "Sign & continue"}
+                  </Button>
+                )
+              )}
+              {step === "intake" && (
+                <Button
+                  onClick={() => { setIntakePayload(toPayload(intakeForm)); setStep("confirm") }}
+                  disabled={!intakeIsComplete(intakeForm)}
+                  className="w-full sm:w-auto text-sm sm:text-base rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: "var(--fg)", color: "var(--bg)", border: "1px solid var(--fg)" }}
+                >
+                  Continue
+                </Button>
+              )}
+              {step === "confirm" && (
+                <Button
+                  onClick={(ev) => { ev.stopPropagation(); handleAccept() }}
+                  className="w-full sm:w-auto text-sm sm:text-base rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: "var(--fg)", color: "var(--bg)", border: "1px solid var(--fg)" }}
+                  disabled={submitting || !consentComplete}
+                >
+                  {submitting ? "Booking..." : `Confirm${depositCents > 0 ? ` · $${(depositCents / 100).toFixed(2)}` : ""}`}
+                </Button>
+              )}
             </RDialogFooter>
           </RDialogContent>
         </RDialogPortal>
@@ -842,18 +919,6 @@ export default function BookingPicker({ artistId, date, artistName }: Props) {
           </RDialogContent>
         </RDialogPortal>
       </RDialog>
-
-      <PreBookingWaiverModal
-        open={waiverModalOpen}
-        onClose={() => setWaiverModalOpen(false)}
-        onSigned={() => setWaiverSigned(true)}
-      />
-
-      <PreBookingIntakeModal
-        open={intakeModalOpen}
-        onClose={() => setIntakeModalOpen(false)}
-        onComplete={(payload) => setIntakePayload(payload)}
-      />
 
       <ToastContainer
         position="top-center"
