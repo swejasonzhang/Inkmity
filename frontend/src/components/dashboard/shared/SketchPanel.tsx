@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { PenTool, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PromptModal, { type PromptConfig } from "@/components/dashboard/shared/PromptModal";
 import {
   getSketches,
   createSketch,
@@ -32,6 +33,7 @@ export default function SketchPanel({
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState("");
   const [note, setNote] = useState("");
+  const [prompt, setPrompt] = useState<PromptConfig | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -65,11 +67,7 @@ export default function SketchPanel({
     }
   };
 
-  const respond = async (id: string, action: "approve" | "request_changes") => {
-    let changeNote = "";
-    if (action === "request_changes") {
-      changeNote = window.prompt("What changes would you like?") || "";
-    }
+  const doRespond = async (id: string, action: "approve" | "request_changes", changeNote: string) => {
     setBusy(true);
     try {
       const t = (await getToken()) ?? undefined;
@@ -80,8 +78,23 @@ export default function SketchPanel({
       load();
     } catch (e: any) {
       toast.error(e?.message || "Failed", { theme: "dark" });
+      throw e;
     } finally {
       setBusy(false);
+    }
+  };
+
+  const respond = (id: string, action: "approve" | "request_changes") => {
+    if (action === "request_changes") {
+      setPrompt({
+        title: "Request changes",
+        message: "Tell the artist what you'd like adjusted.",
+        confirmLabel: "Send request",
+        input: { label: "What changes would you like?", placeholder: "e.g. thinner linework, smaller", required: true },
+        onConfirm: (changeNote) => doRespond(id, "request_changes", changeNote),
+      });
+    } else {
+      doRespond(id, "approve", "");
     }
   };
 
@@ -155,6 +168,8 @@ export default function SketchPanel({
           </div>
         )}
       </div>
+
+      <PromptModal config={prompt} onClose={() => setPrompt(null)} />
     </div>
   );
 }

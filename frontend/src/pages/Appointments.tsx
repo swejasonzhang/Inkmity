@@ -17,6 +17,7 @@ import PaymentBreakdown from "@/components/dashboard/client/PaymentBreakdown";
 import IntakeFormPanel from "@/components/dashboard/client/IntakeFormPanel";
 import TipModal from "@/components/dashboard/client/TipModal";
 import ReviewPromptModal from "@/components/dashboard/shared/ReviewPromptModal";
+import PromptModal, { type PromptConfig } from "@/components/dashboard/shared/PromptModal";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash, Heart, Star } from "lucide-react";
 
 function formatCurrency(cents: number): string {
@@ -90,6 +91,7 @@ export default function Appointments() {
   const [tipTarget, setTipTarget] = useState<AppointmentWithUsers | null>(null);
   const [reviewTarget, setReviewTarget] = useState<AppointmentWithUsers | null>(null);
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
+  const [prompt, setPrompt] = useState<PromptConfig | null>(null);
 
   useScrollLock(cancelTarget !== null);
 
@@ -151,20 +153,24 @@ export default function Appointments() {
     }
   };
 
-  const handleArtistNoShow = async (id: string) => {
-    if (processing) return;
-    const reason = window.prompt("What happened? (optional) — e.g. the artist never arrived") ?? "";
-    setProcessing(id);
-    try {
-      const token = await getToken();
-      await reportArtistNoShow(id, reason || undefined, token ?? undefined);
-      toast.success("Reported — the artist will be asked to confirm or dispute.", { position: "top-center", hideProgressBar: true });
-      await loadAppointments();
-    } catch (error: any) {
-      toast.error(error?.body?.message || error?.body?.error || "Couldn't submit the report");
-    } finally {
-      setProcessing(null);
-    }
+  const handleArtistNoShow = (id: string) => {
+    setPrompt({
+      title: "Report a no-show",
+      message: "The artist will be asked to confirm or dispute this.",
+      confirmLabel: "Submit report",
+      input: { label: "What happened? (optional)", placeholder: "e.g. the artist never arrived" },
+      onConfirm: async (reason) => {
+        try {
+          const token = await getToken();
+          await reportArtistNoShow(id, reason || undefined, token ?? undefined);
+          toast.success("Reported — the artist will be asked to confirm or dispute.", { position: "top-center", hideProgressBar: true });
+          await loadAppointments();
+        } catch (error: any) {
+          toast.error(error?.body?.message || error?.body?.error || "Couldn't submit the report");
+          throw error;
+        }
+      },
+    });
   };
 
   const handleCheckIn = async (id: string) => {
@@ -193,15 +199,7 @@ export default function Appointments() {
     }
   };
 
-  const handleRespondNoShow = async (id: string, accept: boolean) => {
-    if (processing) return;
-    let note = "";
-    if (accept) {
-      if (!window.confirm("Confirm you missed this appointment? The client's deposit will be refunded.")) return;
-    } else {
-      note = window.prompt("Add a note for our review (optional) — e.g. the client didn't show") ?? "";
-    }
-    setProcessing(id);
+  const runRespondNoShow = async (id: string, accept: boolean, note: string) => {
     try {
       const token = await getToken();
       await respondArtistNoShow(id, accept, note || undefined, token ?? undefined);
@@ -209,8 +207,26 @@ export default function Appointments() {
       await loadAppointments();
     } catch (error: any) {
       toast.error(error?.body?.message || error?.body?.error || "Couldn't submit your response");
-    } finally {
-      setProcessing(null);
+      throw error;
+    }
+  };
+
+  const handleRespondNoShow = (id: string, accept: boolean) => {
+    if (accept) {
+      setPrompt({
+        title: "Confirm you missed this appointment?",
+        message: "The client's deposit will be refunded to them.",
+        confirmLabel: "Yes, refund the client",
+        onConfirm: () => runRespondNoShow(id, true, ""),
+      });
+    } else {
+      setPrompt({
+        title: "Dispute this report",
+        message: "Add a note for our team's review.",
+        confirmLabel: "Submit dispute",
+        input: { label: "Note (optional)", placeholder: "e.g. the client didn't show" },
+        onConfirm: (note) => runRespondNoShow(id, false, note),
+      });
     }
   };
 
@@ -679,39 +695,36 @@ export default function Appointments() {
             </div>
           )}
 
-          {isClient && isCompleted && (
-            <div className="pt-2 border-t space-y-2" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
-              {((appointment as any).reviewed || reviewedIds.has(appointment._id)) ? (
-                <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
-                  <Star className="h-3.5 w-3.5" /> Review submitted — thanks for the feedback.
+          {isClient && isCompleted && (() => {
+            const reviewed = (appointment as any).reviewed || reviewedIds.has(appointment._id);
+            const tipped = (appointment as any).tipCents > 0;
+            if (reviewed && tipped) {
+              return (
+                <div className="pt-2 border-t flex items-center justify-center gap-4 text-xs text-subtle" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+                  <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5" /> Reviewed</span>
+                  <span className="inline-flex items-center gap-1.5"><Heart className="h-3.5 w-3.5" /> Tipped {formatCurrency((appointment as any).tipCents)}</span>
                 </div>
-              ) : (
-                <Button
-                  onClick={() => setReviewTarget(appointment)}
-                  variant="outline"
-                  className="w-full h-9 text-sm font-medium gap-2"
-                  style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}
-                >
-                  <Star className="h-4 w-4" /> Leave a review
-                </Button>
-              )}
-              {(appointment as any).tipCents > 0 ? (
-                <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
-                  <Heart className="h-3.5 w-3.5" />
-                  You tipped {formatCurrency((appointment as any).tipCents)} — thank you.
-                </div>
-              ) : (
-                <Button
-                  onClick={() => setTipTarget(appointment)}
-                  variant="outline"
-                  className="w-full h-9 text-sm font-medium gap-2"
-                  style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}
-                >
-                  <Heart className="h-4 w-4" /> Tip your artist — 100% goes to them
-                </Button>
-              )}
-            </div>
-          )}
+              );
+            }
+            return (
+              <div className="pt-2 border-t flex gap-2" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+                {reviewed ? (
+                  <div className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-subtle"><Star className="h-3.5 w-3.5" /> Reviewed</div>
+                ) : (
+                  <Button onClick={() => setReviewTarget(appointment)} variant="outline" className="flex-1 h-9 text-sm font-medium gap-1.5" style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}>
+                    <Star className="h-4 w-4" /> Review
+                  </Button>
+                )}
+                {tipped ? (
+                  <div className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs text-subtle"><Heart className="h-3.5 w-3.5" /> Tipped {formatCurrency((appointment as any).tipCents)}</div>
+                ) : (
+                  <Button onClick={() => setTipTarget(appointment)} variant="outline" className="flex-1 h-9 text-sm font-medium gap-1.5" style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}>
+                    <Heart className="h-4 w-4" /> Tip
+                  </Button>
+                )}
+              </div>
+            );
+          })()}
 
           {isTattooSession && isClient && (
             <SketchPanel bookingId={appointment._id} isArtist={isArtist} isClient={isClient} />
@@ -1004,6 +1017,8 @@ export default function Appointments() {
         artistName={reviewTarget?.artist?.username || "your artist"}
         bookingId={reviewTarget?._id}
       />
+
+      <PromptModal config={prompt} onClose={() => setPrompt(null)} />
 
       <ToastContainer
         position="top-center"

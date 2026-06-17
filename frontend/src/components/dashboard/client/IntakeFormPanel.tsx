@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { ClipboardList, Loader2, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import PromptModal, { type PromptConfig } from "@/components/dashboard/shared/PromptModal";
 import { getIntakeForm, submitIntakeForm, deleteIntakeForm } from "@/api";
 import {
   type FormState,
@@ -27,6 +28,7 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_INTAKE);
   const [saving, setSaving] = useState(false);
+  const [deletePrompt, setDeletePrompt] = useState<PromptConfig | null>(null);
 
   useScrollLock(open);
 
@@ -83,9 +85,7 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("Delete your submitted health & intake data for this appointment? This can't be undone.")) return;
-    setSaving(true);
+  const doDelete = async () => {
     try {
       const token = await getToken();
       await deleteIntakeForm(bookingId, token);
@@ -95,8 +95,7 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
       setOpen(false);
     } catch (err: any) {
       toast.error(err?.body?.message || err?.message || "Couldn't delete your intake data");
-    } finally {
-      setSaving(false);
+      throw err;
     }
   };
 
@@ -173,7 +172,14 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
               {submittedAt && (
                 <button
                   type="button"
-                  onClick={handleDelete}
+                  onClick={() =>
+                    setDeletePrompt({
+                      title: "Delete your intake data?",
+                      message: "This removes your submitted health & intake info for this appointment. It can't be undone.",
+                      confirmLabel: "Delete",
+                      onConfirm: doDelete,
+                    })
+                  }
                   disabled={saving}
                   className="mt-3 w-full text-[11px] text-subtle hover:text-app underline underline-offset-2 transition disabled:opacity-50"
                 >
@@ -184,6 +190,8 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
           </div>,
           document.body
         )}
+
+      <PromptModal config={deletePrompt} onClose={() => setDeletePrompt(null)} />
     </div>
   );
 }
