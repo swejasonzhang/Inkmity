@@ -279,6 +279,7 @@ export type Me = {
   handle?: string;
   usernameUpdatedAt?: string;
   onboardingComplete?: boolean;
+  isAdmin?: boolean;
   portfolioImages?: string[];
   portfolioMeta?: { url: string; idea: string }[];
   bio?: string;
@@ -454,6 +455,56 @@ export async function createReport(
   signal?: AbortSignal
 ) {
   return apiPost<{ ok: boolean }>("/reports", input, token, signal);
+}
+
+export type NoShowDispute = Booking & {
+  client?: { username?: string; handle?: string } | null;
+  artist?: { username?: string; handle?: string } | null;
+  artistNoShowStatus?: string;
+  artistNoShowReason?: string;
+  artistNoShowArtistNote?: string;
+};
+
+export async function getNoShowDisputes(token?: string | null, signal?: AbortSignal) {
+  return apiGet<{ items: NoShowDispute[] }>("/bookings/no-show-disputes", undefined, token, signal);
+}
+
+export async function resolveArtistNoShow(
+  id: string,
+  refund: boolean,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/artist-no-show/resolve`, { refund }, token, signal);
+}
+
+export type AdminReport = {
+  _id: string;
+  reporterClerkId: string;
+  targetType: string;
+  targetRef: string;
+  targetOwnerClerkId?: string;
+  reason: string;
+  details?: string;
+  status: string;
+  createdAt: string;
+};
+
+export async function listReports(
+  params: { status?: string } = {},
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiGet<{ reports: AdminReport[] }>("/reports", params, token, signal);
+}
+
+export async function updateReportStatus(
+  id: string,
+  status: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPatch<AdminReport>(`/reports/${id}`, { status }, token, signal);
 }
 
 export async function syncUser(

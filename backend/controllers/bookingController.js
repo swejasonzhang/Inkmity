@@ -2027,6 +2027,40 @@ export async function resolveArtistNoShow(req, res) {
   }
 }
 
+export async function listArtistNoShowDisputes(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId || !config.admin.clerkIds.includes(actorId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    const bookings = await Booking.find({
+      artistNoShowStatus: { $in: ["reported", "disputed"] },
+    })
+      .sort({ artistNoShowReportedAt: -1 })
+      .limit(200)
+      .lean();
+
+    const User = (await import("../models/UserBase.js")).default;
+    const items = await Promise.all(
+      bookings.map(async (b) => {
+        const [client, artist] = await Promise.all([
+          User.findOne({ clerkId: b.clientId }).select("username handle").lean(),
+          User.findOne({ clerkId: b.artistId }).select("username handle").lean(),
+        ]);
+        return {
+          ...b,
+          client: client ? { username: client.username, handle: client.handle } : null,
+          artist: artist ? { username: artist.username, handle: artist.handle } : null,
+        };
+      })
+    );
+    res.json({ items });
+  } catch (e) {
+    console.error("listArtistNoShowDisputes error:", e.message);
+    res.status(500).json({ error: "list_failed" });
+  }
+}
+
 export async function acceptAppointment(req, res) {
   try {
     const userId = getActorId(req);

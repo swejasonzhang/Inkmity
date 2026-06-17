@@ -18,6 +18,7 @@ import {
   reportArtistNoShow,
   respondArtistNoShow,
   resolveArtistNoShow,
+  listArtistNoShowDisputes,
   submitIntakeForm,
   getIntakeForm,
   deleteIntakeForm,
@@ -36,6 +37,7 @@ router.get("/appointments", requireAuth(), getAppointments);
 router.get("/client", requireAuth(), getClientBookings);
 router.get("/artist", requireAuth(), getArtistBookings);
 router.get("/consultation-status", requireAuth(), checkConsultationStatus);
+router.get("/no-show-disputes", requireAuth(), listArtistNoShowDisputes);
 router.get("/:id", getBooking);
 router.get("/:id/details", requireAuth(), getAppointmentDetails);
 router.post("/", requireAuth(), createBooking);

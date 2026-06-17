@@ -1,7 +1,7 @@
 import request from "supertest";
 import express from "express";
 import Report from "../../models/Report.js";
-import { createReport, listReports } from "../../controllers/reportController.js";
+import { createReport, listReports, updateReportStatus } from "../../controllers/reportController.js";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
 
@@ -18,6 +18,7 @@ const app = express();
 app.use(express.json());
 app.post("/reports", mockAuth, createReport);
 app.get("/reports", mockAuth, listReports);
+app.patch("/reports/:id", mockAuth, updateReportStatus);
 
 conditionalDescribe("reports", () => {
   test("creates a report with a valid target + reason", async () => {
@@ -59,6 +60,14 @@ conditionalDescribe("reports", () => {
 
   test("forbids non-admins from listing reports", async () => {
     const res = await request(app).get("/reports").set("x-test-user-id", "user_1");
+    expect(res.status).toBe(403);
+  });
+
+  test("forbids non-admins from actioning a report", async () => {
+    const res = await request(app)
+      .patch("/reports/507f1f77bcf86cd799439011")
+      .set("x-test-user-id", "user_1")
+      .send({ status: "dismissed" });
     expect(res.status).toBe(403);
   });
 

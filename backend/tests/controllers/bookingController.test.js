@@ -18,6 +18,7 @@ import {
   markNoShow,
   reportArtistNoShow,
   respondArtistNoShow,
+  listArtistNoShowDisputes,
   submitIntakeForm,
   getIntakeForm,
   deleteIntakeForm,
@@ -55,6 +56,7 @@ app.delete("/bookings/:bookingId/intake", mockAuth, deleteIntakeForm);
 app.post("/bookings/:id/complete", mockAuth, completeBooking);
 app.post("/bookings/:id/artist-no-show", mockAuth, reportArtistNoShow);
 app.post("/bookings/:id/artist-no-show/respond", mockAuth, respondArtistNoShow);
+app.get("/bookings/no-show-disputes", mockAuth, listArtistNoShowDisputes);
 
 conditionalDescribe("Booking Controller - Consultation Creation", () => {
   let artistId;
@@ -316,6 +318,11 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       .send({});
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("too_early");
+  });
+
+  test("forbids non-admins from listing no-show disputes", async () => {
+    const res = await request(app).get("/bookings/no-show-disputes").set("x-test-user-id", clientId);
+    expect(res.status).toBe(403);
   });
 
   test("artist accepting a no-show report marks it refunded + cancels the booking", async () => {

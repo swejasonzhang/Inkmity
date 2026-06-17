@@ -52,6 +52,26 @@ export async function createReport(req, res) {
   }
 }
 
+export async function updateReportStatus(req, res) {
+  try {
+    const me = actorId(req);
+    if (!me || !config.admin.clerkIds.includes(me)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    const { id } = req.params;
+    const status = String(req.body?.status || "").trim();
+    if (!["open", "reviewed", "actioned", "dismissed"].includes(status)) {
+      return res.status(400).json({ error: "invalid_status" });
+    }
+    const report = await Report.findByIdAndUpdate(id, { status }, { new: true }).lean();
+    if (!report) return res.status(404).json({ error: "not_found" });
+    res.json(report);
+  } catch (e) {
+    console.error("updateReportStatus error:", e.message);
+    res.status(500).json({ error: "update_failed" });
+  }
+}
+
 export async function listReports(req, res) {
   try {
     const me = actorId(req);

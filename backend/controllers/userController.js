@@ -96,7 +96,7 @@ export async function getMe(req, res) {
     }
   }
   if (!me) return res.status(404).json({ error: "Not found" });
-  res.json(me);
+  res.json({ ...me, isAdmin: config.admin.clerkIds.includes(clerkId) });
 }
 
 export async function getAvatarSignature(_req, res) {

@@ -13,6 +13,7 @@ import Portfolio from "./pages/Portfolio";
 import Tiers from "./pages/Tiers";
 import ArtistWorks from "./pages/ArtistWorks";
 import Studios from "./pages/Studios";
+import Admin from "./pages/Admin";
 import Landing from "./pages/Landing";
 import SSOCallback from "./pages/SSOCallback";
 import Onboarding from "./pages/Onboarding";
@@ -91,6 +92,9 @@ const App: React.FC = () => {
       </Route>
       <Route path="/studios" element={<DashboardScope />}>
         <Route index element={<Studios />} />
+      </Route>
+      <Route path="/admin" element={<DashboardScope />}>
+        <Route index element={<Admin />} />
       </Route>
       <Route path="/artist/:handle" element={<DashboardScope />}>
         <Route index element={<ArtistWorks />} />
