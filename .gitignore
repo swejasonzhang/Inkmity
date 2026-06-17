@@ -31,6 +31,6 @@ Thumbs.db
 *.swp
 *.swo
 
-# Internal docs — not for the public repo
+# Internal docs — kept locally, never committed to the public repo
 BUSINESS_SETUP.md
-DEPLOYMENT.md
+LEGAL_REVIEW.md
