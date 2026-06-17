@@ -18,6 +18,7 @@ import {
   getArtists,
   getArtistById,
   checkHandleAvailability,
+  saveMyPortfolio,
 } from "../../controllers/userController.js";
 
 const app = express();
@@ -47,6 +48,7 @@ app.post("/users/sync", mockAuth, syncUser);
 app.get("/users/artists", getArtists);
 app.get("/users/artists/:id", getArtistById);
 app.get("/users/handle/check", checkHandleAvailability);
+app.put("/users/me/portfolio", mockAuth, saveMyPortfolio);
 
 conditionalDescribe("User Controller - getMe", () => {
   test("should return user data for authenticated user", async () => {
@@ -516,5 +518,34 @@ conditionalDescribe("User Controller - checkHandleAvailability", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("handle_required");
+  });
+});
+
+conditionalDescribe("saveMyPortfolio", () => {
+  test("stores per-image idea metadata, ignoring blanks and unknown urls", async () => {
+    const Artist = mongoose.model("artist");
+    await Artist.create({
+      clerkId: "art_pf",
+      email: "art_pf@example.com",
+      username: "pf",
+      handle: "@art_pf",
+      role: "artist",
+    });
+
+    const res = await request(app)
+      .put("/users/me/portfolio")
+      .set("x-test-user-id", "art_pf")
+      .send({
+        urls: ["p1.jpg", "p2.jpg"],
+        meta: [
+          { url: "p1.jpg", idea: "  Dragon origami back tattoo  " },
+          { url: "ghost.jpg", idea: "not in urls — ignore" },
+          { url: "p2.jpg", idea: "   " },
+        ],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.portfolioImages).toEqual(["p1.jpg", "p2.jpg"]);
+    expect(res.body.portfolioMeta).toEqual([{ url: "p1.jpg", idea: "Dragon origami back tattoo" }]);
   });
 });

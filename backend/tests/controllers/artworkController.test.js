@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import "../../models/Client.js";
 import "../../models/Artist.js";
 import ArtworkLike from "../../models/ArtworkLike.js";
-import { getPopularArtworks, toggleArtworkLike } from "../../controllers/artworkController.js";
+import { getPopularArtworks, getTrendingIdeas, toggleArtworkLike } from "../../controllers/artworkController.js";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
 
@@ -20,6 +20,7 @@ const mockAuth = (req, res, next) => {
 const app = express();
 app.use(express.json());
 app.get("/artworks/popular", mockAuth, getPopularArtworks);
+app.get("/artworks/trending-ideas", getTrendingIdeas);
 app.post("/artworks/like", mockAuth, toggleArtworkLike);
 
 const Artist = () => mongoose.model("artist");
@@ -105,5 +106,54 @@ conditionalDescribe("Artwork Controller", () => {
 
     const noBody = await request(app).post("/artworks/like").set("x-test-user-id", "me").send({});
     expect(noBody.status).toBe(400);
+  });
+
+  test("getPopularArtworks attaches the idea caption from portfolioMeta", async () => {
+    await seedArtist("art_idea", {
+      portfolioImages: ["pi1.jpg", "pi2.jpg"],
+      portfolioMeta: [{ url: "pi1.jpg", idea: "Dragon origami back tattoo" }],
+    });
+
+    const res = await request(app).get("/artworks/popular");
+    expect(res.status).toBe(200);
+    const pi1 = res.body.items.find((i) => i.url === "pi1.jpg");
+    const pi2 = res.body.items.find((i) => i.url === "pi2.jpg");
+    expect(pi1.idea).toBe("Dragon origami back tattoo");
+    expect(pi2.idea).toBe("");
+  });
+
+  test("getTrendingIdeas groups captions case-insensitively, counts, and uses a real image", async () => {
+    await seedArtist("art_t1", {
+      portfolioImages: ["t1a.jpg", "t1b.jpg"],
+      portfolioMeta: [
+        { url: "t1a.jpg", idea: "Dragon origami back tattoo" },
+        { url: "t1b.jpg", idea: "Fine line rose" },
+      ],
+    });
+    await seedArtist("art_t2", {
+      portfolioImages: ["t2a.jpg"],
+      portfolioMeta: [{ url: "t2a.jpg", idea: "dragon origami back tattoo" }],
+    });
+
+    const res = await request(app).get("/artworks/trending-ideas");
+    expect(res.status).toBe(200);
+    const items = res.body.items;
+    expect(items).toHaveLength(2);
+
+    // Most-used idea first; "Dragon..." and "dragon..." collapse to one (count 2).
+    expect(items[0].label.toLowerCase()).toBe("dragon origami back tattoo");
+    expect(items[0].query.toLowerCase()).toBe("dragon origami back tattoo");
+    expect(["t1a.jpg", "t2a.jpg"]).toContain(items[0].image);
+
+    const rose = items.find((i) => i.label === "Fine line rose");
+    expect(rose).toBeTruthy();
+    expect(rose.image).toBe("t1b.jpg");
+  });
+
+  test("getTrendingIdeas returns nothing when no captions exist", async () => {
+    await seedArtist("art_none", { portfolioImages: ["n1.jpg"] });
+    const res = await request(app).get("/artworks/trending-ideas");
+    expect(res.status).toBe(200);
+    expect(res.body.items).toEqual([]);
   });
 });
