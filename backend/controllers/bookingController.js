@@ -1046,6 +1046,35 @@ function getAppointmentDuration(appointmentType, customDuration) {
   return customDuration || DEFAULT_SLOT_MINUTES;
 }
 
+function ageFromDob(dob) {
+  if (!dob) return NaN;
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return NaN;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+  return age;
+}
+
+async function assertClientAdult(userId, res) {
+  if (config.dev.bypassGates) return true;
+  const client = await Client.findOne({ clerkId: String(userId) }).select("dob").lean();
+  const age = ageFromDob(client?.dob);
+  if (!Number.isFinite(age)) {
+    res.status(403).json({
+      error: "dob_required",
+      message: "Add your date of birth to your profile to book a tattoo — you must be 18 or older.",
+    });
+    return false;
+  }
+  if (age < 18) {
+    res.status(403).json({ error: "underage", message: "You must be 18 or older to book a tattoo." });
+    return false;
+  }
+  return true;
+}
+
 export async function createConsultation(req, res) {
   try {
     const userId = getActorId(req);
@@ -1154,6 +1183,8 @@ export async function createTattooSession(req, res) {
   try {
     const userId = getActorId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    if (!(await assertClientAdult(userId, res))) return;
 
     const body = req.body || {};
     const artistId = String(body.artistId || "").trim();
@@ -1350,6 +1381,8 @@ export async function createMultiSession(req, res) {
   try {
     const userId = getActorId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    if (!(await assertClientAdult(userId, res))) return;
 
     const body = req.body || {};
     const artistId = String(body.artistId || "").trim();
@@ -1772,6 +1805,32 @@ export async function getIntakeForm(req, res) {
   }
 }
 
+export async function deleteIntakeForm(req, res) {
+  try {
+    const userId = getActorId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    if (String(booking.clientId) !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    await IntakeForm.deleteOne({ bookingId });
+    if (booking.intakeFormId) {
+      booking.intakeFormId = undefined;
+      await booking.save();
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("deleteIntakeForm error:", error?.message);
+    return res.status(500).json({ error: "Failed to delete intake form" });
+  }
+}
+
 export async function getAppointmentDetails(req, res) {
   try {
     const userId = getActorId(req);
@@ -2000,6 +2059,13 @@ export async function getAppointments(req, res) {
     }
 
     const User = (await import("../models/UserBase.js")).default;
+    const Review = (await import("../models/Review.js")).default;
+
+    const reviewed = new Set(
+      (await Review.find({ bookingId: { $in: bookings.map((b) => b._id) } })
+        .select("bookingId")
+        .lean()).map((r) => String(r.bookingId))
+    );
 
     const projectIds = [...new Set(bookings.map((b) => b.projectId).filter(Boolean).map(String))];
     const projects = projectIds.length
@@ -2018,6 +2084,7 @@ export async function getAppointments(req, res) {
 
         return {
           ...booking,
+          reviewed: reviewed.has(String(booking._id)),
           projectName: proj?.name || null,
           projectSessions: proj?.estimatedSessions || null,
           client: client

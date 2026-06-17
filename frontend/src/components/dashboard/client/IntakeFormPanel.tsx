@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { ClipboardList, Loader2, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import { getIntakeForm, submitIntakeForm } from "@/api";
+import { getIntakeForm, submitIntakeForm, deleteIntakeForm } from "@/api";
 import {
   type FormState,
   EMPTY_INTAKE,
@@ -83,6 +83,23 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm("Delete your submitted health & intake data for this appointment? This can't be undone.")) return;
+    setSaving(true);
+    try {
+      const token = await getToken();
+      await deleteIntakeForm(bookingId, token);
+      setSubmittedAt(null);
+      setForm(EMPTY_INTAKE);
+      toast.success("Your intake data was deleted.");
+      setOpen(false);
+    } catch (err: any) {
+      toast.error(err?.body?.message || err?.message || "Couldn't delete your intake data");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
       <Button
@@ -152,6 +169,16 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
               </div>
               {!canSubmit && !saving && (
                 <p className="mt-2 text-[11px] text-subtle text-center">All consent boxes (except photo) are required to submit.</p>
+              )}
+              {submittedAt && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={saving}
+                  className="mt-3 w-full text-[11px] text-subtle hover:text-app underline underline-offset-2 transition disabled:opacity-50"
+                >
+                  Delete my submitted intake data
+                </button>
               )}
             </div>
           </div>,

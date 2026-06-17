@@ -17,6 +17,7 @@ import {
   markNoShow,
   submitIntakeForm,
   getIntakeForm,
+  deleteIntakeForm,
   getAppointmentDetails,
   acceptAppointment,
   denyAppointment,
@@ -50,4 +51,5 @@ router.post("/:id/verify/start", requireAuth(), startVerification);
 router.post("/:id/verify", requireAuth(), verifyBookingCode);
 router.post("/:bookingId/intake", requireAuth(), submitIntakeForm);
 router.get("/:bookingId/intake", requireAuth(), getIntakeForm);
+router.delete("/:bookingId/intake", requireAuth(), deleteIntakeForm);
 export default router;

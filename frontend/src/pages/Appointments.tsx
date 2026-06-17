@@ -16,7 +16,8 @@ import SketchPanel from "@/components/dashboard/shared/SketchPanel";
 import PaymentBreakdown from "@/components/dashboard/client/PaymentBreakdown";
 import IntakeFormPanel from "@/components/dashboard/client/IntakeFormPanel";
 import TipModal from "@/components/dashboard/client/TipModal";
-import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash, Heart } from "lucide-react";
+import ReviewPromptModal from "@/components/dashboard/shared/ReviewPromptModal";
+import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash, Heart, Star } from "lucide-react";
 
 function formatCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -87,6 +88,8 @@ export default function Appointments() {
   const [priceInput, setPriceInput] = useState("");
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [tipTarget, setTipTarget] = useState<AppointmentWithUsers | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<AppointmentWithUsers | null>(null);
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
 
   useScrollLock(cancelTarget !== null);
 
@@ -614,7 +617,21 @@ export default function Appointments() {
           )}
 
           {isClient && isCompleted && (
-            <div className="pt-2 border-t" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+            <div className="pt-2 border-t space-y-2" style={{ borderColor: "color-mix(in srgb, var(--border) 50%, transparent)" }}>
+              {((appointment as any).reviewed || reviewedIds.has(appointment._id)) ? (
+                <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
+                  <Star className="h-3.5 w-3.5" /> Review submitted — thanks for the feedback.
+                </div>
+              ) : (
+                <Button
+                  onClick={() => setReviewTarget(appointment)}
+                  variant="outline"
+                  className="w-full h-9 text-sm font-medium gap-2"
+                  style={{ borderColor: "var(--border)", color: "var(--fg)", background: "var(--card)" }}
+                >
+                  <Star className="h-4 w-4" /> Leave a review
+                </Button>
+              )}
               {(appointment as any).tipCents > 0 ? (
                 <div className="flex items-center justify-center gap-2 text-xs text-subtle py-1">
                   <Heart className="h-3.5 w-3.5" />
@@ -834,6 +851,17 @@ export default function Appointments() {
         bookingId={tipTarget?._id || ""}
         artistName={tipTarget?.artist?.username}
         onClose={() => setTipTarget(null)}
+      />
+
+      <ReviewPromptModal
+        open={reviewTarget !== null}
+        onClose={() => setReviewTarget(null)}
+        onSubmitted={() => {
+          if (reviewTarget) setReviewedIds((prev) => new Set(prev).add(reviewTarget._id));
+        }}
+        artistId={reviewTarget?.artistId || ""}
+        artistName={reviewTarget?.artist?.username || "your artist"}
+        bookingId={reviewTarget?._id}
       />
 
       <ToastContainer

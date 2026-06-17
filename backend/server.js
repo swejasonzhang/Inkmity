@@ -51,6 +51,7 @@ import waitlistRoutes from "./routes/waitlist.js";
 import sketchRoutes from "./routes/sketches.js";
 import artworkRoutes from "./routes/artworks.js";
 import assistantRoutes from "./routes/assistant.js";
+import reportRoutes from "./routes/reports.js";
 import { mountStripeWebhook } from "./controllers/billingController.js";
 import { apiLimiter, authLimiter, assistantLimiter } from "./middleware/rateLimiter.js";
 import { initSocket } from "./services/socketService.js";
@@ -153,6 +154,7 @@ app.use("/waitlist", waitlistRoutes);
 app.use("/sketches", sketchRoutes);
 app.use("/artworks", artworkRoutes);
 app.use("/assistant", assistantLimiter, assistantRoutes);
+app.use("/reports", reportRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });

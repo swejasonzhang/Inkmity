@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { Sparkles, ImageIcon, Bot, ShieldCheck, ThumbsUp, Flame, Search, TrendingUp } from "lucide-react";
+import { Sparkles, ImageIcon, Bot, ShieldCheck, ThumbsUp, Flame, Search, TrendingUp, Flag } from "lucide-react";
 import { toast } from "react-toastify";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
 import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
+import ReportModal from "@/components/dashboard/shared/ReportModal";
 import { fetchPopularArtworks, getTrendingIdeas, toggleArtworkLike, type PopularArtwork, type TrendingIdea } from "@/api";
 
 type TabKey = "real" | "ai";
@@ -17,6 +18,7 @@ const Gallery: React.FC = () => {
   const [trending, setTrending] = useState<TrendingIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [reportTarget, setReportTarget] = useState<PopularArtwork | null>(null);
   const { getToken } = useAuth();
   const { isSignedIn } = useUser();
 
@@ -172,12 +174,31 @@ const Gallery: React.FC = () => {
 
         <div className="mt-8">
           {tab === "real" ? (
-            <PopularGrid items={shownItems} loading={loading} onToggleLike={onToggleLike} />
+            <PopularGrid
+              items={shownItems}
+              loading={loading}
+              onToggleLike={onToggleLike}
+              onReport={(it) => {
+                if (!isSignedIn) {
+                  toast.info("Sign in to report.", { position: "top-center", hideProgressBar: true });
+                  return;
+                }
+                setReportTarget(it);
+              }}
+            />
           ) : (
             <AiInspiration />
           )}
         </div>
       </main>
+
+      <ReportModal
+        open={reportTarget !== null}
+        targetType="artwork"
+        targetRef={reportTarget?.url || ""}
+        targetOwnerClerkId={reportTarget?.artistClerkId}
+        onClose={() => setReportTarget(null)}
+      />
     </div>
   );
 };
@@ -188,7 +209,8 @@ const PopularGrid: React.FC<{
   items: PopularArtwork[];
   loading: boolean;
   onToggleLike: (item: PopularArtwork) => void;
-}> = ({ items, loading, onToggleLike }) => {
+  onReport: (item: PopularArtwork) => void;
+}> = ({ items, loading, onToggleLike, onReport }) => {
   const skeleton = (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
       {Array.from({ length: 12 }).map((_, i) => (
@@ -212,7 +234,7 @@ const PopularGrid: React.FC<{
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 auto-rows-[10px] gap-3">
             {items.map((item, i) => (
-              <ArtworkTile key={`${item.artistClerkId}-${item.url}`} item={item} span={SPANS[i % SPANS.length]} onLike={() => onToggleLike(item)} />
+              <ArtworkTile key={`${item.artistClerkId}-${item.url}`} item={item} span={SPANS[i % SPANS.length]} onLike={() => onToggleLike(item)} onReport={() => onReport(item)} />
             ))}
           </div>
         </>
@@ -221,7 +243,7 @@ const PopularGrid: React.FC<{
   );
 };
 
-const ArtworkTile: React.FC<{ item: PopularArtwork; span: number; onLike: () => void }> = ({ item, span, onLike }) => {
+const ArtworkTile: React.FC<{ item: PopularArtwork; span: number; onLike: () => void; onReport: () => void }> = ({ item, span, onLike, onReport }) => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
 
@@ -247,6 +269,16 @@ const ArtworkTile: React.FC<{ item: PopularArtwork; span: number; onLike: () => 
         className={`w-full h-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] ${loaded ? "ink-fade-in" : "opacity-0"}`}
       />
       <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onReport(); }}
+        aria-label="Report this piece"
+        title="Report"
+        className="absolute top-2 left-2 grid place-items-center h-8 w-8 rounded-full border bg-black/40 text-white border-white/30 hover:bg-black/60 backdrop-blur-md transition opacity-0 group-hover:opacity-100"
+      >
+        <Flag className="h-3.5 w-3.5" />
+      </button>
 
       <button
         type="button"

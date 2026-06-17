@@ -440,6 +440,22 @@ export async function getTrendingIdeas(signal?: AbortSignal) {
   return apiGet<{ items: TrendingIdea[] }>("/artworks/trending-ideas", undefined, undefined, signal);
 }
 
+export type ReportTargetType = "artwork" | "message" | "artist" | "profile";
+
+export async function createReport(
+  input: {
+    targetType: ReportTargetType;
+    targetRef: string;
+    reason: string;
+    details?: string;
+    targetOwnerClerkId?: string;
+  },
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<{ ok: boolean }>("/reports", input, token, signal);
+}
+
 export async function syncUser(
   token: string | undefined,
   payload: {
@@ -536,6 +552,14 @@ export async function submitIntakeForm(
   signal?: AbortSignal
 ) {
   return apiPost<IntakeForm>(`/bookings/${bookingId}/intake`, form, token, signal);
+}
+
+export async function deleteIntakeForm(
+  bookingId: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiDelete<{ ok: boolean }>(`/bookings/${bookingId}/intake`, token, signal);
 }
 
 export async function createCardSetupIntent(

@@ -6,6 +6,7 @@ import Booking from "../../models/Booking.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
 import Project from "../../models/Project.js";
 import Artist from "../../models/Artist.js";
+import Client from "../../models/Client.js";
 import ClientBookingPermission from "../../models/ClientBookingPermission.js";
 import SignedDocument from "../../models/SignedDocument.js";
 import { DOCUMENTS } from "../../services/documentsService.js";
@@ -17,6 +18,7 @@ import {
   markNoShow,
   submitIntakeForm,
   getIntakeForm,
+  deleteIntakeForm,
 } from "../../controllers/bookingController.js";
 
 const app = express();
@@ -46,6 +48,7 @@ app.post("/bookings/:id/cancel", mockAuth, cancelBooking);
 app.post("/bookings/:id/no-show", mockAuth, markNoShow);
 app.post("/bookings/:bookingId/intake", mockAuth, submitIntakeForm);
 app.get("/bookings/:bookingId/intake", mockAuth, getIntakeForm);
+app.delete("/bookings/:bookingId/intake", mockAuth, deleteIntakeForm);
 
 conditionalDescribe("Booking Controller - Consultation Creation", () => {
   let artistId;
@@ -175,6 +178,14 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       signatureName: "Test Client",
       contentHash: "test-hash",
     });
+    await Client.create({
+      clerkId: clientId,
+      email: `${clientId}@example.com`,
+      username: "Client",
+      handle: `@${clientId}`,
+      role: "client",
+      dob: new Date("1995-01-01"),
+    });
   });
 
   test("should create tattoo session with custom duration", async () => {
@@ -261,6 +272,26 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.sessionNumber).toBe(2);
+  });
+
+  test("rejects a tattoo session for an underage client", async () => {
+    await Client.create({
+      clerkId: "minor-1",
+      email: "minor-1@example.com",
+      username: "Minor",
+      handle: "@minor-1",
+      role: "client",
+      dob: new Date(Date.now() - 15 * 365 * 24 * 60 * 60 * 1000),
+    });
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+
+    const response = await request(app)
+      .post("/bookings/session")
+      .set("x-test-user-id", "minor-1")
+      .send({ artistId, startISO, durationMinutes: 120, priceCents: 20000, intake: VALID_INTAKE });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe("underage");
   });
 });
 
@@ -551,5 +582,32 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
     expect(response.status).toBe(200);
     const booking = await Booking.findById(bookingId);
     expect(booking.intakeFormId).toBeDefined();
+  });
+
+  test("lets the client delete their submitted intake data", async () => {
+    await request(app)
+      .post(`/bookings/${bookingId}/intake`)
+      .set("x-test-user-id", clientId)
+      .send({
+        consent: { ageVerification: true, healthDisclosure: true, aftercareInstructions: true, depositPolicy: true, cancellationPolicy: true },
+      });
+
+    const del = await request(app).delete(`/bookings/${bookingId}/intake`).set("x-test-user-id", clientId);
+    expect(del.status).toBe(200);
+
+    const get = await request(app).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", clientId);
+    expect(get.status).toBe(404);
+  });
+
+  test("forbids a non-client from deleting intake data", async () => {
+    await request(app)
+      .post(`/bookings/${bookingId}/intake`)
+      .set("x-test-user-id", clientId)
+      .send({
+        consent: { ageVerification: true, healthDisclosure: true, aftercareInstructions: true, depositPolicy: true, cancellationPolicy: true },
+      });
+
+    const del = await request(app).delete(`/bookings/${bookingId}/intake`).set("x-test-user-id", "stranger");
+    expect(del.status).toBe(403);
   });
 });

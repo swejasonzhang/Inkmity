@@ -297,9 +297,12 @@ export function PrivacyContent() {
         Some bookings involve health-related intake information (such as allergies, medications, skin
         conditions, or pregnancy status) that you choose to provide so an artist can tattoo you
         safely. We collect only what is needed for the booking, share it only with the artist or
-        studio you book and our service providers, and do not use it for advertising. Inkmity is not
-        a healthcare provider and this information is not protected by HIPAA; provide only what is
-        necessary.
+        studio you book and our service providers, and do not use it for advertising. Access is
+        scoped to the client and the artist on that booking. You can <strong>delete your submitted
+        intake data at any time</strong> from the appointment's intake panel, and we otherwise retain
+        it only as long as needed for the appointment and applicable legal or dispute-resolution
+        purposes. Inkmity is not a healthcare provider and this information is not protected by HIPAA;
+        provide only what is necessary.
       </p>
 
       <h2>California residents</h2>

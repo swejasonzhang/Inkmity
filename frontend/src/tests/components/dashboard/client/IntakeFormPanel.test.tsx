@@ -4,6 +4,7 @@ import { render, screen, waitFor, fireEvent } from "@/tests/setup/test-utils";
 const mockGetToken = jest.fn<() => Promise<string>>();
 const mockGetIntakeForm = jest.fn<(...a: any[]) => Promise<any>>();
 const mockSubmitIntakeForm = jest.fn<(...a: any[]) => Promise<any>>();
+const mockDeleteIntakeForm = jest.fn<(...a: any[]) => Promise<any>>();
 
 jest.unstable_mockModule("@clerk/clerk-react", () => ({
   useAuth: () => ({ getToken: mockGetToken }),
@@ -12,6 +13,7 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
 jest.unstable_mockModule("@/api", () => ({
   getIntakeForm: mockGetIntakeForm,
   submitIntakeForm: mockSubmitIntakeForm,
+  deleteIntakeForm: mockDeleteIntakeForm,
 }));
 
 jest.unstable_mockModule("react-toastify", () => ({

@@ -86,6 +86,7 @@ async function createClientUser(clientId) {
     username: "Client",
     handle: `@${clientId}`,
     role: "client",
+    dob: new Date("1995-01-01"),
   });
 }
 
@@ -223,6 +224,7 @@ conditionalDescribe("Integration - Multi-Session Project Booking Flow", () => {
 
     await onboardArtist(artistId);
     await enableBookings(artistId, clientId);
+    await createClientUser(clientId);
 
     stripeMock.customers.create.mockResolvedValue({ id: "cus_test123" });
     stripeMock.paymentIntents.create.mockResolvedValue({

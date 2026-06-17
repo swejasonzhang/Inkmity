@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import LazyReveal from "@/components/ui/LazyReveal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Plus, X, ImageIcon, Save, Star } from "lucide-react";
+import { Plus, X, ImageIcon, Save, Star, TrendingUp } from "lucide-react";
 
 const MAX_IMAGES = 30;
 
@@ -173,6 +173,21 @@ export default function Portfolio() {
             </div>
           )}
         </div>
+
+        {isArtist && images.length > 0 && (() => {
+          const captioned = images.filter((u) => (ideas[u] ?? "").trim()).length;
+          if (captioned === images.length) return null;
+          return (
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-app bg-elevated/60 px-4 py-3">
+              <TrendingUp className="h-4 w-4 mt-0.5 shrink-0 text-subtle" />
+              <p className="text-xs text-subtle leading-relaxed">
+                Add an idea to each piece (e.g. <span className="text-app font-medium">"dragon origami back tattoo"</span>) — captioned work surfaces in the
+                <span className="text-app font-medium"> Trending ideas</span> feed on Explore and gets found by clients searching that idea.
+                <span className="text-app font-medium"> {captioned}/{images.length}</span> captioned.
+              </p>
+            </div>
+          );
+        })()}
 
         <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
 

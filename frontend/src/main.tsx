@@ -2,10 +2,20 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, useNavigate } from "react-router-dom";
 import { ClerkProvider } from "@clerk/clerk-react";
+import * as Sentry from "@sentry/react";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { PAGE_SCROLL_LOCKED, applyScrollLock } from "./lib/scrollLock";
 import "./global.css";
+
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: 0.1,
+  });
+}
 
 applyScrollLock(PAGE_SCROLL_LOCKED);
 (window as unknown as { inkScroll: (allow: boolean) => void }).inkScroll = (allow: boolean) =>
