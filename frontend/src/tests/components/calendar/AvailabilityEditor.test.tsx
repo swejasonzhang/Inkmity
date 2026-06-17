@@ -62,7 +62,7 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
   }),
 }));
 
-const { default: AvailabilityEditor } = await import("@/components/calender/AvailabilityEditor");
+const { default: AvailabilityEditor } = await import("@/components/calendar/AvailabilityEditor");
 
 describe("AvailabilityEditor", () => {
   beforeEach(() => {

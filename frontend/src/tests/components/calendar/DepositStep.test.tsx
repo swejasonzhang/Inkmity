@@ -36,7 +36,7 @@ jest.unstable_mockModule("react-toastify", () => ({
   },
 }));
 
-const { default: DepositStep } = await import("@/components/calender/DepositStep");
+const { default: DepositStep } = await import("@/components/calendar/DepositStep");
 
 describe("DepositStep", () => {
   const defaultBooking = {

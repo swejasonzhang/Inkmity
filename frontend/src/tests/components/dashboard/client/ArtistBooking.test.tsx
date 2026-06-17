@@ -1,7 +1,7 @@
 import { jest, describe, test, expect } from "@jest/globals";
 import { render } from "@/tests/setup/test-utils";
 
-jest.unstable_mockModule("@/components/calender/BookingPicker", () => ({
+jest.unstable_mockModule("@/components/calendar/BookingPicker", () => ({
   default: jest.fn(() => <div data-testid="booking-picker">Booking Picker</div>),
 }));
 

@@ -16,7 +16,7 @@ jest.unstable_mockModule("@/lib/socket", () => ({
 
 global.fetch = jest.fn() as any;
 
-const { default: ArtistCalendarManager } = await import("@/components/calender/ArtistCalendarManager");
+const { default: ArtistCalendarManager } = await import("@/components/calendar/ArtistCalendarManager");
 
 describe("ArtistCalendarManager", () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import BookingPicker from "../../calender/BookingPicker";
-import CalendarPicker from "../../calender/CalendarPicker";
+import BookingPicker from "../../calendar/BookingPicker";
+import CalendarPicker from "../../calendar/CalendarPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import LazyReveal from "@/components/ui/LazyReveal";

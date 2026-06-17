@@ -2,7 +2,7 @@
 
 > A modern platform for discovering tattoo artists across the US — browse by style, message with full context, book with transparent pricing, and earn rewards as you go.
 
-Inkmity connects tattoo clients, artists, and studios in one place: portfolio-driven discovery with tier-boosted ranking, real-time messaging, and an end-to-end on-platform booking flow. Payments run through the platform as merchant of record — deposit up front, balance captured only once both parties verify completion, payouts split between artist and studio (with chargeback clawback). It also includes signed legal documents (client waiver + artist/studio agreements), reward tiers with platform-funded credits (loyalty/birthday/consultation), an appointment waitlist, and in-app sketch approval. It is in active development — see the [Roadmap](#roadmap) for what's coming next.
+Inkmity connects tattoo clients, artists, and studios in one place: portfolio-driven discovery with tier-boosted ranking, an Explore feed of trending ideas drawn from real uploads, real-time messaging, and an end-to-end on-platform booking flow. Before a tattoo session can be requested, the client signs a consent/liability waiver and completes the intake form — enforced on both the client and the server. Payments run through the platform as merchant of record — balance captured only once both parties verify completion, payouts split between artist and studio (with chargeback clawback), and post-session tips that go 100% to the artist (no platform cut). It also includes signed legal documents (client waiver + artist/studio agreements), reward tiers with platform-funded credits (loyalty/birthday/consultation), an appointment waitlist, and in-app sketch approval. It is in active development — see the [Roadmap](#roadmap) for what's coming next.
 
 ---
 
@@ -13,7 +13,13 @@ Inkmity connects tattoo clients, artists, and studios in one place: portfolio-dr
 | [`frontend/`](frontend) | React 19 + Vite + TypeScript single-page app (deploys to Vercel). |
 | [`backend/`](backend) | Node.js + Express 5 API, MongoDB, Socket.io (deploys to Render). |
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production deployment guide.
+### Project documents
+
+| Doc | What it covers |
+|-----|----------------|
+| [`DEPLOYMENT.md`](DEPLOYMENT.md) | Full production deployment guide (Render + Vercel, Stripe Connect, Clerk, env vars, smoke test). |
+| [`BUSINESS_SETUP.md`](BUSINESS_SETUP.md) | Business/operational setup notes. |
+| [`LEGAL_REVIEW.md`](LEGAL_REVIEW.md) | Founder-prepared memo for a NY attorney — context + questions to make a paid review cheaper. **Not legal advice; docs are not attorney-reviewed.** |
 
 ---
 
@@ -21,8 +27,10 @@ See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the full production deployment guide.
 
 **For clients**
 - Discover artists by technique, healed results, budget, location, and travel radius
+- Explore feed of trending ideas — specific concepts (e.g. "dragon origami back tattoo") surfaced from real artist uploads, each with a matching image
 - Real-time messaging with shared references and sketch approval
-- End-to-end booking: time selection, intake form, deposit, confirmation
+- End-to-end booking: waiver + intake completed up front, time selection, confirmation
+- Tip your artist after a completed session — 100% goes to them
 - Transparent up-front pricing and verified reviews
 - Rewards that accrue as you book
 
@@ -48,7 +56,8 @@ relationship from the first reference to the healed result, with money and trust
 
 - **Booking, not just leads.** The entire transaction runs on-platform — deposit through final balance — instead of dumping you into someone's DMs.
 - **Paid only when it's done right.** The balance is captured after *both* client and artist confirm the session is complete, with payouts split between artist and studio (and chargeback clawback).
-- **Built for skin, not just bookings.** Signed waivers, health intake, and clear consent are part of the flow — protecting clients, artists, and studios from the first message.
+- **Built for skin, not just bookings.** A signed consent/liability waiver and health intake are *required before* a tattoo session can be booked — enforced on the client and the server — protecting clients, artists, and studios from the first message.
+- **Tips go entirely to the artist.** After a completed session a client can tip, and 100% of it routes straight to the artist's account — Inkmity takes nothing, and the UI says so.
 - **One thread, full context.** References, sketch approvals, and every message live in a single conversation. No lost DMs, no screenshots.
 - **Discovery by real style.** Search by technique, healed results, budget, and travel radius — not a feed of pretty pictures.
 - **Transparent by default.** Up-front quotes, verified reviews, and clear cancellation terms shown before you pay.
@@ -60,6 +69,7 @@ relationship from the first reference to the healed result, with money and trust
 One way, in the open — **a single transparent platform fee on completed bookings**, shown before you pay. No lead fees, no per-listing charges, no surprise costs.
 
 - **The essentials are always free.** Discovery, booking, messaging, sketch approval, intake, and reviews cost nothing — and the free tier deliberately includes tools other platforms lock behind a paid plan.
+- **We take nothing on tips.** Tips are optional and go 100% to the artist; the platform fee never touches them.
 - **We only earn when you book.** The fee applies to completed bookings and drops as low as 5% as a client books more (see [Tiers](frontend/src/pages/Tiers.tsx)). Our incentive is aligned with keeping artists' books full.
 - **We bring the clients.** Artists focus on tattooing, not chasing leads — Inkmity owns discovery and client acquisition.
 - **We carry the risk.** Inkmity acts as merchant of record and mediator, so payments, paperwork, and protections sit with the platform rather than individual clients or artists.
@@ -103,7 +113,7 @@ One way, in the open — **a single transparent platform fee on completed bookin
 ## Getting started
 
 ### Prerequisites
-- Node.js v18+
+- Node.js v20 (see [`.nvmrc`](.nvmrc); CI runs on Node 20)
 - npm
 - A MongoDB connection string, plus Clerk, Stripe, and Cloudinary accounts
 

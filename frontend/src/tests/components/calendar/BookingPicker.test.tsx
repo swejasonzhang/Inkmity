@@ -96,7 +96,7 @@ jest.unstable_mockModule("react-toastify", () => ({
   ToastContainer: () => null,
 }));
 
-const { default: BookingPicker } = await import("@/components/calender/BookingPicker");
+const { default: BookingPicker } = await import("@/components/calendar/BookingPicker");
 
 describe("BookingPicker", () => {
   const defaultProps = {

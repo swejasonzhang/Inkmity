@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { X, CalendarDays, Clock, Info, ArrowLeft, ChevronRight } from "lucide-react";
-import BookingPicker from "../../calender/BookingPicker";
+import BookingPicker from "../../calendar/BookingPicker";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import type { ArtistWithGroups } from "./ArtistPortfolio";
 

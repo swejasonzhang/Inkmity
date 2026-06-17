@@ -2,7 +2,7 @@ import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import { render, screen } from "@/tests/setup/test-utils";
 import userEvent from "@testing-library/user-event";
 
-const { default: CalendarPicker } = await import("@/components/calender/CalendarPicker");
+const { default: CalendarPicker } = await import("@/components/calendar/CalendarPicker");
 
 describe("CalendarPicker", () => {
   const startOfToday = new Date();
