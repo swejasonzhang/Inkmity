@@ -21,6 +21,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import { useTheme } from "@/hooks/useTheme";
+import { useRole } from "@/hooks/useRole";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
 import ComingSoon from "./components/access/ComingSoon";
@@ -56,6 +57,13 @@ const DashboardScope: React.FC = () => {
       </SignedOut>
     </div>
   );
+};
+
+const HomeRedirect: React.FC = () => {
+  const { role, isLoaded } = useRole();
+  if (!isLoaded) return null;
+  const isProvider = role === "artist" || role === "studio";
+  return <Navigate to={isProvider ? "/dashboard" : "/artists"} replace />;
 };
 
 const App: React.FC = () => {
@@ -105,7 +113,7 @@ const App: React.FC = () => {
           element={
             <>
               <SignedIn>
-                <Navigate to="/artists" replace />
+                <HomeRedirect />
               </SignedIn>
               <SignedOut>
                 <Navigate to="/landing" replace />

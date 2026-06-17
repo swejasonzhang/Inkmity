@@ -18,11 +18,14 @@ export async function getPopularArtworks(req, res) {
     const me = actorId(req);
 
     const artists = await Artist.find({ role: "artist", visible: true })
-      .select("clerkId handle username avatar styles rating bookingsCount portfolioImages pastWorks healedWorks sketches")
+      .select("clerkId handle username avatar styles rating bookingsCount portfolioImages portfolioMeta pastWorks healedWorks sketches")
       .lean();
 
     const artworks = [];
     for (const a of artists) {
+      const ideaByUrl = new Map(
+        (a.portfolioMeta || []).filter((m) => m?.url && m?.idea).map((m) => [m.url, m.idea])
+      );
       const urls = [
         ...(a.portfolioImages || []),
         ...(a.pastWorks || []),
@@ -42,6 +45,7 @@ export async function getPopularArtworks(req, res) {
           styles: a.styles || [],
           rating: Number(a.rating || 0),
           url,
+          idea: ideaByUrl.get(url) || "",
         });
       }
     }
@@ -68,6 +72,41 @@ export async function getPopularArtworks(req, res) {
   } catch (e) {
     console.error("getPopularArtworks error:", e.message);
     res.status(500).json({ error: "popular_failed" });
+  }
+}
+
+export async function getTrendingIdeas(req, res) {
+  try {
+    const limit = Math.min(24, Math.max(1, Number(req.query.limit) || 12));
+    const artists = await Artist.find({ role: "artist", visible: true })
+      .select("portfolioMeta")
+      .lean();
+
+    const byIdea = new Map();
+    for (const a of artists) {
+      for (const m of a.portfolioMeta || []) {
+        const idea = String(m?.idea || "").trim();
+        const url = String(m?.url || "").trim();
+        if (!idea || !url) continue;
+        const norm = idea.toLowerCase();
+        const existing = byIdea.get(norm);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          byIdea.set(norm, { label: idea, query: idea, image: url, count: 1 });
+        }
+      }
+    }
+
+    const items = [...byIdea.values()]
+      .sort((x, y) => y.count - x.count || x.label.localeCompare(y.label))
+      .slice(0, limit)
+      .map(({ label, query, image }) => ({ label, query, image }));
+
+    res.json({ items });
+  } catch (e) {
+    console.error("getTrendingIdeas error:", e.message);
+    res.status(500).json({ error: "trending_ideas_failed" });
   }
 }
 

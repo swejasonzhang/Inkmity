@@ -7,17 +7,14 @@ import { toast } from "react-toastify";
 import Header from "@/components/header/Header";
 import LazyReveal from "@/components/ui/LazyReveal";
 import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
-import { fetchPopularArtworks, toggleArtworkLike, type PopularArtwork } from "@/api";
+import { fetchPopularArtworks, getTrendingIdeas, toggleArtworkLike, type PopularArtwork, type TrendingIdea } from "@/api";
 
 type TabKey = "real" | "ai";
-
-type TrendingIdea = { label: string; query: string; image: string };
-
-const TRENDING_IDEAS: TrendingIdea[] = [];
 
 const Gallery: React.FC = () => {
   const [tab, setTab] = useState<TabKey>("real");
   const [items, setItems] = useState<PopularArtwork[]>([]);
+  const [trending, setTrending] = useState<TrendingIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const { getToken } = useAuth();
@@ -38,6 +35,19 @@ const Gallery: React.FC = () => {
     })();
     return () => controller.abort();
   }, [isSignedIn, getToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await getTrendingIdeas(controller.signal);
+        setTrending(res?.items ?? []);
+      } catch {
+        setTrending([]);
+      }
+    })();
+    return () => controller.abort();
+  }, []);
 
   const onToggleLike = async (it: PopularArtwork) => {
     if (!isSignedIn) {
@@ -69,7 +79,11 @@ const Gallery: React.FC = () => {
 
   const q = query.trim().toLowerCase();
   const shownItems = q
-    ? items.filter((it) => `${it.username ?? ""} ${it.handle ?? ""}`.toLowerCase().includes(q))
+    ? items.filter((it) =>
+        `${it.idea ?? ""} ${it.username ?? ""} ${it.handle ?? ""} ${(it.styles ?? []).join(" ")}`
+          .toLowerCase()
+          .includes(q)
+      )
     : items;
 
   return (
@@ -114,12 +128,12 @@ const Gallery: React.FC = () => {
             )}
           </div>
 
-          {TRENDING_IDEAS.length > 0 && (
+          {trending.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs">
               <span className="inline-flex items-center gap-1 text-subtle font-medium">
                 <TrendingUp className="h-3.5 w-3.5" /> Trending ideas:
               </span>
-              {TRENDING_IDEAS.map((idea) => (
+              {trending.map((idea) => (
                 <button
                   key={idea.label}
                   type="button"

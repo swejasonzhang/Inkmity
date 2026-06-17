@@ -610,16 +610,28 @@ export async function saveMyPortfolio(req, res) {
       .map((u) => String(u || "").trim())
       .filter(Boolean)
       .slice(0, 30);
+    const urlSet = new Set(urls);
+    const ideaByUrl = new Map();
+    if (Array.isArray(req.body?.meta)) {
+      for (const m of req.body.meta) {
+        const url = String(m?.url || "").trim();
+        const idea = String(m?.idea || "").trim().slice(0, 80);
+        if (url && idea && urlSet.has(url) && !ideaByUrl.has(url)) {
+          ideaByUrl.set(url, idea);
+        }
+      }
+    }
+    const portfolioMeta = [...ideaByUrl.entries()].map(([url, idea]) => ({ url, idea }));
     const Artist = mongoose.model("artist");
     const user = await Artist.findOneAndUpdate(
       { clerkId },
-      { $set: { portfolioImages: urls } },
+      { $set: { portfolioImages: urls, portfolioMeta } },
       { new: true }
     ).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
     const { emitArtistProfileUpdated } = await import("../services/socketService.js");
     emitArtistProfileUpdated(clerkId);
-    res.json({ ok: true, portfolioImages: user.portfolioImages || [] });
+    res.json({ ok: true, portfolioImages: user.portfolioImages || [], portfolioMeta: user.portfolioMeta || [] });
   } catch {
     res.status(500).json({ error: "save_portfolio_failed" });
   }

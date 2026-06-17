@@ -20,6 +20,7 @@ export default function Portfolio() {
   const isArtist = role === "artist";
 
   const [images, setImages] = useState<string[]>([]);
+  const [ideas, setIdeas] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,7 +46,14 @@ export default function Portfolio() {
       try {
         const token = await getToken();
         const me = await getMe({ token: token ?? undefined });
-        if (!cancelled) setImages((me?.portfolioImages ?? []).filter(Boolean));
+        if (!cancelled) {
+          setImages((me?.portfolioImages ?? []).filter(Boolean));
+          const ideaMap: Record<string, string> = {};
+          for (const m of me?.portfolioMeta ?? []) {
+            if (m?.url && m?.idea) ideaMap[m.url] = m.idea;
+          }
+          setIdeas(ideaMap);
+        }
       } catch {
         if (!cancelled) setImages([]);
       } finally {
@@ -115,7 +123,10 @@ export default function Portfolio() {
     setSaving(true);
     try {
       const token = await getToken();
-      await updateMyPortfolio(images, token ?? undefined);
+      const meta = images
+        .filter((url) => (ideas[url] ?? "").trim())
+        .map((url) => ({ url, idea: ideas[url].trim() }));
+      await updateMyPortfolio(images, meta, token ?? undefined);
       setDirty(false);
       toast.success("Portfolio saved.");
     } catch {
@@ -198,42 +209,54 @@ export default function Portfolio() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {images.map((url, i) => (
-              <figure
-                key={`${url}-${i}`}
-                className={`group relative aspect-square overflow-hidden rounded-xl bg-card transition ${
-                  i < 3
-                    ? "ring-2 ring-[var(--fg)] ring-offset-2 ring-offset-[var(--bg)] shadow-[0_10px_30px_-8px_rgba(0,0,0,0.55)]"
-                    : "border border-app"
-                }`}
-              >
-                <img src={url} alt={`Portfolio piece ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-                {i < 3 && (
-                  <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--fg)] text-[var(--bg)] text-[10px] font-bold px-2 py-0.5 shadow">
-                    <Star className="h-3 w-3" /> {i === 0 ? "Cover" : "Featured"}
-                  </span>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {i !== 0 && (
+              <div key={`${url}-${i}`} className="group flex flex-col gap-1.5">
+                <figure
+                  className={`relative aspect-square overflow-hidden rounded-xl bg-card transition ${
+                    i < 3
+                      ? "ring-2 ring-[var(--fg)] ring-offset-2 ring-offset-[var(--bg)] shadow-[0_10px_30px_-8px_rgba(0,0,0,0.55)]"
+                      : "border border-app"
+                  }`}
+                >
+                  <img src={url} alt={`Portfolio piece ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                  {i < 3 && (
+                    <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--fg)] text-[var(--bg)] text-[10px] font-bold px-2 py-0.5 shadow">
+                      <Star className="h-3 w-3" /> {i === 0 ? "Cover" : "Featured"}
+                    </span>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {i !== 0 && (
+                      <button
+                        type="button"
+                        onClick={() => makeCover(i)}
+                        title="Make cover"
+                        className="grid place-items-center h-7 w-7 rounded-full bg-white/90 text-black hover:bg-white transition"
+                      >
+                        <Star className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => makeCover(i)}
-                      title="Make cover"
-                      className="grid place-items-center h-7 w-7 rounded-full bg-white/90 text-black hover:bg-white transition"
+                      onClick={() => removeAt(i)}
+                      title="Remove"
+                      className="grid place-items-center h-7 w-7 rounded-full bg-black text-white hover:bg-neutral-800 transition"
                     >
-                      <Star className="h-3.5 w-3.5" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeAt(i)}
-                    title="Remove"
-                    className="grid place-items-center h-7 w-7 rounded-full bg-black text-white hover:bg-neutral-800 transition"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </figure>
+                  </div>
+                </figure>
+                <input
+                  value={ideas[url] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setIdeas((prev) => ({ ...prev, [url]: v }));
+                    setDirty(true);
+                  }}
+                  maxLength={80}
+                  placeholder="Describe the idea — e.g. dragon origami back tattoo"
+                  className="w-full rounded-lg border border-app bg-elevated px-2.5 py-1.5 text-xs text-app placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-[color:var(--fg)]/20"
+                />
+              </div>
             ))}
           </div>
         )}

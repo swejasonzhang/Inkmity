@@ -280,6 +280,7 @@ export type Me = {
   usernameUpdatedAt?: string;
   onboardingComplete?: boolean;
   portfolioImages?: string[];
+  portfolioMeta?: { url: string; idea: string }[];
   bio?: string;
   avatar?: { url?: string };
   avatarUrl?: string;
@@ -319,6 +320,7 @@ export type PopularArtwork = {
   styles: string[];
   rating: number;
   url: string;
+  idea?: string;
   likes: number;
   likedByMe: boolean;
 };
@@ -421,14 +423,21 @@ export async function updateVisibility(
 
 export async function updateMyPortfolio(
   urls: string[],
+  meta?: { url: string; idea: string }[],
   token?: string | null,
   signal?: AbortSignal
 ) {
-  return apiRequest<{ ok: boolean; portfolioImages: string[] }>(
+  return apiRequest<{ ok: boolean; portfolioImages: string[]; portfolioMeta?: { url: string; idea: string }[] }>(
     "/users/me/portfolio",
-    { method: "PUT", body: JSON.stringify({ urls }), signal },
+    { method: "PUT", body: JSON.stringify({ urls, meta }), signal },
     token
   );
+}
+
+export type TrendingIdea = { label: string; query: string; image: string };
+
+export async function getTrendingIdeas(signal?: AbortSignal) {
+  return apiGet<{ items: TrendingIdea[] }>("/artworks/trending-ideas", undefined, undefined, signal);
 }
 
 export async function syncUser(
