@@ -7,7 +7,7 @@ import { connectSocket, getSocket } from "@/lib/socket";
 
 const APPT_KINDS = ["request", "final_price", "verification", "balance", "booking", "appointment"];
 const linkFor = (kind: string | null) =>
-  kind && APPT_KINDS.some((k) => kind.includes(k)) ? "/appointments" : "/dashboard";
+  kind && APPT_KINDS.some((k) => kind.includes(k)) ? "/appointments" : "/";
 
 const REALTIME_EVENTS = [
   "message:new",
@@ -219,7 +219,7 @@ export default function NotificationBell({ className = "" }: { className?: strin
             type="button"
             onClick={() => {
               setOpen(false);
-              navigate("/dashboard");
+              navigate("/");
             }}
             className="w-full px-4 py-2.5 text-xs font-semibold text-app border-t border-app hover:bg-elevated transition-colors"
           >

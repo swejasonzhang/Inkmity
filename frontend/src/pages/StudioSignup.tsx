@@ -140,7 +140,6 @@ export default function StudioSignup() {
   return (
     <div className="relative flex h-svh flex-col text-white">
       <VideoBackground />
-      <div id="clerk-captcha" />
       <ToastContainer
         position="top-center"
         theme="dark"

@@ -67,6 +67,13 @@ const HomeRedirect: React.FC = () => {
   return <Navigate to={isProvider ? "/dashboard" : "/artists"} replace />;
 };
 
+const ProviderDashboard: React.FC = () => {
+  const { role, isLoaded } = useRole();
+  if (!isLoaded) return null;
+  if (role === "client") return <Navigate to="/artists" replace />;
+  return <Dashboard />;
+};
+
 const App: React.FC = () => {
   useInactivityLogout();
 
@@ -79,7 +86,7 @@ const App: React.FC = () => {
         <Route index element={<Dashboard />} />
       </Route>
       <Route path="/dashboard" element={<DashboardScope />}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<ProviderDashboard />} />
       </Route>
       <Route path="/profile" element={<DashboardScope />}>
         <Route index element={<Profile />} />

@@ -6,7 +6,6 @@ import { Command, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@
 import { Badge } from "@/components/ui/badge";
 import { Check, X, ChevronUp, ChevronDown, MapPin, Clock, DollarSign, Brush, CalendarCheck, Plane } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import StudioLocationPicker from "@/components/studio/StudioLocationPicker";
 
 type ArtistProfile = {
     location: string;
@@ -259,26 +258,6 @@ export default function ArtistDetailsStep({
             <div className="flex flex-col items-center justify-center text-center gap-1.5">
                 <h3 className="text-lg font-bold text-white">Artist Details</h3>
                 <p className="text-xs text-white/55">Tell us about your practice — or use “Skip now” to set defaults.</p>
-            </div>
-
-            <div className={`${fieldCls} !items-stretch`}>
-                <label className={labelCls}><MapPin className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Shop <span className="text-white/40 normal-case">(optional)</span></label>
-                <input
-                    name="shop"
-                    type="text"
-                    value={artist.shop || ""}
-                    placeholder="Shop name"
-                    className={inputCls}
-                    onChange={onChange}
-                />
-                <StudioLocationPicker
-                    compact
-                    value={{ name: artist.shop, address: artist.shopAddress || "", city: "", lat: artist.shopLat, lng: artist.shopLng }}
-                    onChange={(loc) => {
-                        onChange({ target: { name: "shop", value: loc.name || "" } } as React.ChangeEvent<HTMLInputElement>);
-                        onChange({ target: { name: "shopAddress", value: loc.address || "" } } as React.ChangeEvent<HTMLInputElement>);
-                    }}
-                />
             </div>
 
             <div className="grid grid-cols-2 gap-1.5">

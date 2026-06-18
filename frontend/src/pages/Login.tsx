@@ -41,14 +41,14 @@ export default function Login() {
   const [flashToken, setFlashToken] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successType, setSuccessType] = useState<"login" | "already" | null>(null);
-  const [redirectTo, setRedirectTo] = useState<"/dashboard" | "/onboarding">("/dashboard");
+  const [redirectTo, setRedirectTo] = useState<"/artists" | "/dashboard" | "/onboarding">("/dashboard");
   const redirectTimerRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
   const justLoggedInRef = useRef(false);
   const isRedirectingRef = useRef(false);
   const intendedSuccessTypeRef = useRef<"login" | "already" | null>(null);
 
-  const beginRedirect = useCallback((dest: "/dashboard" | "/onboarding" = "/dashboard") => {
+  const beginRedirect = useCallback((dest: "/" | "/artists" | "/dashboard" | "/onboarding" = "/") => {
     if (redirectTimerRef.current !== null) {
       window.clearTimeout(redirectTimerRef.current);
     }
@@ -58,11 +58,12 @@ export default function Login() {
     }, 600);
   }, [navigate]);
 
-  const resolveDestination = useCallback(async (): Promise<"/dashboard" | "/onboarding"> => {
+  const resolveDestination = useCallback(async (): Promise<"/artists" | "/dashboard" | "/onboarding"> => {
     try {
       const token = await getToken();
       const me = await getMe({ token: token ?? undefined });
-      return me?.onboardingComplete === true ? "/dashboard" : "/onboarding";
+      if (me?.onboardingComplete !== true) return "/onboarding";
+      return me?.role === "client" ? "/artists" : "/dashboard";
     } catch (e: unknown) {
       return (e as { status?: number })?.status === 404 ? "/onboarding" : "/dashboard";
     }

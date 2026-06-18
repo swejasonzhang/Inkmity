@@ -186,7 +186,7 @@ export default function SignUp() {
         clearTimeout(redirectTimerRef.current);
       }
       redirectTimerRef.current = window.setTimeout(() => {
-        navigate("/dashboard", { replace: true });
+        navigate("/", { replace: true });
       }, 600);
     }
   }, [authLoaded, userId, navigate]);
@@ -281,7 +281,8 @@ export default function SignUp() {
       ? [{ key: "role", valid: allSharedValid }]
       : [
         { key: "role", valid: allSharedValid },
-        { key: "artist-1", valid: effectiveArtistValid }
+        { key: "artist-1", valid: effectiveArtistValid },
+        { key: "artist-2", valid: true }
       ];
   }, [role, allSharedValid, effectiveArtistValid]);
 
@@ -406,6 +407,7 @@ export default function SignUp() {
     if (!isLoaded || !setActive) {
       return;
     }
+    const homePath = role === "client" ? "/artists" : "/dashboard";
     setLoading(true);
     try {
       const result = await signUpAttempt.attemptEmailAddressVerification({ code: code.trim() });
@@ -444,20 +446,25 @@ export default function SignUp() {
             clearTimeout(redirectTimerRef.current);
           }
           redirectTimerRef.current = window.setTimeout(() => {
-            navigate("/dashboard", { replace: true });
+            navigate(homePath, { replace: true });
           }, 600);
           return;
         } catch {
-          try {
-            await signOut();
-          } catch { }
+          justSignedUpRef.current = true;
+          isMountedRef.current = true;
+          setSuccessType("signup");
+          setShowSuccess(true);
+          isRedirectingRef.current = true;
+          if (redirectTimerRef.current !== null) {
+            clearTimeout(redirectTimerRef.current);
+          }
+          redirectTimerRef.current = window.setTimeout(() => {
+            navigate(homePath, { replace: true });
+          }, 600);
           return;
         }
       }
     } catch {
-      try {
-        await signOut();
-      } catch { }
     } finally {
       setLoading(false);
     }
@@ -509,8 +516,6 @@ export default function SignUp() {
 
   return (
     <div className="relative h-svh overflow-hidden flex flex-col text-app">
-      {}
-      <div id="clerk-captcha" />
       <ToastContainer position="top-center" theme="dark" newestOnTop closeOnClick hideProgressBar style={{ zIndex: 2147483647 }} />
       <VideoBackground />
       <Header />

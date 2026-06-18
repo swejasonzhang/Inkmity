@@ -60,7 +60,7 @@ export default function Onboarding() {
                 const token = await getToken();
                 const me = await getMe({ token: token ?? undefined });
                 if (!active) return;
-                if (me?.onboardingComplete === true) navigate("/dashboard", { replace: true });
+                if (me?.onboardingComplete === true) navigate("/", { replace: true });
                 else setChecking(false);
             } catch {
                 if (active) setChecking(false);
@@ -142,7 +142,7 @@ export default function Onboarding() {
             setCachedUsername(username.trim());
             markOnboarded(user.id);
             window.dispatchEvent(new Event("inkmity:user-updated"));
-            setTimeout(() => navigate("/dashboard", { replace: true }), 500);
+            setTimeout(() => navigate(role === "client" ? "/artists" : "/dashboard", { replace: true }), 500);
         } catch {
             setSubmitting(false);
             setCompleting(false);

@@ -522,11 +522,6 @@ export default function ArtistsSection({
             <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
                 <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-2 sm:px-1 pb-16">
                     <header className="text-center pt-3 pb-0 px-4">
-                        <div className="flex items-center justify-center gap-3 mb-4">
-                            <span className="h-px w-8 bg-app/50" aria-hidden />
-                            <span className="text-[11px] font-bold uppercase tracking-[0.32em] text-subtle">Discover artists</span>
-                            <span className="h-px w-8 bg-app/50" aria-hidden />
-                        </div>
                         <h1 className="font-extrabold tracking-tight leading-[1.05]" style={{ fontSize: "clamp(1.7rem, 1.6vw + 1.2rem, 2.7rem)" }}>
                             Find your artist. Wear their art.
                         </h1>

@@ -8,6 +8,7 @@ import ProgressDots from "@/components/access/ProgressDots";
 import SharedAccountStep from "@/components/access/SharedAccountStep";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
 import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
+import ArtistLocationStep from "@/components/access/ArtistLocationStep";
 import ReviewStep from "@/components/access/ReviewStep";
 import OtpStep from "@/components/access/OtpStep";
 import SignupUpload from "@/components/upload/SignupUpload";
@@ -26,6 +27,10 @@ type ArtistProfile = {
   portfolio: string;
   styles: string[];
   bio?: string;
+  shop?: string;
+  shopAddress?: string;
+  shopLat?: number;
+  shopLng?: number;
 };
 
 type BaseProps = {
@@ -219,6 +224,7 @@ export default function SignupFormCard(props: SignupProps) {
                       )}
                       {slides[step].key === "client-1" && <ClientDetailsStep client={client} onChange={onClientChange} />}
                       {slides[step].key === "artist-1" && <ArtistDetailsStep artist={artist} onChange={onArtistChange} />}
+                      {slides[step].key === "artist-2" && <ArtistLocationStep artist={artist} onChange={onArtistChange} />}
                       {slides[step].key === "upload" && (
                         <SignupUpload
                           label="Showcase your top 4 pieces"
