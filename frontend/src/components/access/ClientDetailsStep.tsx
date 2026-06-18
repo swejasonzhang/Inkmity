@@ -282,7 +282,7 @@ export default function ClientDetailsStep({
         } catch { }
     }, []);
 
-    const fieldCls = "space-y-1 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 md:py-2 transition hover:border-white/20";
+    const fieldCls = "space-y-0.5 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-0.5 transition hover:border-white/20";
     const labelCls = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-semibold capitalize text-white/90 text-center";
     const triggerCls =
         "relative h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
@@ -296,8 +296,8 @@ export default function ClientDetailsStep({
         "w-full [&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-white/15 [&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-white [&_[data-slot=slider-thumb]]:bg-neutral-900 [&_[data-slot=slider-thumb]]:shadow-lg [&_[data-slot=slider-thumb]]:ring-white/30";
 
     return (
-        <div className="w-full space-y-1.5 md:space-y-2">
-            <div className="grid grid-cols-2 gap-1.5">
+        <div className="w-full space-y-1">
+            <div className="grid grid-cols-2 gap-1">
                 <div className={`${fieldCls} col-span-2`}>
                     <label className={labelCls}><DollarSign className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Budget range</label>
                     <div className="w-full max-w-md px-1 pt-1">
@@ -311,17 +311,18 @@ export default function ClientDetailsStep({
                             aria-label="Budget range"
                             className={sliderCls}
                         />
-                        <div className="mt-1.5 flex items-stretch justify-center gap-2">
-                            <div className="flex-1 max-w-[7.5rem] flex flex-col items-center gap-0.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-1.5">
+                        <div className="mt-1.5 flex items-center justify-center gap-2">
+                            <div className="flex items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-0.5">
                                 <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">Min</span>
-                                <span className="text-base font-bold leading-none tabular-nums text-white">${low.toLocaleString()}</span>
+                                <span className="text-sm font-bold leading-none tabular-nums text-white">${low.toLocaleString()}</span>
                             </div>
-                            <div className="flex-1 max-w-[7.5rem] flex flex-col items-center gap-0.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-1.5">
+                            <span className="text-white/30 text-xs">·</span>
+                            <div className="flex items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-0.5">
                                 <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">Max</span>
-                                <span className="text-base font-bold leading-none tabular-nums text-white">${high.toLocaleString()}{high >= MAX ? "+" : ""}</span>
+                                <span className="text-sm font-bold leading-none tabular-nums text-white">${high.toLocaleString()}{high >= MAX ? "+" : ""}</span>
                             </div>
+                            <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-white/35">USD</span>
                         </div>
-                        <p className="mt-1.5 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">USD budget · optional</p>
                     </div>
                 </div>
 

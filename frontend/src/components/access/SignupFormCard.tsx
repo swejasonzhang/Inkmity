@@ -185,16 +185,16 @@ export default function SignupFormCard(props: SignupProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
-      <div className={`rounded-3xl ${showInfo ? "sm:rounded-l-none sm:rounded-r-3xl" : ""} w-full m-0 bg-card border border-app p-3 sm:p-5 h-full mx-auto flex items-center justify-center`}>
-        <div className="w-full flex flex-col items-center justify-center gap-1.5 sm:gap-2">
-          <div className="flex flex-col items-center text-center gap-1.5 sm:gap-2">
-            <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-1 text-xs text-app/70">
+      <div className={`rounded-3xl ${showInfo ? "sm:rounded-l-none sm:rounded-r-3xl" : ""} w-full m-0 bg-card border border-app p-3 sm:p-4 h-full mx-auto flex items-center justify-center`}>
+        <div className="w-full flex flex-col items-center justify-center gap-1 sm:gap-1.5">
+          <div className="flex flex-col items-center text-center gap-1">
+            <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-app/40 bg-elevated px-3 py-0.5 text-xs text-app/70">
               <Sparkles className="h-3 w-3" />
               <span>Join the Inkmity community</span>
             </div>
-            <div className="space-y-0.5 sm:space-y-1">
-              <h1 className="text-base sm:text-xl lg:text-2xl font-extrabold tracking-tight text-app">Sign up</h1>
-              <p className="hidden sm:block text-subtle text-xs sm:text-sm">A few quick steps to personalize your experience.</p>
+            <div className="space-y-0.5">
+              <h1 className="text-base sm:text-lg lg:text-xl font-extrabold tracking-tight text-app">Sign up</h1>
+              <p className="hidden sm:block text-subtle text-[11px] sm:text-xs">A few quick steps to personalize your experience.</p>
             </div>
           </div>
           <div className="w-full flex flex-col">
@@ -307,7 +307,7 @@ export default function SignupFormCard(props: SignupProps) {
               </AnimatePresence>
             </motion.div>
           </div>
-          <div className="text-subtle text-center text-xs sm:text-sm space-y-1">
+          <div className="text-subtle text-center text-[11px] sm:text-xs space-y-0.5">
             <div><span>Already have an account? <a href="/login" className="underline text-app hover:opacity-80">Login</a></span></div>
             <div><span>Setting up a tattoo studio? <a href="/signup/studio" className="underline text-app hover:opacity-80">Create a studio account</a></span></div>
           </div>

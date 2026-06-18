@@ -72,13 +72,13 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
             className="w-full h-full"
         >
             <div className="w-full h-full rounded-3xl sm:rounded-l-3xl sm:rounded-r-none border border-app bg-card text-app overflow-hidden flex flex-col">
-                <div className="w-full h-full px-5 py-5 sm:px-6 sm:py-6 flex flex-col items-center justify-center text-center">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-app/40 bg-elevated px-3 py-1 text-fluid-xs text-app select-none mb-3">
+                <div className="w-full h-full px-5 py-4 sm:px-6 sm:py-5 flex flex-col items-center justify-center text-center">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-app/40 bg-elevated px-3 py-0.5 text-fluid-xs text-app select-none mb-2">
                         <Sparkles className="h-3.5 w-3.5" />
                         <span>Inkmity</span>
                     </div>
 
-                    <h2 className="text-fluid-xl font-extrabold tracking-tight text-app select-none">
+                    <h2 className="text-fluid-lg font-extrabold tracking-tight text-app select-none">
                         {heading}
                     </h2>
 
@@ -86,19 +86,19 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                         initial={false}
                         animate={{ opacity: delayed ? 1 : 0 }}
                         transition={{ duration: 0.45, ease: "easeOut" }}
-                        className="mt-2 text-subtle text-fluid-xs leading-relaxed max-w-sm select-none"
+                        className="mt-1.5 text-subtle text-fluid-xs leading-snug max-w-sm select-none"
                     >
                         {message}
                     </motion.p>
 
-                    <div className="mt-4 w-full max-w-sm space-y-2">
+                    <div className="mt-3 w-full max-w-sm space-y-1.5">
                         {valueProps.map(({ icon: Icon, title, body }, i) => (
                             <motion.div
                                 key={title}
                                 initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
                                 animate={delayed ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
                                 transition={prefersReduced ? { duration: 0 } : { delay: 0.15 + i * 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                                className="flex items-center gap-2.5 rounded-xl border border-app bg-elevated/70 p-2.5 text-left"
+                                className="flex items-center gap-2.5 rounded-xl border border-app bg-elevated/70 p-2 text-left"
                             >
                                 <span className="inline-grid place-items-center rounded-lg border border-app/40 bg-card p-1.5 flex-shrink-0">
                                     <Icon className="h-4 w-4 text-app" />
@@ -116,15 +116,15 @@ export default function InfoPanel({ show, prefersReduced, mode = "signup", role 
                             initial={{ opacity: 0, y: 10 }}
                             animate={delayed ? { opacity: 1, y: 0 } : {}}
                             transition={prefersReduced ? { duration: 0 } : { duration: 0.45, ease: "easeOut", delay: 0.45 }}
-                            className="mt-5 w-full max-w-sm"
+                            className="mt-3 w-full max-w-sm"
                         >
-                            <div className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-app mb-2.5">
+                            <div className="text-fluid-xs font-semibold uppercase tracking-[0.15em] text-app mb-1.5">
                                 How it works
                             </div>
                             <div className="flex items-start gap-1">
                                 {steps.map((label, i) => (
-                                    <div key={label} className="flex-1 flex flex-col items-center gap-1.5">
-                                        <span className="grid h-7 w-7 place-items-center rounded-full border border-app/40 bg-elevated text-fluid-xs font-bold text-app">
+                                    <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                                        <span className="grid h-6 w-6 place-items-center rounded-full border border-app/40 bg-elevated text-fluid-xs font-bold text-app">
                                             {i + 1}
                                         </span>
                                         <span className="text-fluid-xs text-app font-semibold leading-tight">{label}</span>

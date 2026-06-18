@@ -82,7 +82,7 @@ export default function ArtistDetailsStep({
 
     const inputCls =
         "w-full rounded-xl border border-white/15 bg-neutral-900/80 px-3 py-1.5 text-xs text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 text-center truncate";
-    const fieldCls = "space-y-1 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 md:py-2 transition hover:border-white/20";
+    const fieldCls = "space-y-0.5 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-0.5 transition hover:border-white/20";
     const labelCls = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-semibold capitalize text-white/90 text-center";
     const triggerCls =
         "relative h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
@@ -254,13 +254,12 @@ export default function ArtistDetailsStep({
     }
 
     return (
-        <div className="space-y-1.5 md:space-y-2">
-            <div className="flex flex-col items-center justify-center text-center gap-1.5">
-                <h3 className="text-lg font-bold text-white">Artist Details</h3>
-                <p className="text-xs text-white/55">Tell us about your practice — or use “Skip now” to set defaults.</p>
+        <div className="space-y-1">
+            <div className="flex flex-col items-center justify-center text-center">
+                <h3 className="text-base font-bold text-white">Artist Details</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-1">
                 <div className={fieldCls}>
                     <label className={labelCls}><MapPin className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Location</label>
                     <Select value={artist.location && artist.location !== "__unset__" ? artist.location : "New York, NY"} onValueChange={handleSelect("location")}>
@@ -323,7 +322,7 @@ export default function ArtistDetailsStep({
 
                 <div className={`${fieldCls} col-span-2 order-first`}>
                     <label className={labelCls}><DollarSign className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Hourly rate</label>
-                    <div className="w-full max-w-md px-1 pt-2">
+                    <div className="w-full max-w-md px-1 pt-1">
                         <Slider
                             min={RATE_MIN}
                             max={RATE_MAX}
@@ -332,17 +331,18 @@ export default function ArtistDetailsStep({
                             onValueChange={onRateChange}
                             className="w-full [&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-white/15 [&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-white [&_[data-slot=slider-thumb]]:bg-neutral-900 [&_[data-slot=slider-thumb]]:shadow-lg [&_[data-slot=slider-thumb]]:ring-white/30"
                         />
-                        <div className="mt-3 flex items-stretch justify-center gap-2">
-                            <div className="flex-1 max-w-[7.5rem] flex flex-col items-center gap-0.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-1.5">
+                        <div className="mt-1.5 flex items-center justify-center gap-2">
+                            <div className="flex items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-0.5">
                                 <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">Min</span>
-                                <span className="text-base font-bold leading-none tabular-nums text-white">${rateLow}</span>
+                                <span className="text-sm font-bold leading-none tabular-nums text-white">${rateLow}</span>
                             </div>
-                            <div className="flex-1 max-w-[7.5rem] flex flex-col items-center gap-0.5 rounded-xl border border-white/12 bg-white/[0.05] px-3 py-1.5">
+                            <span className="text-white/30 text-xs">·</span>
+                            <div className="flex items-center gap-1.5 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-0.5">
                                 <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/40">Max</span>
-                                <span className="text-base font-bold leading-none tabular-nums text-white">${rateHigh}{rateHigh >= RATE_MAX ? "+" : ""}</span>
+                                <span className="text-sm font-bold leading-none tabular-nums text-white">${rateHigh}{rateHigh >= RATE_MAX ? "+" : ""}</span>
                             </div>
+                            <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-white/35">USD/hr</span>
                         </div>
-                        <p className="mt-1.5 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">USD / hour</p>
                     </div>
                 </div>
 

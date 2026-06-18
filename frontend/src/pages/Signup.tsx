@@ -276,15 +276,28 @@ export default function SignUp() {
 
   const effectiveArtistValid = detailsSkipped || allArtistValid;
 
+  const clientBudgetOk =
+    !client.budgetMin || !client.budgetMax
+      ? true
+      : Number.isFinite(Number(client.budgetMin)) &&
+        Number.isFinite(Number(client.budgetMax)) &&
+        Number(client.budgetMax) > Number(client.budgetMin);
+  const allClientValid = !!client.location && clientBudgetOk;
+  const effectiveClientValid = detailsSkipped || allClientValid;
+
   const slides = useMemo<{ key: string; valid: boolean }[]>(() => {
     return role === "client"
-      ? [{ key: "role", valid: allSharedValid }]
+      ? [
+        { key: "role", valid: allSharedValid },
+        { key: "client-1", valid: effectiveClientValid },
+        { key: "review", valid: allSharedValid && effectiveClientValid }
+      ]
       : [
         { key: "role", valid: allSharedValid },
         { key: "artist-1", valid: effectiveArtistValid },
         { key: "artist-2", valid: true }
       ];
-  }, [role, allSharedValid, effectiveArtistValid]);
+  }, [role, allSharedValid, effectiveArtistValid, effectiveClientValid]);
 
   const isLastFormSlide = step === slides.length - 1;
 
@@ -339,7 +352,7 @@ export default function SignUp() {
 
   const startVerification = async () => {
     if (loading) return;
-    const tips = detailsSkipped ? [] : collectIssues({ role, step: role === "client" ? 0 : 3, shared, client, artist });
+    const tips = detailsSkipped ? [] : collectIssues({ role, step: 3, shared, client, artist });
     if (tips.length) {
       setInvalidFields([]);
       setFlashToken((t) => t + 1);
@@ -415,11 +428,33 @@ export default function SignUp() {
         await setActive({ session: result.createdSessionId });
         resetActivityTimer();
         try {
+          localStorage.setItem("trustedDevice", shared.email);
+          localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
+          localStorage.removeItem(LOGOUT_TYPE_KEY);
+        } catch { }
+
+        const finishSuccess = (dest: string) => {
+          justSignedUpRef.current = true;
+          isMountedRef.current = true;
+          setSuccessType("signup");
+          setShowSuccess(true);
+          isRedirectingRef.current = true;
+          if (redirectTimerRef.current !== null) {
+            clearTimeout(redirectTimerRef.current);
+          }
+          redirectTimerRef.current = window.setTimeout(() => {
+            navigate(dest, { replace: true });
+          }, 600);
+        };
+
+        try {
           const token = await getToken();
           const headers: Record<string, string> = { "Content-Type": "application/json" };
           if (token) headers.Authorization = `Bearer ${token}`;
           const basePayload = { email: shared.email.trim().toLowerCase(), role, username: shared.username.trim(), bio: role === "artist" ? (artist.bio || "") : "" };
-          const payload = role === "client" ? { ...basePayload, profile: { ...client, referenceImages: clientRefs.filter(Boolean) } } : { ...basePayload, profile: { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) } };
+          const payload = role === "client"
+            ? { ...basePayload, profile: { ...client, referenceImages: clientRefs.filter(Boolean) } }
+            : { ...basePayload, profile: { ...artist, portfolioImages: artistPortfolioImgs.filter(Boolean) } };
           const syncRes = await fetch(apiUrl("/users/sync"), { method: "POST", credentials: "include", headers, body: JSON.stringify(payload) });
           if (!syncRes.ok) throw new Error("sync_failed");
           const meRes = await fetch(apiUrl("/users/me"), { method: "GET", credentials: "include", headers });
@@ -432,35 +467,10 @@ export default function SignUp() {
               await fetch(apiUrl("/users/me/references"), { method: "PUT", credentials: "include", headers, body: JSON.stringify({ urls }) });
             }
           }
-          try {
-            localStorage.setItem("trustedDevice", shared.email);
-            localStorage.setItem(LOGIN_TIMESTAMP_KEY, Date.now().toString());
-            localStorage.removeItem(LOGOUT_TYPE_KEY);
-          } catch { }
-          justSignedUpRef.current = true;
-          isMountedRef.current = true;
-          setSuccessType("signup");
-          setShowSuccess(true);
-          isRedirectingRef.current = true;
-          if (redirectTimerRef.current !== null) {
-            clearTimeout(redirectTimerRef.current);
-          }
-          redirectTimerRef.current = window.setTimeout(() => {
-            navigate(homePath, { replace: true });
-          }, 600);
+          finishSuccess(homePath);
           return;
         } catch {
-          justSignedUpRef.current = true;
-          isMountedRef.current = true;
-          setSuccessType("signup");
-          setShowSuccess(true);
-          isRedirectingRef.current = true;
-          if (redirectTimerRef.current !== null) {
-            clearTimeout(redirectTimerRef.current);
-          }
-          redirectTimerRef.current = window.setTimeout(() => {
-            navigate(homePath, { replace: true });
-          }, 600);
+          finishSuccess(homePath);
           return;
         }
       }
