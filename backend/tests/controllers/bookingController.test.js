@@ -24,6 +24,7 @@ import {
   getIntakeForm,
   deleteIntakeForm,
   completeBooking,
+  getBooking,
 } from "../../controllers/bookingController.js";
 
 const app = express();
@@ -59,6 +60,35 @@ app.post("/bookings/:id/artist-no-show", mockAuth, reportArtistNoShow);
 app.post("/bookings/:id/artist-no-show/respond", mockAuth, respondArtistNoShow);
 app.get("/bookings/no-show-disputes", mockAuth, listArtistNoShowDisputes);
 app.post("/bookings/:id/check-in", mockAuth, checkInBooking);
+app.get("/bookings/:id", mockAuth, getBooking);
+
+conditionalDescribe("Booking Controller - getBooking ownership", () => {
+  async function makeBooking() {
+    return Booking.create({
+      artistId: "artist-owner",
+      clientId: "client-owner",
+      startAt: new Date("2026-07-01T15:00:00Z"),
+      endAt: new Date("2026-07-01T16:00:00Z"),
+      status: "accepted",
+      priceCents: 20000,
+    });
+  }
+
+  test("a party to the booking can read it", async () => {
+    const b = await makeBooking();
+    for (const uid of ["client-owner", "artist-owner"]) {
+      const res = await request(app).get(`/bookings/${b._id}`).set("x-test-user-id", uid);
+      expect(res.status).toBe(200);
+      expect(String(res.body._id)).toBe(String(b._id));
+    }
+  });
+
+  test("a non-party is forbidden", async () => {
+    const b = await makeBooking();
+    const res = await request(app).get(`/bookings/${b._id}`).set("x-test-user-id", "stranger-999");
+    expect(res.status).toBe(403);
+  });
+});
 
 conditionalDescribe("Booking Controller - Consultation Creation", () => {
   let artistId;

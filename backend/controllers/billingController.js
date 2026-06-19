@@ -614,11 +614,21 @@ export async function refundBilling(req, res) {
 
 export async function createPortalSession(req, res) {
   try {
-    const { customerId } = req.body || {};
-    if (!customerId)
-      return res.status(400).json({ error: "customerId required" });
+    const actorId = String(req.user?.clerkId || req.auth?.userId || "").trim();
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+
+    // Resolve the caller's OWN Stripe customer — never trust a client-supplied id.
+    const bill = await Billing.findOne({
+      clientId: actorId,
+      stripeCustomerId: { $exists: true, $ne: null },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    if (!bill?.stripeCustomerId)
+      return res.status(404).json({ error: "no_customer" });
+
     const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
+      customer: bill.stripeCustomerId,
       return_url: process.env.APP_URL,
     });
     res.json({ url: session.url });

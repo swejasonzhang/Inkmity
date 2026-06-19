@@ -5,6 +5,7 @@ import { ArrowLeft, Images, CalendarDays, Star, MapPin, Clock, LogIn } from "luc
 import Header from "@/components/header/Header";
 import { useTheme } from "@/hooks/useTheme";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { jsonLdSafe } from "@/lib/jsonLd";
 import { fetchArtistByHandle, fetchArtistById } from "@/api";
 import ArtistPortfolio, { type ArtistWithGroups } from "@/components/dashboard/client/ArtistPortfolio";
 import ArtistBooking from "@/components/dashboard/client/ArtistBooking";
@@ -132,7 +133,7 @@ export default function ArtistWorks() {
 
     return (
         <div id="dashboard-scope" className="ink-scope min-h-dvh flex flex-col" style={{ color: shellFg }}>
-            {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
+            {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(jsonLd) }} />}
             <Header />
             <main className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "clamp(14px, 2.5vw, 36px)" }}>
                 <div className="mx-auto w-full max-w-6xl">

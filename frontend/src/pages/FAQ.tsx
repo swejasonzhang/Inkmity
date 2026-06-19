@@ -4,6 +4,7 @@ import { ChevronDown, HelpCircle } from "lucide-react";
 import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { jsonLdSafe } from "@/lib/jsonLd";
 
 type QA = { q: string; a: string };
 type Section = { title: string; items: QA[] };
@@ -113,7 +114,7 @@ export default function FAQ() {
       <Header />
 
       <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(FAQ_JSON_LD) }} />
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}

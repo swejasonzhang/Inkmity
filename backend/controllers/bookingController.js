@@ -250,7 +250,9 @@ export async function getBookingsForDay(req, res) {
       startAt: { $lt: end },
       endAt: { $gt: start },
       status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
-    }).sort({ startAt: 1 });
+    })
+      .select("startAt endAt status artistId")
+      .sort({ startAt: 1 });
     res.json(docs);
   } catch (err) {
     if (err.name === "CastError") return res.status(400).json({ error: "Invalid parameter" });
@@ -262,6 +264,12 @@ export async function getBooking(req, res) {
   try {
     const doc = await Booking.findById(req.params.id);
     if (!doc) return res.status(404).json({ error: "not_found" });
+    const actorId = getActorId(req);
+    const isParty =
+      String(doc.clientId) === actorId ||
+      String(doc.artistId) === actorId ||
+      config.admin.clerkIds.includes(actorId);
+    if (!isParty) return res.status(403).json({ error: "forbidden" });
     res.json(doc);
   } catch (err) {
     if (err.name === "CastError") return res.status(400).json({ error: "Invalid booking id" });

@@ -22,6 +22,10 @@ export async function upsertArtistPolicy(req, res) {
   try {
     const { artistId } = req.params;
     if (!artistId) return res.status(400).json({ error: "missing_artistId" });
+    const actorId = String(req.user?.clerkId || req.auth?.userId || "").trim();
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+    if (actorId !== String(artistId))
+      return res.status(403).json({ error: "Only the artist can modify their policy" });
     const depositPayload = req.body?.deposit || {};
     const bookingEnabled = req.body?.bookingEnabled;
 

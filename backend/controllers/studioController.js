@@ -119,11 +119,20 @@ export async function createStudio(req, res) {
   }
 }
 
+const PRIVATE_STUDIO_FIELDS = [
+  "stripeConnectAccountId",
+  "chargesEnabled",
+  "payoutsEnabled",
+  "connectRequirementsDue",
+  "verificationNotes",
+];
+
 export async function getStudio(req, res) {
   try {
     const { studioId } = req.params;
-    const studio = await Studio.findById(studioId);
+    const studio = await Studio.findById(studioId).lean();
     if (!studio) return res.status(404).json({ error: "not_found" });
+    for (const f of PRIVATE_STUDIO_FIELDS) delete studio[f];
     res.json(studio);
   } catch (err) {
     if (err.name === "CastError")
