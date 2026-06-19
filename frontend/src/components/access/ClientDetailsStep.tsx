@@ -1,7 +1,22 @@
 import { useState, useMemo, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { MapPin, DollarSign, Brush, Clock, Crosshair, Ruler, Cake } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { MapPin, DollarSign, Brush, Clock, Crosshair, Ruler, Cake, ChevronDown } from "lucide-react";
+
+const parseLocalDate = (s?: string): Date | undefined => {
+    if (!s) return undefined;
+    const [y, m, d] = s.split("-").map(Number);
+    if (!y || !m || !d) return undefined;
+    return new Date(y, m - 1, d);
+};
+const formatYMD = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const formatDob = (s?: string): string => {
+    const d = parseLocalDate(s);
+    return d ? d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }) : "";
+};
 
 type ClientProfile = {
     budgetMin: string;
@@ -114,6 +129,7 @@ export default function ClientDetailsStep({
     onChange: React.ChangeEventHandler<HTMLInputElement>;
 }) {
     const [openCity, setOpenCity] = useState(false);
+    const [dobOpen, setDobOpen] = useState(false);
     const [prefStyle, setPrefStyle] = useState<string>(client.style ?? "all");
     const [prefAvail, setPrefAvail] = useState<string>(client.availability ?? "all");
     const [cities, setCities] = useState<string[]>([]);
@@ -285,13 +301,15 @@ export default function ClientDetailsStep({
     const fieldCls = "space-y-0.5 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-0.5 transition hover:border-white/20";
     const labelCls = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-semibold capitalize text-white/90 text-center";
     const triggerCls =
-        "relative h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center " +
+        "relative h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 pl-9 pr-9 text-xs text-white !justify-center transition-colors hover:border-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 " +
         "data-[placeholder]:text-white/45 " +
-        "[&>svg]:absolute [&>svg]:right-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:text-white/70 [&>svg]:opacity-100 " +
+        "[&>svg]:absolute [&>svg]:right-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2 [&>svg]:text-white/70 [&>svg]:opacity-100 [&>svg]:transition-transform [&[data-state=open]>svg]:rotate-180 " +
         "[&_[data-slot=select-value]]:w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center [&_[data-slot=select-value]]:truncate";
     const contentCls =
-        "w-[var(--radix-select-trigger-width)] rounded-xl max-h-72 overflow-y-auto border-white/10 bg-neutral-900 text-white " +
-        "[&_[data-slot=select-item]]:justify-center [&_[data-slot=select-item]]:text-center [&_[data-slot=select-item]]:pl-8 [&_[data-slot=select-item]]:truncate [&_[data-slot=select-item]]:text-xs [&_[data-slot=select-item]]:capitalize [&_[data-slot=select-item]]:text-white";
+        "w-[var(--radix-select-trigger-width)] rounded-xl max-h-72 overflow-y-auto border border-white/10 bg-neutral-900 p-1 text-white shadow-xl shadow-black/40 ring-1 ring-white/5 " +
+        "[&_[data-slot=select-item]]:justify-center [&_[data-slot=select-item]]:text-center [&_[data-slot=select-item]]:rounded-lg [&_[data-slot=select-item]]:py-1.5 [&_[data-slot=select-item]]:pl-8 [&_[data-slot=select-item]]:truncate [&_[data-slot=select-item]]:text-xs [&_[data-slot=select-item]]:capitalize [&_[data-slot=select-item]]:text-white " +
+        "[&_[data-slot=select-scroll-up-button]]:bg-neutral-900 [&_[data-slot=select-scroll-up-button]]:text-white/80 [&_[data-slot=select-scroll-up-button]]:border-white/10 " +
+        "[&_[data-slot=select-scroll-down-button]]:bg-neutral-900 [&_[data-slot=select-scroll-down-button]]:text-white/80 [&_[data-slot=select-scroll-down-button]]:border-white/10";
     const sliderCls =
         "w-full [&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:bg-white/15 [&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-white [&_[data-slot=slider-thumb]]:bg-neutral-900 [&_[data-slot=slider-thumb]]:shadow-lg [&_[data-slot=slider-thumb]]:ring-white/30";
 
@@ -393,11 +411,12 @@ export default function ClientDetailsStep({
 
                 <div className={fieldCls}>
                     <label className={labelCls}><Crosshair className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Placement</label>
-                    <Select value={client.placement && client.placement !== "" ? client.placement : undefined} onValueChange={(v) => emit("placement", v)}>
+                    <Select value={client.placement && client.placement !== "" ? client.placement : "all"} onValueChange={(v) => emit("placement", v)}>
                         <SelectTrigger className={triggerCls}>
-                            <SelectValue placeholder="Placement" className="text-center" />
+                            <SelectValue placeholder="No preference" className="text-center" />
                         </SelectTrigger>
                         <SelectContent position="popper" align="center" side="bottom" className={contentCls}>
+                            <SelectItem value="all" className="text-center justify-center">No preference</SelectItem>
                             {PLACEMENT_OPTIONS.map((p) => (
                                 <SelectItem key={p} value={p} className="text-center justify-center">{p}</SelectItem>
                             ))}
@@ -407,11 +426,12 @@ export default function ClientDetailsStep({
 
                 <div className={fieldCls}>
                     <label className={labelCls}><Ruler className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Size</label>
-                    <Select value={client.size && client.size !== "" ? client.size : undefined} onValueChange={(v) => emit("size", v)}>
+                    <Select value={client.size && client.size !== "" ? client.size : "all"} onValueChange={(v) => emit("size", v)}>
                         <SelectTrigger className={triggerCls}>
-                            <SelectValue placeholder="Size" className="text-center" />
+                            <SelectValue placeholder="No preference" className="text-center" />
                         </SelectTrigger>
                         <SelectContent position="popper" align="center" side="bottom" className={contentCls}>
+                            <SelectItem value="all" className="text-center justify-center">No preference</SelectItem>
                             {SIZE_OPTIONS.map((s) => (
                                 <SelectItem key={s.value} value={s.value} className="text-center justify-center">{s.label}</SelectItem>
                             ))}
@@ -421,14 +441,42 @@ export default function ClientDetailsStep({
 
                 <div className={`${fieldCls} col-span-2`}>
                     <label className={labelCls}><Cake className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />Birthday</label>
-                    <input
-                        type="date"
-                        name="dob"
-                        value={client.dob || ""}
-                        max={new Date().toISOString().slice(0, 10)}
-                        onChange={(e) => emit("dob", e.target.value)}
-                        className="h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 px-3 text-white text-center [color-scheme:dark]"
-                    />
+                    <Popover open={dobOpen} onOpenChange={setDobOpen}>
+                        <PopoverTrigger asChild>
+                            <button
+                                type="button"
+                                aria-label="Select your birthday"
+                                className="relative h-9 md:h-8 w-full rounded-xl border border-white/15 bg-neutral-900/70 px-9 text-xs text-white text-center transition hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                            >
+                                <Cake className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/70" />
+                                <span className={client.dob ? "text-white" : "text-white/45"}>
+                                    {client.dob ? formatDob(client.dob) : "Select your birthday"}
+                                </span>
+                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/70" />
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="center" className="w-auto p-0 rounded-xl border-white/10 bg-neutral-900 text-white">
+                            <Calendar
+                                mode="single"
+                                selected={parseLocalDate(client.dob)}
+                                onSelect={(d) => {
+                                    emit("dob", d ? formatYMD(d) : "");
+                                    setDobOpen(false);
+                                }}
+                                captionLayout="dropdown"
+                                startMonth={new Date(1920, 0)}
+                                endMonth={new Date()}
+                                defaultMonth={parseLocalDate(client.dob) ?? new Date(2000, 0)}
+                                disabled={{ after: new Date() }}
+                                autoFocus
+                                className="p-3 w-[17.5rem]"
+                                classNames={{
+                                    month_caption: "flex items-center justify-center h-(--cell-size) px-8",
+                                    nav: "absolute inset-x-0 top-0 flex items-center justify-between w-full",
+                                }}
+                            />
+                        </PopoverContent>
+                    </Popover>
                     <p className="text-center text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">For your birthday credit · optional</p>
                 </div>
             </div>

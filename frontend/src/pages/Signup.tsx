@@ -337,10 +337,20 @@ export default function SignUp() {
 
   const skipDetails = () => {
     const key = slides[step].key;
+
+    // "Skip now" only skips optional preferences — required selections must still be made.
+    if ((key === "client-1" && !allClientValid) || (key === "artist-1" && !allArtistValid)) {
+      setInvalidFields([]);
+      setFlashToken((t) => t + 1);
+      triggerMascotError();
+      return;
+    }
+
+    // Default the optional extras while preserving the user's required selections.
     if (key === "artist-1") {
-      setArtist({ location: "New York, NY", shop: "", years: "0", baseRate: "100", baseRateMax: "200", bookingPreference: "open", travelFrequency: "rare", portfolio: "", styles: [], bio: "" });
+      setArtist((a) => ({ ...a, shop: "", portfolio: "", bio: "" }));
     } else if (key === "client-1") {
-      setClient({ budgetMin: "100", budgetMax: "200", location: "New York, NY", placement: "", size: "", dob: "" });
+      setClient((c) => ({ ...c, budgetMin: "100", budgetMax: "200", placement: "", size: "", dob: "" }));
       setClientRefs(["", "", ""]);
     } else if (key === "upload") {
       setArtistPortfolioImgs(["", "", "", ""]);
