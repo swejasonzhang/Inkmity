@@ -483,6 +483,43 @@ conditionalDescribe("User Controller - getArtistById", () => {
     expect(response.status).toBe(404);
     expect(response.body.error).toBe("not_found");
   });
+
+  test("excludes private and financial fields from the public response", async () => {
+    const artist = await mongoose.model("artist").create({
+      clerkId: "artist-private",
+      email: "private@example.com",
+      username: "Private Artist",
+      handle: "@privartist",
+      role: "artist",
+      stripeConnectAccountId: "acct_secret123",
+      chargesEnabled: true,
+      payoutsEnabled: true,
+    });
+
+    const response = await request(app).get(`/users/artists/${artist._id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.username).toBe("Private Artist");
+    expect(response.body.clerkId).toBe("artist-private");
+    expect(response.body.email).toBeUndefined();
+    expect(response.body.stripeConnectAccountId).toBeUndefined();
+    expect(response.body.chargesEnabled).toBeUndefined();
+    expect(response.body.payoutsEnabled).toBeUndefined();
+  });
+
+  test("returns 404 for a deactivated (visible:false) artist", async () => {
+    const artist = await mongoose.model("artist").create({
+      clerkId: "artist-deactivated",
+      email: "deactivated@example.com",
+      username: "Deactivated",
+      handle: "@deactivated",
+      role: "artist",
+      visible: false,
+    });
+
+    const response = await request(app).get(`/users/artists/${artist._id}`);
+    expect(response.status).toBe(404);
+  });
 });
 
 conditionalDescribe("User Controller - checkHandleAvailability", () => {

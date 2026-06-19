@@ -133,9 +133,6 @@ const App: React.FC = () => {
       <Route path="/admin" element={<DashboardScope />}>
         <Route index element={<Admin />} />
       </Route>
-      <Route path="/artist/:handle" element={<DashboardScope />}>
-        <Route index element={<ArtistWorks />} />
-      </Route>
       <Route path="/explore" element={<Gallery />} />
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
@@ -147,6 +144,7 @@ const App: React.FC = () => {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/faq" element={<FAQ />} />
+        <Route path="/artist/:handle" element={<ArtistWorks />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Images, CalendarDays, Star, MapPin, Clock } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
+import { ArrowLeft, Images, CalendarDays, Star, MapPin, Clock, LogIn } from "lucide-react";
 import Header from "@/components/header/Header";
 import { useTheme } from "@/hooks/useTheme";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { fetchArtistByHandle, fetchArtistById } from "@/api";
 import ArtistPortfolio, { type ArtistWithGroups } from "@/components/dashboard/client/ArtistPortfolio";
 import ArtistBooking from "@/components/dashboard/client/ArtistBooking";
@@ -18,6 +20,7 @@ export default function ArtistWorks() {
     const location = useLocation();
     const navigate = useNavigate();
     const { theme } = useTheme();
+    const { isSignedIn } = useUser();
 
     const stateArtist = (location.state as { artist?: AnyArtist; tab?: Tab } | null)?.artist ?? null;
     const initialTab = (location.state as { tab?: Tab } | null)?.tab ?? 0;
@@ -92,6 +95,35 @@ export default function ArtistWorks() {
     const rating = Number(mapped.rating ?? 0);
     const years = Number(mapped.yearsExperience ?? 0);
 
+    const metaDescription = artist
+        ? (mapped.bio?.trim() ||
+            `See ${mapped.username}'s tattoo portfolio${styles.length ? ` — ${styles.slice(0, 3).map(titleCase).join(", ")}` : ""}${mapped.location ? ` in ${mapped.location}` : ""
+            }, plus reviews and booking on Inkmity.`)
+        : "Tattoo artist portfolio on Inkmity.";
+
+    usePageMeta({
+        title: artist ? `${mapped.username} (@${displayHandle}) — Tattoo Artist` : "Tattoo Artist",
+        description: metaDescription,
+        path: `/artist/${displayHandle}`,
+    });
+
+    const jsonLd = artist
+        ? {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: mapped.username,
+            alternateName: `@${displayHandle}`,
+            jobTitle: "Tattoo Artist",
+            url: `https://inkmity.com/artist/${displayHandle}`,
+            ...(mapped.bio ? { description: mapped.bio } : {}),
+            ...(mapped.avatarUrl ? { image: mapped.avatarUrl } : {}),
+            ...(mapped.location ? { homeLocation: { "@type": "Place", name: mapped.location } } : {}),
+            ...(rating > 0 && mapped.reviewsCount
+                ? { aggregateRating: { "@type": "AggregateRating", ratingValue: rating, reviewCount: mapped.reviewsCount } }
+                : {}),
+        }
+        : null;
+
     const tabs: { key: Tab; label: string; Icon: ComponentType<{ className?: string }> }[] = [
         { key: 0, label: "Portfolio", Icon: Images },
         { key: 1, label: "Booking & Message", Icon: CalendarDays },
@@ -100,6 +132,7 @@ export default function ArtistWorks() {
 
     return (
         <div id="dashboard-scope" className="ink-scope min-h-dvh flex flex-col" style={{ color: shellFg }}>
+            {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
             <Header />
             <main className="flex-1 min-h-0 overflow-y-auto" style={{ padding: "clamp(14px, 2.5vw, 36px)" }}>
                 <div className="mx-auto w-full max-w-6xl">
@@ -184,7 +217,7 @@ export default function ArtistWorks() {
                                     </div>
                                     <div className="flex sm:flex-col gap-2 sm:self-stretch sm:justify-center">
                                         <button
-                                            onClick={() => setTab(1)}
+                                            onClick={() => (isSignedIn ? setTab(1) : navigate("/login"))}
                                             className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold bg-[color:var(--fg)] text-[color:var(--bg)] transition hover:opacity-90 active:scale-[0.99]"
                                         >
                                             <CalendarDays className="h-4 w-4" /> Book now
@@ -216,15 +249,28 @@ export default function ArtistWorks() {
 
                             {tab === 0 && <ArtistPortfolio artist={mapped} compact />}
                             {tab === 1 && (
-                                <ArtistBooking
-                                    artist={mapped}
-                                    onBack={() => setTab(0)}
-                                    onGoToStep={(s) => setTab(s)}
-                                    onMessage={async (a) => {
-                                        try { if (a.clerkId) sessionStorage.setItem("inkmity_reopen_conversation", a.clerkId); } catch { }
-                                        navigate("/artists");
-                                    }}
-                                />
+                                isSignedIn ? (
+                                    <ArtistBooking
+                                        artist={mapped}
+                                        onBack={() => setTab(0)}
+                                        onGoToStep={(s) => setTab(s)}
+                                        onMessage={async (a) => {
+                                            try { if (a.clerkId) sessionStorage.setItem("inkmity_reopen_conversation", a.clerkId); } catch { }
+                                            navigate("/artists");
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="rounded-3xl border bg-card p-8 text-center" style={{ borderColor: "var(--border)" }}>
+                                        <p className="text-lg font-bold text-app">Sign in to book or message</p>
+                                        <p className="mt-1 text-sm text-subtle">Create a free account to message {mapped.username} and book a session.</p>
+                                        <button
+                                            onClick={() => navigate("/login")}
+                                            className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold bg-[color:var(--fg)] text-[color:var(--bg)] transition hover:opacity-90"
+                                        >
+                                            <LogIn className="h-4 w-4" /> Sign in
+                                        </button>
+                                    </div>
+                                )
                             )}
                             {tab === 2 && <ArtistReviews artist={mapped} />}
                         </>

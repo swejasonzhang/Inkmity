@@ -8,6 +8,7 @@ Allow: /privacy
 Allow: /terms
 Allow: /login
 Allow: /signup
+Allow: /artist/
 # Authenticated areas — no value to crawlers
 Disallow: /dashboard
 Disallow: /profile

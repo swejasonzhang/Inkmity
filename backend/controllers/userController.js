@@ -13,6 +13,24 @@ import { tierRankAggExpr } from "../services/artistTierService.js";
 
 const SAFE_ROLES = new Set(["client", "artist", "studio"]);
 
+// Public artist endpoints must never leak private/financial fields. clerkId is
+// kept (the client uses it for messaging); email and all Stripe/Connect payout
+// data are stripped from the response.
+const PRIVATE_ARTIST_FIELDS = [
+  "email",
+  "stripeConnectAccountId",
+  "chargesEnabled",
+  "payoutsEnabled",
+  "payoutSpeed",
+  "onboardingCompletedAt",
+  "connectRequirementsDue",
+];
+
+function stripPrivateArtistFields(obj) {
+  for (const f of PRIVATE_ARTIST_FIELDS) delete obj[f];
+  return obj;
+}
+
 const authObj = (req) =>
   typeof req.auth === "function" ? req.auth() : req.auth;
 function getClerkId(req) {
@@ -231,6 +249,7 @@ export async function getArtists(req, res) {
       : null;
 
   Object.assign(filter, hideTestAccountsFilter(getClerkId(req)));
+  filter.visible = { $ne: false };
 
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
@@ -292,6 +311,7 @@ export async function getArtistById(req, res) {
     .lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
   if (isHiddenFromViewer(doc.clerkId, getClerkId(req))) return res.status(404).json({ error: "not_found" });
+  if (doc.visible === false) return res.status(404).json({ error: "not_found" });
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
   const docWithProfileImage = {
@@ -301,7 +321,7 @@ export async function getArtistById(req, res) {
     isOnline: onlineUsersSet.has(doc.clerkId) && doc.visibility !== "invisible",
     lastActive: doc.lastActive ? doc.lastActive.getTime() : null,
   };
-  res.json(docWithProfileImage);
+  res.json(stripPrivateArtistFields(docWithProfileImage));
 }
 
 export async function getArtistByHandle(req, res) {
@@ -313,15 +333,18 @@ export async function getArtistByHandle(req, res) {
     .lean();
   if (!doc) return res.status(404).json({ error: "not_found" });
   if (isHiddenFromViewer(doc.clerkId, getClerkId(req))) return res.status(404).json({ error: "not_found" });
+  if (doc.visible === false) return res.status(404).json({ error: "not_found" });
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
-  res.json({
-    ...doc,
-    profileImage: doc.avatar?.url || doc.profileImage || null,
-    avatarUrl: doc.avatar?.url || doc.avatarUrl || null,
-    isOnline: onlineUsersSet.has(doc.clerkId) && doc.visibility !== "invisible",
-    lastActive: doc.lastActive ? doc.lastActive.getTime() : null,
-  });
+  res.json(
+    stripPrivateArtistFields({
+      ...doc,
+      profileImage: doc.avatar?.url || doc.profileImage || null,
+      avatarUrl: doc.avatar?.url || doc.avatarUrl || null,
+      isOnline: onlineUsersSet.has(doc.clerkId) && doc.visibility !== "invisible",
+      lastActive: doc.lastActive ? doc.lastActive.getTime() : null,
+    })
+  );
 }
 
 export async function checkHandleAvailability(req, res) {
