@@ -41,6 +41,7 @@ const PublicScope: React.FC = () => {
 const DashboardScope: React.FC = () => {
   const { themeClass } = useTheme();
   const { onboarded } = useOnboarded();
+  console.log("[dashboard-scope]", { path: window.location.pathname, onboarded });
   return (
     <div id="dashboard-scope" className={`${themeClass} theme-smooth`}>
       <SignedIn>
@@ -64,6 +65,7 @@ const HomeRedirect: React.FC = () => {
   const { role, isLoaded } = useRole();
   if (!isLoaded) return null;
   const isProvider = role === "artist" || role === "studio";
+  console.log("[home-redirect]", { role, to: isProvider ? "/dashboard" : "/artists" });
   return <Navigate to={isProvider ? "/dashboard" : "/artists"} replace />;
 };
 

@@ -60,9 +60,16 @@ export default function Onboarding() {
                 const token = await getToken();
                 const me = await getMe({ token: token ?? undefined });
                 if (!active) return;
-                if (me?.onboardingComplete === true) navigate("/", { replace: true });
-                else setChecking(false);
-            } catch {
+                console.log("[onboarding] getMe ok", { clerkId: user?.id, onboardingComplete: me?.onboardingComplete, role: (me as { role?: string })?.role, meClerkId: (me as { clerkId?: string })?.clerkId, email: (me as { email?: string })?.email });
+                if (me?.onboardingComplete === true) {
+                    console.log("[onboarding] SKIP -> existing completed account, redirecting home");
+                    navigate("/", { replace: true });
+                } else {
+                    console.log("[onboarding] SHOW form (incomplete profile)");
+                    setChecking(false);
+                }
+            } catch (e: unknown) {
+                console.log("[onboarding] getMe error -> SHOW form", { status: (e as { status?: number })?.status });
                 if (active) setChecking(false);
             }
         })();
