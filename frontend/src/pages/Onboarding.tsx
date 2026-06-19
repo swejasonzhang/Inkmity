@@ -34,6 +34,7 @@ export default function Onboarding() {
     const { getToken } = useAuth();
 
     const [checking, setChecking] = useState(true);
+    const [existingRole, setExistingRole] = useState<"client" | "artist" | "studio" | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [completing, setCompleting] = useState(false);
     const [username, setUsername] = useState("");
@@ -60,8 +61,13 @@ export default function Onboarding() {
                 const token = await getToken();
                 const me = await getMe({ token: token ?? undefined });
                 if (!active) return;
-                if (me?.onboardingComplete === true) navigate("/", { replace: true });
-                else setChecking(false);
+                if (me?.onboardingComplete === true) {
+                    const roleStr = String((me as { role?: string }).role || "");
+                    const r = roleStr === "artist" || roleStr === "studio" || roleStr === "client" ? (roleStr as "client" | "artist" | "studio") : "client";
+                    setExistingRole(r);
+                } else {
+                    setChecking(false);
+                }
             } catch {
                 if (active) setChecking(false);
             }
@@ -70,6 +76,13 @@ export default function Onboarding() {
             active = false;
         };
     }, [isLoaded, isSignedIn, getToken, navigate]);
+
+    useEffect(() => {
+        if (!existingRole) return;
+        const dest = existingRole === "client" ? "/artists" : existingRole === "studio" ? "/studios" : "/dashboard";
+        const t = window.setTimeout(() => navigate(dest, { replace: true }), 1400);
+        return () => window.clearTimeout(t);
+    }, [existingRole, navigate]);
 
     const presetRole = (user?.unsafeMetadata as { role?: string } | undefined)?.role;
     const roleLocked = presetRole === "client" || presetRole === "artist";
@@ -156,6 +169,22 @@ export default function Onboarding() {
                 <div className="flex flex-col items-center gap-4">
                     <Spinner size={40} className="text-app" />
                     <p className="text-sm text-subtle">Setting up your account…</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (existingRole) {
+        const where = existingRole === "client" ? "artists" : existingRole === "studio" ? "studio" : "dashboard";
+        return (
+            <div className="relative h-svh flex flex-col items-center justify-center text-app">
+                <VideoBackground />
+                <div className="flex flex-col items-center gap-4 text-center px-6">
+                    <Spinner size={40} className="text-app" />
+                    <div className="space-y-1">
+                        <p className="text-app text-lg font-semibold">Account found</p>
+                        <p className="text-sm text-subtle">Redirecting you to your {where}…</p>
+                    </div>
                 </div>
             </div>
         );
