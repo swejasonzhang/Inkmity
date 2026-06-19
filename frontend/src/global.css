@@ -319,10 +319,22 @@ body {
 html {
   background-color: var(--bg);
   background-image:
-    radial-gradient(130% 95% at 50% -10%, color-mix(in srgb, var(--fg) 20%, transparent), transparent 60%),
-    radial-gradient(90% 70% at 50% 50%, color-mix(in srgb, var(--fg) 8%, transparent), transparent 70%),
-    radial-gradient(120% 80% at 50% 118%, color-mix(in srgb, var(--fg) 10%, transparent), transparent 58%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+    radial-gradient(130% 95% at 50% -10%, color-mix(in srgb, var(--fg) 9%, transparent), transparent 60%),
+    radial-gradient(90% 70% at 50% 50%, color-mix(in srgb, var(--fg) 4%, transparent), transparent 70%),
+    radial-gradient(120% 80% at 50% 118%, color-mix(in srgb, var(--fg) 6%, transparent), transparent 58%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+  background-size: 100% 100%, 100% 100%, 100% 100%, 160px 160px;
+  background-attachment: fixed, fixed, fixed, fixed;
+}
+
+/* Light mode keeps a touch more depth since the glows are dark-on-white. */
+html.ink-light {
+  background-image:
+    radial-gradient(130% 95% at 50% -10%, color-mix(in srgb, var(--fg) 14%, transparent), transparent 60%),
+    radial-gradient(90% 70% at 50% 50%, color-mix(in srgb, var(--fg) 6%, transparent), transparent 70%),
+    radial-gradient(120% 80% at 50% 118%, color-mix(in srgb, var(--fg) 8%, transparent), transparent 58%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
   background-size: 100% 100%, 100% 100%, 100% 100%, 160px 160px;
   background-attachment: fixed, fixed, fixed, fixed;

@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 
 const THEME_MS = 300;
 type Theme = "dark" | "light";
-const STORAGE_KEY = "inkmity-theme";
+const BASE_KEY = "inkmity-theme";
 
 export function isThemedPath(pathname: string): boolean {
   return (
@@ -17,21 +17,28 @@ export function isThemedPath(pathname: string): boolean {
   );
 }
 
-function readStored(): Theme {
+let activeUserId: string | null = null;
+function keyFor(uid: string | null): string {
+  return uid ? `${BASE_KEY}:${uid}` : BASE_KEY;
+}
+
+function readStoredFor(uid: string | null): Theme {
   if (typeof window === "undefined") return "dark";
   try {
-    const v = localStorage.getItem(STORAGE_KEY);
+    const v = localStorage.getItem(keyFor(uid));
     if (v === "light" || v === "dark") return v;
-    const legacy = localStorage.getItem("dashboard-theme");
-    if (legacy === "light" || legacy === "dark") {
-      localStorage.setItem(STORAGE_KEY, legacy);
-      return legacy;
+    if (!uid) {
+      const legacy = localStorage.getItem("dashboard-theme");
+      if (legacy === "light" || legacy === "dark") {
+        localStorage.setItem(BASE_KEY, legacy);
+        return legacy;
+      }
     }
   } catch {}
   return "dark";
 }
 
-let store: Theme = readStored();
+let store: Theme = readStoredFor(activeUserId);
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -48,14 +55,24 @@ function setStore(t: Theme) {
   if (store === t) return;
   store = t;
   try {
-    localStorage.setItem(STORAGE_KEY, t);
+    localStorage.setItem(keyFor(activeUserId), t);
   } catch {}
   notify();
 }
 
+export function setThemeAccount(uid: string | null) {
+  if (uid === activeUserId) return;
+  activeUserId = uid;
+  const next = readStoredFor(uid);
+  if (next !== store) {
+    store = next;
+    notify();
+  }
+}
+
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
-    if (e.key !== STORAGE_KEY) return;
+    if (e.key !== keyFor(activeUserId)) return;
     const next = e.newValue === "light" || e.newValue === "dark" ? e.newValue : "dark";
     if (next !== store) {
       store = next;

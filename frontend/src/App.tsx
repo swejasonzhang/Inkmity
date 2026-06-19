@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, RedirectToSignIn, useUser } from "@clerk/clerk-react";
 import SignUp from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -21,7 +21,7 @@ import StudioSignup from "./pages/StudioSignup";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, setThemeAccount } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
 import { useOnboarded } from "@/hooks/useOnboarded";
@@ -76,6 +76,14 @@ const ProviderDashboard: React.FC = () => {
   return <Dashboard />;
 };
 
+const ThemeAccountSync: React.FC = () => {
+  const { user } = useUser();
+  useEffect(() => {
+    setThemeAccount(user?.id ?? null);
+  }, [user?.id]);
+  return null;
+};
+
 const App: React.FC = () => {
   useInactivityLogout();
 
@@ -83,7 +91,9 @@ const App: React.FC = () => {
   if (isTestingMode && !previewAllowed) return <ComingSoon />;
 
   return (
-    <Routes>
+    <>
+      <ThemeAccountSync />
+      <Routes>
       <Route path="/artists" element={<DashboardScope />}>
         <Route index element={<Dashboard />} />
       </Route>
@@ -136,7 +146,8 @@ const App: React.FC = () => {
         />
         <Route path="*" element={<NotFound />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 };
 

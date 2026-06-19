@@ -517,10 +517,12 @@ export default function ArtistsSection({
         </div>
     );
 
+    const canScrollVertically = viewAllStyle ? viewAllItems.length > 8 : sections.length > 1;
+
     return (
         <div className="flex flex-col h-full min-h-0 w-full">
             <div className="relative flex-1 min-h-0" onPointerDownCapture={handleGridPointerDown}>
-                <div data-artist-scroll className="h-full min-h-0 overflow-y-auto px-2 sm:px-1 pb-16">
+                <div data-artist-scroll className={`h-full min-h-0 ${canScrollVertically ? "overflow-y-auto" : "overflow-y-hidden"} px-2 sm:px-1 pb-16`}>
                     <header className="text-center pt-3 pb-0 px-4">
                         <h1 className="font-extrabold tracking-tight leading-[1.05]" style={{ fontSize: "clamp(1.7rem, 1.6vw + 1.2rem, 2.7rem)" }}>
                             Find your artist. Wear their art.
@@ -534,10 +536,12 @@ export default function ArtistsSection({
                             {filterNode}
                         </div>
                     </div>
-                    <p className="flex items-center justify-center gap-1.5 text-xs text-subtle mt-3 mb-4">
-                        <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
-                        Scroll to explore every style
-                    </p>
+                    {!viewAllStyle && sections.length > 1 && (
+                        <p className="flex items-center justify-center gap-1.5 text-xs text-subtle mt-3 mb-4">
+                            <ChevronsDown className="h-4 w-4 animate-bounce" aria-hidden />
+                            Scroll to explore every style
+                        </p>
+                    )}
                     <div className="flex justify-center mb-6">
                         <button
                             type="button"

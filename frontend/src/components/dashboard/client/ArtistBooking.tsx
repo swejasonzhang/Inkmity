@@ -471,7 +471,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       </div>
 
       <ToastContainer
-        position="bottom-center"
+        position="top-center"
         newestOnTop
         closeOnClick
         draggable
