@@ -9,10 +9,10 @@ export const VIEWPORTS = [
 export default defineConfig({
   testDir: "./e2e",
   outputDir: "./e2e/.artifacts",
-  globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
+  timeout: 60_000,
   reporter: [["list"]],
   use: {
     baseURL: "http://localhost:5173",

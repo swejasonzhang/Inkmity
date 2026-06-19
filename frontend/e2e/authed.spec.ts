@@ -1,17 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { clerk, setupClerkTestingToken } from "@clerk/testing/playwright";
 import { VIEWPORTS } from "../playwright.config";
 
-// Provide credentials via env to capture signed-in pages, e.g.:
-//   E2E_CLIENT_EMAIL=... E2E_CLIENT_PASSWORD=... \
-//   E2E_ARTIST_EMAIL=... E2E_ARTIST_PASSWORD=... \
-//   CLERK_SECRET_KEY=sk_test_... npm run test:visual
-// The backend (port 3001) + DB must also be running for dashboard data to load.
+// Signed-in capture. Uses the app's dev quick-login (the "Login as Client/Artist"
+// buttons on /login), which mints a Clerk ticket via the backend — the session
+// the app actually recognizes. Requires the dev backend on :3001 with the test
+// accounts seeded (backend/scripts/seedTestAuthUsers.js). Enable with:
+//   E2E_AUTHED=1 npm run test:visual -- authed.spec.ts
+const ENABLED = process.env.E2E_AUTHED === "1";
+
 const ACCOUNTS = [
   {
     role: "client",
-    email: process.env.E2E_CLIENT_EMAIL,
-    password: process.env.E2E_CLIENT_PASSWORD,
+    button: "Login as Client",
     pages: [
       { name: "dashboard", path: "/artists" },
       { name: "explore", path: "/explore" },
@@ -21,8 +21,7 @@ const ACCOUNTS = [
   },
   {
     role: "artist",
-    email: process.env.E2E_ARTIST_EMAIL,
-    password: process.env.E2E_ARTIST_PASSWORD,
+    button: "Login as Artist",
     pages: [
       { name: "dashboard", path: "/dashboard" },
       { name: "portfolio", path: "/portfolio" },
@@ -34,18 +33,13 @@ const ACCOUNTS = [
 
 for (const acct of ACCOUNTS) {
   test.describe(`${acct.role} (authed)`, () => {
-    test.skip(
-      !acct.email || !acct.password,
-      `Set E2E_${acct.role.toUpperCase()}_EMAIL and E2E_${acct.role.toUpperCase()}_PASSWORD to capture ${acct.role} pages`
-    );
+    test.skip(!ENABLED, "Set E2E_AUTHED=1 with the dev backend running to capture signed-in pages");
 
     test.beforeEach(async ({ page }) => {
-      await setupClerkTestingToken({ page });
       await page.goto("/login");
-      await clerk.signIn({
-        page,
-        signInParams: { strategy: "password", identifier: acct.email!, password: acct.password! },
-      });
+      await page.getByRole("button", { name: acct.button }).click();
+      // Dev quick-login redirects away from /login once the session is active.
+      await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
     });
 
     for (const vp of VIEWPORTS) {
@@ -54,8 +48,13 @@ for (const acct of ACCOUNTS) {
           await page.setViewportSize({ width: vp.width, height: vp.height });
           await page.goto(p.path);
           await page.waitForLoadState("load");
-          await page.waitForTimeout(1500);
 
+          // Hard guard: a real signed-in page, not a redirect back to auth/onboarding.
+          await expect(page, `${acct.role} ${p.name} should stay on an authed route`).not.toHaveURL(
+            /\/(login|onboarding)(\?|#|$)/
+          );
+
+          await page.waitForTimeout(1500);
           await page.screenshot({
             path: `e2e/screenshots/${acct.role}-${p.name}-${vp.name}.png`,
             fullPage: true,

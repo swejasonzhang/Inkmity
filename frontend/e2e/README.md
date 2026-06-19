@@ -15,19 +15,24 @@ npm run test:visual -- responsive.spec.ts
 
 Covers `/landing`, `/login`, `/signup`.
 
-## Signed-in pages — needs test accounts
+## Signed-in pages — needs the dev backend
 
-`authed.spec.ts` skips unless credentials are provided. It signs in with
-Clerk's official Playwright helper (`@clerk/testing`), so you need a Clerk
-**secret key** plus a test client and artist account. The **backend** (port
-3001) and its database must also be running so dashboard data loads.
+`authed.spec.ts` skips unless `E2E_AUTHED=1`. It signs in through the app's own
+**dev quick-login** (the "Login as Client/Artist" buttons on `/login`), which
+mints a Clerk ticket via the backend — the session the app actually recognizes.
+No passwords or secret keys are passed in.
+
+Requirements:
+- The dev **backend** running on port 3001 (`cd backend && npm run dev`), with a
+  `sk_test` Clerk key — the dev-login endpoint is gated to the test instance.
+- The test accounts seeded once: `cd backend && node --env-file-if-exists=.env.development scripts/seedTestAuthUsers.js`.
 
 ```bash
-CLERK_SECRET_KEY=sk_test_... \
-E2E_CLIENT_EMAIL=...  E2E_CLIENT_PASSWORD=... \
-E2E_ARTIST_EMAIL=...  E2E_ARTIST_PASSWORD=... \
-npm run test:visual
+E2E_AUTHED=1 npm run test:visual -- authed.spec.ts --workers=2
 ```
 
 Covers client (`/artists`, `/explore`, `/appointments`, `/profile`) and artist
-(`/dashboard`, `/portfolio`, `/appointments`, `/profile`) pages.
+(`/dashboard`, `/portfolio`, `/appointments`, `/profile`) pages. Each test hard-
+asserts it stayed on an authed route (not bounced to `/login` or `/onboarding`),
+so a pass means a real signed-in capture. Use `--workers=2` to avoid memory
+pressure from parallel full-page screenshots.
