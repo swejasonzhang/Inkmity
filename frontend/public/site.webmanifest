@@ -1,0 +1,15 @@
+{
+  "name": "Inkmity — Book Tattoo Artists",
+  "short_name": "Inkmity",
+  "description": "Discover tattoo artists by style, message with full context, and book with transparent on-platform pricing.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b0b",
+  "theme_color": "#0b0b0b",
+  "categories": ["lifestyle", "shopping"],
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }
+  ]
+}

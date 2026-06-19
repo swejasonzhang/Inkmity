@@ -4,6 +4,7 @@ import { motion, useReducedMotion, LayoutGroup } from "framer-motion";
 import { useClerk, useSignUp, useAuth } from "@clerk/clerk-react";
 import type { SignUpResource } from "@clerk/types";
 import { validateEmail, validatePassword } from "@/lib/utils";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
 import CookieConsent from "@/components/access/CookieConsent";
@@ -103,6 +104,10 @@ function collectIssues({ role, step, shared, client, artist }: { role: Role; ste
 }
 
 export default function SignUp() {
+  usePageMeta({
+    title: "Sign up",
+    description: "Create your Inkmity account — discover tattoo artists by style and book with transparent pricing.",
+  });
   const prefersReduced = !!useReducedMotion();
   const [role, setRole] = useState<Role>("client");
   const [entrySelected, setEntrySelected] = useState(false);

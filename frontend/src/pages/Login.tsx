@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { validateEmail } from "@/lib/utils";
 import { advanceOnEnterIfEmpty } from "@/lib/formNav";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
 import LoginFormCard from "@/components/access/LoginFormCard";
@@ -22,6 +23,10 @@ import "react-toastify/dist/ReactToastify.css";
 type TipState = { show: boolean; x: number; y: number };
 
 export default function Login() {
+  usePageMeta({
+    title: "Log in",
+    description: "Log in to Inkmity to message artists, manage bookings, and pick up where you left off.",
+  });
   const navigate = useNavigate();
   const prefersReduced = !!useReducedMotion();
   const [showPassword, setShowPassword] = useState(false);

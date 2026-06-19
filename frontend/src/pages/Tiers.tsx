@@ -4,6 +4,7 @@ import { Award, Check, Crown, Plus, Sparkles, Star } from "lucide-react";
 import Header from "@/components/header/Header";
 import VideoBackground from "@/components/VideoBackground";
 import RewardsPanel from "@/components/dashboard/client/RewardsPanel";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { useRole } from "@/hooks/useRole";
 import { getMe, getMyRewards, fetchArtistById, type RewardsSummary } from "@/api";
 
@@ -44,6 +45,10 @@ function artistTierForStats(bookings: number, rating: number): string {
 }
 
 export default function Tiers() {
+  usePageMeta({
+    title: "Pricing & Tiers",
+    description: "Transparent, completion-based platform fees that drop as low as 5% as you book — plus loyalty rewards. No lead fees, no per-listing charges.",
+  });
   const { role, isLoaded } = useRole();
   const { getToken } = useAuth();
 

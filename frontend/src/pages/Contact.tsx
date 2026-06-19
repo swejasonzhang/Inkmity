@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { Mail, Send, User, MessageSquareText } from "lucide-react";
 import Header from "@/components/header/Header";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -173,6 +174,10 @@ function AutoCenterTextarea({
 }
 
 export default function Contact() {
+    usePageMeta({
+        title: "Contact",
+        description: "Get in touch with the Inkmity team — questions, support, partnerships, and press.",
+    });
     const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
     const [loading, setLoading] = useState(false);
     const [hp, setHp] = useState("");

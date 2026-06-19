@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import Header from "@/components/header/Header";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function NotFound() {
+  usePageMeta({ title: "Page not found", description: "We couldn't find that page." });
   return (
     <div className="min-h-screen flex flex-col bg-app text-app">
       <Header />

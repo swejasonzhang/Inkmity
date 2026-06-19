@@ -4,8 +4,13 @@ import Header from "@/components/header/Header";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import VideoBackground from "@/components/VideoBackground";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const About: React.FC = () => {
+  usePageMeta({
+    title: "About",
+    description: "Why Inkmity exists — carrying the tattoo relationship from first reference to healed result, with money and trust handled in one place.",
+  });
   return (
     <div className="h-svh overflow-hidden flex flex-col text-app">
       <VideoBackground />
