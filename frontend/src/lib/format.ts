@@ -22,3 +22,10 @@ export function displayNameFromUsername(u?: string): string {
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+export function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format((Number.isFinite(cents) ? cents : 0) / 100);
+}

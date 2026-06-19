@@ -19,10 +19,7 @@ import TipModal from "@/components/dashboard/client/TipModal";
 import ReviewPromptModal from "@/components/dashboard/shared/ReviewPromptModal";
 import PromptModal, { type PromptConfig } from "@/components/dashboard/shared/PromptModal";
 import { Calendar, Clock, DollarSign, FileText, Image, RefreshCw, CheckCircle, XCircle, AlertCircle, Hash, Heart, Star } from "lucide-react";
-
-function formatCurrency(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
-}
+import { formatCurrency } from "@/lib/format";
 
 function formatDate(date: string | Date): string {
   const d = new Date(date);

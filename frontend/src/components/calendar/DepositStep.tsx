@@ -3,6 +3,7 @@ import { useAuth } from "@clerk/clerk-react"
 import { checkoutDeposit, getBooking } from "@/api/index.ts"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/hooks/useTheme"
+import { formatCurrency } from "@/lib/format"
 import { CreditCard, AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 import { toast } from "react-toastify"
 
@@ -20,13 +21,6 @@ type Props = {
   onDepositPaid: () => void
   onCancel: () => void
   artistName?: string
-}
-
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100)
 }
 
 export default function DepositStep({ booking, onDepositPaid, onCancel, artistName }: Props) {

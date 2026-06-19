@@ -34,3 +34,9 @@ dist-ssr
 # Compiled config artifacts (source is vite.config.ts)
 vite.config.js
 vite.config.d.ts
+
+# Playwright / visual tests
+/e2e/screenshots/
+/e2e/.artifacts/
+/playwright-report/
+/test-results/

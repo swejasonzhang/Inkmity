@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
+import { formatCurrency } from "@/lib/format";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Calendar, Clock, User, DollarSign, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,13 +91,6 @@ export default function ArtistAppointmentHistory() {
             hour: "2-digit",
             minute: "2-digit"
         });
-    };
-
-    const formatCurrency = (cents: number) => {
-        return new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-        }).format(cents / 100);
     };
 
     const formatDuration = (start: string, end: string) => {
