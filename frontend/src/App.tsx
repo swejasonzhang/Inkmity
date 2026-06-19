@@ -20,6 +20,7 @@ import Onboarding from "./pages/Onboarding";
 import StudioSignup from "./pages/StudioSignup";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import { useTheme, setThemeAccount } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
@@ -28,6 +29,7 @@ import { useOnboarded } from "@/hooks/useOnboarded";
 import ComingSoon from "./components/access/ComingSoon";
 import CookieConsent from "./components/access/CookieConsent";
 import { isTestingMode, resolvePreviewAccess } from "@/lib/launch";
+import { initAnalytics } from "@/lib/analytics";
 
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
@@ -84,12 +86,30 @@ const ThemeAccountSync: React.FC = () => {
 
 const App: React.FC = () => {
   useInactivityLogout();
+  useEffect(() => {
+    initAnalytics();
+  }, []);
 
   const previewAllowed = useMemo(() => resolvePreviewAccess(), []);
   if (isTestingMode && !previewAllowed) return <ComingSoon />;
 
   return (
     <>
+      <a
+        href="#main-content"
+        onClick={(e) => {
+          e.preventDefault();
+          const main = document.querySelector("main");
+          if (main) {
+            main.setAttribute("tabindex", "-1");
+            (main as HTMLElement).focus();
+            main.scrollIntoView();
+          }
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2147483647] focus:rounded-lg focus:bg-[color:var(--fg)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[color:var(--bg)] focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--fg)]/40"
+      >
+        Skip to content
+      </a>
       <ThemeAccountSync />
       <Routes>
       <Route path="/artists" element={<DashboardScope />}>
@@ -126,6 +146,7 @@ const App: React.FC = () => {
         <Route path="/tiers" element={<Tiers />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/sso-callback" element={<SSOCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />

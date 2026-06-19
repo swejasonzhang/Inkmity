@@ -3,6 +3,7 @@ Allow: /$
 Allow: /about
 Allow: /contact
 Allow: /tiers
+Allow: /faq
 Allow: /privacy
 Allow: /terms
 Allow: /login
