@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
 import ArtistDetailsStep from "@/components/access/ArtistDetailsStep";
+import { advanceOnEnterIfEmpty } from "@/lib/formNav";
 
 type Role = "client" | "artist";
 
@@ -214,7 +215,7 @@ export default function Onboarding() {
             <VideoBackground />
             <Header />
             <main className="flex-1 min-h-0 flex items-center justify-center px-3 sm:px-6 py-2 sm:py-3 overflow-hidden">
-                <div className="w-full max-w-sm sm:max-w-xl mx-auto max-h-full overflow-hidden rounded-xl sm:rounded-2xl bg-card border border-app p-2.5 sm:p-5">
+                <div className="w-full max-w-sm sm:max-w-xl mx-auto max-h-full overflow-hidden rounded-xl sm:rounded-2xl bg-card border border-app p-2.5 sm:p-5" onKeyDown={advanceOnEnterIfEmpty}>
                     <div className="mb-1.5 sm:mb-2">
                         <label htmlFor="onboard-username" className="block text-xs text-white/80 mb-1 text-center">
                             Username <span className="text-white">*</span> <span className="text-app/50">(required)</span>

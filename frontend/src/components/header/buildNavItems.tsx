@@ -15,6 +15,8 @@ export function buildNavItems(
   onGate: (e: React.MouseEvent) => void,
   role?: "client" | "artist" | "studio" | null
 ): NavItem[] {
+  if (!isSignedIn) return [];
+
   const gate = (item: NavItem): NavItem =>
     isSignedIn ? item : { ...item, disabled: true, onClick: onGate };
 

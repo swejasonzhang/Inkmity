@@ -111,15 +111,15 @@ select {
 .ink-scope[data-ink="light"],
 .ink-scope.ink-light,
 html.ink-light {
-  --bg: #ffffff !important;
+  --bg: #e6e6e6 !important;
   --fg: #000000 !important;
   --muted: #7d7d7d !important;
   --subtle: #4d4d4d !important;
   --card: #ffffff !important;
   --overlay: rgba(0, 0, 0, 0.5) !important;
   --border: #4d4d4d !important;
-  --elevated: #ededed !important;
-  --background: 0 0% 100% !important;
+  --elevated: #f4f4f4 !important;
+  --background: 0 0% 90% !important;
   --foreground: 0 0% 0% !important;
   --card-h: 0 0% 100% !important;
   --card-foreground: var(--foreground) !important;
@@ -1244,6 +1244,29 @@ input::-moz-focus-inner {
 }
 .pac-container:after {
   display: none !important;
+}
+
+/* Google PlaceAutocompleteElement input — themed to match our inputs. */
+.ink-gmp-autocomplete {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--elevated);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.ink-gmp-autocomplete:focus-within {
+  border-color: color-mix(in srgb, var(--fg) 40%, transparent);
+}
+.ink-gmp-autocomplete gmp-place-autocomplete {
+  width: 100%;
+  background: transparent;
+  color: var(--fg);
+  font-family: inherit;
+}
+.ink-gmp-autocomplete gmp-place-autocomplete::part(input) {
+  background: transparent;
+  color: var(--fg);
+  border: 0;
 }
 
 /* ─── react-toastify · monochrome, modern theme ───────────────────────────

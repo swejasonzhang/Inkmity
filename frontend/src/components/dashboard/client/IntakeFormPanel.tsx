@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import PromptModal, { type PromptConfig } from "@/components/dashboard/shared/PromptModal";
 import { getIntakeForm, submitIntakeForm, deleteIntakeForm } from "@/api";
+import { advanceOnEnterIfEmpty } from "@/lib/formNav";
 import {
   type FormState,
   EMPTY_INTAKE,
@@ -130,6 +131,7 @@ export default function IntakeFormPanel({ bookingId, isClient }: Props) {
               className="w-full max-w-lg max-h-[90vh] overflow-y-auto ink-page-scroll rounded-3xl border border-app bg-card p-6 text-app shadow-2xl"
               style={{ boxShadow: "0 24px 70px -20px rgba(0,0,0,0.7)" }}
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={advanceOnEnterIfEmpty}
             >
               <div className="flex items-start justify-between gap-3 mb-5">
                 <div className="flex items-center gap-3 min-w-0">

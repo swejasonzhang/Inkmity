@@ -42,7 +42,7 @@ const Hero: React.FC<HeroProps> = ({ wc, textFadeUp, onReveal }) => {
                     className="rounded-xl px-fluid-md py-3 h-auto text-fluid-base font-semibold bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-90 transition-opacity focus-visible:ring-2 focus-visible:ring-[color:var(--fg)]/30"
                 >
                     <Link to={findArtistTo} aria-label={isOnboarded ? "Go to your dashboard" : "Create your Inkmity account"}>
-                        Find your artist
+                        Create your account
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                 </Button>

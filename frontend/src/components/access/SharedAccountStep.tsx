@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import OAuthButtons from "@/components/access/OAuthButtons";
 import { validateEmail, validatePassword } from "@/lib/utils";
+import { advanceOnEnterIfEmpty } from "@/lib/formNav";
 
 type Role = "client" | "artist";
 type SharedAccount = { username: string; email: string; password: string };
@@ -79,7 +80,7 @@ export default function SharedAccountStep({
     const pwdMsg = shared.password.length > 0 && !pwdOk ? "Use at least 8 characters, including a number." : "";
 
     return (
-        <div className="grid w-full mx-0 p-0 place-items-stretch text-center">
+        <div className="grid w-full mx-0 p-0 place-items-stretch text-center" onKeyDown={advanceOnEnterIfEmpty}>
             <OAuthButtons mode="signup" />
             <div className="flex items-center gap-2 w-full mt-1.5 mb-1.5" aria-hidden>
                 <span className="h-px flex-1 bg-white/15" />

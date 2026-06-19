@@ -4,6 +4,7 @@ import Header from "@/components/header/Header";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { validateEmail } from "@/lib/utils";
+import { advanceOnEnterIfEmpty } from "@/lib/formNav";
 import InfoPanel from "@/components/access/InfoPanel";
 import GateNotice from "@/components/access/GateNotice";
 import LoginFormCard from "@/components/access/LoginFormCard";
@@ -459,7 +460,7 @@ export default function Login() {
                     {showSuccess ? (
                       RedirectNotice
                     ) : (
-                      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
+                      <form onSubmit={handleSubmit} onKeyDown={advanceOnEnterIfEmpty} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
                         {import.meta.env.DEV && (
                           <div className="w-full rounded-xl border border-dashed border-white/25 bg-white/5 p-2.5">
                             <p className="mb-2 text-[10px] uppercase tracking-wider text-white/50">Dev: skip signup</p>
