@@ -25,6 +25,7 @@ import {
   deleteIntakeForm,
   completeBooking,
   getBooking,
+  setFinalPrice,
 } from "../../controllers/bookingController.js";
 
 const app = express();
@@ -61,6 +62,43 @@ app.post("/bookings/:id/artist-no-show/respond", mockAuth, respondArtistNoShow);
 app.get("/bookings/no-show-disputes", mockAuth, listArtistNoShowDisputes);
 app.post("/bookings/:id/check-in", mockAuth, checkInBooking);
 app.get("/bookings/:id", mockAuth, getBooking);
+app.patch("/bookings/:id/final-price", mockAuth, setFinalPrice);
+
+conditionalDescribe("Booking Controller - price guardrails", () => {
+  test("setFinalPrice rejects a price above the absolute cap", async () => {
+    const b = await Booking.create({
+      artistId: "artist-cap",
+      clientId: "client-cap",
+      startAt: new Date("2026-07-02T15:00:00Z"),
+      endAt: new Date("2026-07-02T16:00:00Z"),
+      status: "accepted",
+      priceCents: 20000,
+      depositPaidCents: 5000,
+    });
+    const res = await request(app)
+      .patch(`/bookings/${b._id}/final-price`)
+      .set("x-test-user-id", "artist-cap")
+      .send({ finalPriceCents: 6_000_000 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("price_above_max");
+  });
+
+  test("deleteIntakeForm is locked after the session is completed", async () => {
+    const b = await Booking.create({
+      artistId: "artist-done",
+      clientId: "client-done",
+      startAt: new Date("2026-07-03T15:00:00Z"),
+      endAt: new Date("2026-07-03T16:00:00Z"),
+      status: "completed",
+      priceCents: 20000,
+    });
+    const res = await request(app)
+      .delete(`/bookings/${b._id}/intake`)
+      .set("x-test-user-id", "client-done");
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe("intake_locked");
+  });
+});
 
 conditionalDescribe("Booking Controller - getBooking ownership", () => {
   async function makeBooking() {

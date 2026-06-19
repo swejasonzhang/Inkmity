@@ -872,6 +872,11 @@ export async function setFinalPrice(req, res) {
         error: "price_below_deposit",
         message: "Final price cannot be less than the deposit already paid.",
       });
+    if (finalPriceCents > config.booking.maxPriceCents)
+      return res.status(400).json({
+        error: "price_above_max",
+        message: `Final price cannot exceed $${(config.booking.maxPriceCents / 100).toLocaleString()}.`,
+      });
 
     booking.priceCents = finalPriceCents;
     booking.finalPriceSetAt = new Date();
@@ -1828,6 +1833,13 @@ export async function deleteIntakeForm(req, res) {
 
     if (String(booking.clientId) !== userId) {
       return res.status(403).json({ error: "Unauthorized" });
+    }
+    // Once the session is completed the intake is retained for liability/records.
+    if (booking.status === "completed") {
+      return res.status(409).json({
+        error: "intake_locked",
+        message: "Intake forms can't be deleted after the session is completed.",
+      });
     }
 
     await IntakeForm.deleteOne({ bookingId });

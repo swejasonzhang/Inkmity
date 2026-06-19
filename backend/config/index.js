@@ -40,6 +40,12 @@ export const config = {
     defaultCommissionPct: Number(process.env.STUDIO_DEFAULT_COMMISSION_PCT ?? 0.30),
   },
 
+  booking: {
+    // Absolute sanity ceiling on any booking price ($50,000 default). Bounds both
+    // client-supplied prices at creation and artist-set final prices.
+    maxPriceCents: Number(process.env.MAX_BOOKING_PRICE_CENTS ?? 5_000_000),
+  },
+
   admin: {
     clerkIds: (process.env.ADMIN_CLERK_IDS || "")
       .split(",")

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { config } from "../config/index.js";
 
 const BookingSchema = new mongoose.Schema(
   {
@@ -32,7 +33,7 @@ const BookingSchema = new mongoose.Schema(
     rescheduledAt: { type: Date },
     rescheduledFrom: { type: Date },
     rescheduledBy: { type: String, enum: ["client", "artist"] },
-    priceCents: { type: Number, default: 0, min: 0 },
+    priceCents: { type: Number, default: 0, min: 0, max: config.booking.maxPriceCents },
     finalPriceSetAt: { type: Date },
     depositRequiredCents: { type: Number, default: 0, min: 0 },
     depositPaidCents: { type: Number, default: 0, min: 0 },

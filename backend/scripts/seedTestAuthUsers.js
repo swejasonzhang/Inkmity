@@ -7,7 +7,9 @@ import "../models/StudioAccount.js";
 import Studio from "../models/Studio.js";
 
 const ALLOWED_DB = "inkmity_dev";
-const PASSWORD = "InkmityDevTest!2026";
+// Dev-only test-account password. Override via env (TEST_ACCOUNT_PASSWORD) to
+// keep a real value out of source; the default is for local dev convenience.
+const PASSWORD = process.env.TEST_ACCOUNT_PASSWORD || "InkmityDevTest!2026";
 
 export const TEST_ACCOUNTS = [
   {
