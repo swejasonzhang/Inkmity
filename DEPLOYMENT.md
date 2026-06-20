@@ -82,6 +82,13 @@ connecting the repo in Render:
    the deployed `inkmity-api` URL.
 3. Add the production domain in Clerk's allowed origins and Stripe's redirect
    allowlist.
+4. **Social link previews for artist profiles** are served by the serverless
+   function `frontend/api/artist.ts`: a `vercel.json` rule routes only social-bot
+   user-agents on `/artist/:handle` to it, returning per-artist meta + JSON-LD.
+   Real users and Google (which renders JS) are unaffected. It calls the backend
+   via `SSR_API_URL` (defaults to the prod API URL; override only if the API host
+   differs). Verify after deploy by pasting an artist URL into Slack/iMessage or
+   the Facebook Sharing Debugger.
 
 ### Required env vars
 

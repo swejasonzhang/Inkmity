@@ -5,6 +5,17 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "https://inkmity-api.onrender.com/sitemap.xml" },
+    {
+      "source": "/artist/:handle",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Slack-ImgProxy|WhatsApp|Discordbot|TelegramBot|Applebot|Pinterest|redditbot|Embedly|vkShare|SkypeUriPreview|bingbot).*"
+        }
+      ],
+      "destination": "/api/artist?handle=:handle"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
