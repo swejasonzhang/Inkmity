@@ -4,6 +4,7 @@ import {
   getMyWaitlist,
   getArtistWaitlist,
 } from "../services/waitlistService.js";
+import { sendError } from "../lib/httpError.js";
 
 function getActorId(req) {
   return String(
@@ -18,7 +19,7 @@ export async function join(req, res) {
     const entry = await joinWaitlist(clientId, req.body || {});
     res.status(201).json(entry);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message || "Failed to join waitlist" });
+    sendError(res, err, "Failed to join waitlist");
   }
 }
 
@@ -30,7 +31,7 @@ export async function leave(req, res) {
     if (!entry) return res.status(404).json({ error: "not_found" });
     res.json({ ok: true });
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message || "Failed to leave waitlist" });
+    sendError(res, err, "Failed to leave waitlist");
   }
 }
 
@@ -40,7 +41,7 @@ export async function mine(req, res) {
     if (!clientId) return res.status(401).json({ error: "Unauthorized" });
     res.json(await getMyWaitlist(clientId));
   } catch (err) {
-    res.status(500).json({ error: err.message || "Failed to fetch waitlist" });
+    sendError(res, err, "Failed to fetch waitlist");
   }
 }
 
@@ -50,6 +51,6 @@ export async function forArtist(req, res) {
     if (!artistId) return res.status(401).json({ error: "Unauthorized" });
     res.json(await getArtistWaitlist(artistId));
   } catch (err) {
-    res.status(500).json({ error: err.message || "Failed to fetch waitlist" });
+    sendError(res, err, "Failed to fetch waitlist");
   }
 }

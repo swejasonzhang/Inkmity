@@ -1,4 +1,5 @@
 import { getRewardsSummary } from "../services/rewardsService.js";
+import { sendError } from "../lib/httpError.js";
 import {
   getAvailableCreditCents,
   grantCredit,
@@ -42,7 +43,7 @@ export async function grantCreditToClient(req, res) {
     res.status(201).json(credit);
   } catch (err) {
     console.error("grantCreditToClient error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Failed to grant credit" });
+    sendError(res, err, "Failed to grant credit");
   }
 }
 

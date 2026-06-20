@@ -2,6 +2,7 @@ import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
 import { config } from "../config/index.js";
 import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
+import { sendError } from "../lib/httpError.js";
 
 async function ensureArtistAgreement(artist, res) {
   if (config.dev.bypassGates) return true;
@@ -82,7 +83,7 @@ export async function createConnectAccount(req, res) {
     res.json({ accountId: account.id, existing: false });
   } catch (err) {
     console.error("createConnectAccount error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    sendError(res, err);
   }
 }
 
@@ -121,7 +122,7 @@ export async function createAccountLink(req, res) {
     res.json({ url: link.url });
   } catch (err) {
     console.error("createAccountLink error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    sendError(res, err);
   }
 }
 
@@ -156,7 +157,7 @@ export async function getConnectStatus(req, res) {
     });
   } catch (err) {
     console.error("getConnectStatus error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    sendError(res, err);
   }
 }
 
@@ -171,6 +172,6 @@ export async function createLoginLink(req, res) {
     res.json({ url: link.url });
   } catch (err) {
     console.error("createLoginLink error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    sendError(res, err);
   }
 }

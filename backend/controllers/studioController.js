@@ -1,4 +1,5 @@
 import Studio from "../models/Studio.js";
+import { sendError } from "../lib/httpError.js";
 import StudioMembership from "../models/StudioMembership.js";
 import Artist from "../models/Artist.js";
 import User from "../models/UserBase.js";
@@ -448,7 +449,7 @@ export async function createStudioConnect(req, res) {
     res.json({ accountId: account.id, existing: false });
   } catch (err) {
     console.error("createStudioConnect error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    sendError(res, err);
   }
 }
 
@@ -492,7 +493,7 @@ export async function createStudioAccountLink(req, res) {
     res.json({ url: link.url });
   } catch (err) {
     console.error("createStudioAccountLink error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    sendError(res, err);
   }
 }
 
@@ -558,6 +559,6 @@ export async function getStudioConnectStatus(req, res) {
     });
   } catch (err) {
     console.error("getStudioConnectStatus error:", err);
-    res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    sendError(res, err);
   }
 }

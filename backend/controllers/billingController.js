@@ -1,4 +1,5 @@
 import Billing from "../models/Billing.js";
+import { sendError } from "../lib/httpError.js";
 import Booking from "../models/Booking.js";
 import Client from "../models/Client.js";
 import Artist from "../models/Artist.js";
@@ -205,7 +206,7 @@ export async function checkoutDeposit(req, res) {
   res.json({ url: session.url, id: session.id, clientSecret: null });
   } catch (err) {
     console.error("checkoutDeposit error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return sendError(res, err);
   }
 }
 
@@ -320,9 +321,7 @@ export async function createDepositPaymentIntent(req, res) {
   });
   } catch (err) {
     console.error("createDepositPaymentIntent error:", err);
-    return res
-      .status(err.status || 500)
-      .json({ error: err.message || "Internal error", message: err.publicMessage });
+    return sendError(res, err);
   }
 }
 
@@ -375,9 +374,7 @@ export async function createCardSetupIntent(req, res) {
     });
   } catch (err) {
     console.error("createCardSetupIntent error:", err);
-    return res
-      .status(err.status || 500)
-      .json({ error: err.message || "Internal error", message: err.publicMessage });
+    return sendError(res, err);
   }
 }
 
@@ -433,9 +430,7 @@ export async function createBankSetupIntent(req, res) {
     });
   } catch (err) {
     console.error("createBankSetupIntent error:", err);
-    return res
-      .status(err.status || 500)
-      .json({ error: err.message || "Internal error", message: err.publicMessage });
+    return sendError(res, err);
   }
 }
 
@@ -476,7 +471,7 @@ export async function createClientSetupIntent(req, res) {
     });
   } catch (err) {
     console.error("createClientSetupIntent error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return sendError(res, err);
   }
 }
 
@@ -522,7 +517,7 @@ export async function listClientPaymentMethods(req, res) {
     res.json({ methods });
   } catch (err) {
     console.error("listClientPaymentMethods error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return sendError(res, err);
   }
 }
 
@@ -545,7 +540,7 @@ export async function deleteClientPaymentMethod(req, res) {
     res.json({ ok: true });
   } catch (err) {
     console.error("deleteClientPaymentMethod error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return sendError(res, err);
   }
 }
 
@@ -612,7 +607,7 @@ export async function refundBilling(req, res) {
     res.json({ ok: true, refunds });
   } catch (err) {
     console.error("refundBilling error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return sendError(res, err);
   }
 }
 
@@ -638,7 +633,7 @@ export async function createPortalSession(req, res) {
     res.json({ url: session.url });
   } catch (err) {
     console.error("createPortalSession error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return sendError(res, err);
   }
 }
 
@@ -647,7 +642,7 @@ export async function scheduleCancel(_req, res) {
     res.json({ ok: true });
   } catch (err) {
     console.error("scheduleCancel error:", err);
-    return res.status(err.status || 500).json({ error: err.message || "Internal error" });
+    return sendError(res, err);
   }
 }
 
@@ -760,9 +755,7 @@ export async function createFinalPaymentIntent(req, res) {
   });
   } catch (err) {
     console.error("createFinalPaymentIntent error:", err);
-    return res
-      .status(err.status || 500)
-      .json({ error: err.message || "Internal error", message: err.publicMessage });
+    return sendError(res, err);
   }
 }
 
@@ -873,9 +866,7 @@ export async function createTipCheckout(req, res) {
     res.json({ url: session.url, id: session.id, tipCents });
   } catch (err) {
     console.error("createTipCheckout error:", err);
-    return res
-      .status(err.status || 500)
-      .json({ error: err.message || "Internal error", message: err.publicMessage });
+    return sendError(res, err);
   }
 }
 
