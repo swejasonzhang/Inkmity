@@ -1,4 +1,5 @@
 import React from "react";
+import { STUDIOS_ENABLED } from "@/lib/features";
 
 export type NavItem = {
   label: string;
@@ -28,7 +29,7 @@ export function buildNavItems(
   if (isSignedIn && role === "artist") {
     items.push(gate({ label: "Portfolio", to: "/portfolio" }));
   }
-  if (isSignedIn && role === "studio") {
+  if (STUDIOS_ENABLED && isSignedIn && role === "studio") {
     items.push(gate({ label: "Studios", to: "/studios" }));
   }
 

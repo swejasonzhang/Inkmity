@@ -1,11 +1,14 @@
 import { Search, Brush, Building2, ArrowRight, type LucideIcon } from "lucide-react";
+import { STUDIOS_ENABLED } from "@/lib/features";
 
 export type RoleChoice = "client" | "artist" | "studio";
 
 const OPTIONS: { key: RoleChoice; title: string; subtitle: string; Icon: LucideIcon }[] = [
     { key: "client", title: "I want a tattoo", subtitle: "Discover artists by style and book your session.", Icon: Search },
     { key: "artist", title: "I'm a tattoo artist", subtitle: "Take bookings and grow your client base.", Icon: Brush },
-    { key: "studio", title: "I run a studio", subtitle: "Manage your artists and studio bookings.", Icon: Building2 },
+    ...(STUDIOS_ENABLED
+        ? [{ key: "studio" as const, title: "I run a studio", subtitle: "Manage your artists and studio bookings.", Icon: Building2 }]
+        : []),
 ];
 
 export default function RoleChooser({ onSelect }: { onSelect: (choice: RoleChoice) => void }) {

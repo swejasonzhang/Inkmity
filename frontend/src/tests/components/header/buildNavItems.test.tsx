@@ -53,4 +53,8 @@ describe("buildNavItems", () => {
     expect(buildNavItems(true, jest.fn(), "studio").map((i) => i.label)).not.toContain("Explore");
     expect(buildNavItems(true, jest.fn(), "client").map((i) => i.label)).toContain("Explore");
   });
+
+  test("should NOT show the Studios link while the studio section is locked", () => {
+    expect(buildNavItems(true, jest.fn(), "studio").map((i) => i.label)).not.toContain("Studios");
+  });
 });

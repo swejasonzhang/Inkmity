@@ -4,6 +4,7 @@ import { Sparkles } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { shake } from "@/lib/animations";
+import { STUDIOS_ENABLED } from "@/lib/features";
 import ProgressDots from "@/components/access/ProgressDots";
 import SharedAccountStep from "@/components/access/SharedAccountStep";
 import ClientDetailsStep from "@/components/access/ClientDetailsStep";
@@ -309,7 +310,9 @@ export default function SignupFormCard(props: SignupProps) {
           </div>
           <div className="text-subtle text-center text-[11px] sm:text-xs space-y-0.5">
             <div><span>Already have an account? <a href="/login" className="underline text-app hover:opacity-80">Login</a></span></div>
-            <div><span>Setting up a tattoo studio? <a href="/signup/studio" className="underline text-app hover:opacity-80">Create a studio account</a></span></div>
+            {STUDIOS_ENABLED && (
+              <div><span>Setting up a tattoo studio? <a href="/signup/studio" className="underline text-app hover:opacity-80">Create a studio account</a></span></div>
+            )}
           </div>
         </div>
       </div>

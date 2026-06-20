@@ -30,6 +30,7 @@ import ComingSoon from "./components/access/ComingSoon";
 import CookieConsent from "./components/access/CookieConsent";
 import { isTestingMode, resolvePreviewAccess } from "@/lib/launch";
 import { initAnalytics } from "@/lib/analytics";
+import { STUDIOS_ENABLED } from "@/lib/features";
 
 const PublicScope: React.FC = () => {
   const { themeClass } = useTheme();
@@ -127,16 +128,18 @@ const App: React.FC = () => {
       <Route path="/portfolio" element={<DashboardScope />}>
         <Route index element={<Portfolio />} />
       </Route>
-      <Route path="/studios" element={<DashboardScope />}>
-        <Route index element={<Studios />} />
-      </Route>
+      {STUDIOS_ENABLED && (
+        <Route path="/studios" element={<DashboardScope />}>
+          <Route index element={<Studios />} />
+        </Route>
+      )}
       <Route path="/admin" element={<DashboardScope />}>
         <Route index element={<Admin />} />
       </Route>
       <Route path="/explore" element={<Gallery />} />
       <Route element={<PublicScope />}>
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/signup/studio" element={<StudioSignup />} />
+        {STUDIOS_ENABLED && <Route path="/signup/studio" element={<StudioSignup />} />}
         <Route path="/login" element={<Login />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
