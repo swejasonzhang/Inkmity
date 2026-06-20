@@ -878,22 +878,87 @@ export async function setFinalPrice(req, res) {
         message: `Final price cannot exceed $${(config.booking.maxPriceCents / 100).toLocaleString()}.`,
       });
 
+    // A final price beyond the client's quote + tolerance needs client re-consent
+    // before the remaining balance can be charged.
+    const quoted = Number(booking.quotedPriceCents || 0);
+    const reconsentThreshold = Math.round(quoted * (1 + config.booking.finalPriceReconsentPct));
+    const needsReconsent = finalPriceCents > reconsentThreshold;
+
     booking.priceCents = finalPriceCents;
     booking.finalPriceSetAt = new Date();
+    booking.finalPriceApproved = !needsReconsent;
+    booking.finalPriceApprovedAt = needsReconsent ? undefined : new Date();
     await booking.save();
 
     try {
       await notify({
         senderId: String(booking.artistId),
         receiverId: String(booking.clientId),
-        text: `Final price set to $${(finalPriceCents / 100).toFixed(2)}. Your remaining balance will be charged automatically once you both confirm completion.`,
-        meta: { kind: "final_price_set", bookingId: String(booking._id), finalPriceCents },
+        text: needsReconsent
+          ? `Your artist set the final price to $${(finalPriceCents / 100).toFixed(2)} (quoted $${(quoted / 100).toFixed(2)}). Please review and approve it before your remaining balance is charged.`
+          : `Final price set to $${(finalPriceCents / 100).toFixed(2)}. Your remaining balance will be charged automatically once you both confirm completion.`,
+        meta: {
+          kind: needsReconsent ? "final_price_needs_approval" : "final_price_set",
+          bookingId: String(booking._id),
+          finalPriceCents,
+          quotedPriceCents: quoted,
+        },
       });
     } catch {}
 
     res.json(booking);
   } catch {
     res.status(500).json({ error: "set_final_price_failed" });
+  }
+}
+
+export async function approveFinalPrice(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId) return res.status(401).json({ error: "Unauthorized" });
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+    if (!booking) return res.status(404).json({ error: "not_found" });
+    if (String(booking.clientId) !== actorId)
+      return res.status(403).json({ error: "Only the client can approve the final price" });
+    if (!booking.finalPriceSetAt)
+      return res.status(400).json({ error: "no_final_price" });
+
+    if (booking.finalPriceApproved !== true) {
+      booking.finalPriceApproved = true;
+      booking.finalPriceApprovedAt = new Date();
+      await booking.save();
+
+      try {
+        await notify({
+          senderId: String(booking.clientId),
+          receiverId: String(booking.artistId),
+          text: `Your client approved the final price of $${(Number(booking.priceCents || 0) / 100).toFixed(2)}.`,
+          meta: { kind: "final_price_approved", bookingId: String(booking._id) },
+        });
+      } catch {}
+
+      // If the session already completed, the deferred balance can now be charged.
+      if (booking.status === "completed" && !config.dev.bypassGates) {
+        try {
+          const result = await captureBookingBalance(booking);
+          if (result && !result.ok && !result.skipped) {
+            await notify({
+              senderId: String(booking.artistId),
+              receiverId: String(booking.clientId),
+              text: "We couldn't automatically charge your remaining balance. Please complete the payment from your appointment.",
+              meta: { kind: "balance_capture_failed", bookingId: String(booking._id), reason: result.reason },
+            });
+          }
+        } catch (e) {
+          console.error("captureBookingBalance (post-approval) failed:", e.message);
+        }
+      }
+    }
+
+    res.json(booking);
+  } catch {
+    res.status(500).json({ error: "approve_final_price_failed" });
   }
 }
 
@@ -953,12 +1018,15 @@ export async function verifyBookingCode(req, res) {
         try {
           const result = await captureBookingBalance(doc);
           if (result && !result.ok && !result.skipped) {
+            const unapproved = result.reason === "final_price_unapproved";
             await notify({
               senderId: String(doc.artistId),
               receiverId: String(doc.clientId),
-              text: "We couldn't automatically charge your remaining balance. Please complete the payment from your appointment.",
+              text: unapproved
+                ? "Approve the final price on your appointment to complete payment of your remaining balance."
+                : "We couldn't automatically charge your remaining balance. Please complete the payment from your appointment.",
               meta: {
-                kind: "balance_capture_failed",
+                kind: unapproved ? "final_price_needs_approval" : "balance_capture_failed",
                 bookingId: String(doc._id),
                 reason: result.reason,
               },

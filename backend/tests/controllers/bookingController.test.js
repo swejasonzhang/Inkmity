@@ -26,7 +26,9 @@ import {
   completeBooking,
   getBooking,
   setFinalPrice,
+  approveFinalPrice,
 } from "../../controllers/bookingController.js";
+import { captureBookingBalance } from "../../services/balanceCaptureService.js";
 
 const app = express();
 app.use(express.json());
@@ -63,6 +65,72 @@ app.get("/bookings/no-show-disputes", mockAuth, listArtistNoShowDisputes);
 app.post("/bookings/:id/check-in", mockAuth, checkInBooking);
 app.get("/bookings/:id", mockAuth, getBooking);
 app.patch("/bookings/:id/final-price", mockAuth, setFinalPrice);
+app.post("/bookings/:id/approve-final-price", mockAuth, approveFinalPrice);
+
+conditionalDescribe("Booking Controller - final price re-consent", () => {
+  async function bookingQuoted(priceCents = 20000) {
+    return Booking.create({
+      artistId: "artist-rc",
+      clientId: "client-rc",
+      startAt: new Date("2026-08-01T15:00:00Z"),
+      endAt: new Date("2026-08-01T16:00:00Z"),
+      status: "accepted",
+      priceCents,
+      depositPaidCents: 5000,
+    });
+  }
+
+  test("a final price within tolerance is auto-approved", async () => {
+    const b = await bookingQuoted(20000); // quote captured = 20000
+    const res = await request(app)
+      .patch(`/bookings/${b._id}/final-price`)
+      .set("x-test-user-id", "artist-rc")
+      .send({ finalPriceCents: 21000 }); // +5% <= +10% tolerance
+    expect(res.status).toBe(200);
+    expect(res.body.finalPriceApproved).toBe(true);
+  });
+
+  test("a final price beyond tolerance requires client approval", async () => {
+    const b = await bookingQuoted(20000);
+    const res = await request(app)
+      .patch(`/bookings/${b._id}/final-price`)
+      .set("x-test-user-id", "artist-rc")
+      .send({ finalPriceCents: 30000 }); // +50%
+    expect(res.status).toBe(200);
+    expect(res.body.finalPriceApproved).toBe(false);
+  });
+
+  test("captureBookingBalance refuses to charge an unapproved final price", async () => {
+    const result = await captureBookingBalance({
+      _id: "x",
+      priceCents: 30000,
+      depositPaidCents: 5000,
+      balancePaidCents: 0,
+      finalPriceApproved: false,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("final_price_unapproved");
+  });
+
+  test("the client can approve the final price", async () => {
+    const b = await bookingQuoted(20000);
+    await request(app)
+      .patch(`/bookings/${b._id}/final-price`)
+      .set("x-test-user-id", "artist-rc")
+      .send({ finalPriceCents: 30000 });
+
+    const denied = await request(app)
+      .post(`/bookings/${b._id}/approve-final-price`)
+      .set("x-test-user-id", "artist-rc"); // artist cannot approve
+    expect(denied.status).toBe(403);
+
+    const res = await request(app)
+      .post(`/bookings/${b._id}/approve-final-price`)
+      .set("x-test-user-id", "client-rc");
+    expect(res.status).toBe(200);
+    expect(res.body.finalPriceApproved).toBe(true);
+  });
+});
 
 conditionalDescribe("Booking Controller - price guardrails", () => {
   test("setFinalPrice rejects a price above the absolute cap", async () => {

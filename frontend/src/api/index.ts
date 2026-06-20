@@ -199,6 +199,9 @@ export type Booking = {
   noShowMarkedAt?: string;
   noShowMarkedBy?: "client" | "artist" | "system";
   priceCents?: number;
+  quotedPriceCents?: number;
+  finalPriceSetAt?: string;
+  finalPriceApproved?: boolean;
   depositRequiredCents?: number;
   depositPaidCents?: number;
   rescheduledFrom?: string;
@@ -616,6 +619,14 @@ export async function setBookingFinalPrice(
   signal?: AbortSignal
 ) {
   return apiPatch<Booking>(`/bookings/${id}/final-price`, { finalPriceCents }, token, signal);
+}
+
+export async function approveBookingFinalPrice(
+  id: string,
+  token?: string | null,
+  signal?: AbortSignal
+) {
+  return apiPost<Booking>(`/bookings/${id}/approve-final-price`, {}, token, signal);
 }
 
 export async function getIntakeForm(

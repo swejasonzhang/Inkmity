@@ -21,6 +21,11 @@ export async function captureBookingBalance(booking) {
   const balance = computeBalanceDueCents(booking);
   if (balance <= 0) return { ok: true, skipped: true, reason: "no_balance_due" };
 
+  // The client must approve a final price set above their quote before we charge.
+  if (booking.finalPriceApproved === false) {
+    return { ok: false, reason: "final_price_unapproved" };
+  }
+
   const transferGroup = `booking_${String(booking._id)}`;
 
   const clientFee = await getClientPlatformFee(booking.clientId);

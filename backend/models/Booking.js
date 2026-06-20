@@ -34,7 +34,10 @@ const BookingSchema = new mongoose.Schema(
     rescheduledFrom: { type: Date },
     rescheduledBy: { type: String, enum: ["client", "artist"] },
     priceCents: { type: Number, default: 0, min: 0, max: config.booking.maxPriceCents },
+    quotedPriceCents: { type: Number, default: 0, min: 0 },
     finalPriceSetAt: { type: Date },
+    finalPriceApproved: { type: Boolean, default: true },
+    finalPriceApprovedAt: { type: Date },
     depositRequiredCents: { type: Number, default: 0, min: 0 },
     depositPaidCents: { type: Number, default: 0, min: 0 },
     balancePaidCents: { type: Number, default: 0, min: 0 },
@@ -88,6 +91,13 @@ BookingSchema.index({ status: 1, startAt: 1 }, { name: "status_date_idx" });
 BookingSchema.index({ createdAt: -1 }, { name: "created_desc_idx" });
 
 BookingSchema.index({ note: "text", requirements: "text", serviceDescription: "text" });
+
+BookingSchema.pre("save", function (next) {
+  // Capture the price the client consented to at booking time; setFinalPrice
+  // compares against this to decide whether re-consent is required.
+  if (this.isNew) this.quotedPriceCents = this.priceCents || 0;
+  next();
+});
 
 BookingSchema.post("save", function (doc) {
   import("../services/socketService.js")

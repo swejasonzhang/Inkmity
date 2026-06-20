@@ -4,7 +4,7 @@ import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import Header from "@/components/header/Header";
-import { getAppointments, acceptAppointment, denyAppointment, reportArtistNoShow, respondArtistNoShow, checkInBooking, setBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
+import { getAppointments, acceptAppointment, denyAppointment, reportArtistNoShow, respondArtistNoShow, checkInBooking, setBookingFinalPrice, approveBookingFinalPrice, startBookingVerification, verifyBookingCompletion, Booking } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -249,6 +249,21 @@ export default function Appointments() {
     }
   };
 
+  const handleApproveFinalPrice = async (id: string) => {
+    if (processing) return;
+    setProcessing(id);
+    try {
+      const token = await getToken();
+      await approveBookingFinalPrice(id, token ?? undefined);
+      toast.success("Final price approved");
+      await loadAppointments();
+    } catch (error: any) {
+      toast.error(error?.body?.message || error?.body?.error || "Failed to approve price");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const handleStartVerification = async (id: string) => {
     if (processing) return;
     setProcessing(id);
@@ -329,6 +344,8 @@ export default function Appointments() {
     const remainingBalance = appointment.priceCents && appointment.depositPaidCents
       ? appointment.priceCents - appointment.depositPaidCents
       : undefined;
+    const needsFinalPriceApproval =
+      isTattooSession && !!appointment.finalPriceSetAt && appointment.finalPriceApproved === false;
 
     const getStatusBadgeStyle = (): React.CSSProperties => {
       const statusColors: Record<string, { bg: string; text: string; border: string }> = {
@@ -533,6 +550,31 @@ export default function Appointments() {
                   </div>
                 )}
               </div>
+            )}
+
+            {needsFinalPriceApproval && isClient && (
+              <div className="col-span-2 mt-2 rounded-xl border p-3" style={{ borderColor: "var(--fg)", background: "var(--elevated)" }}>
+                <p className="text-sm font-semibold text-app">Approve the final price</p>
+                <p className="mt-0.5 text-xs text-subtle">
+                  Your artist set the final price to{" "}
+                  <span className="font-semibold text-app">{formatCurrency(appointment.priceCents || 0)}</span>
+                  {appointment.quotedPriceCents ? <> (quoted {formatCurrency(appointment.quotedPriceCents)})</> : null}.
+                  {" "}Your remaining balance won't be charged until you approve.
+                </p>
+                <Button
+                  onClick={() => handleApproveFinalPrice(appointment._id)}
+                  disabled={processing === appointment._id}
+                  className="mt-2 h-9 rounded-lg text-xs px-4 bg-[color:var(--fg)] text-[color:var(--bg)] hover:opacity-90"
+                >
+                  {processing === appointment._id ? "Approving..." : `Approve ${formatCurrency(appointment.priceCents || 0)}`}
+                </Button>
+              </div>
+            )}
+
+            {needsFinalPriceApproval && isArtist && (
+              <p className="col-span-2 mt-1 text-xs text-subtle">
+                Waiting for the client to approve the final price before the balance is charged.
+              </p>
             )}
 
             {isTattooSession && appointment.status === "accepted" && (() => {
