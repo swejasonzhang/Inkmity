@@ -6,7 +6,6 @@ type Props = {
     video?: boolean;
 };
 
-const POSTER = "/poster.jpg";
 const VIDEO = "/Landing.mp4";
 
 const VideoBackground: React.FC<Props> = ({ scrim = 58, video = true }) => {
@@ -55,12 +54,6 @@ const VideoBackground: React.FC<Props> = ({ scrim = 58, video = true }) => {
             style={{ zIndex: -1 }}
             aria-hidden
         >
-            <img
-                src={POSTER}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover grayscale"
-                decoding="async"
-            />
             {showVideo && (
                 <video
                     ref={ref}
@@ -69,7 +62,6 @@ const VideoBackground: React.FC<Props> = ({ scrim = 58, video = true }) => {
                     muted
                     playsInline
                     preload="auto"
-                    poster={POSTER}
                     className="absolute inset-0 h-full w-full object-cover grayscale"
                 >
                     <source src={VIDEO} type="video/mp4" />
