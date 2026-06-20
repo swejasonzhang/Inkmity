@@ -34,6 +34,7 @@ import { Server } from "socket.io";
 import { logger } from "./lib/logger.js";
 
 import authRoutes from "./routes/auth.js";
+import { getSitemap } from "./controllers/sitemapController.js";
 import bookingRoutes from "./routes/bookings.js";
 import userRoutes from "./routes/users.js";
 import billingRoutes from "./routes/billing.js";
@@ -125,6 +126,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.get("/", (req, res) => {
   res.json({ service: "inkmity-api", status: "ok", health: "/health" });
 });
+
+app.get("/sitemap.xml", getSitemap);
 
 app.get("/health", (req, res) => {
   res.json({
