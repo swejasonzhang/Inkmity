@@ -596,9 +596,13 @@ export async function refundBilling(req, res) {
     const refunds = [];
     for (const b of list) {
       if (b.type !== "platform_fee") continue;
+      if (b.status === "refunded") continue;
       const pi = b.stripePaymentIntentId;
       if (!pi) continue;
-      const rr = await stripe.refunds.create({ payment_intent: pi });
+      const rr = await stripe.refunds.create(
+        { payment_intent: pi },
+        { idempotencyKey: `refund_${b._id}` }
+      );
       b.status = "refunded";
       b.stripeRefundIds.push(rr.id);
       b.refundedAt = new Date();
@@ -971,6 +975,13 @@ export async function stripeWebhook(req, res) {
             if (bill) {
               feeCents = Number(bill.platformFeeCents || 0);
               if (bill.status !== "paid") {
+                const expected = Number(bill.amountCents || 0);
+                const received = Number(pi.amount_received ?? pi.amount ?? 0);
+                if (expected > 0 && received !== expected) {
+                  console.warn(
+                    `webhook amount mismatch for billing ${bill._id}: expected ${expected}, received ${received}`
+                  );
+                }
                 bill.status = "paid";
                 bill.stripePaymentIntentId = pi.id;
                 bill.stripeChargeId = pi.latest_charge || null;
