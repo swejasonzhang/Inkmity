@@ -550,7 +550,10 @@ export async function refundDepositForBooking(bookingId) {
   for (const b of deposits) {
     if (b.stripePaymentIntentId) {
       try {
-        const rr = await stripe.refunds.create({ payment_intent: b.stripePaymentIntentId });
+        const rr = await stripe.refunds.create(
+          { payment_intent: b.stripePaymentIntentId },
+          { idempotencyKey: `refund_deposit_${b._id}` }
+        );
         b.stripeRefundIds = b.stripeRefundIds || [];
         b.stripeRefundIds.push(rr.id);
         refunds.push(rr.id);

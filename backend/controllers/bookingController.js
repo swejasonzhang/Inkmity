@@ -8,7 +8,7 @@ import BookingCooldown from "../models/BookingCooldown.js";
 import Client from "../models/Client.js";
 import Artist from "../models/Artist.js";
 import { dayBoundsUTC } from "../utils/date.js";
-import { refundBilling } from "./billingController.js";
+import { refundDepositForBooking } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
 import { getIO, emitMessageCreated, emitBookingCreated } from "../services/socketService.js";
 import { sendAppointmentCancellationEmail, sendVerificationCodeEmail } from "../services/emailService.js";
@@ -673,22 +673,14 @@ export async function cancelBooking(req, res) {
         hoursUntilAppointment >= 0 &&
         booking.depositPaidCents > 0
       ) {
-        const mockRes = {
-          _status: 200,
-          _json: null,
-          status(code) {
-            this._status = code;
-            return this;
-          },
-          json(payload) {
-            this._json = payload;
-            return this;
-          },
-        };
-        req.body = { bookingId: String(booking._id) };
-        await refundBilling(req, mockRes);
+        // Good-faith cancellation: actually refund the deposit (type "deposit")
+        // and reverse any payout. refundBilling only touches legacy platform_fee
+        // bills, so it silently refunded nothing here.
+        await refundDepositForBooking(String(booking._id));
       }
-    } catch {}
+    } catch (e) {
+      console.error("cancelBooking deposit refund failed:", e.message);
+    }
 
     try {
       const zone = await getArtistTimezone(booking.artistId);
@@ -2342,6 +2334,30 @@ async function autoCompleteDueBookings(userId) {
       await b.save();
       try { await recordCompletedBooking(b.clientId); } catch (e) { console.error("recordCompletedBooking failed:", e.message); }
       try { await incrementArtistBookings(b.artistId); } catch (e) { console.error("incrementArtistBookings failed:", e.message); }
+      // Capture the remaining balance just like a manual completion would — without
+      // this the artist is never paid the balance on auto-completed bookings.
+      if (!config.dev.bypassGates) {
+        try {
+          const result = await captureBookingBalance(b);
+          if (result && !result.ok && !result.skipped) {
+            const unapproved = result.reason === "final_price_unapproved";
+            await notify({
+              senderId: String(b.artistId),
+              receiverId: String(b.clientId),
+              text: unapproved
+                ? "Approve the final price on your appointment to complete payment of your remaining balance."
+                : "We couldn't automatically charge your remaining balance. Please complete the payment from your appointment.",
+              meta: {
+                kind: unapproved ? "final_price_needs_approval" : "balance_capture_failed",
+                bookingId: String(b._id),
+                reason: result.reason,
+              },
+            });
+          }
+        } catch (e) {
+          console.error("autoComplete captureBookingBalance failed:", e.message);
+        }
+      }
     }
   } catch (e) {
     console.error("autoCompleteDueBookings failed:", e.message);

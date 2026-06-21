@@ -3,6 +3,7 @@ import express from "express";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 import Booking from "../../models/Booking.js";
+import Billing from "../../models/Billing.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
 import Project from "../../models/Project.js";
 import Artist from "../../models/Artist.js";
@@ -756,6 +757,27 @@ conditionalDescribe("Booking Controller - Cancellation", () => {
     const updatedBooking = await Booking.findById(bookingId);
     expect(updatedBooking.status).toBe("cancelled");
     expect(updatedBooking.depositPaidCents).toBe(1000);
+  });
+
+  test("actually refunds the deposit bill on a good-faith cancellation", async () => {
+    const bill = await Billing.create({
+      bookingId,
+      clientId,
+      artistId,
+      type: "deposit",
+      amountCents: 1000,
+      status: "paid",
+      currency: "usd",
+    });
+
+    const response = await request(app)
+      .post(`/bookings/${bookingId}/cancel`)
+      .set("x-test-user-id", clientId)
+      .send({ reason: "Schedule conflict" });
+
+    expect(response.status).toBe(200);
+    const updatedBill = await Billing.findById(bill._id);
+    expect(updatedBill.status).toBe("refunded");
   });
 });
 
