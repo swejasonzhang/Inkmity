@@ -17,7 +17,7 @@ const steps = [
     {
         icon: CheckCircle2,
         title: "Show Up & Earn",
-        body: "Your artist has everything before you arrive. Walk in prepared. Every completed session earns you reward points toward your next one.",
+        body: "Your artist has everything before you arrive. Walk in prepared. Every completed session moves you toward lower platform fees and loyalty credit.",
     },
 ];
 

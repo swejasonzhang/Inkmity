@@ -13,9 +13,9 @@ type ArtistTier = { key: string; label: string; bookings: number; minRating: num
 
 const CLIENT_TIERS: ClientTier[] = [
   { key: "bronze", label: "Bronze", threshold: 0, perks: ["Full marketplace access", "Book & message any artist", "Secure deposit & payment protection", "Standard fee: $10 + 5%, capped at $50"] },
-  { key: "silver", label: "Silver", threshold: 3, perks: ["Priority booking support", "Early-bird appointment slots", "Birthday booking credit"] },
-  { key: "gold", label: "Gold", threshold: 8, perks: ["Early access to new artists", "Priority waitlist placement", "Bigger loyalty credits"] },
-  { key: "platinum", label: "Platinum", threshold: 10, perks: ["No $10 base fee — pay just 5%", "Concierge booking support", "Annual loyalty credit"] },
+  { key: "silver", label: "Silver", threshold: 3, perks: ["Lower platform fee — 8%", "$10 loyalty credit", "Birthday booking credit"] },
+  { key: "gold", label: "Gold", threshold: 8, perks: ["Lower platform fee — 6%", "$25 loyalty credit", "Free consultation credit"] },
+  { key: "platinum", label: "Platinum", threshold: 10, perks: ["No $10 base fee — flat 5%", "$50 loyalty credit", "Credits auto-applied at checkout"] },
 ];
 
 const ARTIST_TIERS: ArtistTier[] = [
@@ -89,7 +89,7 @@ export default function Tiers() {
 
   const intro = isArtist
     ? "Every artist gets the full toolkit — including instant payouts, free. Climb the tiers with completed bookings and a strong rating to stack on better placement and badges."
-    : "Every client gets the full marketplace. Book more to stack on perks like priority support, credits, and early access — Platinum even skips the $10 base fee.";
+    : "Every client gets the full marketplace. Book more and your platform fee drops while loyalty credits unlock automatically — Platinum even skips the $10 base fee.";
 
   const tiers = useMemo(() => (isArtist ? ARTIST_TIERS : CLIENT_TIERS), [isArtist]);
 

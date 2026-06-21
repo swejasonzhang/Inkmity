@@ -15,14 +15,14 @@ type Props = {
 const loginProps = [
     { icon: Search, title: "Search that understands style", body: "Filter by technique, healed results, budget, and travel radius." },
     { icon: MessageSquareText, title: "Chat with full context", body: "Share references and approve sketches in one clean thread." },
-    { icon: Gift, title: "Earn as you book", body: "Reward points stack with every session toward real perks." },
+    { icon: Gift, title: "Earn as you book", body: "Your platform fee drops and credits unlock as your booking history grows." },
 ];
 
 const clientProps = [
     { icon: Search, title: "Matched to your vision", body: "We surface artists whose healed work fits your style, budget, and city." },
     { icon: MessageSquareText, title: "Everything in one place", body: "Ideas, references, and decisions stay together — never lost in DMs." },
     { icon: Tag, title: "No surprises at checkout", body: "See honest quotes and real reviews before you ever put money down." },
-    { icon: Gift, title: "Rewarded for every piece", body: "Collect points with each session and redeem them for real perks." },
+    { icon: Gift, title: "Rewarded for every piece", body: "Book more to unlock lower fees and credits that auto-apply at checkout." },
     { icon: BadgeCheck, title: "Start free, stay flexible", body: "Joining costs nothing — explore, message, and book on your terms." },
 ];
 
