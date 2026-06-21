@@ -1,7 +1,3 @@
-// Vercel serverless function: serves per-artist meta to social scrapers.
-// Only bot user-agents are routed here (see vercel.json `has` rule); real users
-// and JS-rendering crawlers (Google) get the SPA untouched. Bots don't run JS,
-// so this returns a small self-contained HTML document with the right <head>.
 
 const SITE = "https://inkmity.com";
 const API_BASE = process.env.SSR_API_URL || "https://inkmity-api.onrender.com";
@@ -116,7 +112,6 @@ export default async function handler(req: any, res: any) {
         html = buildArtistDocument(artist, handle);
       }
     } catch {
-      // fall through to the generic document
     }
   }
   if (!html) html = buildFallbackDocument();

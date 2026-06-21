@@ -343,7 +343,6 @@ export default function SignUp() {
   const skipDetails = () => {
     const key = slides[step].key;
 
-    // "Skip now" only skips optional preferences — required selections must still be made.
     if ((key === "client-1" && !allClientValid) || (key === "artist-1" && !allArtistValid)) {
       setInvalidFields([]);
       setFlashToken((t) => t + 1);
@@ -351,7 +350,6 @@ export default function SignUp() {
       return;
     }
 
-    // Default the optional extras while preserving the user's required selections.
     if (key === "artist-1") {
       setArtist((a) => ({ ...a, shop: "", portfolio: "", bio: "" }));
     } else if (key === "client-1") {

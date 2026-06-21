@@ -6,8 +6,6 @@ let initialized = false;
 
 export const analyticsEnabled = !!DOMAIN;
 
-// Plausible is cookieless and privacy-first, so it runs without gating on the
-// cookie-consent banner. No-op unless VITE_PLAUSIBLE_DOMAIN is configured.
 export function initAnalytics() {
   if (initialized || !DOMAIN || typeof document === "undefined") return;
   initialized = true;

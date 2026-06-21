@@ -93,8 +93,6 @@ BookingSchema.index({ createdAt: -1 }, { name: "created_desc_idx" });
 BookingSchema.index({ note: "text", requirements: "text", serviceDescription: "text" });
 
 BookingSchema.pre("save", function (next) {
-  // Capture the price the client consented to at booking time; setFinalPrice
-  // compares against this to decide whether re-consent is required.
   if (this.isNew) this.quotedPriceCents = this.priceCents || 0;
   next();
 });

@@ -2,8 +2,6 @@ import { describe, test, expect, beforeAll, afterAll, afterEach, jest } from "@j
 import type { KeyboardEvent } from "react";
 import { advanceOnEnterIfEmpty } from "@/lib/formNav";
 
-// jsdom does not compute layout, so offsetParent is always null. The helper
-// uses it as a visibility check, so expose a truthy value for attached nodes.
 let originalDesc: PropertyDescriptor | undefined;
 beforeAll(() => {
   originalDesc = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, "offsetParent");

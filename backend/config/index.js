@@ -41,11 +41,7 @@ export const config = {
   },
 
   booking: {
-    // Absolute sanity ceiling on any booking price ($50,000 default). Bounds both
-    // client-supplied prices at creation and artist-set final prices.
     maxPriceCents: Number(process.env.MAX_BOOKING_PRICE_CENTS ?? 5_000_000),
-    // A final price above the quote by more than this fraction requires the
-    // client to re-consent before the remaining balance can be charged.
     finalPriceReconsentPct: Number(process.env.FINAL_PRICE_RECONSENT_PCT ?? 0.1),
   },
 

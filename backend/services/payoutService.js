@@ -74,9 +74,6 @@ export async function executePayouts({
   });
   if (split?.studioId) billing.studioId = split.studioId;
 
-  // Resume-safe: skip transfers already recorded (by kind), and persist after
-  // each one so a mid-loop failure can't lose the record of a transfer that
-  // already happened at Stripe. The per-kind idempotency key prevents double-pay.
   const results = Array.isArray(billing.transfers) ? [...billing.transfers] : [];
   const doneKinds = new Set(results.filter((t) => t.status === "paid").map((t) => t.kind));
 
@@ -97,7 +94,6 @@ export async function executePayouts({
     await billing.save();
   }
 
-  // Persist studioId even when there were no new transfers to make.
   await billing.save();
   return results;
 }

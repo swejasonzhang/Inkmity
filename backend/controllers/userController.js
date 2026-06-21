@@ -13,9 +13,6 @@ import { tierRankAggExpr } from "../services/artistTierService.js";
 
 const SAFE_ROLES = new Set(["client", "artist", "studio"]);
 
-// Public artist endpoints must never leak private/financial fields. clerkId is
-// kept (the client uses it for messaging); email and all Stripe/Connect payout
-// data are stripped from the response.
 const PRIVATE_ARTIST_FIELDS = [
   "email",
   "stripeConnectAccountId",

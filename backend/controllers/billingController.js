@@ -619,7 +619,6 @@ export async function createPortalSession(req, res) {
     const actorId = String(req.user?.clerkId || req.auth?.userId || "").trim();
     if (!actorId) return res.status(401).json({ error: "Unauthorized" });
 
-    // Resolve the caller's OWN Stripe customer — never trust a client-supplied id.
     const bill = await Billing.findOne({
       clientId: actorId,
       stripeCustomerId: { $exists: true, $ne: null },
@@ -951,8 +950,6 @@ export async function stripeWebhook(req, res) {
             }
             await runPayoutsForBill(bill);
           }
-          // Only record the tip the first time this bill is marked paid, so a
-          // redelivered webhook can't double-count the tip total.
           if (type === "tip" && bookingId && !billWasAlreadyPaid) {
             const book = await Booking.findById(bookingId);
             if (book) {

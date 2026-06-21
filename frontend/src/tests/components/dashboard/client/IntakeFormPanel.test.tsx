@@ -65,10 +65,8 @@ describe("IntakeFormPanel", () => {
     render(<IntakeFormPanel bookingId="bk1" isClient />);
     fireEvent.click(await screen.findByRole("button", { name: /complete intake form/i }));
 
-    // modal open
     expect(await screen.findByText(/pre-appointment intake/i)).toBeInTheDocument();
 
-    // submit disabled until required consent is checked
     const submitBtn = screen.getByRole("button", { name: /submit intake/i });
     expect(submitBtn).toBeDisabled();
     fireEvent.click(submitBtn);

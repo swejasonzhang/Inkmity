@@ -673,9 +673,6 @@ export async function cancelBooking(req, res) {
         hoursUntilAppointment >= 0 &&
         booking.depositPaidCents > 0
       ) {
-        // Good-faith cancellation: actually refund the deposit (type "deposit")
-        // and reverse any payout. refundBilling only touches legacy platform_fee
-        // bills, so it silently refunded nothing here.
         await refundDepositForBooking(String(booking._id));
       }
     } catch (e) {
@@ -870,8 +867,6 @@ export async function setFinalPrice(req, res) {
         message: `Final price cannot exceed $${(config.booking.maxPriceCents / 100).toLocaleString()}.`,
       });
 
-    // A final price beyond the client's quote + tolerance needs client re-consent
-    // before the remaining balance can be charged.
     const quoted = Number(booking.quotedPriceCents || 0);
     const reconsentThreshold = Math.round(quoted * (1 + config.booking.finalPriceReconsentPct));
     const needsReconsent = finalPriceCents > reconsentThreshold;
@@ -930,7 +925,6 @@ export async function approveFinalPrice(req, res) {
         });
       } catch {}
 
-      // If the session already completed, the deferred balance can now be charged.
       if (booking.status === "completed" && !config.dev.bypassGates) {
         try {
           const result = await captureBookingBalance(booking);
@@ -1894,7 +1888,6 @@ export async function deleteIntakeForm(req, res) {
     if (String(booking.clientId) !== userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
-    // Once the session is completed the intake is retained for liability/records.
     if (booking.status === "completed") {
       return res.status(409).json({
         error: "intake_locked",
@@ -2334,8 +2327,6 @@ async function autoCompleteDueBookings(userId) {
       await b.save();
       try { await recordCompletedBooking(b.clientId); } catch (e) { console.error("recordCompletedBooking failed:", e.message); }
       try { await incrementArtistBookings(b.artistId); } catch (e) { console.error("incrementArtistBookings failed:", e.message); }
-      // Capture the remaining balance just like a manual completion would — without
-      // this the artist is never paid the balance on auto-completed bookings.
       if (!config.dev.bypassGates) {
         try {
           const result = await captureBookingBalance(b);

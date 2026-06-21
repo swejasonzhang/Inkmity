@@ -1,7 +1,3 @@
-// Safely return an error to the client. Intentional client errors (4xx, thrown
-// with err.status) and Stripe errors (customer-safe, e.g. "Your card was
-// declined") keep their message. Anything else — unexpected 500s from the DB or
-// libraries — has its message hidden so internals never leak to clients.
 export function sendError(res, err, fallback = "Internal error") {
   const status =
     err && Number.isInteger(err.status) && err.status >= 400 && err.status < 600
