@@ -918,10 +918,12 @@ export async function stripeWebhook(req, res) {
 
           let feeCents = 0;
           let bill = null;
+          let billWasAlreadyPaid = false;
           if (billingId) {
             bill = await Billing.findById(billingId);
             if (bill) {
               feeCents = Number(bill.platformFeeCents || 0);
+              billWasAlreadyPaid = bill.status === "paid";
               if (bill.status !== "paid") {
                 bill.status = "paid";
                 bill.stripePaymentIntentId =
@@ -949,7 +951,9 @@ export async function stripeWebhook(req, res) {
             }
             await runPayoutsForBill(bill);
           }
-          if (type === "tip" && bookingId) {
+          // Only record the tip the first time this bill is marked paid, so a
+          // redelivered webhook can't double-count the tip total.
+          if (type === "tip" && bookingId && !billWasAlreadyPaid) {
             const book = await Booking.findById(bookingId);
             if (book) {
               book.tipCents = Number(book.tipCents || 0) + Number(bill?.amountCents || 0);

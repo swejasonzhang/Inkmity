@@ -181,6 +181,33 @@ conditionalDescribe("Tipping", () => {
       expect(paidBill.status).toBe("paid");
     });
 
+    test("a redelivered tip webhook (new event id, same bill) does not double-count", async () => {
+      const booking = await makeBooking("completed");
+      await request(app)
+        .post("/billing/tip")
+        .set("x-test-user-id", "client_1")
+        .send({ bookingId: String(booking._id), tipCents: 4000 });
+      const bill = await Billing.findOne({ bookingId: booking._id, type: "tip" });
+
+      const makeEvent = (id) => ({
+        id,
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_dup",
+            payment_intent: "pi_dup",
+            metadata: { billingId: String(bill._id), bookingId: String(booking._id), type: "tip" },
+          },
+        },
+      });
+
+      await request(app).post("/billing/webhook").send(makeEvent("evt_tip_a"));
+      await request(app).post("/billing/webhook").send(makeEvent("evt_tip_b"));
+
+      const updated = await Booking.findById(booking._id);
+      expect(updated.tipCents).toBe(4000);
+    });
+
     test("a tip does not trigger a separate payout transfer (destination charge already routed it)", async () => {
       const booking = await makeBooking("completed");
       await request(app)

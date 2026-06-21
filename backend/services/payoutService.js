@@ -68,17 +68,20 @@ export async function executePayouts({
   transferGroup,
   currency = "usd",
 }) {
-  if (Array.isArray(billing.transfers) && billing.transfers.length > 0) {
-    return billing.transfers;
-  }
-
   const { transfers, split } = await computePayoutPlan({
     artistId,
     transferableCents,
   });
+  if (split?.studioId) billing.studioId = split.studioId;
 
-  const results = [];
+  // Resume-safe: skip transfers already recorded (by kind), and persist after
+  // each one so a mid-loop failure can't lose the record of a transfer that
+  // already happened at Stripe. The per-kind idempotency key prevents double-pay.
+  const results = Array.isArray(billing.transfers) ? [...billing.transfers] : [];
+  const doneKinds = new Set(results.filter((t) => t.status === "paid").map((t) => t.kind));
+
   for (const t of transfers) {
+    if (doneKinds.has(t.kind)) continue;
     const tr = await stripe.transfers.create(
       {
         amount: t.amountCents,
@@ -90,10 +93,11 @@ export async function executePayouts({
       { idempotencyKey: `transfer_${billing._id}_${t.kind}` }
     );
     results.push({ ...t, stripeTransferId: tr.id, status: "paid" });
+    billing.transfers = results;
+    await billing.save();
   }
 
-  billing.transfers = results;
-  if (split?.studioId) billing.studioId = split.studioId;
+  // Persist studioId even when there were no new transfers to make.
   await billing.save();
   return results;
 }
