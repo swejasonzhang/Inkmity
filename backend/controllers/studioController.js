@@ -1,4 +1,5 @@
 import Studio from "../models/Studio.js";
+import { getActorId } from "../lib/auth.js";
 import { sendError } from "../lib/httpError.js";
 import StudioMembership from "../models/StudioMembership.js";
 import Artist from "../models/Artist.js";
@@ -24,12 +25,6 @@ async function ensureStudioAgreement(actorId, res) {
     return false;
   }
   return true;
-}
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
 }
 
 function frontendBase() {

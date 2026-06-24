@@ -1,12 +1,7 @@
 import Sketch from "../models/Sketch.js";
+import { getActorId } from "../lib/auth.js";
 import Booking from "../models/Booking.js";
 import Message from "../models/Message.js";
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
-}
 
 export async function createSketch(req, res) {
   try {

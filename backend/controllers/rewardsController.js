@@ -1,4 +1,5 @@
 import { getRewardsSummary } from "../services/rewardsService.js";
+import { getActorId } from "../lib/auth.js";
 import { sendError } from "../lib/httpError.js";
 import {
   getAvailableCreditCents,
@@ -6,12 +7,6 @@ import {
   maybeGrantBirthdayCredit,
 } from "../services/creditsService.js";
 import { config } from "../config/index.js";
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
-}
 
 export async function getMyCredits(req, res) {
   try {

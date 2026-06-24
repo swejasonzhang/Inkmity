@@ -1,11 +1,6 @@
 import SignedDocument from "../models/SignedDocument.js";
+import { getActorId } from "../lib/auth.js";
 import { getDocument, hashDocument, DOCUMENTS } from "../services/documentsService.js";
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
-}
 
 export async function fetchDocument(req, res) {
   try {

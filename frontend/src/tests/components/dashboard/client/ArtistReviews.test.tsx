@@ -1,5 +1,5 @@
 import { describe, test, expect } from "@jest/globals";
-import { render } from "@/tests/setup/test-utils";
+import { render, waitFor } from "@/tests/setup/test-utils";
 
 const { default: ArtistReviews } = await import("@/components/dashboard/client/ArtistReviews");
 
@@ -10,8 +10,9 @@ describe("ArtistReviews", () => {
     username: "Test Artist",
   };
 
-  test("should render artist reviews", () => {
+  test("should render artist reviews", async () => {
     const { container } = render(<ArtistReviews artist={defaultArtist} />);
     expect(container.firstChild).toBeInTheDocument();
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
   });
 });

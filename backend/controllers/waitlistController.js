@@ -1,16 +1,11 @@
 import {
+import { getActorId } from "../lib/auth.js";
   joinWaitlist,
   leaveWaitlist,
   getMyWaitlist,
   getArtistWaitlist,
 } from "../services/waitlistService.js";
 import { sendError } from "../lib/httpError.js";
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
-}
 
 export async function join(req, res) {
   try {

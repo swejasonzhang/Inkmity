@@ -1,4 +1,5 @@
 import Availability from "../models/Availability.js";
+import { getActorId } from "../lib/auth.js";
 import Booking from "../models/Booking.js";
 import { DateTime, Interval } from "luxon";
 
@@ -6,12 +7,6 @@ const DEFAULT_TIMEZONE = "America/New_York";
 const DEFAULT_SLOT_MINUTES = 60;
 const DEFAULT_OPEN_RANGES = [{ start: "10:00", end: "22:00" }];
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
-}
 
 function makeWeeklyDefault() {
   const weekly = {};

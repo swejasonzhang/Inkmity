@@ -38,15 +38,17 @@ global.fetch = jest.fn<typeof fetch>(() =>
   } as Response)
 ) as jest.MockedFunction<typeof fetch>;
 
+const mockGetToken = jest.fn<() => Promise<string>>().mockResolvedValue("mock-token");
+const mockUser = { id: "user-123" };
 jest.unstable_mockModule("@clerk/clerk-react", () => ({
   ClerkProvider: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
   useAuth: jest.fn(() => ({
-    getToken: jest.fn<() => Promise<string>>().mockResolvedValue("mock-token"),
+    getToken: mockGetToken,
     userId: "user-123",
     isLoaded: true,
   })),
   useUser: jest.fn(() => ({
-    user: { id: "user-123" },
+    user: mockUser,
     isSignedIn: true,
     isLoaded: true,
   })),

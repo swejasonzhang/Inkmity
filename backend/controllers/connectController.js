@@ -1,4 +1,5 @@
 import Artist from "../models/Artist.js";
+import { getActorId } from "../lib/auth.js";
 import { stripe } from "../lib/stripe.js";
 import { config } from "../config/index.js";
 import { hasSignedCurrentDocument } from "../services/signatureGateService.js";
@@ -16,12 +17,6 @@ async function ensureArtistAgreement(artist, res) {
     return false;
   }
   return true;
-}
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
 }
 
 function frontendBase() {

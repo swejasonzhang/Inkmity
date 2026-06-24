@@ -1,4 +1,5 @@
 import Booking from "../models/Booking.js";
+import { getActorId } from "../lib/auth.js";
 import ArtistPolicy from "../models/ArtistPolicy.js";
 import Message from "../models/Message.js";
 import Availability from "../models/Availability.js";
@@ -108,12 +109,6 @@ async function notifyArtistOfBooking({ clientId, artistId, booking, tz }) {
   } catch (e) {
     console.error("notifyArtistOfBooking failed:", e?.message);
   }
-}
-
-function getActorId(req) {
-  return String(
-    req.user?.clerkId || req.auth?.userId || req.user?._id || req.user?.id || ""
-  ).trim();
 }
 
 function genCode() {
