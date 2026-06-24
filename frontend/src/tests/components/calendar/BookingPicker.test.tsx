@@ -125,9 +125,10 @@ describe("BookingPicker", () => {
     } as Booking);
   });
 
-  test("should render booking picker", () => {
+  test("should render booking picker", async () => {
     render(<BookingPicker {...defaultProps} />);
     expect(screen.getByText(/Pick a time to continue/i)).toBeInTheDocument();
+    await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
   });
 
   test("should render time slots", async () => {

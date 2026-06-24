@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render } from "@/tests/setup/test-utils";
+import { render, waitFor } from "@/tests/setup/test-utils";
 
 jest.unstable_mockModule("@/lib/socket", () => ({
   socket: {
@@ -24,8 +24,9 @@ describe("ChatWindow", () => {
     jest.clearAllMocks();
   });
 
-  test("should render chat window", () => {
+  test("should render chat window", async () => {
     const { container } = render(<ChatWindow {...defaultProps} />);
     expect(container.firstChild).toBeInTheDocument();
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
   });
 });
