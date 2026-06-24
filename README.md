@@ -1,5 +1,7 @@
 # Inkmity
 
+[![CI](https://github.com/swejasonzhang/Inkmity/actions/workflows/ci.yml/badge.svg)](https://github.com/swejasonzhang/Inkmity/actions/workflows/ci.yml)
+
 > A modern platform for discovering tattoo artists across the US — browse by style, message with full context, book with transparent pricing, and earn rewards as you go.
 
 Inkmity connects tattoo clients, artists, and studios in one place: portfolio-driven discovery with tier-boosted ranking, an Explore feed of trending ideas drawn from real uploads, real-time messaging, and an end-to-end on-platform booking flow. Before a tattoo session can be requested, the client signs a consent/liability waiver and completes the intake form — enforced on both the client and the server. Payments run through the platform as merchant of record — balance captured only once both parties verify completion, payouts split between artist and studio (with chargeback clawback), and post-session tips that go 100% to the artist (no platform cut). It also includes signed legal documents (client waiver + artist/studio agreements), reward tiers with platform-funded credits (loyalty/birthday/consultation), an appointment waitlist, and in-app sketch approval. It is in active development — see the [Roadmap](#roadmap) for what's coming next.
