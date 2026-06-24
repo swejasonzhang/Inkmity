@@ -1,10 +1,10 @@
 import {
-import { getActorId } from "../lib/auth.js";
   joinWaitlist,
   leaveWaitlist,
   getMyWaitlist,
   getArtistWaitlist,
 } from "../services/waitlistService.js";
+import { getActorId } from "../lib/auth.js";
 import { sendError } from "../lib/httpError.js";
 
 export async function join(req, res) {

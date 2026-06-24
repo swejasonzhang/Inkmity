@@ -40,3 +40,6 @@ vite.config.d.ts
 /e2e/.artifacts/
 /playwright-report/
 /test-results/
+
+# Test coverage
+coverage/
