@@ -1,9 +1,12 @@
+import { verifyToken } from "@clerk/express";
 import Message from "../models/Message.js";
 import User from "../models/UserBase.js";
+import { config } from "../config/index.js";
 
 let io;
 const onlineUsers = new Map();
 const MAX_DECLINES = 99;
+const IS_PROD = (process.env.NODE_ENV || "development") === "production";
 
 const updateLastActive = async (clerkId) => {
   if (!clerkId) return;
@@ -17,18 +20,37 @@ const updateLastActive = async (clerkId) => {
 export const initSocket = (ioInstance) => {
   io = ioInstance;
 
+  io.use(async (socket, next) => {
+    socket.data = socket.data || {};
+    try {
+      const token = socket.handshake?.auth?.token;
+      if (token && config.auth.clerkSecretKey) {
+        const payload = await verifyToken(token, { secretKey: config.auth.clerkSecretKey });
+        if (payload?.sub) socket.data.verifiedUserId = String(payload.sub);
+      }
+    } catch {
+      // invalid/expired token — identity stays unverified, enforced below
+    }
+    if (IS_PROD && !socket.data.verifiedUserId) {
+      return next(new Error("unauthorized"));
+    }
+    next();
+  });
+
   io.on("connection", (socket) => {
     socket.data = socket.data || {};
 
     socket.on("register", async (clerkId) => {
-      if (typeof clerkId !== "string" || !clerkId) return;
-      onlineUsers.set(clerkId, socket.id);
-      socket.data.userId = clerkId;
-      socket.join(userRoom(clerkId));
-      updateLastActive(clerkId).then(() => {
-        io.emit("user:activity:updated", { userId: clerkId, lastActive: Date.now() });
+      const verified = socket.data.verifiedUserId;
+      const userId = verified || (IS_PROD ? "" : typeof clerkId === "string" ? clerkId : "");
+      if (!userId) return;
+      onlineUsers.set(userId, socket.id);
+      socket.data.userId = userId;
+      socket.join(userRoom(userId));
+      updateLastActive(userId).then(() => {
+        io.emit("user:activity:updated", { userId, lastActive: Date.now() });
       }).catch(() => {});
-      io.emit("user:online", { clerkId, socketId: socket.id });
+      io.emit("user:online", { clerkId: userId, socketId: socket.id });
     });
 
     socket.on("unregister", () => {
@@ -80,8 +102,11 @@ export const initSocket = (ioInstance) => {
 
     socket.on("send_message", async (data, ack) => {
       try {
-        const { senderId, receiverId, text, meta } = data || {};
-        if (!senderId || !receiverId || !text)
+        const { receiverId, text, meta } = data || {};
+        const verified = socket.data.verifiedUserId || socket.data.userId;
+        const senderId = verified || (IS_PROD ? "" : data?.senderId);
+        if (!senderId) return ack?.({ error: "unauthorized" });
+        if (!receiverId || !text)
           return ack?.({ error: "missing_fields" });
         const allowed = await isAllowedToChat(senderId, receiverId);
         if (!allowed) return ack?.({ error: "not_allowed" });

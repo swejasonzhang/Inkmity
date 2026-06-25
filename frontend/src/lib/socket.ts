@@ -4,8 +4,9 @@ import { env } from "@/utils/env";
 const SOCKET_URL = env.socketUrl;
 const SOCKET_PATH = env.socketPath;
 
+type AuthCallback = (data: Record<string, unknown>) => void;
 type AuthSocket = ReturnType<typeof ioClient> & {
-  auth?: Record<string, unknown>;
+  auth?: Record<string, unknown> | ((cb: AuthCallback) => void);
 };
 
 export const socket: AuthSocket = ioClient(SOCKET_URL.replace(/\/+$/, ""), {
@@ -19,6 +20,18 @@ export function getSocket() {
 }
 
 let registeredUserId = "";
+let tokenGetter: (() => Promise<string | null>) | null = null;
+
+socket.auth = (cb: AuthCallback) => {
+  const done = (token: string) => cb({ token, userId: registeredUserId || "" });
+  if (tokenGetter) {
+    tokenGetter()
+      .then((t) => done(t || ""))
+      .catch(() => done(""));
+  } else {
+    done("");
+  }
+};
 
 socket.on("connect", () => {
   if (registeredUserId) socket.emit("register", registeredUserId);
@@ -29,17 +42,12 @@ export async function connectSocket(
   userId?: string
 ) {
   if (userId) registeredUserId = userId;
+  tokenGetter = getToken;
 
   if (socket.connected) {
     if (registeredUserId) socket.emit("register", registeredUserId);
     return;
   }
 
-  try {
-    const token = await getToken();
-    socket.auth = { token: token || "", userId: userId || "" };
-  } catch {
-    socket.auth = {};
-  }
   if (!socket.connected) socket.connect();
 }
