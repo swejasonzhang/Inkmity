@@ -90,6 +90,17 @@ BookingSchema.index({ clientId: 1, appointmentType: 1, status: 1 }, { name: "cli
 BookingSchema.index({ status: 1, startAt: 1 }, { name: "status_date_idx" });
 BookingSchema.index({ createdAt: -1 }, { name: "created_desc_idx" });
 
+BookingSchema.index(
+  { artistId: 1, startAt: 1 },
+  {
+    name: "artist_live_slot_unique",
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ["pending", "accepted", "booked", "matched"] },
+    },
+  }
+);
+
 BookingSchema.index({ note: "text", requirements: "text", serviceDescription: "text" });
 
 BookingSchema.pre("save", function (next) {

@@ -12,7 +12,7 @@ jest.unstable_mockModule("../../services/studioService.js", () => ({
   computeArtistStudioSplit: mockComputeSplit,
 }));
 
-const { computePayoutPlan, reversePayouts } = await import(
+const { computePayoutPlan, reversePayouts, executePayouts } = await import(
   "../../services/payoutService.js"
 );
 
@@ -86,6 +86,47 @@ describe("computePayoutPlan", () => {
     const plan = await computePayoutPlan({ artistId: "a1", transferableCents: 10000 });
     expect(plan.transfers).toEqual([
       { destination: "acct_studio", amountCents: 10000, kind: "studio" },
+    ]);
+  });
+});
+
+describe("executePayouts (failure persistence + retry)", () => {
+  test("records a failed leg and throws payout_partial_failure instead of losing it", async () => {
+    artistAccount("acct_artist");
+    mockComputeSplit.mockResolvedValue(null);
+    mockTransfers.create.mockRejectedValueOnce(new Error("insufficient_funds"));
+    const billing = {
+      _id: "billf",
+      transfers: [],
+      save: jest.fn().mockResolvedValue(undefined),
+      markModified: jest.fn(),
+    };
+    await expect(
+      executePayouts({ billing, artistId: "a1", transferableCents: 10000, transferGroup: "g1" })
+    ).rejects.toMatchObject({ code: "payout_partial_failure" });
+    expect(billing.transfers).toEqual([
+      expect.objectContaining({
+        kind: "artist",
+        status: "failed",
+        error: expect.stringContaining("insufficient_funds"),
+      }),
+    ]);
+  });
+
+  test("a retry skips paid legs and completes the previously-failed one", async () => {
+    artistAccount("acct_artist");
+    mockComputeSplit.mockResolvedValue(null);
+    const billing = {
+      _id: "billr",
+      transfers: [{ kind: "artist", amountCents: 10000, status: "failed", error: "x" }],
+      save: jest.fn().mockResolvedValue(undefined),
+      markModified: jest.fn(),
+    };
+    mockTransfers.create.mockResolvedValueOnce({ id: "tr_ok" });
+    await executePayouts({ billing, artistId: "a1", transferableCents: 10000, transferGroup: "g1" });
+    expect(mockTransfers.create).toHaveBeenCalledTimes(1);
+    expect(billing.transfers).toEqual([
+      expect.objectContaining({ kind: "artist", status: "paid", stripeTransferId: "tr_ok" }),
     ]);
   });
 });

@@ -516,7 +516,8 @@ export async function createBooking(req, res) {
     await notifyArtistOfBooking({ clientId: userId, artistId, booking: created });
     await applyScheduleCooldown(userId, artistId, created._id);
     return res.status(201).json(created);
-  } catch {
+  } catch (err) {
+    if (err?.code === 11000) return res.status(409).json({ error: "Slot already booked" });
     return res.status(500).json({ error: "Failed to create booking" });
   }
 }
@@ -1246,6 +1247,7 @@ export async function createConsultation(req, res) {
 
     res.status(201).json(booking);
   } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ error: "Slot already booked" });
     console.error("Error creating consultation:", error);
     return res.status(500).json({ error: "Failed to create consultation" });
   }
@@ -1444,6 +1446,7 @@ export async function createTattooSession(req, res) {
 
     res.status(201).json(booking);
   } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ error: "Slot already booked" });
     console.error("Error creating tattoo session:", error);
     return res.status(500).json({ error: "Failed to create tattoo session" });
   }
@@ -1614,6 +1617,7 @@ export async function createMultiSession(req, res) {
 
     res.status(201).json({ project, bookings });
   } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ error: "Slot already booked" });
     console.error("Error creating multi-session booking:", error);
     return res.status(500).json({ error: "Failed to create multi-session booking" });
   }

@@ -639,6 +639,37 @@ conditionalDescribe("Booking Controller - Double Booking Prevention", () => {
     expect(response.body.error).toBe("Slot already booked");
   });
 
+  test("the DB unique index blocks a second live booking at the same artist+slot (race-safe)", async () => {
+    await Booking.init();
+    const startAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+    const end = new Date(startAt.getTime() + 60 * 60 * 1000);
+    await Booking.create({
+      artistId: "race-artist", clientId: "c1", startAt, endAt: end,
+      status: "accepted", appointmentType: "consultation",
+    });
+    await expect(
+      Booking.create({
+        artistId: "race-artist", clientId: "c2", startAt, endAt: end,
+        status: "pending", appointmentType: "consultation",
+      })
+    ).rejects.toMatchObject({ code: 11000 });
+  });
+
+  test("a cancelled booking does not reserve the slot in the unique index", async () => {
+    await Booking.init();
+    const startAt = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000);
+    const end = new Date(startAt.getTime() + 60 * 60 * 1000);
+    await Booking.create({
+      artistId: "freed-artist", clientId: "c1", startAt, endAt: end,
+      status: "cancelled", appointmentType: "consultation",
+    });
+    const ok = await Booking.create({
+      artistId: "freed-artist", clientId: "c2", startAt, endAt: end,
+      status: "pending", appointmentType: "consultation",
+    });
+    expect(ok._id).toBeTruthy();
+  });
+
   test("should allow booking when only cancelled appointments conflict", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
     const endISO = new Date(startISO.getTime() + 30 * 60 * 1000);

@@ -6,6 +6,7 @@ import Artist from "../models/Artist.js";
 import { stripe } from "../lib/stripe.js";
 import { sendAppointmentConfirmationEmail } from "../services/emailService.js";
 import { config } from "../config/index.js";
+import { getActorId } from "../lib/auth.js";
 import { recordFeePaid, getClientPlatformFee } from "../services/rewardsService.js";
 import { executePayouts, reversePayouts } from "../services/payoutService.js";
 import { applyPayoutScheduleForArtist } from "../services/payoutScheduleService.js";
@@ -26,6 +27,8 @@ const CURRENCY = config.stripe.currency || "usd";
 
 async function runPayoutsForBill(bill) {
   if (!bill) return;
+  bill.payoutAttempts = Number(bill.payoutAttempts || 0) + 1;
+  bill.lastPayoutAttemptAt = new Date();
   try {
     const gross =
       bill.type === "deposit"
@@ -44,8 +47,46 @@ async function runPayoutsForBill(bill) {
       transferGroup: bill.transferGroup || bookingTransferGroup(bill.bookingId),
       currency: bill.currency || CURRENCY,
     });
+    bill.payoutStatus = "paid";
+    bill.payoutError = undefined;
+    await bill.save();
   } catch (e) {
+    bill.payoutStatus = "failed";
+    bill.payoutError = String(e.code || e.message || e).slice(0, 300);
+    await bill.save().catch(() => {});
     console.error("runPayoutsForBill failed:", e.code || e.message);
+  }
+}
+
+const PAYOUT_MAX_ATTEMPTS = 5;
+
+export async function retryFailedPayouts({ artistId, limit = 50 } = {}) {
+  const query = {
+    status: "paid",
+    payoutStatus: "failed",
+    payoutAttempts: { $lt: PAYOUT_MAX_ATTEMPTS },
+  };
+  if (artistId) query.artistId = String(artistId);
+  const bills = await Billing.find(query).limit(limit);
+  let recovered = 0;
+  for (const bill of bills) {
+    await runPayoutsForBill(bill);
+    if (bill.payoutStatus === "paid") recovered += 1;
+  }
+  return { attempted: bills.length, recovered };
+}
+
+export async function retryPayoutsHandler(req, res) {
+  try {
+    const actorId = getActorId(req);
+    if (!actorId || !config.admin.clerkIds.includes(actorId)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+    const result = await retryFailedPayouts({ artistId: req.body?.artistId });
+    res.json(result);
+  } catch (e) {
+    console.error("retryPayoutsHandler failed:", e.message);
+    res.status(500).json({ error: "retry_failed" });
   }
 }
 
@@ -306,7 +347,9 @@ export async function createDepositPaymentIntent(req, res) {
       enabled: true,
     },
   };
-  const paymentIntent = await stripe.paymentIntents.create(depositIntentParams);
+  const paymentIntent = await stripe.paymentIntents.create(depositIntentParams, {
+    idempotencyKey: `deposit_pi_${booking._id}_${depositIntentParams.amount}`,
+  });
 
   bill.stripePaymentIntentId = paymentIntent.id;
   await bill.save();
@@ -742,7 +785,9 @@ export async function createFinalPaymentIntent(req, res) {
       enabled: true,
     },
   };
-  const paymentIntent = await stripe.paymentIntents.create(finalIntentParams);
+  const paymentIntent = await stripe.paymentIntents.create(finalIntentParams, {
+    idempotencyKey: `final_pi_${booking._id}_${finalIntentParams.amount}`,
+  });
 
   bill.stripePaymentIntentId = paymentIntent.id;
   await bill.save();
@@ -860,6 +905,8 @@ export async function createTipCheckout(req, res) {
       },
       success_url: `${process.env.APP_URL}/appointments/${bookingId}?tipped=1`,
       cancel_url: `${process.env.APP_URL}/appointments/${bookingId}?tip_cancelled=1`,
+    }, {
+      idempotencyKey: `tip_cs_${bookingId}_${tipCents}`,
     });
 
     bill.stripeCheckoutSessionId = session.id;
@@ -1056,6 +1103,11 @@ export async function stripeWebhook(req, res) {
             await owner.save();
             if (owner.clerkId && account.charges_enabled) {
               await applyPayoutScheduleForArtist(owner.clerkId);
+              if (account.payouts_enabled) {
+                await retryFailedPayouts({ artistId: owner.clerkId }).catch((e) =>
+                  console.error("auto retryFailedPayouts failed:", e.message)
+                );
+              }
             }
           }
           break;

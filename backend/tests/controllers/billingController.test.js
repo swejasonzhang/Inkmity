@@ -126,7 +126,8 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
         amount: 1000 + PLATFORM_FEE_MIN_CENTS,
         transfer_group: expect.stringContaining("booking_"),
         metadata: expect.objectContaining({ type: "deposit", bookingId }),
-      })
+      }),
+      expect.objectContaining({ idempotencyKey: expect.any(String) })
     );
   });
 
@@ -227,7 +228,8 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
           type: "final_payment",
           depositApplied: "2000",
         }),
-      })
+      }),
+      expect.objectContaining({ idempotencyKey: expect.any(String) })
     );
     const callArg = stripeMock.paymentIntents.create.mock.calls[0][0];
     expect(callArg.application_fee_amount).toBeUndefined();

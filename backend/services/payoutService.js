@@ -75,26 +75,42 @@ export async function executePayouts({
   if (split?.studioId) billing.studioId = split.studioId;
 
   const results = Array.isArray(billing.transfers) ? [...billing.transfers] : [];
-  const doneKinds = new Set(results.filter((t) => t.status === "paid").map((t) => t.kind));
+  const paidKinds = new Set(results.filter((t) => t.status === "paid").map((t) => t.kind));
+  let anyFailed = false;
 
   for (const t of transfers) {
-    if (doneKinds.has(t.kind)) continue;
-    const tr = await stripe.transfers.create(
-      {
-        amount: t.amountCents,
-        currency,
-        destination: t.destination,
-        transfer_group: transferGroup,
-        metadata: { billingId: String(billing._id), kind: t.kind },
-      },
-      { idempotencyKey: `transfer_${billing._id}_${t.kind}` }
-    );
-    results.push({ ...t, stripeTransferId: tr.id, status: "paid" });
+    if (paidKinds.has(t.kind)) continue;
+    const priorIdx = results.findIndex((r) => r.kind === t.kind && r.status !== "paid");
+    if (priorIdx >= 0) results.splice(priorIdx, 1);
+    try {
+      const tr = await stripe.transfers.create(
+        {
+          amount: t.amountCents,
+          currency,
+          destination: t.destination,
+          transfer_group: transferGroup,
+          metadata: { billingId: String(billing._id), kind: t.kind },
+        },
+        { idempotencyKey: `transfer_${billing._id}_${t.kind}` }
+      );
+      results.push({ ...t, stripeTransferId: tr.id, status: "paid" });
+    } catch (e) {
+      anyFailed = true;
+      results.push({ ...t, status: "failed", error: String(e?.message || e).slice(0, 300) });
+    }
     billing.transfers = results;
+    billing.markModified?.("transfers");
     await billing.save();
   }
 
+  billing.transfers = results;
   await billing.save();
+
+  if (anyFailed) {
+    const err = new Error("one_or_more_transfers_failed");
+    err.code = "payout_partial_failure";
+    throw err;
+  }
   return results;
 }
 

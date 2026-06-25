@@ -364,7 +364,8 @@ conditionalDescribe("Integration - Deposit Application to Final Payment", () => 
           type: "final_payment",
           depositApplied: "2000",
         }),
-      })
+      }),
+      expect.objectContaining({ idempotencyKey: expect.any(String) })
     );
   });
 });

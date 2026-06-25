@@ -14,6 +14,7 @@ import {
   createPortalSession,
   scheduleCancel,
   getPaymentBreakdown,
+  retryPayoutsHandler,
 } from "../controllers/billingController.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -32,4 +33,5 @@ router.post("/refund", requireAuth(), refundBilling);
 router.post("/portal", requireAuth(), createPortalSession);
 router.post("/schedule-cancel", requireAuth(), scheduleCancel);
 router.post("/breakdown", requireAuth(), getPaymentBreakdown);
+router.post("/payouts/retry", requireAuth(), retryPayoutsHandler);
 export default router;
