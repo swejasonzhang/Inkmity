@@ -1,6 +1,7 @@
 import Review from "../models/Review.js";
 import User from "../models/UserBase.js";
 import Booking from "../models/Booking.js";
+import { emitArtistProfileUpdated } from "../services/socketService.js";
 
 export const addReview = async (req, res) => {
   try {
@@ -76,8 +77,16 @@ export const addReview = async (req, res) => {
     }
     await artist.save();
 
+    emitArtistProfileUpdated(String(booking.artistId));
+
     res.status(201).json(review);
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        error: "already_reviewed",
+        message: "You've already reviewed this appointment.",
+      });
+    }
     console.error("addReview error:", error);
     res.status(500).json({ error: "Failed to add review" });
   }

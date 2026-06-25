@@ -3,7 +3,9 @@ import express from "express";
 import "../../models/UserBase.js";
 import Artist from "../../models/Artist.js";
 import Client from "../../models/Client.js";
+import mongoose from "mongoose";
 import Booking from "../../models/Booking.js";
+import Review from "../../models/Review.js";
 import { addReview } from "../../controllers/reviewController.js";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
@@ -101,5 +103,16 @@ conditionalDescribe("addReview (verified)", () => {
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 1, text: "b" });
     expect(dup.status).toBe(409);
     expect(dup.body.error).toBe("already_reviewed");
+  });
+
+  test("enforces a DB-level unique index on bookingId (race-safe)", async () => {
+    await Review.init();
+    const b = await makeBooking("completed");
+    const reviewerId = new mongoose.Types.ObjectId();
+    const artistId = new mongoose.Types.ObjectId();
+    await Review.create({ reviewer: reviewerId, artist: artistId, bookingId: b._id, rating: 5 });
+    await expect(
+      Review.create({ reviewer: reviewerId, artist: artistId, bookingId: b._id, rating: 1 })
+    ).rejects.toMatchObject({ code: 11000 });
   });
 });

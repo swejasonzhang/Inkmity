@@ -34,7 +34,7 @@ import {
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
-router.get("/", getBookingsForDay);
+router.get("/", requireAuth(), getBookingsForDay);
 router.get("/appointments", requireAuth(), getAppointments);
 router.get("/client", requireAuth(), getClientBookings);
 router.get("/artist", requireAuth(), getArtistBookings);

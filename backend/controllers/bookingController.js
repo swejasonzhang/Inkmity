@@ -816,6 +816,12 @@ export async function completeBooking(req, res) {
     const isArtist = String(doc.artistId) === actorId;
     if (!isArtist) return res.status(403).json({ error: "Only the artist can complete a booking" });
     if (doc.status === "completed") return res.json(doc);
+    if (["cancelled", "denied", "no-show"].includes(doc.status)) {
+      return res.status(409).json({
+        error: "invalid_status",
+        message: `A ${doc.status} booking cannot be completed.`,
+      });
+    }
     if (!config.dev.bypassGates && !(doc.clientVerifiedAt && doc.artistVerifiedAt)) {
       return res.status(400).json({
         error: "verification_required",
@@ -1750,6 +1756,14 @@ export async function markNoShow(req, res) {
 
     if (booking.status === "no-show") {
       return res.json(booking);
+    }
+
+    const NO_SHOW_ALLOWED = ["accepted", "confirmed", "booked", "matched", "in-progress"];
+    if (!NO_SHOW_ALLOWED.includes(booking.status)) {
+      return res.status(409).json({
+        error: "invalid_status",
+        message: `A ${booking.status} booking cannot be marked no-show.`,
+      });
     }
 
     const shouldForfeitDeposit = booking.depositPaidCents > 0;

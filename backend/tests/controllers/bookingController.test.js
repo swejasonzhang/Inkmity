@@ -561,6 +561,27 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
     expect(res.body.error).toBe("verification_required");
   });
 
+  test("refuses to complete a cancelled booking even when both verify flags are set", async () => {
+    const booking = await Booking.create({
+      clientId,
+      artistId,
+      appointmentType: "tattoo_session",
+      status: "cancelled",
+      startAt: new Date(Date.now() - 3600000),
+      endAt: new Date(),
+      priceCents: 20000,
+      clientVerifiedAt: new Date(),
+      artistVerifiedAt: new Date(),
+    });
+    const res = await request(app)
+      .post(`/bookings/${booking._id}/complete`)
+      .set("x-test-user-id", artistId);
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe("invalid_status");
+    const after = await Booking.findById(booking._id);
+    expect(after.status).toBe("cancelled");
+  });
+
   test("rejects a tattoo session for an underage client", async () => {
     await Client.create({
       clerkId: "minor-1",
@@ -828,6 +849,31 @@ conditionalDescribe("Booking Controller - No-Show", () => {
       .send({ reason: "Test" });
 
     expect(response.status).toBe(400);
+  });
+
+  test("rejects marking no-show on a never-accepted (pending) booking and preserves the deposit", async () => {
+    const startISO = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const pending = await Booking.create({
+      artistId,
+      clientId,
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "pending",
+      appointmentType: "consultation",
+      depositPaidCents: 1000,
+      depositRequiredCents: 1000,
+    });
+
+    const response = await request(app)
+      .post(`/bookings/${pending._id}/no-show`)
+      .set("x-test-user-id", artistId)
+      .send({ reason: "Client did not arrive" });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toBe("invalid_status");
+    const after = await Booking.findById(pending._id);
+    expect(after.status).toBe("pending");
+    expect(after.depositPaidCents).toBe(1000);
   });
 });
 
