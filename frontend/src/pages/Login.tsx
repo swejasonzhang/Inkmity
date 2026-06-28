@@ -201,7 +201,7 @@ export default function Login() {
   const pwdOk = password.trim().length > 0;
 
   const quickLogin = async (role: "client" | "artist") => {
-    if (!import.meta.env.DEV || !signIn || !signInLoaded || loading) return;
+    if (!(import.meta as any)?.env?.DEV || !signIn || !signInLoaded || loading) return;
     setAuthError("");
     setLoading(true);
     try {
@@ -466,7 +466,7 @@ export default function Login() {
                       RedirectNotice
                     ) : (
                       <form onSubmit={handleSubmit} onKeyDown={advanceOnEnterIfEmpty} className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
-                        {import.meta.env.DEV && (
+                        {(import.meta as any)?.env?.DEV && (
                           <div className="w-full rounded-xl border border-dashed border-white/25 bg-white/5 p-2.5">
                             <p className="mb-2 text-[10px] uppercase tracking-wider text-white/50">Dev: skip signup</p>
                             <div className="flex gap-2">

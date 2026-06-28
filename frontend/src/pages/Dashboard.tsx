@@ -35,7 +35,7 @@ const ClientDashboard = lazy(loadClientDashboard);
 const ArtistDashboard = lazy(loadArtistDashboard);
 
 function useDevOverride() {
-  const isDev = import.meta.env.MODE !== "production";
+  const isDev = (import.meta as any)?.env?.MODE !== "production";
   const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const q = (search?.get("as") || "").toLowerCase();
   const fromQuery = q === "client" || q === "artist" ? (q as "client" | "artist") : null;
