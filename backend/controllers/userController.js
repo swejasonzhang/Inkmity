@@ -225,7 +225,9 @@ export async function getArtists(req, res) {
     });
   }
   if (location)
-    Object.assign(filter, { location: new RegExp(`^${location}$`, "i") });
+    Object.assign(filter, {
+      location: new RegExp(`^${location.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+    });
   if (style) Object.assign(filter, { styles: style });
   if (booking) Object.assign(filter, { bookingPreference: booking });
   if (travel) Object.assign(filter, { travelFrequency: travel });

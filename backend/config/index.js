@@ -143,26 +143,27 @@ export const config = {
   },
 };
 
+const REQUIRED_CONFIG = {
+  'database.uri': 'MONGO_URI',
+  'auth.clerkSecretKey': 'CLERK_SECRET_KEY',
+  'stripe.secretKey': 'STRIPE_SECRET_KEY',
+  'stripe.webhookSecret': 'STRIPE_WEBHOOK_SECRET',
+};
+
+export function missingConfig() {
+  return Object.entries(REQUIRED_CONFIG)
+    .filter(([path]) => {
+      const value = path.split('.').reduce((acc, k) => acc?.[k], config);
+      return !value;
+    })
+    .map(([, envVar]) => envVar);
+}
+
 export function validateConfig() {
-  const required = [
-    'auth.clerkSecretKey',
-    'stripe.secretKey',
-    'database.uri',
-  ];
-
-  const missing = required.filter(key => {
-    const keys = key.split('.');
-    let value = config;
-    for (const k of keys) {
-      value = value?.[k];
-    }
-    return !value;
-  });
-
+  const missing = missingConfig();
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
-
   console.log('✅ Configuration validated successfully');
 }
 

@@ -98,7 +98,7 @@ class UserRepository {
     }
 
     if (location) {
-      query.location = new RegExp(`^${location}$`, "i");
+      query.location = new RegExp(`^${location.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
     }
 
     if (style) {

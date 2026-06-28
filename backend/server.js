@@ -56,18 +56,13 @@ import reportRoutes from "./routes/reports.js";
 import { mountStripeWebhook } from "./controllers/billingController.js";
 import { apiLimiter, authLimiter, assistantLimiter } from "./middleware/rateLimiter.js";
 import { initSocket } from "./services/socketService.js";
+import { missingConfig } from "./config/index.js";
 
 const isProd = ENV === "production";
 
 if (isProd) {
-  const prodRequired = [
-    "MONGO_URI",
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-    "CLERK_SECRET_KEY",
-    "APP_URL",
-  ];
-  const prodMissing = prodRequired.filter((k) => !process.env[k]);
+  const prodMissing = [...missingConfig()];
+  if (!process.env.APP_URL) prodMissing.push("APP_URL");
   if (prodMissing.length > 0) {
     console.error(
       `[fatal] Missing required production env vars: ${prodMissing.join(", ")}`

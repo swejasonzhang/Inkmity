@@ -111,6 +111,15 @@ function requireBooking(booking) {
   }
 }
 
+function requireBookingClient(booking, req) {
+  const actorId = getActorId(req);
+  if (!actorId || String(booking.clientId) !== actorId) {
+    const e = new Error("forbidden");
+    e.status = 403;
+    throw e;
+  }
+}
+
 export async function checkoutPlatformFee(_req, res) {
   return res.status(410).json({
     error: "deprecated",
@@ -126,6 +135,7 @@ export async function checkoutDeposit(req, res) {
 
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
+  requireBookingClient(booking, req);
 
   if (booking.depositPaidCents >= booking.depositRequiredCents) {
     return res.status(400).json({ error: "deposit_already_paid" });
@@ -258,6 +268,7 @@ export async function createDepositPaymentIntent(req, res) {
 
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
+  requireBookingClient(booking, req);
 
   if (booking.depositPaidCents >= booking.depositRequiredCents) {
     return res.status(400).json({ error: "deposit_already_paid" });
@@ -698,6 +709,7 @@ export async function createFinalPaymentIntent(req, res) {
 
   const booking = await Booking.findById(bookingId);
   requireBooking(booking);
+  requireBookingClient(booking, req);
 
   if (booking.depositPaidCents < booking.depositRequiredCents) {
     return res.status(400).json({ error: "deposit_not_paid" });
