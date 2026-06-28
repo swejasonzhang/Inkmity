@@ -43,4 +43,5 @@ function Badge({
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- shadcn primitive: variants co-located with component
 export { Badge, badgeVariants }

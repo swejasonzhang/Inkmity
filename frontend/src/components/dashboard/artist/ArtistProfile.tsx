@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
@@ -280,11 +280,7 @@ export default function ArtistProfile() {
         }
     };
 
-    useEffect(() => {
-        loadProfile();
-    }, []);
-
-    const loadProfile = async () => {
+    const loadProfile = useCallback(async () => {
         try {
             const token = await getToken();
             const response = await fetch(`${API_URL}/users/me`, {
@@ -328,7 +324,11 @@ export default function ArtistProfile() {
         } catch (error) {
             console.error("Failed to load profile:", error);
         }
-    };
+    }, [getToken]);
+
+    useEffect(() => {
+        loadProfile();
+    }, [loadProfile]);
 
     const handleImageUpload = async (file: File, type: "avatar" | "cover" | "portfolio") => {
         try {

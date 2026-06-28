@@ -170,7 +170,7 @@ const Header = ({ disableDashboardLink = false, logoSrc: logoSrcProp }: HeaderPr
       cancelled = true;
       ac.abort();
     };
-  }, [isLoaded, isSignedIn, getToken, userRefreshTick]);
+  }, [isLoaded, isSignedIn, getToken, userRefreshTick, API_BASE]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) {

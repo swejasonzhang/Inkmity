@@ -26,6 +26,7 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key! Did you forget to add it in .env?");
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- entry file: component defined inline, not a Fast Refresh boundary
 function ClerkWithRouter({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   return (

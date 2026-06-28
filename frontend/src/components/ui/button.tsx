@@ -57,4 +57,5 @@ function Button({
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- shadcn primitive: variants co-located with component
 export { Button, buttonVariants }

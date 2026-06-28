@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- test-only helper, not part of the shipped app; Fast Refresh boundaries are irrelevant */
 import { ReactElement } from "react";
 import {
   render as rtlRender,

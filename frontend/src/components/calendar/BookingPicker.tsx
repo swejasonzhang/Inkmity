@@ -19,7 +19,8 @@ import "react-toastify/dist/ReactToastify.css"
 import { useTheme } from "@/hooks/useTheme"
 import DepositStep from "./DepositStep"
 import CardOnFileStep from "./CardOnFileStep"
-import { type FormState, EMPTY_INTAKE, IntakeFields, intakeIsComplete, toPayload } from "@/components/dashboard/client/intakeFormShared"
+import { type FormState, EMPTY_INTAKE, intakeIsComplete, toPayload } from "@/components/dashboard/client/intakeFormShared.helpers"
+import { IntakeFields } from "@/components/dashboard/client/intakeFormShared"
 
 type Kind = "consultation" | "appointment"
 type Props = { artistId: string; date?: Date; artistName?: string }

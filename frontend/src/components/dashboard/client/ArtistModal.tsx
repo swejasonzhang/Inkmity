@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,6 +28,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
   const [hydrated, setHydrated] = useState<ArtistWithGroups>(artist);
   useEffect(() => {
     setHydrated(artist);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-seed only when switching artists; depending on full artist would clobber hydrated data on every parent render
   }, [artist._id]);
   useEffect(() => {
     if (!open) return;
@@ -74,11 +75,11 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     setStep(initialStep);
   }, [initialStep, open]);
 
-  const markJustClosed = () => {
+  const markJustClosed = useCallback(() => {
     window.__INK_MODAL_JUST_CLOSED_AT__ = Date.now();
-  };
+  }, []);
 
-  const closeNow = () => {
+  const closeNow = useCallback(() => {
     markJustClosed();
     if (portalRef.current) {
       const portal = portalRef.current;
@@ -102,7 +103,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
       } catch {}
     }
     onClose();
-  };
+  }, [markJustClosed, onClose]);
 
   useEffect(() => {
     if (!open) {
@@ -436,7 +437,7 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     };
     if (open) window.addEventListener("keydown", onEsc, true);
     return () => window.removeEventListener("keydown", onEsc, true);
-  }, [open]);
+  }, [open, closeNow]);
 
   useEffect(() => {
     if (!open) {
@@ -463,11 +464,12 @@ const ArtistModal: React.FC<Props> = ({ open, onClose, artist, onMessage, initia
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
     const preventScrollChain = (e: Event) => e.preventDefault();
-    overlayRef.current?.addEventListener("wheel", preventScrollChain, { passive: false });
-    overlayRef.current?.addEventListener("touchmove", preventScrollChain, { passive: false });
+    const overlayEl = overlayRef.current;
+    overlayEl?.addEventListener("wheel", preventScrollChain, { passive: false });
+    overlayEl?.addEventListener("touchmove", preventScrollChain, { passive: false });
     return () => {
-      overlayRef.current?.removeEventListener("wheel", preventScrollChain as EventListener);
-      overlayRef.current?.removeEventListener("touchmove", preventScrollChain as EventListener);
+      overlayEl?.removeEventListener("wheel", preventScrollChain as EventListener);
+      overlayEl?.removeEventListener("touchmove", preventScrollChain as EventListener);
       document.body.style.position = "";
       document.body.style.top = "";
       document.body.style.width = "";

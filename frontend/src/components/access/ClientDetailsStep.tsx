@@ -296,6 +296,7 @@ export default function ClientDetailsStep({
                 emit("availability", p.availabilityFilter);
             }
         } catch { }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- seed prefs from storage once on mount; emit wraps onChange and re-running would re-emit stale prefs
     }, []);
 
     const fieldCls = "space-y-0.5 flex flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2.5 py-0.5 transition hover:border-white/20";

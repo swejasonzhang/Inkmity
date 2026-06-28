@@ -428,6 +428,7 @@ function StudioSettings({
       placeId: studio.placeId,
     });
     setCommission(pctToWhole(studio.defaultCommissionPct));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-seed only when switching studios; depending on studio.* would clobber in-progress edits
   }, [studio._id]);
 
   const save = async () => {

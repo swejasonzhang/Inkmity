@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { Mail, Send, User, MessageSquareText } from "lucide-react";
@@ -57,6 +57,28 @@ function AutoCenterTextarea({
     const [isFocused, setIsFocused] = useState(false);
     const [showPlaceholder, setShowPlaceholder] = useState(!isFocused && isEmpty);
 
+    const lineHeightPx = (el: HTMLElement) => {
+        const lh = getComputedStyle(el).lineHeight;
+        if (lh === "normal") return 24;
+        const n = parseFloat(lh);
+        return Number.isFinite(n) ? n : 24;
+    };
+
+    const centerCaret = useCallback((el: HTMLElement) => {
+        const h = el.clientHeight || rows * 24;
+        const lh = lineHeightPx(el);
+        const pad = Math.max(0, (h - lh) / 2);
+        el.style.paddingTop = `${pad}px`;
+        el.style.paddingBottom = `${pad}px`;
+        el.style.textAlign = "center";
+    }, [rows]);
+
+    const clearCenter = useCallback((el: HTMLElement) => {
+        el.style.paddingTop = "";
+        el.style.paddingBottom = "";
+        el.style.textAlign = "";
+    }, []);
+
     useEffect(() => {
         if (!ref.current) return;
         const empty = value.trim().length === 0;
@@ -71,29 +93,7 @@ function AutoCenterTextarea({
             if (ref.current.innerText !== value) ref.current.innerText = value;
             clearCenter(ref.current);
         }
-    }, [value, isFocused]);
-
-    const lineHeightPx = (el: HTMLElement) => {
-        const lh = getComputedStyle(el).lineHeight;
-        if (lh === "normal") return 24;
-        const n = parseFloat(lh);
-        return Number.isFinite(n) ? n : 24;
-    };
-
-    const centerCaret = (el: HTMLElement) => {
-        const h = el.clientHeight || rows * 24;
-        const lh = lineHeightPx(el);
-        const pad = Math.max(0, (h - lh) / 2);
-        el.style.paddingTop = `${pad}px`;
-        el.style.paddingBottom = `${pad}px`;
-        el.style.textAlign = "center";
-    };
-
-    const clearCenter = (el: HTMLElement) => {
-        el.style.paddingTop = "";
-        el.style.paddingBottom = "";
-        el.style.textAlign = "";
-    };
+    }, [value, isFocused, centerCaret, clearCenter]);
 
     const placeCaretEnd = (el: HTMLElement) => {
         const r = document.createRange();

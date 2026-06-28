@@ -246,7 +246,7 @@ export default function FloatingBar({
       measureButton();
     }, 120);
     return () => window.clearTimeout(id);
-  }, [open, isMdUp, vp.h, vvBottom, centerH]);
+  }, [open, isMdUp, vp.h, vvBottom, centerH, btnRef]);
 
   const wrapperH = Math.max(collapsedHeight, centerH || 0);
 

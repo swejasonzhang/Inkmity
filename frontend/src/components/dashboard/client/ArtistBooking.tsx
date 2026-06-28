@@ -116,6 +116,7 @@ export default function ArtistBooking({ artist, onBack, onClose }: BookingProps)
       fetchingRef.current = false;
       ac.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on artist change only; gate/gateReady are read as guards and set inside, adding them would refetch-loop
   }, [artist?.clerkId]);
 
   const refreshBookingGate = useCallback(async () => {

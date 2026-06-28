@@ -34,17 +34,17 @@ export function useInkConversations({
     return v < 0 ? 0 : v;
   };
 
+  const unreadConvKey = unreadConversationIds?.join("|");
+  const pendingReqCount = pendingRequestIds?.length;
+
   const unreadConvoCount = useMemo(() => {
     if (Array.isArray(unreadConversationIds)) {
       return unreadConversationIds.filter((id) => !clearedConvos.has(id))
         .length;
     }
     return toInt(unreadConversationsCount);
-  }, [
-    unreadConversationIds?.join("|"),
-    clearedConvos,
-    unreadConversationsCount,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- unreadConvKey is the content-stable digest of unreadConversationIds
+  }, [unreadConvKey, clearedConvos, unreadConversationsCount]);
 
   const requestCount = useMemo(() => {
     if (role !== "Artist") return 0;
@@ -52,7 +52,8 @@ export function useInkConversations({
     if (Array.isArray(pendingRequestIds))
       return pendingRequestIds.length > 0 ? 1 : 0;
     return toInt(pendingRequestsCount) > 0 ? 1 : 0;
-  }, [role, requestExists, pendingRequestIds?.length, pendingRequestsCount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pendingReqCount tracks pendingRequestIds length; full array identity is intentionally ignored
+  }, [role, requestExists, pendingReqCount, pendingRequestsCount]);
 
   const totalUnreadMessages = useMemo(
     () =>
@@ -123,7 +124,8 @@ export function useInkConversations({
       });
       return next;
     });
-  }, [unreadConversationIds?.join("|")]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- unreadConvKey is the content-stable digest of unreadConversationIds
+  }, [unreadConvKey]);
 
   useEffect(() => {
     if (!open) return;

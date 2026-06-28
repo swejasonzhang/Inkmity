@@ -59,6 +59,7 @@ export default function DepositStep({ booking, onDepositPaid, onCancel, artistNa
       checkBookingStatus()
       window.history.replaceState({}, "", window.location.pathname)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handles Stripe deposit return once per booking; getToken is stable and onDepositPaid is a parent callback we don't want to re-trigger on
   }, [currentBooking._id])
 
   const handlePayDeposit = async () => {

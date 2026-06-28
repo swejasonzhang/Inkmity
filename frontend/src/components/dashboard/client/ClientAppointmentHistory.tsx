@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
@@ -31,13 +31,7 @@ export default function ClientAppointmentHistory() {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadBookings();
-    }, []);
-
-    useBookingRealtime(() => loadBookings());
-
-    const loadBookings = async () => {
+    const loadBookings = useCallback(async () => {
         try {
             const token = await getToken();
             const response = await fetch(`${API_URL}/bookings/client`, {
@@ -55,7 +49,13 @@ export default function ClientAppointmentHistory() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [getToken]);
+
+    useEffect(() => {
+        loadBookings();
+    }, [loadBookings]);
+
+    useBookingRealtime(() => loadBookings());
 
     const { pendingBookings, pastBookings } = useMemo(() => {
         const finishedStatuses = new Set<Booking["status"]>([

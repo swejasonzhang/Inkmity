@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +15,7 @@ export default function RequestsPanel({ authFetch }: { authFetch: (url: string, 
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState<Req[]>([]);
 
-    const load = async () => {
+    const load = useCallback(async () => {
         setLoading(true);
         try {
             const r = await authFetch("/api/messages/requests");
@@ -24,9 +24,9 @@ export default function RequestsPanel({ authFetch }: { authFetch: (url: string, 
         } finally {
             setLoading(false);
         }
-    };
+    }, [authFetch]);
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [load]);
 
     const accept = async (id: string) => {
         await authFetch(`/api/messages/requests/${id}/accept`, { method: "POST" });

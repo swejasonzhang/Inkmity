@@ -20,6 +20,7 @@ export default function GateNotice() {
       hideTimer.current = window.setTimeout(() => setVisible(false), 2000);
       unmountTimer.current = window.setTimeout(() => setMounted(false), 2350);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per navigation; location.key already changes with pathname/state, and navigate is stable
   }, [location.key]);
 
   useEffect(

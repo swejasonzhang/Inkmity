@@ -38,5 +38,5 @@ export function useSyncOnAuth() {
       cancelled = true;
       ac.abort();
     };
-  }, [isSignedIn, user?.id]);
+  }, [isSignedIn, user?.id, getToken]);
 }

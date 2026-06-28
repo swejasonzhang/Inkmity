@@ -75,9 +75,8 @@ function fmtMoney(cents: number) {
 }
 
 export default function ArtistOverview({ appointments, loading }: Props) {
-  const data = appointments ?? [];
-
   const { stats, money, next } = useMemo(() => {
+    const data = appointments ?? [];
     const now = new Date();
     const weekAhead = new Date(now.getTime() + 7 * 86400000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
@@ -130,7 +129,7 @@ export default function ArtistOverview({ appointments, loading }: Props) {
       ],
       next: upcomingList[0] ?? null,
     };
-  }, [data]);
+  }, [appointments]);
 
   return (
     <div className="flex flex-col h-full min-h-0 overflow-y-auto sm:overflow-hidden gap-2 sm:gap-2.5">

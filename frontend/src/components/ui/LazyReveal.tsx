@@ -91,7 +91,6 @@ export default function LazyReveal({
         evaluate(group);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group, minSkeletonMs]);
 
   useEffect(() => {

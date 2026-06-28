@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
@@ -164,10 +164,6 @@ export default function ClientProfile() {
     const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
 
     useEffect(() => {
-        loadProfile();
-    }, []);
-
-    useEffect(() => {
         let active = true;
         (async () => {
             try {
@@ -197,7 +193,7 @@ export default function ClientProfile() {
         };
     }, []);
 
-    const loadProfile = async () => {
+    const loadProfile = useCallback(async () => {
         try {
             const token = await getToken();
             const response = await fetch(`${API_URL}/users/me`, {
@@ -241,7 +237,11 @@ export default function ClientProfile() {
         } catch (error) {
             console.error("Failed to load profile:", error);
         }
-    };
+    }, [getToken]);
+
+    useEffect(() => {
+        loadProfile();
+    }, [loadProfile]);
 
     const handleImageUpload = async (file: File, type: "avatar" | "cover" | "reference", replaceIndex?: number) => {
         try {
@@ -416,7 +416,10 @@ export default function ClientProfile() {
     const currentLocation = editedClient.location ?? client?.location ?? "New York, NY";
     const currentProfileImage = editedClient.profileImage ?? client?.profileImage;
     const currentCoverImage = editedClient.coverImage ?? client?.coverImage;
-    const currentReferences = editedClient.references ?? client?.references ?? [];
+    const currentReferences = useMemo(
+        () => editedClient.references ?? client?.references ?? [],
+        [editedClient.references, client?.references]
+    );
     const currentBudgetMin = editedClient.budgetMin ?? client?.budgetMin ?? 100;
     const currentBudgetMax = editedClient.budgetMax ?? client?.budgetMax ?? 200;
     const currentPlacement = editedClient.placement ?? client?.placement ?? "none";

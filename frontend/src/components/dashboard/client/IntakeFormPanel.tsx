@@ -14,8 +14,8 @@ import {
   REQUIRED_CONSENT,
   fromIntake,
   toPayload,
-  IntakeFields,
-} from "./intakeFormShared";
+} from "./intakeFormShared.helpers";
+import { IntakeFields } from "./intakeFormShared";
 
 type Props = {
   bookingId: string;

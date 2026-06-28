@@ -1,4 +1,4 @@
-import { useEffect, useState, useLayoutEffect } from "react";
+import { useCallback, useEffect, useState, useLayoutEffect } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useRole } from "@/hooks/useRole";
 import { useTheme } from "@/hooks/useTheme";
@@ -113,12 +113,7 @@ export default function Appointments() {
   const isClient = role === "client";
   const isArtist = role === "artist";
 
-  useEffect(() => {
-    loadAppointments();
-  }, [roleLoaded, user?.id]);
-
-
-  const loadAppointments = async (silent = false) => {
+  const loadAppointments = useCallback(async (silent = false) => {
     if (!roleLoaded || !user?.id) return;
     if (!silent) setLoading(true);
     try {
@@ -130,7 +125,11 @@ export default function Appointments() {
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [roleLoaded, user?.id, getToken]);
+
+  useEffect(() => {
+    loadAppointments();
+  }, [loadAppointments]);
 
   useBookingRealtime(() => loadAppointments(true));
 

@@ -97,6 +97,7 @@ export function useRole() {
       ac.abort();
       inFlightRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch role once per user; getToken is stable, ready/publicMetadata are read as fallbacks and adding them would refetch-churn
   }, [clerkLoaded, isSignedIn, user?.id]);
 
   return { role, isLoaded: ready, isSignedIn };
