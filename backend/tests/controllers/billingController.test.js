@@ -6,6 +6,9 @@ import mongoose from "mongoose";
 const conditionalDescribe =
   process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
 
+const ADMIN_ID = "admin-1";
+process.env.ADMIN_CLERK_IDS = ADMIN_ID;
+
 const stripeMock = {
   customers: { create: jest.fn(), retrieve: jest.fn() },
   paymentIntents: { create: jest.fn() },
@@ -16,6 +19,7 @@ const stripeMock = {
   accountLinks: { create: jest.fn() },
   refunds: { create: jest.fn() },
   transfers: { create: jest.fn(), createReversal: jest.fn() },
+  billingPortal: { sessions: { create: jest.fn() } },
 };
 jest.unstable_mockModule("../../lib/stripe.js", () => ({ stripe: stripeMock }));
 
@@ -27,6 +31,11 @@ const {
   listClientPaymentMethods,
   deleteClientPaymentMethod,
   stripeWebhook,
+  checkoutPlatformFee,
+  refundBilling,
+  createPortalSession,
+  scheduleCancel,
+  retryPayoutsHandler,
 } = await import("../../controllers/billingController.js");
 const Booking = (await import("../../models/Booking.js")).default;
 const Billing = (await import("../../models/Billing.js")).default;
@@ -51,6 +60,11 @@ app.post("/billing/bank-setup-intent", mockAuth, createBankSetupIntent);
 app.post("/billing/client/setup-intent", mockAuth, createClientSetupIntent);
 app.get("/billing/client/payment-methods", mockAuth, listClientPaymentMethods);
 app.post("/billing/client/payment-methods/delete", mockAuth, deleteClientPaymentMethod);
+app.post("/billing/checkout", mockAuth, checkoutPlatformFee);
+app.post("/billing/refund", mockAuth, refundBilling);
+app.post("/billing/portal", mockAuth, createPortalSession);
+app.post("/billing/schedule-cancel", mockAuth, scheduleCancel);
+app.post("/billing/payouts/retry", mockAuth, retryPayoutsHandler);
 app.post(
   "/billing/webhook",
   (req, res, next) => {
@@ -635,5 +649,83 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
 
     expect(res.status).toBe(403);
     expect(stripeMock.paymentMethods.detach).not.toHaveBeenCalled();
+  });
+});
+
+conditionalDescribe("Billing Controller - misc endpoints", () => {
+  test("checkoutPlatformFee is deprecated (410)", async () => {
+    const res = await request(app).post("/billing/checkout").set("x-test-user-id", "u1");
+    expect(res.status).toBe(410);
+    expect(res.body.error).toBe("deprecated");
+  });
+
+  test("scheduleCancel returns ok", async () => {
+    const res = await request(app).post("/billing/schedule-cancel").set("x-test-user-id", "u1");
+    expect(res.body).toEqual({ ok: true });
+  });
+
+  test("createPortalSession 404 when the client has no Stripe customer", async () => {
+    const res = await request(app).post("/billing/portal").set("x-test-user-id", "no-cust");
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("no_customer");
+  });
+
+  test("createPortalSession returns a billing-portal url", async () => {
+    await Billing.create({
+      bookingId: new mongoose.Types.ObjectId(),
+      clientId: "u1",
+      artistId: "a1",
+      type: "deposit",
+      amountCents: 1000,
+      status: "paid",
+      stripeCustomerId: "cus_1",
+    });
+    stripeMock.billingPortal.sessions.create.mockResolvedValue({ url: "https://portal" });
+    const res = await request(app).post("/billing/portal").set("x-test-user-id", "u1");
+    expect(res.body).toEqual({ url: "https://portal" });
+  });
+
+  test("refundBilling refunds a paid platform_fee bill the actor owns", async () => {
+    const bill = await Billing.create({
+      bookingId: new mongoose.Types.ObjectId(),
+      clientId: "u1",
+      artistId: "a1",
+      type: "platform_fee",
+      amountCents: 1000,
+      status: "paid",
+      stripePaymentIntentId: "pi_1",
+      stripeRefundIds: [],
+    });
+    stripeMock.refunds.create.mockResolvedValue({ id: "re_1" });
+    const res = await request(app).post("/billing/refund").set("x-test-user-id", "u1").send({ billingId: String(bill._id) });
+    expect(res.body.ok).toBe(true);
+    expect(res.body.refunds).toHaveLength(1);
+    const updated = await Billing.findById(bill._id);
+    expect(updated.status).toBe("refunded");
+  });
+
+  test("refundBilling 403 when the actor doesn't own the bill", async () => {
+    const bill = await Billing.create({
+      bookingId: new mongoose.Types.ObjectId(),
+      clientId: "someone",
+      artistId: "else",
+      type: "platform_fee",
+      amountCents: 1000,
+      status: "paid",
+      stripePaymentIntentId: "pi_1",
+    });
+    const res = await request(app).post("/billing/refund").set("x-test-user-id", "intruder").send({ billingId: String(bill._id) });
+    expect(res.status).toBe(403);
+  });
+
+  test("retryPayoutsHandler 403 for a non-admin", async () => {
+    const res = await request(app).post("/billing/payouts/retry").set("x-test-user-id", "u1");
+    expect(res.status).toBe(403);
+  });
+
+  test("retryPayoutsHandler runs for a platform admin", async () => {
+    const res = await request(app).post("/billing/payouts/retry").set("x-test-user-id", ADMIN_ID);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("attempted");
   });
 });
