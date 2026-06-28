@@ -1,4 +1,4 @@
-import { jest, describe, test, expect, beforeEach, afterEach } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -22,6 +22,10 @@ app.use(express.json());
 app.get("/auth/check-email", checkEmail);
 app.post("/auth/dev-sign-in-token", devSignInToken);
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 describe("Auth Controller - Email Check", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -32,7 +36,7 @@ describe("Auth Controller - Email Check", () => {
       { id: "user-123", emailAddresses: [{ emailAddress: "test@example.com" }] },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/auth/check-email")
       .query({ email: "test@example.com" });
 
@@ -47,7 +51,7 @@ describe("Auth Controller - Email Check", () => {
   test("should return false when email does not exist", async () => {
     mockGetUserList.mockResolvedValue([]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/auth/check-email")
       .query({ email: "nonexistent@example.com" });
 
@@ -58,7 +62,7 @@ describe("Auth Controller - Email Check", () => {
   test("should return false when getUserList returns nullish", async () => {
     mockGetUserList.mockResolvedValue(null);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/auth/check-email")
       .query({ email: "test@example.com" });
 
@@ -67,14 +71,14 @@ describe("Auth Controller - Email Check", () => {
   });
 
   test("should return 400 when email is missing", async () => {
-    const response = await request(app).get("/auth/check-email");
+    const response = await request(server).get("/auth/check-email");
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("Missing email");
   });
 
   test("should return 400 when email is empty string", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .get("/auth/check-email")
       .query({ email: "" });
 
@@ -87,7 +91,7 @@ describe("Auth Controller - Email Check", () => {
       { id: "user-123", emailAddresses: [{ emailAddress: "test@example.com" }] },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/auth/check-email")
       .query({ email: "TEST@EXAMPLE.COM" });
 
@@ -101,7 +105,7 @@ describe("Auth Controller - Email Check", () => {
   test("should return 500 on internal error", async () => {
     mockGetUserList.mockRejectedValue(new Error("API Error"));
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/auth/check-email")
       .query({ email: "test@example.com" });
 
@@ -129,7 +133,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
   test("should return 403 when not on dev/test instance", async () => {
     process.env.CLERK_SECRET_KEY = "sk_live_abc123";
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "client" });
 
@@ -141,7 +145,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
   test("should return 403 when CLERK_SECRET_KEY is unset", async () => {
     delete process.env.CLERK_SECRET_KEY;
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "client" });
 
@@ -149,7 +153,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
   });
 
   test("should return 400 when role is invalid", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "admin" });
 
@@ -158,7 +162,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
   });
 
   test("should return 400 when role is missing", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({});
 
@@ -169,7 +173,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
   test("should return 404 when test user is not seeded", async () => {
     mockGetUserList.mockResolvedValue({ data: [] });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "client" });
 
@@ -185,7 +189,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
     mockGetUserList.mockResolvedValue({ data: [{ id: "user-client-1" }] });
     mockCreateSignInToken.mockResolvedValue({ token: "tok_abc" });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "client" });
 
@@ -205,7 +209,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
     mockGetUserList.mockResolvedValue({ data: [{ id: "user-artist-1" }] });
     mockCreateSignInToken.mockResolvedValue({ token: "tok_artist" });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "ARTIST" });
 
@@ -221,7 +225,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
     mockGetUserList.mockResolvedValue({ data: [{ id: "user-client-1" }] });
     mockCreateSignInToken.mockRejectedValue(new Error("token boom"));
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "client" });
 
@@ -232,7 +236,7 @@ describe("Auth Controller - Dev Sign-In Token", () => {
   test("should return 500 with fallback message when error has no message", async () => {
     mockGetUserList.mockRejectedValue({});
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/auth/dev-sign-in-token")
       .send({ role: "client" });
 

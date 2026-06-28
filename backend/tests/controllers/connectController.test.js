@@ -1,4 +1,4 @@
-import { jest, describe, test, expect, beforeEach } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -68,15 +68,19 @@ beforeEach(() => {
   mockStripe.accountLinks.create.mockResolvedValue({ url: "https://onboard" });
 });
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 describe("requireArtist guard (shared)", () => {
   test("401 when unauthenticated", async () => {
-    const res = await request(app).post("/connect/account");
+    const res = await request(server).post("/connect/account");
     expect(res.status).toBe(401);
   });
 
   test("403 when the user is not an artist", async () => {
     mockArtist.findOne.mockResolvedValue(null);
-    const res = await request(app).post("/connect/account").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account").set("x-test-user-id", "artist1");
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("Only artists can set up payouts");
   });
@@ -85,7 +89,7 @@ describe("requireArtist guard (shared)", () => {
 describe("createConnectAccount", () => {
   test("403 when the artist agreement isn't signed", async () => {
     mockHasSigned.mockResolvedValue(false);
-    const res = await request(app).post("/connect/account").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account").set("x-test-user-id", "artist1");
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("agreement_required");
     expect(mockStripe.accounts.create).not.toHaveBeenCalled();
@@ -93,7 +97,7 @@ describe("createConnectAccount", () => {
 
   test("returns the existing account without creating a new one", async () => {
     mockArtist.findOne.mockResolvedValue(makeArtist({ stripeConnectAccountId: "acct_existing" }));
-    const res = await request(app).post("/connect/account").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account").set("x-test-user-id", "artist1");
     expect(res.body).toEqual({ accountId: "acct_existing", existing: true });
     expect(mockStripe.accounts.create).not.toHaveBeenCalled();
   });
@@ -101,7 +105,7 @@ describe("createConnectAccount", () => {
   test("creates an Express account and syncs the onboarding flags", async () => {
     const artist = makeArtist();
     mockArtist.findOne.mockResolvedValue(artist);
-    const res = await request(app).post("/connect/account").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account").set("x-test-user-id", "artist1");
 
     expect(mockStripe.accounts.create).toHaveBeenCalledWith(
       expect.objectContaining({ type: "express", email: "a@x.com" })
@@ -116,7 +120,7 @@ describe("createConnectAccount", () => {
 
   test("delegates to sendError on a Stripe failure", async () => {
     mockStripe.accounts.create.mockRejectedValue(new Error("stripe_down"));
-    const res = await request(app).post("/connect/account").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account").set("x-test-user-id", "artist1");
     expect(res.status).toBe(500);
   });
 });
@@ -124,7 +128,7 @@ describe("createConnectAccount", () => {
 describe("createAccountLink", () => {
   test("creates an onboarding link for an existing account", async () => {
     mockArtist.findOne.mockResolvedValue(makeArtist({ stripeConnectAccountId: "acct_x" }));
-    const res = await request(app).post("/connect/account-link").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account-link").set("x-test-user-id", "artist1");
     expect(mockStripe.accounts.create).not.toHaveBeenCalled();
     expect(mockStripe.accountLinks.create).toHaveBeenCalledWith(
       expect.objectContaining({ account: "acct_x", type: "account_onboarding" })
@@ -133,7 +137,7 @@ describe("createAccountLink", () => {
   });
 
   test("creates the account first when the artist has none, then the link", async () => {
-    const res = await request(app).post("/connect/account-link").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account-link").set("x-test-user-id", "artist1");
     expect(mockStripe.accounts.create).toHaveBeenCalled();
     expect(mockStripe.accountLinks.create).toHaveBeenCalledWith(
       expect.objectContaining({ account: "acct_1" })
@@ -144,14 +148,14 @@ describe("createAccountLink", () => {
   test("delegates to sendError when the link call fails", async () => {
     mockArtist.findOne.mockResolvedValue(makeArtist({ stripeConnectAccountId: "acct_x" }));
     mockStripe.accountLinks.create.mockRejectedValue(new Error("boom"));
-    const res = await request(app).post("/connect/account-link").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/account-link").set("x-test-user-id", "artist1");
     expect(res.status).toBe(500);
   });
 });
 
 describe("getConnectStatus", () => {
   test("reports not-connected when there is no Connect account", async () => {
-    const res = await request(app).get("/connect/status").set("x-test-user-id", "artist1");
+    const res = await request(server).get("/connect/status").set("x-test-user-id", "artist1");
     expect(res.body).toEqual({
       connected: false,
       chargesEnabled: false,
@@ -163,7 +167,7 @@ describe("getConnectStatus", () => {
 
   test("refreshes flags from Stripe when connected", async () => {
     mockArtist.findOne.mockResolvedValue(makeArtist({ stripeConnectAccountId: "acct_x" }));
-    const res = await request(app).get("/connect/status").set("x-test-user-id", "artist1");
+    const res = await request(server).get("/connect/status").set("x-test-user-id", "artist1");
     expect(mockStripe.accounts.retrieve).toHaveBeenCalledWith("acct_x");
     expect(res.body).toMatchObject({ connected: true, chargesEnabled: true, payoutsEnabled: true });
   });
@@ -173,27 +177,27 @@ describe("getConnectStatus", () => {
       makeArtist({ stripeConnectAccountId: "acct_x", chargesEnabled: true })
     );
     mockStripe.accounts.retrieve.mockRejectedValue(new Error("rate_limited"));
-    const res = await request(app).get("/connect/status").set("x-test-user-id", "artist1");
+    const res = await request(server).get("/connect/status").set("x-test-user-id", "artist1");
     expect(res.body).toMatchObject({ connected: true, chargesEnabled: true });
   });
 
   test("delegates to sendError when the artist lookup throws", async () => {
     mockArtist.findOne.mockRejectedValue(new Error("db_down"));
-    const res = await request(app).get("/connect/status").set("x-test-user-id", "artist1");
+    const res = await request(server).get("/connect/status").set("x-test-user-id", "artist1");
     expect(res.status).toBe(500);
   });
 });
 
 describe("createLoginLink", () => {
   test("400 when the artist has no Connect account", async () => {
-    const res = await request(app).post("/connect/login-link").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/login-link").set("x-test-user-id", "artist1");
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("no_connect_account");
   });
 
   test("returns a Stripe Express dashboard login link", async () => {
     mockArtist.findOne.mockResolvedValue(makeArtist({ stripeConnectAccountId: "acct_x" }));
-    const res = await request(app).post("/connect/login-link").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/login-link").set("x-test-user-id", "artist1");
     expect(mockStripe.accounts.createLoginLink).toHaveBeenCalledWith("acct_x");
     expect(res.body).toEqual({ url: "https://login" });
   });
@@ -201,7 +205,7 @@ describe("createLoginLink", () => {
   test("delegates to sendError when the login-link call fails", async () => {
     mockArtist.findOne.mockResolvedValue(makeArtist({ stripeConnectAccountId: "acct_x" }));
     mockStripe.accounts.createLoginLink.mockRejectedValue(new Error("boom"));
-    const res = await request(app).post("/connect/login-link").set("x-test-user-id", "artist1");
+    const res = await request(server).post("/connect/login-link").set("x-test-user-id", "artist1");
     expect(res.status).toBe(500);
   });
 });

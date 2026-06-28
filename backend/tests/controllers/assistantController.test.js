@@ -1,4 +1,4 @@
-import { jest, describe, test, expect, beforeEach } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -45,22 +45,26 @@ beforeEach(() => {
   mockMessagesStream.mockReturnValue(mockStream);
 });
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 describe("chatAssistant", () => {
   test("503 when the assistant isn't configured", async () => {
     mockConfig.anthropic.apiKey = null;
-    const res = await request(app).post("/assistant").send({ messages: userMsg });
+    const res = await request(server).post("/assistant").send({ messages: userMsg });
     expect(res.status).toBe(503);
     expect(res.body.error).toBe("assistant_unavailable");
   });
 
   test("400 when there is no trailing user message", async () => {
-    const res = await request(app).post("/assistant").send({ messages: [] });
+    const res = await request(server).post("/assistant").send({ messages: [] });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("invalid_messages");
   });
 
   test("drops a leading assistant message and trims to a valid history", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/assistant")
       .send({ messages: [{ role: "assistant", content: "hi" }, { role: "user", content: "go" }] });
     expect(res.status).toBe(200);
@@ -70,7 +74,7 @@ describe("chatAssistant", () => {
   });
 
   test("streams the model's text back to the client", async () => {
-    const res = await request(app).post("/assistant").send({ messages: userMsg });
+    const res = await request(server).post("/assistant").send({ messages: userMsg });
     expect(res.status).toBe(200);
     expect(res.text).toContain("Here is a brief.");
     expect(mockMessagesStream).toHaveBeenCalledWith(
@@ -82,7 +86,7 @@ describe("chatAssistant", () => {
     mockMessagesStream.mockImplementation(() => {
       throw new Error("anthropic_down");
     });
-    const res = await request(app).post("/assistant").send({ messages: userMsg });
+    const res = await request(server).post("/assistant").send({ messages: userMsg });
     expect(res.status).toBe(500);
     expect(res.text).toContain("assistant_failed");
   });

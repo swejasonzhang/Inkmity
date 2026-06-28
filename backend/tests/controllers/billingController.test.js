@@ -7,7 +7,15 @@ const conditionalDescribe =
   process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
 
 const ADMIN_ID = "admin-1";
-process.env.ADMIN_CLERK_IDS = ADMIN_ID;
+let prevAdminEnv;
+beforeAll(() => {
+  prevAdminEnv = process.env.ADMIN_CLERK_IDS;
+  process.env.ADMIN_CLERK_IDS = ADMIN_ID;
+});
+afterAll(() => {
+  if (prevAdminEnv === undefined) delete process.env.ADMIN_CLERK_IDS;
+  else process.env.ADMIN_CLERK_IDS = prevAdminEnv;
+});
 
 const stripeMock = {
   customers: { create: jest.fn(), retrieve: jest.fn() },
@@ -97,6 +105,10 @@ async function createOnboardedArtist(artistId) {
   });
 }
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
   let artistId;
   let clientId;
@@ -134,7 +146,7 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
   });
 
   test("should create PaymentIntent charging deposit + platform fee, routed to the artist", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/deposit/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -159,7 +171,7 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
     const Artist = mongoose.model("artist");
     await Artist.updateOne({ clerkId: artistId }, { $set: { chargesEnabled: false } });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/deposit/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -173,7 +185,7 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
     booking.depositPaidCents = 1000;
     await booking.save();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/deposit/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -183,7 +195,7 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
   });
 
   test("should create Billing record with status pending and recorded fee", async () => {
-    await request(app)
+    await request(server)
       .post("/billing/deposit/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -198,7 +210,7 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
   });
 
   test("403 when a user who is not the booking's client requests a deposit intent", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/deposit/intent")
       .set("x-test-user-id", "intruder")
       .send({ bookingId });
@@ -245,7 +257,7 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
   });
 
   test("should charge remaining balance (no extra fee) and transfer fully to the artist", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/final-payment/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -274,7 +286,7 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
     booking.depositPaidCents = 0;
     await booking.save();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/final-payment/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -289,7 +301,7 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
     booking.depositPaidCents = 2000;
     await booking.save();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/final-payment/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -299,7 +311,7 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
   });
 
   test("403 when a user who is not the booking's client requests the final-payment intent", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/final-payment/intent")
       .set("x-test-user-id", "intruder")
       .send({ bookingId });
@@ -355,7 +367,7 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
       },
     };
 
-    const response = await request(app).post("/billing/webhook").send(event);
+    const response = await request(server).post("/billing/webhook").send(event);
     expect(response.status).toBe(200);
 
     const billing = await Billing.findById(billingId);
@@ -379,8 +391,8 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
       },
     };
 
-    await request(app).post("/billing/webhook").send(event);
-    const response = await request(app).post("/billing/webhook").send(event);
+    await request(server).post("/billing/webhook").send(event);
+    const response = await request(server).post("/billing/webhook").send(event);
 
     expect(response.status).toBe(200);
     expect(response.body.message).toBe("Event already processed");
@@ -424,7 +436,7 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
         },
       },
     };
-    const res = await request(app).post("/billing/webhook").send(event);
+    const res = await request(server).post("/billing/webhook").send(event);
     expect(res.status).toBe(200);
 
     const updated = await Billing.findById(fpBill._id);
@@ -445,11 +457,11 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
       },
     };
 
-    await request(app).post("/billing/webhook").send(event);
+    await request(server).post("/billing/webhook").send(event);
     const booking1 = await Booking.findById(bookingId);
     const depositPaid1 = booking1.depositPaidCents;
 
-    await request(app).post("/billing/webhook").send(event);
+    await request(server).post("/billing/webhook").send(event);
     const booking2 = await Booking.findById(bookingId);
     const depositPaid2 = booking2.depositPaidCents;
 
@@ -464,7 +476,7 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
       data: { object: { id: "pi_fail", metadata: { billingId } } },
     };
 
-    const response = await request(app).post("/billing/webhook").send(event);
+    const response = await request(server).post("/billing/webhook").send(event);
     expect(response.status).toBe(200);
 
     const billing = await Billing.findById(billingId);
@@ -496,7 +508,7 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
       },
     };
 
-    const response = await request(app).post("/billing/webhook").send(event);
+    const response = await request(server).post("/billing/webhook").send(event);
     expect(response.status).toBe(200);
 
     const artist = await Artist.findOne({ stripeConnectAccountId: "acct_sync_1" });
@@ -534,7 +546,7 @@ conditionalDescribe("Billing Controller - Bank Setup Intent (ACH)", () => {
   });
 
   test("creates a us_bank_account SetupIntent for off-session ACH charges", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/bank-setup-intent")
       .set("x-test-user-id", "client-456")
       .send({ bookingId });
@@ -557,7 +569,7 @@ conditionalDescribe("Billing Controller - Bank Setup Intent (ACH)", () => {
   });
 
   test("rejects when bookingId is missing", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/bank-setup-intent")
       .set("x-test-user-id", "client-456")
       .send({});
@@ -595,7 +607,7 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
   });
 
   test("creates an automatic-methods SetupIntent (card + bank) and persists the Stripe customer", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/client/setup-intent")
       .set("x-test-user-id", CLERK)
       .send({});
@@ -628,7 +640,7 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
         : { data: [{ id: "pm_bank_1", us_bank_account: { bank_name: "Test Bank", last4: "6789" } }] }
     );
 
-    const res = await request(app)
+    const res = await request(server)
       .get("/billing/client/payment-methods")
       .set("x-test-user-id", CLERK);
 
@@ -641,7 +653,7 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
   });
 
   test("returns empty list when the client has no Stripe customer yet", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .get("/billing/client/payment-methods")
       .set("x-test-user-id", CLERK);
 
@@ -655,7 +667,7 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
     stripeMock.paymentMethods.retrieve.mockResolvedValue({ id: "pm_card_1", customer: "cus_pm1" });
     stripeMock.paymentMethods.detach.mockResolvedValue({ id: "pm_card_1" });
 
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/client/payment-methods/delete")
       .set("x-test-user-id", CLERK)
       .send({ paymentMethodId: "pm_card_1" });
@@ -670,7 +682,7 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
     await Client.updateOne({ clerkId: CLERK }, { $set: { stripeCustomerId: "cus_pm1" } });
     stripeMock.paymentMethods.retrieve.mockResolvedValue({ id: "pm_x", customer: "cus_other" });
 
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/client/payment-methods/delete")
       .set("x-test-user-id", CLERK)
       .send({ paymentMethodId: "pm_x" });
@@ -682,18 +694,18 @@ conditionalDescribe("Billing Controller - Client saved payment methods (profile)
 
 conditionalDescribe("Billing Controller - misc endpoints", () => {
   test("checkoutPlatformFee is deprecated (410)", async () => {
-    const res = await request(app).post("/billing/checkout").set("x-test-user-id", "u1");
+    const res = await request(server).post("/billing/checkout").set("x-test-user-id", "u1");
     expect(res.status).toBe(410);
     expect(res.body.error).toBe("deprecated");
   });
 
   test("scheduleCancel returns ok", async () => {
-    const res = await request(app).post("/billing/schedule-cancel").set("x-test-user-id", "u1");
+    const res = await request(server).post("/billing/schedule-cancel").set("x-test-user-id", "u1");
     expect(res.body).toEqual({ ok: true });
   });
 
   test("createPortalSession 404 when the client has no Stripe customer", async () => {
-    const res = await request(app).post("/billing/portal").set("x-test-user-id", "no-cust");
+    const res = await request(server).post("/billing/portal").set("x-test-user-id", "no-cust");
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("no_customer");
   });
@@ -709,7 +721,7 @@ conditionalDescribe("Billing Controller - misc endpoints", () => {
       stripeCustomerId: "cus_1",
     });
     stripeMock.billingPortal.sessions.create.mockResolvedValue({ url: "https://portal" });
-    const res = await request(app).post("/billing/portal").set("x-test-user-id", "u1");
+    const res = await request(server).post("/billing/portal").set("x-test-user-id", "u1");
     expect(res.body).toEqual({ url: "https://portal" });
   });
 
@@ -725,7 +737,7 @@ conditionalDescribe("Billing Controller - misc endpoints", () => {
       stripeRefundIds: [],
     });
     stripeMock.refunds.create.mockResolvedValue({ id: "re_1" });
-    const res = await request(app).post("/billing/refund").set("x-test-user-id", "u1").send({ billingId: String(bill._id) });
+    const res = await request(server).post("/billing/refund").set("x-test-user-id", "u1").send({ billingId: String(bill._id) });
     expect(res.body.ok).toBe(true);
     expect(res.body.refunds).toHaveLength(1);
     const updated = await Billing.findById(bill._id);
@@ -742,17 +754,17 @@ conditionalDescribe("Billing Controller - misc endpoints", () => {
       status: "paid",
       stripePaymentIntentId: "pi_1",
     });
-    const res = await request(app).post("/billing/refund").set("x-test-user-id", "intruder").send({ billingId: String(bill._id) });
+    const res = await request(server).post("/billing/refund").set("x-test-user-id", "intruder").send({ billingId: String(bill._id) });
     expect(res.status).toBe(403);
   });
 
   test("retryPayoutsHandler 403 for a non-admin", async () => {
-    const res = await request(app).post("/billing/payouts/retry").set("x-test-user-id", "u1");
+    const res = await request(server).post("/billing/payouts/retry").set("x-test-user-id", "u1");
     expect(res.status).toBe(403);
   });
 
   test("retryPayoutsHandler runs for a platform admin", async () => {
-    const res = await request(app).post("/billing/payouts/retry").set("x-test-user-id", ADMIN_ID);
+    const res = await request(server).post("/billing/payouts/retry").set("x-test-user-id", ADMIN_ID);
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("attempted");
   });
@@ -795,7 +807,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
   });
 
   test("creates a checkout session with deposit + platform-fee line items", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/deposit/checkout")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -822,7 +834,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
   });
 
   test("rejects when bookingId missing", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/deposit/checkout")
       .set("x-test-user-id", clientId)
       .send({});
@@ -831,7 +843,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
   });
 
   test("404 when booking not found", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/deposit/checkout")
       .set("x-test-user-id", clientId)
       .send({ bookingId: new mongoose.Types.ObjectId().toString() });
@@ -840,7 +852,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
 
   test("rejects deposit already paid", async () => {
     await Booking.updateOne({ _id: bookingId }, { $set: { depositPaidCents: 5000 } });
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/deposit/checkout")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -849,7 +861,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
   });
 
   test("403 when a user who is not the booking's client starts a deposit checkout", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/deposit/checkout")
       .set("x-test-user-id", "intruder")
       .send({ bookingId });
@@ -869,7 +881,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
     });
     stripeMock.customers.retrieve.mockRejectedValue(new Error("no such customer"));
 
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/deposit/checkout")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -890,7 +902,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
     });
     stripeMock.customers.retrieve.mockResolvedValue({ id: "cus_existing" });
 
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/deposit/checkout")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -928,7 +940,7 @@ conditionalDescribe("Billing Controller - createCardSetupIntent", () => {
   });
 
   test("creates an automatic-methods card SetupIntent and saves the customer on the booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/card-setup-intent")
       .set("x-test-user-id", "client-card")
       .send({ bookingId });
@@ -945,7 +957,7 @@ conditionalDescribe("Billing Controller - createCardSetupIntent", () => {
   });
 
   test("rejects when bookingId missing", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/card-setup-intent")
       .set("x-test-user-id", "client-card")
       .send({});
@@ -953,7 +965,7 @@ conditionalDescribe("Billing Controller - createCardSetupIntent", () => {
   });
 
   test("404 when booking not found", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/card-setup-intent")
       .set("x-test-user-id", "client-card")
       .send({ bookingId: new mongoose.Types.ObjectId().toString() });
@@ -965,7 +977,7 @@ conditionalDescribe("Billing Controller - createClientSetupIntent edge cases", (
   afterEach(() => jest.clearAllMocks());
 
   test("404 when no Client record exists for the clerkId", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/client/setup-intent")
       .set("x-test-user-id", "ghost-client")
       .send({});
@@ -989,7 +1001,7 @@ conditionalDescribe("Billing Controller - createClientSetupIntent edge cases", (
       client_secret: "seti_reuse_secret",
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/client/setup-intent")
       .set("x-test-user-id", "client-reuse")
       .send({});
@@ -1033,7 +1045,7 @@ conditionalDescribe("Billing Controller - createTipCheckout (100% to artist)", (
   afterEach(() => jest.clearAllMocks());
 
   test("creates a destination-charge tip session routed 100% to the artist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/tip")
       .set("x-test-user-id", clientId)
       .send({ bookingId, tipCents: 2500 });
@@ -1054,7 +1066,7 @@ conditionalDescribe("Billing Controller - createTipCheckout (100% to artist)", (
   });
 
   test("400 when bookingId missing", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/tip")
       .set("x-test-user-id", clientId)
       .send({ tipCents: 2500 });
@@ -1063,7 +1075,7 @@ conditionalDescribe("Billing Controller - createTipCheckout (100% to artist)", (
   });
 
   test("rejects a tip below the minimum", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/tip")
       .set("x-test-user-id", clientId)
       .send({ bookingId, tipCents: 50 });
@@ -1072,7 +1084,7 @@ conditionalDescribe("Billing Controller - createTipCheckout (100% to artist)", (
   });
 
   test("403 when a non-client tries to tip", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/tip")
       .set("x-test-user-id", "someone-else")
       .send({ bookingId, tipCents: 2500 });
@@ -1081,7 +1093,7 @@ conditionalDescribe("Billing Controller - createTipCheckout (100% to artist)", (
 
   test("rejects tipping before the session is completed", async () => {
     await Booking.updateOne({ _id: bookingId }, { $set: { status: "confirmed" } });
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/tip")
       .set("x-test-user-id", clientId)
       .send({ bookingId, tipCents: 2500 });
@@ -1090,7 +1102,7 @@ conditionalDescribe("Billing Controller - createTipCheckout (100% to artist)", (
   });
 
   test("caps an oversized tip at the maximum", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/tip")
       .set("x-test-user-id", clientId)
       .send({ bookingId, tipCents: 9999999 });
@@ -1123,7 +1135,7 @@ conditionalDescribe("Billing Controller - getPaymentBreakdown (hides payout spli
   afterEach(() => jest.clearAllMocks());
 
   test("client sees totals but NOT artist net / studio commission", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -1139,7 +1151,7 @@ conditionalDescribe("Billing Controller - getPaymentBreakdown (hides payout spli
   });
 
   test("the artist sees their own gross/net/studio split", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", artistId)
       .send({ bookingId });
@@ -1153,7 +1165,7 @@ conditionalDescribe("Billing Controller - getPaymentBreakdown (hides payout spli
   });
 
   test("403 when an unrelated user requests a booking breakdown", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", "intruder")
       .send({ bookingId });
@@ -1161,7 +1173,7 @@ conditionalDescribe("Billing Controller - getPaymentBreakdown (hides payout spli
   });
 
   test("404 when the booking does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", clientId)
       .send({ bookingId: new mongoose.Types.ObjectId().toString() });
@@ -1169,7 +1181,7 @@ conditionalDescribe("Billing Controller - getPaymentBreakdown (hides payout spli
   });
 
   test("supports ad-hoc artistClerkId + priceCents (no booking)", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", clientId)
       .send({ artistClerkId: artistId, priceCents: 15000 });
@@ -1179,7 +1191,7 @@ conditionalDescribe("Billing Controller - getPaymentBreakdown (hides payout spli
   });
 
   test("400 when neither bookingId nor artistClerkId provided", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", clientId)
       .send({ priceCents: 15000 });
@@ -1287,7 +1299,7 @@ conditionalDescribe("Billing Controller - webhook checkout.session.completed + d
         },
       },
     };
-    const res = await request(app).post("/billing/webhook").send(event);
+    const res = await request(server).post("/billing/webhook").send(event);
     expect(res.status).toBe(200);
 
     const bill = await Billing.findById(billingId);
@@ -1320,7 +1332,7 @@ conditionalDescribe("Billing Controller - webhook checkout.session.completed + d
         },
       },
     };
-    const res = await request(app).post("/billing/webhook").send(event);
+    const res = await request(server).post("/billing/webhook").send(event);
     expect(res.status).toBe(200);
 
     const booking = await Booking.findById(bookingId);
@@ -1348,7 +1360,7 @@ conditionalDescribe("Billing Controller - webhook checkout.session.completed + d
         object: { id: "dp_1", charge: "ch_disp", payment_intent: "pi_disp" },
       },
     };
-    const res = await request(app).post("/billing/webhook").send(event);
+    const res = await request(server).post("/billing/webhook").send(event);
     expect(res.status).toBe(200);
 
     const updated = await Billing.findById(bill._id);
@@ -1359,7 +1371,7 @@ conditionalDescribe("Billing Controller - webhook checkout.session.completed + d
     stripeMock.webhooks.constructEvent.mockImplementationOnce(() => {
       throw new Error("bad sig");
     });
-    const res = await request(app).post("/billing/webhook").send({ id: "x", type: "noop" });
+    const res = await request(server).post("/billing/webhook").send({ id: "x", type: "noop" });
     expect(res.status).toBe(400);
   });
 });

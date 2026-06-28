@@ -1,8 +1,7 @@
-import { jest } from "@jest/globals";
+import { jest, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 import Report from "../../models/Report.js";
-import { config } from "../../config/index.js";
 import { createReport, listReports, updateReportStatus } from "../../controllers/reportController.js";
 
 const ADMIN_ID = "admin_report_test";
@@ -24,9 +23,13 @@ app.post("/reports", mockAuth, createReport);
 app.get("/reports", mockAuth, listReports);
 app.patch("/reports/:id", mockAuth, updateReportStatus);
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("reports", () => {
   test("creates a report with a valid target + reason", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reports")
       .set("x-test-user-id", "user_1")
       .send({ targetType: "artwork", targetRef: "https://img/x.jpg", reason: "inappropriate", details: "nsfw" });
@@ -38,7 +41,7 @@ conditionalDescribe("reports", () => {
   });
 
   test("rejects an invalid target type", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reports")
       .set("x-test-user-id", "user_1")
       .send({ targetType: "nope", targetRef: "x", reason: "spam" });
@@ -47,7 +50,7 @@ conditionalDescribe("reports", () => {
   });
 
   test("rejects an invalid reason", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reports")
       .set("x-test-user-id", "user_1")
       .send({ targetType: "artwork", targetRef: "x", reason: "because" });
@@ -56,19 +59,19 @@ conditionalDescribe("reports", () => {
   });
 
   test("requires auth", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reports")
       .send({ targetType: "artwork", targetRef: "x", reason: "spam" });
     expect(res.status).toBe(401);
   });
 
   test("forbids non-admins from listing reports", async () => {
-    const res = await request(app).get("/reports").set("x-test-user-id", "user_1");
+    const res = await request(server).get("/reports").set("x-test-user-id", "user_1");
     expect(res.status).toBe(403);
   });
 
   test("forbids non-admins from actioning a report", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .patch("/reports/507f1f77bcf86cd799439011")
       .set("x-test-user-id", "user_1")
       .send({ status: "dismissed" });
@@ -77,16 +80,16 @@ conditionalDescribe("reports", () => {
 
   test("dedupes repeat open reports from the same reporter for the same target", async () => {
     const body = { targetType: "artwork", targetRef: "https://img/dupe.jpg", reason: "spam" };
-    const first = await request(app).post("/reports").set("x-test-user-id", "user_d").send(body);
+    const first = await request(server).post("/reports").set("x-test-user-id", "user_d").send(body);
     expect(first.status).toBe(201);
-    const second = await request(app).post("/reports").set("x-test-user-id", "user_d").send(body);
+    const second = await request(server).post("/reports").set("x-test-user-id", "user_d").send(body);
     expect(second.status).toBe(200);
     expect(second.body.deduped).toBe(true);
     expect(await Report.countDocuments({ targetRef: "https://img/dupe.jpg" })).toBe(1);
   });
 
   test("rejects a missing target ref", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reports")
       .set("x-test-user-id", "user_1")
       .send({ targetType: "artwork", targetRef: "   ", reason: "spam" });
@@ -96,7 +99,7 @@ conditionalDescribe("reports", () => {
 
   test("persists targetOwnerClerkId and truncates details to 1000 chars", async () => {
     const longDetails = "z".repeat(1500);
-    const res = await request(app)
+    const res = await request(server)
       .post("/reports")
       .set("x-test-user-id", "user_owner")
       .send({
@@ -114,7 +117,7 @@ conditionalDescribe("reports", () => {
 
   test("returns 500 when report creation throws", async () => {
     const spy = jest.spyOn(Report, "create").mockRejectedValueOnce(new Error("boom"));
-    const res = await request(app)
+    const res = await request(server)
       .post("/reports")
       .set("x-test-user-id", "user_err")
       .send({ targetType: "message", targetRef: "msg_1", reason: "other" });
@@ -125,20 +128,22 @@ conditionalDescribe("reports", () => {
 });
 
 conditionalDescribe("reports admin moderation", () => {
+  let prevAdminEnv;
   beforeEach(() => {
-    config.admin.clerkIds.push(ADMIN_ID);
+    prevAdminEnv = process.env.ADMIN_CLERK_IDS;
+    process.env.ADMIN_CLERK_IDS = ADMIN_ID;
   });
 
   afterEach(() => {
-    const i = config.admin.clerkIds.indexOf(ADMIN_ID);
-    if (i !== -1) config.admin.clerkIds.splice(i, 1);
+    if (prevAdminEnv === undefined) delete process.env.ADMIN_CLERK_IDS;
+    else process.env.ADMIN_CLERK_IDS = prevAdminEnv;
     jest.restoreAllMocks();
   });
 
   test("admin lists all reports sorted by newest", async () => {
     await Report.create({ reporterClerkId: "u1", targetType: "artwork", targetRef: "a", reason: "spam" });
     await Report.create({ reporterClerkId: "u2", targetType: "message", targetRef: "b", reason: "other" });
-    const res = await request(app).get("/reports").set("x-test-user-id", ADMIN_ID);
+    const res = await request(server).get("/reports").set("x-test-user-id", ADMIN_ID);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.reports)).toBe(true);
     expect(res.body.reports.length).toBe(2);
@@ -147,7 +152,7 @@ conditionalDescribe("reports admin moderation", () => {
   test("admin filters reports by status", async () => {
     await Report.create({ reporterClerkId: "u1", targetType: "artwork", targetRef: "a", reason: "spam", status: "open" });
     await Report.create({ reporterClerkId: "u2", targetType: "message", targetRef: "b", reason: "other", status: "dismissed" });
-    const res = await request(app).get("/reports?status=dismissed").set("x-test-user-id", ADMIN_ID);
+    const res = await request(server).get("/reports?status=dismissed").set("x-test-user-id", ADMIN_ID);
     expect(res.status).toBe(200);
     expect(res.body.reports.length).toBe(1);
     expect(res.body.reports[0].targetRef).toBe("b");
@@ -157,14 +162,14 @@ conditionalDescribe("reports admin moderation", () => {
     jest.spyOn(Report, "find").mockImplementationOnce(() => {
       throw new Error("db down");
     });
-    const res = await request(app).get("/reports").set("x-test-user-id", ADMIN_ID);
+    const res = await request(server).get("/reports").set("x-test-user-id", ADMIN_ID);
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("list_failed");
   });
 
   test("admin updates a report status", async () => {
     const rep = await Report.create({ reporterClerkId: "u1", targetType: "artwork", targetRef: "a", reason: "spam" });
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/reports/${rep._id}`)
       .set("x-test-user-id", ADMIN_ID)
       .send({ status: "reviewed" });
@@ -176,7 +181,7 @@ conditionalDescribe("reports admin moderation", () => {
 
   test("rejects an invalid status update", async () => {
     const rep = await Report.create({ reporterClerkId: "u1", targetType: "artwork", targetRef: "a", reason: "spam" });
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/reports/${rep._id}`)
       .set("x-test-user-id", ADMIN_ID)
       .send({ status: "bogus" });
@@ -185,7 +190,7 @@ conditionalDescribe("reports admin moderation", () => {
   });
 
   test("returns 404 when updating a nonexistent report", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .patch("/reports/507f1f77bcf86cd799439011")
       .set("x-test-user-id", ADMIN_ID)
       .send({ status: "actioned" });
@@ -197,7 +202,7 @@ conditionalDescribe("reports admin moderation", () => {
     jest.spyOn(Report, "findByIdAndUpdate").mockImplementationOnce(() => {
       throw new Error("db down");
     });
-    const res = await request(app)
+    const res = await request(server)
       .patch("/reports/507f1f77bcf86cd799439011")
       .set("x-test-user-id", ADMIN_ID)
       .send({ status: "actioned" });

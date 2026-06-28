@@ -32,6 +32,10 @@ app.get("/analytics-noauth", noAuth, getArtistAnalytics);
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Dashboard Controller - getDashboardData", () => {
   test("should return user and featured artists", async () => {
     const userId = "test-user-id";
@@ -71,7 +75,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
       },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/dashboard")
       .set("x-test-user-id", userId);
 
@@ -121,7 +125,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
       },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/dashboard")
       .set("x-test-user-id", userId);
 
@@ -135,7 +139,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
   });
 
   test("should return 404 when user not found", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .get("/dashboard")
       .set("x-test-user-id", "nonexistent-user-id");
 
@@ -165,7 +169,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
 
     await mongoose.model("artist").insertMany(artists);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/dashboard")
       .set("x-test-user-id", userId);
 
@@ -180,7 +184,7 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
         throw new Error("boom");
       });
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/dashboard")
       .set("x-test-user-id", "any-user");
 
@@ -193,14 +197,14 @@ conditionalDescribe("Dashboard Controller - getDashboardData", () => {
 
 conditionalDescribe("Dashboard Controller - getArtistAnalytics", () => {
   test("should return 401 when there is no auth identity", async () => {
-    const response = await request(app).get("/analytics-noauth");
+    const response = await request(server).get("/analytics-noauth");
 
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("Unauthorized");
   });
 
   test("should return 403 when the user is not an artist", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .get("/analytics")
       .set("x-test-user-id", "not-an-artist");
 
@@ -261,7 +265,7 @@ conditionalDescribe("Dashboard Controller - getArtistAnalytics", () => {
       },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/analytics")
       .set("x-test-user-id", artistId);
 
@@ -292,7 +296,7 @@ conditionalDescribe("Dashboard Controller - getArtistAnalytics", () => {
       role: "artist",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/analytics")
       .set("x-test-user-id", artistId);
 
@@ -325,7 +329,7 @@ conditionalDescribe("Dashboard Controller - getArtistAnalytics", () => {
         throw new Error("aggregate boom");
       });
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/analytics")
       .set("x-test-user-id", artistId);
 

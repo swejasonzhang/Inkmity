@@ -26,6 +26,10 @@ app.post("/bookings/session", auth, createTattooSession);
 app.post("/bookings/:id/accept", auth, acceptAppointment);
 app.post("/bookings/:id/complete", auth, completeBooking);
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Dev Bypass - full booking → rewards workflow", () => {
   const artistId = "artist-bypass";
   const clientId = "client-bypass";
@@ -60,7 +64,7 @@ conditionalDescribe("Dev Bypass - full booking → rewards workflow", () => {
       Date.now() + dayOffset * 24 * 60 * 60 * 1000
     ).toISOString();
 
-    const create = await request(app)
+    const create = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO, durationMinutes: 120, priceCents: 20000 });
@@ -68,13 +72,13 @@ conditionalDescribe("Dev Bypass - full booking → rewards workflow", () => {
     expect(create.body.depositRequiredCents).toBe(0);
     const id = create.body._id;
 
-    const accept = await request(app)
+    const accept = await request(server)
       .post(`/bookings/${id}/accept`)
       .set("x-test-user-id", artistId);
     expect(accept.status).toBe(200);
     expect(accept.body.status).toBe("accepted");
 
-    const complete = await request(app)
+    const complete = await request(server)
       .post(`/bookings/${id}/complete`)
       .set("x-test-user-id", artistId);
     expect(complete.status).toBe(200);

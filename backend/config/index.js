@@ -46,10 +46,12 @@ export const config = {
   },
 
   admin: {
-    clerkIds: (process.env.ADMIN_CLERK_IDS || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
+    get clerkIds() {
+      return (process.env.ADMIN_CLERK_IDS || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    },
   },
 
   test: {

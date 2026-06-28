@@ -60,6 +60,20 @@ app.get("/users/avatar-signature", mockAuth, getAvatarSignature);
 app.get("/users/reference-signature", mockAuth, getReferenceSignature);
 app.put("/users/me/references", mockAuth, saveMyReferences);
 
+const appNoAuth = express();
+appNoAuth.use(express.json());
+appNoAuth.get("/users/me", getMe);
+
+let server;
+let serverNoAuth;
+beforeAll(() => {
+  server = app.listen(0);
+  serverNoAuth = appNoAuth.listen(0);
+});
+afterAll((done) => {
+  server.close(() => serverNoAuth.close(done));
+});
+
 conditionalDescribe("User Controller - getMe", () => {
   test("should return user data for authenticated user", async () => {
     const client = await mongoose.model("client").create({
@@ -70,7 +84,7 @@ conditionalDescribe("User Controller - getMe", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/me")
       .set("x-test-user-id", "test-user-id");
 
@@ -80,18 +94,14 @@ conditionalDescribe("User Controller - getMe", () => {
   });
 
   test("should return 401 when not authenticated", async () => {
-    const appNoAuth = express();
-    appNoAuth.use(express.json());
-    appNoAuth.get("/users/me", getMe);
-
-    const response = await request(appNoAuth).get("/users/me");
+    const response = await request(serverNoAuth).get("/users/me");
 
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("Unauthorized");
   });
 
   test("should return 404 when user not found", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/me")
       .set("x-test-user-id", "nonexistent-user-id");
 
@@ -110,7 +120,7 @@ conditionalDescribe("User Controller - updateMyAvatar", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .put("/users/me/avatar")
       .set("x-test-user-id", "test-user-id")
       .send({
@@ -133,7 +143,7 @@ conditionalDescribe("User Controller - updateMyAvatar", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .put("/users/me/avatar")
       .set("x-test-user-id", "test-user-id")
       .send({});
@@ -153,7 +163,7 @@ conditionalDescribe("User Controller - updateMyBio", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .put("/users/me/bio")
       .set("x-test-user-id", "test-user-id")
       .send({ bio: "Updated bio text" });
@@ -173,7 +183,7 @@ conditionalDescribe("User Controller - updateMyBio", () => {
     });
 
     const longBio = "a".repeat(700);
-    const response = await request(app)
+    const response = await request(server)
       .put("/users/me/bio")
       .set("x-test-user-id", "test-user-id")
       .send({ bio: longBio });
@@ -193,7 +203,7 @@ conditionalDescribe("User Controller - updateMyVisibility", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .put("/users/me/visibility")
       .set("x-test-user-id", "test-user-id")
       .send({ visibility: "away" });
@@ -212,7 +222,7 @@ conditionalDescribe("User Controller - updateMyVisibility", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .put("/users/me/visibility")
       .set("x-test-user-id", "test-user-id")
       .send({ visibility: "invalid" });
@@ -224,7 +234,7 @@ conditionalDescribe("User Controller - updateMyVisibility", () => {
 
 conditionalDescribe("User Controller - syncUser", () => {
   test("should create new client user", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "new-user-id")
       .send({
@@ -240,7 +250,7 @@ conditionalDescribe("User Controller - syncUser", () => {
   });
 
   test("should create new artist user", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "new-artist-id")
       .send({
@@ -269,7 +279,7 @@ conditionalDescribe("User Controller - syncUser", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "existing-user-id")
       .send({
@@ -284,7 +294,7 @@ conditionalDescribe("User Controller - syncUser", () => {
   });
 
   test("should return 400 when required fields are missing", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "test-user-id")
       .send({
@@ -296,7 +306,7 @@ conditionalDescribe("User Controller - syncUser", () => {
   });
 
   test("generates a unique @handle and applies client budget/visibility defaults", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-client-1")
       .send({
@@ -336,7 +346,7 @@ conditionalDescribe("User Controller - syncUser", () => {
   });
 
   test("clamps client budgets to the 0-5000 range and keeps max above min", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-client-2")
       .send({
@@ -358,7 +368,7 @@ conditionalDescribe("User Controller - syncUser", () => {
   });
 
   test("maps artist profile fields: years, baseRate, portfolio, restrictedPlacements, verification", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-artist-1")
       .send({
@@ -410,7 +420,7 @@ conditionalDescribe("User Controller - syncUser", () => {
       usernameUpdatedAt: new Date(),
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-cooldown")
       .send({
@@ -438,7 +448,7 @@ conditionalDescribe("User Controller - syncUser", () => {
       usernameUpdatedAt: old,
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-elapsed")
       .send({
@@ -463,7 +473,7 @@ conditionalDescribe("User Controller - syncUser", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-mismatch")
       .send({
@@ -478,7 +488,7 @@ conditionalDescribe("User Controller - syncUser", () => {
   });
 
   test("creates a studio account and backing Studio document", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-studio-1")
       .send({
@@ -506,7 +516,7 @@ conditionalDescribe("User Controller - syncUser", () => {
   });
 
   test("falls back to client role for an unsafe role value", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/users/sync")
       .set("x-test-user-id", "sync-unsafe")
       .send({
@@ -548,7 +558,7 @@ conditionalDescribe("User Controller - getArtists", () => {
       },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/artists")
       .query({ page: 1, pageSize: 10 });
 
@@ -580,7 +590,7 @@ conditionalDescribe("User Controller - getArtists", () => {
       },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/artists")
       .query({ location: "New York" });
 
@@ -601,7 +611,7 @@ conditionalDescribe("User Controller - getArtists", () => {
     });
 
     const started = Date.now();
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/artists")
       .query({ location: "(a+)+$" });
 
@@ -632,7 +642,7 @@ conditionalDescribe("User Controller - getArtists", () => {
       },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/artists")
       .query({ search: "John" });
 
@@ -667,7 +677,7 @@ conditionalDescribe("User Controller - getArtists", () => {
       },
     ]);
 
-    const response = await request(app).get("/users/artists");
+    const response = await request(server).get("/users/artists");
 
     expect(response.status).toBe(200);
     // Pro tier (60 bookings, 4.6) surfaces above a Rising artist with a higher
@@ -702,7 +712,7 @@ conditionalDescribe("User Controller - getArtists", () => {
       },
     ]);
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/artists")
       .query({ sort: "experience_desc" });
 
@@ -739,13 +749,13 @@ conditionalDescribe("User Controller - getArtists", () => {
       },
     ]);
 
-    const ranged = await request(app)
+    const ranged = await request(server)
       .get("/users/artists")
       .query({ experience: "10-20" });
     expect(ranged.status).toBe(200);
     expect(ranged.body.items.map((a) => a.username)).toEqual(["Senior"]);
 
-    const plus = await request(app)
+    const plus = await request(server)
       .get("/users/artists")
       .query({ experience: "10+", booking: "waitlist", travel: "often" });
     expect(plus.status).toBe(200);
@@ -764,7 +774,7 @@ conditionalDescribe("User Controller - getArtistById", () => {
       location: "Test City",
     });
 
-    const response = await request(app).get(`/users/artists/${artist._id}`);
+    const response = await request(server).get(`/users/artists/${artist._id}`);
 
     expect(response.status).toBe(200);
     expect(response.body._id.toString()).toBe(artist._id.toString());
@@ -773,7 +783,7 @@ conditionalDescribe("User Controller - getArtistById", () => {
 
   test("should return 404 when artist not found", async () => {
     const fakeId = new mongoose.Types.ObjectId();
-    const response = await request(app).get(`/users/artists/${fakeId}`);
+    const response = await request(server).get(`/users/artists/${fakeId}`);
 
     expect(response.status).toBe(404);
     expect(response.body.error).toBe("not_found");
@@ -791,7 +801,7 @@ conditionalDescribe("User Controller - getArtistById", () => {
       payoutsEnabled: true,
     });
 
-    const response = await request(app).get(`/users/artists/${artist._id}`);
+    const response = await request(server).get(`/users/artists/${artist._id}`);
 
     expect(response.status).toBe(200);
     expect(response.body.username).toBe("Private Artist");
@@ -812,14 +822,14 @@ conditionalDescribe("User Controller - getArtistById", () => {
       visible: false,
     });
 
-    const response = await request(app).get(`/users/artists/${artist._id}`);
+    const response = await request(server).get(`/users/artists/${artist._id}`);
     expect(response.status).toBe(404);
   });
 });
 
 conditionalDescribe("User Controller - checkHandleAvailability", () => {
   test("should return available when handle not taken", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/handle/check")
       .query({ h: "newhandle" });
 
@@ -837,7 +847,7 @@ conditionalDescribe("User Controller - checkHandleAvailability", () => {
       role: "client",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .get("/users/handle/check")
       .query({ h: "takenhandle" });
 
@@ -846,7 +856,7 @@ conditionalDescribe("User Controller - checkHandleAvailability", () => {
   });
 
   test("should return 400 when handle is missing", async () => {
-    const response = await request(app).get("/users/handle/check");
+    const response = await request(server).get("/users/handle/check");
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("handle_required");
@@ -864,7 +874,7 @@ conditionalDescribe("saveMyPortfolio", () => {
       role: "artist",
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .put("/users/me/portfolio")
       .set("x-test-user-id", "art_pf")
       .send({
@@ -890,12 +900,12 @@ conditionalDescribe("getArtists test-account visibility", () => {
       await Artist.create({ clerkId: "artist_hidden", email: "h@example.com", username: "Hidden", handle: "@artist_hidden", role: "artist" });
       await Artist.create({ clerkId: "artist_shown", email: "s@example.com", username: "Shown", handle: "@artist_shown", role: "artist" });
 
-      const real = await request(app).get("/users/artists");
+      const real = await request(server).get("/users/artists");
       const handles = real.body.items.map((i) => i.handle);
       expect(handles).toContain("@artist_shown");
       expect(handles).not.toContain("@artist_hidden");
 
-      const asTest = await request(app).get("/users/artists").set("x-clerk-user-id", "artist_hidden");
+      const asTest = await request(server).get("/users/artists").set("x-clerk-user-id", "artist_hidden");
       const handles2 = asTest.body.items.map((i) => i.handle);
       expect(handles2).toContain("@artist_hidden");
     } finally {
@@ -915,7 +925,7 @@ conditionalDescribe("User Controller - deleteMyAvatar", () => {
       avatar: { url: "https://x/y.jpg", publicId: "pid-1" },
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .delete("/users/me/avatar")
       .set("x-test-user-id", "del-av");
 
@@ -926,7 +936,7 @@ conditionalDescribe("User Controller - deleteMyAvatar", () => {
   });
 
   test("returns 404 when the user does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .delete("/users/me/avatar")
       .set("x-test-user-id", "ghost");
     expect(res.status).toBe(404);
@@ -943,7 +953,7 @@ conditionalDescribe("User Controller - getMyDefaultBio", () => {
       role: "client",
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .get("/users/me/bio/default")
       .set("x-test-user-id", "bio-default");
 
@@ -953,7 +963,7 @@ conditionalDescribe("User Controller - getMyDefaultBio", () => {
   });
 
   test("returns 404 when the user is missing", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .get("/users/me/bio/default")
       .set("x-test-user-id", "nobody");
     expect(res.status).toBe(404);
@@ -962,13 +972,13 @@ conditionalDescribe("User Controller - getMyDefaultBio", () => {
 
 conditionalDescribe("User Controller - getArtistByHandle", () => {
   test("400 when the handle is blank", async () => {
-    const res = await request(app).get("/users/artist-handle/%20");
+    const res = await request(server).get("/users/artist-handle/%20");
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("handle_required");
   });
 
   test("404 when no artist matches the handle", async () => {
-    const res = await request(app).get("/users/artist-handle/unknown");
+    const res = await request(server).get("/users/artist-handle/unknown");
     expect(res.status).toBe(404);
   });
 
@@ -982,7 +992,7 @@ conditionalDescribe("User Controller - getArtistByHandle", () => {
       avatar: { url: "https://x/a.jpg" },
     });
 
-    const res = await request(app).get("/users/artist-handle/handler");
+    const res = await request(server).get("/users/artist-handle/handler");
     expect(res.status).toBe(200);
     expect(res.body.handle).toBe("@handler");
     expect(res.body.profileImage).toBe("https://x/a.jpg");
@@ -998,7 +1008,7 @@ conditionalDescribe("User Controller - getArtistByHandle", () => {
       role: "artist",
       visible: false,
     });
-    const res = await request(app).get("/users/artist-handle/hidden-handle");
+    const res = await request(server).get("/users/artist-handle/hidden-handle");
     expect(res.status).toBe(404);
   });
 });
@@ -1013,7 +1023,7 @@ conditionalDescribe("User Controller - saveMyReferences", () => {
       role: "client",
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .put("/users/me/references")
       .set("x-test-user-id", "ref-client")
       .send({ urls: [" a.jpg ", "", "b.jpg", "c.jpg", "d.jpg"] });
@@ -1024,7 +1034,7 @@ conditionalDescribe("User Controller - saveMyReferences", () => {
   });
 
   test("returns 404 when the client does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .put("/users/me/references")
       .set("x-test-user-id", "missing-ref")
       .send({ urls: ["a.jpg"] });
@@ -1049,7 +1059,7 @@ conditionalDescribe("User Controller - upload signatures", () => {
   });
 
   test("getAvatarSignature returns a signed payload for the avatars folder", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .get("/users/avatar-signature")
       .set("x-test-user-id", "any");
     expect(res.status).toBe(200);
@@ -1059,7 +1069,7 @@ conditionalDescribe("User Controller - upload signatures", () => {
   });
 
   test("getReferenceSignature returns a signed payload for the references folder", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .get("/users/reference-signature")
       .set("x-test-user-id", "any");
     expect(res.status).toBe(200);
@@ -1070,7 +1080,7 @@ conditionalDescribe("User Controller - upload signatures", () => {
 
 conditionalDescribe("User Controller - 404 edges", () => {
   test("updateMyVisibility returns 404 when the user does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .put("/users/me/visibility")
       .set("x-test-user-id", "no-such-user")
       .send({ visibility: "away" });
@@ -1078,7 +1088,7 @@ conditionalDescribe("User Controller - 404 edges", () => {
   });
 
   test("saveMyPortfolio returns 404 when the artist does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .put("/users/me/portfolio")
       .set("x-test-user-id", "no-such-artist")
       .send({ urls: ["p1.jpg"] });
@@ -1086,7 +1096,7 @@ conditionalDescribe("User Controller - 404 edges", () => {
   });
 
   test("updateMyBio returns 404 when the user does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .put("/users/me/bio")
       .set("x-test-user-id", "no-such-bio")
       .send({ bio: "hello" });

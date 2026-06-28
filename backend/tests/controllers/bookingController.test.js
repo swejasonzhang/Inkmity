@@ -15,7 +15,6 @@ import ClientBookingPermission from "../../models/ClientBookingPermission.js";
 import BookingCooldown from "../../models/BookingCooldown.js";
 import SignedDocument from "../../models/SignedDocument.js";
 import { DOCUMENTS } from "../../services/documentsService.js";
-import { config } from "../../config/index.js";
 import {
   createBooking,
   createMultiSession,
@@ -103,6 +102,10 @@ app.get("/bookings/:id", mockAuth, getBooking);
 app.patch("/bookings/:id/final-price", mockAuth, setFinalPrice);
 app.post("/bookings/:id/approve-final-price", mockAuth, approveFinalPrice);
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Booking Controller - final price re-consent", () => {
   async function bookingQuoted(priceCents = 20000) {
     return Booking.create({
@@ -118,7 +121,7 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
 
   test("a final price within tolerance is auto-approved", async () => {
     const b = await bookingQuoted(20000); // quote captured = 20000
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "artist-rc")
       .send({ finalPriceCents: 21000 }); // +5% <= +10% tolerance
@@ -128,7 +131,7 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
 
   test("a final price beyond tolerance requires client approval", async () => {
     const b = await bookingQuoted(20000);
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "artist-rc")
       .send({ finalPriceCents: 30000 }); // +50%
@@ -150,17 +153,17 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
 
   test("the client can approve the final price", async () => {
     const b = await bookingQuoted(20000);
-    await request(app)
+    await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "artist-rc")
       .send({ finalPriceCents: 30000 });
 
-    const denied = await request(app)
+    const denied = await request(server)
       .post(`/bookings/${b._id}/approve-final-price`)
       .set("x-test-user-id", "artist-rc"); // artist cannot approve
     expect(denied.status).toBe(403);
 
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/approve-final-price`)
       .set("x-test-user-id", "client-rc");
     expect(res.status).toBe(200);
@@ -168,7 +171,7 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
   });
 
   test("approve-final-price 404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/approve-final-price`)
       .set("x-test-user-id", "client-rc");
     expect(res.status).toBe(404);
@@ -176,7 +179,7 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
 
   test("approve-final-price 400 when no final price was set", async () => {
     const b = await bookingQuoted(20000);
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/approve-final-price`)
       .set("x-test-user-id", "client-rc");
     expect(res.status).toBe(400);
@@ -196,7 +199,7 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
       finalPriceSetAt: new Date(),
       finalPriceApproved: false,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/approve-final-price`)
       .set("x-test-user-id", "client-rc");
     expect(res.status).toBe(200);
@@ -215,7 +218,7 @@ conditionalDescribe("Booking Controller - price guardrails", () => {
       priceCents: 20000,
       depositPaidCents: 5000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "artist-cap")
       .send({ finalPriceCents: 6_000_000 });
@@ -224,7 +227,7 @@ conditionalDescribe("Booking Controller - price guardrails", () => {
   });
 
   test("setFinalPrice 404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${new mongoose.Types.ObjectId()}/final-price`)
       .set("x-test-user-id", "artist-cap")
       .send({ finalPriceCents: 10000 });
@@ -241,7 +244,7 @@ conditionalDescribe("Booking Controller - price guardrails", () => {
       priceCents: 20000,
       depositPaidCents: 5000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "sfp-client")
       .send({ finalPriceCents: 10000 });
@@ -258,7 +261,7 @@ conditionalDescribe("Booking Controller - price guardrails", () => {
       priceCents: 20000,
       depositPaidCents: 5000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "sfp-artist")
       .send({ finalPriceCents: 25000 });
@@ -276,7 +279,7 @@ conditionalDescribe("Booking Controller - price guardrails", () => {
       priceCents: 20000,
       depositPaidCents: 8000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "sfp-artist")
       .send({ finalPriceCents: 5000 });
@@ -293,7 +296,7 @@ conditionalDescribe("Booking Controller - price guardrails", () => {
       status: "completed",
       priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .delete(`/bookings/${b._id}/intake`)
       .set("x-test-user-id", "client-done");
     expect(res.status).toBe(409);
@@ -316,7 +319,7 @@ conditionalDescribe("Booking Controller - getBooking ownership", () => {
   test("a party to the booking can read it", async () => {
     const b = await makeBooking();
     for (const uid of ["client-owner", "artist-owner"]) {
-      const res = await request(app).get(`/bookings/${b._id}`).set("x-test-user-id", uid);
+      const res = await request(server).get(`/bookings/${b._id}`).set("x-test-user-id", uid);
       expect(res.status).toBe(200);
       expect(String(res.body._id)).toBe(String(b._id));
     }
@@ -324,7 +327,7 @@ conditionalDescribe("Booking Controller - getBooking ownership", () => {
 
   test("a non-party is forbidden", async () => {
     const b = await makeBooking();
-    const res = await request(app).get(`/bookings/${b._id}`).set("x-test-user-id", "stranger-999");
+    const res = await request(server).get(`/bookings/${b._id}`).set("x-test-user-id", "stranger-999");
     expect(res.status).toBe(403);
   });
 });
@@ -341,7 +344,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
   test("should create consultation with 15-60 minute duration", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({
@@ -361,7 +364,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
   test("should reject consultation with duration outside 15-60 minute range", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({
@@ -391,7 +394,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
 
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({
@@ -408,7 +411,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
   test("should set status to pending until deposit paid", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({
@@ -424,7 +427,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
   });
 
   test("400 when artistId or startISO is missing", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({ artistId });
@@ -433,7 +436,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
   });
 
   test("400 on an invalid start date", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: "not-a-date" });
@@ -451,7 +454,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
       status: "accepted",
       appointmentType: "consultation",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: new Date(startISO.getTime() + 10 * 60 * 1000).toISOString(), durationMinutes: 30 });
@@ -506,7 +509,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   test("should create tattoo session with custom duration", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({
@@ -526,7 +529,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   test("should reject a session when the intake form is missing", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({
@@ -552,7 +555,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
 
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({
@@ -573,7 +576,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   test("should set sessionNumber correctly", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({
@@ -590,7 +593,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   });
 
   test("400 when artistId or startISO is missing", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({ artistId });
@@ -599,7 +602,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   });
 
   test("400 on an invalid start date", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: "nope" });
@@ -609,7 +612,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
 
   test("404 Project not found for an unknown projectId", async () => {
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO, projectId: new mongoose.Types.ObjectId().toString(), intake: VALID_INTAKE });
@@ -626,7 +629,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       status: "active",
     });
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO, projectId: project._id.toString(), intake: VALID_INTAKE });
@@ -644,7 +647,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       status: "accepted",
       appointmentType: "tattoo_session",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: new Date(start.getTime() + 30 * 60 * 1000).toISOString(), durationMinutes: 60, intake: VALID_INTAKE });
@@ -655,7 +658,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   test("403 too_many_sessions when the session number exceeds the approved max", async () => {
     await ClientBookingPermission.updateOne({ artistId, clientId }, { $set: { maxSessions: 1 } });
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO, sessionNumber: 5, intake: VALID_INTAKE });
@@ -668,7 +671,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
       startAt: new Date(Date.now() - 10 * 60 * 1000), endAt: new Date(Date.now() + 60 * 60 * 1000), priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/check-in`)
       .set("x-test-user-id", clientId)
       .send({ lat: 40.7, lng: -74 });
@@ -681,7 +684,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
       startAt: new Date(Date.now() + 5 * 60 * 60 * 1000), endAt: new Date(Date.now() + 6 * 60 * 60 * 1000), priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/check-in`)
       .set("x-test-user-id", clientId)
       .send({});
@@ -694,7 +697,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
       startAt: new Date(Date.now() - 10 * 60 * 1000), endAt: new Date(Date.now() + 60 * 60 * 1000), priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/check-in`)
       .set("x-test-user-id", "stranger")
       .send({});
@@ -706,7 +709,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
       startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/artist-no-show`)
       .set("x-test-user-id", clientId)
       .send({ reason: "Artist never arrived" });
@@ -719,7 +722,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
       startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/artist-no-show`)
       .set("x-test-user-id", artistId)
       .send({});
@@ -731,7 +734,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       clientId, artistId, appointmentType: "tattoo_session", status: "accepted",
       startAt: new Date(Date.now() + 86400000), endAt: new Date(Date.now() + 90000000), priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/artist-no-show`)
       .set("x-test-user-id", clientId)
       .send({});
@@ -740,7 +743,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
   });
 
   test("forbids non-admins from listing no-show disputes", async () => {
-    const res = await request(app).get("/bookings/no-show-disputes").set("x-test-user-id", clientId);
+    const res = await request(server).get("/bookings/no-show-disputes").set("x-test-user-id", clientId);
     expect(res.status).toBe(403);
   });
 
@@ -750,7 +753,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
       artistNoShowReportedAt: new Date(), artistNoShowStatus: "reported",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/artist-no-show/respond`)
       .set("x-test-user-id", artistId)
       .send({ accept: true });
@@ -765,7 +768,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
       artistNoShowReportedAt: new Date(), artistNoShowStatus: "reported",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/artist-no-show/respond`)
       .set("x-test-user-id", artistId)
       .send({ accept: false, note: "I was there on time." });
@@ -779,7 +782,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       startAt: new Date(Date.now() - 3600000), endAt: new Date(), priceCents: 20000,
       artistNoShowReportedAt: new Date(), artistNoShowStatus: "reported",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/artist-no-show/respond`)
       .set("x-test-user-id", clientId)
       .send({ accept: true });
@@ -796,7 +799,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       endAt: new Date(),
       priceCents: 20000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/complete`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(400);
@@ -815,7 +818,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
       clientVerifiedAt: new Date(),
       artistVerifiedAt: new Date(),
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${booking._id}/complete`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(409);
@@ -835,7 +838,7 @@ conditionalDescribe("Booking Controller - Tattoo Session Creation", () => {
     });
     const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/session")
       .set("x-test-user-id", "minor-1")
       .send({ artistId, startISO, durationMinutes: 120, priceCents: 20000, intake: VALID_INTAKE });
@@ -867,7 +870,7 @@ conditionalDescribe("Booking Controller - Double Booking Prevention", () => {
       appointmentType: "consultation",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({
@@ -925,7 +928,7 @@ conditionalDescribe("Booking Controller - Double Booking Prevention", () => {
       appointmentType: "consultation",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({
@@ -966,7 +969,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
     const newStartISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const newEndISO = new Date(newStartISO.getTime() + 60 * 60 * 1000);
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({
@@ -988,7 +991,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
     const newStartISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const newEndISO = new Date(newStartISO.getTime() + 60 * 60 * 1000);
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({
@@ -1002,7 +1005,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
   });
 
   test("400 when startISO or endISO is missing", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({ startISO: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() });
@@ -1012,7 +1015,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
 
   test("404 for a missing booking", async () => {
     const start = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({ startISO: start.toISOString(), endISO: new Date(start.getTime() + 3600000).toISOString() });
@@ -1021,7 +1024,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
 
   test("403 when the actor is neither client nor artist", async () => {
     const start = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", "stranger")
       .send({ startISO: start.toISOString(), endISO: new Date(start.getTime() + 3600000).toISOString() });
@@ -1031,7 +1034,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
   test("400 when rescheduling a completed appointment", async () => {
     await Booking.findByIdAndUpdate(bookingId, { status: "completed" });
     const start = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({ startISO: start.toISOString(), endISO: new Date(start.getTime() + 3600000).toISOString() });
@@ -1041,7 +1044,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
 
   test("400 insufficient_notice when the new start is too soon", async () => {
     const start = new Date(Date.now() + 60 * 60 * 1000);
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({ startISO: start.toISOString(), endISO: new Date(start.getTime() + 3600000).toISOString() });
@@ -1052,7 +1055,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
 
   test("400 when end is not after start", async () => {
     const start = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({ startISO: start.toISOString(), endISO: new Date(start.getTime() - 3600000).toISOString() });
@@ -1072,7 +1075,7 @@ conditionalDescribe("Booking Controller - Rescheduling", () => {
       appointmentType: "consultation",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({
@@ -1112,7 +1115,7 @@ conditionalDescribe("Booking Controller - Cancellation", () => {
     booking.startAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await booking.save();
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/cancel`)
       .set("x-test-user-id", clientId)
       .send({ reason: "Emergency" });
@@ -1124,7 +1127,7 @@ conditionalDescribe("Booking Controller - Cancellation", () => {
   });
 
   test("should preserve deposit if cancelled 48+ hours before", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/cancel`)
       .set("x-test-user-id", clientId)
       .send({ reason: "Schedule conflict" });
@@ -1146,7 +1149,7 @@ conditionalDescribe("Booking Controller - Cancellation", () => {
       currency: "usd",
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/cancel`)
       .set("x-test-user-id", clientId)
       .send({ reason: "Schedule conflict" });
@@ -1181,7 +1184,7 @@ conditionalDescribe("Booking Controller - No-Show", () => {
   });
 
   test("should automatically forfeit deposit when marked no-show", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/no-show`)
       .set("x-test-user-id", artistId)
       .send({ reason: "Client did not arrive" });
@@ -1198,7 +1201,7 @@ conditionalDescribe("Booking Controller - No-Show", () => {
     booking.startAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await booking.save();
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/no-show`)
       .set("x-test-user-id", artistId)
       .send({ reason: "Test" });
@@ -1219,7 +1222,7 @@ conditionalDescribe("Booking Controller - No-Show", () => {
       depositRequiredCents: 1000,
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${pending._id}/no-show`)
       .set("x-test-user-id", artistId)
       .send({ reason: "Client did not arrive" });
@@ -1232,14 +1235,14 @@ conditionalDescribe("Booking Controller - No-Show", () => {
   });
 
   test("404 marking a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/no-show`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(404);
   });
 
   test("403 when a non-artist marks no-show", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${bookingId}/no-show`)
       .set("x-test-user-id", clientId)
       .send({ reason: "x" });
@@ -1249,7 +1252,7 @@ conditionalDescribe("Booking Controller - No-Show", () => {
 
   test("marking an already no-show booking is a no-op", async () => {
     await Booking.findByIdAndUpdate(bookingId, { status: "no-show", noShowMarkedAt: new Date() });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${bookingId}/no-show`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(200);
@@ -1279,7 +1282,7 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
   });
 
   test("should require all mandatory consent fields", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/intake`)
       .set("x-test-user-id", clientId)
       .send({
@@ -1297,7 +1300,7 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
   });
 
   test("should successfully submit intake form with all required fields", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/intake`)
       .set("x-test-user-id", clientId)
       .send({
@@ -1319,34 +1322,34 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
   });
 
   test("lets the client delete their submitted intake data", async () => {
-    await request(app)
+    await request(server)
       .post(`/bookings/${bookingId}/intake`)
       .set("x-test-user-id", clientId)
       .send({
         consent: { ageVerification: true, healthDisclosure: true, aftercareInstructions: true, depositPolicy: true, cancellationPolicy: true },
       });
 
-    const del = await request(app).delete(`/bookings/${bookingId}/intake`).set("x-test-user-id", clientId);
+    const del = await request(server).delete(`/bookings/${bookingId}/intake`).set("x-test-user-id", clientId);
     expect(del.status).toBe(200);
 
-    const get = await request(app).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", clientId);
+    const get = await request(server).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", clientId);
     expect(get.status).toBe(404);
   });
 
   test("forbids a non-client from deleting intake data", async () => {
-    await request(app)
+    await request(server)
       .post(`/bookings/${bookingId}/intake`)
       .set("x-test-user-id", clientId)
       .send({
         consent: { ageVerification: true, healthDisclosure: true, aftercareInstructions: true, depositPolicy: true, cancellationPolicy: true },
       });
 
-    const del = await request(app).delete(`/bookings/${bookingId}/intake`).set("x-test-user-id", "stranger");
+    const del = await request(server).delete(`/bookings/${bookingId}/intake`).set("x-test-user-id", "stranger");
     expect(del.status).toBe(403);
   });
 
   test("submitIntakeForm 404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/intake`)
       .set("x-test-user-id", clientId)
       .send({ consent: { ageVerification: true, healthDisclosure: true, aftercareInstructions: true } });
@@ -1354,7 +1357,7 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
   });
 
   test("submitIntakeForm 403 when the actor is not the client", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${bookingId}/intake`)
       .set("x-test-user-id", "stranger")
       .send({ consent: { ageVerification: true, healthDisclosure: true, aftercareInstructions: true } });
@@ -1362,35 +1365,35 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
   });
 
   test("getIntakeForm 404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .get(`/bookings/${new mongoose.Types.ObjectId()}/intake`)
       .set("x-test-user-id", clientId);
     expect(res.status).toBe(404);
   });
 
   test("getIntakeForm 403 for a non-party", async () => {
-    const res = await request(app).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", "stranger");
+    const res = await request(server).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", "stranger");
     expect(res.status).toBe(403);
   });
 
   test("getIntakeForm 404 when no form has been submitted", async () => {
-    const res = await request(app).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", artistId);
+    const res = await request(server).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", artistId);
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Intake form not found");
   });
 
   test("getIntakeForm returns a submitted form for the artist", async () => {
-    await request(app)
+    await request(server)
       .post(`/bookings/${bookingId}/intake`)
       .set("x-test-user-id", clientId)
       .send({ consent: { ageVerification: true, healthDisclosure: true, aftercareInstructions: true } });
-    const res = await request(app).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", artistId);
+    const res = await request(server).get(`/bookings/${bookingId}/intake`).set("x-test-user-id", artistId);
     expect(res.status).toBe(200);
     expect(res.body.consent.ageVerification).toBe(true);
   });
 
   test("deleteIntakeForm 404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .delete(`/bookings/${new mongoose.Types.ObjectId()}/intake`)
       .set("x-test-user-id", clientId);
     expect(res.status).toBe(404);
@@ -1416,7 +1419,7 @@ conditionalDescribe("Booking Controller - queries", () => {
   test("getClientBookings returns the client's bookings enriched with the artist", async () => {
     await Artist.create({ clerkId: "qa-artist", email: "a@x.com", username: "ArtPro", handle: "@qa-artist", role: "artist" });
     await seedBooking();
-    const res = await request(app).get("/bookings/client").set("x-test-user-id", "qa-client");
+    const res = await request(server).get("/bookings/client").set("x-test-user-id", "qa-client");
     expect(res.status).toBe(200);
     expect(res.body[0].artist.username).toBe("ArtPro");
   });
@@ -1424,28 +1427,28 @@ conditionalDescribe("Booking Controller - queries", () => {
   test("getArtistBookings returns the artist's bookings enriched with the client", async () => {
     await Client.create({ clerkId: "qa-client", email: "c@x.com", username: "CliName", handle: "@qa-client", role: "client" });
     await seedBooking();
-    const res = await request(app).get("/bookings/artist").set("x-test-user-id", "qa-artist");
+    const res = await request(server).get("/bookings/artist").set("x-test-user-id", "qa-artist");
     expect(res.status).toBe(200);
     expect(res.body[0].client.username).toBe("CliName");
   });
 
   test("getClientBookings falls back to Unknown Artist when the artist user is missing", async () => {
     await seedBooking();
-    const res = await request(app).get("/bookings/client").set("x-test-user-id", "qa-client");
+    const res = await request(server).get("/bookings/client").set("x-test-user-id", "qa-client");
     expect(res.status).toBe(200);
     expect(res.body[0].artist.username).toBe("Unknown Artist");
   });
 
   test("getArtistBookings falls back to Unknown Client when the client user is missing", async () => {
     await seedBooking();
-    const res = await request(app).get("/bookings/artist").set("x-test-user-id", "qa-artist");
+    const res = await request(server).get("/bookings/artist").set("x-test-user-id", "qa-artist");
     expect(res.status).toBe(200);
     expect(res.body[0].client.username).toBe("Unknown Client");
   });
 
   test("getAppointments returns both-party appointments with a reviewed flag", async () => {
     const b = await seedBooking({ status: "completed" });
-    const res = await request(app).get("/bookings/appointments").set("x-test-user-id", "qa-client");
+    const res = await request(server).get("/bookings/appointments").set("x-test-user-id", "qa-client");
     expect(res.status).toBe(200);
     expect(res.body.some((a) => String(a._id) === String(b._id))).toBe(true);
     expect(res.body[0].reviewed).toBe(false);
@@ -1453,7 +1456,7 @@ conditionalDescribe("Booking Controller - queries", () => {
 
   test("getAppointments filters by role=artist", async () => {
     await seedBooking();
-    const res = await request(app).get("/bookings/appointments?role=artist").set("x-test-user-id", "qa-artist");
+    const res = await request(server).get("/bookings/appointments?role=artist").set("x-test-user-id", "qa-artist");
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
   });
@@ -1468,7 +1471,7 @@ conditionalDescribe("Booking Controller - queries", () => {
       estimatedSessions: 3,
     });
     const b = await seedBooking({ projectId: project._id });
-    const res = await request(app).get("/bookings/appointments").set("x-test-user-id", "qa-client");
+    const res = await request(server).get("/bookings/appointments").set("x-test-user-id", "qa-client");
     expect(res.status).toBe(200);
     const appt = res.body.find((a) => String(a._id) === String(b._id));
     expect(appt.client.username).toBe("EnrichClient");
@@ -1486,7 +1489,7 @@ conditionalDescribe("Booking Controller - queries", () => {
       appointmentType: "tattoo_session",
     });
 
-    const res = await request(app).get("/bookings/appointments").set("x-test-user-id", "qa-client");
+    const res = await request(server).get("/bookings/appointments").set("x-test-user-id", "qa-client");
     expect(res.status).toBe(200);
 
     const persisted = await Booking.findById(b._id).lean();
@@ -1507,7 +1510,7 @@ conditionalDescribe("Booking Controller - queries", () => {
       finalPriceApproved: true,
       finalPriceSetAt: new Date(),
     });
-    const res = await request(app).get("/bookings/appointments").set("x-test-user-id", "qa-client");
+    const res = await request(server).get("/bookings/appointments").set("x-test-user-id", "qa-client");
     expect(res.status).toBe(200);
     const persisted = await Booking.findById(b._id).lean();
     expect(persisted.status).toBe("completed");
@@ -1520,34 +1523,34 @@ conditionalDescribe("Booking Controller - queries", () => {
       startAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       endAt: new Date(Date.now() - 60 * 60 * 1000),
     });
-    await request(app).get("/bookings/appointments").set("x-test-user-id", "qa-client");
+    await request(server).get("/bookings/appointments").set("x-test-user-id", "qa-client");
     const persisted = await Booking.findById(b._id).lean();
     expect(persisted.status).toBe("accepted");
     expect(persisted.autoCompleted).toBeFalsy();
   });
 
   test("checkConsultationStatus 400 without ids", async () => {
-    const res = await request(app).get("/bookings/consultation-status").set("x-test-user-id", "u1");
+    const res = await request(server).get("/bookings/consultation-status").set("x-test-user-id", "u1");
     expect(res.status).toBe(400);
   });
 
   test("checkConsultationStatus reports a completed consultation", async () => {
     await seedBooking({ status: "completed", completedAt: new Date() });
-    const res = await request(app)
+    const res = await request(server)
       .get("/bookings/consultation-status?artistId=qa-artist&clientId=qa-client")
       .set("x-test-user-id", "qa-client");
     expect(res.body.hasCompletedConsultation).toBe(true);
   });
 
   test("getBookingsForDay 400 without artistId/date", async () => {
-    const res = await request(app).get("/bookings/day").set("x-test-user-id", "u1");
+    const res = await request(server).get("/bookings/day").set("x-test-user-id", "u1");
     expect(res.status).toBe(400);
   });
 
   test("getBookingsForDay returns busy slots for the day", async () => {
     const day = new Date(Date.now() + 86400000);
     await seedBooking({ startAt: day, endAt: new Date(day.getTime() + 3600000), status: "accepted" });
-    const res = await request(app)
+    const res = await request(server)
       .get(`/bookings/day?artistId=qa-artist&date=${day.toISOString().slice(0, 10)}`)
       .set("x-test-user-id", "qa-artist");
     expect(res.status).toBe(200);
@@ -1555,27 +1558,26 @@ conditionalDescribe("Booking Controller - queries", () => {
   });
 
   test("getBooking 404 for a valid id that does not exist", async () => {
-    const res = await request(app).get(`/bookings/${new mongoose.Types.ObjectId()}`).set("x-test-user-id", "qa-client");
+    const res = await request(server).get(`/bookings/${new mongoose.Types.ObjectId()}`).set("x-test-user-id", "qa-client");
     expect(res.status).toBe(404);
   });
 
   test("getBooking 400 for an invalid booking id", async () => {
-    const res = await request(app).get("/bookings/not-an-id").set("x-test-user-id", "qa-client");
+    const res = await request(server).get("/bookings/not-an-id").set("x-test-user-id", "qa-client");
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("Invalid booking id");
   });
 
   test("getBooking lets an admin read any booking", async () => {
-    const originalAdmins = [...config.admin.clerkIds];
-    config.admin.clerkIds.length = 0;
-    config.admin.clerkIds.push("qa-admin");
+    const prevAdminEnv = process.env.ADMIN_CLERK_IDS;
+    process.env.ADMIN_CLERK_IDS = "qa-admin";
     try {
       const b = await seedBooking();
-      const res = await request(app).get(`/bookings/${b._id}`).set("x-test-user-id", "qa-admin");
+      const res = await request(server).get(`/bookings/${b._id}`).set("x-test-user-id", "qa-admin");
       expect(res.status).toBe(200);
     } finally {
-      config.admin.clerkIds.length = 0;
-      config.admin.clerkIds.push(...originalAdmins);
+      if (prevAdminEnv === undefined) delete process.env.ADMIN_CLERK_IDS;
+      else process.env.ADMIN_CLERK_IDS = prevAdminEnv;
     }
   });
 });
@@ -1596,7 +1598,7 @@ conditionalDescribe("Booking Controller - verification", () => {
 
   test("startVerification issues codes and an expiry", async () => {
     const b = await seedBooking();
-    const res = await request(app).post(`/bookings/${b._id}/start-verification`).set("x-test-user-id", "v-artist");
+    const res = await request(server).post(`/bookings/${b._id}/start-verification`).set("x-test-user-id", "v-artist");
     expect(res.body.ok).toBe(true);
     expect(res.body.expiresAt).toBeTruthy();
     const updated = await Booking.findById(b._id);
@@ -1605,13 +1607,13 @@ conditionalDescribe("Booking Controller - verification", () => {
   });
 
   test("startVerification 404 for a missing booking", async () => {
-    const res = await request(app).post(`/bookings/${new mongoose.Types.ObjectId()}/start-verification`).set("x-test-user-id", "v-artist");
+    const res = await request(server).post(`/bookings/${new mongoose.Types.ObjectId()}/start-verification`).set("x-test-user-id", "v-artist");
     expect(res.status).toBe(404);
   });
 
   test("startVerification 400 for a cancelled booking", async () => {
     const b = await seedBooking({ status: "cancelled" });
-    const res = await request(app).post(`/bookings/${b._id}/start-verification`).set("x-test-user-id", "v-artist");
+    const res = await request(server).post(`/bookings/${b._id}/start-verification`).set("x-test-user-id", "v-artist");
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("booking_cancelled");
   });
@@ -1620,7 +1622,7 @@ conditionalDescribe("Booking Controller - verification", () => {
     await mongoose.model("artist").create({ clerkId: "v-artist", email: "va@x.com", username: "VArtist", handle: "@v-artist", role: "artist" });
     await mongoose.model("client").create({ clerkId: "v-client", email: "vc@x.com", username: "VClient", handle: "@v-client", role: "client" });
     const b = await seedBooking();
-    const res = await request(app).post(`/bookings/${b._id}/start-verification`).set("x-test-user-id", "v-artist");
+    const res = await request(server).post(`/bookings/${b._id}/start-verification`).set("x-test-user-id", "v-artist");
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
   });
@@ -1636,7 +1638,7 @@ conditionalDescribe("Booking Controller - verification", () => {
       clientVerifiedAt: new Date(),
       codeExpiresAt: new Date(Date.now() + 60000),
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/verify`)
       .set("x-test-user-id", "v-artist")
       .send({ role: "artist", code: "ACODEZ" });
@@ -1647,27 +1649,27 @@ conditionalDescribe("Booking Controller - verification", () => {
 
   test("verifyBookingCode 400 without role/code", async () => {
     const b = await seedBooking();
-    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({});
+    const res = await request(server).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({});
     expect(res.status).toBe(400);
   });
 
   test("verifyBookingCode rejects an expired code", async () => {
     const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() - 1000) });
-    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "ABC123" });
+    const res = await request(server).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "ABC123" });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("code_expired");
   });
 
   test("verifyBookingCode rejects a bad code", async () => {
     const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() + 60000) });
-    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "WRONG" });
+    const res = await request(server).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "WRONG" });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("bad_code");
   });
 
   test("verifyBookingCode accepts the client's correct code", async () => {
     const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() + 60000) });
-    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "abc123" });
+    const res = await request(server).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "abc123" });
     expect(res.status).toBe(200);
     const updated = await Booking.findById(b._id);
     expect(updated.clientVerifiedAt).toBeTruthy();
@@ -1675,7 +1677,7 @@ conditionalDescribe("Booking Controller - verification", () => {
 
   test("verifyBookingCode blocks a role mismatch", async () => {
     const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() + 60000) });
-    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "artist", code: "ABC123" });
+    const res = await request(server).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "artist", code: "ABC123" });
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("role_mismatch");
   });
@@ -1696,33 +1698,33 @@ conditionalDescribe("Booking Controller - details, cancel-link, time", () => {
   }
 
   test("getAppointmentDetails 404 for a missing booking", async () => {
-    const res = await request(app).get(`/bookings/${new mongoose.Types.ObjectId()}/details`).set("x-test-user-id", "dl-client");
+    const res = await request(server).get(`/bookings/${new mongoose.Types.ObjectId()}/details`).set("x-test-user-id", "dl-client");
     expect(res.status).toBe(404);
   });
 
   test("getAppointmentDetails 403 for a non-party", async () => {
     const b = await seed();
-    const res = await request(app).get(`/bookings/${b._id}/details`).set("x-test-user-id", "stranger");
+    const res = await request(server).get(`/bookings/${b._id}/details`).set("x-test-user-id", "stranger");
     expect(res.status).toBe(403);
   });
 
   test("getAppointmentDetails returns details with enriched parties", async () => {
     const b = await seed();
-    const res = await request(app).get(`/bookings/${b._id}/details`).set("x-test-user-id", "dl-client");
+    const res = await request(server).get(`/bookings/${b._id}/details`).set("x-test-user-id", "dl-client");
     expect(res.status).toBe(200);
     expect(String(res.body._id)).toBe(String(b._id));
   });
 
   test("cancelBookingViaLink redirects with an error on an invalid token", async () => {
     const b = await seed({ cancelToken: "good" });
-    const res = await request(app).get(`/bookings/${b._id}/cancel-link?token=bad`);
+    const res = await request(server).get(`/bookings/${b._id}/cancel-link?token=bad`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("invalid_token");
   });
 
   test("cancelBookingViaLink cancels and redirects with the valid token", async () => {
     const b = await seed({ cancelToken: "good" });
-    const res = await request(app).get(`/bookings/${b._id}/cancel-link?token=good`);
+    const res = await request(server).get(`/bookings/${b._id}/cancel-link?token=good`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("cancelled=true");
     const updated = await Booking.findById(b._id);
@@ -1730,13 +1732,13 @@ conditionalDescribe("Booking Controller - details, cancel-link, time", () => {
   });
 
   test("cancelBookingViaLink 404 for a missing booking", async () => {
-    const res = await request(app).get(`/bookings/${new mongoose.Types.ObjectId()}/cancel-link?token=x`);
+    const res = await request(server).get(`/bookings/${new mongoose.Types.ObjectId()}/cancel-link?token=x`);
     expect(res.status).toBe(404);
   });
 
   test("cancelBookingViaLink redirects cancelled=true for an already-cancelled booking", async () => {
     const b = await seed({ cancelToken: "good", status: "cancelled" });
-    const res = await request(app).get(`/bookings/${b._id}/cancel-link?token=good`);
+    const res = await request(server).get(`/bookings/${b._id}/cancel-link?token=good`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("cancelled=true");
   });
@@ -1758,7 +1760,7 @@ conditionalDescribe("Booking Controller - details, cancel-link, time", () => {
       appointmentType: "consultation",
       cancelToken: "good",
     });
-    const res = await request(app).get(`/bookings/${b._id}/cancel-link?token=good`);
+    const res = await request(server).get(`/bookings/${b._id}/cancel-link?token=good`);
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("cancelled=true");
     const updated = await Booking.findById(b._id);
@@ -1767,13 +1769,13 @@ conditionalDescribe("Booking Controller - details, cancel-link, time", () => {
 
   test("updateBookingTime 400 without dates", async () => {
     const b = await seed();
-    const res = await request(app).patch(`/bookings/${b._id}/time`).set("x-test-user-id", "dl-artist").send({});
+    const res = await request(server).patch(`/bookings/${b._id}/time`).set("x-test-user-id", "dl-artist").send({});
     expect(res.status).toBe(400);
   });
 
   test("updateBookingTime 403 when not the artist", async () => {
     const b = await seed();
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/time`)
       .set("x-test-user-id", "dl-client")
       .send({ startISO: new Date().toISOString(), endISO: new Date(Date.now() + 3600000).toISOString() });
@@ -1782,7 +1784,7 @@ conditionalDescribe("Booking Controller - details, cancel-link, time", () => {
 
   test("updateBookingTime 400 on invalid dates (end before start)", async () => {
     const b = await seed();
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/time`)
       .set("x-test-user-id", "dl-artist")
       .send({ startISO: new Date(Date.now() + 7200000).toISOString(), endISO: new Date(Date.now() + 3600000).toISOString() });
@@ -1840,7 +1842,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
 
   test("400 when artistId or startISO is missing", async () => {
     await enablePermission();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({ artistId });
@@ -1850,7 +1852,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
 
   test("400 on an unparseable start date", async () => {
     await enablePermission();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: "not-a-date" });
@@ -1862,7 +1864,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
     await enablePermission();
     const start = new Date(Date.now() + 2 * 86400000).toISOString();
     const end = new Date(Date.now() + 86400000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: start, endISO: end });
@@ -1872,7 +1874,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
 
   test("403 bookings_disabled when the client has no permission", async () => {
     const start = new Date(Date.now() + 2 * 86400000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: start });
@@ -1883,7 +1885,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
   test("creates a booking and auto-computes the end from default availability", async () => {
     await enablePermission();
     const start = new Date(Date.now() + 2 * 86400000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: start, priceCents: 15000, note: "sleeve" });
@@ -1906,7 +1908,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
       endAt: end,
       status: "accepted",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({
@@ -1925,7 +1927,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
     );
     await enablePermission();
     const start = new Date(Date.now() + 2 * 86400000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: start });
@@ -1937,7 +1939,7 @@ conditionalDescribe("Booking Controller - createBooking", () => {
     await SignedDocument.deleteMany({ signerClerkId: clientId });
     await enablePermission();
     const start = new Date(Date.now() + 2 * 86400000).toISOString();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/create")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO: start });
@@ -1972,7 +1974,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
   });
 
   test("400 when artistId is missing", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ sessions: sessions(2) });
@@ -1981,7 +1983,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
   });
 
   test("400 when fewer than two sessions are provided", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ artistId, sessions: sessions(1) });
@@ -1990,7 +1992,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
   });
 
   test("400 when more than twelve sessions are provided", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ artistId, sessions: sessions(13) });
@@ -1999,7 +2001,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
   });
 
   test("400 Invalid session start for an unparseable date", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({
@@ -2014,7 +2016,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
   });
 
   test("403 bookings_disabled without permission", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ artistId, sessions: sessions(2), intake: VALID_INTAKE });
@@ -2024,7 +2026,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
 
   test("403 too_many_sessions when the count exceeds the approved max", async () => {
     await enablePermission(1);
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ artistId, sessions: sessions(2), intake: VALID_INTAKE });
@@ -2035,7 +2037,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
 
   test("400 intake_required when consent is incomplete", async () => {
     await enablePermission();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ artistId, sessions: sessions(2) });
@@ -2045,7 +2047,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
 
   test("creates a project with one booking per session", async () => {
     await enablePermission();
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({
@@ -2083,7 +2085,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
       startISO: new Date(Date.now() + (i + 2) * 86400000).toISOString(),
       durationMinutes: 120,
     }));
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ artistId: naId, sessions: ss, intake: VALID_INTAKE });
@@ -2102,7 +2104,7 @@ conditionalDescribe("Booking Controller - createMultiSession", () => {
       endAt: new Date(conflictStart.getTime() + 3600000),
       status: "accepted",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post("/bookings/multi-session")
       .set("x-test-user-id", clientId)
       .send({ artistId, sessions: ss, intake: VALID_INTAKE });
@@ -2128,7 +2130,7 @@ conditionalDescribe("Booking Controller - accept/deny appointment", () => {
   }
 
   test("404 when the booking does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/accept`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(404);
@@ -2136,7 +2138,7 @@ conditionalDescribe("Booking Controller - accept/deny appointment", () => {
 
   test("403 when a non-artist tries to accept", async () => {
     const b = await pending();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/accept`)
       .set("x-test-user-id", clientId);
     expect(res.status).toBe(403);
@@ -2144,7 +2146,7 @@ conditionalDescribe("Booking Controller - accept/deny appointment", () => {
 
   test("400 when accepting a non-pending booking", async () => {
     const b = await pending({ status: "accepted" });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/accept`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(400);
@@ -2153,7 +2155,7 @@ conditionalDescribe("Booking Controller - accept/deny appointment", () => {
 
   test("the artist accepts a pending appointment", async () => {
     const b = await pending();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/accept`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(200);
@@ -2163,7 +2165,7 @@ conditionalDescribe("Booking Controller - accept/deny appointment", () => {
 
   test("403 when a stranger tries to deny", async () => {
     const b = await pending();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/deny`)
       .set("x-test-user-id", "stranger");
     expect(res.status).toBe(403);
@@ -2171,7 +2173,7 @@ conditionalDescribe("Booking Controller - accept/deny appointment", () => {
 
   test("the artist denies a pending appointment", async () => {
     const b = await pending();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/deny`)
       .set("x-test-user-id", artistId)
       .send({ reason: "Fully booked" });
@@ -2183,7 +2185,7 @@ conditionalDescribe("Booking Controller - accept/deny appointment", () => {
 
   test("a client denial sets a booking cooldown", async () => {
     const b = await pending();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/deny`)
       .set("x-test-user-id", clientId);
     expect(res.status).toBe(200);
@@ -2201,7 +2203,7 @@ conditionalDescribe("Booking Controller - resolveArtistNoShow (admin)", () => {
   const artistId = "ns-artist";
   const clientId = "ns-client";
   const adminId = "ns-admin";
-  let originalAdmins;
+  let prevAdminEnv;
 
   async function reportedBooking() {
     return Booking.create({
@@ -2216,19 +2218,18 @@ conditionalDescribe("Booking Controller - resolveArtistNoShow (admin)", () => {
   }
 
   beforeEach(() => {
-    originalAdmins = [...config.admin.clerkIds];
-    config.admin.clerkIds.length = 0;
-    config.admin.clerkIds.push(adminId);
+    prevAdminEnv = process.env.ADMIN_CLERK_IDS;
+    process.env.ADMIN_CLERK_IDS = adminId;
   });
 
   afterEach(() => {
-    config.admin.clerkIds.length = 0;
-    config.admin.clerkIds.push(...originalAdmins);
+    if (prevAdminEnv === undefined) delete process.env.ADMIN_CLERK_IDS;
+    else process.env.ADMIN_CLERK_IDS = prevAdminEnv;
   });
 
   test("403 for a non-admin actor", async () => {
     const b = await reportedBooking();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/no-show-disputes/resolve`)
       .set("x-test-user-id", clientId)
       .send({ refund: true });
@@ -2236,7 +2237,7 @@ conditionalDescribe("Booking Controller - resolveArtistNoShow (admin)", () => {
   });
 
   test("404 when the booking does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/no-show-disputes/resolve`)
       .set("x-test-user-id", adminId)
       .send({ refund: true });
@@ -2251,7 +2252,7 @@ conditionalDescribe("Booking Controller - resolveArtistNoShow (admin)", () => {
       endAt: new Date(Date.now() - 86400000 + 3600000),
       status: "completed",
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/no-show-disputes/resolve`)
       .set("x-test-user-id", adminId)
       .send({ refund: true });
@@ -2261,7 +2262,7 @@ conditionalDescribe("Booking Controller - resolveArtistNoShow (admin)", () => {
 
   test("an admin refund cancels the booking and refunds the deposit", async () => {
     const b = await reportedBooking();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/no-show-disputes/resolve`)
       .set("x-test-user-id", adminId)
       .send({ refund: true });
@@ -2273,7 +2274,7 @@ conditionalDescribe("Booking Controller - resolveArtistNoShow (admin)", () => {
 
   test("an admin dismissal marks the report dismissed without cancelling", async () => {
     const b = await reportedBooking();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/no-show-disputes/resolve`)
       .set("x-test-user-id", adminId)
       .send({ refund: false });
@@ -2287,21 +2288,20 @@ conditionalDescribe("Booking Controller - listArtistNoShowDisputes (admin)", () 
   const adminId = "dispute-admin";
   const artistId = "dispute-artist";
   const clientId = "dispute-client";
-  let originalAdmins;
+  let prevAdminEnv;
 
   beforeEach(() => {
-    originalAdmins = [...config.admin.clerkIds];
-    config.admin.clerkIds.length = 0;
-    config.admin.clerkIds.push(adminId);
+    prevAdminEnv = process.env.ADMIN_CLERK_IDS;
+    process.env.ADMIN_CLERK_IDS = adminId;
   });
 
   afterEach(() => {
-    config.admin.clerkIds.length = 0;
-    config.admin.clerkIds.push(...originalAdmins);
+    if (prevAdminEnv === undefined) delete process.env.ADMIN_CLERK_IDS;
+    else process.env.ADMIN_CLERK_IDS = prevAdminEnv;
   });
 
   test("403 for a non-admin actor", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .get("/bookings/no-show-disputes")
       .set("x-test-user-id", clientId);
     expect(res.status).toBe(403);
@@ -2337,7 +2337,7 @@ conditionalDescribe("Booking Controller - listArtistNoShowDisputes (admin)", () 
       status: "completed",
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .get("/bookings/no-show-disputes")
       .set("x-test-user-id", adminId);
 
@@ -2359,7 +2359,7 @@ conditionalDescribe("Booking Controller - listArtistNoShowDisputes (admin)", () 
       artistNoShowReportedAt: new Date(),
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .get("/bookings/no-show-disputes")
       .set("x-test-user-id", adminId);
 
@@ -2386,7 +2386,7 @@ conditionalDescribe("Booking Controller - check-in", () => {
   }
 
   test("404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/check-in`)
       .set("x-test-user-id", clientId);
     expect(res.status).toBe(404);
@@ -2394,13 +2394,13 @@ conditionalDescribe("Booking Controller - check-in", () => {
 
   test("403 for a non-party", async () => {
     const b = await seed();
-    const res = await request(app).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", "stranger");
+    const res = await request(server).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", "stranger");
     expect(res.status).toBe(403);
   });
 
   test("400 invalid_status for a completed booking", async () => {
     const b = await seed({ status: "completed" });
-    const res = await request(app).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", clientId);
+    const res = await request(server).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", clientId);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("invalid_status");
   });
@@ -2410,7 +2410,7 @@ conditionalDescribe("Booking Controller - check-in", () => {
       startAt: new Date(Date.now() + 3 * 60 * 60 * 1000),
       endAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
     });
-    const res = await request(app).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", clientId);
+    const res = await request(server).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", clientId);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("too_early");
   });
@@ -2420,14 +2420,14 @@ conditionalDescribe("Booking Controller - check-in", () => {
       startAt: new Date(Date.now() - 48 * 60 * 60 * 1000),
       endAt: new Date(Date.now() - 47 * 60 * 60 * 1000),
     });
-    const res = await request(app).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", clientId);
+    const res = await request(server).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", clientId);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("window_closed");
   });
 
   test("client checks in with geo coordinates", async () => {
     const b = await seed();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/check-in`)
       .set("x-test-user-id", clientId)
       .send({ lat: 40.7, lng: -73.9 });
@@ -2439,7 +2439,7 @@ conditionalDescribe("Booking Controller - check-in", () => {
 
   test("artist checks in", async () => {
     const b = await seed();
-    const res = await request(app).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", artistId);
+    const res = await request(server).post(`/bookings/${b._id}/check-in`).set("x-test-user-id", artistId);
     expect(res.status).toBe(200);
     const updated = await Booking.findById(b._id);
     expect(updated.artistCheckedInAt).toBeTruthy();
@@ -2463,7 +2463,7 @@ conditionalDescribe("Booking Controller - artist no-show report/respond", () => 
   }
 
   test("404 reporting a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/artist-no-show`)
       .set("x-test-user-id", clientId);
     expect(res.status).toBe(404);
@@ -2471,7 +2471,7 @@ conditionalDescribe("Booking Controller - artist no-show report/respond", () => 
 
   test("403 when a non-client reports the artist no-show", async () => {
     const b = await pastBooking();
-    const res = await request(app).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", artistId);
+    const res = await request(server).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", artistId);
     expect(res.status).toBe(403);
   });
 
@@ -2480,21 +2480,21 @@ conditionalDescribe("Booking Controller - artist no-show report/respond", () => 
       startAt: new Date(Date.now() + 60 * 60 * 1000),
       endAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
     });
-    const res = await request(app).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", clientId);
+    const res = await request(server).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", clientId);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("too_early");
   });
 
   test("400 invalid_status reporting a completed booking", async () => {
     const b = await pastBooking({ status: "completed" });
-    const res = await request(app).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", clientId);
+    const res = await request(server).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", clientId);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("invalid_status");
   });
 
   test("client reports the no-show and the booking is flagged", async () => {
     const b = await pastBooking();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/artist-no-show`)
       .set("x-test-user-id", clientId)
       .send({ reason: "Artist never came" });
@@ -2507,14 +2507,14 @@ conditionalDescribe("Booking Controller - artist no-show report/respond", () => 
 
   test("a duplicate report is a no-op and returns the existing booking", async () => {
     const b = await pastBooking({ artistNoShowReportedAt: new Date(), artistNoShowStatus: "reported" });
-    const res = await request(app).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", clientId);
+    const res = await request(server).post(`/bookings/${b._id}/artist-no-show`).set("x-test-user-id", clientId);
     expect(res.status).toBe(200);
     expect(res.body.artistNoShowStatus).toBe("reported");
   });
 
   test("403 when a non-artist responds to a report", async () => {
     const b = await pastBooking({ artistNoShowStatus: "reported", artistNoShowReportedAt: new Date() });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/artist-no-show/respond`)
       .set("x-test-user-id", clientId)
       .send({ accept: true });
@@ -2523,7 +2523,7 @@ conditionalDescribe("Booking Controller - artist no-show report/respond", () => 
 
   test("400 no_open_report when responding without an open report", async () => {
     const b = await pastBooking();
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/artist-no-show/respond`)
       .set("x-test-user-id", artistId)
       .send({ accept: true });
@@ -2533,7 +2533,7 @@ conditionalDescribe("Booking Controller - artist no-show report/respond", () => 
 
   test("artist accepts the report: booking cancelled, deposit refunded", async () => {
     const b = await pastBooking({ artistNoShowStatus: "reported", artistNoShowReportedAt: new Date(), depositPaidCents: 1000 });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/artist-no-show/respond`)
       .set("x-test-user-id", artistId)
       .send({ accept: true });
@@ -2545,7 +2545,7 @@ conditionalDescribe("Booking Controller - artist no-show report/respond", () => 
 
   test("artist disputes the report with a note", async () => {
     const b = await pastBooking({ artistNoShowStatus: "reported", artistNoShowReportedAt: new Date() });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/artist-no-show/respond`)
       .set("x-test-user-id", artistId)
       .send({ accept: false, note: "I was there on time" });
@@ -2575,7 +2575,7 @@ conditionalDescribe("Booking Controller - completeBooking", () => {
   }
 
   test("404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/complete`)
       .set("x-test-user-id", artistId);
     expect(res.status).toBe(404);
@@ -2583,34 +2583,34 @@ conditionalDescribe("Booking Controller - completeBooking", () => {
 
   test("403 when a non-artist tries to complete", async () => {
     const b = await seed();
-    const res = await request(app).post(`/bookings/${b._id}/complete`).set("x-test-user-id", clientId);
+    const res = await request(server).post(`/bookings/${b._id}/complete`).set("x-test-user-id", clientId);
     expect(res.status).toBe(403);
   });
 
   test("returns the booking unchanged if already completed", async () => {
     const b = await seed({ status: "completed", completedAt: new Date() });
-    const res = await request(app).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
+    const res = await request(server).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("completed");
   });
 
   test("409 for a cancelled booking", async () => {
     const b = await seed({ status: "cancelled" });
-    const res = await request(app).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
+    const res = await request(server).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
     expect(res.status).toBe(409);
     expect(res.body.error).toBe("invalid_status");
   });
 
   test("400 verification_required when both parties have not confirmed", async () => {
     const b = await seed();
-    const res = await request(app).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
+    const res = await request(server).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("verification_required");
   });
 
   test("completes when both parties are verified", async () => {
     const b = await seed({ clientVerifiedAt: new Date(), artistVerifiedAt: new Date() });
-    const res = await request(app).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
+    const res = await request(server).post(`/bookings/${b._id}/complete`).set("x-test-user-id", artistId);
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("completed");
     const updated = await Booking.findById(b._id);
@@ -2638,7 +2638,7 @@ conditionalDescribe("Booking Controller - verify completes when both codes match
       codeExpiresAt: new Date(Date.now() + 60000),
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/verify`)
       .set("x-test-user-id", artistId)
       .send({ role: "artist", code: "acode1" });
@@ -2651,7 +2651,7 @@ conditionalDescribe("Booking Controller - verify completes when both codes match
   });
 
   test("verify 404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${new mongoose.Types.ObjectId()}/verify`)
       .set("x-test-user-id", artistId)
       .send({ role: "artist", code: "x" });
@@ -2669,7 +2669,7 @@ conditionalDescribe("Booking Controller - verify completes when both codes match
       clientCode: "CCODE1",
       codeExpiresAt: new Date(Date.now() + 60000),
     });
-    const res = await request(app)
+    const res = await request(server)
       .post(`/bookings/${b._id}/verify`)
       .set("x-test-user-id", clientId)
       .send({ role: "client", code: "CCODE1" });
@@ -2683,7 +2683,7 @@ conditionalDescribe("Booking Controller - updateBookingTime success", () => {
   const clientId = "ut-client";
 
   test("404 for a missing booking", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${new mongoose.Types.ObjectId()}/time`)
       .set("x-test-user-id", artistId)
       .send({ startISO: new Date(Date.now() + 86400000).toISOString(), endISO: new Date(Date.now() + 90000000).toISOString() });
@@ -2699,7 +2699,7 @@ conditionalDescribe("Booking Controller - updateBookingTime success", () => {
       status: "cancelled",
       appointmentType: "consultation",
     });
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/time`)
       .set("x-test-user-id", artistId)
       .send({ startISO: new Date(Date.now() + 86400000).toISOString(), endISO: new Date(Date.now() + 90000000).toISOString() });
@@ -2722,7 +2722,7 @@ conditionalDescribe("Booking Controller - updateBookingTime success", () => {
     const start = new Date(target);
     const end = new Date(target.getTime() + 60 * 60 * 1000);
 
-    const res = await request(app)
+    const res = await request(server)
       .patch(`/bookings/${b._id}/time`)
       .set("x-test-user-id", artistId)
       .send({ startISO: start.toISOString(), endISO: end.toISOString() });

@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "engines": {
-    "node": ">=20 <23"
+    "node": ">=22 <23"
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env.production --import ./instrument.js server.js",

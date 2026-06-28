@@ -1,4 +1,4 @@
-import { jest, describe, test, expect, beforeEach } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -46,16 +46,20 @@ beforeEach(() => {
   mockSignedDocument.create.mockResolvedValue({ _id: "sig1", docType: "client_waiver" });
 });
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 describe("fetchDocument", () => {
   test("returns the document body", async () => {
-    const res = await request(app).get("/documents/client_waiver");
+    const res = await request(server).get("/documents/client_waiver");
     expect(res.status).toBe(200);
     expect(res.body.version).toBe("v1");
   });
 
   test("404 for an unknown document", async () => {
     mockGetDocument.mockReturnValue(null);
-    const res = await request(app).get("/documents/nope");
+    const res = await request(server).get("/documents/nope");
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("unknown_document");
   });
@@ -64,25 +68,25 @@ describe("fetchDocument", () => {
     mockGetDocument.mockImplementation(() => {
       throw new Error("boom");
     });
-    const res = await request(app).get("/documents/client_waiver");
+    const res = await request(server).get("/documents/client_waiver");
     expect(res.status).toBe(500);
   });
 });
 
 describe("getSignatureStatus", () => {
   test("401 when unauthenticated", async () => {
-    const res = await request(app).get("/documents/client_waiver/status");
+    const res = await request(server).get("/documents/client_waiver/status");
     expect(res.status).toBe(401);
   });
 
   test("404 for an unknown document", async () => {
     mockGetDocument.mockReturnValue(null);
-    const res = await request(app).get("/documents/nope/status").set("x-test-user-id", "u1");
+    const res = await request(server).get("/documents/nope/status").set("x-test-user-id", "u1");
     expect(res.status).toBe(404);
   });
 
   test("reports signed:false when there is no signature", async () => {
-    const res = await request(app).get("/documents/client_waiver/status").set("x-test-user-id", "u1");
+    const res = await request(server).get("/documents/client_waiver/status").set("x-test-user-id", "u1");
     expect(res.body).toMatchObject({ signed: false, version: "v1" });
   });
 
@@ -91,7 +95,7 @@ describe("getSignatureStatus", () => {
     mockSignedDocument.findOne.mockReturnValue({
       sort: () => ({ lean: () => Promise.resolve({ signedAt }) }),
     });
-    const res = await request(app)
+    const res = await request(server)
       .get("/documents/client_waiver/status?bookingId=bk1")
       .set("x-test-user-id", "u1");
     expect(res.body.signed).toBe(true);
@@ -103,17 +107,17 @@ describe("getSignatureStatus", () => {
 
 describe("signDocument", () => {
   test("401 when unauthenticated", async () => {
-    const res = await request(app).post("/documents/client_waiver/sign").send({});
+    const res = await request(server).post("/documents/client_waiver/sign").send({});
     expect(res.status).toBe(401);
   });
 
   test("404 for an unknown document type", async () => {
-    const res = await request(app).post("/documents/nope/sign").set("x-test-user-id", "u1").send({});
+    const res = await request(server).post("/documents/nope/sign").set("x-test-user-id", "u1").send({});
     expect(res.status).toBe(404);
   });
 
   test("400 when no signature name is typed", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/documents/client_waiver/sign")
       .set("x-test-user-id", "u1")
       .send({ signerRole: "client" });
@@ -122,7 +126,7 @@ describe("signDocument", () => {
   });
 
   test("400 when the signer role isn't allowed for the document", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/documents/client_waiver/sign")
       .set("x-test-user-id", "u1")
       .send({ signatureName: "Jane Doe", signerRole: "artist" });
@@ -131,7 +135,7 @@ describe("signDocument", () => {
   });
 
   test("records the signature with the content hash", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/documents/client_waiver/sign")
       .set("x-test-user-id", "u1")
       .send({ signatureName: "Jane Doe", signerRole: "client", bookingId: "bk1" });
@@ -149,7 +153,7 @@ describe("signDocument", () => {
 
   test("500 when the write fails", async () => {
     mockSignedDocument.create.mockRejectedValue(new Error("db"));
-    const res = await request(app)
+    const res = await request(server)
       .post("/documents/client_waiver/sign")
       .set("x-test-user-id", "u1")
       .send({ signatureName: "Jane Doe", signerRole: "client" });
@@ -159,7 +163,7 @@ describe("signDocument", () => {
 
 describe("listMySignatures", () => {
   test("401 when unauthenticated", async () => {
-    const res = await request(app).get("/signatures");
+    const res = await request(server).get("/signatures");
     expect(res.status).toBe(401);
   });
 
@@ -167,7 +171,7 @@ describe("listMySignatures", () => {
     mockSignedDocument.find.mockReturnValue({
       sort: () => ({ limit: () => ({ lean: () => Promise.resolve([{ _id: "s1" }]) }) }),
     });
-    const res = await request(app).get("/signatures").set("x-test-user-id", "u1");
+    const res = await request(server).get("/signatures").set("x-test-user-id", "u1");
     expect(res.body).toHaveLength(1);
     expect(mockSignedDocument.find).toHaveBeenCalledWith({ signerClerkId: "u1" });
   });
@@ -176,7 +180,7 @@ describe("listMySignatures", () => {
     mockSignedDocument.find.mockImplementation(() => {
       throw new Error("db");
     });
-    const res = await request(app).get("/signatures").set("x-test-user-id", "u1");
+    const res = await request(server).get("/signatures").set("x-test-user-id", "u1");
     expect(res.status).toBe(500);
   });
 });

@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { jest, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 import "../../models/UserBase.js";
@@ -32,6 +32,10 @@ const makeBooking = (status) =>
     priceCents: 20000,
   });
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("addReview (verified)", () => {
   beforeEach(async () => {
     await Artist.create({
@@ -52,7 +56,7 @@ conditionalDescribe("addReview (verified)", () => {
 
   test("returns 401 when there is no authenticated reviewer", async () => {
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "x" });
     expect(res.status).toBe(401);
@@ -60,14 +64,14 @@ conditionalDescribe("addReview (verified)", () => {
   });
 
   test("rejects an out-of-range / non-numeric rating", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: "anything", rating: 9, text: "x" });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("invalid_rating");
 
-    const res2 = await request(app)
+    const res2 = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: "anything", rating: "abc", text: "x" });
@@ -76,7 +80,7 @@ conditionalDescribe("addReview (verified)", () => {
   });
 
   test("returns 404 when the booking does not exist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(new mongoose.Types.ObjectId()), rating: 5, text: "x" });
@@ -86,7 +90,7 @@ conditionalDescribe("addReview (verified)", () => {
 
   test("rejects when the supplied artistClerkId does not match the booking", async () => {
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "someone_else", bookingId: String(b._id), rating: 5, text: "x" });
@@ -97,7 +101,7 @@ conditionalDescribe("addReview (verified)", () => {
   test("returns 404 when the artist user does not exist", async () => {
     await Artist.deleteOne({ clerkId: "artist_r" });
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "x" });
@@ -108,7 +112,7 @@ conditionalDescribe("addReview (verified)", () => {
   test("returns 404 when the reviewer user does not exist", async () => {
     await Client.deleteOne({ clerkId: "client_r" });
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "x" });
@@ -120,7 +124,7 @@ conditionalDescribe("addReview (verified)", () => {
     const b = await makeBooking("completed");
     const dupErr = Object.assign(new Error("E11000 duplicate key"), { code: 11000 });
     const spy = jest.spyOn(Review, "create").mockRejectedValueOnce(dupErr);
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "x" });
@@ -133,7 +137,7 @@ conditionalDescribe("addReview (verified)", () => {
     const b = await makeBooking("completed");
     const spy = jest.spyOn(Review, "create").mockRejectedValueOnce(new Error("boom"));
     const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "x" });
@@ -157,7 +161,7 @@ conditionalDescribe("addReview (verified)", () => {
     await artist.save();
 
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 4, text: "ok" });
@@ -172,7 +176,7 @@ conditionalDescribe("addReview (verified)", () => {
 
   test("persists the review document and links it onto the artist", async () => {
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, comment: "amazing", recommend: true });
@@ -190,7 +194,7 @@ conditionalDescribe("addReview (verified)", () => {
   });
 
   test("requires a bookingId", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", rating: 5, text: "great" });
@@ -200,7 +204,7 @@ conditionalDescribe("addReview (verified)", () => {
 
   test("rejects a review on a booking that isn't completed", async () => {
     const b = await makeBooking("pending");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "great" });
@@ -210,7 +214,7 @@ conditionalDescribe("addReview (verified)", () => {
 
   test("rejects when the reviewer isn't the booking's client", async () => {
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "stranger")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "x" });
@@ -220,7 +224,7 @@ conditionalDescribe("addReview (verified)", () => {
 
   test("creates a verified review and updates the artist rating + count", async () => {
     const b = await makeBooking("completed");
-    const res = await request(app)
+    const res = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 4, text: "solid", recommend: true });
@@ -233,11 +237,11 @@ conditionalDescribe("addReview (verified)", () => {
 
   test("rejects a duplicate review for the same booking", async () => {
     const b = await makeBooking("completed");
-    await request(app)
+    await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 5, text: "a" });
-    const dup = await request(app)
+    const dup = await request(server)
       .post("/reviews")
       .set("x-test-user-id", "client_r")
       .send({ artistClerkId: "artist_r", bookingId: String(b._id), rating: 1, text: "b" });

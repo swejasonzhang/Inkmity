@@ -21,6 +21,10 @@ const app = express();
 app.use(express.json());
 app.post("/billing/breakdown", mockAuth, getPaymentBreakdown);
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Payment Breakdown", () => {
   test("client view: sees only what they pay, never the artist/studio split", async () => {
     const booking = await Booking.create({
@@ -33,7 +37,7 @@ conditionalDescribe("Payment Breakdown", () => {
       priceCents: 20000,
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", "client_1")
       .send({ bookingId: String(booking._id) });
@@ -63,7 +67,7 @@ conditionalDescribe("Payment Breakdown", () => {
       priceCents: 20000,
     });
 
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", "solo_artist")
       .send({ bookingId: String(booking._id) });
@@ -80,7 +84,7 @@ conditionalDescribe("Payment Breakdown", () => {
   });
 
   test("estimate mode (artistClerkId + priceCents, no booking)", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", "client_2")
       .send({ artistClerkId: "solo_artist", priceCents: 10000 });
@@ -92,10 +96,10 @@ conditionalDescribe("Payment Breakdown", () => {
   });
 
   test("requires auth and a target", async () => {
-    const noAuth = await request(app).post("/billing/breakdown").send({ artistClerkId: "a", priceCents: 1 });
+    const noAuth = await request(server).post("/billing/breakdown").send({ artistClerkId: "a", priceCents: 1 });
     expect(noAuth.status).toBe(401);
 
-    const noTarget = await request(app).post("/billing/breakdown").set("x-test-user-id", "client_1").send({});
+    const noTarget = await request(server).post("/billing/breakdown").set("x-test-user-id", "client_1").send({});
     expect(noTarget.status).toBe(400);
   });
 
@@ -109,7 +113,7 @@ conditionalDescribe("Payment Breakdown", () => {
       endAt: new Date(Date.now() + 3600000),
       priceCents: 15000,
     });
-    const res = await request(app)
+    const res = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", "stranger")
       .send({ bookingId: String(booking._id) });

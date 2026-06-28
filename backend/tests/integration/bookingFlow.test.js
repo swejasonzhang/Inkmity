@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { jest, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 import Booking from "../../models/Booking.js";
@@ -108,6 +108,10 @@ async function enableBookings(artistId, clientId) {
   });
 }
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
   let artistId;
   let clientId;
@@ -138,7 +142,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
   test.skip("should complete full consultation booking flow", async () => {
     const startISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 
-    const createResponse = await request(app)
+    const createResponse = await request(server)
       .post("/bookings/consultation")
       .set("x-test-user-id", clientId)
       .send({ artistId, startISO, durationMinutes: 30, priceCents: 10000 });
@@ -146,7 +150,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
     expect(createResponse.status).toBe(201);
     bookingId = createResponse.body._id;
 
-    const intakeResponse = await request(app)
+    const intakeResponse = await request(server)
       .post(`/bookings/${bookingId}/intake`)
       .set("x-test-user-id", clientId)
       .send({
@@ -161,7 +165,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
 
     expect(intakeResponse.status).toBe(200);
 
-    const depositResponse = await request(app)
+    const depositResponse = await request(server)
       .post("/billing/deposit/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });
@@ -184,7 +188,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
       },
     };
 
-    const webhookResponse = await request(app)
+    const webhookResponse = await request(server)
       .post("/billing/webhook")
       .send(webhookEvent);
 
@@ -241,7 +245,7 @@ conditionalDescribe("Integration - Multi-Session Project Booking Flow", () => {
         Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000
       ).toISOString();
 
-      const response = await request(app)
+      const response = await request(server)
         .post("/bookings/session")
         .set("x-test-user-id", clientId)
         .send({
@@ -299,7 +303,7 @@ conditionalDescribe("Integration - Rescheduling with Deposit Forfeiture", () => 
     const newStartISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const newEndISO = new Date(newStartISO.getTime() + 60 * 60 * 1000);
 
-    const response = await request(app)
+    const response = await request(server)
       .post(`/bookings/${bookingId}/reschedule`)
       .set("x-test-user-id", clientId)
       .send({
@@ -347,7 +351,7 @@ conditionalDescribe("Integration - Deposit Application to Final Payment", () => 
   });
 
   test("should create final payment intent with deposit applied", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .post("/billing/final-payment/intent")
       .set("x-test-user-id", clientId)
       .send({ bookingId });

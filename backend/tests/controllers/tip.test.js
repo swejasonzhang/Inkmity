@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+import { jest, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -58,6 +58,10 @@ const makeBooking = (status) =>
     priceCents: 20000,
   });
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Tipping", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -76,7 +80,7 @@ conditionalDescribe("Tipping", () => {
   describe("gates", () => {
     test("rejects a tip on a booking that isn't completed", async () => {
       const booking = await makeBooking("pending");
-      const res = await request(app)
+      const res = await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ bookingId: String(booking._id), tipCents: 2000 });
@@ -86,7 +90,7 @@ conditionalDescribe("Tipping", () => {
 
     test("forbids a non-client from tipping", async () => {
       const booking = await makeBooking("completed");
-      const res = await request(app)
+      const res = await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "stranger")
         .send({ bookingId: String(booking._id), tipCents: 2000 });
@@ -94,7 +98,7 @@ conditionalDescribe("Tipping", () => {
     });
 
     test("rejects an invalid tip amount", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ bookingId: "507f1f77bcf86cd799439011", tipCents: 0 });
@@ -103,7 +107,7 @@ conditionalDescribe("Tipping", () => {
     });
 
     test("requires a bookingId", async () => {
-      const res = await request(app)
+      const res = await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ tipCents: 2000 });
@@ -114,7 +118,7 @@ conditionalDescribe("Tipping", () => {
   describe("checkout creation", () => {
     test("routes 100% of the tip to the artist with no platform fee", async () => {
       const booking = await makeBooking("completed");
-      const res = await request(app)
+      const res = await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ bookingId: String(booking._id), tipCents: 5000 });
@@ -138,7 +142,7 @@ conditionalDescribe("Tipping", () => {
 
     test("clamps an over-max tip to the cap", async () => {
       const booking = await makeBooking("completed");
-      const res = await request(app)
+      const res = await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ bookingId: String(booking._id), tipCents: 9_999_999 });
@@ -152,7 +156,7 @@ conditionalDescribe("Tipping", () => {
   describe("webhook", () => {
     test("checkout.session.completed records the tip on the booking", async () => {
       const booking = await makeBooking("completed");
-      await request(app)
+      await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ bookingId: String(booking._id), tipCents: 5000 });
@@ -171,7 +175,7 @@ conditionalDescribe("Tipping", () => {
         },
       };
 
-      const res = await request(app).post("/billing/webhook").send(event);
+      const res = await request(server).post("/billing/webhook").send(event);
       expect(res.status).toBe(200);
 
       const updated = await Booking.findById(booking._id);
@@ -183,7 +187,7 @@ conditionalDescribe("Tipping", () => {
 
     test("a redelivered tip webhook (new event id, same bill) does not double-count", async () => {
       const booking = await makeBooking("completed");
-      await request(app)
+      await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ bookingId: String(booking._id), tipCents: 4000 });
@@ -201,8 +205,8 @@ conditionalDescribe("Tipping", () => {
         },
       });
 
-      await request(app).post("/billing/webhook").send(makeEvent("evt_tip_a"));
-      await request(app).post("/billing/webhook").send(makeEvent("evt_tip_b"));
+      await request(server).post("/billing/webhook").send(makeEvent("evt_tip_a"));
+      await request(server).post("/billing/webhook").send(makeEvent("evt_tip_b"));
 
       const updated = await Booking.findById(booking._id);
       expect(updated.tipCents).toBe(4000);
@@ -210,7 +214,7 @@ conditionalDescribe("Tipping", () => {
 
     test("a tip does not trigger a separate payout transfer (destination charge already routed it)", async () => {
       const booking = await makeBooking("completed");
-      await request(app)
+      await request(server)
         .post("/billing/tip")
         .set("x-test-user-id", "client_1")
         .send({ bookingId: String(booking._id), tipCents: 3000 });
@@ -227,7 +231,7 @@ conditionalDescribe("Tipping", () => {
           },
         },
       };
-      await request(app).post("/billing/webhook").send(event);
+      await request(server).post("/billing/webhook").send(event);
 
       expect(stripeMock.transfers.create).not.toHaveBeenCalled();
     });

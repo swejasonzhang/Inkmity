@@ -28,7 +28,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: npm test -- --coverage
+      - run: npm test -- --coverage --maxWorkers=2
         env:
           DATABASE_AVAILABLE: "true"
 

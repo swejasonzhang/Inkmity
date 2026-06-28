@@ -1,5 +1,3 @@
-process.env.DEV_BYPASS_GATES = "true";
-
 import request from "supertest";
 import express from "express";
 import "../../models/Client.js";
@@ -9,6 +7,18 @@ import { setFinalPrice, verifyBookingCode } from "../../controllers/bookingContr
 import { getPaymentBreakdown } from "../../controllers/billingController.js";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
+
+// config.dev.bypassGates is a live getter, so scope the flag to this file's
+// lifecycle instead of leaking it worker-wide via a module-scope assignment.
+let _prevBypass;
+beforeAll(() => {
+  _prevBypass = process.env.DEV_BYPASS_GATES;
+  process.env.DEV_BYPASS_GATES = "true";
+});
+afterAll(() => {
+  if (_prevBypass === undefined) delete process.env.DEV_BYPASS_GATES;
+  else process.env.DEV_BYPASS_GATES = _prevBypass;
+});
 
 const mockAuth = (req, res, next) => {
   const id = req.headers["x-test-user-id"];
@@ -24,6 +34,10 @@ app.use(express.json());
 app.post("/bookings/:id/final-price", mockAuth, setFinalPrice);
 app.post("/bookings/:id/verify", mockAuth, verifyBookingCode);
 app.post("/billing/breakdown", mockAuth, getPaymentBreakdown);
+
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
 
 conditionalDescribe("Appointment lifecycle: set price → both confirm → completed → breakdown", () => {
   const ARTIST = "lifecycle_artist";
@@ -45,28 +59,28 @@ conditionalDescribe("Appointment lifecycle: set price → both confirm → compl
     });
     const id = String(booking._id);
 
-    const priced = await request(app)
+    const priced = await request(server)
       .post(`/bookings/${id}/final-price`)
       .set("x-test-user-id", ARTIST)
       .send({ finalPriceCents: 25000 });
     expect(priced.status).toBe(200);
     expect(priced.body.priceCents).toBe(25000);
 
-    const clientVerify = await request(app)
+    const clientVerify = await request(server)
       .post(`/bookings/${id}/verify`)
       .set("x-test-user-id", CLIENT)
       .send({ role: "client", code: "AAAAAA" });
     expect(clientVerify.status).toBe(200);
     expect(clientVerify.body.status).not.toBe("completed");
 
-    const artistVerify = await request(app)
+    const artistVerify = await request(server)
       .post(`/bookings/${id}/verify`)
       .set("x-test-user-id", ARTIST)
       .send({ role: "artist", code: "BBBBBB" });
     expect(artistVerify.status).toBe(200);
     expect(artistVerify.body.status).toBe("completed");
 
-    const breakdown = await request(app)
+    const breakdown = await request(server)
       .post("/billing/breakdown")
       .set("x-test-user-id", ARTIST)
       .send({ bookingId: id });
@@ -99,7 +113,7 @@ conditionalDescribe("Appointment lifecycle: set price → both confirm → compl
     });
     const id = String(booking._id);
 
-    const bad = await request(app)
+    const bad = await request(server)
       .post(`/bookings/${id}/verify`)
       .set("x-test-user-id", CLIENT)
       .send({ role: "client", code: "ZZZZZZ" });

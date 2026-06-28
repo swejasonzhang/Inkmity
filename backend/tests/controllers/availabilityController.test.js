@@ -23,9 +23,13 @@ app.get("/availability/:artistId", getAvailability);
 app.put("/availability/:artistId", mockAuth, upsertAvailability);
 app.get("/availability/:artistId/slots", getSlotsForDate);
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 describe("Availability Controller - getAvailability", () => {
   test("should return default availability when none exists", async () => {
-    const response = await request(app).get("/availability/artist-123");
+    const response = await request(server).get("/availability/artist-123");
 
     expect(response.status).toBe(200);
     expect(response.body.artistId).toBe("artist-123");
@@ -45,7 +49,7 @@ describe("Availability Controller - getAvailability", () => {
       },
     });
 
-    const response = await request(app).get(`/availability/${artistId}`);
+    const response = await request(server).get(`/availability/${artistId}`);
 
     expect(response.status).toBe(200);
     expect(response.body.artistId).toBe(artistId);
@@ -59,7 +63,7 @@ const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe
 conditionalDescribe("Availability Controller - upsertAvailability", () => {
   test("should create new availability", async () => {
     const artistId = "artist-456";
-    const response = await request(app)
+    const response = await request(server)
       .put(`/availability/${artistId}`)
       .set("x-test-user-id", artistId)
       .send({
@@ -85,7 +89,7 @@ conditionalDescribe("Availability Controller - upsertAvailability", () => {
       slotMinutes: 60,
     });
 
-    const response = await request(app)
+    const response = await request(server)
       .put(`/availability/${artistId}`)
       .set("x-test-user-id", artistId)
       .send({
@@ -100,7 +104,7 @@ conditionalDescribe("Availability Controller - upsertAvailability", () => {
 
   test("should return 403 when user is not the artist", async () => {
     const artistId = "artist-123";
-    const response = await request(app)
+    const response = await request(server)
       .put(`/availability/${artistId}`)
       .set("x-test-user-id", "different-user-id")
       .send({
@@ -113,7 +117,7 @@ conditionalDescribe("Availability Controller - upsertAvailability", () => {
   });
 
   test("should return 401 when not authenticated", async () => {
-    const response = await request(app)
+    const response = await request(server)
       .put("/availability/artist-123")
       .send({
         timezone: "America/New_York",
@@ -149,7 +153,7 @@ conditionalDescribe("Availability Controller - getSlotsForDate", () => {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 7);
 
-    const response = await request(app)
+    const response = await request(server)
       .get(`/availability/${artistId}/slots`)
       .query({
         date: startDate.toISOString().split("T")[0],
@@ -178,7 +182,7 @@ conditionalDescribe("Availability Controller - getSlotsForDate", () => {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 1);
 
-    const response = await request(app)
+    const response = await request(server)
       .get(`/availability/${artistId}/slots`)
       .query({
         date: startDate.toISOString().split("T")[0],

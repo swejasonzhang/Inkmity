@@ -37,6 +37,10 @@ async function seedArtist(clerkId, overrides = {}) {
   });
 }
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 conditionalDescribe("Artwork Controller", () => {
   test("getPopularArtworks ranks works by like count and flags likedByMe", async () => {
     await seedArtist("art_a", { rating: 4.5, bookingsCount: 5, portfolioImages: ["a1.jpg", "a2.jpg"] });
@@ -49,7 +53,7 @@ conditionalDescribe("Artwork Controller", () => {
       { userClerkId: "u1", artistClerkId: "art_a", imageUrl: "a2.jpg" },
     ]);
 
-    const res = await request(app).get("/artworks/popular").set("x-test-user-id", "me");
+    const res = await request(server).get("/artworks/popular").set("x-test-user-id", "me");
     expect(res.status).toBe(200);
     const items = res.body.items;
     expect(items).toHaveLength(3);
@@ -73,7 +77,7 @@ conditionalDescribe("Artwork Controller", () => {
     await seedArtist("art_c", { portfolioImages: ["c1.jpg"] });
     await ArtworkLike.create({ userClerkId: "u9", artistClerkId: "art_c", imageUrl: "c1.jpg" });
 
-    const res = await request(app).get("/artworks/popular");
+    const res = await request(server).get("/artworks/popular");
     expect(res.status).toBe(200);
     const c1 = res.body.items.find((i) => i.url === "c1.jpg");
     expect(c1.likes).toBe(1);
@@ -83,7 +87,7 @@ conditionalDescribe("Artwork Controller", () => {
   test("toggleArtworkLike likes then unlikes, updating the count", async () => {
     await seedArtist("art_d", { portfolioImages: ["d1.jpg"] });
 
-    const like = await request(app)
+    const like = await request(server)
       .post("/artworks/like")
       .set("x-test-user-id", "me")
       .send({ artistClerkId: "art_d", imageUrl: "d1.jpg" });
@@ -91,7 +95,7 @@ conditionalDescribe("Artwork Controller", () => {
     expect(like.body).toEqual({ liked: true, likes: 1 });
     expect(await ArtworkLike.countDocuments({ artistClerkId: "art_d", imageUrl: "d1.jpg" })).toBe(1);
 
-    const unlike = await request(app)
+    const unlike = await request(server)
       .post("/artworks/like")
       .set("x-test-user-id", "me")
       .send({ artistClerkId: "art_d", imageUrl: "d1.jpg" });
@@ -101,10 +105,10 @@ conditionalDescribe("Artwork Controller", () => {
   });
 
   test("toggleArtworkLike requires auth and a target", async () => {
-    const noAuth = await request(app).post("/artworks/like").send({ artistClerkId: "art_d", imageUrl: "d1.jpg" });
+    const noAuth = await request(server).post("/artworks/like").send({ artistClerkId: "art_d", imageUrl: "d1.jpg" });
     expect(noAuth.status).toBe(401);
 
-    const noBody = await request(app).post("/artworks/like").set("x-test-user-id", "me").send({});
+    const noBody = await request(server).post("/artworks/like").set("x-test-user-id", "me").send({});
     expect(noBody.status).toBe(400);
   });
 
@@ -114,7 +118,7 @@ conditionalDescribe("Artwork Controller", () => {
       portfolioMeta: [{ url: "pi1.jpg", idea: "Dragon origami back tattoo" }],
     });
 
-    const res = await request(app).get("/artworks/popular");
+    const res = await request(server).get("/artworks/popular");
     expect(res.status).toBe(200);
     const pi1 = res.body.items.find((i) => i.url === "pi1.jpg");
     const pi2 = res.body.items.find((i) => i.url === "pi2.jpg");
@@ -135,7 +139,7 @@ conditionalDescribe("Artwork Controller", () => {
       portfolioMeta: [{ url: "t2a.jpg", idea: "dragon origami back tattoo" }],
     });
 
-    const res = await request(app).get("/artworks/trending-ideas");
+    const res = await request(server).get("/artworks/trending-ideas");
     expect(res.status).toBe(200);
     const items = res.body.items;
     expect(items).toHaveLength(2);
@@ -152,7 +156,7 @@ conditionalDescribe("Artwork Controller", () => {
 
   test("getTrendingIdeas returns nothing when no captions exist", async () => {
     await seedArtist("art_none", { portfolioImages: ["n1.jpg"] });
-    const res = await request(app).get("/artworks/trending-ideas");
+    const res = await request(server).get("/artworks/trending-ideas");
     expect(res.status).toBe(200);
     expect(res.body.items).toEqual([]);
   });
@@ -163,12 +167,12 @@ conditionalDescribe("Artwork Controller", () => {
       await seedArtist("art_real", { portfolioImages: ["real1.jpg"] });
       await seedArtist("art_hidden", { portfolioImages: ["hidden1.jpg"] });
 
-      const real = await request(app).get("/artworks/popular");
+      const real = await request(server).get("/artworks/popular");
       const urls = real.body.items.map((i) => i.url);
       expect(urls).toContain("real1.jpg");
       expect(urls).not.toContain("hidden1.jpg");
 
-      const asTest = await request(app).get("/artworks/popular").set("x-test-user-id", "art_hidden");
+      const asTest = await request(server).get("/artworks/popular").set("x-test-user-id", "art_hidden");
       const urls2 = asTest.body.items.map((i) => i.url);
       expect(urls2).toContain("hidden1.jpg");
       expect(urls2).toContain("real1.jpg");

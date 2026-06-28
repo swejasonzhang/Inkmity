@@ -1,4 +1,4 @@
-import { jest, describe, test, expect, beforeEach } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -50,15 +50,19 @@ beforeEach(() => {
   mockUser.updateOne.mockResolvedValue({});
 });
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 describe("signUpload", () => {
   test("signs a portfolio upload via GET with the right folder", async () => {
-    const res = await request(app).get("/images/sign?kind=artist_portfolio");
+    const res = await request(server).get("/images/sign?kind=artist_portfolio");
     expect(res.body.signature).toBe("signed123");
     expect(res.body.folder).toBe("inkmity/portfolio");
     expect(res.body.apiKey).toBe("ck_test");
   });
   test("signs a reference upload via POST by default", async () => {
-    const res = await request(app).post("/images/sign").send({});
+    const res = await request(server).post("/images/sign").send({});
     expect(res.body.folder).toBe("inkmity/references");
     expect(res.body.tags).toBe("reference");
   });
@@ -66,10 +70,10 @@ describe("signUpload", () => {
 
 describe("saveImages", () => {
   test("400 when required fields are missing", async () => {
-    expect((await request(app).post("/images").send({ userId: "c1" })).status).toBe(400);
+    expect((await request(server).post("/images").send({ userId: "c1" })).status).toBe(400);
   });
   test("saves images and appends client reference urls", async () => {
-    const res = await request(app).post("/images").send({
+    const res = await request(server).post("/images").send({
       userId: "c1",
       role: "client",
       kind: "client_ref",
@@ -83,7 +87,7 @@ describe("saveImages", () => {
     );
   });
   test("portfolio images do not touch client references", async () => {
-    await request(app).post("/images").send({
+    await request(server).post("/images").send({
       userId: "a1",
       role: "artist",
       kind: "artist_portfolio",
@@ -93,20 +97,20 @@ describe("saveImages", () => {
   });
   test("swallows an insert failure and reports count 0", async () => {
     mockImage.insertMany.mockRejectedValue(new Error("dup"));
-    const res = await request(app).post("/images").send({ userId: "c1", role: "client", kind: "client_ref", files: [{ public_id: "p" }] });
+    const res = await request(server).post("/images").send({ userId: "c1", role: "client", kind: "client_ref", files: [{ public_id: "p" }] });
     expect(res.body).toEqual({ ok: true, count: 0 });
   });
 });
 
 describe("listImages", () => {
   test("returns items with a next cursor and applies filters", async () => {
-    const res = await request(app).get("/images?userId=c1&role=client&kind=client_ref&cursor=z");
+    const res = await request(server).get("/images?userId=c1&role=client&kind=client_ref&cursor=z");
     expect(res.body.items).toHaveLength(1);
     expect(res.body.nextCursor).toBe("i1");
   });
   test("null cursor when there are no items", async () => {
     mockImage.find.mockReturnValue(q([]));
-    const res = await request(app).get("/images");
+    const res = await request(server).get("/images");
     expect(res.body.nextCursor).toBeNull();
   });
 });
@@ -114,10 +118,10 @@ describe("listImages", () => {
 describe("deleteImage", () => {
   test("404 when the image is missing", async () => {
     mockImage.findById.mockResolvedValue(null);
-    expect((await request(app).delete("/images/i1")).status).toBe(404);
+    expect((await request(server).delete("/images/i1")).status).toBe(404);
   });
   test("destroys in Cloudinary, deletes the doc, and pulls the client reference", async () => {
-    const res = await request(app).delete("/images/i1");
+    const res = await request(server).delete("/images/i1");
     expect(res.body.ok).toBe(true);
     expect(mockCloudinary.uploader.destroy).toHaveBeenCalledWith("pid", expect.anything());
     expect(mockImage.deleteOne).toHaveBeenCalledWith({ _id: "i1" });
@@ -125,7 +129,7 @@ describe("deleteImage", () => {
   });
   test("still deletes when the Cloudinary destroy fails", async () => {
     mockCloudinary.uploader.destroy.mockRejectedValue(new Error("cloud_down"));
-    const res = await request(app).delete("/images/i1");
+    const res = await request(server).delete("/images/i1");
     expect(res.body.ok).toBe(true);
     expect(mockImage.deleteOne).toHaveBeenCalled();
   });

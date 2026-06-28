@@ -1,5 +1,9 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
+// socketService captures IS_PROD at import, so NODE_ENV must be "production"
+// before the import below; we restore it immediately after so this file does
+// not leak production mode into other suites sharing the worker.
+const _prevNodeEnv = process.env.NODE_ENV;
 process.env.NODE_ENV = "production";
 process.env.CLERK_SECRET_KEY = "sk_test_dummy";
 
@@ -23,6 +27,8 @@ jest.unstable_mockModule("../../models/Message.js", () => ({ default: mockMessag
 jest.unstable_mockModule("../../models/UserBase.js", () => ({ default: mockUser }));
 
 const socketModule = await import("../../services/socketService.js");
+if (_prevNodeEnv === undefined) delete process.env.NODE_ENV;
+else process.env.NODE_ENV = _prevNodeEnv;
 const {
   initSocket,
   emitToUser,

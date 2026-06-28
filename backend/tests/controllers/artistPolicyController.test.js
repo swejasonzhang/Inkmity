@@ -1,4 +1,4 @@
-import { jest, describe, test, expect, beforeEach } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -45,39 +45,43 @@ beforeEach(() => {
   mockGetIO.mockReturnValue(null);
 });
 
+let server;
+beforeAll(() => { server = app.listen(0); });
+afterAll((done) => { server.close(done); });
+
 describe("getArtistPolicy", () => {
   test("returns the existing policy", async () => {
-    const res = await request(app).get("/policy/a1");
+    const res = await request(server).get("/policy/a1");
     expect(res.status).toBe(200);
     expect(res.body.artistId).toBe("a1");
   });
 
   test("creates a default policy when none exists", async () => {
     mockArtistPolicy.findOne.mockResolvedValue(null);
-    await request(app).get("/policy/a1");
+    await request(server).get("/policy/a1");
     expect(mockArtistPolicy.create).toHaveBeenCalledWith({ artistId: "a1" });
   });
 
   test("500 when the lookup throws", async () => {
     mockArtistPolicy.findOne.mockRejectedValue(new Error("db"));
-    const res = await request(app).get("/policy/a1");
+    const res = await request(server).get("/policy/a1");
     expect(res.status).toBe(500);
   });
 });
 
 describe("upsertArtistPolicy", () => {
   test("401 when unauthenticated", async () => {
-    const res = await request(app).put("/policy/a1").send({});
+    const res = await request(server).put("/policy/a1").send({});
     expect(res.status).toBe(401);
   });
 
   test("403 when a different user tries to edit the policy", async () => {
-    const res = await request(app).put("/policy/a1").set("x-test-user-id", "other").send({});
+    const res = await request(server).put("/policy/a1").set("x-test-user-id", "other").send({});
     expect(res.status).toBe(403);
   });
 
   test("saves the deposit policy for the owning artist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .put("/policy/a1")
       .set("x-test-user-id", "a1")
       .send({ deposit: { mode: "flat", amountCents: 6000 } });
@@ -90,7 +94,7 @@ describe("upsertArtistPolicy", () => {
   });
 
   test("rejects enabling bookings without a configured deposit", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .put("/policy/a1")
       .set("x-test-user-id", "a1")
       .send({ bookingEnabled: true, deposit: { mode: "percent", percent: 0, minCents: 0 } });
@@ -99,7 +103,7 @@ describe("upsertArtistPolicy", () => {
   });
 
   test("enables bookings when a valid deposit is configured", async () => {
-    await request(app)
+    await request(server)
       .put("/policy/a1")
       .set("x-test-user-id", "a1")
       .send({ bookingEnabled: true, deposit: { mode: "flat", amountCents: 6000 } });
@@ -111,7 +115,7 @@ describe("upsertArtistPolicy", () => {
   });
 
   test("can explicitly disable bookings", async () => {
-    await request(app)
+    await request(server)
       .put("/policy/a1")
       .set("x-test-user-id", "a1")
       .send({ bookingEnabled: false, deposit: { mode: "flat", amountCents: 6000 } });
@@ -124,7 +128,7 @@ describe("upsertArtistPolicy", () => {
 
   test("500 when the update throws", async () => {
     mockArtistPolicy.findOneAndUpdate.mockRejectedValue(new Error("db"));
-    const res = await request(app)
+    const res = await request(server)
       .put("/policy/a1")
       .set("x-test-user-id", "a1")
       .send({ deposit: { mode: "flat", amountCents: 6000 } });
@@ -135,12 +139,12 @@ describe("upsertArtistPolicy", () => {
 describe("getBookingGate", () => {
   test("reports not-found when the artist has no policy", async () => {
     mockArtistPolicy.findOne.mockResolvedValue(null);
-    const res = await request(app).get("/gate/a1").set("x-test-user-id", "c1");
+    const res = await request(server).get("/gate/a1").set("x-test-user-id", "c1");
     expect(res.body).toMatchObject({ enabled: false, depositConfigured: false });
   });
 
   test("enabled when the client is permitted and payouts are ready", async () => {
-    const res = await request(app).get("/gate/a1?clientId=c1").set("x-test-user-id", "c1");
+    const res = await request(server).get("/gate/a1?clientId=c1").set("x-test-user-id", "c1");
     expect(res.body).toMatchObject({
       enabled: true,
       depositConfigured: true,
@@ -151,7 +155,7 @@ describe("getBookingGate", () => {
 
   test("not enabled when the artist's payouts aren't ready", async () => {
     mockArtist.findOne.mockResolvedValue({ stripeConnectAccountId: null, chargesEnabled: false });
-    const res = await request(app).get("/gate/a1?clientId=c1").set("x-test-user-id", "c1");
+    const res = await request(server).get("/gate/a1?clientId=c1").set("x-test-user-id", "c1");
     expect(res.body.enabled).toBe(false);
     expect(res.body.payoutsReady).toBe(false);
     expect(res.body.message).toMatch(/payment setup/);
@@ -159,19 +163,19 @@ describe("getBookingGate", () => {
 
   test("500 when the lookup throws", async () => {
     mockArtistPolicy.findOne.mockRejectedValue(new Error("db"));
-    const res = await request(app).get("/gate/a1").set("x-test-user-id", "c1");
+    const res = await request(server).get("/gate/a1").set("x-test-user-id", "c1");
     expect(res.status).toBe(500);
   });
 });
 
 describe("enableClientBookings", () => {
   test("400 when artistId or clientId is missing", async () => {
-    const res = await request(app).post("/enable").set("x-test-user-id", "a1").send({ artistId: "a1" });
+    const res = await request(server).post("/enable").set("x-test-user-id", "a1").send({ artistId: "a1" });
     expect(res.status).toBe(400);
   });
 
   test("403 when the actor isn't the artist", async () => {
-    const res = await request(app)
+    const res = await request(server)
       .post("/enable")
       .set("x-test-user-id", "other")
       .send({ artistId: "a1", clientId: "c1" });
@@ -180,7 +184,7 @@ describe("enableClientBookings", () => {
 
   test("400 when the artist has no policy", async () => {
     mockArtistPolicy.findOne.mockResolvedValue(null);
-    const res = await request(app)
+    const res = await request(server)
       .post("/enable")
       .set("x-test-user-id", "a1")
       .send({ artistId: "a1", clientId: "c1" });
@@ -189,7 +193,7 @@ describe("enableClientBookings", () => {
 
   test("400 when the deposit isn't configured", async () => {
     mockArtistPolicy.findOne.mockResolvedValue({ deposit: { mode: "percent", percent: 0, minCents: 0 } });
-    const res = await request(app)
+    const res = await request(server)
       .post("/enable")
       .set("x-test-user-id", "a1")
       .send({ artistId: "a1", clientId: "c1" });
@@ -200,7 +204,7 @@ describe("enableClientBookings", () => {
   test("enables bookings, derives sessions from piece size, and notifies the client", async () => {
     const io = { to: jest.fn(() => ({ emit: jest.fn() })) };
     mockGetIO.mockReturnValue(io);
-    const res = await request(app)
+    const res = await request(server)
       .post("/enable")
       .set("x-test-user-id", "a1")
       .send({ artistId: "a1", clientId: "c1", pieceSize: "large" });
@@ -215,7 +219,7 @@ describe("enableClientBookings", () => {
 
   test("500 when the permission write throws", async () => {
     mockPermission.findOneAndUpdate.mockRejectedValue(new Error("db"));
-    const res = await request(app)
+    const res = await request(server)
       .post("/enable")
       .set("x-test-user-id", "a1")
       .send({ artistId: "a1", clientId: "c1" });
