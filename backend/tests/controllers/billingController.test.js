@@ -15,6 +15,7 @@ const stripeMock = {
   accounts: { create: jest.fn(), retrieve: jest.fn() },
   accountLinks: { create: jest.fn() },
   refunds: { create: jest.fn() },
+  transfers: { create: jest.fn(), createReversal: jest.fn() },
 };
 jest.unstable_mockModule("../../lib/stripe.js", () => ({ stripe: stripeMock }));
 
@@ -30,7 +31,7 @@ const {
 const Booking = (await import("../../models/Booking.js")).default;
 const Billing = (await import("../../models/Billing.js")).default;
 const WebhookEvent = (await import("../../models/WebhookEvent.js")).default;
-await import("../../models/Artist.js");
+const Artist = (await import("../../models/Artist.js")).default;
 await import("../../models/Client.js");
 
 const PLATFORM_FEE_MIN_CENTS = 1000; // $10 platform base fee (config.platformFee.baseCents)
@@ -345,6 +346,49 @@ conditionalDescribe("Billing Controller - Stripe Webhook", () => {
     const webhookEvents = await WebhookEvent.find({ stripeEventId: "evt_test123" });
     expect(webhookEvents.length).toBe(1);
     expect(webhookEvents[0].processed).toBe(true);
+  });
+
+  test("a final_payment succeeded event pays out to an onboarded artist", async () => {
+    await Artist.create({
+      clerkId: artistId,
+      email: "artist-123@example.com",
+      username: "Artist",
+      handle: "@artist-123",
+      role: "artist",
+      stripeConnectAccountId: "acct_x",
+      chargesEnabled: true,
+      payoutsEnabled: true,
+    });
+    const fpBill = await Billing.create({
+      bookingId,
+      artistId,
+      clientId,
+      type: "final_payment",
+      amountCents: 8000,
+      platformFeeCents: 0,
+      status: "pending",
+      transferGroup: `booking_${bookingId}`,
+    });
+    stripeMock.transfers.create.mockResolvedValue({ id: "tr_final" });
+
+    const event = {
+      id: "evt_final_1",
+      type: "payment_intent.succeeded",
+      data: {
+        object: {
+          id: "pi_final",
+          amount_received: 8000,
+          metadata: { billingId: fpBill._id.toString(), bookingId, type: "final_payment" },
+        },
+      },
+    };
+    const res = await request(app).post("/billing/webhook").send(event);
+    expect(res.status).toBe(200);
+
+    const updated = await Billing.findById(fpBill._id);
+    expect(updated.status).toBe("paid");
+    expect(updated.payoutStatus).toBe("paid");
+    expect(stripeMock.transfers.create).toHaveBeenCalled();
   });
 
   test("should not double-charge on duplicate events", async () => {
