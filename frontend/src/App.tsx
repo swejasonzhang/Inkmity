@@ -1,27 +1,30 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn, useUser } from "@clerk/clerk-react";
-import SignUp from "./pages/Signup";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
-import Appointments from "./pages/Appointments";
-import Contact from "./pages/Contact";
-import About from "./pages/About";
-import Gallery from "./pages/Gallery";
-import Portfolio from "./pages/Portfolio";
-import Tiers from "./pages/Tiers";
-import ArtistWorks from "./pages/ArtistWorks";
-import Studios from "./pages/Studios";
-import Admin from "./pages/Admin";
-import Landing from "./pages/Landing";
-import SSOCallback from "./pages/SSOCallback";
-import Onboarding from "./pages/Onboarding";
-import StudioSignup from "./pages/StudioSignup";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import FAQ from "./pages/FAQ";
-import NotFound from "./pages/NotFound";
+
+// Pages are route-level and code-split so anonymous/landing visitors don't
+// download the whole authenticated app up front.
+const SignUp = lazy(() => import("./pages/Signup"));
+const Login = lazy(() => import("./pages/Login"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Appointments = lazy(() => import("./pages/Appointments"));
+const Contact = lazy(() => import("./pages/Contact"));
+const About = lazy(() => import("./pages/About"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Tiers = lazy(() => import("./pages/Tiers"));
+const ArtistWorks = lazy(() => import("./pages/ArtistWorks"));
+const Studios = lazy(() => import("./pages/Studios"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Landing = lazy(() => import("./pages/Landing"));
+const SSOCallback = lazy(() => import("./pages/SSOCallback"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const StudioSignup = lazy(() => import("./pages/StudioSignup"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import { useTheme, setThemeAccount } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
@@ -112,6 +115,7 @@ const App: React.FC = () => {
         Skip to content
       </a>
       <ThemeAccountSync />
+      <Suspense fallback={null}>
       <Routes>
       <Route path="/artists" element={<DashboardScope />}>
         <Route index element={<Dashboard />} />
@@ -167,6 +171,7 @@ const App: React.FC = () => {
         <Route path="*" element={<NotFound />} />
       </Route>
       </Routes>
+      </Suspense>
     </>
   );
 };
