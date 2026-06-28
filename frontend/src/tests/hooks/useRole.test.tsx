@@ -1,4 +1,4 @@
-import { jest, describe, test, expect, beforeEach } from "@jest/globals";
+import { jest, describe, test, expect, beforeEach, beforeAll } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react";
 
 const mockGetMe = jest.fn<() => Promise<any>>();
@@ -62,12 +62,21 @@ jest.unstable_mockModule("@clerk/clerk-react", () => ({
   }),
 }));
 
-const { useRole } = await import("@/hooks/useRole");
+let useRole: typeof import("@/hooks/useRole").useRole;
+
+beforeAll(async () => {
+  ({ useRole } = await import("@/hooks/useRole"));
+});
 
 describe("useRole", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetToken.mockResolvedValue("mock-token");
+    try {
+      localStorage.removeItem("inkmity-role");
+    } catch {
+      // ignore
+    }
   });
 
   test("should return client role by default", async () => {
