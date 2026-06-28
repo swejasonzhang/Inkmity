@@ -298,12 +298,12 @@ describe("markConversationRead", () => {
 
 describe("getAllMessagesForUser — request bucketing", () => {
   test("folds pending/accepted requests into the conversation with status meta", async () => {
-    mockMessage.aggregate.mockResolvedValue([
-      { doc: { senderId: "u1", receiverId: "p1", text: "req", createdAt: new Date(), requestStatus: "pending", meta: {} } },
-    ]);
+    mockMessage.aggregate
+      .mockResolvedValueOnce([
+        { doc: { senderId: "u1", receiverId: "p1", text: "req", createdAt: new Date(), requestStatus: "accepted", meta: {} } },
+      ]) // requests
+      .mockResolvedValueOnce([]); // decline counts
     mockUser.find.mockReturnValue(q([{ clerkId: "p1", username: "Pal" }]));
-    mockMessage.findOne.mockReturnValue(q({ requestStatus: "accepted", senderId: "u1", receiverId: "p1" }));
-    mockMessage.countDocuments.mockResolvedValue(0);
     const res = await request(server).get("/messages/u1").set("x-test-user-id", "u1");
     expect(res.status).toBe(200);
     expect(res.body[0].participantId).toBe("p1");

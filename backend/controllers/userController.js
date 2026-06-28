@@ -8,7 +8,8 @@ import Studio from "../models/Studio.js";
 import cloudinary, { signUpload } from "../lib/cloudinary.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
 import { config } from "../config/index.js";
-import { hideTestAccountsFilter, isHiddenFromViewer } from "../lib/testAccounts.js";
+import { hideTestAccountsFilter, isHiddenFromViewer, isTestAccount } from "../lib/testAccounts.js";
+import cache from "../lib/cache.js";
 import { tierRankAggExpr } from "../services/artistTierService.js";
 
 const SAFE_ROLES = new Set(["client", "artist", "studio"]);
@@ -233,9 +234,21 @@ export async function getArtists(req, res) {
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
 
+  // Cache the (expensive, tier-ranked) DB result by query params. Test-account
+  // viewers see a different set (hidden accounts), so they bypass the shared
+  // cache entirely — never reading or writing it. Live isOnline state is
+  // applied per-request below, not cached.
+  const viewerIsTest = isTestAccount(getClerkId(req));
+  const discoveryKey = `artists:list:${JSON.stringify({
+    search, location, style, booking, travel, experience, sortKey, page, pageSize,
+  })}`;
+
   let total;
   let items;
-  if (explicitSort) {
+  const cached = viewerIsTest ? null : await cache.get(discoveryKey);
+  if (cached) {
+    ({ total, items } = cached);
+  } else if (explicitSort) {
     [total, items] = await Promise.all([
       Artist.countDocuments(filter),
       Artist.find(filter)
@@ -261,6 +274,7 @@ export async function getArtists(req, res) {
       ]),
     ]);
   }
+  if (!cached && !viewerIsTest) cache.set(discoveryKey, { total, items }, 30000);
   const itemsWithProfileImage = items.map(item => ({
     ...item,
     profileImage: item.avatar?.url || item.profileImage || null,

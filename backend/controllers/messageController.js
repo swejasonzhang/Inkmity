@@ -90,11 +90,16 @@ export const getAllMessagesForUser = async (req, res) => {
         },
       },
     ]);
+    const lastReqByPid = new Map();
     for (const r of reqs) {
       const doc = r.doc;
+      const pid = doc.senderId === userId ? doc.receiverId : doc.senderId;
+      const prev = lastReqByPid.get(pid);
+      if (!prev || new Date(doc.createdAt) > new Date(prev.createdAt)) {
+        lastReqByPid.set(pid, doc);
+      }
       if (doc.requestStatus !== "pending" && doc.requestStatus !== "accepted")
         continue;
-      const pid = doc.senderId === userId ? doc.receiverId : doc.senderId;
       if (!buckets.has(pid)) buckets.set(pid, { messages: [] });
       const arr = buckets.get(pid).messages;
       const ts = new Date(doc.createdAt).getTime();
@@ -149,10 +154,24 @@ export const getAllMessagesForUser = async (req, res) => {
       perms.map((p) => (String(p.clientId) === String(userId) ? p.artistId : p.clientId))
     );
 
+    const declineAgg = await Message.aggregate([
+      {
+        $match: {
+          type: "request",
+          requestStatus: "declined",
+          $or: [{ senderId: userId }, { receiverId: userId }],
+        },
+      },
+      { $group: { _id: { s: "$senderId", r: "$receiverId" }, count: { $sum: 1 } } },
+    ]);
+    const declineByPair = new Map(
+      declineAgg.map((d) => [`${d._id.s}|${d._id.r}`, d.count])
+    );
+
     const convs = [];
     for (const pid of participantIds) {
       if (deletedParticipantIds.has(pid)) continue;
-      const lastReq = await latestRequestBetween(userId, pid);
+      const lastReq = lastReqByPid.get(pid);
       let declines = 0;
       let lastStatus = null;
       let allowed = false;
@@ -161,7 +180,7 @@ export const getAllMessagesForUser = async (req, res) => {
         lastStatus = lastReq.requestStatus || null;
         const clientId = lastReq.senderId;
         const artistId = lastReq.receiverId;
-        declines = await declineCount(clientId, artistId);
+        declines = declineByPair.get(`${clientId}|${artistId}`) || 0;
         blocked = declines >= MAX_DECLINES;
         allowed = lastStatus === "accepted";
       }

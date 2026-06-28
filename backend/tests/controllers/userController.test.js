@@ -761,6 +761,25 @@ conditionalDescribe("User Controller - getArtists", () => {
     expect(plus.status).toBe(200);
     expect(plus.body.items.map((a) => a.username)).toEqual(["Senior"]);
   });
+
+  test("caches the discovery result for real viewers (served within TTL)", async () => {
+    await mongoose.model("artist").create({
+      clerkId: "cache-artist",
+      email: "ca@example.com",
+      username: "Cached",
+      handle: "@cache-artist",
+      role: "artist",
+      rating: 5,
+    });
+
+    const first = await request(server).get("/users/artists").query({ page: 1, pageSize: 10 });
+    expect(first.body.items.map((a) => a.username)).toContain("Cached");
+
+    // Remove the artist from the DB; the cached page should still include it.
+    await mongoose.model("artist").deleteMany({ clerkId: "cache-artist" });
+    const second = await request(server).get("/users/artists").query({ page: 1, pageSize: 10 });
+    expect(second.body.items.map((a) => a.username)).toContain("Cached");
+  });
 });
 
 conditionalDescribe("User Controller - getArtistById", () => {
