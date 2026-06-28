@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 import "../../models/UserBase.js";
 import "../../models/Client.js";
 import "../../models/Artist.js";
+import "../../models/StudioAccount.js";
+import "../../models/Studio.js";
 import "../../models/Review.js";
 import {
   getMe,
@@ -17,8 +19,12 @@ import {
   syncUser,
   getArtists,
   getArtistById,
+  getArtistByHandle,
   checkHandleAvailability,
   saveMyPortfolio,
+  getAvatarSignature,
+  getReferenceSignature,
+  saveMyReferences,
 } from "../../controllers/userController.js";
 
 const app = express();
@@ -47,8 +53,12 @@ app.put("/users/me/visibility", mockAuth, updateMyVisibility);
 app.post("/users/sync", mockAuth, syncUser);
 app.get("/users/artists", getArtists);
 app.get("/users/artists/:id", getArtistById);
+app.get("/users/artist-handle/:handle", getArtistByHandle);
 app.get("/users/handle/check", checkHandleAvailability);
 app.put("/users/me/portfolio", mockAuth, saveMyPortfolio);
+app.get("/users/avatar-signature", mockAuth, getAvatarSignature);
+app.get("/users/reference-signature", mockAuth, getReferenceSignature);
+app.put("/users/me/references", mockAuth, saveMyReferences);
 
 conditionalDescribe("User Controller - getMe", () => {
   test("should return user data for authenticated user", async () => {
@@ -284,6 +294,231 @@ conditionalDescribe("User Controller - syncUser", () => {
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("clerkId, email, role are required");
   });
+
+  test("generates a unique @handle and applies client budget/visibility defaults", async () => {
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-client-1")
+      .send({
+        clerkId: "sync-client-1",
+        email: "syncclient@example.com",
+        role: "client",
+        username: "Sync Client",
+        handle: "Sync Client!!",
+        profile: {
+          bio: "hello there",
+          style: "Traditional",
+          location: "Brooklyn",
+          placement: "arm",
+          size: "medium",
+          referenceImages: [" ", "https://x.com/a.jpg", "https://x.com/b.jpg", "https://x.com/c.jpg", "https://x.com/d.jpg"],
+        },
+        visible: false,
+        visibility: "away",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.role).toBe("client");
+    expect(response.body.handle).toMatch(/^@/);
+    expect(response.body.visible).toBe(false);
+    expect(response.body.visibility).toBe("away");
+    expect(response.body.budgetMin).toBe(100);
+    expect(response.body.budgetMax).toBe(200);
+    expect(response.body.bio).toBe("hello there");
+    expect(response.body.styles).toEqual(["Traditional"]);
+    expect(response.body.placement).toBe("arm");
+    expect(Array.isArray(response.body.references)).toBe(true);
+    expect(response.body.references).toHaveLength(3);
+
+    const saved = await mongoose.model("client").findOne({ clerkId: "sync-client-1" }).lean();
+    expect(saved.budgetMin).toBe(100);
+    expect(saved.budgetMax).toBe(200);
+  });
+
+  test("clamps client budgets to the 0-5000 range and keeps max above min", async () => {
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-client-2")
+      .send({
+        clerkId: "sync-client-2",
+        email: "clamp@example.com",
+        role: "client",
+        username: "clampuser",
+        profile: {
+          budgetMin: 99999,
+          budgetMax: 50,
+          dob: "1990-01-01",
+        },
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.budgetMin).toBe(5000);
+    expect(response.body.budgetMax).toBeGreaterThan(response.body.budgetMin);
+    expect(response.body.dob).toBeTruthy();
+  });
+
+  test("maps artist profile fields: years, baseRate, portfolio, restrictedPlacements, verification", async () => {
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-artist-1")
+      .send({
+        clerkId: "sync-artist-1",
+        email: "syncartist@example.com",
+        role: "artist",
+        username: "syncartist",
+        profile: {
+          bio: "experienced artist",
+          styles: ["Blackwork", "Fineline"],
+          years: 8,
+          baseRate: 150,
+          baseRateMax: 400,
+          shop: "Ink Shop",
+          shopAddress: "123 Main St",
+          shopLat: 40.7,
+          shopLng: -73.9,
+          coverImage: "https://x.com/cover.jpg",
+          bookingPreference: "waitlist",
+          travelFrequency: "often",
+          portfolioImages: ["https://x.com/1.jpg", "https://x.com/2.jpg", "https://x.com/3.jpg", "https://x.com/4.jpg", "https://x.com/5.jpg"],
+          restrictedPlacements: ["face", " ", "hands"],
+        },
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.role).toBe("artist");
+    expect(response.body.yearsExperience).toBe(8);
+    expect(response.body.baseRate).toBe(150);
+    expect(response.body.baseRateMax).toBe(400);
+    expect(response.body.bookingPreference).toBe("waitlist");
+    expect(response.body.travelFrequency).toBe("often");
+    expect(response.body.shopLat).toBe(40.7);
+    expect(response.body.shopLng).toBe(-73.9);
+    expect(response.body.coverImage).toBe("https://x.com/cover.jpg");
+    expect(response.body.portfolioImages).toHaveLength(4);
+    expect(response.body.restrictedPlacements).toEqual(["face", "hands"]);
+    expect(response.body.verified).toBe(true);
+    expect(response.body.verifiedAt).toBeTruthy();
+  });
+
+  test("blocks username change during cooldown and reports availableAt", async () => {
+    await mongoose.model("client").create({
+      clerkId: "sync-cooldown",
+      email: "cooldown@example.com",
+      username: "originalname",
+      handle: "@originalname",
+      role: "client",
+      usernameUpdatedAt: new Date(),
+    });
+
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-cooldown")
+      .send({
+        clerkId: "sync-cooldown",
+        email: "cooldown@example.com",
+        role: "client",
+        username: "brandnewname",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.username).toBe("originalname");
+    expect(response.body.usernameChange.blocked).toBe(true);
+    expect(response.body.usernameChange.changed).toBe(false);
+    expect(response.body.usernameChange.availableAt).toBeTruthy();
+  });
+
+  test("allows username change after cooldown has elapsed", async () => {
+    const old = new Date(Date.now() - 1000 * 60 * 60 * 24 * 365);
+    await mongoose.model("client").create({
+      clerkId: "sync-elapsed",
+      email: "elapsed@example.com",
+      username: "oldname",
+      handle: "@oldname",
+      role: "client",
+      usernameUpdatedAt: old,
+    });
+
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-elapsed")
+      .send({
+        clerkId: "sync-elapsed",
+        email: "elapsed@example.com",
+        role: "client",
+        username: "freshname",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.username).toBe("freshname");
+    expect(response.body.usernameChange.changed).toBe(true);
+    expect(response.body.usernameChange.blocked).toBe(false);
+  });
+
+  test("returns 409 ROLE_MISMATCH when email already registered under a different role", async () => {
+    await mongoose.model("client").create({
+      clerkId: "sync-mismatch",
+      email: "mismatch@example.com",
+      username: "mismatchuser",
+      handle: "@mismatchuser",
+      role: "client",
+    });
+
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-mismatch")
+      .send({
+        clerkId: "sync-mismatch",
+        email: "mismatch@example.com",
+        role: "artist",
+        username: "mismatchuser",
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toBe("ROLE_MISMATCH");
+  });
+
+  test("creates a studio account and backing Studio document", async () => {
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-studio-1")
+      .send({
+        clerkId: "sync-studio-1",
+        email: "studio@example.com",
+        role: "studio",
+        username: "studioowner",
+        profile: {
+          studioName: "Black Needle Studio",
+          city: "Queens",
+          address: "9 Art Ave",
+        },
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.role).toBe("studio");
+    expect(response.body.location).toBe("Queens");
+    expect(response.body.ownedStudioId).toBeTruthy();
+
+    const Studio = mongoose.model("Studio");
+    const studioDoc = await Studio.findOne({ ownerClerkId: "sync-studio-1" }).lean();
+    expect(studioDoc).toBeTruthy();
+    expect(studioDoc.name).toBe("Black Needle Studio");
+    expect(studioDoc.city).toBe("Queens");
+  });
+
+  test("falls back to client role for an unsafe role value", async () => {
+    const response = await request(app)
+      .post("/users/sync")
+      .set("x-test-user-id", "sync-unsafe")
+      .send({
+        clerkId: "sync-unsafe",
+        email: "unsafe@example.com",
+        role: "superadmin",
+        username: "unsafeuser",
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.role).toBe("client");
+  });
 });
 
 conditionalDescribe("User Controller - getArtists", () => {
@@ -352,6 +587,27 @@ conditionalDescribe("User Controller - getArtists", () => {
     expect(response.status).toBe(200);
     expect(response.body.items).toHaveLength(1);
     expect(response.body.items[0].location).toBe("New York");
+  });
+
+  test("treats a regex-laden location as a literal (ReDoS-safe), matching nothing", async () => {
+    await mongoose.model("artist").create({
+      clerkId: "artist-loc",
+      email: "loc@example.com",
+      username: "LocArtist",
+      handle: "@loc-artist",
+      role: "artist",
+      location: "New York",
+      rating: 4.5,
+    });
+
+    const started = Date.now();
+    const response = await request(app)
+      .get("/users/artists")
+      .query({ location: "(a+)+$" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.items).toHaveLength(0);
+    expect(Date.now() - started).toBeLessThan(2000);
   });
 
   test("should search artists by text", async () => {
@@ -455,6 +711,45 @@ conditionalDescribe("User Controller - getArtists", () => {
     // lower tier — no placement boost applied.
     expect(response.body.items[0].username).toBe("Rising Star");
     expect(response.body.items[1].username).toBe("Pro Vet");
+  });
+
+  test("filters by experience range, booking preference, and travel frequency", async () => {
+    await mongoose.model("artist").create([
+      {
+        clerkId: "exp-1",
+        email: "exp1@example.com",
+        username: "Junior",
+        handle: "@junior",
+        role: "artist",
+        yearsExperience: 2,
+        bookingPreference: "open",
+        travelFrequency: "rare",
+        rating: 4,
+      },
+      {
+        clerkId: "exp-2",
+        email: "exp2@example.com",
+        username: "Senior",
+        handle: "@senior",
+        role: "artist",
+        yearsExperience: 15,
+        bookingPreference: "waitlist",
+        travelFrequency: "often",
+        rating: 4.9,
+      },
+    ]);
+
+    const ranged = await request(app)
+      .get("/users/artists")
+      .query({ experience: "10-20" });
+    expect(ranged.status).toBe(200);
+    expect(ranged.body.items.map((a) => a.username)).toEqual(["Senior"]);
+
+    const plus = await request(app)
+      .get("/users/artists")
+      .query({ experience: "10+", booking: "waitlist", travel: "often" });
+    expect(plus.status).toBe(200);
+    expect(plus.body.items.map((a) => a.username)).toEqual(["Senior"]);
   });
 });
 
@@ -606,5 +901,195 @@ conditionalDescribe("getArtists test-account visibility", () => {
     } finally {
       delete process.env.TEST_CLERK_IDS;
     }
+  });
+});
+
+conditionalDescribe("User Controller - deleteMyAvatar", () => {
+  test("clears the avatar and returns ok", async () => {
+    await mongoose.model("client").create({
+      clerkId: "del-av",
+      email: "del-av@example.com",
+      username: "DelAv",
+      handle: "@del-av",
+      role: "client",
+      avatar: { url: "https://x/y.jpg", publicId: "pid-1" },
+    });
+
+    const res = await request(app)
+      .delete("/users/me/avatar")
+      .set("x-test-user-id", "del-av");
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    const after = await mongoose.model("client").findOne({ clerkId: "del-av" }).lean();
+    expect(after.avatar).toBeUndefined();
+  });
+
+  test("returns 404 when the user does not exist", async () => {
+    const res = await request(app)
+      .delete("/users/me/avatar")
+      .set("x-test-user-id", "ghost");
+    expect(res.status).toBe(404);
+  });
+});
+
+conditionalDescribe("User Controller - getMyDefaultBio", () => {
+  test("returns a default bio derived from the username when bio is empty", async () => {
+    await mongoose.model("client").create({
+      clerkId: "bio-default",
+      email: "bd@example.com",
+      username: "Vega",
+      handle: "@bio-default",
+      role: "client",
+    });
+
+    const res = await request(app)
+      .get("/users/me/bio/default")
+      .set("x-test-user-id", "bio-default");
+
+    expect(res.status).toBe(200);
+    expect(typeof res.body.text).toBe("string");
+    expect(res.body.text).toContain("Vega");
+  });
+
+  test("returns 404 when the user is missing", async () => {
+    const res = await request(app)
+      .get("/users/me/bio/default")
+      .set("x-test-user-id", "nobody");
+    expect(res.status).toBe(404);
+  });
+});
+
+conditionalDescribe("User Controller - getArtistByHandle", () => {
+  test("400 when the handle is blank", async () => {
+    const res = await request(app).get("/users/artist-handle/%20");
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("handle_required");
+  });
+
+  test("404 when no artist matches the handle", async () => {
+    const res = await request(app).get("/users/artist-handle/unknown");
+    expect(res.status).toBe(404);
+  });
+
+  test("returns the artist with public profile fields for a matching handle", async () => {
+    await mongoose.model("artist").create({
+      clerkId: "h-artist",
+      email: "ha@example.com",
+      username: "Handler",
+      handle: "@handler",
+      role: "artist",
+      avatar: { url: "https://x/a.jpg" },
+    });
+
+    const res = await request(app).get("/users/artist-handle/handler");
+    expect(res.status).toBe(200);
+    expect(res.body.handle).toBe("@handler");
+    expect(res.body.profileImage).toBe("https://x/a.jpg");
+    expect(res.body.stripeConnectAccountId).toBeUndefined();
+  });
+
+  test("404 for a deactivated (visible:false) artist", async () => {
+    await mongoose.model("artist").create({
+      clerkId: "h-hidden",
+      email: "hh@example.com",
+      username: "Hidden",
+      handle: "@hidden-handle",
+      role: "artist",
+      visible: false,
+    });
+    const res = await request(app).get("/users/artist-handle/hidden-handle");
+    expect(res.status).toBe(404);
+  });
+});
+
+conditionalDescribe("User Controller - saveMyReferences", () => {
+  test("trims, dedupes blanks, and caps references at three", async () => {
+    await mongoose.model("client").create({
+      clerkId: "ref-client",
+      email: "rc@example.com",
+      username: "RefClient",
+      handle: "@ref-client",
+      role: "client",
+    });
+
+    const res = await request(app)
+      .put("/users/me/references")
+      .set("x-test-user-id", "ref-client")
+      .send({ urls: [" a.jpg ", "", "b.jpg", "c.jpg", "d.jpg"] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.references).toEqual(["a.jpg", "b.jpg", "c.jpg"]);
+  });
+
+  test("returns 404 when the client does not exist", async () => {
+    const res = await request(app)
+      .put("/users/me/references")
+      .set("x-test-user-id", "missing-ref")
+      .send({ urls: ["a.jpg"] });
+    expect(res.status).toBe(404);
+  });
+});
+
+conditionalDescribe("User Controller - upload signatures", () => {
+  const prev = {};
+  beforeAll(() => {
+    prev.secret = process.env.CLOUDINARY_API_SECRET;
+    prev.key = process.env.CLOUDINARY_API_KEY;
+    prev.cloud = process.env.CLOUDINARY_CLOUD_NAME;
+    process.env.CLOUDINARY_API_SECRET = "test-secret";
+    process.env.CLOUDINARY_API_KEY = "test-key";
+    process.env.CLOUDINARY_CLOUD_NAME = "test-cloud";
+  });
+  afterAll(() => {
+    process.env.CLOUDINARY_API_SECRET = prev.secret;
+    process.env.CLOUDINARY_API_KEY = prev.key;
+    process.env.CLOUDINARY_CLOUD_NAME = prev.cloud;
+  });
+
+  test("getAvatarSignature returns a signed payload for the avatars folder", async () => {
+    const res = await request(app)
+      .get("/users/avatar-signature")
+      .set("x-test-user-id", "any");
+    expect(res.status).toBe(200);
+    expect(res.body.folder).toBe("inkmity/avatars");
+    expect(res.body.signature).toBeTruthy();
+    expect(res.body.timestamp).toEqual(expect.any(Number));
+  });
+
+  test("getReferenceSignature returns a signed payload for the references folder", async () => {
+    const res = await request(app)
+      .get("/users/reference-signature")
+      .set("x-test-user-id", "any");
+    expect(res.status).toBe(200);
+    expect(res.body.folder).toBe("inkmity/references");
+    expect(res.body.signature).toBeTruthy();
+  });
+});
+
+conditionalDescribe("User Controller - 404 edges", () => {
+  test("updateMyVisibility returns 404 when the user does not exist", async () => {
+    const res = await request(app)
+      .put("/users/me/visibility")
+      .set("x-test-user-id", "no-such-user")
+      .send({ visibility: "away" });
+    expect(res.status).toBe(404);
+  });
+
+  test("saveMyPortfolio returns 404 when the artist does not exist", async () => {
+    const res = await request(app)
+      .put("/users/me/portfolio")
+      .set("x-test-user-id", "no-such-artist")
+      .send({ urls: ["p1.jpg"] });
+    expect(res.status).toBe(404);
+  });
+
+  test("updateMyBio returns 404 when the user does not exist", async () => {
+    const res = await request(app)
+      .put("/users/me/bio")
+      .set("x-test-user-id", "no-such-bio")
+      .send({ bio: "hello" });
+    expect(res.status).toBe(404);
   });
 });

@@ -24,12 +24,17 @@ const stripeMock = {
 jest.unstable_mockModule("../../lib/stripe.js", () => ({ stripe: stripeMock }));
 
 const {
+  checkoutDeposit,
   createDepositPaymentIntent,
   createFinalPaymentIntent,
+  createCardSetupIntent,
   createBankSetupIntent,
   createClientSetupIntent,
   listClientPaymentMethods,
   deleteClientPaymentMethod,
+  refundDepositForBooking,
+  createTipCheckout,
+  getPaymentBreakdown,
   stripeWebhook,
   checkoutPlatformFee,
   refundBilling,
@@ -54,7 +59,11 @@ const mockAuth = (req, res, next) => {
   next();
 };
 
+app.post("/billing/deposit/checkout", mockAuth, checkoutDeposit);
 app.post("/billing/deposit/intent", mockAuth, createDepositPaymentIntent);
+app.post("/billing/card-setup-intent", mockAuth, createCardSetupIntent);
+app.post("/billing/tip", mockAuth, createTipCheckout);
+app.post("/billing/breakdown", mockAuth, getPaymentBreakdown);
 app.post("/billing/final-payment/intent", mockAuth, createFinalPaymentIntent);
 app.post("/billing/bank-setup-intent", mockAuth, createBankSetupIntent);
 app.post("/billing/client/setup-intent", mockAuth, createClientSetupIntent);
@@ -187,6 +196,16 @@ conditionalDescribe("Billing Controller - Deposit PaymentIntent", () => {
     expect(billing.platformFeeCents).toBe(PLATFORM_FEE_MIN_CENTS);
     expect(billing.stripeConnectAccountId).toBe("acct_test_123");
   });
+
+  test("403 when a user who is not the booking's client requests a deposit intent", async () => {
+    const response = await request(app)
+      .post("/billing/deposit/intent")
+      .set("x-test-user-id", "intruder")
+      .send({ bookingId });
+    expect(response.status).toBe(403);
+    expect(stripeMock.paymentIntents.create).not.toHaveBeenCalled();
+    expect(await Billing.findOne({ bookingId })).toBeNull();
+  });
 });
 
 conditionalDescribe("Billing Controller - Final Payment Intent", () => {
@@ -277,6 +296,15 @@ conditionalDescribe("Billing Controller - Final Payment Intent", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("no_payment_required");
+  });
+
+  test("403 when a user who is not the booking's client requests the final-payment intent", async () => {
+    const response = await request(app)
+      .post("/billing/final-payment/intent")
+      .set("x-test-user-id", "intruder")
+      .send({ bookingId });
+    expect(response.status).toBe(403);
+    expect(stripeMock.paymentIntents.create).not.toHaveBeenCalled();
   });
 });
 
@@ -727,5 +755,611 @@ conditionalDescribe("Billing Controller - misc endpoints", () => {
     const res = await request(app).post("/billing/payouts/retry").set("x-test-user-id", ADMIN_ID);
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("attempted");
+  });
+});
+
+conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", () => {
+  let artistId;
+  let clientId;
+  let bookingId;
+
+  beforeEach(async () => {
+    artistId = "artist-co";
+    clientId = "client-co";
+    await createOnboardedArtist(artistId);
+
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const booking = await Booking.create({
+      artistId,
+      clientId,
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "pending",
+      appointmentType: "tattoo_session",
+      priceCents: 20000,
+      depositRequiredCents: 5000,
+      depositPaidCents: 0,
+    });
+    bookingId = booking._id.toString();
+
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_co1" });
+    stripeMock.checkout = { sessions: { create: jest.fn() } };
+    stripeMock.checkout.sessions.create.mockResolvedValue({
+      id: "cs_co1",
+      url: "https://checkout.stripe/co1",
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("creates a checkout session with deposit + platform-fee line items", async () => {
+    const res = await request(app)
+      .post("/billing/deposit/checkout")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.url).toBe("https://checkout.stripe/co1");
+    expect(res.body.id).toBe("cs_co1");
+    expect(res.body.clientSecret).toBeNull();
+
+    const expectedFee = PLATFORM_FEE_MIN_CENTS + Math.round(20000 * 0.05); // base + 5% of price
+    const args = stripeMock.checkout.sessions.create.mock.calls[0][0];
+    expect(args.mode).toBe("payment");
+    expect(args.line_items).toHaveLength(2);
+    expect(args.line_items[0].price_data.unit_amount).toBe(5000);
+    expect(args.line_items[1].price_data.product_data.name).toBe("Platform service fee");
+    expect(args.line_items[1].price_data.unit_amount).toBe(expectedFee);
+    expect(args.metadata).toMatchObject({ type: "deposit", bookingId });
+
+    const bill = await Billing.findOne({ bookingId, type: "deposit" });
+    expect(bill.status).toBe("pending");
+    expect(bill.amountCents).toBe(5000 + expectedFee);
+    expect(bill.platformFeeCents).toBe(expectedFee);
+    expect(bill.stripeCheckoutSessionId).toBe("cs_co1");
+  });
+
+  test("rejects when bookingId missing", async () => {
+    const res = await request(app)
+      .post("/billing/deposit/checkout")
+      .set("x-test-user-id", clientId)
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("bookingId required");
+  });
+
+  test("404 when booking not found", async () => {
+    const res = await request(app)
+      .post("/billing/deposit/checkout")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId: new mongoose.Types.ObjectId().toString() });
+    expect(res.status).toBe(404);
+  });
+
+  test("rejects deposit already paid", async () => {
+    await Booking.updateOne({ _id: bookingId }, { $set: { depositPaidCents: 5000 } });
+    const res = await request(app)
+      .post("/billing/deposit/checkout")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("deposit_already_paid");
+  });
+
+  test("403 when a user who is not the booking's client starts a deposit checkout", async () => {
+    const res = await request(app)
+      .post("/billing/deposit/checkout")
+      .set("x-test-user-id", "intruder")
+      .send({ bookingId });
+    expect(res.status).toBe(403);
+    expect(stripeMock.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  test("falls back to creating a customer when retrieve throws", async () => {
+    await Billing.create({
+      bookingId: new mongoose.Types.ObjectId(),
+      artistId,
+      clientId,
+      type: "deposit",
+      amountCents: 1000,
+      status: "paid",
+      stripeCustomerId: "cus_stale",
+    });
+    stripeMock.customers.retrieve.mockRejectedValue(new Error("no such customer"));
+
+    const res = await request(app)
+      .post("/billing/deposit/checkout")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId });
+
+    expect(res.status).toBe(200);
+    expect(stripeMock.customers.create).toHaveBeenCalled();
+  });
+
+  test("reuses an existing Stripe customer from a prior bill", async () => {
+    await Billing.create({
+      bookingId: new mongoose.Types.ObjectId(),
+      artistId,
+      clientId,
+      type: "deposit",
+      amountCents: 1000,
+      status: "paid",
+      stripeCustomerId: "cus_existing",
+    });
+    stripeMock.customers.retrieve.mockResolvedValue({ id: "cus_existing" });
+
+    const res = await request(app)
+      .post("/billing/deposit/checkout")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId });
+
+    expect(res.status).toBe(200);
+    expect(stripeMock.customers.retrieve).toHaveBeenCalledWith("cus_existing");
+    expect(stripeMock.customers.create).not.toHaveBeenCalled();
+  });
+});
+
+conditionalDescribe("Billing Controller - createCardSetupIntent", () => {
+  let bookingId;
+
+  beforeEach(async () => {
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const booking = await Booking.create({
+      artistId: "artist-card",
+      clientId: "client-card",
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "confirmed",
+      appointmentType: "tattoo_session",
+      priceCents: 10000,
+    });
+    bookingId = booking._id.toString();
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_card1" });
+    stripeMock.setupIntents.create.mockResolvedValue({
+      id: "seti_card1",
+      client_secret: "seti_card1_secret",
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("creates an automatic-methods card SetupIntent and saves the customer on the booking", async () => {
+    const res = await request(app)
+      .post("/billing/card-setup-intent")
+      .set("x-test-user-id", "client-card")
+      .send({ bookingId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.clientSecret).toBe("seti_card1_secret");
+    expect(res.body.customerId).toBe("cus_card1");
+    const args = stripeMock.setupIntents.create.mock.calls[0][0];
+    expect(args.automatic_payment_methods).toEqual({ enabled: true });
+    expect(args.metadata.type).toBe("card_on_file");
+
+    const booking = await Booking.findById(bookingId);
+    expect(booking.stripeCustomerId).toBe("cus_card1");
+  });
+
+  test("rejects when bookingId missing", async () => {
+    const res = await request(app)
+      .post("/billing/card-setup-intent")
+      .set("x-test-user-id", "client-card")
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  test("404 when booking not found", async () => {
+    const res = await request(app)
+      .post("/billing/card-setup-intent")
+      .set("x-test-user-id", "client-card")
+      .send({ bookingId: new mongoose.Types.ObjectId().toString() });
+    expect(res.status).toBe(404);
+  });
+});
+
+conditionalDescribe("Billing Controller - createClientSetupIntent edge cases", () => {
+  afterEach(() => jest.clearAllMocks());
+
+  test("404 when no Client record exists for the clerkId", async () => {
+    const res = await request(app)
+      .post("/billing/client/setup-intent")
+      .set("x-test-user-id", "ghost-client")
+      .send({});
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe("client_not_found");
+  });
+
+  test("reuses the existing Stripe customer stored on the client", async () => {
+    const Client = mongoose.model("client");
+    await Client.create({
+      clerkId: "client-reuse",
+      email: "reuse@example.com",
+      username: "Reuse",
+      handle: "@reuse",
+      role: "client",
+      stripeCustomerId: "cus_reuse",
+    });
+    stripeMock.customers.retrieve.mockResolvedValue({ id: "cus_reuse", deleted: false });
+    stripeMock.setupIntents.create.mockResolvedValue({
+      id: "seti_reuse",
+      client_secret: "seti_reuse_secret",
+    });
+
+    const res = await request(app)
+      .post("/billing/client/setup-intent")
+      .set("x-test-user-id", "client-reuse")
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.customerId).toBe("cus_reuse");
+    expect(stripeMock.customers.create).not.toHaveBeenCalled();
+  });
+});
+
+conditionalDescribe("Billing Controller - createTipCheckout (100% to artist)", () => {
+  let artistId;
+  let clientId;
+  let bookingId;
+
+  beforeEach(async () => {
+    artistId = "artist-tip";
+    clientId = "client-tip";
+    await createOnboardedArtist(artistId);
+
+    const startISO = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const booking = await Booking.create({
+      artistId,
+      clientId,
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "completed",
+      appointmentType: "tattoo_session",
+      priceCents: 10000,
+    });
+    bookingId = booking._id.toString();
+
+    stripeMock.customers.create.mockResolvedValue({ id: "cus_tip1" });
+    stripeMock.checkout = { sessions: { create: jest.fn() } };
+    stripeMock.checkout.sessions.create.mockResolvedValue({
+      id: "cs_tip1",
+      url: "https://checkout.stripe/tip1",
+    });
+  });
+
+  afterEach(() => jest.clearAllMocks());
+
+  test("creates a destination-charge tip session routed 100% to the artist", async () => {
+    const res = await request(app)
+      .post("/billing/tip")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId, tipCents: 2500 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.tipCents).toBe(2500);
+    expect(res.body.url).toBe("https://checkout.stripe/tip1");
+
+    const args = stripeMock.checkout.sessions.create.mock.calls[0][0];
+    expect(args.payment_intent_data.transfer_data).toEqual({ destination: "acct_test_123" });
+    expect(args.payment_intent_data.on_behalf_of).toBe("acct_test_123");
+    expect(args.payment_intent_data.application_fee_amount).toBeUndefined();
+    expect(args.line_items[0].price_data.unit_amount).toBe(2500);
+
+    const bill = await Billing.findOne({ bookingId, type: "tip" });
+    expect(bill.amountCents).toBe(2500);
+    expect(bill.platformFeeCents).toBe(0);
+  });
+
+  test("400 when bookingId missing", async () => {
+    const res = await request(app)
+      .post("/billing/tip")
+      .set("x-test-user-id", clientId)
+      .send({ tipCents: 2500 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("bookingId required");
+  });
+
+  test("rejects a tip below the minimum", async () => {
+    const res = await request(app)
+      .post("/billing/tip")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId, tipCents: 50 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("invalid_amount");
+  });
+
+  test("403 when a non-client tries to tip", async () => {
+    const res = await request(app)
+      .post("/billing/tip")
+      .set("x-test-user-id", "someone-else")
+      .send({ bookingId, tipCents: 2500 });
+    expect(res.status).toBe(403);
+  });
+
+  test("rejects tipping before the session is completed", async () => {
+    await Booking.updateOne({ _id: bookingId }, { $set: { status: "confirmed" } });
+    const res = await request(app)
+      .post("/billing/tip")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId, tipCents: 2500 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("not_completed");
+  });
+
+  test("caps an oversized tip at the maximum", async () => {
+    const res = await request(app)
+      .post("/billing/tip")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId, tipCents: 9999999 });
+    expect(res.status).toBe(200);
+    expect(res.body.tipCents).toBe(100000);
+  });
+});
+
+conditionalDescribe("Billing Controller - getPaymentBreakdown (hides payout split from clients)", () => {
+  let artistId;
+  let clientId;
+  let bookingId;
+
+  beforeEach(async () => {
+    artistId = "artist-bd";
+    clientId = "client-bd";
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const booking = await Booking.create({
+      artistId,
+      clientId,
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "confirmed",
+      appointmentType: "tattoo_session",
+      priceCents: 20000,
+    });
+    bookingId = booking._id.toString();
+  });
+
+  afterEach(() => jest.clearAllMocks());
+
+  test("client sees totals but NOT artist net / studio commission", async () => {
+    const res = await request(app)
+      .post("/billing/breakdown")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.priceCents).toBe(20000);
+    expect(res.body.platformFeeCents).toBeGreaterThan(0);
+    expect(res.body.clientTotalCents).toBe(20000 + res.body.platformFeeCents);
+    expect(res.body).not.toHaveProperty("artistNetCents");
+    expect(res.body).not.toHaveProperty("studioCents");
+    expect(res.body).not.toHaveProperty("artistGrossCents");
+    expect(res.body).not.toHaveProperty("stripeFeeCents");
+  });
+
+  test("the artist sees their own gross/net/studio split", async () => {
+    const res = await request(app)
+      .post("/billing/breakdown")
+      .set("x-test-user-id", artistId)
+      .send({ bookingId });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("artistGrossCents");
+    expect(res.body).toHaveProperty("artistNetCents");
+    expect(res.body).toHaveProperty("studioCents");
+    expect(res.body.isStudio).toBe(false);
+    expect(res.body.artistNetCents).toBeLessThan(res.body.artistGrossCents);
+  });
+
+  test("403 when an unrelated user requests a booking breakdown", async () => {
+    const res = await request(app)
+      .post("/billing/breakdown")
+      .set("x-test-user-id", "intruder")
+      .send({ bookingId });
+    expect(res.status).toBe(403);
+  });
+
+  test("404 when the booking does not exist", async () => {
+    const res = await request(app)
+      .post("/billing/breakdown")
+      .set("x-test-user-id", clientId)
+      .send({ bookingId: new mongoose.Types.ObjectId().toString() });
+    expect(res.status).toBe(404);
+  });
+
+  test("supports ad-hoc artistClerkId + priceCents (no booking)", async () => {
+    const res = await request(app)
+      .post("/billing/breakdown")
+      .set("x-test-user-id", clientId)
+      .send({ artistClerkId: artistId, priceCents: 15000 });
+    expect(res.status).toBe(200);
+    expect(res.body.priceCents).toBe(15000);
+    expect(res.body).not.toHaveProperty("artistNetCents");
+  });
+
+  test("400 when neither bookingId nor artistClerkId provided", async () => {
+    const res = await request(app)
+      .post("/billing/breakdown")
+      .set("x-test-user-id", clientId)
+      .send({ priceCents: 15000 });
+    expect(res.status).toBe(400);
+  });
+});
+
+conditionalDescribe("Billing Controller - refundDepositForBooking (forfeit/clawback helper)", () => {
+  afterEach(() => jest.clearAllMocks());
+
+  test("refunds paid deposits, marks them refunded and reverses payouts", async () => {
+    const bookingObjId = new mongoose.Types.ObjectId();
+    const bill = await Billing.create({
+      bookingId: bookingObjId,
+      artistId: "artist-rf",
+      clientId: "client-rf",
+      type: "deposit",
+      amountCents: 5000,
+      status: "paid",
+      stripePaymentIntentId: "pi_dep_rf",
+      stripeRefundIds: [],
+    });
+    stripeMock.refunds.create.mockResolvedValue({ id: "re_dep_rf" });
+    stripeMock.transfers.createReversal.mockResolvedValue({ id: "trr_rf" });
+
+    const refunds = await refundDepositForBooking(bookingObjId.toString());
+    expect(refunds).toContain("re_dep_rf");
+    expect(stripeMock.refunds.create).toHaveBeenCalledWith(
+      { payment_intent: "pi_dep_rf" },
+      expect.objectContaining({ idempotencyKey: expect.any(String) })
+    );
+
+    const updated = await Billing.findById(bill._id);
+    expect(updated.status).toBe("refunded");
+    expect(updated.refundedAt).toBeTruthy();
+    expect(updated.stripeRefundIds).toContain("re_dep_rf");
+  });
+
+  test("still marks refunded when there is no payment intent to refund", async () => {
+    const bookingObjId = new mongoose.Types.ObjectId();
+    const bill = await Billing.create({
+      bookingId: bookingObjId,
+      artistId: "artist-rf2",
+      clientId: "client-rf2",
+      type: "deposit",
+      amountCents: 5000,
+      status: "paid",
+    });
+    const refunds = await refundDepositForBooking(bookingObjId.toString());
+    expect(refunds).toHaveLength(0);
+    const updated = await Billing.findById(bill._id);
+    expect(updated.status).toBe("refunded");
+  });
+});
+
+conditionalDescribe("Billing Controller - webhook checkout.session.completed + dispute", () => {
+  let artistId;
+  let clientId;
+  let bookingId;
+  let billingId;
+
+  beforeEach(async () => {
+    artistId = "artist-wh2";
+    clientId = "client-wh2";
+    await createOnboardedArtist(artistId);
+
+    const startISO = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    const booking = await Booking.create({
+      artistId,
+      clientId,
+      startAt: startISO,
+      endAt: new Date(startISO.getTime() + 60 * 60 * 1000),
+      status: "pending",
+      appointmentType: "consultation",
+      depositRequiredCents: 1000,
+      depositPaidCents: 0,
+    });
+    bookingId = booking._id.toString();
+
+    const billing = await Billing.create({
+      bookingId,
+      artistId,
+      clientId,
+      type: "deposit",
+      amountCents: 1500,
+      platformFeeCents: 500,
+      status: "pending",
+      transferGroup: `booking_${bookingId}`,
+    });
+    billingId = billing._id.toString();
+    stripeMock.transfers.create.mockResolvedValue({ id: "tr_wh2" });
+  });
+
+  afterEach(() => jest.clearAllMocks());
+
+  test("checkout.session.completed for a deposit marks bill paid and confirms booking", async () => {
+    const event = {
+      id: "evt_cs_dep",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_dep",
+          payment_intent: "pi_cs_dep",
+          metadata: { billingId, bookingId, type: "deposit" },
+        },
+      },
+    };
+    const res = await request(app).post("/billing/webhook").send(event);
+    expect(res.status).toBe(200);
+
+    const bill = await Billing.findById(billingId);
+    expect(bill.status).toBe("paid");
+    expect(bill.stripePaymentIntentId).toBe("pi_cs_dep");
+
+    const booking = await Booking.findById(bookingId);
+    expect(booking.status).toBe("confirmed");
+    expect(booking.depositPaidCents).toBe(1000);
+  });
+
+  test("checkout.session.completed for a tip increments booking.tipCents", async () => {
+    const tipBill = await Billing.create({
+      bookingId,
+      artistId,
+      clientId,
+      type: "tip",
+      amountCents: 3000,
+      platformFeeCents: 0,
+      status: "pending",
+    });
+    const event = {
+      id: "evt_cs_tip",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_tip",
+          payment_intent: "pi_cs_tip",
+          metadata: { billingId: tipBill._id.toString(), bookingId, type: "tip" },
+        },
+      },
+    };
+    const res = await request(app).post("/billing/webhook").send(event);
+    expect(res.status).toBe(200);
+
+    const booking = await Booking.findById(bookingId);
+    expect(booking.tipCents).toBe(3000);
+    const bill = await Billing.findById(tipBill._id);
+    expect(bill.status).toBe("paid");
+  });
+
+  test("charge.dispute.created flags the bill disputed and reverses payouts", async () => {
+    const bill = await Billing.create({
+      bookingId,
+      artistId,
+      clientId,
+      type: "deposit",
+      amountCents: 1500,
+      status: "paid",
+      stripeChargeId: "ch_disp",
+    });
+    stripeMock.transfers.createReversal.mockResolvedValue({ id: "trr_disp" });
+
+    const event = {
+      id: "evt_disp",
+      type: "charge.dispute.created",
+      data: {
+        object: { id: "dp_1", charge: "ch_disp", payment_intent: "pi_disp" },
+      },
+    };
+    const res = await request(app).post("/billing/webhook").send(event);
+    expect(res.status).toBe(200);
+
+    const updated = await Billing.findById(bill._id);
+    expect(["reversed", "disputed", "reversal_failed"]).toContain(updated.disputeStatus);
+  });
+
+  test("returns 400 on an invalid webhook signature", async () => {
+    stripeMock.webhooks.constructEvent.mockImplementationOnce(() => {
+      throw new Error("bad sig");
+    });
+    const res = await request(app).post("/billing/webhook").send({ id: "x", type: "noop" });
+    expect(res.status).toBe(400);
   });
 });

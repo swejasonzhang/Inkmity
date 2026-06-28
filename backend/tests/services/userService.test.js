@@ -211,5 +211,99 @@ describe("User Service - TDD", () => {
     test("should throw error when handle missing", async () => {
       await expect(userService.checkHandleAvailability("")).rejects.toThrow("handle_required");
     });
+
+    test("reports unavailable without a DB lookup for a malformed handle", async () => {
+      mockIsValidHandle.mockReturnValue(false);
+
+      const result = await userService.checkHandleAvailability("bad!!handle");
+
+      expect(result.available).toBe(false);
+      expect(mockUserRepository.isHandleAvailable).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getById", () => {
+    test("delegates to the repository", async () => {
+      const doc = { _id: "id-1" };
+      mockUserRepository.findById = jest.fn().mockResolvedValue(doc);
+
+      const result = await userService.getById("id-1");
+
+      expect(result).toEqual(doc);
+      expect(mockUserRepository.findById).toHaveBeenCalledWith("id-1");
+    });
+  });
+
+  describe("syncUser - artist branch", () => {
+    test("maps artist profile fields onto the upsert document", async () => {
+      mockUserRepository.findByClerkId.mockResolvedValue(null);
+      mockEnsureUniqueHandle.mockResolvedValue("inkmaster");
+      mockUserRepository.upsert.mockImplementation((_clerkId, doc) => doc);
+
+      const result = await userService.syncUser("art-1", {
+        email: "art@example.com",
+        role: "artist",
+        username: "Ink Master",
+        profile: {
+          years: 8,
+          baseRate: 150,
+          bookingPreference: "selective",
+          travelFrequency: "often",
+          shop: "Ink Co",
+          shopLat: 40.7,
+          shopLng: -74,
+          coverImage: "cover.jpg",
+          portfolioImages: ["a.jpg", "b.jpg", "c.jpg", "d.jpg"],
+          restrictedPlacements: ["face", " "],
+          style: "blackwork",
+        },
+      });
+
+      expect(result.role).toBe("artist");
+      expect(result.yearsExperience).toBe(8);
+      expect(result.baseRate).toBe(150);
+      expect(result.bookingPreference).toBe("selective");
+      expect(result.travelFrequency).toBe("often");
+      expect(result.shopLat).toBe(40.7);
+      expect(result.shopLng).toBe(-74);
+      expect(result.coverImage).toBe("cover.jpg");
+      expect(result.portfolioImages).toHaveLength(3);
+      expect(result.restrictedPlacements).toEqual(["face"]);
+      expect(result.styles).toEqual(["blackwork"]);
+    });
+  });
+
+  describe("deleteAvatar", () => {
+    test("clears the avatar via the repository", async () => {
+      mockUserRepository.updateByClerkId.mockResolvedValue({ clerkId: "test-123" });
+
+      await userService.deleteAvatar("test-123");
+
+      expect(mockUserRepository.updateByClerkId).toHaveBeenCalledWith("test-123", {
+        avatar: undefined,
+      });
+    });
+  });
+
+  describe("getArtists / getFeaturedArtists", () => {
+    test("getArtists forwards filters to the repository", async () => {
+      const page = { items: [], total: 0 };
+      mockUserRepository.findArtists.mockResolvedValue(page);
+
+      const result = await userService.getArtists({ sort: "newest" });
+
+      expect(result).toEqual(page);
+      expect(mockUserRepository.findArtists).toHaveBeenCalledWith({}, { sort: "newest" });
+    });
+
+    test("getFeaturedArtists passes the limit through", async () => {
+      const artists = [{ _id: "f1" }];
+      mockUserRepository.findFeaturedArtists.mockResolvedValue(artists);
+
+      const result = await userService.getFeaturedArtists(3);
+
+      expect(result).toEqual(artists);
+      expect(mockUserRepository.findFeaturedArtists).toHaveBeenCalledWith(3);
+    });
   });
 });
