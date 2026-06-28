@@ -7,6 +7,8 @@ import Booking from "../../models/Booking.js";
 import Billing from "../../models/Billing.js";
 import ArtistPolicy from "../../models/ArtistPolicy.js";
 import Project from "../../models/Project.js";
+import "../../models/IntakeForm.js";
+import "../../models/Image.js";
 import Artist from "../../models/Artist.js";
 import Client from "../../models/Client.js";
 import ClientBookingPermission from "../../models/ClientBookingPermission.js";
@@ -36,6 +38,9 @@ import {
   getBookingsForDay,
   startVerification,
   verifyBookingCode,
+  getAppointmentDetails,
+  cancelBookingViaLink,
+  updateBookingTime,
 } from "../../controllers/bookingController.js";
 import { captureBookingBalance } from "../../services/balanceCaptureService.js";
 
@@ -79,6 +84,9 @@ app.get("/bookings/consultation-status", mockAuth, checkConsultationStatus);
 app.get("/bookings/day", mockAuth, getBookingsForDay);
 app.post("/bookings/:id/start-verification", mockAuth, startVerification);
 app.post("/bookings/:id/verify", mockAuth, verifyBookingCode);
+app.get("/bookings/:id/details", mockAuth, getAppointmentDetails);
+app.get("/bookings/:id/cancel-link", cancelBookingViaLink);
+app.patch("/bookings/:id/time", mockAuth, updateBookingTime);
 app.get("/bookings/:id", mockAuth, getBooking);
 app.patch("/bookings/:id/final-price", mockAuth, setFinalPrice);
 app.post("/bookings/:id/approve-final-price", mockAuth, approveFinalPrice);
@@ -1150,5 +1158,79 @@ conditionalDescribe("Booking Controller - verification", () => {
     const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "artist", code: "ABC123" });
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("role_mismatch");
+  });
+});
+
+conditionalDescribe("Booking Controller - details, cancel-link, time", () => {
+  async function seed(over = {}) {
+    return Booking.create({
+      artistId: "dl-artist",
+      clientId: "dl-client",
+      startAt: new Date(Date.now() + 3 * 86400000),
+      endAt: new Date(Date.now() + 3 * 86400000 + 3600000),
+      status: "accepted",
+      appointmentType: "consultation",
+      priceCents: 5000,
+      ...over,
+    });
+  }
+
+  test("getAppointmentDetails 404 for a missing booking", async () => {
+    const res = await request(app).get(`/bookings/${new mongoose.Types.ObjectId()}/details`).set("x-test-user-id", "dl-client");
+    expect(res.status).toBe(404);
+  });
+
+  test("getAppointmentDetails 403 for a non-party", async () => {
+    const b = await seed();
+    const res = await request(app).get(`/bookings/${b._id}/details`).set("x-test-user-id", "stranger");
+    expect(res.status).toBe(403);
+  });
+
+  test("getAppointmentDetails returns details with enriched parties", async () => {
+    const b = await seed();
+    const res = await request(app).get(`/bookings/${b._id}/details`).set("x-test-user-id", "dl-client");
+    expect(res.status).toBe(200);
+    expect(String(res.body._id)).toBe(String(b._id));
+  });
+
+  test("cancelBookingViaLink redirects with an error on an invalid token", async () => {
+    const b = await seed({ cancelToken: "good" });
+    const res = await request(app).get(`/bookings/${b._id}/cancel-link?token=bad`);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toContain("invalid_token");
+  });
+
+  test("cancelBookingViaLink cancels and redirects with the valid token", async () => {
+    const b = await seed({ cancelToken: "good" });
+    const res = await request(app).get(`/bookings/${b._id}/cancel-link?token=good`);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toContain("cancelled=true");
+    const updated = await Booking.findById(b._id);
+    expect(updated.status).toBe("cancelled");
+  });
+
+  test("updateBookingTime 400 without dates", async () => {
+    const b = await seed();
+    const res = await request(app).patch(`/bookings/${b._id}/time`).set("x-test-user-id", "dl-artist").send({});
+    expect(res.status).toBe(400);
+  });
+
+  test("updateBookingTime 403 when not the artist", async () => {
+    const b = await seed();
+    const res = await request(app)
+      .patch(`/bookings/${b._id}/time`)
+      .set("x-test-user-id", "dl-client")
+      .send({ startISO: new Date().toISOString(), endISO: new Date(Date.now() + 3600000).toISOString() });
+    expect(res.status).toBe(403);
+  });
+
+  test("updateBookingTime 400 on invalid dates (end before start)", async () => {
+    const b = await seed();
+    const res = await request(app)
+      .patch(`/bookings/${b._id}/time`)
+      .set("x-test-user-id", "dl-artist")
+      .send({ startISO: new Date(Date.now() + 7200000).toISOString(), endISO: new Date(Date.now() + 3600000).toISOString() });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Invalid dates");
   });
 });
