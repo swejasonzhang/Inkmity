@@ -1,5 +1,10 @@
-import { describe, test, expect } from "@jest/globals";
-import { cityFromPlace, MONO_MAP_STYLE, googleMapsKey } from "@/lib/googleMaps";
+import { describe, test, expect, afterEach } from "@jest/globals";
+import {
+  cityFromPlace,
+  MONO_MAP_STYLE,
+  googleMapsKey,
+  loadGoogleMaps,
+} from "@/lib/googleMaps";
 
 describe("cityFromPlace", () => {
   function comp(types: string[], long_name: string) {
@@ -53,4 +58,26 @@ describe("MONO_MAP_STYLE", () => {
       expect(Array.isArray(rule.stylers)).toBe(true);
     }
   });
+});
+
+describe("loadGoogleMaps", () => {
+  afterEach(() => {
+    delete (window as any).google;
+    document.head.innerHTML = "";
+    delete (window as any).__inkmityGoogleMapsReady;
+  });
+
+  test("resolves immediately when the places library is already present", async () => {
+    const google = { maps: { places: {} } };
+    (window as any).google = google;
+    await expect(loadGoogleMaps()).resolves.toBe(google);
+    expect(document.head.querySelector("script")).toBeNull();
+  });
+
+  test("rejects when no API key is configured", async () => {
+    await expect(loadGoogleMaps()).rejects.toThrow(
+      "VITE_GOOGLE_MAPS_API_KEY is not configured"
+    );
+  });
+
 });

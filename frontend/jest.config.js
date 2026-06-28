@@ -30,10 +30,10 @@ export default {
   ],
   coverageThreshold: {
     global: {
-      statements: 35,
-      branches: 25,
-      functions: 32,
-      lines: 37,
+      statements: 39,
+      branches: 28,
+      functions: 36,
+      lines: 41,
     },
   },
   setupFilesAfterEnv: ["<rootDir>/src/tests/setup/jest.setup.ts"],
