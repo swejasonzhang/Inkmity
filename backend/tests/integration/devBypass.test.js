@@ -9,7 +9,6 @@ const {
   acceptAppointment,
   completeBooking,
 } = await import("../../controllers/bookingController.js");
-const Booking = (await import("../../models/Booking.js")).default;
 const Artist = (await import("../../models/Artist.js")).default;
 const Client = (await import("../../models/Client.js")).default;
 const { getRewardsSummary } = await import("../../services/rewardsService.js");

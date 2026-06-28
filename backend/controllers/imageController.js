@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import Image from "../models/Image.js";
 import User from "../models/UserBase.js";
+import { signUpload as signUploadPayload } from "../lib/cloudinarySign.js";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -19,27 +20,14 @@ export const signUpload = (req, res) => {
   const folder =
     (req.method === "GET" ? req.query.folder : req.body.folder) ||
     kindToFolder(kind);
-  const tags =
+  const rawTags =
     (req.method === "GET" ? req.query.tags : req.body.tags) ||
     (kind === "artist_portfolio" ? ["portfolio"] : ["reference"]);
-  const timestamp = Math.floor(Date.now() / 1000);
-  const paramsToSign = {
-    timestamp,
-    folder,
-    tags: Array.isArray(tags) ? tags.join(",") : tags,
-  };
-  const signature = cloudinary.utils.api_sign_request(
-    paramsToSign,
-    process.env.CLOUDINARY_API_SECRET
-  );
-  res.json({
-    timestamp,
-    signature,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    folder,
-    tags: paramsToSign.tags,
+  const tags = Array.isArray(rawTags) ? rawTags.join(",") : rawTags;
+  const { timestamp, signature, apiKey, cloudName } = signUploadPayload(folder, {
+    tags,
   });
+  res.json({ timestamp, signature, apiKey, cloudName, folder, tags });
 };
 
 export const saveImages = async (req, res) => {

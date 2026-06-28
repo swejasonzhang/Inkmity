@@ -14,7 +14,7 @@ class UserRepository {
     const cacheKey = `${CACHE_KEY_PREFIX}:clerkId:${clerkId}`;
 
     if (useCache) {
-      const cached = cache.get(cacheKey);
+      const cached = await cache.get(cacheKey);
       if (cached) return cached;
     }
 
@@ -38,7 +38,7 @@ class UserRepository {
 
   async findById(id) {
     const cacheKey = `${CACHE_KEY_PREFIX}:id:${id}`;
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
     const user = await User.findById(id).lean();
@@ -78,7 +78,7 @@ class UserRepository {
     return user;
   }
 
-  async findArtists(filters = {}, pagination = {}) {
+  async findArtists(_filters = {}, pagination = {}) {
     const {
       search,
       location,
@@ -245,7 +245,7 @@ class UserRepository {
 
   async findFeaturedArtists(limit = 5) {
     const cacheKey = `${CACHE_KEY_PREFIX}:featured:${limit}`;
-    const cached = cache.get(cacheKey);
+    const cached = await cache.get(cacheKey);
     if (cached) return cached;
 
     const artists = await User.aggregate([

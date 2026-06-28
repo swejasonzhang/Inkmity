@@ -71,3 +71,38 @@ services:
         sync: false
       - key: SENTRY_TRACES_SAMPLE_RATE
         value: "0"
+      # Redis (Key Value) — powers the Socket.io adapter, a shared cache, and a
+      # shared rate-limit store so the API can run on more than one instance.
+      # When unset, the app cleanly falls back to per-instance in-memory state
+      # (correct for a single instance). Wired from the keyvalue service below.
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: inkmity-redis
+          property: connectionString
+      # Set to "true" ONLY when running more than one instance: forces Socket.io
+      # to websocket-only so the polling handshake doesn't bounce across
+      # instances (Render has no sticky sessions). The frontend socket client
+      # must then also use transports: ["websocket"]. Harmless at 1 instance.
+      - key: SOCKET_WS_ONLY
+        value: "false"
+    # --- Horizontal scaling (requires a Standard+ plan; starter = 1 instance) ---
+    # To scale out: raise `plan`, uncomment `scaling`, and set SOCKET_WS_ONLY=true.
+    # The Redis-backed adapter/cache/rate-limit above make >1 instance correct.
+    # scaling:
+    #   minInstances: 2
+    #   maxInstances: 5
+    #   targetCPUPercent: 70
+
+  # --- Redis / Key Value: Socket.io adapter + shared cache + rate-limit store ---
+  - type: keyvalue
+    name: inkmity-redis
+    region: ohio
+    # `starter` is a small paid always-on instance; use `free` for staging.
+    plan: starter
+    # Internal-only: no public ingress, reachable from the API service via the
+    # private network. Empty allow-list blocks all external connections.
+    ipAllowList: []
+    # The cache tolerates eviction (it just re-reads from Mongo); LRU keeps the
+    # most-used keys hot. Rate-limit/adapter keys are short-lived.
+    maxmemoryPolicy: allkeys-lru

@@ -71,6 +71,61 @@ function respondWithCooldown(res, cooldown) {
   });
 }
 
+async function computeDepositForfeiture(booking, now) {
+  const hoursUntilAppointment =
+    (new Date(booking.startAt).getTime() - now.getTime()) / (1000 * 60 * 60);
+  let cancelPolicy = null;
+  try {
+    cancelPolicy = await ArtistPolicy.findOne({ artistId: booking.artistId });
+  } catch {}
+  const cutoffHours = Number(cancelPolicy?.deposit?.cutoffHours ?? 48);
+  const shouldForfeitDeposit =
+    hoursUntilAppointment < cutoffHours && booking.depositPaidCents > 0;
+  return { hoursUntilAppointment, shouldForfeitDeposit };
+}
+
+async function sendClientCancellationEmail(booking) {
+  let clientEmail = null;
+  let clientName = "Valued Client";
+  if (booking.clientId) {
+    const client = await Client.findById(booking.clientId);
+    if (client) {
+      clientEmail = client.email;
+      clientName = client.username || client.handle || "Valued Client";
+    }
+  }
+  if (clientEmail) {
+    await sendAppointmentCancellationEmail(booking, clientEmail, clientName);
+  }
+}
+
+function emitBookingDayEvent(event, booking) {
+  try {
+    const io = getIO();
+    if (io) {
+      io.emit(event, {
+        artistId: String(booking.artistId),
+        date: new Date(booking.startAt).toISOString().slice(0, 10),
+        bookingId: String(booking._id),
+      });
+    }
+  } catch {}
+}
+
+async function applyClientCancelCooldown(clientId, artistId, bookingId, now = new Date()) {
+  return BookingCooldown.findOneAndUpdate(
+    { userId: String(clientId), artistId: String(artistId) },
+    {
+      userId: String(clientId),
+      artistId: String(artistId),
+      cancelledAt: now,
+      expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      bookingId,
+    },
+    { upsert: true, new: true }
+  );
+}
+
 async function applyScheduleCooldown(userId, artistId, bookingId) {
   try {
     const now = new Date();
@@ -272,6 +327,34 @@ export async function getBooking(req, res) {
   }
 }
 
+async function enrichBookingsWithParty(docs, party) {
+  const idKey = party === "artist" ? "artistId" : "clientId";
+  const fallbackLabel = party === "artist" ? "Unknown Artist" : "Unknown Client";
+  const User = (await import("../models/UserBase.js")).default;
+
+  const ids = [...new Set(docs.map((b) => b[idKey]).filter(Boolean))];
+  const users = ids.length
+    ? await User.find({ clerkId: { $in: ids } })
+        .select("clerkId username avatar")
+        .lean()
+    : [];
+  const userMap = new Map(users.map((u) => [u.clerkId, u]));
+
+  return docs.map((booking) => {
+    const user = userMap.get(booking[idKey]);
+    return {
+      ...booking,
+      [party]: user
+        ? {
+            username: user.username || "Unknown",
+            profileImage: user.avatar?.url || "",
+            avatar: user.avatar || null,
+          }
+        : { username: fallbackLabel, profileImage: "", avatar: null },
+    };
+  });
+}
+
 export async function getClientBookings(req, res) {
   try {
     const userId = getActorId(req);
@@ -282,45 +365,7 @@ export async function getClientBookings(req, res) {
       .limit(100)
       .lean();
 
-    const Artist = (await import("../models/Artist.js")).default;
-    const User = (await import("../models/UserBase.js")).default;
-
-    const bookingsWithArtists = await Promise.all(
-      docs.map(async (booking) => {
-        try {
-          const user = await User.findOne({ clerkId: booking.artistId }).lean();
-          if (user) {
-            return {
-              ...booking,
-              artist: {
-                username: user.username || "Unknown",
-                profileImage: user.avatar?.url || "",
-                avatar: user.avatar || null,
-              },
-            };
-          }
-          return {
-            ...booking,
-            artist: {
-              username: "Unknown Artist",
-              profileImage: "",
-              avatar: null,
-            },
-          };
-        } catch (err) {
-          return {
-            ...booking,
-            artist: {
-              username: "Unknown Artist",
-              profileImage: "",
-              avatar: null,
-            },
-          };
-        }
-      })
-    );
-
-    res.json(bookingsWithArtists);
+    res.json(await enrichBookingsWithParty(docs, "artist"));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch bookings" });
   }
@@ -336,44 +381,7 @@ export async function getArtistBookings(req, res) {
       .limit(100)
       .lean();
 
-    const User = (await import("../models/UserBase.js")).default;
-
-    const bookingsWithClients = await Promise.all(
-      docs.map(async (booking) => {
-        try {
-          const user = await User.findOne({ clerkId: booking.clientId }).lean();
-          if (user) {
-            return {
-              ...booking,
-              client: {
-                username: user.username || "Unknown",
-                profileImage: user.avatar?.url || "",
-                avatar: user.avatar || null,
-              },
-            };
-          }
-          return {
-            ...booking,
-            client: {
-              username: "Unknown Client",
-              profileImage: "",
-              avatar: null,
-            },
-          };
-        } catch (err) {
-          return {
-            ...booking,
-            client: {
-              username: "Unknown Client",
-              profileImage: "",
-              avatar: null,
-            },
-          };
-        }
-      })
-    );
-
-    res.json(bookingsWithClients);
+    res.json(await enrichBookingsWithParty(docs, "client"));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch artist bookings" });
   }
@@ -615,15 +623,8 @@ export async function cancelBooking(req, res) {
     }
 
     const now = new Date();
-    const hoursUntilAppointment =
-      (new Date(booking.startAt).getTime() - now.getTime()) / (1000 * 60 * 60);
-    let cancelPolicy = null;
-    try {
-      cancelPolicy = await ArtistPolicy.findOne({ artistId: booking.artistId });
-    } catch {}
-    const cutoffHours = Number(cancelPolicy?.deposit?.cutoffHours ?? 48);
-    const shouldForfeitDeposit =
-      hoursUntilAppointment < cutoffHours && booking.depositPaidCents > 0;
+    const { hoursUntilAppointment, shouldForfeitDeposit } =
+      await computeDepositForfeiture(booking, now);
 
     booking.status = "cancelled";
     booking.cancelledAt = now;
@@ -637,31 +638,10 @@ export async function cancelBooking(req, res) {
     await booking.save();
 
     if (isClient) {
-      const cooldownExpiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      await BookingCooldown.findOneAndUpdate(
-        { userId: String(booking.clientId), artistId: String(booking.artistId) },
-        {
-          userId: String(booking.clientId),
-          artistId: String(booking.artistId),
-          cancelledAt: now,
-          expiresAt: cooldownExpiresAt,
-          bookingId: booking._id,
-        },
-        { upsert: true, new: true }
-      );
+      await applyClientCancelCooldown(booking.clientId, booking.artistId, booking._id, now);
     }
 
-    try {
-      const io = getIO();
-      if (io) {
-        const dateStr = new Date(booking.startAt).toISOString().slice(0, 10);
-        io.emit("booking:cancelled", {
-          artistId: String(booking.artistId),
-          date: dateStr,
-          bookingId: String(booking._id),
-        });
-      }
-    } catch {}
+    emitBookingDayEvent("booking:cancelled", booking);
 
     try {
       if (
@@ -696,21 +676,7 @@ export async function cancelBooking(req, res) {
     } catch {}
 
     try {
-      if (isClient) {
-        let clientEmail = null;
-        let clientName = "Valued Client";
-        if (booking.clientId) {
-          const client = await Client.findById(booking.clientId);
-          if (client) {
-            clientEmail = client.email;
-            clientName = client.username || client.handle || "Valued Client";
-          }
-        }
-
-        if (clientEmail) {
-          await sendAppointmentCancellationEmail(booking, clientEmail, clientName);
-        }
-      }
+      if (isClient) await sendClientCancellationEmail(booking);
     } catch (emailError) {
       console.error("Failed to send cancellation email:", emailError);
     }
@@ -742,16 +708,7 @@ export async function cancelBookingViaLink(req, res) {
     }
 
     const now = new Date();
-    const hoursUntilAppointment =
-      (new Date(booking.startAt).getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    let cancelPolicy = null;
-    try {
-      cancelPolicy = await ArtistPolicy.findOne({ artistId: booking.artistId });
-    } catch {}
-    const cutoffHours = Number(cancelPolicy?.deposit?.cutoffHours ?? 48);
-    const shouldForfeitDeposit =
-      hoursUntilAppointment < cutoffHours && booking.depositPaidCents > 0;
+    const { shouldForfeitDeposit } = await computeDepositForfeiture(booking, now);
 
     const cancellationReason = "Cancelled via email link";
     booking.status = "cancelled";
@@ -784,20 +741,7 @@ export async function cancelBookingViaLink(req, res) {
     } catch {}
 
     try {
-      let clientEmail = null;
-      let clientName = "Valued Client";
-
-      if (booking.clientId) {
-        const client = await Client.findById(booking.clientId);
-        if (client) {
-          clientEmail = client.email;
-          clientName = client.username || client.handle || "Valued Client";
-        }
-      }
-
-      if (clientEmail) {
-        await sendAppointmentCancellationEmail(booking, clientEmail, clientName);
-      }
+      await sendClientCancellationEmail(booking);
     } catch (emailError) {
       console.error("Failed to send cancellation confirmation email:", emailError);
     }
@@ -1111,13 +1055,6 @@ export async function updateBookingTime(req, res) {
 
 const CONSULTATION_DURATION_MINUTES = 30;
 const MIN_RESCHEDULE_NOTICE_HOURS = 48;
-
-function getAppointmentDuration(appointmentType, customDuration) {
-  if (appointmentType === "consultation") {
-    return customDuration || CONSULTATION_DURATION_MINUTES;
-  }
-  return customDuration || DEFAULT_SLOT_MINUTES;
-}
 
 function ageFromDob(dob) {
   if (!dob) return NaN;
@@ -2265,32 +2202,10 @@ export async function denyAppointment(req, res) {
     await booking.save();
 
     if (isClient) {
-      const now = new Date();
-      const cooldownExpiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      await BookingCooldown.findOneAndUpdate(
-        { userId: String(booking.clientId), artistId: String(booking.artistId) },
-        {
-          userId: String(booking.clientId),
-          artistId: String(booking.artistId),
-          cancelledAt: now,
-          expiresAt: cooldownExpiresAt,
-          bookingId: booking._id,
-        },
-        { upsert: true, new: true }
-      );
+      await applyClientCancelCooldown(booking.clientId, booking.artistId, booking._id);
     }
 
-    try {
-      const io = getIO();
-      if (io) {
-        const dateStr = new Date(booking.startAt).toISOString().slice(0, 10);
-        io.emit("booking:denied", {
-          artistId: String(booking.artistId),
-          date: dateStr,
-          bookingId: String(booking._id),
-        });
-      }
-    } catch {}
+    emitBookingDayEvent("booking:denied", booking);
 
     try {
       const isConsultation = booking.appointmentType === "consultation";
@@ -2412,35 +2327,36 @@ export async function getAppointments(req, res) {
       : [];
     const projectMap = new Map(projects.map((p) => [String(p._id), p]));
 
-    const appointmentsWithUsers = await Promise.all(
-      bookings.map(async (booking) => {
-        const [client, artist] = await Promise.all([
-          User.findOne({ clerkId: booking.clientId }).lean(),
-          User.findOne({ clerkId: booking.artistId }).lean(),
-        ]);
+    const clerkIds = [
+      ...new Set(
+        bookings.flatMap((b) => [b.clientId, b.artistId]).filter(Boolean)
+      ),
+    ];
+    const users = clerkIds.length
+      ? await User.find({ clerkId: { $in: clerkIds } })
+          .select("clerkId username avatar")
+          .lean()
+      : [];
+    const userMap = new Map(users.map((u) => [u.clerkId, u]));
 
-        const proj = booking.projectId ? projectMap.get(String(booking.projectId)) : null;
+    const appointmentsWithUsers = bookings.map((booking) => {
+      const client = userMap.get(booking.clientId);
+      const artist = userMap.get(booking.artistId);
+      const proj = booking.projectId ? projectMap.get(String(booking.projectId)) : null;
 
-        return {
-          ...booking,
-          reviewed: reviewed.has(String(booking._id)),
-          projectName: proj?.name || null,
-          projectSessions: proj?.estimatedSessions || null,
-          client: client
-            ? {
-                username: client.username || "Unknown",
-                avatar: client.avatar || null,
-              }
-            : null,
-          artist: artist
-            ? {
-                username: artist.username || "Unknown",
-                avatar: artist.avatar || null,
-              }
-            : null,
-        };
-      })
-    );
+      return {
+        ...booking,
+        reviewed: reviewed.has(String(booking._id)),
+        projectName: proj?.name || null,
+        projectSessions: proj?.estimatedSessions || null,
+        client: client
+          ? { username: client.username || "Unknown", avatar: client.avatar || null }
+          : null,
+        artist: artist
+          ? { username: artist.username || "Unknown", avatar: artist.avatar || null }
+          : null,
+      };
+    });
 
     res.json(appointmentsWithUsers);
   } catch (error) {

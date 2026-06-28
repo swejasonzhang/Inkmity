@@ -90,13 +90,25 @@ describe("cacheHelpers", () => {
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
-  test("invalidate removes keys matching the pattern only", () => {
+  test("invalidate removes keys matching the glob pattern only", () => {
     cache.set("artist:1:profile", "a");
     cache.set("artist:2:profile", "b");
     cache.set("studio:1:info", "c");
 
-    expect(cacheHelpers.invalidate("artist::id:profile")).toBe(2);
+    expect(cacheHelpers.invalidate("artist:*:profile")).toBe(2);
     expect(cache.get("artist:1:profile")).toBeNull();
     expect(cache.get("studio:1:info")).toBe("c");
+  });
+
+  test("invalidate scopes a trailing wildcard to its prefix, not the whole namespace", () => {
+    cache.set("user:featured:5", "f");
+    cache.set("user:id:abc", "x");
+    cache.set("user:clerkId:k1", "y");
+
+    expect(cacheHelpers.invalidate("user:featured:*")).toBe(1);
+    expect(cache.get("user:featured:5")).toBeNull();
+    // The earlier regex wiped these too; they must survive now.
+    expect(cache.get("user:id:abc")).toBe("x");
+    expect(cache.get("user:clerkId:k1")).toBe("y");
   });
 });

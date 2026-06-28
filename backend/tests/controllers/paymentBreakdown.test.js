@@ -1,6 +1,5 @@
 import request from "supertest";
 import express from "express";
-import mongoose from "mongoose";
 import "../../models/Client.js";
 import "../../models/Artist.js";
 import Booking from "../../models/Booking.js";

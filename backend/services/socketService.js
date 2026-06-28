@@ -1,7 +1,9 @@
 import { verifyToken } from "@clerk/express";
+import { createAdapter } from "@socket.io/redis-adapter";
 import Message from "../models/Message.js";
 import User from "../models/UserBase.js";
 import { config } from "../config/index.js";
+import { createRedisPubSub } from "../lib/redis.js";
 
 let io;
 const onlineUsers = new Map();
@@ -19,6 +21,19 @@ const updateLastActive = async (clerkId) => {
 
 export const initSocket = (ioInstance) => {
   io = ioInstance;
+
+  // With more than one instance, in-process emit only reaches sockets on this
+  // node. The Redis adapter fans events out across all instances. No-op when
+  // REDIS_URL is unset (single instance / local / tests).
+  const pubSub = createRedisPubSub();
+  if (pubSub) {
+    try {
+      io.adapter(createAdapter(pubSub.pub, pubSub.sub));
+      console.log("🔌 Socket.io Redis adapter enabled (multi-instance)");
+    } catch (e) {
+      console.error("[socket] failed to enable Redis adapter:", e.message);
+    }
+  }
 
   io.use(async (socket, next) => {
     socket.data = socket.data || {};
@@ -111,8 +126,13 @@ export const initSocket = (ioInstance) => {
         const allowed = await isAllowedToChat(senderId, receiverId);
         if (!allowed) return ack?.({ error: "not_allowed" });
         const now = new Date();
+        // Only the conversation partner needs to know the sender is active —
+        // emitting to every connected client was an O(N) broadcast per message.
         updateLastActive(senderId).then(() => {
-          io.emit("user:activity:updated", { userId: senderId, lastActive: now.getTime() });
+          io.to(userRoom(String(receiverId))).emit("user:activity:updated", {
+            userId: senderId,
+            lastActive: now.getTime(),
+          });
         }).catch(() => {});
         const message = await Message.create({
           senderId: String(senderId),

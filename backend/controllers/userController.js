@@ -6,6 +6,7 @@ import "../models/Artist.js";
 import "../models/StudioAccount.js";
 import Studio from "../models/Studio.js";
 import cloudinary from "../lib/cloudinary.js";
+import { signUpload } from "../lib/cloudinarySign.js";
 import { ensureUniqueHandle, isValidHandle } from "../lib/handle.js";
 import { config } from "../config/index.js";
 import { hideTestAccountsFilter, isHiddenFromViewer } from "../lib/testAccounts.js";
@@ -117,19 +118,9 @@ export async function getMe(req, res) {
 
 export async function getAvatarSignature(_req, res) {
   try {
-    const timestamp = Math.round(Date.now() / 1000);
-    const folder = "inkmity/avatars";
-    const signature = cloudinary.utils.api_sign_request(
-      { timestamp, folder },
-      process.env.CLOUDINARY_API_SECRET
-    );
-    res.json({
-      timestamp,
-      folder,
-      signature,
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    });
+    const { timestamp, folder, signature, apiKey, cloudName } =
+      signUpload("inkmity/avatars");
+    res.json({ timestamp, folder, signature, apiKey, cloudName });
   } catch {
     res.status(500).json({ error: "signature_failed" });
   }
@@ -167,19 +158,9 @@ export async function deleteMyAvatar(req, res) {
 
 export async function getReferenceSignature(_req, res) {
   try {
-    const timestamp = Math.round(Date.now() / 1000);
-    const folder = "inkmity/references";
-    const signature = cloudinary.utils.api_sign_request(
-      { timestamp, folder },
-      process.env.CLOUDINARY_API_SECRET
-    );
-    res.json({
-      timestamp,
-      folder,
-      signature,
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    });
+    const { timestamp, folder, signature, apiKey, cloudName } =
+      signUpload("inkmity/references");
+    res.json({ timestamp, folder, signature, apiKey, cloudName });
   } catch {
     res.status(500).json({ error: "signature_failed" });
   }

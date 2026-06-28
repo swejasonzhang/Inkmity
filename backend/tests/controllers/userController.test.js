@@ -76,7 +76,7 @@ afterAll((done) => {
 
 conditionalDescribe("User Controller - getMe", () => {
   test("should return user data for authenticated user", async () => {
-    const client = await mongoose.model("client").create({
+    await mongoose.model("client").create({
       clerkId: "test-user-id",
       email: "test@example.com",
       username: "testuser",

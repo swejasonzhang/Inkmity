@@ -88,6 +88,10 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true,
   },
+  // With >1 instance and no sticky sessions, the HTTP long-polling handshake
+  // would bounce across instances. Forcing websocket-only avoids that. Off by
+  // default (single instance); enable via SOCKET_WS_ONLY when scaling out.
+  ...(process.env.SOCKET_WS_ONLY === "true" ? { transports: ["websocket"] } : {}),
 });
 
 initSocket(io);
@@ -160,7 +164,7 @@ app.use((req, res) => {
 
 Sentry.setupExpressErrorHandler(app);
 
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   (req.log || logger).error({ err }, "Unhandled request error");
   res.status(500).json({
     error: "Internal server error",

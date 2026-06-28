@@ -10,7 +10,7 @@ class BookingRepository {
     const cacheKey = `${CACHE_KEY_PREFIX}:id:${id}`;
 
     if (useCache) {
-      const cached = cache.get(cacheKey);
+      const cached = await cache.get(cacheKey);
       if (cached) return cached;
     }
 
