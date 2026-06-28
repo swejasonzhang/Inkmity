@@ -1,5 +1,5 @@
 import ioClient from "socket.io-client";
-import { env } from "@/utils/env";
+import { env } from "@/lib/env";
 
 const SOCKET_URL = env.socketUrl;
 const SOCKET_PATH = env.socketPath;

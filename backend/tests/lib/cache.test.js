@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from "@jest/globals";
-import cache, { cacheHelpers } from "../../utils/cache.js";
+import cache, { cacheHelpers } from "../../lib/cache.js";
 
 describe("Cache", () => {
   beforeEach(() => {

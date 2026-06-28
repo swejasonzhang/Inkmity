@@ -12,7 +12,7 @@ const mockCache = { get: jest.fn(), set: jest.fn(), delete: jest.fn() };
 const mockCacheHelpers = { invalidate: jest.fn() };
 
 jest.unstable_mockModule("../../models/Booking.js", () => ({ default: mockBooking }));
-jest.unstable_mockModule("../../utils/cache.js", () => ({
+jest.unstable_mockModule("../../lib/cache.js", () => ({
   default: mockCache,
   cacheHelpers: mockCacheHelpers,
 }));

@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 import User from "../models/UserBase.js";
 import "../models/Client.js";
 import "../models/Artist.js";
-import cache from "../utils/cache.js";
-import { cacheHelpers } from "../utils/cache.js";
+import cache from "../lib/cache.js";
+import { cacheHelpers } from "../lib/cache.js";
 import { tierRankAggExpr } from "../services/artistTierService.js";
 
 const CACHE_TTL = 300000;

@@ -1,5 +1,5 @@
 import { describe, test, expect } from "@jest/globals";
-import { dayBoundsUTC } from "../../utils/date.js";
+import { dayBoundsUTC } from "../../lib/date.js";
 
 describe("dayBoundsUTC", () => {
   test("returns UTC midnight start and next-day midnight end", () => {

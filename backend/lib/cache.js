@@ -1,4 +1,4 @@
-import { getRedis } from "../lib/redis.js";
+import { getRedis } from "./redis.js";
 
 // In-memory cache (L1). Used as-is when REDIS_URL is unset. When Redis is
 // configured, the facade below routes through Redis instead so every instance

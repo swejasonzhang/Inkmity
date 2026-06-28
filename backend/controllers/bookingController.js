@@ -8,7 +8,7 @@ import Project from "../models/Project.js";
 import BookingCooldown from "../models/BookingCooldown.js";
 import Client from "../models/Client.js";
 import Artist from "../models/Artist.js";
-import { dayBoundsUTC } from "../utils/date.js";
+import { dayBoundsUTC } from "../lib/date.js";
 import { refundDepositForBooking } from "./billingController.js";
 import { DateTime, Interval } from "luxon";
 import { getIO, emitMessageCreated, emitBookingCreated } from "../services/socketService.js";

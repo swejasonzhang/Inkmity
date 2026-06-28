@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import Image from "../models/Image.js";
 import User from "../models/UserBase.js";
-import { signUpload as signUploadPayload } from "../lib/cloudinarySign.js";
+import { signUpload as signUploadPayload } from "../lib/cloudinary.js";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Star, MapPin, Clock, DollarSign, Store, Image as ImageIcon, BadgeCheck } from "lucide-react";
-import { formatActivityStatus } from "@/utils/activity";
+import { formatActivityStatus } from "@/lib/activity";
 import { computeArtistTier } from "@/lib/artistTier";
 
 interface Artist {

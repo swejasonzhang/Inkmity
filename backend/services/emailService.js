@@ -1,5 +1,5 @@
 import { config } from '../config/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from '../lib/logger.js';
 
 let nodemailer, transporter;
 
@@ -208,14 +208,16 @@ async function deliver(kind, clientEmail, content) {
     if (isEmailConfigured()) {
       const tx = createTransporter();
       await tx.sendMail({ from: config.email.from, to: clientEmail, subject, html, text });
-      logger.logEmail(kind, clientEmail, true);
+      logger.info({ kind, to: clientEmail, success: true }, "email sent");
       return true;
     }
-    logger.info(`Mock email - ${kind} would be sent`, { to: clientEmail, subject, preview: text.substring(0, 160) + '…' });
+    logger.info(
+      { to: clientEmail, subject, preview: text.substring(0, 160) + "…" },
+      `Mock email - ${kind} would be sent`
+    );
     return true;
   } catch (error) {
-    logger.logEmail(kind, clientEmail, false);
-    logger.error(`Failed to send ${kind} email`, { error: error.message });
+    logger.error({ kind, to: clientEmail, error: error.message }, `Failed to send ${kind} email`);
     return false;
   }
 }

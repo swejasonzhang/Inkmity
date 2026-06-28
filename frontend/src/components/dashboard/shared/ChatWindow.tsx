@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox, Lock } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
-import { formatActivityStatus } from "@/utils/activity";
+import { formatActivityStatus } from "@/lib/activity";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPanel from "./messages/requestPanel";

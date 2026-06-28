@@ -1,6 +1,6 @@
 import Booking from "../models/Booking.js";
-import cache from "../utils/cache.js";
-import { cacheHelpers } from "../utils/cache.js";
+import cache from "../lib/cache.js";
+import { cacheHelpers } from "../lib/cache.js";
 
 const CACHE_TTL = 180000;
 const CACHE_KEY_PREFIX = "booking";

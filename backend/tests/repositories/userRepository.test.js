@@ -21,7 +21,7 @@ jest.unstable_mockModule("../../models/UserBase.js", () => ({
   default: mockUser,
 }));
 
-jest.unstable_mockModule("../../utils/cache.js", () => ({
+jest.unstable_mockModule("../../lib/cache.js", () => ({
   default: mockCache,
   cacheHelpers: {
     invalidate: jest.fn(),
@@ -332,7 +332,7 @@ describe("User Repository - TDD", () => {
 
   describe("invalidateCache", () => {
     test("deletes clerkId, id, and featured cache entries", async () => {
-      const cacheModule = await import("../../utils/cache.js");
+      const cacheModule = await import("../../lib/cache.js");
       userRepository.default.invalidateCache("ck-1", "id-1");
 
       expect(mockCache.delete).toHaveBeenCalledWith("user:clerkId:ck-1");
