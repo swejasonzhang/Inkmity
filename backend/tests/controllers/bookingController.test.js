@@ -1,5 +1,6 @@
 import request from "supertest";
 import express from "express";
+import mongoose from "mongoose";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === 'true' ? describe : describe.skip;
 import Booking from "../../models/Booking.js";
@@ -28,6 +29,13 @@ import {
   getBooking,
   setFinalPrice,
   approveFinalPrice,
+  getClientBookings,
+  getArtistBookings,
+  getAppointments,
+  checkConsultationStatus,
+  getBookingsForDay,
+  startVerification,
+  verifyBookingCode,
 } from "../../controllers/bookingController.js";
 import { captureBookingBalance } from "../../services/balanceCaptureService.js";
 
@@ -64,6 +72,13 @@ app.post("/bookings/:id/artist-no-show", mockAuth, reportArtistNoShow);
 app.post("/bookings/:id/artist-no-show/respond", mockAuth, respondArtistNoShow);
 app.get("/bookings/no-show-disputes", mockAuth, listArtistNoShowDisputes);
 app.post("/bookings/:id/check-in", mockAuth, checkInBooking);
+app.get("/bookings/client", mockAuth, getClientBookings);
+app.get("/bookings/artist", mockAuth, getArtistBookings);
+app.get("/bookings/appointments", mockAuth, getAppointments);
+app.get("/bookings/consultation-status", mockAuth, checkConsultationStatus);
+app.get("/bookings/day", mockAuth, getBookingsForDay);
+app.post("/bookings/:id/start-verification", mockAuth, startVerification);
+app.post("/bookings/:id/verify", mockAuth, verifyBookingCode);
 app.get("/bookings/:id", mockAuth, getBooking);
 app.patch("/bookings/:id/final-price", mockAuth, setFinalPrice);
 app.post("/bookings/:id/approve-final-price", mockAuth, approveFinalPrice);
@@ -994,5 +1009,146 @@ conditionalDescribe("Booking Controller - Intake Form", () => {
 
     const del = await request(app).delete(`/bookings/${bookingId}/intake`).set("x-test-user-id", "stranger");
     expect(del.status).toBe(403);
+  });
+});
+conditionalDescribe("Booking Controller - queries", () => {
+  const Client = mongoose.model("client");
+  const Artist = mongoose.model("artist");
+
+  async function seedBooking(over = {}) {
+    return Booking.create({
+      artistId: "qa-artist",
+      clientId: "qa-client",
+      startAt: new Date(Date.now() + 86400000),
+      endAt: new Date(Date.now() + 90000000),
+      status: "confirmed",
+      appointmentType: "consultation",
+      priceCents: 5000,
+      ...over,
+    });
+  }
+
+  test("getClientBookings returns the client's bookings enriched with the artist", async () => {
+    await Artist.create({ clerkId: "qa-artist", email: "a@x.com", username: "ArtPro", handle: "@qa-artist", role: "artist" });
+    await seedBooking();
+    const res = await request(app).get("/bookings/client").set("x-test-user-id", "qa-client");
+    expect(res.status).toBe(200);
+    expect(res.body[0].artist.username).toBe("ArtPro");
+  });
+
+  test("getArtistBookings returns the artist's bookings enriched with the client", async () => {
+    await Client.create({ clerkId: "qa-client", email: "c@x.com", username: "CliName", handle: "@qa-client", role: "client" });
+    await seedBooking();
+    const res = await request(app).get("/bookings/artist").set("x-test-user-id", "qa-artist");
+    expect(res.status).toBe(200);
+    expect(res.body[0].client.username).toBe("CliName");
+  });
+
+  test("getAppointments returns both-party appointments with a reviewed flag", async () => {
+    const b = await seedBooking({ status: "completed" });
+    const res = await request(app).get("/bookings/appointments").set("x-test-user-id", "qa-client");
+    expect(res.status).toBe(200);
+    expect(res.body.some((a) => String(a._id) === String(b._id))).toBe(true);
+    expect(res.body[0].reviewed).toBe(false);
+  });
+
+  test("getAppointments filters by role=artist", async () => {
+    await seedBooking();
+    const res = await request(app).get("/bookings/appointments?role=artist").set("x-test-user-id", "qa-artist");
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+  });
+
+  test("checkConsultationStatus 400 without ids", async () => {
+    const res = await request(app).get("/bookings/consultation-status").set("x-test-user-id", "u1");
+    expect(res.status).toBe(400);
+  });
+
+  test("checkConsultationStatus reports a completed consultation", async () => {
+    await seedBooking({ status: "completed", completedAt: new Date() });
+    const res = await request(app)
+      .get("/bookings/consultation-status?artistId=qa-artist&clientId=qa-client")
+      .set("x-test-user-id", "qa-client");
+    expect(res.body.hasCompletedConsultation).toBe(true);
+  });
+
+  test("getBookingsForDay 400 without artistId/date", async () => {
+    const res = await request(app).get("/bookings/day").set("x-test-user-id", "u1");
+    expect(res.status).toBe(400);
+  });
+
+  test("getBookingsForDay returns busy slots for the day", async () => {
+    const day = new Date(Date.now() + 86400000);
+    await seedBooking({ startAt: day, endAt: new Date(day.getTime() + 3600000), status: "accepted" });
+    const res = await request(app)
+      .get(`/bookings/day?artistId=qa-artist&date=${day.toISOString().slice(0, 10)}`)
+      .set("x-test-user-id", "qa-artist");
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+});
+
+conditionalDescribe("Booking Controller - verification", () => {
+  async function seedBooking(over = {}) {
+    return Booking.create({
+      artistId: "v-artist",
+      clientId: "v-client",
+      startAt: new Date(Date.now() - 3600000),
+      endAt: new Date(),
+      status: "accepted",
+      appointmentType: "tattoo_session",
+      priceCents: 20000,
+      ...over,
+    });
+  }
+
+  test("startVerification issues codes and an expiry", async () => {
+    const b = await seedBooking();
+    const res = await request(app).post(`/bookings/${b._id}/start-verification`).set("x-test-user-id", "v-artist");
+    expect(res.body.ok).toBe(true);
+    expect(res.body.expiresAt).toBeTruthy();
+    const updated = await Booking.findById(b._id);
+    expect(updated.clientCode).toBeTruthy();
+    expect(updated.artistCode).toBeTruthy();
+  });
+
+  test("startVerification 404 for a missing booking", async () => {
+    const res = await request(app).post(`/bookings/${new mongoose.Types.ObjectId()}/start-verification`).set("x-test-user-id", "v-artist");
+    expect(res.status).toBe(404);
+  });
+
+  test("verifyBookingCode 400 without role/code", async () => {
+    const b = await seedBooking();
+    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({});
+    expect(res.status).toBe(400);
+  });
+
+  test("verifyBookingCode rejects an expired code", async () => {
+    const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() - 1000) });
+    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "ABC123" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("code_expired");
+  });
+
+  test("verifyBookingCode rejects a bad code", async () => {
+    const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() + 60000) });
+    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "WRONG" });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("bad_code");
+  });
+
+  test("verifyBookingCode accepts the client's correct code", async () => {
+    const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() + 60000) });
+    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "client", code: "abc123" });
+    expect(res.status).toBe(200);
+    const updated = await Booking.findById(b._id);
+    expect(updated.clientVerifiedAt).toBeTruthy();
+  });
+
+  test("verifyBookingCode blocks a role mismatch", async () => {
+    const b = await seedBooking({ clientCode: "ABC123", codeExpiresAt: new Date(Date.now() + 60000) });
+    const res = await request(app).post(`/bookings/${b._id}/verify`).set("x-test-user-id", "v-client").send({ role: "artist", code: "ABC123" });
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("role_mismatch");
   });
 });
