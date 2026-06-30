@@ -1,21 +1,19 @@
-import { jest, describe, test, expect } from "@jest/globals";
-import { render } from "@/tests/setup/test-utils";
-
-jest.unstable_mockModule("react-router-dom", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
-  useNavigate: () => jest.fn(),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
+import { describe, test, expect } from "@jest/globals";
+import { render, screen } from "@/tests/setup/test-utils";
 
 const { default: BottomCTA } = await import("@/components/landing/BottomCTA");
+const fade = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
-describe("BottomCTA", () => {
-  test("should render bottom CTA", () => {
-    const mockTextFadeUp = {
-      hidden: { opacity: 0, y: 20 },
-      show: { opacity: 1, y: 0 },
-    };
-    const { container } = render(<BottomCTA textFadeUp={mockTextFadeUp} />);
-    expect(container.firstChild).toBeInTheDocument();
+describe("BottomCTA (landing)", () => {
+  test("shows the closing pitch and routes the CTA to signup", () => {
+    render(<BottomCTA textFadeUp={fade} />);
+
+    expect(
+      screen.getByRole("heading", { name: /ready to make booking painless\?/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Join Inkmity today/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /create your inkmity account/i })
+    ).toHaveAttribute("href", "/signup");
   });
 });

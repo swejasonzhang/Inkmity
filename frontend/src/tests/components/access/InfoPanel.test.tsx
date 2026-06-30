@@ -1,33 +1,29 @@
 import { describe, test, expect } from "@jest/globals";
-import { render, screen, waitFor } from "@/tests/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 import InfoPanel from "@/components/access/InfoPanel";
 
 describe("InfoPanel", () => {
-  test("should render info panel", async () => {
-    const { container } = render(<InfoPanel show={true} prefersReduced={false} />);
-    await waitFor(() => {
-      expect(container.firstChild).toBeInTheDocument();
-    });
+  test("signup + client shows the mission, client value props, and the client steps", () => {
+    render(<InfoPanel show prefersReduced mode="signup" role="client" />);
+    expect(screen.getByRole("heading", { name: /our mission/i })).toBeInTheDocument();
+    expect(screen.getByText("Matched to your vision")).toBeInTheDocument();
+    expect(screen.getByText(/How it works/i)).toBeInTheDocument();
+    expect(screen.getByText("Explore")).toBeInTheDocument();
+    expect(screen.getByText("Get rewarded")).toBeInTheDocument();
   });
 
-  test("should display mission message for signup", async () => {
-    render(<InfoPanel show={true} prefersReduced={false} mode="signup" />);
-    await waitFor(() => {
-      expect(screen.getByText(/Our Mission/i)).toBeInTheDocument();
-    });
+  test("signup + artist shows artist-focused value props and steps", () => {
+    render(<InfoPanel show prefersReduced mode="signup" role="artist" />);
+    expect(screen.getByText("Less admin, more art")).toBeInTheDocument();
+    expect(screen.getByText("Cash out")).toBeInTheDocument();
+    // client-only copy should not be shown to an artist
+    expect(screen.queryByText("Matched to your vision")).not.toBeInTheDocument();
   });
 
-  test("should display welcome message for login", async () => {
-    render(<InfoPanel show={true} prefersReduced={false} mode="login" />);
-    await waitFor(() => {
-      expect(screen.getByText(/missed you/i)).toBeInTheDocument();
-    }, { timeout: 2000 });
-  });
-
-  test("should render value props", async () => {
-    render(<InfoPanel show={true} prefersReduced={false} mode="signup" />);
-    await waitFor(() => {
-      expect(screen.getByText(/Matched to your vision/i)).toBeInTheDocument();
-    }, { timeout: 2000 });
+  test("login mode greets a returning visitor and omits the signup steps", () => {
+    render(<InfoPanel show prefersReduced mode="login" role="client" />);
+    expect(screen.getByRole("heading", { name: /we.ve missed you/i })).toBeInTheDocument();
+    expect(screen.getByText("Search that understands style")).toBeInTheDocument();
+    expect(screen.queryByText(/How it works/i)).not.toBeInTheDocument();
   });
 });
