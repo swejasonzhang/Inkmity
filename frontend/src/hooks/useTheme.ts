@@ -93,6 +93,8 @@ function applyToDom(t: Theme, animate: boolean) {
   const dash = document.getElementById("dashboard-scope");
   html.setAttribute("data-ink", t);
   html.classList.toggle("ink-light", t === "light");
+  html.style.backgroundColor = "";
+  html.style.color = "";
   if (!dash) {
     html.removeAttribute("data-ink-themed");
     return;
