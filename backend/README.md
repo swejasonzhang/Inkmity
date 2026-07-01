@@ -36,4 +36,4 @@ npm run dev        # API on http://localhost:3001 (nodemon)
 
 - Stripe webhooks need the raw body — handled in `server.js`; this is why the backend runs as a long-lived process on Render, not serverless.
 - Payments: clients are charged via Checkout/PaymentIntents with a `transfer_group`; balance is captured at completion; tips are destination charges routed 100% to the artist.
-- Legal document templates live in `services/documentsService.js` (versioned + content-hashed). They are **not** attorney-reviewed — see [`../LEGAL_REVIEW.md`](../LEGAL_REVIEW.md).
+- Legal document templates live in `services/documentsService.js` (versioned + content-hashed). They are **not** attorney-reviewed.

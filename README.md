@@ -15,14 +15,6 @@ Inkmity connects tattoo clients, artists, and studios in one place: portfolio-dr
 | [`frontend/`](frontend) | React 19 + Vite + TypeScript single-page app (deploys to Vercel). |
 | [`backend/`](backend) | Node.js + Express 5 API, MongoDB, Socket.io (deploys to Render). |
 
-### Project documents
-
-| Doc | What it covers |
-|-----|----------------|
-| [`DEPLOYMENT.md`](DEPLOYMENT.md) | Full production deployment guide (Render + Vercel, Stripe Connect, Clerk, env vars, smoke test). |
-| [`BUSINESS_SETUP.md`](BUSINESS_SETUP.md) | Business/operational setup notes. |
-| [`LEGAL_REVIEW.md`](LEGAL_REVIEW.md) | Founder-prepared memo for a NY attorney — context + questions to make a paid review cheaper. **Not legal advice; docs are not attorney-reviewed.** |
-
 ---
 
 ## Features
@@ -194,9 +186,8 @@ The two halves deploy to different hosts, by design:
 | `frontend/` | **Vercel** | The Vite/React app is a static SPA; Vercel handles the CDN, preview deploys, and zero-config builds. |
 
 `render.yaml` is the backend blueprint (`rootDir: backend`); `frontend/vercel.json`
-adds the SPA fallback (set the Vercel project root directory to `frontend`). The
-full checklist — Stripe Connect, Clerk production instance, env vars, and a
-post-deploy smoke test — is in [`DEPLOYMENT.md`](DEPLOYMENT.md).
+adds the SPA fallback (set the Vercel project root directory to `frontend`).
+Secrets are configured in the Render and Vercel dashboards, never committed.
 
 ---
 
