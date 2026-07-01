@@ -14,7 +14,7 @@ import { useDashboardData } from "@/hooks";
 import { useMessaging } from "@/hooks/useMessaging";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import type { Artist as ArtistDto } from "@/api";
-import { computeArtistTier } from "@/lib/artistTier";
+import { filterAndSortArtists } from "@/lib/artistFilter";
 import { AnimatePresence, motion } from "framer-motion";
 import ArtistFilter from "@/components/dashboard/client/ArtistFilter";
 
@@ -168,56 +168,24 @@ export default function ClientDashboard() {
         grid.scrollTop += e.deltaY;
     }, [selectedArtist]);
 
-    const filtered = useMemo(() => {
-        const txt = searchQuery.trim().toLowerCase();
-        const inPrice = (a: any) => {
-            if (priceFilter === "all") return true;
-            const r = a?.priceRange || {};
-            const min = Number(r.min ?? 0);
-            const max = Number(r.max ?? Number.POSITIVE_INFINITY);
-            const [loRaw, hiRaw] = priceFilter.split("-");
-            const lo = loRaw.endsWith("+") ? Number(loRaw.replace("+", "")) : Number(loRaw);
-            const hi = hiRaw ? Number(hiRaw) : Number.POSITIVE_INFINITY;
-            return max >= lo && min <= hi;
-        };
-        const inLocation = (a: any) => locationFilter === "all" || (a.location || "").toLowerCase() === locationFilter.toLowerCase();
-        const inStyle = (a: any) => {
-            if (styleFilter === "all") return true;
-            const arr = Array.isArray(a.styles) ? a.styles : typeof a.styles === "string" ? a.styles.split(/[;,/]+/) : [];
-            return arr.map((s: any) => String(s).trim().toLowerCase()).includes(styleFilter.toLowerCase());
-        };
-        const inAvail = (a: any) => availabilityFilter === "all" || a.availabilityCode === availabilityFilter;
-        const inExp = (a: any) => {
-            if (experienceFilter === "all") return true;
-            const y = Number(a.yearsExperience ?? -1);
-            if (!Number.isFinite(y) || y < 0) return false;
-            if (experienceFilter === "amateur") return y <= 2;
-            if (experienceFilter === "experienced") return y >= 3 && y <= 5;
-            if (experienceFilter === "professional") return y >= 6 && y <= 10;
-            if (experienceFilter === "veteran") return y >= 10;
-            return true;
-        };
-        const inBooking = (a: any) => bookingFilter === "all" || a.bookingPreference === bookingFilter;
-        const inTravel = (a: any) => travelFilter === "all" || a.travelFrequency === travelFilter;
-        const inSearch = (a: any) => {
-            if (!txt) return true;
-            const hay = [a.username, a.bio, a.location, ...(Array.isArray(a.styles) ? a.styles : [])].filter(Boolean).join(" ").toLowerCase();
-            return hay.includes(txt);
-        };
-        const out = artists.filter(a => inPrice(a) && inLocation(a) && inStyle(a) && inAvail(a) && inExp(a) && inBooking(a) && inTravel(a) && inSearch(a));
-        const by = (v: string) => {
-            if (v === "highest_rated") return [...out].sort((a: any, b: any) =>
-                (computeArtistTier(b.bookingsCount, b.rating).rank - computeArtistTier(a.bookingsCount, a.rating).rank)
-                || ((b.rating ?? 0) - (a.rating ?? 0))
-                || ((b.reviewsCount ?? 0) - (a.reviewsCount ?? 0)));
-            if (v === "most_reviews") return [...out].sort((a: any, b: any) => (b.reviewsCount ?? 0) - (a.reviewsCount ?? 0));
-            if (v === "experience_desc") return [...out].sort((a: any, b: any) => (b.yearsExperience ?? 0) - (a.yearsExperience ?? 0));
-            if (v === "experience_asc") return [...out].sort((a: any, b: any) => (a.yearsExperience ?? 0) - (b.yearsExperience ?? 0));
-            if (v === "newest") return [...out].sort((a: any, b: any) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
-            return out;
-        };
-        return by(sort);
-    }, [artists, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]);
+    const filtered = useMemo(
+        () =>
+            filterAndSortArtists(
+                artists,
+                {
+                    search: searchQuery,
+                    price: priceFilter,
+                    location: locationFilter,
+                    style: styleFilter,
+                    availability: availabilityFilter,
+                    experience: experienceFilter,
+                    booking: bookingFilter,
+                    travel: travelFilter,
+                },
+                sort
+            ),
+        [artists, priceFilter, locationFilter, styleFilter, availabilityFilter, experienceFilter, bookingFilter, travelFilter, sort, searchQuery]
+    );
 
     if (!isLoaded || !user) {
         return null;
