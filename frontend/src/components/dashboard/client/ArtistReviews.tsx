@@ -7,16 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Pagination from "@/components/dashboard/shared/Pagination";
 import { Star, X } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
+import { mapReview, sortReviews, type Review } from "@/lib/reviews";
 
-export type Review = {
-    _id: string;
-    authorName: string;
-    rating: number;
-    createdAt: string | Date;
-    title?: string;
-    body: string;
-    photos?: string[];
-};
+export type { Review };
 
 type ReviewsProps = {
     artist: ArtistWithGroups;
@@ -57,19 +50,6 @@ Stars.displayName = "Stars";
 const joinUrl = (base: string, path: string) => `${base.replace(/\/$/, "")}/${String(path).replace(/^\//, "")}`;
 
 const PER_PAGE = 6;
-
-const mapReview = (raw: any): Review => {
-    const author = raw?.authorName || raw?.reviewerName || raw?.reviewer?.username || raw?.reviewer?.email || "Client";
-    return {
-        _id: String(raw?._id ?? (raw?.createdAt ?? "") + (raw?.rating ?? "") + (raw?.authorName ?? "")),
-        authorName: String(author),
-        rating: Number(raw?.rating ?? 0),
-        createdAt: raw?.createdAt ?? new Date().toISOString(),
-        title: raw?.title || undefined,
-        body: String(raw?.comment ?? raw?.body ?? ""),
-        photos: Array.isArray(raw?.photos) ? raw.photos : undefined
-    };
-};
 
 const ReviewCard: React.FC<{ r: Review; onZoom: (src: string) => void }> = React.memo(({ r, onZoom }) => {
     return (
@@ -215,22 +195,7 @@ export default function ArtistReviews({ artist, reviews = [], averageRating }: R
 
     const effectiveReviews = reviews.length ? reviews : remoteReviews;
 
-    const sorted = useMemo(() => {
-        const arr = effectiveReviews.slice(0);
-        switch (sort) {
-            case "high":
-                arr.sort((a, b) => b.rating - a.rating);
-                break;
-            case "low":
-                arr.sort((a, b) => a.rating - b.rating);
-                break;
-            case "recent":
-            default:
-                arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                break;
-        }
-        return arr;
-    }, [effectiveReviews, sort]);
+    const sorted = useMemo(() => sortReviews(effectiveReviews, sort), [effectiveReviews, sort]);
 
     const deferredSorted = useDeferredValue(sorted);
     const totalPages = Math.max(1, Math.ceil(deferredSorted.length / PER_PAGE));
