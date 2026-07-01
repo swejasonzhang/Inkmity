@@ -8,6 +8,7 @@ import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox, Lock } fro
 import { displayNameFromUsername } from "@/lib/format";
 import { formatActivityStatus } from "@/lib/activity";
 import { extractUrls, faviconUrl, splitMessageParts } from "@/lib/messageText";
+import { cldCard, cldThumb } from "@/lib/img";
 import { resolveMessageAccess, type GateStatus } from "@/lib/messagingGate";
 import { formatMessageTime as fmtTime, formatMessageDateTime as fmtDateTime } from "@/lib/messageTime";
 import QuickBooking from "../client/QuickBooking";
@@ -921,7 +922,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
     if (avatarUrl && !imgError) {
       return (
         <img
-          src={avatarUrl}
+          src={cldThumb(avatarUrl, 80)}
           alt={name}
           className={`rounded-full object-cover ${fill ? "absolute inset-0 block h-full w-full" : ""} ${withBorder ? "border border-app" : ""}`}
           style={fill ? undefined : { width: 'clamp(1.5rem, 2vw, 1.75rem)', height: 'clamp(1.5rem, 2vw, 1.75rem)' }}
@@ -1467,7 +1468,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                         style={{ minWidth: 0, flex: '1 1 0%', maxWidth: `calc((100% - ${(merged.length - 1) * 8}px) / ${merged.length})` }}
                                       >
                                         <img
-                                          src={u}
+                                          src={cldCard(u, 700)}
                                           alt="reference"
                                           className="ink-conv-chat-thumb w-full h-auto object-contain rounded-lg"
                                           style={{ maxWidth: '100%', width: 'auto', height: 'auto', maxHeight: '120px' }}
@@ -1867,7 +1868,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                     style={{ minWidth: 0, flex: '1 1 0%', maxWidth: `calc((100% - ${(merged.length - 1) * 8}px) / ${merged.length})` }}
                                   >
                                     <img
-                                      src={u}
+                                      src={cldCard(u, 700)}
                                       alt="reference"
                                       className="ink-conv-chat-thumb w-full h-auto object-contain rounded-lg"
                                       style={{ maxWidth: '100%', width: 'auto', height: 'auto', maxHeight: '120px' }}

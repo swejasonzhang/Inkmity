@@ -6,6 +6,7 @@ import { Search, ChevronsDown, ChevronLeft, ChevronRight, MapPin, Clock, Buildin
 import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
 import { ArtistCardSkeleton } from "@/components/dashboard/client/ArtistCardSkeleton";
 import { titleCase } from "@/lib/format";
+import { cldCard, cldThumb } from "@/lib/img";
 import {
     normalizeYears,
     toNumber,
@@ -76,7 +77,7 @@ const ArtistCarouselCard = ({ artist, onClick, fill = false }: { artist: any; on
                                 className={`relative overflow-hidden ${basisClass} grow-0 shrink min-w-0 will-change-[flex-basis] group-hover/imgs:basis-0 hover:!basis-full`}
                                 style={{ transition: "flex-basis 450ms cubic-bezier(0.33, 1, 0.68, 1)" }}
                             >
-                                <img src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={imgCls} />
+                                <img src={cldCard(src, 500)} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" className={imgCls} />
                             </div>
                         ))}
                     </div>
@@ -89,7 +90,7 @@ const ArtistCarouselCard = ({ artist, onClick, fill = false }: { artist: any; on
                 <div className="flex items-center gap-2 min-w-0">
                     <span className="grid place-items-center h-8 w-8 shrink-0 rounded-full border border-app bg-elevated overflow-hidden text-xs font-bold">
                         {avatar ? (
-                            <img src={avatar} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                            <img src={cldThumb(avatar, 96)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                             (artist.username?.[0] || "A").toUpperCase()
                         )}

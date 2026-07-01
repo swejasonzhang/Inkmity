@@ -9,6 +9,7 @@ import LazyReveal from "@/components/ui/LazyReveal";
 import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
 import ReportModal from "@/components/dashboard/shared/ReportModal";
 import { fetchPopularArtworks, getTrendingIdeas, toggleArtworkLike, type PopularArtwork, type TrendingIdea } from "@/api";
+import { cldCard, cldThumb } from "@/lib/img";
 
 type TabKey = "real" | "ai";
 
@@ -142,7 +143,7 @@ const Gallery: React.FC = () => {
                   onClick={() => setQuery(idea.query)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-app/50 bg-elevated pl-1 pr-2.5 py-1 text-subtle hover:text-app hover:border-app transition"
                 >
-                  <img src={idea.image} alt="" className="h-5 w-5 rounded-full object-cover" />
+                  <img src={cldThumb(idea.image, 40)} alt="" width={20} height={20} decoding="async" className="h-5 w-5 rounded-full object-cover" />
                   {idea.label}
                 </button>
               ))}
@@ -259,7 +260,7 @@ const ArtworkTile: React.FC<{ item: PopularArtwork; span: number; onLike: () => 
     >
       {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
       <img
-        src={item.url}
+        src={cldCard(item.url, 600)}
         alt={`Tattoo work by ${item.username}`}
         loading="lazy"
         decoding="async"

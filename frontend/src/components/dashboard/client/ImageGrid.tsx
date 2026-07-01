@@ -1,5 +1,6 @@
 import React from "react";
 import { Maximize2 } from "lucide-react";
+import { cldCard } from "@/lib/img";
 
 type Props = {
     images: string[];
@@ -24,7 +25,7 @@ const ImageGrid: React.FC<Props> = ({ images, imgAltPrefix, startOffset = 0, onO
                     aria-label={`Open ${imgAltPrefix} ${i + 1}`}
                 >
                     <img
-                        src={src}
+                        src={cldCard(src, 600)}
                         alt={`${imgAltPrefix} ${i + 1}`}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                         loading={i < 4 ? "eager" : "lazy"}

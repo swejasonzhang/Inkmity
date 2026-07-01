@@ -6,7 +6,7 @@ import FloatingBar from "@/components/dashboard/shared/FloatingBar";
 import { Bot, X } from "lucide-react";
 import { ArtistCardSkeleton } from "@/components/dashboard/client/ArtistCardSkeleton";
 import ChatWindow from "@/components/dashboard/shared/ChatWindow";
-import ChatBot from "@/components/dashboard/shared/ChatBot";
+const ChatBot = lazy(() => import("@/components/dashboard/shared/ChatBot"));
 import { toast } from "react-toastify";
 import { displayNameFromUsername } from "@/lib/format";
 import { API_URL } from "@/api";
@@ -313,7 +313,9 @@ export default function ClientDashboard() {
                                     </button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto">
-                                    <ChatBot />
+                                    <Suspense fallback={null}>
+                                        <ChatBot />
+                                    </Suspense>
                                 </div>
                             </div>
                         </motion.div>

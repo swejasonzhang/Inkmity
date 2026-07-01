@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import FullscreenZoom from "./FullscreenZoom";
 import ShopLocationMap from "./ShopLocationMap";
 import { titleCase } from "@/lib/format";
+import { cldCard, cldThumb } from "@/lib/img";
 
 const SECTION_INITIAL = 5;
 
@@ -25,7 +26,7 @@ const PortfolioTile: React.FC<{
         >
             {!loaded && <span className="ink-shimmer absolute inset-0" aria-hidden />}
             <img
-                src={src}
+                src={cldCard(src, 600)}
                 alt={alt}
                 onLoad={() => setLoaded(true)}
                 onError={() => setLoaded(true)}
@@ -190,10 +191,11 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                         <div className="relative w-full overflow-hidden" style={{ background: "var(--elevated)" }}>
                             {bgOk && artist.coverImage ? (
                                 <img
-                                    src={artist.coverImage}
+                                    src={cldCard(artist.coverImage, 900)}
                                     alt={`${artist.username} cover`}
                                     className="absolute inset-0 h-full w-full object-cover object-center"
                                     loading="lazy"
+                                    decoding="async"
                                     referrerPolicy="no-referrer"
                                     onError={() => setBgOk(false)}
                                 />
@@ -205,7 +207,7 @@ const ArtistPortfolio: React.FC<PortfolioProps> = ({ artist, compact = false }) 
                             <div className="relative px-3 sm:px-4 pb-3 pt-[clamp(2.75rem,9vh,5rem)] flex flex-col items-center text-center">
                                 {artist.avatarUrl ? (
                                     <img
-                                        src={artist.avatarUrl}
+                                        src={cldThumb(artist.avatarUrl, 160)}
                                         alt={`${artist.username} profile picture`}
                                         className="h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 rounded-full object-cover ring-4"
                                         style={{ ['--tw-ring-color' as any]: "var(--card)", boxShadow: "0 10px 26px -10px rgba(0,0,0,0.5)" }}

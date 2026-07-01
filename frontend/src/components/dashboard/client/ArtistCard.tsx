@@ -3,6 +3,7 @@ import { initialsFromName } from "@/lib/format";
 import { Star, MapPin, Clock, DollarSign, Store, Image as ImageIcon, BadgeCheck } from "lucide-react";
 import { formatActivityStatus } from "@/lib/activity";
 import { computeArtistTier } from "@/lib/artistTier";
+import { cldCard, cldThumb } from "@/lib/img";
 
 interface Artist {
   _id: string;
@@ -74,7 +75,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
             style={{ borderColor: "var(--border)", background: "var(--elevated)" }}
           >
             <img
-              src={src}
+              src={cldCard(src, 500)}
               alt={`Work ${i + 1}`}
               className="h-full w-full object-cover"
               loading={i < eager ? "eager" : "lazy"}
@@ -165,10 +166,11 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
           >
             {bgOk && artist.coverImage ? (
               <img
-                src={artist.coverImage}
+                src={cldCard(artist.coverImage, 800)}
                 alt={`${artist.username} background`}
                 className="absolute inset-0 h-full w-full object-cover object-center"
                 loading="lazy"
+                decoding="async"
                 referrerPolicy="no-referrer"
                 onError={() => setBgOk(false)}
               />
@@ -208,10 +210,11 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
               >
                 {avatarOk && profileImageUrl ? (
                   <img
-                    src={profileImageUrl}
+                    src={cldThumb(profileImageUrl, 128)}
                     alt={`${artist.username} profile`}
                     className="h-full w-full object-cover"
                     loading="lazy"
+                    decoding="async"
                     referrerPolicy="no-referrer"
                     onError={() => setAvatarOk(false)}
                   />

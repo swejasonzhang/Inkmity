@@ -6,13 +6,19 @@ export function extractUrls(text: string): string[] {
   );
 }
 
+const faviconCache = new Map<string, string | null>();
+
 export function faviconUrl(url: string): string | null {
+  const hit = faviconCache.get(url);
+  if (hit !== undefined) return hit;
+  let result: string | null;
   try {
-    const domain = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+    result = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`;
   } catch {
-    return null;
+    result = null;
   }
+  faviconCache.set(url, result);
+  return result;
 }
 
 export type MessagePart = { type: "text" | "link"; value: string };

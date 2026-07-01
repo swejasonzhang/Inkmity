@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import useResponsiveLensSize from "../../../hooks/useResponsiveLensSize.ts";
+import { cldFull } from "@/lib/img";
 
 type Props = {
     src: string;
@@ -22,6 +23,7 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
     const [naturalSize, setNaturalSize] = useState({ width: 1, height: 1 });
     const zoom = 1.55;
     const lensSize = useResponsiveLensSize();
+    const fullSrc = cldFull(src, 1600);
 
     const measureImage = useCallback(() => {
         const img = imgRef.current;
@@ -134,7 +136,7 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                     <motion.img
                         ref={imgRef}
                         key={src}
-                        src={src}
+                        src={fullSrc}
                         alt="Zoomed artwork"
                         className="select-none block h-auto w-auto max-h-full max-w-full object-contain"
                         onLoad={measureImage}
@@ -157,7 +159,7 @@ const FullscreenZoom: React.FC<Props> = ({ src, count, onPrev, onNext, onClose }
                                 border: "1px solid var(--border)",
                                 boxShadow: "0 10px 30px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.1)",
                                 zIndex: 6,
-                                backgroundImage: `url(${src})`,
+                                backgroundImage: `url(${fullSrc})`,
                                 backgroundRepeat: "no-repeat",
                                 backgroundSize: `${naturalSize.width * zoom}px ${naturalSize.height * zoom}px`,
                                 backgroundPosition: `${lensSize / 2 - origin.oxPx * (scaleX * zoom)}px ${lensSize / 2 - origin.oyPx * (scaleY * zoom)}px`,
