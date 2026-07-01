@@ -1,37 +1,35 @@
 import { jest, describe, test, expect } from "@jest/globals";
-import { render, waitFor, screen } from "@/tests/setup/test-utils";
-
-const { default: FullscreenZoom } = await import("@/components/dashboard/client/FullscreenZoom");
+import { act } from "@testing-library/react";
+import { render, screen } from "@/tests/setup/test-utils";
+import FullscreenZoom from "@/components/dashboard/client/FullscreenZoom";
 
 describe("FullscreenZoom", () => {
-  const defaultProps = {
-    src: "image1.jpg",
-    count: "1 / 3",
-    onPrev: jest.fn(),
-    onNext: jest.fn(),
-    onClose: jest.fn(),
-  };
-
-  test("should render fullscreen zoom", async () => {
-    const { container } = render(<FullscreenZoom {...defaultProps} />);
-    await waitFor(() => {
-      expect(container.firstChild).toBeInTheDocument();
-    });
+  test("shows the zoomed artwork", () => {
+    render(<FullscreenZoom src="art.jpg" count="2 / 5" onPrev={jest.fn()} onNext={jest.fn()} onClose={jest.fn()} />);
+    expect(screen.getByAltText("Zoomed artwork")).toHaveAttribute("src", "art.jpg");
   });
 
-  test("should display image count", async () => {
-    render(<FullscreenZoom {...defaultProps} />);
-    await waitFor(() => {
-      expect(screen.getByText("1 / 3")).toBeInTheDocument();
-    });
-  });
-
-  test("should call onClose when close button is clicked", async () => {
+  test("closes on Escape and via the close button", () => {
     const onClose = jest.fn();
-    render(<FullscreenZoom {...defaultProps} onClose={onClose} />);
-    await waitFor(() => {
-      const closeButton = screen.getByLabelText("Close image");
-      expect(closeButton).toBeInTheDocument();
+    render(<FullscreenZoom src="art.jpg" count="2 / 5" onPrev={jest.fn()} onNext={jest.fn()} onClose={onClose} />);
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     });
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    screen.getByRole("button", { name: "Close image" }).click();
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  test("navigates with the prev/next controls", () => {
+    const onPrev = jest.fn();
+    const onNext = jest.fn();
+    render(<FullscreenZoom src="art.jpg" count="2 / 5" onPrev={onPrev} onNext={onNext} onClose={jest.fn()} />);
+
+    screen.getByRole("button", { name: "Previous image" }).click();
+    expect(onPrev).toHaveBeenCalledTimes(1);
+    screen.getByRole("button", { name: "Next image" }).click();
+    expect(onNext).toHaveBeenCalledTimes(1);
   });
 });

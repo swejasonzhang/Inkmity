@@ -1,24 +1,28 @@
 import { jest, describe, test, expect } from "@jest/globals";
 import { render, screen } from "@/tests/setup/test-utils";
-import userEvent from "@testing-library/user-event";
-
-const { default: StepBarRow } = await import("@/components/dashboard/client/StepBarRow");
+import StepBarRow from "@/components/dashboard/client/StepBarRow";
 
 describe("StepBarRow", () => {
-  test("should render step bar row", () => {
-    const { container } = render(<StepBarRow active={0} />);
-    expect(container.firstChild).toBeInTheDocument();
-  });
-
-  test("should call onGoToStep when step is clicked", async () => {
-    const user = userEvent.setup();
+  test("jumps to a step when its tab is clicked", () => {
     const onGoToStep = jest.fn();
     render(<StepBarRow active={0} onGoToStep={onGoToStep} />);
+    screen.getByRole("button", { name: "Reviews" }).click();
+    expect(onGoToStep).toHaveBeenCalledWith(2);
+  });
 
-    const buttons = screen.getAllByRole("button");
-    if (buttons.length > 0) {
-      await user.click(buttons[0]);
-      expect(onGoToStep).toHaveBeenCalled();
-    }
+  test("prev/next move one step at a time", () => {
+    const onGoToStep = jest.fn();
+    render(<StepBarRow active={1} onGoToStep={onGoToStep} />);
+    screen.getByRole("button", { name: "Next step" }).click();
+    expect(onGoToStep).toHaveBeenCalledWith(2);
+    screen.getByRole("button", { name: "Previous step" }).click();
+    expect(onGoToStep).toHaveBeenCalledWith(0);
+  });
+
+  test("does not page past the ends (no prev on the first step)", () => {
+    const onGoToStep = jest.fn();
+    render(<StepBarRow active={0} onGoToStep={onGoToStep} />);
+    screen.getByRole("button", { name: "Previous step" }).click();
+    expect(onGoToStep).not.toHaveBeenCalled();
   });
 });
