@@ -9,6 +9,7 @@ import { displayNameFromUsername } from "@/lib/format";
 import { formatActivityStatus } from "@/lib/activity";
 import { extractUrls, faviconUrl, splitMessageParts } from "@/lib/messageText";
 import { resolveMessageAccess, type GateStatus } from "@/lib/messagingGate";
+import { formatMessageTime as fmtTime, formatMessageDateTime as fmtDateTime } from "@/lib/messageTime";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPanel from "./messages/requestPanel";
@@ -517,30 +518,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
     };
   }, [expandedId, activeConv?.participantId, conversations.length]);
 
-  const fmtTime = (ts: number) => {
-    try {
-      const d = new Date(ts);
-      const now = new Date();
-      const sameDay = d.toDateString() === now.toDateString();
-      if (sameDay) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-      return d.toLocaleDateString([], { month: "short", day: "numeric" });
-    } catch {
-      return "";
-    }
-  };
-
-  const fmtDateTime = (ts: number | string | undefined) => {
-    try {
-      if (!ts) return "";
-      const d = typeof ts === "string" ? new Date(ts) : new Date(ts);
-      if (isNaN(d.getTime())) return "";
-      const dateStr = d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
-      const timeStr = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-      return `${dateStr}, ${timeStr}`;
-    } catch {
-      return "";
-    }
-  };
 
   const onToggleCollapse = (participantId: string) =>
     setCollapsedMap(m => ({ ...m, [participantId]: !m[participantId] }));
