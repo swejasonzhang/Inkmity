@@ -65,5 +65,8 @@ const BillingSchema = new mongoose.Schema({
   refundedAt: { type: Date },
 });
 
+BillingSchema.index({ bookingId: 1, type: 1, status: 1 }, { name: "booking_type_status_idx" });
+BillingSchema.index({ clientId: 1, stripeCustomerId: 1 }, { name: "client_customer_idx" });
+
 export default mongoose.models.Billing ||
   mongoose.model("Billing", BillingSchema);

@@ -304,7 +304,8 @@ export async function getBookingsForDay(req, res) {
       status: { $in: ["booked", "matched", "completed", "accepted", "pending"] },
     })
       .select("startAt endAt status artistId")
-      .sort({ startAt: 1 });
+      .sort({ startAt: 1 })
+      .lean();
     res.json(docs);
   } catch (err) {
     if (err.name === "CastError") return res.status(400).json({ error: "Invalid parameter" });
@@ -1479,19 +1480,16 @@ export async function createMultiSession(req, res) {
       return res.status(409).json({ error: "studio_not_ready", message: studioReady.message });
     }
 
-    for (const p of parsed) {
-      const conflict = await Booking.findOne({
-        artistId,
-        startAt: { $lt: p.endAt },
-        endAt: { $gt: p.startAt },
-        status: { $nin: ["cancelled"] },
+    const conflict = await Booking.findOne({
+      artistId,
+      status: { $nin: ["cancelled"] },
+      $or: parsed.map((p) => ({ startAt: { $lt: p.endAt }, endAt: { $gt: p.startAt } })),
+    }).lean();
+    if (conflict) {
+      return res.status(409).json({
+        error: "slot_conflict",
+        message: "One of the chosen times is already booked. Please adjust your sessions.",
       });
-      if (conflict) {
-        return res.status(409).json({
-          error: "slot_conflict",
-          message: "One of the chosen times is already booked. Please adjust your sessions.",
-        });
-      }
     }
 
     let policy = null;
@@ -2109,19 +2107,16 @@ export async function listArtistNoShowDisputes(req, res) {
       .lean();
 
     const User = (await import("../models/UserBase.js")).default;
-    const items = await Promise.all(
-      bookings.map(async (b) => {
-        const [client, artist] = await Promise.all([
-          User.findOne({ clerkId: b.clientId }).select("username handle").lean(),
-          User.findOne({ clerkId: b.artistId }).select("username handle").lean(),
-        ]);
-        return {
-          ...b,
-          client: client ? { username: client.username, handle: client.handle } : null,
-          artist: artist ? { username: artist.username, handle: artist.handle } : null,
-        };
-      })
-    );
+    const clerkIds = [...new Set(bookings.flatMap((b) => [b.clientId, b.artistId]).filter(Boolean))];
+    const users = clerkIds.length
+      ? await User.find({ clerkId: { $in: clerkIds } }).select("clerkId username handle").lean()
+      : [];
+    const userById = new Map(users.map((u) => [u.clerkId, u]));
+    const pick = (id) => {
+      const u = userById.get(id);
+      return u ? { username: u.username, handle: u.handle } : null;
+    };
+    const items = bookings.map((b) => ({ ...b, client: pick(b.clientId), artist: pick(b.artistId) }));
     res.json({ items });
   } catch (e) {
     console.error("listArtistNoShowDisputes error:", e.message);

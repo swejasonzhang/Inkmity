@@ -1,7 +1,8 @@
 import { getAuth } from "@clerk/express";
 import Artist from "../models/Artist.js";
 import ArtworkLike from "../models/ArtworkLike.js";
-import { hideTestAccountsFilter } from "../lib/testAccounts.js";
+import { hideTestAccountsFilter, isTestAccount } from "../lib/testAccounts.js";
+import cache from "../lib/cache.js";
 
 const key = (artistClerkId, url) => `${artistClerkId}|${url}`;
 
@@ -13,48 +14,66 @@ function actorId(req) {
   }
 }
 
+// The heavy part (scan every artist's images + aggregate all likes + sort) is
+// viewer-independent, so cache the ranked list and apply the per-user
+// likedByMe flag per request. Test-account viewers see a different set and
+// bypass the shared cache.
+async function computePopularBase(me) {
+  const artists = await Artist.find({ role: "artist", visible: true, ...hideTestAccountsFilter(me) })
+    .select("clerkId handle username avatar styles rating bookingsCount portfolioImages portfolioMeta pastWorks healedWorks sketches")
+    .lean();
+
+  const artworks = [];
+  for (const a of artists) {
+    const ideaByUrl = new Map(
+      (a.portfolioMeta || []).filter((m) => m?.url && m?.idea).map((m) => [m.url, m.idea])
+    );
+    const urls = [
+      ...(a.portfolioImages || []),
+      ...(a.pastWorks || []),
+      ...(a.healedWorks || []),
+      ...(a.sketches || []),
+    ].filter(Boolean);
+    const seen = new Set();
+    for (const url of urls) {
+      if (seen.has(url)) continue;
+      seen.add(url);
+      artworks.push({
+        artistClerkId: a.clerkId,
+        handle: (a.handle || "").replace(/^@/, ""),
+        username: a.username,
+        avatarUrl: a.avatar?.url || null,
+        verified: (a.bookingsCount || 0) >= 5,
+        styles: a.styles || [],
+        rating: Number(a.rating || 0),
+        url,
+        idea: ideaByUrl.get(url) || "",
+      });
+    }
+  }
+
+  const counts = await ArtworkLike.aggregate([
+    { $group: { _id: { a: "$artistClerkId", u: "$imageUrl" }, c: { $sum: 1 } } },
+  ]);
+  const countMap = new Map(counts.map((r) => [key(r._id.a, r._id.u), r.c]));
+
+  return artworks
+    .map((w) => ({ ...w, likes: countMap.get(key(w.artistClerkId, w.url)) || 0 }))
+    .sort((x, y) => (y.likes - x.likes) || (y.rating - x.rating) || x.url.localeCompare(y.url))
+    .slice(0, 300);
+}
+
 export async function getPopularArtworks(req, res) {
   try {
     const limit = Math.min(120, Math.max(1, Number(req.query.limit) || 60));
     const me = actorId(req);
+    const viewerIsTest = isTestAccount(me);
 
-    const artists = await Artist.find({ role: "artist", visible: true, ...hideTestAccountsFilter(me) })
-      .select("clerkId handle username avatar styles rating bookingsCount portfolioImages portfolioMeta pastWorks healedWorks sketches")
-      .lean();
-
-    const artworks = [];
-    for (const a of artists) {
-      const ideaByUrl = new Map(
-        (a.portfolioMeta || []).filter((m) => m?.url && m?.idea).map((m) => [m.url, m.idea])
-      );
-      const urls = [
-        ...(a.portfolioImages || []),
-        ...(a.pastWorks || []),
-        ...(a.healedWorks || []),
-        ...(a.sketches || []),
-      ].filter(Boolean);
-      const seen = new Set();
-      for (const url of urls) {
-        if (seen.has(url)) continue;
-        seen.add(url);
-        artworks.push({
-          artistClerkId: a.clerkId,
-          handle: (a.handle || "").replace(/^@/, ""),
-          username: a.username,
-          avatarUrl: a.avatar?.url || null,
-          verified: (a.bookingsCount || 0) >= 5,
-          styles: a.styles || [],
-          rating: Number(a.rating || 0),
-          url,
-          idea: ideaByUrl.get(url) || "",
-        });
-      }
+    let base = viewerIsTest ? null : await cache.get("popular:artworks:base");
+    if (!base) {
+      base = await computePopularBase(me);
+      if (!viewerIsTest) cache.set("popular:artworks:base", base, 120000);
     }
-
-    const counts = await ArtworkLike.aggregate([
-      { $group: { _id: { a: "$artistClerkId", u: "$imageUrl" }, c: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(counts.map((r) => [key(r._id.a, r._id.u), r.c]));
 
     let mine = new Set();
     if (me) {
@@ -62,14 +81,8 @@ export async function getPopularArtworks(req, res) {
       mine = new Set(liked.map((l) => key(l.artistClerkId, l.imageUrl)));
     }
 
-    const items = artworks.map((w) => {
-      const k = key(w.artistClerkId, w.url);
-      return { ...w, likes: countMap.get(k) || 0, likedByMe: mine.has(k) };
-    });
-
-    items.sort((x, y) => (y.likes - x.likes) || (y.rating - x.rating) || x.url.localeCompare(y.url));
-
-    res.json({ items: items.slice(0, limit) });
+    const items = base.slice(0, limit).map((w) => ({ ...w, likedByMe: mine.has(key(w.artistClerkId, w.url)) }));
+    res.json({ items });
   } catch (e) {
     console.error("getPopularArtworks error:", e.message);
     res.status(500).json({ error: "popular_failed" });
@@ -80,6 +93,13 @@ export async function getTrendingIdeas(req, res) {
   try {
     const limit = Math.min(24, Math.max(1, Number(req.query.limit) || 12));
     const me = actorId(req);
+    const viewerIsTest = isTestAccount(me);
+    const cacheKey = `trending:ideas:${limit}`;
+    if (!viewerIsTest) {
+      const cached = await cache.get(cacheKey);
+      if (cached) return res.json(cached);
+    }
+
     const artists = await Artist.find({ role: "artist", visible: true, ...hideTestAccountsFilter(me) })
       .select("portfolioMeta")
       .lean();
@@ -105,7 +125,9 @@ export async function getTrendingIdeas(req, res) {
       .slice(0, limit)
       .map(({ label, query, image }) => ({ label, query, image }));
 
-    res.json({ items });
+    const payload = { items };
+    if (!viewerIsTest) cache.set(cacheKey, payload, 300000);
+    res.json(payload);
   } catch (e) {
     console.error("getTrendingIdeas error:", e.message);
     res.status(500).json({ error: "trending_ideas_failed" });
