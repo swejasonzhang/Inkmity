@@ -1,6 +1,15 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { initialsFromName } from "@/lib/format";
 import { buildRequestMessage } from "@/lib/bookingMessage";
+import {
+    BUDGET_MIN,
+    BUDGET_MAX,
+    BUDGET_STEP,
+    BUDGET_MIN_GAP,
+    normalizeBudgetRange,
+    priceBucketFromRange,
+    normalizeOption,
+} from "@/lib/budget";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
@@ -125,20 +134,11 @@ const fallbackCities = [
     "Miami, FL",
 ];
 
-const MIN = 100;
-const MAX = 5000;
-const STEP = 50;
-const MIN_GAP = 100;
+const MIN = BUDGET_MIN;
+const MAX = BUDGET_MAX;
+const STEP = BUDGET_STEP;
+const MIN_GAP = BUDGET_MIN_GAP;
 const PRESET_STORAGE_KEY = "inkmity_artist_filters";
-
-const priceBucketFromRange = (lo: number, hi: number) => {
-    if (lo <= MIN && hi >= MAX) return "all";
-    if (hi <= 500) return "100-500";
-    if (hi <= 1000) return "500-1000";
-    if (hi <= 2000) return "1000-2000";
-    if (hi <= 5000) return "2000-5000";
-    return "5000+";
-};
 
 export default function ClientProfile() {
     const { getToken } = useAuth();
@@ -449,16 +449,10 @@ export default function ClientProfile() {
     const initials = useMemo(() => initialsFromName(currentUsername), [currentUsername]);
     const loc = currentLocation?.trim() || "";
 
-    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
-    const snap = (v: number) => Math.round(v / STEP) * STEP;
+    const { min: budgetMin, max: budgetMax } = normalizeBudgetRange(currentBudgetMin, currentBudgetMax);
 
-    const budgetMin = clamp(snap(currentBudgetMin), MIN, MAX - MIN_GAP);
-    const budgetMax = clamp(snap(currentBudgetMax), budgetMin + MIN_GAP, MAX);
-
-    const optValue = (opts: string[], v?: string) =>
-        opts.find((o) => o.toLowerCase() === (v || "").toLowerCase()) ?? "none";
-    const placementValue = optValue(PLACEMENT_OPTIONS, currentPlacement);
-    const pieceTypeValue = optValue(PIECE_TYPE_OPTIONS, currentPieceType);
+    const placementValue = normalizeOption(PLACEMENT_OPTIONS, currentPlacement);
+    const pieceTypeValue = normalizeOption(PIECE_TYPE_OPTIONS, currentPieceType);
 
     const messagePlaceholder = useMemo(
         () =>
@@ -670,8 +664,7 @@ export default function ClientProfile() {
                                         max={MAX}
                                         step={STEP}
                                         onValueChange={([min, max]) => {
-                                            const clampedMin = clamp(snap(min), MIN, MAX - MIN_GAP);
-                                            const clampedMax = clamp(snap(max), clampedMin + MIN_GAP, MAX);
+                                            const { min: clampedMin, max: clampedMax } = normalizeBudgetRange(min, max);
                                             setEditedClient({ ...editedClient, budgetMin: clampedMin, budgetMax: clampedMax });
                                         }}
                                         className="w-full"
