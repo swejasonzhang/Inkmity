@@ -21,44 +21,12 @@ import DepositStep from "./DepositStep"
 import CardOnFileStep from "./CardOnFileStep"
 import { type FormState, EMPTY_INTAKE, intakeIsComplete, toPayload } from "@/components/dashboard/client/intakeFormShared.helpers"
 import { IntakeFields } from "@/components/dashboard/client/intakeFormShared"
+import { addMinutesLocal, buildDefaultFrames, timeKeyLocal } from "@/lib/timeSlots"
 
 type Kind = "consultation" | "appointment"
 type Props = { artistId: string; date?: Date; artistName?: string }
 type Slot = { startISO: string; endISO: string }
 
-function toMinutes(hm: string) {
-  const [hStr, mStr] = String(hm).split(":")
-  const h = Number(hStr)
-  const m = Number(mStr)
-  return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m)
-}
-function atTimeLocal(day: Date, hm: string) {
-  const mins = toMinutes(hm)
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  const d = new Date(day)
-  d.setHours(h, m, 0, 0)
-  return d
-}
-function addMinutesLocal(d: Date, mins: number) {
-  return new Date(d.getTime() + mins * 60_000)
-}
-function buildDefaultFrames(day: Date, open = "10:00", close = "22:00", step = 30) {
-  const start = atTimeLocal(day, open)
-  const end = atTimeLocal(day, close)
-  const out: Date[] = []
-  let t = new Date(start)
-  while (t < end) {
-    out.push(new Date(t))
-    t = addMinutesLocal(t, step)
-  }
-  return out
-}
-function timeKeyLocal(d: Date) {
-  const hh = d.getHours().toString().padStart(2, "0")
-  const mm = d.getMinutes().toString().padStart(2, "0")
-  return `${hh}:${mm}`
-}
 function swallowGestureTail(ms = 220) {
   const h = (ev: Event) => {
     ev.stopPropagation()
