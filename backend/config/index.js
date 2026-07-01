@@ -19,6 +19,12 @@ export const config = {
     apiKey: process.env.ANTHROPIC_API_KEY,
   },
 
+  internal: {
+    // Shared secret guarding internal endpoints (e.g. the retention cron tick).
+    // When empty, those endpoints fail closed and reject every request.
+    cronSecret: process.env.INTERNAL_CRON_SECRET || '',
+  },
+
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
     publishableKey: process.env.VITE_STRIPE_PUBLISHABLE_KEY,

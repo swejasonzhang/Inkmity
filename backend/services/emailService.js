@@ -258,3 +258,125 @@ function createVerificationContent({ code, role, recipientName, expiresAt, appoi
 export async function sendVerificationCodeEmail(toEmail, opts) {
   return deliver('verification_code', toEmail, createVerificationContent(opts));
 }
+
+const appHome = () => config.server.frontendUrl || 'https://inkmity.com';
+
+function createReminderContent(booking, clientName, band) {
+  const apptType = booking.appointmentType === 'consultation' ? 'consultation' : 'tattoo session';
+  const when = fmtDate(booking.startAt);
+  const soon = band === '1h' ? 'in about an hour' : 'tomorrow';
+  const heading = band === '1h' ? 'See you soon' : 'Your appointment is coming up';
+  const body = `
+    <p style="margin:0 0 4px;font-size:14px;color:${BRAND.muted};text-align:center;">Hi ${clientName}, your ${apptType} is ${soon}.</p>
+    ${detailRows([
+      ['Appointment', apptType === 'consultation' ? 'Consultation' : 'Tattoo Session'],
+      ['Date & time', when],
+    ])}
+    <div style="background:#0d0d0d;border:1px solid ${BRAND.border};border-radius:14px;padding:16px 18px;margin:4px 0 22px;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:${BRAND.fg};">Before you arrive</p>
+      <ul style="margin:0;padding-left:18px;color:${BRAND.muted};font-size:13px;line-height:1.7;">
+        <li>Arrive 15 minutes early and bring a valid photo ID.</li>
+        <li>Eat beforehand and stay hydrated.</li>
+        <li>Message your artist in the app if anything changes.</li>
+      </ul>
+    </div>
+    ${button(appHome(), 'Open Inkmity')}
+  `;
+  return {
+    subject: `Reminder ${BRAND.mark} your ${apptType} is ${soon}`,
+    html: renderShell({ preheader: `Your ${apptType} is ${soon} — ${when}.`, heading, body }),
+    text: `${heading}
+
+Hi ${clientName}, your ${apptType} is ${soon}.
+
+Date & time: ${when}
+
+Before you arrive:
+- Arrive 15 minutes early and bring a valid photo ID
+- Eat beforehand and stay hydrated
+- Message your artist in the app if anything changes
+
+Open Inkmity: ${appHome()}
+
+Inkmity(TM) — automated message, please do not reply.`,
+  };
+}
+
+function createAftercareContent(booking, clientName) {
+  const body = `
+    <p style="margin:0 0 18px;font-size:14px;color:${BRAND.muted};text-align:center;">Hi ${clientName}, your fresh ink should be settling in nicely. A quick aftercare refresher to keep it looking its best.</p>
+    <div style="background:#0d0d0d;border:1px solid ${BRAND.border};border-radius:14px;padding:16px 18px;margin:4px 0 22px;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:${BRAND.fg};">Healing checklist</p>
+      <ul style="margin:0;padding-left:18px;color:${BRAND.muted};font-size:13px;line-height:1.7;">
+        <li>Keep it clean — gentle wash with unscented soap, pat dry.</li>
+        <li>Moisturize lightly; don't over-apply.</li>
+        <li>No soaking, pools, or direct sun on the healing tattoo.</li>
+        <li>Don't pick or scratch as it flakes.</li>
+      </ul>
+    </div>
+    <p style="margin:0 0 22px;font-size:13px;color:${BRAND.muted};text-align:center;line-height:1.7;">
+      Noticing anything unusual? Message your artist in the app — they're your best resource.
+    </p>
+    ${button(appHome(), 'Message your artist')}
+  `;
+  return {
+    subject: `Aftercare ${BRAND.mark} keep your new tattoo healing right`,
+    html: renderShell({ preheader: 'A quick aftercare refresher for your new tattoo.', heading: 'Caring for your new tattoo', body }),
+    text: `Caring for your new tattoo
+
+Hi ${clientName}, your fresh ink should be settling in nicely. A quick aftercare refresher:
+
+- Keep it clean: gentle wash with unscented soap, pat dry
+- Moisturize lightly; don't over-apply
+- No soaking, pools, or direct sun on the healing tattoo
+- Don't pick or scratch as it flakes
+
+Noticing anything unusual? Message your artist in the app.
+
+Open Inkmity: ${appHome()}
+
+Inkmity(TM) — automated message, please do not reply.`,
+  };
+}
+
+function createRebookingContent(booking, clientName) {
+  const body = `
+    <p style="margin:0 0 18px;font-size:14px;color:${BRAND.muted};text-align:center;">Hi ${clientName}, hope you're loving your latest piece. When you're ready for the next one, your artists are a tap away.</p>
+    <div style="background:#0d0d0d;border:1px solid ${BRAND.border};border-radius:14px;padding:16px 18px;margin:4px 0 22px;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:${BRAND.fg};">Ready for what's next?</p>
+      <ul style="margin:0;padding-left:18px;color:${BRAND.muted};font-size:13px;line-height:1.7;">
+        <li>Plan the next session in an ongoing project.</li>
+        <li>Leave a review to help other clients find great artists.</li>
+        <li>Explore new work and save ideas for your next tattoo.</li>
+      </ul>
+    </div>
+    ${button(appHome(), 'Find your next artist')}
+  `;
+  return {
+    subject: `Ready for your next tattoo? ${BRAND.mark} Inkmity`,
+    html: renderShell({ preheader: 'When you’re ready for the next one, your artists are a tap away.', heading: 'Your next piece awaits', body }),
+    text: `Your next piece awaits
+
+Hi ${clientName}, hope you're loving your latest piece. When you're ready for the next one:
+
+- Plan the next session in an ongoing project
+- Leave a review to help other clients find great artists
+- Explore new work and save ideas for your next tattoo
+
+Find your next artist: ${appHome()}
+
+Inkmity(TM) — automated message, please do not reply.`,
+  };
+}
+
+export async function sendReminderEmail(booking, clientEmail, clientName, band) {
+  return deliver('reminder', clientEmail, createReminderContent(booking, clientName, band));
+}
+
+export async function sendAftercareEmail(booking, clientEmail, clientName) {
+  return deliver('aftercare', clientEmail, createAftercareContent(booking, clientName));
+}
+
+export async function sendRebookingEmail(booking, clientEmail, clientName) {
+  return deliver('rebooking', clientEmail, createRebookingContent(booking, clientName));
+}

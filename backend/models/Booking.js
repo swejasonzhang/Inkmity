@@ -27,6 +27,10 @@ const BookingSchema = new mongoose.Schema(
     reminderSentAt: { type: Date },
     reminderSent24h: { type: Boolean, default: false },
     reminderSent1h: { type: Boolean, default: false },
+    aftercareSentAt: { type: Date },
+    aftercareSent3d: { type: Boolean, default: false },
+    rebookNudgeSentAt: { type: Date },
+    rebookNudgeSent7d: { type: Boolean, default: false },
     cancelledAt: { type: Date },
     cancelledBy: { type: String, enum: ["client", "artist", "system"] },
     cancellationReason: { type: String },
@@ -88,6 +92,7 @@ BookingSchema.index({ clientId: 1, status: 1, startAt: -1 }, { name: "client_sta
 BookingSchema.index({ artistId: 1, startAt: 1, endAt: 1 }, { name: "artist_time_range_idx" });
 BookingSchema.index({ clientId: 1, appointmentType: 1, status: 1 }, { name: "client_type_status_idx" });
 BookingSchema.index({ status: 1, startAt: 1 }, { name: "status_date_idx" });
+BookingSchema.index({ status: 1, completedAt: 1 }, { name: "status_completed_idx" });
 BookingSchema.index({ createdAt: -1 }, { name: "created_desc_idx" });
 
 BookingSchema.index(

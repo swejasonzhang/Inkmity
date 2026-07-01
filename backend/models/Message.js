@@ -31,6 +31,8 @@ const MessageSchema = new mongoose.Schema(
       kind: { type: String },
       status: { type: String },
       clientId: { type: String },
+      bookingId: { type: String },
+      band: { type: String },
     },
     threadKey: { type: String, index: true },
   },
