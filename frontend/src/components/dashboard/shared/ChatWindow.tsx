@@ -8,6 +8,7 @@ import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox, Lock } fro
 import { displayNameFromUsername } from "@/lib/format";
 import { formatActivityStatus } from "@/lib/activity";
 import { extractUrls, faviconUrl, splitMessageParts } from "@/lib/messageText";
+import { resolveMessageAccess, type GateStatus } from "@/lib/messagingGate";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPanel from "./messages/requestPanel";
@@ -51,7 +52,6 @@ export type Conversation = {
   lastSeen?: number;
 };
 
-type GateStatus = "pending" | "accepted" | "declined";
 type Role = "client" | "artist";
 
 const PIECE_SIZE_LABELS: Record<PieceSize, { label: string; sessions: number; hint: string }> = {
@@ -763,16 +763,17 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
   const rawStatus = activeConv?.meta?.lastStatus ?? null;
   const override = gateOverride[activeConv?.participantId || ""];
-  const computedStatus: GateStatus | null = useMemo(() => {
-    const v = override ?? rawStatus;
-    return v === "pending" || v === "accepted" || v === "declined" ? v : null;
-  }, [override, rawStatus]);
-
-  const status: GateStatus | null = isClient ? null : computedStatus;
-  const canSend = isClient ? true : status === "accepted" && (override === "accepted" || !!activeConv?.meta?.allowed);
-  const isBlocked = activeConv?.meta?.blocked || false;
-  const needsApproval = isClient ? false : status === "pending" && !canSend;
-  const isMessagingDisabled = isClient && isBlocked;
+  const { status, needsApproval, isMessagingDisabled } = useMemo(
+    () =>
+      resolveMessageAccess({
+        isClient,
+        rawStatus,
+        override,
+        allowed: activeConv?.meta?.allowed,
+        blocked: activeConv?.meta?.blocked,
+      }),
+    [isClient, rawStatus, override, activeConv?.meta?.allowed, activeConv?.meta?.blocked]
+  );
 
   if (!currentUserId) {
     return (
