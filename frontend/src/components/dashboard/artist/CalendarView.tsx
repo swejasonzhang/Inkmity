@@ -4,6 +4,14 @@ import { ChevronLeft, ChevronRight, ChevronDown, FileText, User, Clock, Tag } fr
 import { useAuth } from "@clerk/clerk-react";
 import { getIntakeForm, type IntakeForm } from "@/api";
 import {
+    monthMeta as computeMonthMeta,
+    buildMonthCells,
+    dateKey,
+    groupBookingsByDay,
+    isPastDay,
+    isActiveBooking,
+} from "@/lib/calendar";
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -228,56 +236,15 @@ export default function CalendarView({
     const [dayModalOpen, setDayModalOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-    const monthMeta = useMemo(() => {
-        const y = cursor.getFullYear();
-        const m = cursor.getMonth();
-        const start = new Date(y, m, 1);
-        const end = new Date(y, m + 1, 0);
-        const firstWeekday = (start.getDay() + 6) % 7;
-        const days = end.getDate();
-        return { year: y, month: m, days, firstWeekday };
-    }, [cursor]);
+    const monthMeta = useMemo(() => computeMonthMeta(cursor), [cursor]);
 
-    const cells = useMemo(() => {
-        const totalCells = 42;
-        return Array.from({ length: totalCells }).map((_, i) => {
-            const dayNum = i - monthMeta.firstWeekday + 1;
-            const inMonth = dayNum >= 1 && dayNum <= monthMeta.days;
-            const date = inMonth ? new Date(monthMeta.year, monthMeta.month, dayNum) : null;
-            return { inMonth, dayNum: inMonth ? dayNum : null, date };
-        });
-    }, [monthMeta]);
+    const cells = useMemo(() => buildMonthCells(monthMeta), [monthMeta]);
 
     const weekRows = cells.length / 7;
 
-    const dateKey = (d: Date) =>
-        [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+    const bookingsByDay = useMemo(() => groupBookingsByDay(bookings), [bookings]);
 
-    const bookingsByDay = useMemo(() => {
-        const map = new Map<string, Booking[]>();
-        for (const b of bookings) {
-            const d = new Date(b.start);
-            if (isNaN(d.getTime())) continue;
-            const key = dateKey(d);
-            if (!map.has(key)) map.set(key, []);
-            map.get(key)!.push(b);
-        }
-        for (const key of map.keys()) {
-            map.get(key)!.sort((a, b) => +new Date(a.start) - +new Date(b.start));
-        }
-        return map;
-    }, [bookings]);
-
-    const isPastDay = (d: Date) => {
-        const t = new Date();
-        t.setHours(0, 0, 0, 0);
-        return d < t;
-    };
-
-    const isActive = (b: Booking) => {
-        const st = b.status ?? "";
-        return st !== "cancelled" && st !== "no-show" && st !== "denied";
-    };
+    const isActive = (b: Booking) => isActiveBooking(b.status);
 
     const dayPillClass = (items: Booking[]) => {
         const hasUpcoming = items.some((b) => isActive(b) && b.status !== "pending" && !isPastDay(new Date(b.start)));
