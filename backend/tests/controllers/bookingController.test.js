@@ -120,11 +120,11 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
   }
 
   test("a final price within tolerance is auto-approved", async () => {
-    const b = await bookingQuoted(20000); // quote captured = 20000
+    const b = await bookingQuoted(20000);
     const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "artist-rc")
-      .send({ finalPriceCents: 21000 }); // +5% <= +10% tolerance
+      .send({ finalPriceCents: 21000 });
     expect(res.status).toBe(200);
     expect(res.body.finalPriceApproved).toBe(true);
   });
@@ -134,7 +134,7 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
     const res = await request(server)
       .patch(`/bookings/${b._id}/final-price`)
       .set("x-test-user-id", "artist-rc")
-      .send({ finalPriceCents: 30000 }); // +50%
+      .send({ finalPriceCents: 30000 });
     expect(res.status).toBe(200);
     expect(res.body.finalPriceApproved).toBe(false);
   });
@@ -160,7 +160,7 @@ conditionalDescribe("Booking Controller - final price re-consent", () => {
 
     const denied = await request(server)
       .post(`/bookings/${b._id}/approve-final-price`)
-      .set("x-test-user-id", "artist-rc"); // artist cannot approve
+      .set("x-test-user-id", "artist-rc");
     expect(denied.status).toBe(403);
 
     const res = await request(server)
@@ -388,7 +388,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
         mode: "percent",
         percent: 0.2,
         minCents: 1000,
-        consultationFree: false, // consultations are free by default; opt in to charge a deposit
+        consultationFree: false,
       },
     });
 

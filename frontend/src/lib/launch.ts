@@ -11,11 +11,6 @@ export type PreviewDecision = {
   cleanUrl?: string;
 };
 
-/**
- * Pure decision for the testing-mode preview gate. Side effects (persisting the
- * code, rewriting the URL) are described in the return value so this can be
- * unit-tested without touching window/localStorage.
- */
 export function decidePreviewAccess(params: {
   isTestingMode: boolean;
   previewCode: string;

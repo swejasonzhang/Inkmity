@@ -4,9 +4,6 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import "./stripe.setup.js";
 import cache from "../../lib/cache.js";
 
-// CI runs ~900 tests across parallel workers under heavy contention; a small
-// retry budget absorbs rare load-induced flakes without masking real failures
-// (local runs, where CI is unset, still fail fast on the first error).
 if (process.env.CI) {
   jest.retryTimes(2, { logErrorsBeforeRetry: true });
 }
@@ -34,8 +31,6 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  // Drop any cached endpoint results (e.g. discovery) so they don't leak
-  // across tests. Some unit tests mock the cache module without clear().
   if (typeof cache?.clear === "function") cache.clear();
   if (mongoose.connection.readyState === 1 && mongoServer) {
     const collections = mongoose.connection.collections;

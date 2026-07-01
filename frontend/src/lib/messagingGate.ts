@@ -1,5 +1,3 @@
-// Clients bypass the request gate; artists see pending/accepted/declined states.
-
 export type GateStatus = "pending" | "accepted" | "declined";
 
 export type MessageAccess = {

@@ -7,7 +7,7 @@ import {
   timeKeyLocal,
 } from "@/lib/timeSlots";
 
-const DAY = new Date(2026, 5, 30); // local midnight, June 30 2026
+const DAY = new Date(2026, 5, 30);
 
 describe("toMinutes", () => {
   test("parses HH:MM into minutes past midnight", () => {
@@ -17,7 +17,7 @@ describe("toMinutes", () => {
   });
 
   test("treats missing/garbage parts as zero", () => {
-    expect(toMinutes("9")).toBe(540); // no minutes → 0
+    expect(toMinutes("9")).toBe(540);
     expect(toMinutes("")).toBe(0);
     expect(toMinutes("ab:cd")).toBe(0);
   });
@@ -51,7 +51,7 @@ describe("buildDefaultFrames", () => {
     const frames = buildDefaultFrames(DAY);
     expect(frames.length).toBe(24);
     expect(timeKeyLocal(frames[0])).toBe("10:00");
-    expect(timeKeyLocal(frames[frames.length - 1])).toBe("21:30"); // 22:00 not included
+    expect(timeKeyLocal(frames[frames.length - 1])).toBe("21:30");
   });
 
   test("honours a custom window and step", () => {

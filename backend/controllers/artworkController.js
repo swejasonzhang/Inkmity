@@ -14,10 +14,6 @@ function actorId(req) {
   }
 }
 
-// The heavy part (scan every artist's images + aggregate all likes + sort) is
-// viewer-independent, so cache the ranked list and apply the per-user
-// likedByMe flag per request. Test-account viewers see a different set and
-// bypass the shared cache.
 async function computePopularBase(me) {
   const artists = await Artist.find({ role: "artist", visible: true, ...hideTestAccountsFilter(me) })
     .select("clerkId handle username avatar styles rating bookingsCount portfolioImages portfolioMeta pastWorks healedWorks sketches")

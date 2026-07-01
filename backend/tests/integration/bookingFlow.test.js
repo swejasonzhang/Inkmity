@@ -123,8 +123,6 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
 
     await ArtistPolicy.create({
       artistId,
-      // consultations are free by default; this artist opts in to a deposit so
-      // the deposit → webhook → confirmed flow below has something to charge.
       deposit: { mode: "percent", percent: 0.2, minCents: 1000, consultationFree: false },
     });
     await onboardArtist(artistId);

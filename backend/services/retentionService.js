@@ -10,19 +10,13 @@ const DAY = 24 * HOUR;
 
 const UPCOMING = ["accepted", "booked", "confirmed"];
 
-// Backstop so a bug can never spin a runner forever; the atomic claim already
-// guarantees each booking is handled once, so this is only a safety ceiling.
 const MAX_PER_RUN = 500;
 
-// Lower bounds on the "after completion" windows so first-deploy doesn't blast
-// every historical booking — only recently-completed sessions are in range.
 const AFTERCARE_MAX_AGE_DAYS = 14;
 const REBOOK_MAX_AGE_DAYS = 30;
 
 async function resolveClient(clientId) {
   if (!clientId) return null;
-  // booking.clientId is the client's Clerk ID (see how bookings are created and
-  // how billing/rewards resolve the client), not a Mongo _id.
   const c = await Client.findOne({ clerkId: String(clientId) });
   if (!c?.email) return null;
   return { email: c.email, name: c.username || c.handle || "there" };
@@ -36,14 +30,12 @@ async function notifyInApp({ artistId, clientId, text, meta }) {
       text,
       meta,
     });
-    try { emitMessageCreated(msg); } catch { /* socket optional */ }
+    try { emitMessageCreated(msg); } catch {}
   } catch (err) {
     logger.warn?.({ err: err.message, kind: meta?.kind }, "retention in-app notify failed");
   }
 }
 
-// Claim-and-process loop: findOneAndUpdate atomically stamps the idempotency
-// flag as it selects, so concurrent instances never double-send a booking.
 async function drain(claim, handle) {
   let count = 0;
   for (let i = 0; i < MAX_PER_RUN; i++) {
@@ -159,8 +151,6 @@ export async function runRebookingNudges(now = Date.now()) {
   );
 }
 
-// One retention cycle: each stage is independent, so a failure in one doesn't
-// block the others.
 export async function runRetentionTick(now = Date.now()) {
   const result = { reminders: 0, aftercare: 0, rebook: 0 };
   for (const [key, fn] of [

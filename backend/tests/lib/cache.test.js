@@ -107,7 +107,6 @@ describe("cacheHelpers", () => {
 
     expect(cacheHelpers.invalidate("user:featured:*")).toBe(1);
     expect(cache.get("user:featured:5")).toBeNull();
-    // The earlier regex wiped these too; they must survive now.
     expect(cache.get("user:id:abc")).toBe("x");
     expect(cache.get("user:clerkId:k1")).toBe("y");
   });

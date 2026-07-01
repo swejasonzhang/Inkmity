@@ -101,7 +101,6 @@ describe("StudioLocationPicker", () => {
         compact
       />
     );
-    // error fallback path hides the verified label, so use ready path instead
     expect(screen.queryByText(/Verified listing/i)).not.toBeInTheDocument();
   });
 });

@@ -680,8 +680,6 @@ conditionalDescribe("User Controller - getArtists", () => {
     const response = await request(server).get("/users/artists");
 
     expect(response.status).toBe(200);
-    // Pro tier (60 bookings, 4.6) surfaces above a Rising artist with a higher
-    // rating (5.0, 2 bookings) on the default placement view.
     expect(response.body.items[0].username).toBe("Pro Vet");
     expect(response.body.items[1].username).toBe("Rising Star");
   });
@@ -717,8 +715,6 @@ conditionalDescribe("User Controller - getArtists", () => {
       .query({ sort: "experience_desc" });
 
     expect(response.status).toBe(200);
-    // Explicit sort is honored: the Rising artist (12 yrs) leads despite a
-    // lower tier — no placement boost applied.
     expect(response.body.items[0].username).toBe("Rising Star");
     expect(response.body.items[1].username).toBe("Pro Vet");
   });
@@ -775,7 +771,6 @@ conditionalDescribe("User Controller - getArtists", () => {
     const first = await request(server).get("/users/artists").query({ page: 1, pageSize: 10 });
     expect(first.body.items.map((a) => a.username)).toContain("Cached");
 
-    // Remove the artist from the DB; the cached page should still include it.
     await mongoose.model("artist").deleteMany({ clerkId: "cache-artist" });
     const second = await request(server).get("/users/artists").query({ page: 1, pageSize: 10 });
     expect(second.body.items.map((a) => a.username)).toContain("Cached");

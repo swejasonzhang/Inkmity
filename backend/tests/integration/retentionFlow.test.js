@@ -1,9 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
-// Mock only the outward side-effects (email transport, socket). Everything else
-// — Booking, Client, Message — runs against the real in-memory Mongo so this
-// exercises the true query windows, the clerkId-based client lookup, and the
-// idempotency flags actually being written.
 const mockSendReminder = jest.fn().mockResolvedValue(true);
 const mockSendAftercare = jest.fn().mockResolvedValue(true);
 const mockSendRebooking = jest.fn().mockResolvedValue(true);
@@ -69,7 +65,6 @@ conditionalDescribe("retention loop (integration)", () => {
     const sent = await runBookingReminders(now);
 
     expect(sent).toBe(1);
-    // real clerkId lookup worked → the client's actual email was used
     expect(mockSendReminder).toHaveBeenCalledTimes(1);
     expect(mockSendReminder.mock.calls[0][1]).toBe("cass@example.com");
     expect(mockSendReminder.mock.calls[0][3]).toBe("24h");
@@ -80,7 +75,6 @@ conditionalDescribe("retention loop (integration)", () => {
     expect(dueAfter.reminderSentAt).toBeInstanceOf(Date);
     expect(farAfter.reminderSent24h).toBe(false);
 
-    // a real in-app notification landed in the client↔artist thread
     const notes = await Message.find({ receiverId: CLIENT_CLERK, "meta.kind": "appointment_reminder" });
     expect(notes).toHaveLength(1);
     expect(String(notes[0].meta.bookingId)).toBe(String(due._id));
@@ -110,7 +104,7 @@ conditionalDescribe("retention loop (integration)", () => {
       status: "completed",
       appointmentType: "tattoo_session",
       startAt: new Date(now - 2 * DAY),
-      completedAt: new Date(now - 1 * DAY), // too recent
+      completedAt: new Date(now - 1 * DAY),
     });
 
     const sent = await runAftercareSequence(now);
@@ -131,7 +125,7 @@ conditionalDescribe("retention loop (integration)", () => {
     await makeBooking({
       status: "completed",
       startAt: new Date(now - 3 * DAY),
-      completedAt: new Date(now - 2 * DAY), // too recent for rebook
+      completedAt: new Date(now - 2 * DAY),
     });
 
     const sent = await runRebookingNudges(now);
@@ -143,19 +137,19 @@ conditionalDescribe("retention loop (integration)", () => {
   });
 
   test("a full tick handles reminders + aftercare + rebooking in one pass", async () => {
-    await makeBooking({ startAt: new Date(now + 12 * HOUR) }); // 24h reminder
+    await makeBooking({ startAt: new Date(now + 12 * HOUR) });
     await makeBooking({
       status: "completed",
       appointmentType: "tattoo_session",
       startAt: new Date(now - 6 * DAY),
       completedAt: new Date(now - 5 * DAY),
-    }); // aftercare (also eligible for rebook? no — 5d < 7d)
+    });
     await makeBooking({
       status: "completed",
-      appointmentType: "consultation", // consultation → rebook-only, not aftercare
+      appointmentType: "consultation",
       startAt: new Date(now - 11 * DAY),
       completedAt: new Date(now - 10 * DAY),
-    }); // rebook
+    });
 
     const result = await runRetentionTick(now);
 

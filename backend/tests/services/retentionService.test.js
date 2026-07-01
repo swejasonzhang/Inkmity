@@ -50,10 +50,10 @@ describe("runBookingReminders", () => {
     const b24 = booking({ _id: "b24" });
     const b1h = booking({ _id: "b1h" });
     mockBooking.findOneAndUpdate
-      .mockResolvedValueOnce(b24) // 24h claim
-      .mockResolvedValueOnce(null) // 24h drained
-      .mockResolvedValueOnce(b1h) // 1h claim
-      .mockResolvedValueOnce(null); // 1h drained
+      .mockResolvedValueOnce(b24)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(b1h)
+      .mockResolvedValueOnce(null);
 
     const n = await runBookingReminders(NOW);
 
@@ -71,11 +71,10 @@ describe("runBookingReminders", () => {
 
     const [filter, update, opts] = mockBooking.findOneAndUpdate.mock.calls[0];
     expect(filter.status).toEqual({ $in: ["accepted", "booked", "confirmed"] });
-    expect(filter.reminderSent24h).toEqual({ $ne: true }); // won't re-select an already-sent booking
-    // 24h band excludes the final hour (that belongs to the 1h band)
+    expect(filter.reminderSent24h).toEqual({ $ne: true });
     expect(filter.startAt.$gt).toEqual(new Date(NOW + HOUR));
     expect(filter.startAt.$lte).toEqual(new Date(NOW + 24 * HOUR));
-    expect(update.$set.reminderSent24h).toBe(true); // stamped as it's claimed
+    expect(update.$set.reminderSent24h).toBe(true);
     expect(opts).toMatchObject({ new: true });
   });
 
@@ -107,7 +106,7 @@ describe("runAftercareSequence", () => {
     expect(filter.appointmentType).toBe("tattoo_session");
     expect(filter.aftercareSent3d).toEqual({ $ne: true });
     expect(filter.completedAt.$lte).toEqual(new Date(NOW - 3 * DAY));
-    expect(filter.completedAt.$gt).toEqual(new Date(NOW - 14 * DAY)); // first-deploy guard
+    expect(filter.completedAt.$gt).toEqual(new Date(NOW - 14 * DAY));
     expect(update.$set.aftercareSent3d).toBe(true);
   });
 });
@@ -123,7 +122,7 @@ describe("runRebookingNudges", () => {
     expect(mockSendRebooking).toHaveBeenCalledWith(done, "cass@example.com", "Cass");
     const [filter, update] = mockBooking.findOneAndUpdate.mock.calls[0];
     expect(filter.status).toBe("completed");
-    expect(filter.appointmentType).toBeUndefined(); // not restricted to sessions
+    expect(filter.appointmentType).toBeUndefined();
     expect(filter.rebookNudgeSent7d).toEqual({ $ne: true });
     expect(filter.completedAt.$lte).toEqual(new Date(NOW - 7 * DAY));
     expect(update.$set.rebookNudgeSent7d).toBe(true);
@@ -137,7 +136,6 @@ describe("runRetentionTick", () => {
   });
 
   test("a failure in one stage does not abort the others", async () => {
-    // first claim (reminders 24h band) throws; every later claim resolves empty
     mockBooking.findOneAndUpdate
       .mockRejectedValueOnce(new Error("db blip"))
       .mockResolvedValue(null);
@@ -145,7 +143,6 @@ describe("runRetentionTick", () => {
     const result = await runRetentionTick(NOW);
 
     expect(result).toEqual({ reminders: 0, aftercare: 0, rebook: 0 });
-    // aftercare + rebook stages still queried after the reminders stage failed
     expect(mockBooking.findOneAndUpdate.mock.calls.length).toBeGreaterThan(1);
   });
 });

@@ -56,7 +56,7 @@ const WebhookEvent = (await import("../../models/WebhookEvent.js")).default;
 const Artist = (await import("../../models/Artist.js")).default;
 await import("../../models/Client.js");
 
-const PLATFORM_FEE_MIN_CENTS = 1000; // $10 platform base fee (config.platformFee.baseCents)
+const PLATFORM_FEE_MIN_CENTS = 1000;
 
 const app = express();
 app.use(express.json());
@@ -817,7 +817,7 @@ conditionalDescribe("Billing Controller - checkoutDeposit (Stripe Checkout)", ()
     expect(res.body.id).toBe("cs_co1");
     expect(res.body.clientSecret).toBeNull();
 
-    const expectedFee = PLATFORM_FEE_MIN_CENTS + Math.round(20000 * 0.05); // base + 5% of price
+    const expectedFee = PLATFORM_FEE_MIN_CENTS + Math.round(20000 * 0.05);
     const args = stripeMock.checkout.sessions.create.mock.calls[0][0];
     expect(args.mode).toBe("payment");
     expect(args.line_items).toHaveLength(2);

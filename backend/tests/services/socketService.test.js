@@ -1,8 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
-// socketService captures IS_PROD at import, so NODE_ENV must be "production"
-// before the import below; we restore it immediately after so this file does
-// not leak production mode into other suites sharing the worker.
 const _prevNodeEnv = process.env.NODE_ENV;
 process.env.NODE_ENV = "production";
 process.env.CLERK_SECRET_KEY = "sk_test_dummy";

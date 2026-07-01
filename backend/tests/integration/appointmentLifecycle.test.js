@@ -8,8 +8,6 @@ import { getPaymentBreakdown } from "../../controllers/billingController.js";
 
 const conditionalDescribe = process.env.DATABASE_AVAILABLE === "true" ? describe : describe.skip;
 
-// config.dev.bypassGates is a live getter, so scope the flag to this file's
-// lifecycle instead of leaking it worker-wide via a module-scope assignment.
 let _prevBypass;
 beforeAll(() => {
   _prevBypass = process.env.DEV_BYPASS_GATES;

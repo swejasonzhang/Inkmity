@@ -29,7 +29,7 @@ describe("buildRequestMessage", () => {
 
   test("omits piece type / placement when they are 'none' or missing", () => {
     const msg = buildRequestMessage({ budgetMin: 1, budgetMax: 2, pieceType: "none", placement: "none" });
-    expect(msg).not.toContain("I'm interested in a"); // the piece-type sentence (not the greeting)
+    expect(msg).not.toContain("I'm interested in a");
     expect(msg).not.toContain("I'd like it on my");
   });
 

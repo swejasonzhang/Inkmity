@@ -58,13 +58,11 @@ conditionalDescribe("Artwork Controller", () => {
     const items = res.body.items;
     expect(items).toHaveLength(3);
 
-    // Most-liked first.
     expect(items[0].url).toBe("a1.jpg");
     expect(items[0].likes).toBe(3);
     expect(items[0].likedByMe).toBe(true);
     expect(items[0].verified).toBe(true);
 
-    // a2 (1 like) before b1 (0 likes).
     const a2 = items.find((i) => i.url === "a2.jpg");
     const b1 = items.find((i) => i.url === "b1.jpg");
     expect(a2.likes).toBe(1);
@@ -144,7 +142,6 @@ conditionalDescribe("Artwork Controller", () => {
     const items = res.body.items;
     expect(items).toHaveLength(2);
 
-    // Most-used idea first; "Dragon..." and "dragon..." collapse to one (count 2).
     expect(items[0].label.toLowerCase()).toBe("dragon origami back tattoo");
     expect(items[0].query.toLowerCase()).toBe("dragon origami back tattoo");
     expect(["t1a.jpg", "t2a.jpg"]).toContain(items[0].image);

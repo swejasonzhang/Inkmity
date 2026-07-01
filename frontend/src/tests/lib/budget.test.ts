@@ -17,7 +17,7 @@ describe("clampNumber / snapToStep", () => {
     expect(clampNumber(99, 0, 10)).toBe(10);
   });
   test("snapToStep rounds to the nearest step", () => {
-    expect(snapToStep(120)).toBe(100); // step 50
+    expect(snapToStep(120)).toBe(100);
     expect(snapToStep(125)).toBe(150);
     expect(snapToStep(333, 100)).toBe(300);
   });
@@ -51,7 +51,7 @@ describe("normalizeBudgetRange", () => {
 describe("priceBucketFromRange", () => {
   test("the full span is the 'all' bucket", () => {
     expect(priceBucketFromRange(BUDGET_MIN, BUDGET_MAX)).toBe("all");
-    expect(priceBucketFromRange(50, 6000)).toBe("all"); // wider than bounds
+    expect(priceBucketFromRange(50, 6000)).toBe("all");
   });
   test("buckets by the upper bound", () => {
     expect(priceBucketFromRange(100, 500)).toBe("100-500");

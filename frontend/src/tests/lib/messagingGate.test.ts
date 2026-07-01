@@ -28,7 +28,7 @@ describe("resolveMessageAccess — client side", () => {
 
   test("a blocked client has messaging disabled", () => {
     const a = resolveMessageAccess({ isClient: true, rawStatus: "accepted", blocked: true });
-    expect(a.canSend).toBe(true); // client is never gated from sending in this model
+    expect(a.canSend).toBe(true);
     expect(a.isBlocked).toBe(true);
     expect(a.isMessagingDisabled).toBe(true);
   });

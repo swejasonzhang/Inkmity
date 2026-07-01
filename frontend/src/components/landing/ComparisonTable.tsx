@@ -5,8 +5,6 @@ import { Check, X, Minus } from "lucide-react";
 type Cell = "yes" | "no" | "partial" | { text: string };
 type Row = { label: string; inspiration: Cell; booking: Cell };
 
-// Category-framed so no competitor is named on the public page:
-// "Inspiration apps" ≈ discovery marketplaces, "Booking software" ≈ artist SaaS.
 const ROWS: Row[] = [
     { label: "Discover artists & get inspired", inspiration: "yes", booking: "no" },
     { label: "Send a real booking brief", inspiration: "partial", booking: "partial" },

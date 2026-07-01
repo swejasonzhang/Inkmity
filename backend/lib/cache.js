@@ -1,10 +1,5 @@
 import { getRedis } from "./redis.js";
 
-// In-memory cache (L1). Used as-is when REDIS_URL is unset. When Redis is
-// configured, the facade below routes through Redis instead so every instance
-// shares one coherent cache. Reads are awaited by callers, which works for both
-// modes: in-memory returns a plain value (await passes it through) and Redis
-// returns a promise.
 class Cache {
   constructor(defaultTTL = 300000) {
     this.store = new Map();
@@ -103,10 +98,6 @@ class Cache {
 
 const mem = new Cache();
 
-// Facade. In-memory mode delegates to `mem` (synchronous, unchanged behavior).
-// Redis mode returns promises for reads and fires writes/deletes best-effort,
-// falling back to a cache miss on any Redis error so a Redis blip never breaks
-// a request (it just hits the DB).
 const cache = {
   get(key) {
     const redis = getRedis();
@@ -140,7 +131,6 @@ const cache = {
   },
 
   clear() {
-    // Only clears this instance's in-memory L1; never flushes shared Redis.
     mem.clear();
   },
 
@@ -184,16 +174,12 @@ export const cacheHelpers = {
   },
 
   invalidate(pattern) {
-    // Glob semantics: '*' matches any run of characters; every other character
-    // is literal. (The previous regex turned each ':segment' into a wildcard,
-    // so "user:featured:*" wiped the entire "user:*" namespace.)
     const glob = String(pattern);
     const regex = new RegExp(
       `^${glob.split("*").map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`
     );
     const redis = getRedis();
     if (redis) {
-      // Redis MATCH already understands '*', so scan+unlink directly.
       (async () => {
         let cursor = "0";
         do {

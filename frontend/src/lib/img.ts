@@ -10,9 +10,6 @@ type ImgOpts = {
   dpr?: number | "auto";
 };
 
-// Rewrites a Cloudinary delivery URL to serve a right-sized, auto-format
-// (WebP/AVIF), auto-quality image. Non-Cloudinary URLs and already-transformed
-// URLs pass through unchanged, so it's safe to wrap any src.
 export function cldUrl(url: string | null | undefined, opts: ImgOpts = {}): string {
   if (!url) return "";
   const at = url.indexOf(UPLOAD_MARK);
@@ -33,14 +30,11 @@ export function cldUrl(url: string | null | undefined, opts: ImgOpts = {}): stri
   return `${head}${t.join(",")}/${tail}`;
 }
 
-// Square, cropped — avatars and grid thumbnails.
 export const cldThumb = (url?: string | null, size = 400) =>
   cldUrl(url, { width: size, height: size, crop: "fill" });
 
-// Width-bounded, aspect kept — card and cover images.
 export const cldCard = (url?: string | null, width = 640) =>
   cldUrl(url, { width, crop: "limit" });
 
-// Large but bounded — fullscreen / detail views.
 export const cldFull = (url?: string | null, width = 1400) =>
   cldUrl(url, { width, crop: "limit" });

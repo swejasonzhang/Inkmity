@@ -1,10 +1,5 @@
 import Redis from "ioredis";
 
-// Shared Redis access for cross-instance state (Socket.io adapter, cache,
-// rate limiting). When REDIS_URL is unset (local dev, tests, single-instance
-// deploys) every getter returns null and callers fall back to in-memory
-// behavior — so nothing here changes single-instance operation.
-
 let client = null;
 let initialized = false;
 
@@ -12,8 +7,6 @@ function buildClient(label) {
   const url = process.env.REDIS_URL;
   if (!url) return null;
   const c = new Redis(url, {
-    // Fail fast instead of queueing forever when Redis is unreachable, so a
-    // Redis outage degrades to a DB read rather than hanging requests.
     maxRetriesPerRequest: 2,
     enableOfflineQueue: false,
     connectTimeout: 5000,
@@ -34,7 +27,6 @@ export function getRedis() {
   return client;
 }
 
-// The Socket.io adapter needs a fresh pub/sub pair — each needs its own connection.
 export function createRedisPubSub() {
   if (!isRedisEnabled()) return null;
   const pub = buildClient("pub");

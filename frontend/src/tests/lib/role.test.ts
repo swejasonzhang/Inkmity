@@ -19,7 +19,7 @@ describe("resolveRole", () => {
   test("trusts a valid API role, including client", () => {
     expect(resolveRole("artist", undefined)).toBe("artist");
     expect(resolveRole("studio", "client")).toBe("studio");
-    expect(resolveRole("client", "artist")).toBe("client"); // API wins over metadata
+    expect(resolveRole("client", "artist")).toBe("client");
   });
 
   test("falls back to Clerk metadata when the API role is missing/invalid", () => {

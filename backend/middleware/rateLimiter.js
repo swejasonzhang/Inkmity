@@ -8,9 +8,6 @@ const num = (v, d) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) :
 
 const WINDOW_MS = num(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000);
 
-// Without a shared store, each instance keeps its own counters, so N instances
-// effectively multiply every limit by N. A Redis store makes limits global.
-// Falls back to the default in-memory store when REDIS_URL is unset.
 function storeOpt(prefix) {
   const redis = getRedis();
   if (!redis) return {};

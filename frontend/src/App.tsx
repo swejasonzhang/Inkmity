@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn, useUser } from "@clerk/clerk-react";
 
-// Pages are route-level and code-split so anonymous/landing visitors don't
-// download the whole authenticated app up front.
 const SignUp = lazy(() => import("./pages/Signup"));
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));

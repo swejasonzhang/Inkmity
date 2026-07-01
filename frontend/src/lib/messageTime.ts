@@ -1,5 +1,3 @@
-// Exact strings are locale-dependent by design.
-
 export function formatMessageTime(ts: number): string {
   try {
     const d = new Date(ts);

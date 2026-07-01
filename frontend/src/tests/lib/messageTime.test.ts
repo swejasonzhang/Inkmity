@@ -6,12 +6,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 describe("formatMessageTime", () => {
   test("shows a clock time for today's messages (contains a colon)", () => {
     const out = formatMessageTime(Date.now());
-    expect(out).toMatch(/\d:\d{2}/); // e.g. "3:45 PM"
+    expect(out).toMatch(/\d:\d{2}/);
   });
 
   test("shows a short date (no clock) for other days", () => {
     const out = formatMessageTime(Date.now() - 3 * DAY_MS);
-    expect(out).not.toMatch(/:\d{2}/); // e.g. "Jun 27" — no time component
+    expect(out).not.toMatch(/:\d{2}/);
     expect(out.length).toBeGreaterThan(0);
   });
 });
@@ -30,7 +30,7 @@ describe("formatMessageDateTime", () => {
     const fromNumber = formatMessageDateTime(Date.parse(iso));
     expect(fromString).toContain(", ");
     expect(fromString).toMatch(/\d:\d{2}/);
-    expect(fromNumber).toBe(fromString); // same instant, same label
+    expect(fromNumber).toBe(fromString);
   });
 
   test("omits the year for this year and includes it for other years", () => {

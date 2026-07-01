@@ -16,9 +16,6 @@ async function tick() {
   }
 }
 
-// Runs the retention cycle inside the always-on API process — no separate
-// (paid) scheduler service. Multiple instances are safe: each booking is
-// claimed atomically, so at most one instance sends any given message.
 export function startRetentionScheduler({ intervalMs } = {}) {
   if (timer) return timer;
   if (process.env.RETENTION_SCHEDULER === "off") {
@@ -27,7 +24,7 @@ export function startRetentionScheduler({ intervalMs } = {}) {
   }
   const ms = intervalMs || Number(process.env.RETENTION_INTERVAL_MS) || DEFAULT_INTERVAL_MS;
   timer = setInterval(tick, ms);
-  timer.unref?.(); // never block process shutdown
+  timer.unref?.();
   logger.info({ intervalMs: ms }, "retention scheduler started");
   return timer;
 }

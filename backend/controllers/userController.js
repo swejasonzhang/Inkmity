@@ -234,10 +234,6 @@ export async function getArtists(req, res) {
   const { getOnlineUsers } = await import("../services/socketService.js");
   const onlineUsersSet = getOnlineUsers();
 
-  // Cache the (expensive, tier-ranked) DB result by query params. Test-account
-  // viewers see a different set (hidden accounts), so they bypass the shared
-  // cache entirely — never reading or writing it. Live isOnline state is
-  // applied per-request below, not cached.
   const viewerIsTest = isTestAccount(getClerkId(req));
   const discoveryKey = `artists:list:${JSON.stringify({
     search, location, style, booking, travel, experience, sortKey, page, pageSize,

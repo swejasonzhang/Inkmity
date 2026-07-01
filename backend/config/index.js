@@ -20,8 +20,6 @@ export const config = {
   },
 
   internal: {
-    // Shared secret guarding internal endpoints (e.g. the retention cron tick).
-    // When empty, those endpoints fail closed and reject every request.
     cronSecret: process.env.INTERNAL_CRON_SECRET || '',
   },
 

@@ -72,7 +72,6 @@ describe("useScrollLock", () => {
     const evt = new Event("wheel", { cancelable: true, bubbles: true });
     Object.defineProperty(evt, "target", { value: modal });
     document.dispatchEvent(evt);
-    // no inner scroller -> blocked
     expect(evt.defaultPrevented).toBe(true);
 
     modal.remove();

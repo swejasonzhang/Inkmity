@@ -88,8 +88,6 @@ async function sendClientCancellationEmail(booking) {
   let clientEmail = null;
   let clientName = "Valued Client";
   if (booking.clientId) {
-    // booking.clientId is the client's Clerk ID, not a Mongo _id — resolve by
-    // clerkId (findById silently failed here, so cancellation emails never sent).
     const client = await Client.findOne({ clerkId: String(booking.clientId) });
     if (client) {
       clientEmail = client.email;

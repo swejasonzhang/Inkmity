@@ -301,8 +301,8 @@ describe("getAllMessagesForUser — request bucketing", () => {
     mockMessage.aggregate
       .mockResolvedValueOnce([
         { doc: { senderId: "u1", receiverId: "p1", text: "req", createdAt: new Date(), requestStatus: "accepted", meta: {} } },
-      ]) // requests
-      .mockResolvedValueOnce([]); // decline counts
+      ])
+      .mockResolvedValueOnce([]);
     mockUser.find.mockReturnValue(q([{ clerkId: "p1", username: "Pal" }]));
     const res = await request(server).get("/messages/u1").set("x-test-user-id", "u1");
     expect(res.status).toBe(200);

@@ -13,8 +13,8 @@ describe("windowMessages", () => {
     const { shown, earlierCount } = windowMessages(seq(200), 60);
     expect(shown).toHaveLength(60);
     expect(earlierCount).toBe(140);
-    expect(shown[0]).toBe(140); // oldest shown
-    expect(shown[shown.length - 1]).toBe(199); // newest always kept
+    expect(shown[0]).toBe(140);
+    expect(shown[shown.length - 1]).toBe(199);
   });
 
   test("growing the window reveals older messages", () => {

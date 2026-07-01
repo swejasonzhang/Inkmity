@@ -10,10 +10,10 @@ import {
 
 describe("monthMeta", () => {
   test("computes the number of days in the month", () => {
-    expect(monthMeta(new Date(2026, 5, 1)).days).toBe(30); // June
-    expect(monthMeta(new Date(2026, 1, 10)).days).toBe(28); // Feb 2026 (non-leap)
-    expect(monthMeta(new Date(2024, 1, 10)).days).toBe(29); // Feb 2024 (leap)
-    expect(monthMeta(new Date(2026, 0, 1)).days).toBe(31); // Jan
+    expect(monthMeta(new Date(2026, 5, 1)).days).toBe(30);
+    expect(monthMeta(new Date(2026, 1, 10)).days).toBe(28);
+    expect(monthMeta(new Date(2024, 1, 10)).days).toBe(29);
+    expect(monthMeta(new Date(2026, 0, 1)).days).toBe(31);
   });
 
   test("first weekday is Monday-indexed (0-6)", () => {

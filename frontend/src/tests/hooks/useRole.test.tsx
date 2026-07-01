@@ -75,7 +75,6 @@ describe("useRole", () => {
     try {
       localStorage.removeItem("inkmity-role");
     } catch {
-      // ignore
     }
   });
 

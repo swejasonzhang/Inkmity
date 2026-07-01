@@ -1,8 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "@jest/globals";
 
-// Verifies the single-instance fallback contract: with REDIS_URL unset, every
-// accessor is falsy so callers (cache, rate limiter, socket adapter) use their
-// in-memory paths. The Redis-enabled paths are exercised in a real deploy.
 describe("lib/redis (disabled / single-instance fallback)", () => {
   let prev;
   beforeEach(() => {

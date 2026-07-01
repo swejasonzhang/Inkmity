@@ -23,7 +23,6 @@ describe("normalizeYears", () => {
     expect(normalizeYears(undefined)).toBeUndefined();
   });
   test("a string with no digits collapses to 0 (Number('') === 0)", () => {
-    // documents existing behavior: such an artist reads as 0 years experience
     expect(normalizeYears("abc")).toBe(0);
   });
 });
@@ -118,7 +117,7 @@ describe("scoreUpcomingArtists", () => {
     }));
     const ranked = scoreUpcomingArtists(many, NOW);
     expect(ranked).toHaveLength(12);
-    expect(ranked[0].id).toBe("a0"); // newest + fewest reviews scores lowest → first
+    expect(ranked[0].id).toBe("a0");
   });
 
   test("a brand-new artist with no history outranks an established one", () => {

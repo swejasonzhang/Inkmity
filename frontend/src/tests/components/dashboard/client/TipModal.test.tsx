@@ -44,7 +44,7 @@ describe("TipModal", () => {
   test("renders presets and the default tip amount", () => {
     render(<TipModal open bookingId="b1" artistName="Jane" onClose={jest.fn()} />);
     expect(screen.getByText("Tip Jane")).toBeInTheDocument();
-    expect(screen.getByText("Tip $20.00")).toBeInTheDocument(); // default 2000c selected
+    expect(screen.getByText("Tip $20.00")).toBeInTheDocument();
   });
 
   test("calls onClose when cancel is clicked", async () => {

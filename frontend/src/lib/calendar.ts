@@ -1,5 +1,3 @@
-// The day-binning is timezone-sensitive and was a source of test flakiness.
-
 export type CalBooking = { start: string | number | Date; status?: string };
 
 export type MonthMeta = { year: number; month: number; days: number; firstWeekday: number };

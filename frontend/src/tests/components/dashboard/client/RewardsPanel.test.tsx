@@ -47,7 +47,6 @@ describe("RewardsPanel", () => {
     expect(screen.getByText("5%")).toBeInTheDocument();
     expect(screen.getByText("2 completed bookings")).toBeInTheDocument();
     expect(screen.getByText("Silver")).toBeInTheDocument();
-    // progress = round(2 / (3+2) * 100) = 40
     expect(screen.getByTestId("progress")).toHaveAttribute("data-value", "40");
   });
 

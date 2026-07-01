@@ -25,7 +25,6 @@ describe("decidePreviewAccess", () => {
     const d = gate({ href: "https://inkmity.com/explore?preview=inkmity-vip-2026&ref=ig" });
     expect(d.granted).toBe(true);
     expect(d.store).toBe(CODE);
-    // the secret is removed, the unrelated param survives
     expect(d.cleanUrl).toBe("/explore?ref=ig");
   });
 

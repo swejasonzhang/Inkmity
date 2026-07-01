@@ -28,7 +28,7 @@ afterEach(() => {
 describe("retention scheduler", () => {
   test("runs a tick on each interval", async () => {
     startRetentionScheduler({ intervalMs: 1000 });
-    expect(mockRunTick).not.toHaveBeenCalled(); // nothing on start, only on interval
+    expect(mockRunTick).not.toHaveBeenCalled();
 
     await jest.advanceTimersByTimeAsync(1000);
     expect(mockRunTick).toHaveBeenCalledTimes(1);
@@ -56,8 +56,8 @@ describe("retention scheduler", () => {
     mockRunTick.mockRejectedValueOnce(new Error("blip"));
     startRetentionScheduler({ intervalMs: 1000 });
 
-    await jest.advanceTimersByTimeAsync(1000); // throws, caught
-    await jest.advanceTimersByTimeAsync(1000); // still fires
+    await jest.advanceTimersByTimeAsync(1000);
+    await jest.advanceTimersByTimeAsync(1000);
     expect(mockRunTick).toHaveBeenCalledTimes(2);
   });
 

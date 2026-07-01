@@ -28,7 +28,6 @@ export function mapReview(raw: any): Review {
   };
 }
 
-/** Does not mutate input. */
 export function sortReviews<T extends { rating: number; createdAt: string | Date }>(
   reviews: T[],
   sort: ReviewSort

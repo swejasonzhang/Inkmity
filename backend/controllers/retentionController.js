@@ -5,14 +5,13 @@ import { logger } from "../lib/logger.js";
 
 function secretMatches(provided) {
   const expected = config.internal.cronSecret;
-  if (!expected || !provided) return false; // fail closed when unset
+  if (!expected || !provided) return false;
   const a = Buffer.from(String(provided));
   const b = Buffer.from(String(expected));
   if (a.length !== b.length) return false;
   return timingSafeEqual(a, b);
 }
 
-// POST /internal/retention/tick — manual trigger for one retention cycle; guarded by a shared secret.
 export async function retentionTick(req, res) {
   if (!secretMatches(req.get("x-internal-secret"))) {
     return res.status(401).json({ error: "unauthorized" });

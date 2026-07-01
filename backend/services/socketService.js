@@ -22,9 +22,6 @@ const updateLastActive = async (clerkId) => {
 export const initSocket = (ioInstance) => {
   io = ioInstance;
 
-  // With more than one instance, in-process emit only reaches sockets on this
-  // node. The Redis adapter fans events out across all instances. No-op when
-  // REDIS_URL is unset (single instance / local / tests).
   const pubSub = createRedisPubSub();
   if (pubSub) {
     try {
@@ -43,9 +40,7 @@ export const initSocket = (ioInstance) => {
         const payload = await verifyToken(token, { secretKey: config.auth.clerkSecretKey });
         if (payload?.sub) socket.data.verifiedUserId = String(payload.sub);
       }
-    } catch {
-      // invalid/expired token — identity stays unverified, enforced below
-    }
+    } catch {}
     if (IS_PROD && !socket.data.verifiedUserId) {
       return next(new Error("unauthorized"));
     }
@@ -126,8 +121,6 @@ export const initSocket = (ioInstance) => {
         const allowed = await isAllowedToChat(senderId, receiverId);
         if (!allowed) return ack?.({ error: "not_allowed" });
         const now = new Date();
-        // Only the conversation partner needs to know the sender is active —
-        // emitting to every connected client was an O(N) broadcast per message.
         updateLastActive(senderId).then(() => {
           io.to(userRoom(String(receiverId))).emit("user:activity:updated", {
             userId: senderId,
