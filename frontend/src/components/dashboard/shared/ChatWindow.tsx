@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Send, Image as ImageIcon, X, Calendar, MessageSquare, Inbox, Lock } from "lucide-react";
 import { displayNameFromUsername } from "@/lib/format";
 import { formatActivityStatus } from "@/lib/activity";
+import { extractUrls, faviconUrl, splitMessageParts } from "@/lib/messageText";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPanel from "./messages/requestPanel";
@@ -70,18 +71,8 @@ interface ChatWindowProps {
   onRemoveConversation?: (participantId: string) => void;
 }
 
-const urlRegex = /\bhttps?:\/\/[^\s)]+/gi;
-const getUrlsFromText = (text: string) =>
-  Array.from(new Set((text.match(urlRegex) || [])?.map(u => u.replace(/[),.]+$/, ""))));
-
-const getFaviconUrl = (url: string): string | null => {
-  try {
-    const domain = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
-  } catch {
-    return null;
-  }
-};
+const getUrlsFromText = extractUrls;
+const getFaviconUrl = faviconUrl;
 
 const ChatWindow: FC<ChatWindowProps> = ({
   currentUserId,
@@ -1457,11 +1448,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                 style={{ maxWidth: 'clamp(150px, 85vw, 85%)' }}
                               >
                                 <div className="whitespace-pre-wrap break-words">
-                                  {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-                                    part.match(/^https?:\/\//) ? (
+                                  {splitMessageParts(msg.text).map((part, i) =>
+                                    part.type === "link" ? (
                                       <a
                                         key={i}
-                                        href={part}
+                                        href={part.value}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1.5 underline hover:opacity-80"
@@ -1469,9 +1460,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                           e.stopPropagation();
                                         }}
                                       >
-                                        {getFaviconUrl(part) && (
+                                        {getFaviconUrl(part.value) && (
                                           <img
-                                            src={getFaviconUrl(part)!}
+                                            src={getFaviconUrl(part.value)!}
                                             alt=""
                                             className="w-4 h-4 flex-shrink-0"
                                             onError={(e) => {
@@ -1479,10 +1470,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                             }}
                                           />
                                         )}
-                                        <span>{part}</span>
+                                        <span>{part.value}</span>
                                       </a>
                                     ) : (
-                                      <span key={i}>{part}</span>
+                                      <span key={i}>{part.value}</span>
                                     )
                                   )}
                                 </div>
@@ -1857,11 +1848,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
                             style={{ maxWidth: 'clamp(150px, min(80vw, 50%), 600px)', fontSize: 'clamp(0.8125rem, 0.9vw, 0.875rem)' }}
                           >
                             <div className="whitespace-pre-wrap break-words">
-                              {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-                                part.match(/^https?:\/\//) ? (
+                              {splitMessageParts(msg.text).map((part, i) =>
+                                part.type === "link" ? (
                                   <a
                                     key={i}
-                                    href={part}
+                                    href={part.value}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 underline hover:opacity-80"
@@ -1869,9 +1860,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                       e.stopPropagation();
                                     }}
                                   >
-                                        {getFaviconUrl(part) && (
+                                        {getFaviconUrl(part.value) && (
                                           <img
-                                            src={getFaviconUrl(part)!}
+                                            src={getFaviconUrl(part.value)!}
                                             alt=""
                                             className="w-4 h-4 flex-shrink-0"
                                             onError={(e) => {
@@ -1879,10 +1870,10 @@ const ChatWindow: FC<ChatWindowProps> = ({
                                             }}
                                           />
                                         )}
-                                        <span>{part}</span>
+                                        <span>{part.value}</span>
                                   </a>
                                 ) : (
-                                  <span key={i}>{part}</span>
+                                  <span key={i}>{part.value}</span>
                                 )
                               )}
                             </div>
