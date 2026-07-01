@@ -91,10 +91,10 @@ if (typeof window !== "undefined") {
 function applyToDom(t: Theme, animate: boolean) {
   const html = document.documentElement;
   const dash = document.getElementById("dashboard-scope");
+  html.setAttribute("data-ink", t);
+  html.classList.toggle("ink-light", t === "light");
   if (!dash) {
     html.removeAttribute("data-ink-themed");
-    html.classList.remove("ink-light");
-    html.setAttribute("data-ink", "dark");
     return;
   }
   if (animate) {
@@ -103,9 +103,7 @@ function applyToDom(t: Theme, animate: boolean) {
   }
   dash.classList.toggle("ink-light", t === "light");
   dash.setAttribute("data-ink", t);
-  html.setAttribute("data-ink", t);
   html.setAttribute("data-ink-themed", "true");
-  html.classList.toggle("ink-light", t === "light");
 }
 
 export function useTheme() {
