@@ -123,7 +123,9 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
 
     await ArtistPolicy.create({
       artistId,
-      deposit: { mode: "percent", percent: 0.2, minCents: 1000 },
+      // consultations are free by default; this artist opts in to a deposit so
+      // the deposit → webhook → confirmed flow below has something to charge.
+      deposit: { mode: "percent", percent: 0.2, minCents: 1000, consultationFree: false },
     });
     await onboardArtist(artistId);
     await createClientUser(clientId);
@@ -139,7 +141,7 @@ conditionalDescribe("Integration - Complete Consultation Booking Flow", () => {
     jest.clearAllMocks();
   });
 
-  test.skip("should complete full consultation booking flow", async () => {
+  test("should complete full consultation booking flow", async () => {
     const startISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 
     const createResponse = await request(server)

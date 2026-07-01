@@ -2,7 +2,7 @@ import { computeDepositCents } from "../../controllers/bookingController.js";
 
 const policy = (deposit) => ({ deposit });
 
-describe.skip("computeDepositCents (deposit policy → deposit amount)", () => {
+describe("computeDepositCents (deposit policy → deposit amount)", () => {
   test("percent: takes the percentage of the price", () => {
     const p = policy({ mode: "percent", percent: 0.2, minCents: 5000, maxCents: 30000 });
     expect(computeDepositCents(p, 40000, "tattoo_session")).toBe(8000);

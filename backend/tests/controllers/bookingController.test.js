@@ -381,7 +381,7 @@ conditionalDescribe("Booking Controller - Consultation Creation", () => {
     expect(duration).toBeLessThanOrEqual(60);
   });
 
-  test.skip("should calculate deposit based on artist policy", async () => {
+  test("should calculate deposit based on artist policy", async () => {
     await ArtistPolicy.create({
       artistId: artistId,
       deposit: {
