@@ -72,7 +72,6 @@ describe("SignupFormCard", () => {
     render(<SignupFormCard {...makeProps({ success: true })} />);
     expect(screen.getByText("Signup Successful!")).toBeInTheDocument();
     expect(screen.getByText(/Redirecting to Dashboard/i)).toBeInTheDocument();
-    // the signup form steps are no longer shown
     expect(screen.queryByText("SharedAccountStep")).not.toBeInTheDocument();
   });
 

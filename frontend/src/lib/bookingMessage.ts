@@ -1,13 +1,7 @@
-// Builds the suggested first-contact message a client sends an artist, from
-// their budget and piece preferences. Extracted from ClientProfile so the
-// wording rules are testable.
-
 export type RequestMessageInput = {
   budgetMin: number;
   budgetMax: number;
-  /** Normalized piece-type value ("none" or a label). */
   pieceType?: string;
-  /** Normalized placement value ("none" or a label). */
   placement?: string;
   size?: string;
   hasReferences?: boolean;

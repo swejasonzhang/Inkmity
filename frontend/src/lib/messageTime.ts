@@ -1,7 +1,4 @@
-// Timestamp formatting for the chat list: a compact same-day-vs-date label for
-// conversation rows, and a fuller date+time for individual messages. Extracted
-// from ChatWindow so the branching (same day → time, otherwise → date; invalid
-// → empty) is testable. Exact strings are locale-dependent by design.
+// Exact strings are locale-dependent by design.
 
 export function formatMessageTime(ts: number): string {
   try {

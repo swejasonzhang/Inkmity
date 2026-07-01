@@ -1,7 +1,4 @@
-// Resolves whether a message can be sent in a conversation, from the raw gate
-// status plus any optimistic override. Clients bypass the request gate; artists
-// see pending/accepted/declined states. Extracted from ChatWindow so the
-// permission rules are testable without the component.
+// Clients bypass the request gate; artists see pending/accepted/declined states.
 
 export type GateStatus = "pending" | "accepted" | "declined";
 

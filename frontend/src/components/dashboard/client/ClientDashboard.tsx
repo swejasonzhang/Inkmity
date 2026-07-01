@@ -35,8 +35,8 @@ export default function ClientDashboard() {
         const onDown = (e: MouseEvent | TouchEvent) => {
             const t = e.target as HTMLElement | null;
             if (!t) return;
-            if (t.closest(".client-dashboard-assistant")) return; // inside the assistant
-            if (t.closest(".ink-conv-scope")) return; // inside conversations (panel or pill)
+            if (t.closest(".client-dashboard-assistant")) return;
+            if (t.closest(".ink-conv-scope")) return;
             setAssistantOpen(false);
             window.dispatchEvent(new CustomEvent("ink:close-messages"));
         };

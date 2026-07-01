@@ -52,7 +52,6 @@ describe("VideoBackground", () => {
     render(<VideoBackground scrim={80} />);
     const root = document.body.querySelector('[aria-hidden="true"].fixed') as HTMLElement;
     expect(root).toBeInTheDocument();
-    // root contains the video plus the scrim overlay div
     const overlayDivs = root.querySelectorAll(":scope > div");
     expect(overlayDivs.length).toBeGreaterThanOrEqual(1);
   });

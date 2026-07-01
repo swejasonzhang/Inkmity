@@ -18,9 +18,7 @@ describe("ArtistPortfolio", () => {
   test("shows the artist's work and the headline info a client browses by", () => {
     render(<ArtistPortfolio artist={artist} />);
 
-    // their pieces are on screen
     expect(screen.getAllByRole("img").length).toBeGreaterThanOrEqual(3);
-    // and the facts a client weighs
     expect(screen.getByText(/Brooklyn, NY/i)).toBeInTheDocument();
     expect(screen.getByText(/6 yrs exp/i)).toBeInTheDocument();
   });

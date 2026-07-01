@@ -1,7 +1,3 @@
-// Pure review normalization + sorting extracted from ArtistReviews. The mapping
-// (author fallback chain, body from comment/body, photos coercion) is what makes
-// raw API reviews renderable, and is now testable in isolation.
-
 export type Review = {
   _id: string;
   authorName: string;
@@ -14,7 +10,6 @@ export type Review = {
 
 export type ReviewSort = "recent" | "high" | "low";
 
-/** Normalizes a raw review from the API into the shape the UI renders. */
 export function mapReview(raw: any): Review {
   const author =
     raw?.authorName ||
@@ -33,7 +28,7 @@ export function mapReview(raw: any): Review {
   };
 }
 
-/** Orders reviews by rating (high/low) or recency (default). Does not mutate input. */
+/** Does not mutate input. */
 export function sortReviews<T extends { rating: number; createdAt: string | Date }>(
   reviews: T[],
   sort: ReviewSort

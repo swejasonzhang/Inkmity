@@ -19,10 +19,6 @@ export type ArtistSort =
   | "newest"
   | (string & {});
 
-/**
- * Filters and sorts the artist discovery list. Extracted from ClientDashboard so
- * the (non-trivial) matching + ranking rules can be tested in isolation.
- */
 export function filterAndSortArtists<T extends Record<string, any>>(
   artists: T[],
   filters: ArtistFilters = {},

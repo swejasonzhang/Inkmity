@@ -27,7 +27,6 @@ export function isRedisEnabled() {
   return Boolean(process.env.REDIS_URL);
 }
 
-// Singleton client for cache + rate limiting.
 export function getRedis() {
   if (initialized) return client;
   initialized = true;
@@ -35,7 +34,7 @@ export function getRedis() {
   return client;
 }
 
-// Fresh pub/sub pair for the Socket.io adapter (each needs its own connection).
+// The Socket.io adapter needs a fresh pub/sub pair — each needs its own connection.
 export function createRedisPubSub() {
   if (!isRedisEnabled()) return null;
   const pub = buildClient("pub");

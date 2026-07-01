@@ -16,7 +16,6 @@ describe("InfoPanel", () => {
     render(<InfoPanel show prefersReduced mode="signup" role="artist" />);
     expect(screen.getByText("Less admin, more art")).toBeInTheDocument();
     expect(screen.getByText("Cash out")).toBeInTheDocument();
-    // client-only copy should not be shown to an artist
     expect(screen.queryByText("Matched to your vision")).not.toBeInTheDocument();
   });
 

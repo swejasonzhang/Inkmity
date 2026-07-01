@@ -1,7 +1,3 @@
-// Pure discovery rules behind the client's artist browser: coercing messy
-// numeric fields, matching experience/availability/keyword filters, and ranking
-// "upcoming" artists. Extracted from ArtistsSection so the rules are testable.
-
 export type DiscoverArtist = Record<string, any>;
 
 export function normalizeYears(y: unknown): number | undefined {
@@ -65,11 +61,6 @@ export function matchesKeyword(a: DiscoverArtist, q: string): boolean {
   );
 }
 
-/**
- * Rank "upcoming" artists: newer accounts, fewer reviews and less experience
- * score lower and surface first (ascending). Weighted recency 50% / reviews
- * 30% / experience 20%, capped, top 12.
- */
 export function scoreUpcomingArtists<T extends DiscoverArtist>(artists: T[], now: number): T[] {
   const scored = artists.map((a) => {
     const created = new Date(a.createdAt ?? 0).getTime();

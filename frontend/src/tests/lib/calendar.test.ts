@@ -28,14 +28,11 @@ describe("buildMonthCells", () => {
     const cells = buildMonthCells({ year: 2026, month: 0, days: 31, firstWeekday: 3 });
     expect(cells).toHaveLength(42);
 
-    // 3 leading blanks
     expect(cells.slice(0, 3).every((c) => !c.inMonth && c.dayNum === null && c.date === null)).toBe(true);
 
-    // day 1 lands at index 3
     expect(cells[3]).toMatchObject({ inMonth: true, dayNum: 1 });
     expect(cells[3].date?.getDate()).toBe(1);
 
-    // day 31 is the last in-month cell, then trailing blanks
     expect(cells[33]).toMatchObject({ inMonth: true, dayNum: 31 });
     expect(cells[34].inMonth).toBe(false);
   });

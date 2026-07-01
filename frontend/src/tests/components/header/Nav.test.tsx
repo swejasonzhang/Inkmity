@@ -14,7 +14,6 @@ describe("Nav", () => {
     expect(explore).toHaveAttribute("href", "/artists");
     expect(explore).toHaveAttribute("aria-current", "page");
 
-    // the unread count is surfaced on the Messages item
     expect(screen.getAllByText("3").length).toBeGreaterThan(0);
   });
 
@@ -26,7 +25,6 @@ describe("Nav", () => {
     const btn = screen.getAllByRole("button", { name: /dashboard.*sign in required/i })[0];
     btn.click();
     expect(onClick).toHaveBeenCalledTimes(1);
-    // gated items are not navigable links
     expect(screen.queryByRole("link", { name: /dashboard/i })).not.toBeInTheDocument();
   });
 });

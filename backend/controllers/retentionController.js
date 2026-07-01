@@ -12,8 +12,7 @@ function secretMatches(provided) {
   return timingSafeEqual(a, b);
 }
 
-// POST /internal/retention/tick — driven by the Render cron job. Guarded by a
-// shared secret; runs one retention cycle (reminders, aftercare, rebooking).
+// POST /internal/retention/tick — manual trigger for one retention cycle; guarded by a shared secret.
 export async function retentionTick(req, res) {
   if (!secretMatches(req.get("x-internal-secret"))) {
     return res.status(401).json({ error: "unauthorized" });

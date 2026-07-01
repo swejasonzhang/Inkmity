@@ -54,7 +54,6 @@ describe("ShopLocationMap", () => {
       <ShopLocationMap shop="Ink Den" lat={40.7} lng={-74} />
     );
     await waitFor(() => expect(mockLoadGoogleMaps).toHaveBeenCalled());
-    // Studio badge always renders
     expect(screen.getByText("Studio")).toBeInTheDocument();
     expect(container).toBeTruthy();
   });

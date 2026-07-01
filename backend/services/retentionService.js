@@ -8,7 +8,6 @@ import { logger } from "../lib/logger.js";
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
-// Statuses that represent a live, upcoming appointment worth reminding about.
 const UPCOMING = ["accepted", "booked", "confirmed"];
 
 // Backstop so a bug can never spin a runner forever; the atomic claim already
@@ -29,7 +28,6 @@ async function resolveClient(clientId) {
   return { email: c.email, name: c.username || c.handle || "there" };
 }
 
-// Persist an in-app notification in the client↔artist thread and push it live.
 async function notifyInApp({ artistId, clientId, text, meta }) {
   try {
     const msg = await Message.create({
@@ -162,7 +160,7 @@ export async function runRebookingNudges(now = Date.now()) {
 }
 
 // One retention cycle: each stage is independent, so a failure in one doesn't
-// block the others. Called by the internal cron tick endpoint.
+// block the others.
 export async function runRetentionTick(now = Date.now()) {
   const result = { reminders: 0, aftercare: 0, rebook: 0 };
   for (const [key, fn] of [

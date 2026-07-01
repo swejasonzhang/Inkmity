@@ -23,7 +23,6 @@ export function displayNameFromUsername(u?: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/** Up-to-two-letter avatar initials from a name (defaults to "A" when empty). */
 export function initialsFromName(name?: string): string {
   return (name || "A")
     .split(" ")

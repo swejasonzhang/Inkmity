@@ -97,7 +97,7 @@ describe("matchesKeyword", () => {
   test("matches across username, location, bio and styles (query pre-lowercased)", () => {
     expect(matchesKeyword(artist, "ada")).toBe(true);
     expect(matchesKeyword(artist, "brooklyn")).toBe(true);
-    expect(matchesKeyword(artist, "line")).toBe(true); // bio + style
+    expect(matchesKeyword(artist, "line")).toBe(true);
     expect(matchesKeyword(artist, "blackwork")).toBe(true);
   });
   test("returns false when nothing contains the query", () => {

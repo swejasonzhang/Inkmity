@@ -6,11 +6,8 @@ const PREVIEW_KEY = "inkmity_preview";
 export const isTestingMode = LAUNCH_MODE === "testing";
 
 export type PreviewDecision = {
-  /** whether the visitor may enter the site */
   granted: boolean;
-  /** a code to persist for future visits (set when unlocked via URL) */
   store?: string;
-  /** a cleaned URL to replace history with (strips the secret code) */
   cleanUrl?: string;
 };
 

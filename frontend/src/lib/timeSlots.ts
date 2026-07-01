@@ -1,8 +1,3 @@
-// Pure time-of-day helpers behind the booking time picker: parsing "HH:MM",
-// placing it on a given day in local time, and generating the default grid of
-// bookable slot start-times. Extracted from BookingPicker so the slot math is
-// testable independently of the component.
-
 export function toMinutes(hm: string): number {
   const [hStr, mStr] = String(hm).split(":");
   const h = Number(hStr);
