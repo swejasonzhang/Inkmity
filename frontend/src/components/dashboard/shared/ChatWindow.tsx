@@ -10,6 +10,7 @@ import { formatActivityStatus } from "@/lib/activity";
 import { extractUrls, faviconUrl, splitMessageParts } from "@/lib/messageText";
 import { cldCard, cldThumb } from "@/lib/img";
 import { resolveMessageAccess, type GateStatus } from "@/lib/messagingGate";
+import { windowMessages, MESSAGE_WINDOW } from "@/lib/messageWindow";
 import { formatMessageTime as fmtTime, formatMessageDateTime as fmtDateTime } from "@/lib/messageTime";
 import QuickBooking from "../client/QuickBooking";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -106,6 +107,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
   const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(MESSAGE_WINDOW);
 
   const [messageInput, setMessageInput] = useState<Record<string, string>>({});
   const [sendError, setSendError] = useState<string | null>(null);
@@ -473,6 +475,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
     () => conversations.find(c => c.participantId === expandedId) || sortedConversations[0],
     [conversations, expandedId, sortedConversations]
   );
+
+  const shownMessages = useMemo(
+    () => windowMessages(activeConv?.messages ?? [], visibleCount),
+    [activeConv?.messages, visibleCount]
+  );
+
+  useEffect(() => {
+    setVisibleCount(MESSAGE_WINDOW);
+  }, [activeConv?.participantId]);
 
   useEffect(() => {
     if (expandedId && activeConv) {
@@ -1378,6 +1389,15 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       ref={(el) => { messagesContainerRefMobile.current = el; }}
                       className="flex-1 overflow-y-auto px-2 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
                     >
+                      {shownMessages.earlierCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setVisibleCount((c) => c + MESSAGE_WINDOW)}
+                          className="mx-auto mb-1 shrink-0 rounded-full border border-app bg-elevated px-3 py-1 text-[11px] text-subtle hover:text-app transition"
+                        >
+                          Load earlier messages ({shownMessages.earlierCount})
+                        </button>
+                      )}
                       {!activeConv ? (
                         <div className="flex items-center justify-center h-full">
                           <p className="text-sm text-muted-foreground text-center">
@@ -1391,7 +1411,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
                       ) : (!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
                         <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
                       ) : activeConv?.messages && activeConv.messages.length > 0 ? (
-                        activeConv.messages.map((msg, idx) => {
+                        shownMessages.shown.map((msg, idx) => {
                           const isMe = msg.senderId === currentUserId;
                           const fromMetaRef = ([] as string[])
                             .concat(msg.meta?.referenceUrls ?? [])
@@ -1402,7 +1422,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
                           let timestampText = "";
                           let statusText = "";
-                          const isLastMsg = idx === activeConv.messages.length - 1;
+                          const isLastMsg = idx === shownMessages.shown.length - 1;
                           if (isMe && isLastMsg) {
                             if (msg.seen) {
                               const seenTimestamp = msg.seenAt || (msg.deliveredAt && msg.seen ? msg.deliveredAt : msg.timestamp);
@@ -1788,10 +1808,19 @@ const ChatWindow: FC<ChatWindowProps> = ({
                   ref={(el) => { messagesContainerRefDesktop.current = el; }}
                   className="flex-1 overflow-y-auto px-3 md:px-4 py-2 flex flex-col gap-1.5 overscroll-contain min-h-0"
                 >
+                  {shownMessages.earlierCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount((c) => c + MESSAGE_WINDOW)}
+                      className="mx-auto mb-1 shrink-0 rounded-full border border-app bg-elevated px-3 py-1 text-[11px] text-subtle hover:text-app transition"
+                    >
+                      Load earlier messages ({shownMessages.earlierCount})
+                    </button>
+                  )}
                   {(!activeConv?.messages || activeConv.messages.length === 0) && !isClient && (activeConv?.meta?.lastStatus === "pending") ? (
                     <div className="text-sm text-muted-foreground">No messages yet. Approval required.</div>
                   ) : (
-                    activeConv?.messages.map((msg, idx) => {
+                    shownMessages.shown.map((msg, idx) => {
                       const isMe = msg.senderId === currentUserId;
                       const fromMetaRef = ([] as string[])
                         .concat(msg.meta?.referenceUrls ?? [])
@@ -1802,7 +1831,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
                       let timestampText = "";
                       let statusText = "";
-                      const isLastMsg = idx === (activeConv?.messages?.length ?? 0) - 1;
+                      const isLastMsg = idx === shownMessages.shown.length - 1;
                       if (isMe && isLastMsg) {
                         if (msg.seen) {
                           const seenTimestamp = msg.seenAt || (msg.deliveredAt && msg.seen ? msg.deliveredAt : msg.timestamp);
