@@ -98,29 +98,11 @@ services:
     #   maxInstances: 5
     #   targetCPUPercent: 70
 
-  # --- Retention cron: pokes the API to send reminders / aftercare / rebooking ---
-  # Runs on a schedule and POSTs the internal tick endpoint, which does the work
-  # (send emails + in-app notifications). Kept as a separate scheduler so the
-  # always-on web service holds no in-process timers and this runs exactly once
-  # regardless of how many web instances are live. Idempotent flags on each
-  # booking make a missed/duplicate tick harmless.
-  - type: cron
-    name: inkmity-retention-tick
-    runtime: node
-    region: ohio
-    # Every 10 minutes: fine-grained enough for the 1h reminder band, and the
-    # aftercare/rebooking windows are day-scale so they only fire once per booking.
-    schedule: "*/10 * * * *"
-    # No build needed — the job only makes an authenticated HTTP call.
-    buildCommand: 'echo "no build"'
-    startCommand: 'curl -fsS -X POST "$BACKEND_URL/internal/retention/tick" -H "x-internal-secret: $INTERNAL_CRON_SECRET"'
-    envVars:
-      # The deployed API origin (e.g. https://inkmity-api.onrender.com).
-      - key: BACKEND_URL
-        sync: false
-      # Must match INTERNAL_CRON_SECRET on the inkmity-api web service above.
-      - key: INTERNAL_CRON_SECRET
-        sync: false
+  # Retention (reminders / aftercare / rebooking) is scheduled IN-PROCESS by the
+  # always-on API above (see services/retentionScheduler.js) — no separate paid
+  # cron service. It runs every RETENTION_INTERVAL_MS (default 10m); set
+  # RETENTION_SCHEDULER=off to disable. /internal/retention/tick still exists for
+  # manual runs. Multiple instances are safe (each booking is claimed atomically).
 
   # --- Redis / Key Value: Socket.io adapter + shared cache + rate-limit store ---
   - type: keyvalue

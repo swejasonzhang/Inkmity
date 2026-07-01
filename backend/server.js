@@ -54,6 +54,7 @@ import artworkRoutes from "./routes/artworks.js";
 import assistantRoutes from "./routes/assistant.js";
 import reportRoutes from "./routes/reports.js";
 import internalRoutes from "./routes/internal.js";
+import { startRetentionScheduler } from "./services/retentionScheduler.js";
 import { mountStripeWebhook } from "./controllers/billingController.js";
 import { apiLimiter, authLimiter, assistantLimiter } from "./middleware/rateLimiter.js";
 import { initSocket } from "./services/socketService.js";
@@ -198,6 +199,7 @@ async function startServer() {
       console.log(`📱 Frontend: ${process.env.FRONTEND_URL || "http://localhost:3000"}`);
       console.log(`🔗 API: http://localhost:${PORT}`);
       console.log(`💾 Database: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+      if (mongoose.connection.readyState === 1) startRetentionScheduler();
     });
   } catch (error) {
     if (isProd) {
