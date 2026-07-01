@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { initialsFromName } from "@/lib/format";
+import { buildRequestMessage } from "@/lib/bookingMessage";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
@@ -459,30 +460,18 @@ export default function ClientProfile() {
     const placementValue = optValue(PLACEMENT_OPTIONS, currentPlacement);
     const pieceTypeValue = optValue(PIECE_TYPE_OPTIONS, currentPieceType);
 
-    const messagePlaceholder = useMemo(() => {
-        const named = (v: string) => !!v && v !== "none";
-        const article = (w: string) => (/^[aeiou]/i.test(w.trim()) ? "an" : "a");
-        const sizePhrase: Record<string, string> = {
-            tiny: "a tiny piece",
-            small: "a small piece",
-            medium: "a medium-sized piece",
-            large: "a large piece",
-            xl: "a large piece",
-            xxl: "a large piece",
-        };
-        const parts = ["Hi! I'm interested in getting a tattoo."];
-        if (currentReferences.length > 0)
-            parts.push("I've attached a few references that show the style and vibe I'm going for.");
-        parts.push(`My budget is around $${budgetMin}–$${budgetMax}.`);
-        if (named(pieceTypeValue))
-            parts.push(`I'm interested in ${article(pieceTypeValue)} ${pieceTypeValue.toLowerCase()}.`);
-        if (named(placementValue))
-            parts.push(`I'd like it on my ${placementValue.toLowerCase()}.`);
-        if (sizePhrase[currentSize])
-            parts.push(`I'm thinking ${sizePhrase[currentSize]}.`);
-        parts.push("Let me know if you're available and interested!");
-        return parts.join(" ");
-    }, [budgetMin, budgetMax, pieceTypeValue, placementValue, currentSize, currentReferences.length]);
+    const messagePlaceholder = useMemo(
+        () =>
+            buildRequestMessage({
+                budgetMin,
+                budgetMax,
+                pieceType: pieceTypeValue,
+                placement: placementValue,
+                size: currentSize,
+                hasReferences: currentReferences.length > 0,
+            }),
+        [budgetMin, budgetMax, pieceTypeValue, placementValue, currentSize, currentReferences.length]
+    );
 
     useEffect(() => {
         const textarea = messageTextareaRef.current;
