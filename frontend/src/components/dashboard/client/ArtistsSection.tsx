@@ -6,6 +6,14 @@ import { Search, ChevronsDown, ChevronLeft, ChevronRight, MapPin, Clock, Buildin
 import VerifiedBadge from "@/components/dashboard/shared/VerifiedBadge";
 import { ArtistCardSkeleton } from "@/components/dashboard/client/ArtistCardSkeleton";
 import { titleCase } from "@/lib/format";
+import {
+    normalizeYears,
+    toNumber,
+    matchesExperience,
+    matchesAvailability,
+    matchesKeyword,
+    scoreUpcomingArtists,
+} from "@/lib/artistDiscovery";
 import type { Artist } from "@/api";
 
 type Props = {
@@ -34,35 +42,6 @@ const EmptyArtists = () => (
         </div>
     </div>
 );
-
-const normalizeYears = (y: unknown): number | undefined => {
-    if (typeof y === "number" && Number.isFinite(y)) return Math.trunc(y);
-    if (typeof y === "string") {
-        const n = Number(y.toString().replace(/[^\d]/g, ""));
-        if (Number.isFinite(n)) return Math.trunc(n);
-    }
-    return undefined;
-};
-
-const toNumber = (v: unknown, fallback = 0): number => {
-    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
-    if (typeof v === "string") {
-        const cleaned = v.replace(/[, ]/g, "");
-        const n = Number(cleaned);
-        return Number.isFinite(n) ? n : fallback;
-    }
-    return fallback;
-};
-
-const matchesExperience = (years: number | undefined, filter: string) => {
-    if (filter === "all") return true;
-    if (years === undefined) return false;
-    if (filter === "amateur") return years >= 0 && years <= 2;
-    if (filter === "experienced") return years >= 3 && years <= 5;
-    if (filter === "professional") return years >= 6 && years <= 10;
-    if (filter === "veteran") return years >= 10;
-    return true;
-};
 
 const ArtistCarouselCard = ({ artist, onClick, fill = false }: { artist: any; onClick: () => void; fill?: boolean }) => {
     const all: string[] = [
@@ -329,39 +308,9 @@ export default function ArtistsSection({
 
     const filtered = useMemo(() => {
         const now = new Date();
-        const inAvailability = (a: Artist) => {
-            const isNow = (a as any).isAvailableNow === true;
-            const nextRaw = (a as any).nextAvailableDate as string | undefined;
-            const waitlist = (a as any).acceptingWaitlist === true || (a as any).isClosed === true;
-            if (availabilityFilter === "waitlist") return waitlist;
-            const next = nextRaw ? new Date(nextRaw) : null;
-            if (!next && !isNow) {
-                if (availabilityFilter === "all") return true;
-                return false;
-            }
-            const msDay = 24 * 60 * 60 * 1000;
-            const diffDays = isNow ? 0 : Math.ceil(((next as Date).getTime() - now.getTime()) / msDay);
-            if (availabilityFilter === "all") return true;
-            if (availabilityFilter === "7d") return diffDays <= 7;
-            if (availabilityFilter === "lt1m") return diffDays <= 30;
-            if (availabilityFilter === "1to3m") return diffDays > 30 && diffDays <= 90;
-            if (availabilityFilter === "lte6m") return diffDays <= 180;
-            return true;
-        };
         const inPriceRange = (_a: Artist) => {
             if (priceFilter === "all") return true;
             return true;
-        };
-        const matchesKeyword = (a: Artist, q: string) => {
-            if (!q) return true;
-            const styles = Array.isArray((a as any).styles) ? (a as any).styles : [];
-            const bio = (a as any).bio as string | undefined;
-            return (
-                a.username?.toLowerCase().includes(q) ||
-                (a as any).location?.toLowerCase().includes(q) ||
-                (bio ? bio.toLowerCase().includes(q) : false) ||
-                styles.some((s: string) => s.toLowerCase().includes(q))
-            );
         };
         const matchesBooking = (a: Artist, v: string) => {
             if (!v || v === "all") return true;
@@ -379,7 +328,7 @@ export default function ArtistsSection({
             const styles = Array.isArray((a as any).styles) ? (a as any).styles : [];
             if (!(styleFilter === "all" || styles.includes(styleFilter))) return false;
             if (!matchesKeyword(a, debouncedSearch)) return false;
-            if (!inAvailability(a)) return false;
+            if (!matchesAvailability(a, availabilityFilter, now)) return false;
             const y = normalizeYears((a as any).yearsExperience);
             if (!matchesExperience(y, experienceFilter)) return false;
             if (!matchesBooking(a, bookingFilter)) return false;
@@ -433,24 +382,7 @@ export default function ArtistsSection({
             .map(([style, list]) => ({ style, items: list }));
     }, [filtered]);
 
-    const upcomingArtists = useMemo(() => {
-        const now = Date.now();
-        const scored = filtered.map((a) => {
-            const created = new Date((a as any).createdAt ?? 0).getTime();
-            const ageDays = created > 0 ? (now - created) / (1000 * 60 * 60 * 24) : 365;
-            const reviews = Number((a as any).reviewsCount ?? 0);
-            const years = Number((a as any).yearsExperience ?? 0);
-            const recency = Math.min(ageDays, 365) / 365;
-            const reviewed = Math.min(reviews, 50) / 50;
-            const experience = Math.min(years, 10) / 10;
-            const score = recency * 0.5 + reviewed * 0.3 + experience * 0.2;
-            return { a, score };
-        });
-        return scored
-            .sort((x, y) => x.score - y.score)
-            .slice(0, 12)
-            .map((s) => s.a);
-    }, [filtered]);
+    const upcomingArtists = useMemo(() => scoreUpcomingArtists(filtered, Date.now()), [filtered]);
     const isCenterLoading = (loading || !showArtists) && artists.length === 0;
     const [viewAllStyle, setViewAllStyle] = useState<string | null>(null);
     const viewAllItems = viewAllStyle ? sections.find((s) => s.style === viewAllStyle)?.items ?? [] : [];
