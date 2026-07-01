@@ -23,6 +23,15 @@ export function displayNameFromUsername(u?: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Up-to-two-letter avatar initials from a name (defaults to "A" when empty). */
+export function initialsFromName(name?: string): string {
+  return (name || "A")
+    .split(" ")
+    .map((s) => s[0]?.toUpperCase())
+    .slice(0, 2)
+    .join("");
+}
+
 export function formatCurrency(cents: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

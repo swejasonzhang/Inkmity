@@ -1,5 +1,19 @@
 import { describe, test, expect } from "@jest/globals";
-import { titleCase, displayNameFromUsername, formatCurrency } from "@/lib/format";
+import { titleCase, displayNameFromUsername, formatCurrency, initialsFromName } from "@/lib/format";
+
+describe("initialsFromName", () => {
+  test("uses up to two initials from the name", () => {
+    expect(initialsFromName("John Doe")).toBe("JD");
+    expect(initialsFromName("Ada Byron Lovelace")).toBe("AB");
+  });
+  test("a single name yields one initial", () => {
+    expect(initialsFromName("Madonna")).toBe("M");
+  });
+  test("defaults to 'A' when the name is empty or missing", () => {
+    expect(initialsFromName("")).toBe("A");
+    expect(initialsFromName()).toBe("A");
+  });
+});
 
 describe("titleCase", () => {
   test("returns empty string for empty/undefined input", () => {

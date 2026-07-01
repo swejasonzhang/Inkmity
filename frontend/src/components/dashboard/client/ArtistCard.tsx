@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { initialsFromName } from "@/lib/format";
 import { Star, MapPin, Clock, DollarSign, Store, Image as ImageIcon, BadgeCheck } from "lucide-react";
 import { formatActivityStatus } from "@/lib/activity";
 import { computeArtistTier } from "@/lib/artistTier";
@@ -45,7 +46,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick, fullScreen = f
   const healedWorks = (artist.healedWorks || []).filter(Boolean);
   const sketches = (artist.sketches || []).filter(Boolean);
 
-  const initials = useMemo(() => (artist.username || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join(""), [artist.username]);
+  const initials = useMemo(() => initialsFromName(artist.username), [artist.username]);
 
   const bioText = (artist.bio || "").trim() || `Nice to meet you, I'm ${artist.username || "this artist"}, let's talk about your next tattoo.`;
 

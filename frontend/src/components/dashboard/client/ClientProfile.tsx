@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { initialsFromName } from "@/lib/format";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
@@ -444,7 +445,7 @@ export default function ClientProfile() {
         );
     }, [currentUsername, currentBio, currentLocation, currentCoverImage, currentBudgetMin, currentBudgetMax, currentPlacement, currentPieceType, currentSize, currentMessage, currentReferences, client]);
 
-    const initials = useMemo(() => (currentUsername || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join(""), [currentUsername]);
+    const initials = useMemo(() => initialsFromName(currentUsername), [currentUsername]);
     const loc = currentLocation?.trim() || "";
 
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));

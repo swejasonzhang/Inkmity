@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { initialsFromName } from "@/lib/format";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { API_URL } from "@/api";
@@ -575,7 +576,7 @@ export default function ArtistProfile() {
     const currentRestrictedPlacements = editedArtist.restrictedPlacements ?? artist?.restrictedPlacements ?? [];
 
 
-    const initials = useMemo(() => (currentUsername || "A").split(" ").map(s => s[0]?.toUpperCase()).slice(0, 2).join(""), [currentUsername]);
+    const initials = useMemo(() => initialsFromName(currentUsername), [currentUsername]);
 
     if (!artist) return null;
 
