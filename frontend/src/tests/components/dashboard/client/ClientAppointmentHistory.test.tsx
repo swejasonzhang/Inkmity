@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { render, waitFor } from "@/tests/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 
 const mockGetToken = jest.fn<() => Promise<string>>();
 
@@ -42,10 +42,32 @@ describe("ClientAppointmentHistory", () => {
     });
   });
 
-  test("should render client appointment history", async () => {
-    const { container } = render(<ClientAppointmentHistory />);
-    await waitFor(() => {
-      expect(container.firstChild).toBeInTheDocument();
-    }, { timeout: 3000 });
+  const soon = () => new Date(Date.now() + 86400000).toISOString();
+
+  test("shows the client's upcoming appointment with the artist and status", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { _id: "b1", artistId: "a1", startAt: soon(), status: "accepted", appointmentType: "tattoo_session", artist: { username: "Ink Master" } },
+      ],
+    });
+
+    render(<ClientAppointmentHistory />);
+
+    expect(await screen.findByText("Ink Master")).toBeInTheDocument();
+    expect(screen.getByText("Accepted")).toBeInTheDocument();
+  });
+
+  test("falls back to 'Unknown Artist' when the booking has no artist name", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { _id: "b2", artistId: "a2", startAt: soon(), status: "pending", appointmentType: "consultation" },
+      ],
+    });
+
+    render(<ClientAppointmentHistory />);
+
+    expect(await screen.findByText("Unknown Artist")).toBeInTheDocument();
   });
 });

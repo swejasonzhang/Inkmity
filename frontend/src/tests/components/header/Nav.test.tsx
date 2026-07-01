@@ -1,80 +1,32 @@
 import { jest, describe, test, expect } from "@jest/globals";
-import { render } from "@/tests/setup/test-utils";
-
-jest.unstable_mockModule("react-router-dom", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
-  useLocation: () => ({ pathname: "/dashboard" }),
-  useNavigate: () => jest.fn(),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-const { Nav } = await import("@/components/header/Nav");
+import { render, screen } from "@/tests/setup/test-utils";
+import { Nav } from "@/components/header/Nav";
 
 describe("Nav", () => {
-  test("should render desktop navigation", () => {
-    const { container } = render(<Nav items={[]} isActive={() => false} isSignedIn={false} />);
-    expect(container.firstChild).toBeInTheDocument();
-  });
-
-  test("should render mobile navigation", () => {
-    const { container } = render(
-      <Nav
-        items={[]}
-        isActive={() => false}
-        isSignedIn={false}
-        setMobileMenuOpen={jest.fn()}
-        handleLogout={jest.fn()}
-      />
-    );
-    expect(container.firstChild).toBeInTheDocument();
-  });
-
-  test("should render navigation items", () => {
-    const mockItems = [
-      { label: "Dashboard", to: "/dashboard", disabled: false },
-      { label: "Profile", to: "/profile", disabled: false },
+  test("renders enabled items as links to their routes and marks the active one", () => {
+    const items: any = [
+      { label: "Explore", to: "/artists" },
+      { label: "Messages", to: "/messages", count: 3 },
     ];
+    render(<Nav items={items} isActive={(to) => to === "/artists"} isSignedIn />);
 
-    const { container } = render(
-      <Nav
-        items={mockItems}
-        isActive={(to) => to === "/dashboard"}
-        isSignedIn={false}
-      />
-    );
+    const explore = screen.getAllByRole("link", { name: /explore/i })[0];
+    expect(explore).toHaveAttribute("href", "/artists");
+    expect(explore).toHaveAttribute("aria-current", "page");
 
-    expect(container.firstChild).toBeInTheDocument();
+    // the unread count is surfaced on the Messages item
+    expect(screen.getAllByText("3").length).toBeGreaterThan(0);
   });
 
-  test("should handle disabled navigation items", () => {
-    const mockItems = [
-      { label: "Coming Soon", to: "#", disabled: true },
-    ];
+  test("a sign-in-required item is a button that prompts to sign in when clicked", () => {
+    const onClick = jest.fn();
+    const items: any = [{ label: "Dashboard", to: "#", disabled: true, onClick }];
+    render(<Nav items={items} isActive={() => false} isSignedIn={false} />);
 
-    const { container } = render(
-      <Nav
-        items={mockItems}
-        isActive={() => false}
-        isSignedIn={false}
-        onDisabledDashboardHover={jest.fn()}
-        onDisabledDashboardLeave={jest.fn()}
-      />
-    );
-
-    expect(container.firstChild).toBeInTheDocument();
-  });
-
-  test("should render profile and logout links for signed-in users in mobile", () => {
-    const { container } = render(
-      <Nav
-        items={[]}
-        isActive={() => false}
-        isSignedIn={true}
-        setMobileMenuOpen={jest.fn()}
-        handleLogout={jest.fn()}
-      />
-    );
-
-    expect(container.firstChild).toBeInTheDocument();
+    const btn = screen.getAllByRole("button", { name: /dashboard.*sign in required/i })[0];
+    btn.click();
+    expect(onClick).toHaveBeenCalledTimes(1);
+    // gated items are not navigable links
+    expect(screen.queryByRole("link", { name: /dashboard/i })).not.toBeInTheDocument();
   });
 });

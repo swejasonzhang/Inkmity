@@ -1,5 +1,5 @@
 import { jest, describe, test, expect } from "@jest/globals";
-import { render } from "@/tests/setup/test-utils";
+import { render, screen } from "@/tests/setup/test-utils";
 
 jest.unstable_mockModule("@/hooks/useInkConversations", () => ({
   useInkConversations: () => ({
@@ -19,10 +19,20 @@ jest.unstable_mockModule("@/components/dashboard/shared/messages/InkConversation
 const { default: FloatingBar } = await import("@/components/dashboard/shared/FloatingBar");
 
 describe("FloatingBar", () => {
-  test("should render floating bar", () => {
-    const { container } = render(<FloatingBar role="Client" onAssistantOpen={jest.fn()} />);
-    const placeholder = container.querySelector('[data-testid="floating-bar-placeholder"]');
-    const portal = document.body.querySelector('.ink-assistant-btn');
-    expect(placeholder || portal || container.firstChild).toBeInTheDocument();
+  test("the assistant is gated while locked — clicking it does nothing", () => {
+    const onAssistantOpen = jest.fn();
+    render(<FloatingBar role="Client" assistantLocked onAssistantOpen={onAssistantOpen} />);
+
+    const btn = screen.getAllByRole("button", { name: /assistant.*coming soon/i })[0];
+    btn.click();
+    expect(onAssistantOpen).not.toHaveBeenCalled();
+  });
+
+  test("once unlocked, clicking the assistant opens it", () => {
+    const onAssistantOpen = jest.fn();
+    render(<FloatingBar role="Client" assistantLocked={false} onAssistantOpen={onAssistantOpen} />);
+
+    screen.getAllByRole("button", { name: /open assistant/i })[0].click();
+    expect(onAssistantOpen).toHaveBeenCalledTimes(1);
   });
 });
