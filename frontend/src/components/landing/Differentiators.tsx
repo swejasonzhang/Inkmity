@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { LazyMotion, domAnimation, MotionConfig, useReducedMotion, m, type Variants } from "framer-motion";
 import { Wallet, ShieldCheck, FileSignature, Banknote, CalendarClock, Layers, type LucideIcon } from "lucide-react";
 import { EASE, dirForColumn } from "./motion";
+import ComparisonTable from "./ComparisonTable";
 
 type Card = { title: string; body: string; Icon: LucideIcon; wide?: boolean; ink?: boolean };
 
@@ -123,6 +124,8 @@ const Differentiators: React.FC<{ textFadeUp: any; wc?: React.CSSProperties }> =
                         </m.div>
                     </MotionConfig>
                 </LazyMotion>
+
+                <ComparisonTable textFadeUp={textFadeUp} wc={wc} />
             </div>
         </section>
     );
